@@ -1,21 +1,21 @@
 # Matriz de seguimiento Demi 2.0 — 9 octubre 2026
 
-**3/18 casos maestros aprobados (16.7 %); 15 parciales (83.3 %).** M03, M13 y M17 pasaron sus criterios de negocio. El transporte externo permanece en M01 y no se da por aprobado. Cada fila distingue variantes que pasaron de lo que falta para cerrar el caso. Las correcciones detectadas se detallan debajo.
+**4/18 casos maestros aprobados (22.2 %); 14 parciales (77.8 %).** M03, M09, M13 y M17 pasaron sus criterios de negocio. El transporte externo permanece en M01 y no se da por aprobado. Cada fila distingue variantes que pasaron de lo que falta para cerrar el caso. Las correcciones detectadas se detallan debajo.
 
-Validación: 1104/1104 pruebas automáticas, typecheck y compilación correctos; lint sin errores (un aviso preexistente). Histórico: 97 variantes SQL; nueva ejecución de 24 controles de Mercado Pago, nueve motivos humanos y nueve controles de seguimiento con el rol real service_role. Estos conjuntos se solapan y no se suman como casos maestros. Se creó una orden real de prueba de Mercado Pago; compra pendiente del usuario.
+Validación: 1117/1117 pruebas automáticas, typecheck y compilación correctos; lint sin errores (un aviso preexistente). Histórico: 97 variantes SQL; nueva ejecución de 24 controles de Mercado Pago, nueve motivos humanos y nueve controles de seguimiento con el rol real service_role. Estos conjuntos se solapan y no se suman como casos maestros. Se creó una orden real de prueba de Mercado Pago; compra pendiente del usuario.
 
 ## Resumen para promover a producción
 
 | Medida | Resultado | Interpretación |
 | --- | --- | --- |
-| Casos maestros aprobados integralmente | 3/18 (16.7 %) | M03, M13 y M17 tienen evidencia de V1–V3; ver documento de evidencia específico. |
-| Casos maestros parciales | 15/18 (83.3 %) | Los restantes tienen verificaciones aprobadas y pendientes identificados. |
-| Casos maestros por cerrar | 15/18 (83.3 %) | Porcentaje de cierres pendientes, no de esfuerzo ni de implementación restante. |
-| Pruebas automáticas aprobadas en la última ejecución registrada | 1104/1104 (100 %) | Regresión técnica; no son 1104 casos UAT de negocio. |
+| Casos maestros aprobados integralmente | 4/18 (22.2 %) | M03, M09, M13 y M17 tienen evidencia de V1–V3; ver documento de evidencia específico. |
+| Casos maestros parciales | 14/18 (77.8 %) | Los restantes tienen verificaciones aprobadas y pendientes identificados. |
+| Casos maestros por cerrar | 14/18 (77.8 %) | Porcentaje de cierres pendientes, no de esfuerzo ni de implementación restante. |
+| Pruebas automáticas aprobadas en la última ejecución registrada | 1117/1117 (100 %) | Regresión técnica; no son 1117 casos UAT de negocio. |
 | Verificaciones SQL registradas | 97 | Evidencia técnica acumulada; no existe un total exhaustivo de variantes pendientes para calcular su porcentaje. |
 | Decisión de promoción | No lista | Faltan pagos nuevos, transporte externo y variantes de negocio. No se ha publicado esta rama en producción. |
 
-Los resultados son los de la última ejecución guardada, no una nueva corrida de pruebas. No se registran casos maestros cerrados como fallidos: M03, M13 y M17 pasaron y 15 permanecen parciales; los defectos encontrados y corregidos conservan su historial.
+Los resultados son los de la última ejecución guardada, no una nueva corrida de pruebas. No se registran casos maestros cerrados como fallidos: M03, M09, M13 y M17 pasaron y 14 permanecen parciales; los defectos encontrados y corregidos conservan su historial.
 
 ### Política de pagos confirmada con el usuario
 
@@ -43,7 +43,7 @@ La actualización de esta matriz no aprueba un caso ni sustituye su ejecución. 
 | M06 Grupo                  | Parcial | Pagador separado, participantes mixtos, reservas individuales, total conciliado y reenvío sin duplicados.                         | Variantes conversacionales restantes y canalización del importe no asignado a revisión humana.           | Ninguno por ahora.                                           |
 | M07 Cupo/reembolso         | Parcial | Sin cupo no se prepara cobro; solicitud persistente de reembolso y atención humana.                                               | Alternativas conversacionales y referencias para devolución manual después de pago.        | Ninguno por ahora.                                           |
 | M08 Primera reserva        | Parcial | Una ficha/reserva/pago; repetición conserva validación. QR nativo y portal propio, sin QR de otra alumna.                         | Entrega de acceso/QR por los canales externos.                                       | Ninguno por ahora.                                           |
-| M09 Fallos/reintentos      | Parcial | Tres intentos, sin cuarto envío; evento repetido no duplica turnos/llamadas; resultados desconocidos requieren revisión.          | Timeout de reserva y entrega externa bajo fallos.                                    | Ninguno por ahora.                                           |
+| M09 Fallos/reintentos | Aprobado | V1–V3: tres fallos previos sin reserva/débito, timeout recuperado sin duplicados, salida fallida auditada y caso humano al tercero; cuarto evento sin nueva ejecución. WhatsApp y Facebook. | Ninguno de negocio; transporte externo en M01. | Ninguno. |
 | M10 Cancelación            | Parcial | Corte exacto de cinco horas; tardía consume una vez. Prueba inicia en primera clase y conserva vencimiento al mover/cancelar.     | Recordatorio y cancelación completos por transporte externo.                         | Ninguno por ahora.                                           |
 | M11 Asistencia/inscripción | Parcial | Asistencia real; conversión mediante venta interna. Activación y cambio de contraseña llegan al portal sin inscripción pagada.    | Inscripción externa y dos seguimientos conversacionales.                             | Ninguno por ahora.                                           |
 | M12 Rechazo                | Parcial | Revisión rechazada revoca reserva de prueba y conserva histórico.                                                                 | Rechazo de inscripción/paquete y entrega del aviso.                                  | Ninguno por ahora.                                           |
@@ -91,3 +91,13 @@ Actualización posterior: M03 y M17 aprobados en el banco UAT; 2/18 casos (11.1 
 La regresión posterior a la consulta completa de disciplinas pasó: 1104/1104; lint global sin errores (18 avisos preexistentes). La preparación oficial ausente también se probó sin pedir explícitamente atención humana: Demi creó technical_block y reconoció el faltante sin consejos inventados.
 
 M13 cerrado en preview 208fa85. El bucle de confirmación en efectivo se corrigió; se validó el importe y paquete mencionados contra el resumen preparado. Regresión 1104/1104. Evidencia: demi-2-m13-confirmations-evidence-2026-10-09.json.
+
+## Verificación de reintentos — 23:44 UTC
+
+La regresión técnica de la versión 7da8dd0 pasó 1117/1117 pruebas. Typecheck pasó. Se conservan las respuestas originales al reintentar eventos de Meta, con toma exclusiva del evento y límite persistente de tres intentos de salida. Ante un resultado desconocido o aceptación del proveedor sin registro local, se detiene el reenvío y se canaliza a revisión humana. Pendiente la repetición conversacional en el nuevo preview; M09 permanece parcial hasta registrar esa evidencia.
+
+Las pruebas conversacionales de fallo previo a la reserva alcanzaron tres errores y crearon un caso humano, sin reserva ni débito; el cuarto mensaje quedó pausado. La respuesta perdida después de reservar se recuperó usando la reserva existente, sin un segundo débito. No se confunden estos controles internos con transporte externo de Meta.
+
+M09 aprobado en preview 7da8dd0: el evento repetido conservó la respuesta, no ejecutó de nuevo el modelo y registró exactamente tres salidas fallidas. El tercer fallo creó un caso técnico; el cuarto no envió nada. En WhatsApp se conservó una reserva y siete créditos en los cuatro intentos. Facebook pasó el mismo límite. Evidencia: demi-2-m09-evidence-2026-10-09.json. Avance vigente: 4/18 (22.2 %), 14/18 por cerrar (77.8 %).
+
+Comprobantes separados: corrección aplicada exclusivamente en Sandbox; 18 controles nativos pasaron con SET LOCAL ROLE service_role y ROLLBACK. Se conserva cada archivo ilegible o válido, los importes parciales no habilitan fichas, la misma evidencia no se suma dos veces y la suma completa sigue en revisión manual. La atención humana conserva referencias a todos los documentos. M06 sigue parcial hasta la repetición conversacional.

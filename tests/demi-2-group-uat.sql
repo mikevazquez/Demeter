@@ -1,4 +1,5 @@
 begin;
+set local role service_role;
 set local request.jwt.claim.role='service_role';
 set local request.jwt.claims='{"role":"service_role"}';
 do $$
@@ -16,10 +17,30 @@ begin
  out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','payment_first_no_profiles','passed',true));
  insert into public.assistant_whatsapp_events(id,studio_id,provider,provider_event_id,phone_number_id,contact_wa_id,message_type,media_id,payload_fingerprint)
  values(event,s,'meta_whatsapp','group-'||event,'uat','99900000000','image','group-media','group-uat');
+ r:=public.service_record_demi_group_receipt(s,c,g,event,'group-'||event,'group-media','UAT/unreadable.png',repeat('f',64),null,null,0);
+ if r->>'reason_code'<>'receipt_unreadable' or not exists(select 1 from public.demi_group_receipts where event_id=event and status='unreadable') then raise exception 'unreadable_evidence_lost:%',r; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M05','variant','unreadable_document_preserved_no_profiles','passed',true));
+ event:=gen_random_uuid();
+
+ insert into public.assistant_whatsapp_events(id,studio_id,provider,provider_event_id,phone_number_id,contact_wa_id,message_type,media_id,payload_fingerprint)
+ values(event,s,'meta_whatsapp','group-'||event,'uat','99900000000','image','group-media','group-uat');
  r:=public.service_record_demi_group_receipt(s,c,g,event,'group-'||event,'group-media','UAT/group.png',repeat('a',64),15000,'MXN',0.99);
- if r->>'reason_code'<>'receipt_amount_mismatch' then raise exception 'group_amount:%',r; end if;
+ if r->>'reason_code'<>'partial_payment_received' or (r->>'remaining_amount_minor')::integer<>15000 then raise exception 'group_amount:%',r; end if;
  out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','partial_amount_blocked','passed',true));
+ r:=public.service_record_demi_group_receipt(s,c,g,event,'group-'||event,'group-media','UAT/group.png',repeat('a',64),15000,'MXN',0.99);
+ if r->>'reason_code'<>'partial_payment_received' or (r->>'received_amount_minor')::integer<>15000 or not (r->>'idempotent')::boolean then raise exception 'partial_proof_recounted:%',r; end if;
+ r:=public.service_complete_demi_group(s,c,g,people);
+ if r->>'reason_code'<>'receipt_required_before_participants' or exists(select 1 from public.students where studio_id=s and phone in ('+529998880001','+529998880002')) then raise exception 'partial_created_profiles:%',r; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','partial_receipt_replay_no_profiles_or_recount','passed',true));
  r:=public.service_record_demi_group_receipt(s,c,g,event,'group-'||event,'group-media','UAT/group.png',repeat('a',64),30000,'MXN',0.99);
+ if r->>'reason_code'<>'receipt_content_changed' then raise exception 'mutated_proof:%',r; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','same_document_amount_immutable','passed',true));
+ event:=gen_random_uuid();
+ insert into public.assistant_whatsapp_events(id,studio_id,provider,provider_event_id,phone_number_id,contact_wa_id,message_type,media_id,payload_fingerprint)
+ values(event,s,'meta_whatsapp','group-'||event,'uat','99900000000','image','group-media','group-uat');
+ r:=public.service_record_demi_group_receipt(s,c,g,event,'group-'||event,'group-media','UAT/group-second.png',repeat('d',64),15000,'MXN',0.99);
+ if (select count(*) from public.demi_group_receipts where group_id=g and status='received')<>2 then raise exception 'separate_documents_missing'; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','separate_proofs_retained_sum_to_total','passed',true));
  if not coalesce((r->>'ok')::boolean,false) then raise exception 'group_receipt:%',r; end if;
  r:=public.service_complete_demi_group(s,c,g,'[{"name":"UAT Uno","phone":"9998880001"},{"name":"UAT Dos","phone":"9998880001"}]'::jsonb);
  if r->>'reason_code'<>'duplicate_participant_phone' or exists(select 1 from public.demi_group_participants where group_id=g) then raise exception 'duplicate_phone_not_blocked:%',r; end if;
@@ -64,6 +85,10 @@ begin
  if not coalesce((r->>'ok')::boolean,false) or (r->>'reserved_count')::integer<>2 or (r->>'allocated_minor')::integer<>15000 then raise exception 'mixed_complete:%',r; end if;
  if not exists(select 1 from public.demi_group_participants where group_id=g and student_id=(run#>>'{fixtures,people,student_active,student_id}')::uuid and allocated_minor=0 and transfer_intent_id is null and reservation_id is not null) then raise exception 'mixed_credit_charged'; end if;
  out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','mixed_existing_credit_and_one_paid_trial','passed',true));
+ r:=public.service_record_demi_group_receipt(s,c,g,event,'mixed-'||event,'mixed-media','UAT/foreign.png',repeat('a',64),15000,'MXN',0.99);
+ if r->>'reason_code'<>'receipt_already_allocated' then raise exception 'foreign_document_reused:%',r; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','partial_proof_cannot_fund_another_group','passed',true));
+
  -- Capacity can change after receipt; keep one success and a persistent review.
  c:=gen_random_uuid(); event:=gen_random_uuid(); session:=(run#>>'{fixtures,sessions,timely}')::uuid;
  insert into public.assistant_conversations(id,studio_id,channel) values(c,s,'internal_demo');

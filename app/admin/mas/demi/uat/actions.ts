@@ -67,6 +67,7 @@ const TABLES = [
   "notification_rules",
   "demi_cash_purchases",
   "demi_group_bookings",
+  "demi_group_receipts",
   "demi_followups",
   "demi_followup_settings",
 ];
