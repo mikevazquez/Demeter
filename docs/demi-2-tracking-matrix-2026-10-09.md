@@ -4,13 +4,42 @@
 
 Validación: 1086/1086 pruebas automáticas, typecheck y compilación correctos; lint sin errores (un aviso preexistente). Acumulado: 97 variantes SQL en Sandbox. No se realizó una compra nueva ante Mercado Pago.
 
+## Resumen para promover a producción
+
+| Medida | Resultado | Interpretación |
+| --- | --- | --- |
+| Casos maestros aprobados integralmente | 0/18 (0 %) | Ningún caso tiene todavía toda la evidencia necesaria para su cierre. |
+| Casos maestros parciales | 18/18 (100 %) | Todos tienen verificaciones aprobadas y pendientes identificados. |
+| Casos maestros por cerrar | 18/18 (100 %) | Porcentaje de cierres pendientes, no de esfuerzo ni de implementación restante. |
+| Pruebas automáticas aprobadas en la última ejecución registrada | 1086/1086 (100 %) | Regresión técnica; no son 1086 casos UAT de negocio. |
+| Verificaciones SQL registradas | 97 | Evidencia técnica acumulada; no existe un total exhaustivo de variantes pendientes para calcular su porcentaje. |
+| Decisión de promoción | No lista | Faltan pagos nuevos, transporte externo y variantes de negocio. No se ha publicado esta rama en producción. |
+
+Los resultados son los de la última ejecución guardada, no una nueva corrida de pruebas. No se registran casos maestros cerrados como fallidos: los 18 permanecen parciales; los defectos encontrados y corregidos conservan su historial.
+
+### Política de pagos confirmada con el usuario
+
+- **Bancomer:** transferencia y depósito realizado en OXXO directamente a la cuenta Bancomer. Comprobante y revisión manual. OXXO no se ofrece dentro de Mercado Pago.
+- **Mercado Pago:** pago por liga o checkout, ingresando a Mercado Pago. Para la nueva ruta automática de Demi se requiere una liga por solicitud asociada a la conversación y confirmación verificada del proveedor. No se pide comprobante en esa ruta una vez integrada y probada.
+- La liga estática y la revisión de comprobante ya verificadas **no equivalen** a la automatización nueva. Las ligas creadas desde el panel de Mercado Pago no permiten configurar estas notificaciones según su documentación; se requiere la integración mediante API. La conexión existente del checkout de alumnas no cierra por sí sola la ruta de prospectos de Demi.
+
+### Bloqueos y orden de cierre
+
+1. **De mi lado, pago automático de prospectos:** implementar solicitud/liga individual, asociación con conversación, notificación autenticada, verificación de importe/moneda/estado e idempotencia. Probar aprobado, pendiente, rechazado y repetido; sin ficha/reserva prematura ni doble cobro. Afecta M05 y el cierre de las variantes de pago de M06–M09, M11, M15 y M16.
+2. **De mi lado, variantes de negocio restantes:** completar las conversaciones, rechazo de inscripción/paquete, reintentos, cupo, cancelación, renovación y atención humana de cada fila. Registrar evidencia para aprobar o fallar cada variante.
+3. **Compartido, pruebas externas:** recepción y respuesta nuevas de WhatsApp/Facebook, audio/adjuntos, seguimientos y entrega de acceso/QR. La bienvenida WhatsApp sí fue recibida; Facebook fue probado mediante entrada inyectada/salida capturada. La conexión actual de Meta tiene el receptor en producción: falta una ruta segura de prueba sin desviar mensajes de clientes.
+4. **Del usuario, Instagram:** conectar la cuenta y después ejecutar UAT de ese canal. En la evidencia actual no consta conectado; no se da por hecho que siga desconectado sin una nueva comprobación.
+5. **Compartido, proveedor de pagos:** ejecutar un pago nuevo de prueba y, cuando corresponda, una devolución para comprobar notificación, aplicación y retorno. Los antecedentes y las simulaciones no sustituyen esta evidencia. Solicitaré participación o acceso únicamente cuando el recorrido esté preparado y exista una necesidad concreta.
+
+La actualización de esta matriz no aprueba un caso ni sustituye su ejecución. Para promover, cerrar los pendientes del alcance acordado, repetir la regresión sobre la versión candidata y documentar cualquier exclusión explícita; no se excluye Instagram automáticamente.
+
 | Caso                       | Estado  | Ya pasó                                                                                                                           | Pendiente de mi lado                                                                 | Accionable de tu lado                                        |
 | -------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
 | M01 Canales                | Parcial | Bienvenida WhatsApp recibida; Facebook integrado y recorrido interno completo.                                                    | Entrada y entrega reales de Meta en los canales conectados.                          | Conectar Instagram.                                          |
 | M02 Identidad              | Parcial | Cruces de estudio/conversación y apropiación de teléfonos existentes bloqueados.                                                  | Ambigüedad conversacional y vínculo verificado entre canales.                        | Ninguno por ahora.                                           |
 | M03 No clasifica           | Parcial | Rechazo con motivo, parada de seguimientos y reactivación ante respuesta.                                                         | Objeción sin rechazo y consultas configuradas restantes.                             | Ninguno por ahora.                                           |
 | M04 Seguimientos           | Parcial | Dos mensajes, intervalos, deduplicación y cancelación de pendientes/reclamados.                                                   | Recorrido conversacional completo y entrega real de seguimientos.                    | Ninguno por ahora.                                           |
-| M05 Pago antes de datos    | Parcial | WhatsApp/Facebook: comprobante antes de ficha/reserva; enlace público con siete controles SQL y formulario verificado.            | Conciliación del método del enlace público, pago nuevo y retorno real del proveedor. | Configurar el enlace público real de Mercado Pago por clase. |
+| M05 Pago antes de datos    | Parcial | WhatsApp/Facebook: comprobante antes de ficha/reserva; enlace público con siete controles SQL y formulario verificado.            | Implementar liga individual y validación automática MP; probar proveedor. Bancomer/OXXO a Bancomer mantienen comprobante y revisión manual. | Participar en pago de prueba cuando la ruta esté preparada, si se requiere. |
 | M06 Grupo                  | Parcial | Pagador separado, participantes mixtos, reservas individuales, total conciliado y reenvío sin duplicados.                         | Variantes conversacionales restantes y devolución del importe no asignado.           | Ninguno por ahora.                                           |
 | M07 Cupo/reembolso         | Parcial | Sin cupo no se prepara cobro; solicitud persistente de reembolso y atención humana.                                               | Alternativas conversacionales y devolución real después de un pago de prueba.        | Ninguno por ahora.                                           |
 | M08 Primera reserva        | Parcial | Una ficha/reserva/pago; repetición conserva validación. QR nativo y portal propio, sin QR de otra alumna.                         | Entrega de acceso/QR por los canales externos.                                       | Ninguno por ahora.                                           |
@@ -43,6 +72,6 @@ Facebook: run `63d7ae35-5a9f-480a-aea7-9bea8439e509`, comprobante antes de datos
 
 Acceso: run `b691ac79-2848-4273-8c2b-d1f708bc1037`, cuenta sintética activa, contraseña elegida y portal HTTP 200. El portal renderizó el QR propio y ocultó el de otra alumna. Cuatro controles nativos QR verificaron estabilidad, estudio, revocación y permisos sin revelar tokens.
 
-Mercado Pago: enlace ficticio sólo en un estudio aislado UAT, advertencia de no pagar y comprobante requerido. La conexión existente para compras de alumnas no proporciona por sí sola un enlace público de primera clase. Los controles SQL se ejecutaron con ROLLBACK; no equivalen a una compra ante el proveedor.
+Mercado Pago: enlace ficticio sólo en un estudio aislado UAT, advertencia de no pagar y comprobante requerido en la ruta previamente probada. La nueva ruta automática acordada todavía no está implementada ni aprobada. La conexión existente para compras de alumnas no proporciona por sí sola un enlace público de primera clase. Los controles SQL se ejecutaron con ROLLBACK; no equivalen a una compra ante el proveedor.
 
 Los pendientes externos no cierran con pruebas internas. El receptor de producción conserva su configuración. Cambios disponibles en el PR #259, sin merge a producción.
