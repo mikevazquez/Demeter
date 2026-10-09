@@ -16,7 +16,7 @@ export default function FollowupForm({
   const change = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setDraft({ ...draft, [e.target.name]: e.target.value });
   return (
-    <form action={action} className="crm-followup" key={f.revision}>
+    <form action={action} className="crm-followup" onReset={(e) => e.preventDefault()}>
       <h2>Seguimiento de Demi</h2>
       <input type="hidden" name="person_id" value={contact.id} />
       <input type="hidden" name="revision" value={f.revision} />
@@ -54,6 +54,7 @@ export default function FollowupForm({
             Motivo si no es apta
             <input
               name="qualification_reason"
+              required={draft.qualification === "not_qualified"}
               value={draft.qualification_reason}
               onChange={change}
               maxLength={1000}
@@ -84,6 +85,7 @@ export default function FollowupForm({
             Resumen para atención humana
             <textarea
               name="human_summary"
+              required={!!draft.human_reason}
               value={draft.human_summary}
               onChange={change}
               maxLength={2000}
