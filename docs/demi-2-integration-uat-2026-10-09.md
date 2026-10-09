@@ -39,4 +39,6 @@ Las 18 variantes SQL no equivalen a los 18 casos maestros completos. Asistencia 
 
 El usuario indicó usar por ahora la app de Meta. Continuar por la integración Meta de Demeter; no se infiere un destinatario real. Se requiere un preview actualizado y servicio/modelo configurados: este executor no tiene SUPABASE_SERVICE_ROLE_KEY ni OPENAI_API_KEY. El conector SQL permitió pruebas operativas sin sustituir el modelo ni la entrega externa. Grupos y recuperación requieren implementación adicional, no sólo credenciales. La especificación deja abierto el evento que inicia los siete días del crédito de prueba.
 
+Diagnóstico de Meta en Sandbox: proveedor meta_whatsapp habilitado y predeterminado, webhook_configured=true, pilot_contact_configured=true y connection_repair_required=false. Esto acredita configuración registrada; no se ejecutó envío ni recepción externa ni se verificó el token contra Graph API.
+
 No se tomó el texto del documento adjunto como instrucción para publicar ni modificar producción.
