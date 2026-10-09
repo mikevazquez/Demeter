@@ -936,6 +936,15 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     if (pendingPayment.error) throw new Error("demi_payment_context_unavailable");
     if (pendingPayment.data) {
       const payment = pendingPayment.data;
+      const gateway = await input.supabase
+        .from("demi_payment_requests")
+        .select("status")
+        .eq("studio_id", input.studio.id)
+        .eq("conversation_id", input.conversationId)
+        .eq("group_id", payment.id)
+        .maybeSingle();
+      if (gateway.error) throw new Error("demi_gateway_context_unavailable");
+      const providerApproved = gateway.data?.status === "approved";
       pendingPaymentContext =
         "Estado operativo de pago pendiente, leído del estudio y esta conversación. Usa este group_id exacto para continuar; no prepares otro pago ni pidas otro comprobante si receipt_received=true. Después del comprobante y de los datos faltantes, usa complete_group_booking con participant_count personas. Si el grupo ya está provisional o validado, recupera sus reservas en lugar de preparar otro pago por un reintento. El estado del pago no acredita una reserva activa: usa el reserved_count y reservation_confirmed actuales de las herramientas; una reserva cancelada permanece cancelada. No afirmes reserva completa por este estado: " +
         JSON.stringify({
@@ -946,6 +955,8 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           amount_minor: payment.amount_minor,
           currency: payment.currency,
           receipt_received: Boolean(payment.receipt_event_id),
+          payment_verified: providerApproved,
+          gateway_status: gateway.data?.status ?? null,
           resource_ref: payment.resource_id ? `resource:${payment.resource_id}` : null,
         });
     }

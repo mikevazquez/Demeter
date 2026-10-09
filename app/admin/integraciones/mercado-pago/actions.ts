@@ -4,6 +4,17 @@ import { revalidatePath } from "next/cache";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
+export async function saveDemiAutomaticPayment(form: FormData) {
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { error } = await supabase.rpc("admin_set_demi_mercadopago", {
+    p_studio: studio.id,
+    p_enabled: form.get("automatic_enabled") === "on",
+  });
+  if (error) redirect("/admin/integraciones/mercado-pago?automatic_error=1");
+  revalidatePath("/admin/integraciones/mercado-pago");
+  redirect("/admin/integraciones/mercado-pago?automatic_saved=1");
+}
+
 export async function saveFirstClassPaymentLink(form: FormData) {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
   const amount = Number(String(form.get("amount") ?? ""));

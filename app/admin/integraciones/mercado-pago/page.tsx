@@ -4,7 +4,7 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
 import "../integrations-v2.css";
-import { saveFirstClassPaymentLink } from "./actions";
+import { saveDemiAutomaticPayment, saveFirstClassPaymentLink } from "./actions";
 
 function checkoutStatusLabel(status: string) {
   const labels: Record<string, string> = {
@@ -24,10 +24,20 @@ function checkoutStatusLabel(status: string) {
 export default async function MercadoPagoIntegrationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ link_error?: string; link_saved?: string }>;
+  searchParams: Promise<{
+    link_error?: string;
+    link_saved?: string;
+    automatic_error?: string;
+    automatic_saved?: string;
+  }>;
 }) {
   const query = await searchParams;
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const automatic = await supabase
+    .from("demi_mercadopago_settings")
+    .select("enabled")
+    .eq("studio_id", studio.id)
+    .maybeSingle();
 
   const [
     { count: onlineProducts },
@@ -90,6 +100,32 @@ export default async function MercadoPagoIntegrationPage({
           <p>Cobros en línea para compras realizadas por alumnas.</p>
         </div>
       </header>
+
+      <section className="integration-detail-v2-card">
+        <h2>Validación automática con Demi</h2>
+        <p>
+          Demi genera una liga individual y espera la confirmación de Mercado Pago antes de
+          continuar con la reserva. No solicita comprobante para este método. Transferencias y
+          depósitos OXXO a Bancomer conservan revisión manual.
+        </p>
+        <p>
+          Esta opción requiere la conexión de Mercado Pago y sus notificaciones configuradas. En
+          Sandbox se requieren credenciales de prueba.
+        </p>
+        {query.automatic_error && <p role="alert">No se pudo guardar la configuración.</p>}
+        {query.automatic_saved && <p role="status">Configuración guardada.</p>}
+        <form action={saveDemiAutomaticPayment}>
+          <label>
+            <input
+              type="checkbox"
+              name="automatic_enabled"
+              defaultChecked={automatic.data?.enabled === true}
+            />{" "}
+            Activar ligas individuales con validación automática
+          </label>
+          <button type="submit">Guardar</button>
+        </form>
+      </section>
 
       <section className="integration-detail-v2-card">
         <h2>Primera clase con Demi</h2>

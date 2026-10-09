@@ -1263,7 +1263,16 @@ async function prepareFirstClassPayment(
   const externalCheckout = !options.error
     ? asObject(asObject(options.data)?.external_checkout)
     : null;
-  if (!bankAvailable && !externalCheckout)
+  const autoSetting = await ctx.supabase
+    .from("demi_mercadopago_settings")
+    .select("enabled")
+    .eq("studio_id", ctx.studio.id)
+    .maybeSingle();
+  const automaticAvailable = !autoSetting.error && autoSetting.data?.enabled === true;
+  const manualRequested = /transferencia|bancomer|bbva|oxxo|dep[oó]sito/i.test(
+    ctx.currentUserMessage,
+  );
+  if (!bankAvailable && !externalCheckout && !automaticAvailable)
     return { ok: false, reason_code: "transfer_details_unavailable" };
   const prepared = await ctx.supabase.rpc("service_prepare_demi_prospect_payment", {
     p_studio: ctx.studio.id,
@@ -1277,11 +1286,37 @@ async function prepareFirstClassPayment(
     return { ok: false, reason_code: payment?.reason_code ?? "trial_payment_setup_failed" };
   if (!["awaiting_receipt", "awaiting_participants"].includes(String(payment.status)))
     return { ok: false, reason_code: "payment_requires_review", reservation_confirmed: false };
+  let automaticCheckout: Record<string, unknown> | null = null;
+  if (automaticAvailable && !manualRequested && payment.status === "awaiting_receipt") {
+    const order = await ctx.supabase.functions.invoke("create-demi-mercadopago-order", {
+      body: {
+        studio_id: ctx.studio.id,
+        conversation_id: ctx.conversationId,
+        group_id: payment.group_id,
+      },
+    });
+    if (order.error || order.data?.ok !== true)
+      return {
+        ok: false,
+        reason_code: order.data?.error ?? "automatic_checkout_unavailable",
+        reservation_confirmed: false,
+      };
+    automaticCheckout = asObject(order.data.external_checkout);
+  }
+  const providerProof = await ctx.supabase
+    .from("demi_payment_requests")
+    .select("status")
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("group_id", payment.group_id)
+    .maybeSingle();
+  const paidAutomatically = !providerProof.error && providerProof.data?.status === "approved";
   const matchingCheckout =
-    externalCheckout?.amount_minor === payment.amount_minor &&
+    automaticCheckout ??
+    (externalCheckout?.amount_minor === payment.amount_minor &&
     externalCheckout?.currency === payment.currency
       ? externalCheckout
-      : null;
+      : null);
   if (!bankAvailable && !matchingCheckout)
     return {
       ok: false,
@@ -1291,16 +1326,19 @@ async function prepareFirstClassPayment(
   return {
     ...payment,
     status:
-      payment.status === "awaiting_receipt" ? "payment_required" : "participant_data_required",
+      payment.status === "awaiting_receipt" && !paidAutomatically
+        ? "payment_required"
+        : "participant_data_required",
     reservation_confirmed: false,
-    receipt_required: payment.status === "awaiting_receipt",
+    receipt_required: payment.status === "awaiting_receipt" && !automaticCheckout,
+    payment_verified: paidAutomatically,
     bank_details: bankAvailable ? bank.data : null,
     external_checkout: matchingCheckout,
     summary: {
       ...info.summary,
       trial_booking: true,
       payment_before_booking: true,
-      payment_pending: true,
+      payment_pending: !paidAutomatically,
     },
   };
 }
@@ -3825,6 +3863,7 @@ export async function executeAssistantActionTool(
         conversationId: ctx.conversationId,
         tool: toolName,
         args,
+        currentUserMessage: ctx.currentUserMessage,
       });
     case "prepare_cash_package_purchase":
       return prepareCashPackage(ctx, args as Record<string, unknown>);

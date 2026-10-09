@@ -14,6 +14,7 @@ export async function groupBookingAction(input: {
   conversationId: string;
   tool: string;
   args: Record<string, unknown>;
+  currentUserMessage?: string;
 }) {
   if (input.tool === "prepare_group_booking") {
     const session = /^session:([0-9a-f-]{36})$/i.exec(String(input.args.session_ref ?? ""));
@@ -27,6 +28,34 @@ export async function groupBookingAction(input: {
     });
     if (error) return { ok: false, reason_code: "group_prepare_failed" };
     if (data?.ok && data.status === "awaiting_receipt") {
+      const setting = await input.supabase
+        .from("demi_mercadopago_settings")
+        .select("enabled")
+        .eq("studio_id", input.studioId)
+        .maybeSingle();
+      if (
+        !setting.error &&
+        setting.data?.enabled === true &&
+        !/transferencia|bancomer|bbva|oxxo|dep[oó]sito/i.test(input.currentUserMessage ?? "")
+      ) {
+        const order = await input.supabase.functions.invoke("create-demi-mercadopago-order", {
+          body: {
+            studio_id: input.studioId,
+            conversation_id: input.conversationId,
+            group_id: data.group_id,
+          },
+        });
+        if (order.error || order.data?.ok !== true)
+          return { ok: false, reason_code: order.data?.error ?? "automatic_checkout_unavailable" };
+        return {
+          ...data,
+          external_checkout: order.data.external_checkout,
+          receipt_required: false,
+          request_participant_data: false,
+          payment_verified: false,
+          provider_confirmation_required: true,
+        };
+      }
       const bank = await input.supabase
         .from("studio_bank_transfer_settings")
         .select("bank_name,account_holder,account_number,clabe,instructions")
