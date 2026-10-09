@@ -337,7 +337,7 @@ function confirmationReply(toolName: string, result: Record<string, unknown>) {
       return (
         `Perfecto. Tu primera clase cuesta ${price}. Para apartar el lugar, primero realiza la transferencia.` +
         details +
-        "\n\nEnvíame el comprobante por este mismo chat. Tu lugar todavía no está confirmado; cuando el monto del comprobante coincida, Studio Flow confirmará la reserva. La transferencia quedará sujeta a validación."
+        "\n\nEnvíame el comprobante por este mismo chat. Tu lugar todavía no está confirmado; después del comprobante pediré juntos los datos personales faltantes y revisaré el cupo antes de crear tu reserva. La transferencia quedará sujeta a validación."
       );
     }
 
@@ -901,7 +901,16 @@ export async function runAssistantTurn(input: OrchestratorInput) {
 
   const tools = input.improvePrompt
     ? []
-    : [...assistantReadToolDefinitions, ...assistantActionToolDefinitions];
+    : [
+        ...assistantReadToolDefinitions,
+        ...assistantActionToolDefinitions.filter((tool) =>
+          input.studentId || input.testSimulation
+            ? true
+            : !["prepare_transfer_package_choice", "prepare_bank_transfer_purchase"].includes(
+                tool.name,
+              ),
+        ),
+      ];
 
   const managedRules = input.improvePrompt
     ? []
@@ -1003,7 +1012,8 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         "Si prepare_booking devuelve reason_code=no_active_product o reason_code=no_credits y necesitas explicar qué puede comprar para ESA clase, llama get_commercial_options con la misma session_ref exacta. Nunca consultes el catálogo general para resolver una reserva concreta.",
         "Si prepare_booking o prepare_reschedule falla por falta de créditos y get_commercial_options devuelve opciones compatibles, además de mostrar los productos explica las payment_options devueltas. Si existe app_mercado_pago, di que puede pagar desde la app con Mercado Pago. Si existe bank_transfer, ofrece transferencia. No menciones métodos que no aparezcan en payment_options y no inventes datos bancarios.",
         "Cuando haya más de un método digital disponible, termina preguntando cuál prefiere, por ejemplo: 'Puedes pagarlo desde la app con Mercado Pago o por transferencia. ¿Cuál prefieres?'.",
-        "Cuando la persona elija transferencia y todavía deba escoger paquete, llama prepare_transfer_package_choice ANTES de responder, usando la session_ref exacta y únicamente los product_ref de los paquetes que vas a mostrar. Después muestra solo las options devueltas por esa herramienta y pregunta cuál prefiere. Ese estado dura hasta 24 horas para que una respuesta posterior como '8 clases' continúe el mismo pago sin reconstruir reservas.",
+        "Sólo para una persona con ficha de alumna verificada que quiere comprar un paquete: cuando elija transferencia y todavía deba escoger paquete, llama prepare_transfer_package_choice ANTES de responder, usando la session_ref exacta y únicamente los product_ref de los paquetes que vas a mostrar. Después muestra solo las options devueltas por esa herramienta y pregunta cuál prefiere. Ese estado dura hasta 24 horas para que una respuesta posterior como '8 clases' continúe el mismo pago sin reconstruir reservas.",
+        "Para un prospecto que solicita su primera clase individual, usa prepare_booking con la clase exacta; no uses elección ni compra de paquetes para preparar ese pago. Compartir datos de pago no confirma la reserva. Si el flujo pide confirmación, pregunta si desea los datos bancarios y espera su respuesta. El comprobante precede a los datos personales faltantes.",
         "Si la persona ya eligió un paquete concreto en el mismo mensaje en que eligió transferencia, puedes llamar directamente prepare_bank_transfer_purchase con la session_ref y product_ref exactas.",
         "Después de compartir los datos bancarios, pide que envíe el comprobante por este mismo chat. Explica que al recibir el comprobante el paquete se activará de forma provisional para que pueda continuar, pero quedará pendiente de validación y puede ser revocado si la transferencia no se confirma correctamente.",
         "Nunca afirmes que la transferencia fue validada solo porque llegó un comprobante. La validación definitiva es posterior.",

@@ -91,7 +91,11 @@ function orchestratorHarness(pendingAction: Record<string, unknown> | null = nul
       "./prompt-workbench": { testPersonaLabel },
       "./tool-contracts": {
         assistantReadToolDefinitions: [{ name: "get_activity_catalog", type: "function" }],
-        assistantActionToolDefinitions: [{ name: "execute_booking", type: "function" }],
+        assistantActionToolDefinitions: [
+          "execute_booking",
+          "prepare_transfer_package_choice",
+          "prepare_bank_transfer_purchase",
+        ].map((name) => ({ name, type: "function" })),
         assistantReadToolNames: new Set(["get_activity_catalog"]),
         assistantActionToolNames: new Set(["execute_booking"]),
       },
@@ -416,6 +420,28 @@ describe("Demi prompt workbench", () => {
     expect(improveRequest.instructions).toContain("SOLO el prompt completo mejorado");
     expect(h.action).not.toHaveBeenCalled();
   });
+  it.each([null, "student"])(
+    "advertises package transfer only with a student identity (%s)",
+    async (studentId) => {
+      const h = orchestratorHarness();
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      const fetcher = vi
+        .fn()
+        .mockImplementation(async () => new Response(JSON.stringify(reply("Respuesta"))));
+      vi.stubGlobal("fetch", fetcher);
+      await h.run({
+        ...h.input,
+        studentId,
+        testSimulation: undefined,
+        history: [{ role: "user", content: "Quiero primera clase por transferencia" }],
+      });
+      const request = JSON.parse(fetcher.mock.calls[0][1].body);
+      const names = request.tools.map((tool: { name: string }) => tool.name);
+      expect(names).toContain("execute_booking");
+      for (const name of ["prepare_transfer_package_choice", "prepare_bank_transfer_purchase"])
+        expect(names.includes(name)).toBe(Boolean(studentId));
+    },
+  );
   it("blocks IA requests when the budget is exhausted", async () => {
     const h = orchestratorHarness();
     vi.stubEnv("OPENAI_API_KEY", "test");

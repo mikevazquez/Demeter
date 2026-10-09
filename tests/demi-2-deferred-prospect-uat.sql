@@ -2,7 +2,7 @@ begin;
 set local request.jwt.claim.role='service_role';
 set local request.jwt.claims='{"role":"service_role"}';
 do $$
-declare actor uuid; run jsonb; s uuid; c uuid:=gen_random_uuid(); contact uuid; person uuid; session uuid; g uuid; event uuid:=gen_random_uuid(); r jsonb; people jsonb; out jsonb:='[]';
+declare actor uuid; run jsonb; s uuid; c uuid:=gen_random_uuid(); contact uuid; person uuid; session uuid; g uuid; event uuid:=gen_random_uuid(); r jsonb; people jsonb; initial_capacity integer; filler uuid; filler_reservation uuid; out jsonb:='[]';
 begin
  select user_id into actor from public.studio_memberships where studio_id='9fe23cfa-fb47-4670-afeb-ed4a56433772' and active and role='owner' limit 1;
  run:=public.service_create_demi_uat_run('9fe23cfa-fb47-4670-afeb-ed4a56433772',actor,'deferred-prospect-uat'); s:=(run->>'studio_id')::uuid; session:=(run#>>'{fixtures,sessions,available}')::uuid; person:=(run#>>'{fixtures,people,prospect_existing,person_id}')::uuid;
@@ -30,6 +30,17 @@ begin
  r:=public.service_complete_demi_group(s,c,g,'[{"name":"UAT Otra Persona","phone":"9998881001"}]');
  if r->>'reason_code'<>'participant_phone_mismatch' or exists(select 1 from public.students where studio_id=s and person_id=person) then raise exception 'phone_identity:%',r; end if;
  out:=out||jsonb_build_array(jsonb_build_object('variant','different_phone_cannot_replace_verified_identity','passed',true));
+ select cs.capacity into initial_capacity from public.class_sessions cs where id=session;
+ update public.class_sessions set capacity=1 where id=session;
+ filler:=(run#>>'{fixtures,people,full_filler,student_id}')::uuid;
+ r:=public.service_book_student(s,session,filler);
+ select id into filler_reservation from public.reservations where studio_id=s and session_id=session and student_id=filler and status='reserved';
+ if filler_reservation is null then raise exception 'capacity_fixture:%',r; end if;
+ r:=public.service_complete_demi_group(s,c,g,people);
+ if r->>'status'<>'partial' or exists(select 1 from public.students where studio_id=s and person_id=person) or exists(select 1 from public.assistant_conversations where id=c and student_id is not null) then raise exception 'failed_booking_changed_prospect:%',r; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('variant','lost_capacity_does_not_create_trial_student','passed',true));
+ r:=public.service_cancel_reservation(s,filler,filler_reservation,'UAT restore capacity');
+ update public.class_sessions set capacity=initial_capacity where id=session;
  r:=public.service_complete_demi_group(s,c,g,people);
  if not coalesce((r->>'ok')::boolean,false) or (r->>'reserved_count')::integer<>1 then raise exception 'complete:%',r; end if;
  if (select count(*) from public.students where studio_id=s and person_id=person)<>1 or not exists(select 1 from public.assistant_conversations ac join public.students st on st.id=ac.student_id where ac.id=c and st.person_id=person and st.student_type='trial') then raise exception 'link_or_type_missing'; end if;
