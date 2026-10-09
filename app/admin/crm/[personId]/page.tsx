@@ -24,7 +24,7 @@ export default async function ContactPage({
   const data = await loadCrm();
   const c = data.contacts.find((c) => c.id === personId);
   if (!c) notFound();
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
+  const { supabase, studio, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
   const { data: history, error } = await supabase
     .from("crm_followup_history")
     .select("id,created_at,before_data,after_data")
@@ -68,6 +68,23 @@ export default async function ContactPage({
   const base = `/admin/crm/${c.id}`;
   const qual = { pending: "Pendiente", qualified: "Apta", not_qualified: "No apta" }[
     c.state.qualification
+  ];
+  const profileView = query.view ?? "profile";
+  const contactSections = [
+    { key: "conversation", label: "Conversación", href: `${base}?tab=conversation` },
+    { key: "followup", label: "Seguimiento", href: `${base}?tab=followup` },
+    { key: "profile", label: c.studentId ? "Expediente" : "Datos", href: `${base}?tab=profile` },
+    { key: "activity", label: "Actividad", href: `${base}?tab=activity` },
+    { key: "notes", label: "Notas", href: `${base}?tab=notes` },
+  ];
+  const profileSections = [
+    { key: "summary", label: "Resumen" },
+    { key: "packages", label: "Paquetes" },
+    { key: "rewards", label: "Progreso" },
+    ...(can(CAPABILITIES.EVALUATIONS_READ) ? [{ key: "evaluations", label: "Evaluaciones" }] : []),
+    ...(can(CAPABILITIES.DOCUMENTS_READ) ? [{ key: "documents", label: "Documentos" }] : []),
+    { key: "history", label: "Historial" },
+    { key: "profile", label: "Datos" },
   ];
   return (
     <>
@@ -169,22 +186,29 @@ export default async function ContactPage({
           trial={c.state.stage === "scheduled"}
         />
       )}
-      <nav className="crm-tabs" aria-label="Ficha del contacto">
-        {[
-          ["conversation", "Conversación"],
-          ["activity", "Actividad"],
-          ["profile", "Perfil"],
-          ["notes", "Notas"],
-        ].map(([key, label]) => (
-          <Link
-            key={key}
-            href={`${base}?tab=${key}`}
-            aria-current={tab === key ? "page" : undefined}
-          >
-            {label}
-          </Link>
-        ))}
+      <nav className="crm-tabs" aria-label="Secciones del contacto">
+        {contactSections.map((item) => {
+          const active = tab === item.key;
+          return (
+            <Link key={item.key} href={item.href} aria-current={active ? "page" : undefined}>
+              {item.label}
+            </Link>
+          );
+        })}
       </nav>
+      {tab === "profile" && c.studentId && (
+        <nav className="crm-profile-nav" aria-label="Secciones del expediente">
+          {profileSections.map((item) => (
+            <Link
+              key={item.key}
+              href={`${base}?tab=profile&view=${item.key}`}
+              aria-current={profileView === item.key ? "page" : undefined}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      )}
       {tab === "conversation" && (
         <section className="crm-panel">
           <h2>Conversaciones</h2>
@@ -246,9 +270,7 @@ export default async function ContactPage({
                   ["Calificación", qual],
                   [
                     "Fecha de ingreso",
-                    new Date(c.joinedAt).toLocaleDateString("es-MX", {
-                      timeZone: studio.timezone,
-                    }),
+                    new Date(c.joinedAt).toLocaleDateString("es-MX", { timeZone: studio.timezone }),
                   ],
                 ].map(([label, value]) => (
                   <div key={label}>
@@ -276,8 +298,9 @@ export default async function ContactPage({
           {c.studentId ? (
             <StudentRecord
               params={Promise.resolve({ studentId: c.studentId })}
-              searchParams={Promise.resolve({ ...query, view: query.view ?? "profile" })}
+              searchParams={Promise.resolve({ ...query, view: profileView })}
               crmHref={base}
+              hideNavigation
             />
           ) : (
             <section className="crm-panel">

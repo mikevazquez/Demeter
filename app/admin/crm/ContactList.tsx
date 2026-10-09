@@ -86,9 +86,9 @@ export default function ContactList({
     <>
       <header className="crm-heading">
         <div>
-          <span className="crm-eyebrow">RELACIÓN CON ALUMNAS · DEMI</span>
-          <h1>CRM de alumnas</h1>
-          <p>Identifica a cada contacto y acompaña su siguiente paso.</p>
+          <span className="crm-eyebrow">STUDIO FLOW · DEMI</span>
+          <h1>Contactos</h1>
+          <p>Conversaciones, etapas y seguimiento en un solo lugar.</p>
         </div>
         <div className="crm-contact-actions">
           {canConfigure && (
