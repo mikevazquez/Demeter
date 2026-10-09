@@ -40,6 +40,8 @@ El tipo y paquete se proyectan desde inscripciones, reservas y adquisiciones rea
 
 La migración `20261009160000_crm_demi_followup.sql` se aplicó únicamente a `hedouonyhynuvwbckdlg` (Studio Flow Sandbox). Persiste calificación, motivo, ubicación, interés, notas, próxima acción y solicitud humana. Cada guardado genera una auditoría atómica e inmutable para los usuarios de la aplicación. El RPC valida permisos, pertenencia al estudio y revisión para prevenir actualizaciones perdidas. No se aplicó a producción.
 
+Los registros heredados de alumnas regulares sin inscripción comprobable se muestran como **Por verificar**, fuera de los contadores de etapas, con próxima acción de conciliar inscripción; no se convierten en prospectos por falta de datos.
+
 Evidencia: 22 pruebas de contrato/proyección; typecheck y lint del alcance; pruebas SQL con rollback de guardado/auditoría, motivo obligatorio, conflicto de revisión, rechazo entre estudios y escritura anónima. El build Preview valida URL y hash de clave pública del sandbox.
 
 Límites de esta versión: el historial nuevo registra cambios de seguimiento; los históricos de pagos, ventas, reservas e inscripción permanecen en el perfil operativo. La pausa y atención humana son estados de seguimiento en el CRM. No se activaron secuencias comerciales, ni se conectó este estado a todos los proveedores salientes. La reapertura automática ante nuevos mensajes y secuencias de seguimiento necesitan integración de eventos y UAT adicional. No presentar esta versión como automatización completa de Demi.
