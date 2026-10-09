@@ -226,14 +226,16 @@
   "complete_master_cases_approved": 0,
   "bank_cases_recorded": {
     "run_id": "451ec6b5-3c7d-44d4-a0ae-950348839f01",
-    "cases": [
-      "M01",
-      "M08",
-      "M09",
-      "M17",
-      "M18"
-    ],
+    "cases": ["M01", "M08", "M09", "M17", "M18"],
     "status": "partial"
   },
-  "facebook_adapter_integrated_in_demi_2_branch": false
+  "facebook_adapter_integrated_in_demi_2_branch": true,
+  "latest_followup_evidence": "docs/demi-2-followup-evidence-2026-10-09.json",
+  "latest_integrated_facebook_live": {
+    "passed": true,
+    "commit": "565c72",
+    "contract_tests_passed": 12,
+    "contract_tests_failed": 0,
+    "external_inbound": false
+  }
 }

@@ -484,11 +484,11 @@
     ]
   },
   "automated_tests": {
-    "passed": 1066,
-    "total": 1066
+    "passed": 1086,
+    "total": 1086
   },
   "complete_master_cases_approved": 0,
-  "distinct_operational_variants": 80,
+  "distinct_operational_variants": 97,
   "preview_audio": {
     "commit": "0a73af6",
     "actual_openai_transcription": true,
@@ -642,5 +642,11 @@
     "replay_notice_duplicate_observed": true,
     "conditional_notice_unit_regression_commit": "aa79b88"
   },
-  "connected_channels_report": "docs/demi-connected-channels-evidence-2026-10-09.json"
+  "connected_channels_report": "docs/demi-connected-channels-evidence-2026-10-09.json",
+  "latest_followup_evidence": "docs/demi-2-followup-evidence-2026-10-09.json",
+  "followup_variants": {
+    "facebook": 6,
+    "public_payment_link": 7,
+    "qr": 4
+  }
 }

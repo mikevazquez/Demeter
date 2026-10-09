@@ -1,6 +1,6 @@
 {
   "automated_tests": {
-    "passed": 1082,
+    "passed": 1086,
     "failed": 0
   },
   "typecheck": "passed",
@@ -48,5 +48,79 @@
     "partial": 18,
     "fully_approved": 0
   },
-  "new_configuration_preview": "pending"
+  "new_configuration_preview": {
+    "http_page": 200,
+    "public_link_form": true,
+    "untrusted_domain_rejected": 303,
+    "preview_commit": "65560a1"
+  },
+  "live_findings": [
+    {
+      "finding": "post-trial activation tools were not exposed to model",
+      "code_fix": "29e08b6",
+      "runtime_retest": "passed: activation generated, confirmed, password set and portal opened"
+    },
+    {
+      "finding": "model requested identity together with Mercado Pago receipt",
+      "code_fix": "29e08b6; deterministic first-class instructions",
+      "runtime_retest": "passed: fresh UAT quote returns exact configured URL, test warning, receipt before identity"
+    },
+    {
+      "finding": "prepared access incorrectly described as blocked by unpaid enrollment",
+      "code_fix": "c44349d; controlled confirmation independent from collection",
+      "runtime_retest": "passed: one confirmation, generated activation and portal password set without paid enrollment"
+    }
+  ],
+  "portal_activation": {
+    "activation_form_status": 200,
+    "activation_origin_matches_preview": true,
+    "activation_submit_status": 200,
+    "student_destination": "/student/paquete",
+    "student_page": true,
+    "native_access_state": "active",
+    "must_change_password": false
+  },
+  "portal_qr": [
+    {
+      "label": "attended_own",
+      "status": 200,
+      "qr_rendered": true
+    },
+    {
+      "label": "foreign_student",
+      "status": 200,
+      "qr_rendered": false
+    }
+  ],
+  "mercado_pago_live_quote": {
+    "run_id": "438822bd-7fb2-4600-91ca-0ea40d85ff6a",
+    "group_id": "842d61d3-8eae-4895-81de-b3779c6145c8",
+    "amount_minor": 15000,
+    "students_before_receipt": 11,
+    "reservations_created": 0,
+    "provider_request": false,
+    "test_link": true,
+    "identity_requested_before_receipt": false,
+    "preview_commit": "c44349d"
+  },
+  "preview": {
+    "commit": "c44349d",
+    "url": "https://demeterbueno-25dyrwuir-demeter3.vercel.app",
+    "state": "READY"
+  },
+  "portal_activation_latest": {
+    "activation_form_status": 200,
+    "activation_origin_matches_preview": true,
+    "activation_submit_status": 200,
+    "student_destination": "/student/paquete",
+    "student_page": true,
+    "run_id": "438822bd-7fb2-4600-91ca-0ea40d85ff6a"
+  },
+  "tracking_bank": {
+    "runId": "438822bd-7fb2-4600-91ca-0ea40d85ff6a",
+    "cases_saved": 18,
+    "status": "partial",
+    "fully_approved": 0
+  },
+  "remaining_payment_limit": "Public link quote and manual receipt order verified; method reconciliation and a new provider payment/return remain pending"
 }
