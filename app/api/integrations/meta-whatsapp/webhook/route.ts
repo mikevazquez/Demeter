@@ -1,6 +1,7 @@
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
+import { handleDemiGroupReceipt } from "@/lib/assistant/group-booking";
 import { readTransferReceipt } from "@/lib/assistant/receipt-reader";
 import { trialReceiptConfirmation } from "@/lib/assistant/receipt-confirmation";
 import { provisionStudentAccessWithServiceClient } from "@/lib/assistant/student-access";
@@ -1371,19 +1372,31 @@ export async function POST(request: Request) {
         null;
 
       try {
-        transferReceipt = await activateTransferReceiptIfPending({
+        const groupReceipt = await handleDemiGroupReceipt({
           supabase,
           studioId,
           conversationId,
-          studentId,
           eventId: event.id,
           providerMessageId: message.providerMessageId,
           mediaId: message.mediaId,
           messageType: message.messageType,
-          messageText: message.text,
           webhookConfig,
-          activationUrl: new URL("/login/student/activar", request.url).toString(),
         });
+        transferReceipt = groupReceipt.handled
+          ? groupReceipt
+          : await activateTransferReceiptIfPending({
+              supabase,
+              studioId,
+              conversationId,
+              studentId,
+              eventId: event.id,
+              providerMessageId: message.providerMessageId,
+              mediaId: message.mediaId,
+              messageType: message.messageType,
+              messageText: message.text,
+              webhookConfig,
+              activationUrl: new URL("/login/student/activar", request.url).toString(),
+            });
       } catch {
         retryableFailure = true;
         await markEvent(supabase, studioId, event.id, {

@@ -70,6 +70,9 @@ function orchestratorHarness(pendingAction: Record<string, unknown> | null = nul
     {
       "node:crypto": { createHash: vi.fn(), randomUUID: vi.fn() },
       "./read-tools": { getCommercialOptions: vi.fn() },
+      "./group-booking": {
+        groupBookingAction: vi.fn().mockRejectedValue(new Error("Unexpected group action")),
+      },
     },
   );
   const mod = serverModule<typeof import("../lib/assistant/orchestrator")>(
@@ -191,6 +194,9 @@ describe("Demi prompt workbench", () => {
       {
         "node:crypto": { createHash: vi.fn(), randomUUID: vi.fn() },
         "./read-tools": { getCommercialOptions: vi.fn() },
+        "./group-booking": {
+          groupBookingAction: vi.fn().mockRejectedValue(new Error("Unexpected group action")),
+        },
       },
     );
 

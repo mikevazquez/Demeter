@@ -1,0 +1,45 @@
+begin;
+set local request.jwt.claim.role='service_role';
+set local request.jwt.claims='{"role":"service_role"}';
+do $$
+declare source uuid:='9fe23cfa-fb47-4670-afeb-ed4a56433772'; actor uuid; run jsonb; s uuid; c uuid:=gen_random_uuid(); event uuid:=gen_random_uuid(); session uuid; g uuid; r jsonb; out jsonb:='[]'; people jsonb:='[{"name":"UAT Grupo Uno","phone":"9998880001"},{"name":"UAT Grupo Dos","phone":"9998880002"}]';
+begin
+ select user_id into actor from public.studio_memberships where studio_id=source and active and role='owner' limit 1;
+ run:=public.service_create_demi_uat_run(source,actor,'group-uat');s:=(run->>'studio_id')::uuid;session:=(run#>>'{fixtures,sessions,available}')::uuid;
+ insert into public.assistant_conversations(id,studio_id,channel) values(c,s,'internal_demo');
+ r:=public.service_prepare_demi_group(s,c,session,2,2);
+ if not coalesce((r->>'ok')::boolean,false) or (r->>'amount_minor')::integer<>30000 then raise exception 'group_prepare:%',r; end if;
+ g:=(r->>'group_id')::uuid;
+ r:=public.service_complete_demi_group(s,c,g,people);
+ if r->>'reason_code'<>'receipt_required_before_participants' then raise exception 'payment_first:%',r; end if;
+ if exists(select 1 from public.students where studio_id=s and phone in ('+529998880001','+529998880002')) then raise exception 'profile_before_proof'; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','payment_first_no_profiles','passed',true));
+ insert into public.assistant_whatsapp_events(id,studio_id,provider,provider_event_id,phone_number_id,contact_wa_id,message_type,media_id,payload_fingerprint)
+ values(event,s,'meta_whatsapp','group-'||event,'uat','99900000000','image','group-media','group-uat');
+ r:=public.service_record_demi_group_receipt(s,c,g,event,'group-'||event,'group-media','UAT/group.png',repeat('a',64),15000,'MXN',0.99);
+ if r->>'reason_code'<>'receipt_amount_mismatch' then raise exception 'group_amount:%',r; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','partial_amount_blocked','passed',true));
+ r:=public.service_record_demi_group_receipt(s,c,g,event,'group-'||event,'group-media','UAT/group.png',repeat('a',64),30000,'MXN',0.99);
+ if not coalesce((r->>'ok')::boolean,false) then raise exception 'group_receipt:%',r; end if;
+ r:=public.service_complete_demi_group(s,c,g,'[{"name":"UAT Uno","phone":"9998880001"},{"name":"UAT Dos","phone":"9998880001"}]'::jsonb);
+ if r->>'reason_code'<>'duplicate_participant_phone' or exists(select 1 from public.demi_group_participants where group_id=g) then raise exception 'duplicate_phone_not_blocked:%',r; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','shared_phone_blocks_identity_merge','passed',true));
+ r:=public.service_complete_demi_group(s,c,g,people);
+ if not coalesce((r->>'ok')::boolean,false) or (r->>'reserved_count')::integer<>2 then raise exception 'group_complete:%',r; end if;
+ if (select count(*) from public.demi_group_participants where group_id=g and reservation_id is not null)<>2 then raise exception 'group_reservations'; end if;
+ if (select sum(total_minor) from public.sales where studio_id=s)<>30000 then raise exception 'group_total_duplicated'; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','two_profiles_reservations_single_allocation','passed',true));
+ r:=public.service_complete_demi_group(s,c,g,people);
+ if not coalesce((r->>'ok')::boolean,false) or (select sum(total_minor) from public.sales where studio_id=s)<>30000 then raise exception 'group_replay:%',r; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','completion_idempotent','passed',true));
+ perform set_config('request.jwt.claim.sub',actor::text,true);
+ perform set_config('request.jwt.claims',jsonb_build_object('role','service_role','sub',actor)::text,true);
+ r:=public.admin_review_demi_group(g,'approved','UAT proof review');
+ if not coalesce((r->>'ok')::boolean,false) or (select sum(amount_minor) from public.payments where studio_id=s)<>30000 then raise exception 'group_review:%',r; end if;
+ r:=public.admin_review_demi_group(g,'approved','UAT replay');
+ if (select sum(amount_minor) from public.payments where studio_id=s)<>30000 then raise exception 'group_double_payment'; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','review_allocations_once','passed',true));
+ perform set_config('uat.group_results',out::text,true);
+end $$;
+select current_setting('uat.group_results')::jsonb as results;
+rollback;

@@ -9,6 +9,8 @@ import {
   moveDemiUatSession,
   sendDemiUatMessage,
   runDemiUatNotifications,
+  runDemiUatFollowups,
+  reviewDemiUatGroup,
   reviewDemiUatReceipt,
   markDemiUatAttendance,
   recordDemiUatCase,
@@ -39,6 +41,7 @@ export default function Bank({
   const [runs, setRuns] = useState(initialRuns);
   const [data, setData] = useState<Data | null>(null);
   const [intentId, setIntentId] = useState("");
+  const [groupId, setGroupId] = useState("");
   const [reservationId, setReservationId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -354,6 +357,41 @@ export default function Bank({
                 onClick={() => perform(() => runDemiUatNotifications(data.run.id, true))}
               >
                 Adelantar cola y reintentos
+              </button>
+            </div>
+          </section>
+          <section>
+            <h2>Seguimientos de la ejecución</h2>
+            <p>
+              Simula el reloj en el estudio ficticio y captura las salidas sin enviarlas a clientes.
+            </p>
+            <div className="uat-controls">
+              {[0, 1, 2, 3, 7, 14, 15, 30].map((day) => (
+                <button
+                  key={day}
+                  disabled={busy}
+                  onClick={() => perform(() => runDemiUatFollowups(data.run.id, day))}
+                >
+                  {day === 0 ? "Ahora" : `Día ${day}`}
+                </button>
+              ))}
+            </div>
+            <label>
+              ID del grupo
+              <input value={groupId} onChange={(e) => setGroupId(e.target.value)} />
+            </label>
+            <div className="uat-controls">
+              <button
+                disabled={busy || !groupId}
+                onClick={() => perform(() => reviewDemiUatGroup(data.run.id, groupId, "approved"))}
+              >
+                Validar pago grupal
+              </button>
+              <button
+                disabled={busy || !groupId}
+                onClick={() => perform(() => reviewDemiUatGroup(data.run.id, groupId, "rejected"))}
+              >
+                Rechazar pago grupal
               </button>
             </div>
           </section>

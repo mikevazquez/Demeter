@@ -196,6 +196,76 @@ export type PrepareStudentAccessActivationArgs = EmptyArgs;
 export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
   {
     type: "function",
+    name: "update_contact_followup",
+    strict: true,
+    description:
+      "Persiste etapa CRM y seguimientos de un prospecto o prueba. No clasifica exige rechazo o incompatibilidad explícitos y un motivo; el silencio usa not_booked tras dos seguimientos, nunca not_qualified. opt_out conserva la preferencia de no enviar recuperación ni promociones. No inventes que se programó o actualizó si la herramienta falla.",
+    parameters: {
+      type: "object",
+      properties: {
+        stage: {
+          type: "string",
+          enum: [
+            "answering_questions",
+            "awaiting_receipt",
+            "awaiting_participant_data",
+            "not_booked",
+            "not_qualified",
+            "opt_out",
+          ],
+        },
+        reason: { type: ["string", "null"] },
+      },
+      required: ["stage", "reason"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "prepare_group_booking",
+    strict: true,
+    description:
+      "Prepara el total de una reserva grupal. Antes del comprobante solicita sólo clase, número de participantes y cuántas pagarán primera clase por transferencia; no pidas nombres ni celulares. Las alumnas con créditos se validan individualmente después. No crea reservas ni retiene cupo. Devuelve group_id y datos bancarios configurados.",
+    parameters: {
+      type: "object",
+      properties: {
+        session_ref: { type: "string" },
+        participant_count: { type: "integer" },
+        transfer_count: { type: "integer" },
+      },
+      required: ["session_ref", "participant_count", "transfer_count"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "complete_group_booking",
+    strict: true,
+    description:
+      "Después de un comprobante grupal aceptado, recibe juntos los datos faltantes de cada participante y crea reservas individuales provisionales con cupo y elegibilidad reales. El pagador no se convierte automáticamente en participante. Reporta cada resultado y cualquier importe no asignado; no confirma todo el grupo ante un fallo parcial. Una prueba con reserva pendiente requiere cambiar/cancelar la existente.",
+    parameters: {
+      type: "object",
+      properties: {
+        group_id: { type: "string" },
+        participants: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              phone: { type: "string", description: "Diez dígitos mexicanos, sin lada." },
+            },
+            required: ["name", "phone"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["group_id", "participants"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
     name: "prepare_booking",
     description:
       "Prepara una reserva para una clase exacta previamente encontrada en Studio Flow. Valida elegibilidad real y devuelve un resumen que debe confirmarse. No ejecuta la reserva.",

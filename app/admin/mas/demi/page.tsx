@@ -171,7 +171,9 @@ export default async function DemiDemoPage() {
           </Link>
           <div className="demi-eyebrow">Asistente del estudio · configuración por capas</div>
           <h1>Demi 2.0</h1>
-          <p>Personalidad, contexto, objetivos, reglas y acciones para acompañar cada conversación.</p>
+          <p>
+            Personalidad, contexto, objetivos, reglas y acciones para acompañar cada conversación.
+          </p>
         </div>
         <span className="demi-mode">Modo {config.mode}</span>
       </header>
@@ -208,23 +210,42 @@ export default async function DemiDemoPage() {
         </a>
       </p>
 
-      <DemiLayers activeInstructions={config.personality_instructions ?? ""} initialInstructions={(versions?.[0]?.kind === "draft" ? versions[0].instructions : config.personality_instructions) ?? ""} />
-
-      <section className="demi-advanced-workbench"><h2>Pruebas y operación de Demi</h2><p>Prueba conversaciones en Sandbox, revisa escalamiento y conserva el historial de versiones.</p>
-      {process.env.NEXT_PUBLIC_SUPABASE_URL === "https://hedouonyhynuvwbckdlg.supabase.co" && process.env.VERCEL_ENV !== "production" && <p><Link href="/admin/mas/demi/uat">Abrir banco operativo UAT →</Link></p>}
-      <DemiWorkbench
-        assistantName={config.assistant_name}
-        activeInstructions={config.personality_instructions}
-        versions={(versions ?? []) as PromptVersion[]}
-        storageReady={!versionsError}
-        openAIConfigured={openAIConfigured}
-        sandbox={process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("hedouonyhynuvwbckdlg") === true}
-        handoffPolicies={handoffPolicies ?? []}
-        learningProposals={learningProposals ?? []}
-        adminChanges={adminChanges ?? []}
+      <p>
+        <Link href="/admin/mas/demi/seguimientos">Configurar seguimientos →</Link>
+      </p>
+      <DemiLayers
+        activeInstructions={config.personality_instructions ?? ""}
+        initialInstructions={
+          (versions?.[0]?.kind === "draft"
+            ? versions[0].instructions
+            : config.personality_instructions) ?? ""
+        }
       />
+
+      <section className="demi-advanced-workbench">
+        <h2>Pruebas y operación de Demi</h2>
+        <p>
+          Prueba conversaciones en Sandbox, revisa escalamiento y conserva el historial de
+          versiones.
+        </p>
+        {process.env.NEXT_PUBLIC_SUPABASE_URL === "https://hedouonyhynuvwbckdlg.supabase.co" &&
+          process.env.VERCEL_ENV !== "production" && (
+            <p>
+              <Link href="/admin/mas/demi/uat">Abrir banco operativo UAT →</Link>
+            </p>
+          )}
+        <DemiWorkbench
+          assistantName={config.assistant_name}
+          activeInstructions={config.personality_instructions}
+          versions={(versions ?? []) as PromptVersion[]}
+          storageReady={!versionsError}
+          openAIConfigured={openAIConfigured}
+          sandbox={process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("hedouonyhynuvwbckdlg") === true}
+          handoffPolicies={handoffPolicies ?? []}
+          learningProposals={learningProposals ?? []}
+          adminChanges={adminChanges ?? []}
+        />
       </section>
     </main>
   );
 }
-

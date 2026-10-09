@@ -4,6 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getCommercialOptions, type AssistantStudioContext } from "./read-tools";
+import { groupBookingAction } from "./group-booking";
 import type {
   ExecuteBookingArgs,
   ExecuteCancellationArgs,
@@ -659,8 +660,23 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
     resolvedStudentType = student?.student_type ?? null;
   }
 
+  let hasPaidTrialCredit = false;
+  if (studentId && resolvedStudentType === "trial") {
+    const { data: paidTrials, error: paidCreditError } = await ctx.supabase
+      .from("assistant_transfer_purchase_intents")
+      .select("acquisition_id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("student_id", studentId)
+      .eq("intent_kind", "trial_class")
+      .in("status", ["provisional_active", "validated"])
+      .not("acquisition_id", "is", null)
+      .limit(1);
+    if (paidCreditError) return { ok: false, error: "trial_credit_unavailable" };
+    hasPaidTrialCredit = Boolean(paidTrials?.length);
+  }
   const shouldEvaluateTrial =
-    Boolean(ctx.crmContactId && !studentId) || resolvedStudentType === "trial";
+    Boolean(ctx.crmContactId && !studentId) ||
+    (resolvedStudentType === "trial" && !hasPaidTrialCredit);
 
   if (shouldEvaluateTrial) {
     const prepaymentPolicy = await getDemiTrialPrepaymentRequirement(ctx);
@@ -3402,6 +3418,25 @@ export async function executeAssistantActionTool(
   args: Record<string, unknown>,
 ) {
   switch (toolName) {
+    case "update_contact_followup": {
+      const result = await ctx.supabase.rpc("service_update_demi_followup_stage", {
+        p_studio: ctx.studio.id,
+        p_conversation: ctx.conversationId,
+        p_stage: args.stage,
+        p_reason: args.reason,
+        p_source: ctx.turnId,
+      });
+      return result.error ? { ok: false, reason_code: "crm_followup_update_failed" } : result.data;
+    }
+    case "prepare_group_booking":
+    case "complete_group_booking":
+      return groupBookingAction({
+        supabase: ctx.supabase,
+        studioId: ctx.studio.id,
+        conversationId: ctx.conversationId,
+        tool: toolName,
+        args,
+      });
     case "prepare_booking":
       return prepareBooking(ctx, args as PrepareBookingArgs);
     case "execute_booking":

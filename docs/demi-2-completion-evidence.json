@@ -1,0 +1,239 @@
+{
+  "project": "hedouonyhynuvwbckdlg",
+  "environment": "sandbox",
+  "transactions": "rollback",
+  "suites": {
+    "demi-2-group-uat.sql": [
+      {
+        "results": [
+          {
+            "case": "M06",
+            "passed": true,
+            "variant": "payment_first_no_profiles"
+          },
+          {
+            "case": "M06",
+            "passed": true,
+            "variant": "partial_amount_blocked"
+          },
+          {
+            "case": "M06",
+            "passed": true,
+            "variant": "shared_phone_blocks_identity_merge"
+          },
+          {
+            "case": "M06",
+            "passed": true,
+            "variant": "two_profiles_reservations_single_allocation"
+          },
+          {
+            "case": "M06",
+            "passed": true,
+            "variant": "completion_idempotent"
+          },
+          {
+            "case": "M06",
+            "passed": true,
+            "variant": "review_allocations_once"
+          }
+        ]
+      }
+    ],
+    "demi-2-trial-credit-uat.sql": [
+      {
+        "results": [
+          {
+            "case": "M06",
+            "passed": true,
+            "variant": "payment_first_no_profiles"
+          },
+          {
+            "case": "M06",
+            "passed": true,
+            "variant": "partial_amount_blocked"
+          },
+          {
+            "case": "M06",
+            "passed": true,
+            "variant": "two_profiles_reservations_single_allocation"
+          },
+          {
+            "case": "M06",
+            "passed": true,
+            "variant": "completion_idempotent"
+          },
+          {
+            "case": "M06",
+            "passed": true,
+            "variant": "review_allocations_once"
+          },
+          {
+            "case": "M10",
+            "passed": true,
+            "variant": "trial_credit_first_class_anchor"
+          },
+          {
+            "case": "M10",
+            "passed": true,
+            "variant": "paid_trial_rebook_preserves_expiry"
+          },
+          {
+            "case": "M10",
+            "passed": true,
+            "variant": "paid_trial_reschedule_preserves_expiry"
+          },
+          {
+            "case": "M10",
+            "passed": true,
+            "variant": "paid_trial_after_expiry_blocked"
+          }
+        ]
+      }
+    ],
+    "demi-2-followup-uat.sql": [
+      {
+        "results": [
+          {
+            "case": "M09",
+            "passed": true,
+            "variant": "two_steps_configured_interval_idempotent"
+          },
+          {
+            "case": "M09",
+            "passed": true,
+            "variant": "silence_not_booked_preserves_prospect"
+          },
+          {
+            "case": "M09",
+            "passed": true,
+            "variant": "three_attempts_persistent_handoff_no_fourth"
+          },
+          {
+            "case": "M09",
+            "passed": true,
+            "variant": "optout_blocks_all_pending_and_future"
+          },
+          {
+            "case": "M09",
+            "passed": true,
+            "variant": "not_qualified_requires_reason_and_stops"
+          },
+          {
+            "case": "M04",
+            "passed": true,
+            "variant": "reply_stops_claimed_and_pending_reactivates_notqualified"
+          },
+          {
+            "case": "M16",
+            "passed": true,
+            "variant": "7_15_30_recovery_active_enrollment_stops"
+          }
+        ]
+      }
+    ],
+    "demi-2-operational-uat.sql": [
+      {
+        "results": [
+          {
+            "case": "M13",
+            "passed": true,
+            "variant": "booking_and_duplicate"
+          },
+          {
+            "case": "M10",
+            "passed": true,
+            "variant": "exact_5_hours_credit_restored"
+          },
+          {
+            "case": "M10",
+            "passed": true,
+            "variant": "late_consumed_once"
+          },
+          {
+            "case": "M15",
+            "passed": true,
+            "result": {
+              "eligible": false,
+              "credit_cost": 1,
+              "reason_code": "enrollment_required",
+              "enrollment_requirement": {
+                "mode": "package_booking",
+                "missing": true,
+                "required": true
+              }
+            },
+            "variant": "expired_enrollment_preserves_package"
+          },
+          {
+            "case": "M16",
+            "passed": true,
+            "variant": "rights_after_renewal"
+          },
+          {
+            "case": "M17",
+            "passed": true,
+            "variant": "persistent_human_case"
+          },
+          {
+            "case": "M09",
+            "passed": true,
+            "variant": "three_captured_delivery_failures"
+          },
+          {
+            "case": "M13",
+            "passed": true,
+            "variant": "no_show_consumed_once"
+          },
+          {
+            "case": "M11",
+            "passed": true,
+            "variant": "attended_stays_trial"
+          },
+          {
+            "case": "M12",
+            "passed": true,
+            "variant": "trial_receipt_rejected_reservation_revoked"
+          }
+        ]
+      }
+    ],
+    "demi-prospect-prepayment-uat.sql": [
+      {
+        "uat_results": [
+          {
+            "case": "prepare_without_booking",
+            "passed": true
+          },
+          {
+            "case": "unmatched_receipt_blocked",
+            "passed": true
+          },
+          {
+            "case": "cross_identity_blocked",
+            "passed": true
+          },
+          {
+            "case": "expired_receipt_blocked",
+            "passed": true
+          },
+          {
+            "case": "provisional_booking_pending_review",
+            "passed": true
+          },
+          {
+            "case": "duplicate_receipt_idempotent",
+            "passed": true
+          },
+          {
+            "case": "second_receipt_blocked",
+            "passed": true
+          },
+          {
+            "case": "full_session_blocked",
+            "passed": true
+          }
+        ]
+      }
+    ]
+  }
+}

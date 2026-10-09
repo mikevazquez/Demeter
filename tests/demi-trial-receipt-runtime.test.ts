@@ -65,6 +65,9 @@ function harness(
   const access = vi.fn(async () => ({ already_has_access: true }));
   const deps: Record<string, unknown> = {
     "@/lib/assistant/orchestrator": {},
+    "@/lib/assistant/group-booking": {
+      handleDemiGroupReceipt: vi.fn().mockRejectedValue(new Error("Unexpected group receipt")),
+    },
     "@/lib/assistant/runtime-config": {},
     "@/lib/assistant/read-tools": {},
     "@/lib/assistant/receipt-reader": { readTransferReceipt: read },

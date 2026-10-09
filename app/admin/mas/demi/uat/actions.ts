@@ -53,6 +53,9 @@ const TABLES = [
   "notification_deliveries",
   "notification_delivery_attempts",
   "notification_rules",
+  "demi_group_bookings",
+  "demi_followups",
+  "demi_followup_settings",
 ];
 
 async function context() {
@@ -365,6 +368,59 @@ export async function runDemiUatNotifications(id: string, makeDue: boolean) {
       after: await snapshot(ctx),
     });
     if (!response.ok) throw new Error("demi_uat_worker_failed");
+  });
+  return getDemiUatRun(id);
+}
+
+export async function runDemiUatFollowups(id: string, days: number) {
+  if (![0, 1, 2, 3, 7, 14, 15, 30].includes(days)) throw new Error("demi_uat_clock_invalid");
+  await locked(id, async (ctx) => {
+    const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!secret) throw new Error("demi_uat_worker_not_configured");
+    const before = await snapshot(ctx);
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/demi-followup-worker`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${secret}` },
+        body: JSON.stringify({
+          studio_id: ctx.run.studio_id,
+          as_of: new Date(Date.now() + days * 86400000).toISOString(),
+        }),
+      },
+    );
+    const result = await response.json();
+    await record(ctx, "followup_worker", { days, result, before, after: await snapshot(ctx) });
+    if (!response.ok) throw new Error("demi_uat_followup_worker_failed");
+  });
+  return getDemiUatRun(id);
+}
+
+export async function reviewDemiUatGroup(id: string, groupId: string, decision: string) {
+  if (!["approved", "rejected"].includes(decision)) throw new Error("demi_uat_review_invalid");
+  await locked(id, async (ctx) => {
+    const group = await ctx.service
+      .from("demi_group_bookings")
+      .select("id")
+      .eq("studio_id", ctx.run.studio_id)
+      .eq("id", groupId)
+      .single();
+    if (group.error) throw new Error("demi_uat_group_not_found");
+    const before = await snapshot(ctx);
+    const result = await ctx.supabase.rpc("admin_review_demi_group", {
+      p_group: groupId,
+      p_decision: decision,
+      p_note: "Revisión ficticia UAT",
+    });
+    await record(ctx, "group_review", {
+      group_id: groupId,
+      decision,
+      result: result.data,
+      error: result.error?.message ?? null,
+      before,
+      after: await snapshot(ctx),
+    });
+    if (result.error) throw new Error("demi_uat_group_review_failed");
   });
   return getDemiUatRun(id);
 }
