@@ -1,3 +1,4 @@
+import { resolveEnrollmentStatus } from "./enrollment-state";
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -186,12 +187,14 @@ export async function searchClassAvailability(
   }
 
   const activityNeedle = rawArgs.activity_query ? normalize(rawArgs.activity_query) : null;
+  const earliestBookableStart = Date.now() + 30 * 60_000;
   const exactTemplateMatchExists = activityNeedle
     ? templates.some((item) => normalize(item.name) === activityNeedle)
     : false;
   const matches = [];
 
   for (const session of sessions ?? []) {
+    if (new Date(session.starts_at).getTime() <= earliestBookableStart) continue;
     const template = templateMap.get(session.template_id);
     if (!template?.active) continue;
     const discipline = template.discipline_id
@@ -546,27 +549,36 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
   }
 
   const today = localParts(new Date().toISOString(), ctx.studio.timezone).date;
-  const [{ data: student, error: studentError }, { data: acquisitions, error: acquisitionsError }] =
-    await Promise.all([
-      ctx.supabase
-        .from("students")
-        .select("lifecycle_status,student_type,trial_status")
-        .eq("studio_id", ctx.studio.id)
-        .eq("id", ctx.studentId)
-        .maybeSingle(),
-      ctx.supabase
-        .from("product_acquisitions")
-        .select(
-          "id,product_template_id,status,starts_on,expires_on,credit_limit,unlimited,access_blocked,created_at",
-        )
-        .eq("studio_id", ctx.studio.id)
-        .eq("student_id", ctx.studentId)
-        .is("refunded_at", null)
-        .order("created_at", { ascending: false })
-        .limit(20),
-    ]);
+  const [
+    { data: student, error: studentError },
+    { data: acquisitions, error: acquisitionsError },
+    { data: enrollments, error: enrollmentsError },
+  ] = await Promise.all([
+    ctx.supabase
+      .from("students")
+      .select("lifecycle_status,student_type,trial_status")
+      .eq("studio_id", ctx.studio.id)
+      .eq("id", ctx.studentId)
+      .maybeSingle(),
+    ctx.supabase
+      .from("product_acquisitions")
+      .select(
+        "id,product_template_id,status,starts_on,expires_on,credit_limit,unlimited,access_blocked,created_at",
+      )
+      .eq("studio_id", ctx.studio.id)
+      .eq("student_id", ctx.studentId)
+      .is("refunded_at", null)
+      .order("created_at", { ascending: false })
+      .limit(20),
+    ctx.supabase
+      .from("student_enrollments")
+      .select("status,starts_on,expires_on")
+      .eq("studio_id", ctx.studio.id)
+      .eq("student_id", ctx.studentId)
+      .is("refunded_at", null),
+  ]);
 
-  if (studentError || acquisitionsError || !student) {
+  if (studentError || acquisitionsError || enrollmentsError || !student) {
     return { ok: false, error: "package_status_unavailable" };
   }
 
@@ -579,17 +591,19 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
   const hasExpiredPackage = (acquisitions ?? []).some((item) =>
     Boolean(item.expires_on && item.expires_on < today),
   );
+  const enrollmentStatus = resolveEnrollmentStatus(enrollments ?? [], today);
   let studentCategory = "student";
   if (student.student_type === "trial") {
     if (student.trial_status === "no_show") studentCategory = "trial_no_show";
     else if (student.trial_status === "attended") studentCategory = "trial_attended";
     else if (student.trial_status === "cancelled") studentCategory = "trial_cancelled";
     else studentCategory = "trial_pending";
-  } else if (student.lifecycle_status === "inactive" || (!current.length && hasExpiredPackage)) {
+  } else if (enrollmentStatus === "expired") {
     studentCategory = "former_student";
   }
   const studentState = {
     category: studentCategory,
+    enrollment_status: enrollmentStatus,
     lifecycle_status: student.lifecycle_status,
     student_type: student.student_type,
     trial_status: student.trial_status,

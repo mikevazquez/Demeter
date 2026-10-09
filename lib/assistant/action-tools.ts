@@ -222,6 +222,10 @@ export function isExplicitAssistantConfirmation(value: string) {
     "si",
     "si por favor",
     "si confirmo",
+    "si confirmo la reserva",
+    "confirmo la reserva",
+    "si confirma la reserva",
+    "si reservame esa clase",
     "si preparame los datos para transferir",
     "si prepara los datos para transferir",
     "si enviame los datos para transferir",
@@ -618,16 +622,13 @@ async function getDemiTrialPrepaymentRequirement(ctx: AssistantActionToolContext
   };
 }
 
-async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBookingArgs) {
-  if (ctx.identityNeedsName === true && !ctx.studentId) {
-    return {
-      ok: false,
-      reason_code: "prospect_name_required",
-      reason_message:
-        "Antes de reservar, pide el nombre completo y espera a que Studio Flow lo guarde en el CRM.",
-    };
-  }
+function isSessionBookableNow(session: { status: string; starts_at: string }, now = Date.now()) {
+  return (
+    session.status === "scheduled" && new Date(session.starts_at).getTime() > now + 30 * 60_000
+  );
+}
 
+async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBookingArgs) {
   const sessionId = parseOpaqueRef(args.session_ref, "session");
   if (!sessionId) {
     return { ok: false, error: "invalid_session_ref" };
@@ -636,6 +637,13 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
   const sessionInfo = await getSessionSummary(ctx, sessionId);
   if (!sessionInfo) {
     return { ok: false, error: "session_not_found" };
+  }
+  if (!isSessionBookableNow(sessionInfo.session)) {
+    return {
+      ok: false,
+      error: "booking_not_eligible",
+      ...safeBookingReason("session_not_bookable"),
+    };
   }
 
   const studentId = ctx.studentId;
@@ -659,6 +667,14 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
     if (!prepaymentPolicy.ok) return prepaymentPolicy;
 
     const requirePaymentBeforeBooking = prepaymentPolicy.effectiveRequiresPayment;
+    if (ctx.identityNeedsName === true && !studentId && !requirePaymentBeforeBooking) {
+      return {
+        ok: false,
+        reason_code: "prospect_name_required",
+        reason_message:
+          "Antes de reservar, pide el nombre completo y espera a que Studio Flow lo guarde en el CRM.",
+      };
+    }
 
     const { data: preview, error: previewError } = await ctx.supabase.rpc(
       "assistant_trial_booking_preview",
@@ -1105,6 +1121,13 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
   const sessionInfo = await getSessionSummary(ctx, sessionId);
   if (!sessionInfo) {
     return { ok: false, error: "session_not_found" };
+  }
+  if (!isSessionBookableNow(sessionInfo.session)) {
+    return {
+      ok: false,
+      error: "booking_not_eligible",
+      ...safeBookingReason("session_not_bookable"),
+    };
   }
   const resourceId = String(payload.resource_id ?? "") || null;
   const resourceLabel = String(payload.resource_label ?? "") || null;

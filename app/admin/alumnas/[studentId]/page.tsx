@@ -1,3 +1,4 @@
+import { resolveEnrollmentStatus } from "@/lib/assistant/enrollment-state";
 import Link from "next/link";
 import { contactStage } from "@/lib/student-crm";
 import { contactConversations } from "@/lib/student-crm-conversations";
@@ -251,6 +252,7 @@ export default async function StudentProfilePage({
     supabase
       .from("student_enrollments")
       .select("id,status,starts_on,expires_on,created_at")
+      .is("refunded_at", null)
       .eq("studio_id", studio.id)
       .eq("student_id", student.id)
       .order("created_at", { ascending: false }),
@@ -667,6 +669,7 @@ export default async function StudentProfilePage({
     pendingBalanceMinor = confirmedSales.reduce((sum, sale) => sum + sale.balanceMinor, 0);
   }
 
+  if (enrollmentRowsResult.error) throw new Error("crm_enrollment_unavailable");
   const enrollmentRows = enrollmentRowsResult.data ?? [];
   const enrollment =
     enrollmentRows.find(
@@ -1007,7 +1010,7 @@ export default async function StudentProfilePage({
           : "El paquete está bloqueado por una condición de pago pendiente.",
     });
   }
-  if (enrollment && enrollment.status !== "active") {
+  if (enrollment && resolveEnrollmentStatus(enrollmentRows, today) !== "active") {
     alerts.push({
       title: "Inscripción no vigente",
       detail: enrollment.expires_on
@@ -1046,7 +1049,10 @@ export default async function StudentProfilePage({
     <main className="dashboard-shell profile360-page admin-ux04-profile360 crm-page">
       <Profile360Overview
         activeView={view}
-        stage={contactStage(student)}
+        stage={contactStage({
+          ...student,
+          enrollment_status: resolveEnrollmentStatus(enrollmentRows, today),
+        })}
         canEdit={canEdit}
         canReadProducts={canReadProducts}
         showRewards={canReadRewards}

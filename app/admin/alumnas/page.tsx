@@ -1,3 +1,4 @@
+import { resolveEnrollmentStatus } from "@/lib/assistant/enrollment-state";
 import Link from "next/link";
 
 import PendingActionButton from "@/app/admin/components/PendingActionButton";
@@ -99,10 +100,6 @@ export default async function StudentsPage({
     .neq("lifecycle_status", "archived")
     .order("full_name");
 
-  if (status === "active" || status === "inactive") {
-    studentsQuery = studentsQuery.eq("lifecycle_status", status);
-    if (status === "active") studentsQuery = studentsQuery.neq("student_type", "trial");
-  }
   if (status === "trial") {
     studentsQuery = studentsQuery
       .eq("student_type", "trial")
@@ -134,6 +131,7 @@ export default async function StudentsPage({
     { data: prospectContacts },
     acquisitionResult,
     { data: duplicateStudent },
+    enrollmentResult,
   ] = await Promise.all([
     studentsQuery,
     needsAllStudentsQuery
@@ -172,7 +170,21 @@ export default async function StudentsPage({
           .eq("studio_id", studio.id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    supabase
+      .from("student_enrollments")
+      .select("student_id,status,starts_on,expires_on")
+      .eq("studio_id", studio.id)
+      .is("refunded_at", null),
   ]);
+  if (enrollmentResult.error) throw new Error("crm_enrollment_unavailable");
+  const stageFor = (student: Parameters<typeof contactStage>[0] & { id: string }) =>
+    contactStage({
+      ...student,
+      enrollment_status: resolveEnrollmentStatus(
+        (enrollmentResult.data ?? []).filter((row) => row.student_id === student.id),
+        today,
+      ),
+    });
   const allStudents =
     allStudentsResult.data ??
     (students ?? []).map((student) => ({
@@ -262,7 +274,7 @@ export default async function StudentsPage({
   }
 
   const activeStudentsCount = (allStudents ?? []).filter(
-    (item) => item.lifecycle_status === "active" && item.student_type !== "trial",
+    (item) => stageFor(item) === "student",
   ).length;
   const trialStudentsCount = (allStudents ?? []).filter(
     (item) =>
@@ -288,10 +300,12 @@ export default async function StudentsPage({
   }).length;
 
   const filteredStudents = (students ?? []).filter((student) => {
+    if (status === "active") return stageFor(student) === "student";
+    if (status === "inactive") return stageFor(student) === "former";
     if (status === "expiring" || status === "followup") {
       const acquisition = currentAcquisitionFor(student.id);
       return (
-        (status !== "followup" || contactStage(student) === "student") &&
+        (status !== "followup" || stageFor(student) === "student") &&
         Boolean(
           acquisition?.expires_on &&
           acquisition.expires_on >= today &&
@@ -370,7 +384,7 @@ export default async function StudentsPage({
 
   const recommendationsCount = (allStudents ?? []).filter((student) =>
     renewalRecommended(
-      contactStage(student),
+      stageFor(student),
       currentAcquisitionFor(student.id)?.expires_on,
       today,
       sevenDaysFromToday,
@@ -580,7 +594,7 @@ export default async function StudentsPage({
             </div>
             {filteredStudents.map((student) => {
               const acquisition = currentAcquisitionFor(student.id);
-              const stage = contactStage(student);
+              const stage = stageFor(student);
               const recommended = renewalRecommended(
                 stage,
                 acquisition?.expires_on,

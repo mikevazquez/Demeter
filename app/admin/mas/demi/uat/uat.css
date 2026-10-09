@@ -1,0 +1,130 @@
+.uat-bank {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+  color: #20382f;
+}
+.uat-bank h1 {
+  font-size: clamp(26px, 5vw, 38px);
+  margin: 16px 0;
+}
+.uat-bank h2 {
+  font-size: 21px;
+}
+.uat-bank section {
+  border: 1px solid #d8e5df;
+  border-radius: 20px;
+  padding: 22px;
+  margin: 20px 0;
+  background: #fff;
+}
+.uat-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.uat-cards article {
+  background: #edf6f1;
+  border-radius: 12px;
+  padding: 16px;
+}
+.uat-controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.uat-bank button {
+  border: 0;
+  background: #216749;
+  color: #fff;
+  border-radius: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  min-height: 44px;
+}
+.uat-bank button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.uat-bank select,
+.uat-bank textarea,
+.uat-bank input {
+  padding: 12px;
+  border: 1px solid #ccd9d2;
+  border-radius: 10px;
+  font: inherit;
+  max-width: 100%;
+  min-height: 44px;
+}
+.uat-bank label {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+}
+.uat-bank textarea {
+  width: 100%;
+}
+.uat-bank pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+  background: #f3f6f4;
+  padding: 14px;
+  border-radius: 10px;
+  max-height: 480px;
+  overflow: auto;
+}
+.uat-bank code {
+  word-break: break-all;
+}
+.uat-bank summary {
+  cursor: pointer;
+  padding: 12px 0;
+}
+.uat-error {
+  color: #a52428;
+  background: #fff0ee;
+  padding: 12px;
+  border-radius: 10px;
+}
+.uat-conversation {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+.uat-conversation article {
+  max-width: 92%;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid #d9e6de;
+}
+.uat-inbound {
+  align-self: flex-start;
+  background: #f4f6f5;
+}
+.uat-outbound {
+  align-self: flex-end;
+  background: #e9f6ec;
+}
+.uat-conversation p {
+  white-space: pre-wrap;
+}
+.uat-note {
+  color: #596d62;
+}
+@media (max-width: 650px) {
+  .uat-bank {
+    padding: 14px;
+  }
+  .uat-bank section {
+    padding: 16px;
+  }
+  .uat-cards {
+    grid-template-columns: 1fr;
+  }
+  .uat-controls > * {
+    width: 100%;
+  }
+}

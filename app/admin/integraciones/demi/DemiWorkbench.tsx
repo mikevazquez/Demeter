@@ -103,6 +103,16 @@ export default function DemiWorkbench({
     endRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [messages, busy]);
 
+  useEffect(() => {
+    const nextInitial = versions[0]?.kind === "draft" ? versions[0] : null;
+    setDraft(nextInitial?.instructions ?? activeInstructions);
+    setSaved(nextInitial);
+    setHistory(versions);
+    setConversationId(null);
+    setMessages([]);
+    setMessage("");
+  }, [activeInstructions, versions[0]?.id]);
+
   function clearTest() {
     setConversationId(null);
     setMessages([]);

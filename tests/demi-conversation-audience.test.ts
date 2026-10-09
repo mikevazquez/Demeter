@@ -47,11 +47,11 @@ describe("Demi first visit audience", () => {
     );
   });
 
-  it("moves an explicit first booking request to real class options before collecting the name", () => {
+  it("moves a first booking request to real class options and waits for payment proof before the name", () => {
     const guidance = conversationGuidance({ crmContactId: "contact" });
     expect(guidance).toContain("no respondas pidiendo únicamente su nombre");
     expect(guidance).toContain("search_class_availability en ese mismo turno");
-    expect(guidance).toContain("Cuando elija una clase, solicita el nombre completo");
+    expect(guidance).toContain("No pidas nombre, celular ni datos de acompañantes antes de recibir el comprobante");
     expect(guidance).toContain("Nunca conviertas 'gracias'");
     expect(guidance).toContain("en una orden de reserva");
   });
