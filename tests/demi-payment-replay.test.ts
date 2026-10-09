@@ -188,7 +188,7 @@ function firstPaymentHarness(
   return {
     rpc,
     writes,
-    execute: () =>
+    execute: (recipientMode = "self", message = "Quiero mi primera clase por transferencia") =>
       loadedModule.exports.executeAssistantActionTool(
         {
           supabase,
@@ -199,15 +199,27 @@ function firstPaymentHarness(
           crmContactId: "contact",
           activationUrl: null,
           serviceMode: true,
-          currentUserMessage: "Quiero mi primera clase por transferencia",
+          currentUserMessage: message,
         } as never,
         "prepare_first_class_payment",
-        { session_ref: "session:11111111-1111-4111-8111-111111111111", resource_ref: null },
+        { session_ref: "session:11111111-1111-4111-8111-111111111111", resource_ref: null, recipient_mode: recipientMode },
       ),
   };
 }
 
 describe("First-class payment prepares only a quote for a verified prospect", () => {
+  it("does not prepare the payer own trial when paying only for another participant", async () => {
+    const h = firstPaymentHarness();
+    expect(await h.execute("other")).toMatchObject({ ok: false, reason_code: "use_prepare_group_booking_for_other_person" });
+    expect(h.rpc).not.toHaveBeenCalled();
+    expect(h.writes).not.toHaveBeenCalled();
+  });
+  it("guards an explicit non-attending payer even if the model labels the recipient self", async () => {
+    const h = firstPaymentHarness();
+    expect(await h.execute("self", "Quiero pagar sólo para otra persona. Yo no asistiré.")).toMatchObject({ ok: false, reason_code: "use_prepare_group_booking_for_other_person" });
+    expect(h.rpc).not.toHaveBeenCalled();
+  });
+
   it("provides configured bank details without a student, booking or extra confirmation", async () => {
     const h = firstPaymentHarness();
     expect(await h.execute()).toMatchObject({

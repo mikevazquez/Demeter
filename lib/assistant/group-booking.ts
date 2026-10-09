@@ -155,7 +155,7 @@ export async function handleDemiGroupReceipt(input: {
     data?.ok && singleProspect
       ? "Recibí tu comprobante. El pago queda pendiente de validación del equipo. Ahora envíame juntos tu nombre completo y celular mexicano de diez dígitos, sin lada. Todavía no he confirmado tu reserva; revisaré el cupo antes de crearla."
       : data?.ok
-        ? "Recibí el comprobante del total del grupo. El pago queda pendiente de validación del equipo. Ahora envíame juntos el nombre completo y celular mexicano de diez dígitos de cada participante, sin lada. Todavía no he confirmado reservas; revisaré cupo y derechos de cada una."
+        ? "Recibí comprobantes por el total del grupo. El pago queda pendiente de validación del equipo. Ahora envíame juntos el nombre completo y celular mexicano de diez dígitos de cada participante, sin lada. Todavía no he confirmado reservas; revisaré cupo y derechos de cada una."
         : data?.reason_code === "partial_payment_received"
           ? `Recibí comprobantes por ${new Intl.NumberFormat("es-MX", { style: "currency", currency: lookup.data.currency }).format(data.received_amount_minor / 100)}. Queda por cubrir ${new Intl.NumberFormat("es-MX", { style: "currency", currency: lookup.data.currency }).format(data.remaining_amount_minor / 100)}. Los comprobantes están pendientes de validación del equipo. Envíame el comprobante de la diferencia; todavía no confirmé reservas.`
           : data?.reason_code === "receipt_amount_mismatch"

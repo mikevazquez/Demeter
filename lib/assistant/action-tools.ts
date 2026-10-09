@@ -1235,6 +1235,13 @@ async function prepareFirstClassPayment(
   ctx: AssistantActionToolContext,
   args: Record<string, unknown>,
 ) {
+  if (
+    args.recipient_mode === "other" ||
+    /(?:s[oó]lo para otra persona|yo no asistir[eé]|no voy a asistir|no asisto|para mi (?:amiga|amigo|hermana|hermano|hija|hijo))/i.test(
+      ctx.currentUserMessage,
+    )
+  )
+    return { ok: false, reason_code: "use_prepare_group_booking_for_other_person" };
   if (!ctx.serviceMode || ctx.studentId || !ctx.crmContactId)
     return { ok: false, reason_code: "verified_prospect_required" };
   const sessionId = parseOpaqueRef(args.session_ref, "session");

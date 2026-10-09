@@ -2,7 +2,7 @@
 
 **4/18 casos maestros aprobados (22.2 %); 14 parciales (77.8 %).** M03, M09, M13 y M17 pasaron sus criterios de negocio. El transporte externo permanece en M01 y no se da por aprobado. Cada fila distingue variantes que pasaron de lo que falta para cerrar el caso. Las correcciones detectadas se detallan debajo.
 
-Validación: 1117/1117 pruebas automáticas, typecheck y compilación correctos; lint sin errores (un aviso preexistente). Histórico: 97 variantes SQL; nueva ejecución de 24 controles de Mercado Pago, nueve motivos humanos y nueve controles de seguimiento con el rol real service_role. Estos conjuntos se solapan y no se suman como casos maestros. Se creó una orden real de prueba de Mercado Pago; compra pendiente del usuario.
+Validación: 1119/1119 pruebas automáticas, typecheck y compilación correctos; lint sin errores (un aviso preexistente). Histórico: 97 variantes SQL; nueva ejecución de 24 controles de Mercado Pago, nueve motivos humanos y nueve controles de seguimiento con el rol real service_role. Estos conjuntos se solapan y no se suman como casos maestros. Se creó una orden real de prueba de Mercado Pago; compra pendiente del usuario.
 
 ## Resumen para promover a producción
 
@@ -11,7 +11,7 @@ Validación: 1117/1117 pruebas automáticas, typecheck y compilación correctos;
 | Casos maestros aprobados integralmente | 4/18 (22.2 %) | M03, M09, M13 y M17 tienen evidencia de V1–V3; ver documento de evidencia específico. |
 | Casos maestros parciales | 14/18 (77.8 %) | Los restantes tienen verificaciones aprobadas y pendientes identificados. |
 | Casos maestros por cerrar | 14/18 (77.8 %) | Porcentaje de cierres pendientes, no de esfuerzo ni de implementación restante. |
-| Pruebas automáticas aprobadas en la última ejecución registrada | 1117/1117 (100 %) | Regresión técnica; no son 1117 casos UAT de negocio. |
+| Pruebas automáticas aprobadas en la última ejecución registrada | 1119/1119 (100 %) | Regresión técnica; no son 1119 casos UAT de negocio. |
 | Verificaciones SQL registradas | 97 | Evidencia técnica acumulada; no existe un total exhaustivo de variantes pendientes para calcular su porcentaje. |
 | Decisión de promoción | No lista | Faltan pagos nuevos, transporte externo y variantes de negocio. No se ha publicado esta rama en producción. |
 
@@ -101,3 +101,5 @@ Las pruebas conversacionales de fallo previo a la reserva alcanzaron tres errore
 M09 aprobado en preview 7da8dd0: el evento repetido conservó la respuesta, no ejecutó de nuevo el modelo y registró exactamente tres salidas fallidas. El tercer fallo creó un caso técnico; el cuarto no envió nada. En WhatsApp se conservó una reserva y siete créditos en los cuatro intentos. Facebook pasó el mismo límite. Evidencia: demi-2-m09-evidence-2026-10-09.json. Avance vigente: 4/18 (22.2 %), 14/18 por cerrar (77.8 %).
 
 Comprobantes separados: corrección aplicada exclusivamente en Sandbox; 18 controles nativos pasaron con SET LOCAL ROLE service_role y ROLLBACK. Se conserva cada archivo ilegible o válido, los importes parciales no habilitan fichas, la misma evidencia no se suma dos veces y la suma completa sigue en revisión manual. La atención humana conserva referencias a todos los documentos. M06 sigue parcial hasta la repetición conversacional.
+
+Conversación de comprobantes separados en c516581: primero $150 y diferencia $150 sin fichas; reenvío del mismo documento mantiene $150; segundo comprobante alcanza $300 y habilita pedir datos. Datos incompletos no crean fichas ni reservas; al completarlos, dos fichas y dos reservas provisionales, sin inscribir al pagador. Se detectó D16 seleccionando la primera clase del pagador en lugar de la destinataria: se añadió recipient_mode y una validación de acción que exige prepare_group_booking para otra persona. Regresión 1119/1119, typecheck y lint sin errores. D16 sigue pendiente de repetición. Se retiraron los permisos UPDATE/DELETE heredados para conservar los documentos como evidencia inmutable.

@@ -262,11 +262,15 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     name: "prepare_first_class_payment",
     strict: true,
     description:
-      "Obtiene el precio y los métodos oficiales para la primera clase de un prospecto sin ficha de alumna: transferencia/depósito a Bancomer o liga individual de Mercado Pago cuando está habilitada. Usa la clase exacta disponible. Sólo prepara el pago: no crea alumna ni reserva, no requiere confirmar una reserva ni elegir paquete. Devuelve group_id: espera comprobante bancario o payment_verified=true de Mercado Pago y después completa con los datos faltantes de un único participante. Si automatic_verification=true y receipt_required=false, no solicites comprobante. Si exige recurso, ofrece las opciones devueltas y vuelve a llamar con el recurso elegido.",
+      "Sólo para la primera clase de quien conversa y también asistirá (recipient_mode=self). Si paga para otra persona (recipient_mode=other), usa prepare_group_booking con participant_count=1; no asocies al pagador como participante. Obtiene el precio y los métodos oficiales para la primera clase de un prospecto sin ficha de alumna: transferencia/depósito a Bancomer o liga individual de Mercado Pago cuando está habilitada. Usa la clase exacta disponible. Sólo prepara el pago: no crea alumna ni reserva, no requiere confirmar una reserva ni elegir paquete. Devuelve group_id: espera comprobante bancario o payment_verified=true de Mercado Pago y después completa con los datos faltantes de un único participante. Si automatic_verification=true y receipt_required=false, no solicites comprobante. Si exige recurso, ofrece las opciones devueltas y vuelve a llamar con el recurso elegido.",
     parameters: {
       type: "object",
-      properties: { session_ref: { type: "string" }, resource_ref: { type: ["string", "null"] } },
-      required: ["session_ref", "resource_ref"],
+      properties: {
+        session_ref: { type: "string" },
+        resource_ref: { type: ["string", "null"] },
+        recipient_mode: { type: "string", enum: ["self", "other"] },
+      },
+      required: ["session_ref", "resource_ref", "recipient_mode"],
       additionalProperties: false,
     },
   },
@@ -275,7 +279,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     name: "prepare_group_booking",
     strict: true,
     description:
-      "Prepara el total de una reserva grupal. Antes del comprobante bancario o pago Mercado Pago verificado solicita sólo clase, número de participantes y cuántas pagarán primera clase; no pidas nombres ni celulares. Las alumnas con créditos se validan individualmente después. No crea reservas ni retiene cupo. Devuelve group_id y datos bancarios o external_checkout. Si automatic_verification=true y receipt_required=false, espera confirmación del proveedor sin pedir comprobante.",
+      "Prepara el total de una reserva grupal o de una reserva sólo para otra persona (participant_count=1). El pagador que no asiste no es participante ni adquiere prueba. Antes del comprobante bancario o pago Mercado Pago verificado solicita sólo clase, número de participantes y cuántas pagarán primera clase; no pidas nombres ni celulares. Las alumnas con créditos se validan individualmente después. No crea reservas ni retiene cupo. Devuelve group_id y datos bancarios o external_checkout. Si automatic_verification=true y receipt_required=false, espera confirmación del proveedor sin pedir comprobante.",
     parameters: {
       type: "object",
       properties: {
