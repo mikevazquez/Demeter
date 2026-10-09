@@ -39,6 +39,30 @@ begin
  r:=public.admin_review_demi_group(g,'approved','UAT replay');
  if (select sum(amount_minor) from public.payments where studio_id=s)<>30000 then raise exception 'group_double_payment'; end if;
  out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','review_allocations_once','passed',true));
+ -- A regular student's own credit must not be charged as another trial transfer.
+ c:=gen_random_uuid(); event:=gen_random_uuid();
+ insert into public.assistant_conversations(id,studio_id,channel) values(c,s,'internal_demo');
+ session:=(run#>>'{fixtures,sessions,alternative}')::uuid;
+ r:=public.service_prepare_demi_group(s,c,session,2,1); g:=(r->>'group_id')::uuid;
+ if not coalesce((r->>'ok')::boolean,false) or (r->>'amount_minor')::integer<>15000 then raise exception 'mixed_prepare:%',r; end if;
+ insert into public.assistant_whatsapp_events(id,studio_id,provider,provider_event_id,phone_number_id,contact_wa_id,message_type,media_id,payload_fingerprint) values(event,s,'meta_whatsapp','mixed-'||event,'uat','99900000000','image','mixed-media','mixed-uat');
+ r:=public.service_record_demi_group_receipt(s,c,g,event,'mixed-'||event,'mixed-media','UAT/mixed.png',repeat('b',64),15000,'MXN',0.99);
+ people:=jsonb_build_array(jsonb_build_object('name','UAT student_active','phone',right(run#>>'{fixtures,people,student_active,phone}',10)),jsonb_build_object('name','UAT Nueva','phone','9998880003'));
+ r:=public.service_complete_demi_group(s,c,g,people);
+ if not coalesce((r->>'ok')::boolean,false) or (r->>'reserved_count')::integer<>2 or (r->>'allocated_minor')::integer<>15000 then raise exception 'mixed_complete:%',r; end if;
+ if not exists(select 1 from public.demi_group_participants where group_id=g and student_id=(run#>>'{fixtures,people,student_active,student_id}')::uuid and allocated_minor=0 and transfer_intent_id is null and reservation_id is not null) then raise exception 'mixed_credit_charged'; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','mixed_existing_credit_and_one_paid_trial','passed',true));
+ -- Capacity can change after receipt; keep one success and a persistent review.
+ c:=gen_random_uuid(); event:=gen_random_uuid(); session:=(run#>>'{fixtures,sessions,timely}')::uuid;
+ insert into public.assistant_conversations(id,studio_id,channel) values(c,s,'internal_demo');
+ r:=public.service_prepare_demi_group(s,c,session,2,2);g:=(r->>'group_id')::uuid;
+ insert into public.assistant_whatsapp_events(id,studio_id,provider,provider_event_id,phone_number_id,contact_wa_id,message_type,media_id,payload_fingerprint) values(event,s,'meta_whatsapp','partial-'||event,'uat','99900000000','image','partial-media','partial-uat');
+ r:=public.service_record_demi_group_receipt(s,c,g,event,'partial-'||event,'partial-media','UAT/partial.png',repeat('c',64),30000,'MXN',0.99);
+ update public.class_sessions set capacity=(select count(*)+1 from public.reservations where session_id=session and status='reserved') where id=session;
+ r:=public.service_complete_demi_group(s,c,g,'[{"name":"UAT Parcial Uno","phone":"9998880004"},{"name":"UAT Parcial Dos","phone":"9998880005"}]'::jsonb);
+ if r->>'status'<>'partial' or (r->>'reserved_count')::integer<>1 or (r->>'unallocated_minor')::integer<>15000 then raise exception 'partial_result:%',r; end if;
+ if (select count(*) from public.demi_group_participants where group_id=g and reservation_id is not null)<>1 or not exists(select 1 from public.assistant_handoffs where studio_id=s and conversation_id=c and reason_code='group_partial' and status='open') then raise exception 'partial_oversold_or_lost_handoff'; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','capacity_changed_partial_success_no_oversell_human_review','passed',true));
  perform set_config('uat.group_results',out::text,true);
 end $$;
 select current_setting('uat.group_results')::jsonb as results;

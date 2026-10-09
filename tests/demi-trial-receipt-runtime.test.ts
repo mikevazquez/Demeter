@@ -65,6 +65,7 @@ function harness(
   const access = vi.fn(async () => ({ already_has_access: true }));
   const deps: Record<string, unknown> = {
     "@/lib/assistant/orchestrator": {},
+    "@/lib/assistant/audio-transcription": { transcribeDemiAudio: vi.fn() },
     "@/lib/assistant/group-booking": {
       handleDemiGroupReceipt: vi.fn().mockRejectedValue(new Error("Unexpected group receipt")),
     },

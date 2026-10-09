@@ -629,6 +629,129 @@ function isSessionBookableNow(session: { status: string; starts_at: string }, no
   );
 }
 
+async function prepareCashPackage(ctx: AssistantActionToolContext, args: Record<string, unknown>) {
+  const product = parseOpaqueRef(args.product_ref, "product");
+  if (!ctx.serviceMode || !ctx.studentId || !product)
+    return { ok: false, reason_code: "cash_students_only" };
+  const { data: student } = await ctx.supabase
+    .from("students")
+    .select("student_type,active,lifecycle_status")
+    .eq("studio_id", ctx.studio.id)
+    .eq("id", ctx.studentId)
+    .maybeSingle();
+  const { data: item } = await ctx.supabase
+    .from("product_templates")
+    .select("id,name,price_minor,currency,product_type")
+    .eq("studio_id", ctx.studio.id)
+    .eq("id", product)
+    .eq("active", true)
+    .eq("assistant_visible", true)
+    .maybeSingle();
+  if (
+    !student?.active ||
+    student.lifecycle_status !== "active" ||
+    student.student_type !== "regular" ||
+    !item ||
+    !["package", "membership"].includes(item.product_type) ||
+    item.price_minor <= 0
+  )
+    return { ok: false, reason_code: "cash_package_not_available" };
+  const { data: method } = await ctx.supabase
+    .from("studio_payment_methods")
+    .select("code")
+    .eq("studio_id", ctx.studio.id)
+    .eq("code", "cash")
+    .eq("active", true)
+    .maybeSingle();
+  if (!method) return { ok: false, reason_code: "cash_payment_disabled" };
+  const summary = {
+    product_name: item.name,
+    amount_minor: item.price_minor,
+    currency: item.currency,
+    payment_received: false,
+    first_reservation_allowed: true,
+    second_reservation_requires_payment: true,
+    starts_with_first_reservation: true,
+  };
+  const expires = new Date(Date.now() + 600000).toISOString();
+  const { error: cancelError } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .update({ status: "cancelled" })
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("action_type", "commerce.cash_purchase")
+    .eq("status", "pending");
+  if (cancelError) return { ok: false, reason_code: "pending_action_update_failed" };
+  const { error } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .insert({
+      studio_id: ctx.studio.id,
+      conversation_id: ctx.conversationId,
+      action_type: "commerce.cash_purchase",
+      action_token_hash: createHash("sha256").update(randomUUID()).digest("hex"),
+      action_payload: {
+        student_id: ctx.studentId,
+        product_id: product,
+        expected_amount: item.price_minor,
+        prepared_turn_id: ctx.turnId,
+      },
+      confirmation_summary: summary,
+      status: "pending",
+      expires_at: expires,
+    });
+  return error
+    ? { ok: false, reason_code: "pending_action_create_failed" }
+    : { ok: true, status: "confirmation_required", summary, expires_at: expires };
+}
+
+async function confirmCashPackage(ctx: AssistantActionToolContext) {
+  if (
+    !ctx.serviceMode ||
+    !ctx.studentId ||
+    !isExplicitAssistantConfirmation(ctx.currentUserMessage)
+  )
+    return { ok: false, reason_code: "explicit_confirmation_required" };
+  const { data: pending, error } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .select("id,status,action_payload,expires_at")
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("action_type", "commerce.cash_purchase")
+    .in("status", ["pending", "executed"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const payload = asObject(pending?.action_payload);
+  if (
+    error ||
+    !pending ||
+    !payload ||
+    payload.student_id !== ctx.studentId ||
+    payload.prepared_turn_id === ctx.turnId ||
+    (pending.status === "pending" && Date.parse(pending.expires_at) <= Date.now())
+  )
+    return { ok: false, reason_code: "cash_confirmation_unavailable" };
+  const { data: result, error: purchaseError } = await ctx.supabase.rpc(
+    "service_create_demi_cash_purchase",
+    {
+      p_studio: ctx.studio.id,
+      p_conversation: ctx.conversationId,
+      p_student: ctx.studentId,
+      p_product: payload.product_id,
+      p_key: pending.id,
+      p_expected_amount: payload.expected_amount,
+    },
+  );
+  if (purchaseError) return { ok: false, reason_code: "cash_purchase_failed" };
+  if (result?.ok)
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({ status: "executed", updated_at: new Date().toISOString() })
+      .eq("id", pending.id)
+      .eq("studio_id", ctx.studio.id);
+  return result;
+}
+
 async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBookingArgs) {
   const sessionId = parseOpaqueRef(args.session_ref, "session");
   if (!sessionId) {
@@ -3450,6 +3573,10 @@ export async function executeAssistantActionTool(
         tool: toolName,
         args,
       });
+    case "prepare_cash_package_purchase":
+      return prepareCashPackage(ctx, args as Record<string, unknown>);
+    case "confirm_cash_package_purchase":
+      return confirmCashPackage(ctx);
     case "prepare_booking":
       return prepareBooking(ctx, args as PrepareBookingArgs);
     case "execute_booking":

@@ -282,6 +282,8 @@ function confirmationReply(toolName: string, result: Record<string, unknown>) {
     }
   }
 
+  if (toolName === "confirm_cash_package_purchase")
+    return "Registré tu paquete con el efectivo pendiente de cobro. Puedes reservar una primera clase; para una segunda reserva tendrás que cubrir el adeudo. La vigencia inicia en la primera clase reservada.";
   const summary = asObject(result.summary);
   if (toolName === "execute_booking" && summary) {
     if (summary.trial_booking === true && result.status === "payment_required") {
@@ -616,6 +618,7 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
     "booking.reschedule": "execute_reschedule",
     "waitlist.join": "execute_waitlist_join",
     "account.activate": "execute_student_access_activation",
+    "commerce.cash_purchase": "confirm_cash_package_purchase",
   };
   const toolName = executeToolByAction[String(pending.action_type ?? "")];
   if (!toolName) return null;

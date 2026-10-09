@@ -6,7 +6,7 @@ Correcciones: confirmación «Sí, confirmo la reserva», solicitud de celular m
 
 ## Verificación
 
-Suite base 986/986; suite integrada 1023/1023; TypeScript, lint focalizado y build pasan. Preparación del banco pasó en Sandbox `hedouonyhynuvwbckdlg`. `demi-prospect-prepayment-uat.sql`: ocho variantes; `demi-2-operational-uat.sql`: diez variantes. Se ejecutaron RPC y triggers reales con datos ficticios, transacciones y ROLLBACK. Cero ejecuciones residuales de estas pruebas en la consulta posterior. No se modificó producción ni se enviaron mensajes a clientes.
+Suite base 986/986; suite integrada 1029/1029; TypeScript, lint focalizado y build pasan. Preparación del banco pasó en Sandbox `hedouonyhynuvwbckdlg`. `demi-prospect-prepayment-uat.sql`: ocho variantes; `demi-2-operational-uat.sql`: diez variantes. Se ejecutaron RPC y triggers reales con datos ficticios, transacciones y ROLLBACK. Cero ejecuciones residuales de estas pruebas en la consulta posterior. No se modificó producción ni se enviaron mensajes a clientes.
 
 Las variantes SQL no equivalen a los 18 casos maestros completos. Asistencia y rechazo usaron la identidad Owner del estudio ficticio. Un primer intento con un miembro sin capacidad de asistencia recibió forbidden; se corrigió el actor del harness sin cambiar permisos del producto.
 
@@ -56,3 +56,13 @@ No se ha completado el UAT externo ni se han aprobado los 18 casos maestros. M01
 Verificación autenticada del preview `4604a10`: login y selección del estudio de Sandbox pasan; banco UAT y configuración de seguimientos devuelven HTTP 200. Se creó ejecución aislada `45c95aa6-6ebf-4531-954f-3aceadc85d47`, se llamó al worker desplegado desde la acción del banco y se conservó evidencia. Dos consultas al modelo real (prospecto y alumna) pasaron con herramientas ejecutadas y respuestas capturadas; después se comprobó preparación de reserva, confirmación explícita y una reserva efectiva para la alumna. La consulta de grupo obtuvo total de $300 y datos bancarios ficticios antes de pedir acompañantes. Son variantes conversacionales, no aprobación integral de casos.
 
 Se corrigió la instrucción heredada que decía siete días desde cancelar: el prompt de sistema fija el inicio desde la primera clase reservada, como indicó el usuario. La selección del crédito verifica elegibilidad real para no tratar un crédito consumido como utilizable. Un trigger programa seguimientos desde la respuesta persistida de Demi, sin depender de que el modelo llame a una herramienta de CRM; otra respuesta de la persona detiene la cadena previa.
+
+## Tercera ejecución: audio, efectivo y atención humana
+
+Audio integrado en el webhook: descarga restringida por formato y tamaño, transcripción real mediante OpenAI, persistencia como mensaje de usuario y ejecución normal de Demi. Si falla se solicita texto o reenvío y se conserva un caso humano. El banco permite archivos de audio. Seis pruebas de transcripción y tres controles de confirmación en efectivo cubren errores del proveedor, contenido vacío, preguntas, negativa y ejecución en el mismo turno.
+
+Compra en efectivo para alumnas regulares: consulta producto y precio actuales, prepara resumen y exige confirmación explícita en un turno posterior. Crea venta con adeudo y paquete, nunca un pago ficticio. La primera reserva activa la vigencia desde la fecha de esa clase; una segunda se bloquea hasta registrar el cobro real. La repetición no crea otra venta. Se añadió `/admin/mas/demi/atencion` para asignarse casos, pausar Demi y resolver con nota antes de devolver el control.
+
+Pasaron seis variantes SQL nuevas de efectivo y control humano, y dos nuevas de grupos mixtos y cupo modificado. Las seis suites completas se volvieron a ejecutar con RPC reales y ROLLBACK: 44 variantes distintas; la suite de crédito repite cinco comprobaciones grupales. El caso parcial conserva la reserva lograda, el importe sin asignar y un handoff; no acredita un reembolso ejecutado.
+
+El usuario autorizó el número 3323291878 para la prueba externa de WhatsApp. El banco incorpora diagnóstico Graph y envío explícito de una plantilla aprobada sin variables a un número autorizado, conservando evidencia y evitando reintentos ciegos. Aceptación no equivale a entrega. Faltan página/cuenta de Facebook e Instagram y enlace Sandbox de Mercado Pago. La matriz anterior conserva el historial de pendientes; las variantes nuevas amplían M06, M13, M17 y M18, sin aprobar integralmente los casos maestros.

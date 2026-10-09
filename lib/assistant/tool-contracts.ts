@@ -196,6 +196,27 @@ export type PrepareStudentAccessActivationArgs = EmptyArgs;
 export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
   {
     type: "function",
+    name: "prepare_cash_package_purchase",
+    strict: true,
+    description:
+      "Prepara compra de paquete en efectivo para una alumna regular identificada. Usa product_ref real consultada. Explica el precio, deuda pendiente y que se permite una primera reserva; una segunda requiere cobrar el adeudo. La vigencia inicia en la primera clase reservada. Pide confirmación explícita antes de crear venta o créditos.",
+    parameters: {
+      type: "object",
+      properties: { product_ref: { type: "string" } },
+      required: ["product_ref"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "confirm_cash_package_purchase",
+    strict: true,
+    description:
+      "Confirma la compra en efectivo preparada en un turno anterior tras un sí explícito. Registra deuda y paquete; nunca registra efectivo recibido. No usar para pruebas ni prospectos.",
+    parameters: { type: "object", properties: {}, required: [], additionalProperties: false },
+  },
+  {
+    type: "function",
     name: "update_contact_followup",
     strict: true,
     description:

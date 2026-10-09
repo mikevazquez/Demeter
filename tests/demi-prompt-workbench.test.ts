@@ -742,3 +742,47 @@ describe("Demi shared commercial price", () => {
     expect(scopes).toEqual(["studio", "studio", "studio", "studio"]);
   });
 });
+
+describe("cash purchases require a separate explicit confirmation", () => {
+  for (const [label, message, preparedTurn] of [
+    ["questions", "¿Sí puedo pagar después?", "previous"],
+    ["negative confirmation", "No confirmo la compra", "previous"],
+    ["preparation and execution in one turn", "Sí, confirmo", "current"],
+  ]) {
+    it(`blocks ${label} without creating a sale`, async () => {
+      const mod = serverModule<typeof import("../lib/assistant/action-tools")>(
+        "lib/assistant/action-tools.ts",
+        { "node:crypto": {}, "./read-tools": {}, "./group-booking": {} },
+      );
+      const rpc = vi.fn();
+      const chain: Record<string, unknown> = {};
+      for (const name of ["select", "eq", "in", "order", "limit"]) chain[name] = () => chain;
+      chain.maybeSingle = async () => ({
+        data: {
+          id: "pending",
+          status: "pending",
+          expires_at: new Date(Date.now() + 60000).toISOString(),
+          action_payload: { student_id: "student", prepared_turn_id: preparedTurn },
+        },
+        error: null,
+      });
+      const result = await mod.executeAssistantActionTool(
+        {
+          supabase: { from: () => chain, rpc } as never,
+          studio: { id: "studio" } as never,
+          conversationId: "conversation",
+          turnId: "current",
+          studentId: "student",
+          crmContactId: null,
+          activationUrl: null,
+          serviceMode: true,
+          currentUserMessage: message,
+        },
+        "confirm_cash_package_purchase",
+        {},
+      );
+      expect(result).toMatchObject({ ok: false });
+      expect(rpc).not.toHaveBeenCalled();
+    });
+  }
+});

@@ -14,6 +14,8 @@ import {
   reviewDemiUatReceipt,
   markDemiUatAttendance,
   recordDemiUatCase,
+  checkDemiUatMeta,
+  sendDemiUatMetaTest,
 } from "./actions";
 type Data = Awaited<ReturnType<typeof getDemiUatRun>>;
 const PERSONAS: Record<string, string> = {
@@ -48,6 +50,7 @@ export default function Bank({
   const [persona, setPersona] = useState("prospect");
   const [tab, setTab] = useState("reservations");
   const [session, setSession] = useState("timely");
+  const [metaRecipient, setMetaRecipient] = useState("");
   const [hours, setHours] = useState(6);
   async function perform(action: () => Promise<Data>) {
     setBusy(true);
@@ -221,7 +224,7 @@ export default function Bank({
                 <input
                   name="file"
                   type="file"
-                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  accept="image/jpeg,image/png,image/webp,application/pdf,audio/ogg,audio/mpeg,audio/mp4,audio/wav,audio/webm"
                 />
               </label>
               <details>
@@ -450,10 +453,41 @@ export default function Bank({
             </div>
           </section>
           <section>
+            <h2>Prueba externa de WhatsApp</h2>
+            <p>
+              Consulta la conexión real con Meta. El envío usa una plantilla aprobada sin variables
+              y llega al número indicado; usa únicamente un destinatario autorizado. La aceptación
+              de Meta todavía no comprueba recepción.
+            </p>
+            <button disabled={busy} onClick={() => perform(() => checkDemiUatMeta(data.run.id))}>
+              Comprobar conexión Meta
+            </button>
+            <label>
+              Número de prueba autorizado
+              <input
+                value={metaRecipient}
+                onChange={(e) => setMetaRecipient(e.target.value)}
+                inputMode="tel"
+              />
+            </label>
+            <button
+              disabled={busy || !metaRecipient}
+              onClick={() => perform(() => sendDemiUatMetaTest(data.run.id, metaRecipient))}
+            >
+              Enviar prueba externa al número indicado
+            </button>
+            {data.artifacts
+              .filter((a) => a.kind === "meta_readiness" || a.kind === "meta_external_test")
+              .slice(0, 5)
+              .map((a) => (
+                <pre key={a.id}>{JSON.stringify(a.payload, null, 2)}</pre>
+              ))}
+          </section>
+          <section>
             <h2>Límites de esta preparación</h2>
             <p>
-              WhatsApp externo, Instagram, Facebook, audios y pagos reales en Mercado Pago o la app
-              necesitan sus cuentas e integraciones de prueba. Este banco registra fallos del
+              Recepción externa de WhatsApp, Instagram, Facebook y pagos reales en Mercado Pago o la
+              app necesitan sus cuentas e integraciones de prueba. Este banco registra fallos del
               producto; no los sustituye por resultados exitosos.
             </p>
             <details>

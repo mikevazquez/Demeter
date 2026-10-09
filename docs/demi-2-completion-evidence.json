@@ -35,6 +35,52 @@
             "case": "M06",
             "passed": true,
             "variant": "review_allocations_once"
+          },
+          {
+            "case": "M06",
+            "passed": true,
+            "variant": "mixed_existing_credit_and_one_paid_trial"
+          },
+          {
+            "case": "M06",
+            "passed": true,
+            "variant": "capacity_changed_partial_success_no_oversell_human_review"
+          }
+        ]
+      }
+    ],
+    "demi-2-cash-human-uat.sql": [
+      {
+        "results": [
+          {
+            "case": "M13",
+            "passed": true,
+            "variant": "cash_debt_without_fake_payment_or_start"
+          },
+          {
+            "case": "M13",
+            "passed": true,
+            "variant": "cash_sale_idempotent"
+          },
+          {
+            "case": "M13",
+            "passed": true,
+            "variant": "first_booking_starts_validity_second_blocked_until_collection"
+          },
+          {
+            "case": "M13",
+            "passed": true,
+            "variant": "actual_collection_unlocks_second_booking_without_reset"
+          },
+          {
+            "case": "M17",
+            "passed": true,
+            "variant": "takeover_persisted_resolution_required"
+          },
+          {
+            "case": "M17",
+            "passed": true,
+            "variant": "resolution_returns_control_idempotently"
           }
         ]
       }
@@ -241,24 +287,9 @@
       }
     ]
   },
-  "preview": {
-    "commit": "4604a10",
-    "url": "https://demeterbueno-mttv2dgb1-demeter3.vercel.app",
-    "run_id": "45c95aa6-6ebf-4531-954f-3aceadc85d47",
-    "studio_id": "9344d366-8d96-4609-badb-fe7f1bd52948",
-    "authenticated_pages": ["/admin/mas/demi/uat", "/admin/mas/demi/seguimientos"],
-    "worker_invocation": "passed",
-    "real_model_queries": ["prospect", "student_active"],
-    "student_booking": {
-      "confirmation": "Sí, confirmo la reserva.",
-      "reserved_count": 1
-    },
-    "group_prepare": {
-      "participant_count": 2,
-      "amount_minor": 30000,
-      "status": "awaiting_receipt"
-    },
-    "transport": "captured",
-    "external_provider_verified": false
-  }
+  "automated_tests": {
+    "passed": 1029,
+    "total": 1029
+  },
+  "complete_master_cases_approved": 0
 }

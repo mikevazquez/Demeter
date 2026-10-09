@@ -1,6 +1,7 @@
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
+import { transcribeDemiAudio } from "@/lib/assistant/audio-transcription";
 import { handleDemiGroupReceipt } from "@/lib/assistant/group-booking";
 import { readTransferReceipt } from "@/lib/assistant/receipt-reader";
 import { trialReceiptConfirmation } from "@/lib/assistant/receipt-confirmation";
@@ -152,6 +153,14 @@ async function hasBlockingOpenHandoff(input: {
   studioId: string;
   conversationId: string;
 }) {
+  const conversation = await input.supabase
+    .from("assistant_conversations")
+    .select("context")
+    .eq("studio_id", input.studioId)
+    .eq("id", input.conversationId)
+    .maybeSingle();
+  if (conversation.error) throw new Error("human_control_lookup_failed");
+  if (conversation.data?.context?.human_takeover === true) return true;
   const { data, error } = await input.supabase
     .from("assistant_handoffs")
     .select("reason_code")
@@ -1367,7 +1376,31 @@ export async function POST(request: Request) {
       continue;
     }
 
-    if (message.mediaId || META_MEDIA_MESSAGE_TYPES.has(message.messageType)) {
+    let audioTranscribed = false;
+    if (message.messageType === "audio" && message.mediaId) {
+      try {
+        const transcript = await transcribeDemiAudio({
+          config: webhookConfig,
+          mediaId: message.mediaId,
+        });
+        const { error: transcriptError } = await supabase
+          .from("assistant_turns")
+          .update({ content: transcript })
+          .eq("id", inboundTurnId)
+          .eq("studio_id", studioId)
+          .eq("conversation_id", conversationId)
+          .eq("role", "user");
+        if (transcriptError) throw new Error("audio_transcript_persist_failed");
+        message.text = transcript;
+        audioTranscribed = true;
+      } catch {
+        // Unreadable audio follows the persisted human-review flow; it cannot trigger a booking.
+      }
+    }
+    if (
+      !audioTranscribed &&
+      (message.mediaId || META_MEDIA_MESSAGE_TYPES.has(message.messageType))
+    ) {
       let transferReceipt: Awaited<ReturnType<typeof activateTransferReceiptIfPending>> | null =
         null;
 
@@ -1439,9 +1472,12 @@ export async function POST(request: Request) {
             caption,
           );
 
-        reply = paymentLanguage
-          ? "Recibí tu comprobante. No pude asociarlo automáticamente a una compra pendiente, así que lo dejé para validación del pago."
-          : "Recibí tu archivo. Lo dejé para revisión.";
+        reply =
+          message.messageType === "audio"
+            ? "Recibí tu audio, pero no pude transcribirlo. ¿Puedes reenviarlo o escribirlo? Lo dejé para revisión del equipo."
+            : paymentLanguage
+              ? "Recibí tu comprobante. No pude asociarlo automáticamente a una compra pendiente, así que lo dejé para validación del pago."
+              : "Recibí tu archivo. Lo dejé para revisión.";
 
         deterministicOutcome = "media_handoff";
       }

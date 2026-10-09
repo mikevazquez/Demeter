@@ -141,6 +141,7 @@ export default async function DemiDemoPage() {
   if (!config) {
     return (
       <main className="demi-page demi-settings-page">
+        <Link href="/admin/mas/demi/atencion">Atención humana</Link>
         <Link className="demi-back" href="/admin/mas">
           ← Más
         </Link>

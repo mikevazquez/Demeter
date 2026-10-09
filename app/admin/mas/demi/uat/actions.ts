@@ -1,5 +1,10 @@
 "use server";
 
+import {
+  getMetaWhatsAppAdminDiagnostics,
+  sendMetaWhatsAppTemplateTest,
+} from "@/lib/assistant/meta-whatsapp-admin";
+import { normalizeMexicanPhone } from "@/lib/phone";
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
@@ -53,6 +58,7 @@ const TABLES = [
   "notification_deliveries",
   "notification_delivery_attempts",
   "notification_rules",
+  "demi_cash_purchases",
   "demi_group_bookings",
   "demi_followups",
   "demi_followup_settings",
@@ -184,7 +190,17 @@ export async function sendDemiUatMessage(form: FormData) {
     if (hasFile) {
       if (
         file.size > 900 * 1024 ||
-        !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(file.type)
+        ![
+          "image/jpeg",
+          "image/png",
+          "image/webp",
+          "application/pdf",
+          "audio/ogg",
+          "audio/mpeg",
+          "audio/mp4",
+          "audio/wav",
+          "audio/webm",
+        ].includes(file.type)
       )
         throw new Error("demi_uat_invalid_receipt");
       media.set(mediaId, {
@@ -220,7 +236,13 @@ export async function sendDemiUatMessage(form: FormData) {
       countryCallingCode: "52",
       templates: {},
     };
-    const type = hasFile ? (file.type === "application/pdf" ? "document" : "image") : "text";
+    const type = hasFile
+      ? file.type.startsWith("audio/")
+        ? "audio"
+        : file.type === "application/pdf"
+          ? "document"
+          : "image"
+      : "text";
     const message = {
       id: providerId,
       from: person.wa_id,
@@ -481,4 +503,107 @@ export async function markDemiUatAttendance(id: string, reservationId: string, s
     if (result.error) throw new Error(result.error.message);
   });
   return getDemiUatRun(id);
+}
+
+export async function checkDemiUatMeta(runId: string) {
+  const ctx = await ownedRun(runId);
+  const run = ctx.run;
+  const diagnostics = await getMetaWhatsAppAdminDiagnostics(run.source_studio_id);
+  await ctx.service
+    .from("demi_uat_artifacts")
+    .insert({
+      run_id: run.id,
+      kind: "meta_readiness",
+      payload: {
+        connected: diagnostics.connected,
+        error_code: diagnostics.errorCode,
+        subscribed_app_count: diagnostics.subscribedApps.length,
+        approved_templates: diagnostics.templates
+          .filter((t) => t.status === "APPROVED")
+          .map((t) => ({
+            name: t.name,
+            language: t.language,
+            variable_count: t.variableCount,
+            test_ready: t.testReady,
+          })),
+      },
+    });
+  return getDemiUatRun(run.id);
+}
+
+export async function sendDemiUatMetaTest(runId: string, recipient: string) {
+  return locked(runId, async (ctx) => {
+    const run = ctx.run;
+    const phone = normalizeMexicanPhone(recipient);
+    if (!phone) throw new Error("meta_test_phone_invalid");
+    const diagnostics = await getMetaWhatsAppAdminDiagnostics(run.source_studio_id);
+    const template = diagnostics.templates.find(
+      (t) => t.status === "APPROVED" && t.testReady && t.variableCount === 0,
+    );
+    if (!diagnostics.connected || !template)
+      throw new Error(diagnostics.errorCode ?? "meta_zero_variable_template_unavailable");
+    const { data: existing, error: lookupError } = await ctx.service
+      .from("demi_uat_artifacts")
+      .select("id")
+      .eq("run_id", run.id)
+      .eq("kind", "meta_external_test")
+      .contains("payload", { recipient: phone })
+      .limit(1)
+      .maybeSingle();
+    if (lookupError) throw new Error("meta_test_lookup_failed");
+    if (existing) return getDemiUatRun(run.id);
+    // Record before dispatch: ambiguous network results require review, never blind replay.
+    const { data: attempt, error } = await ctx.service
+      .from("demi_uat_artifacts")
+      .insert({
+        run_id: run.id,
+        kind: "meta_external_test",
+        payload: {
+          recipient: phone,
+          template: template.name,
+          language: template.language,
+          status: "dispatching",
+          delivery_verified: false,
+        },
+      })
+      .select("id")
+      .single();
+    if (error || !attempt) throw new Error("meta_test_audit_failed");
+    try {
+      const id = await sendMetaWhatsAppTemplateTest({
+        studioId: run.source_studio_id,
+        recipient: phone,
+        templateName: template.name,
+        languageCode: template.language,
+      });
+      await ctx.service
+        .from("demi_uat_artifacts")
+        .update({
+          payload: {
+            recipient: phone,
+            template: template.name,
+            language: template.language,
+            status: "accepted",
+            provider_message_id: id,
+            delivery_verified: false,
+          },
+        })
+        .eq("id", attempt.id);
+    } catch (error) {
+      await ctx.service
+        .from("demi_uat_artifacts")
+        .update({
+          payload: {
+            recipient: phone,
+            template: template.name,
+            language: template.language,
+            status: "requires_review",
+            error_code: error instanceof Error ? error.message : "meta_test_failed",
+            delivery_verified: false,
+          },
+        })
+        .eq("id", attempt.id);
+    }
+    return getDemiUatRun(run.id);
+  });
 }
