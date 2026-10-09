@@ -14,7 +14,7 @@ describe("Demi conversation guidance for UAT rules", () => {
     expect(guidance).toContain("antes de recibir el comprobante");
     expect(guidance).toContain("Recibir el comprobante no significa que el pago esté validado");
     expect(guidance).toContain("No llames a prepare_booking para una prospecta con pago previo");
-    expect(guidance).toContain("no digas que estás confirmando o apartando una reserva");
+    expect(guidance).toContain("ni digas que estás confirmando o apartando una reserva");
   });
 
   it("checks former-student enrollment and lets an active package finish", () => {
