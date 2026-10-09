@@ -262,7 +262,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     name: "prepare_first_class_payment",
     strict: true,
     description:
-      "Obtiene el precio y los datos bancarios oficiales para un prospecto sin ficha de alumna que solicita su primera clase individual por transferencia. Usa la clase exacta disponible. Sólo prepara el pago: no crea alumna ni reserva, no requiere confirmar una reserva ni elegir paquete. Devuelve group_id para esperar el comprobante y luego completar con un único participante. Si exige recurso, ofrece las opciones devueltas y vuelve a llamar con el recurso elegido.",
+      "Obtiene el precio y los métodos oficiales para la primera clase de un prospecto sin ficha de alumna: transferencia/depósito a Bancomer o liga individual de Mercado Pago cuando está habilitada. Usa la clase exacta disponible. Sólo prepara el pago: no crea alumna ni reserva, no requiere confirmar una reserva ni elegir paquete. Devuelve group_id: espera comprobante bancario o payment_verified=true de Mercado Pago y después completa con los datos faltantes de un único participante. Si automatic_verification=true y receipt_required=false, no solicites comprobante. Si exige recurso, ofrece las opciones devueltas y vuelve a llamar con el recurso elegido.",
     parameters: {
       type: "object",
       properties: { session_ref: { type: "string" }, resource_ref: { type: ["string", "null"] } },
@@ -275,7 +275,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     name: "prepare_group_booking",
     strict: true,
     description:
-      "Prepara el total de una reserva grupal. Antes del comprobante solicita sólo clase, número de participantes y cuántas pagarán primera clase por transferencia; no pidas nombres ni celulares. Las alumnas con créditos se validan individualmente después. No crea reservas ni retiene cupo. Devuelve group_id y datos bancarios configurados.",
+      "Prepara el total de una reserva grupal. Antes del comprobante bancario o pago Mercado Pago verificado solicita sólo clase, número de participantes y cuántas pagarán primera clase; no pidas nombres ni celulares. Las alumnas con créditos se validan individualmente después. No crea reservas ni retiene cupo. Devuelve group_id y datos bancarios o external_checkout. Si automatic_verification=true y receipt_required=false, espera confirmación del proveedor sin pedir comprobante.",
     parameters: {
       type: "object",
       properties: {
@@ -292,7 +292,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     name: "complete_group_booking",
     strict: true,
     description:
-      "Después de un comprobante aceptado, completa el group_id: puede ser una primera clase individual preparada con prepare_first_class_payment (un participante) o un grupo. Recibe juntos los datos faltantes de cada participante y crea reservas individuales provisionales con cupo y elegibilidad reales. El pagador no se convierte automáticamente en participante. Reporta cada resultado y cualquier importe no asignado; no confirma todo el grupo ante un fallo parcial. Una prueba con reserva pendiente requiere cambiar/cancelar la existente.",
+      "Después de comprobante bancario aceptado o payment_verified=true de Mercado Pago, completa el group_id: puede ser una primera clase individual preparada con prepare_first_class_payment (un participante) o un grupo. Recibe juntos los datos faltantes de cada participante y crea reservas individuales con cupo y elegibilidad reales; la transferencia es provisional y el pago Mercado Pago verificado no requiere revisión manual. El pagador no se convierte automáticamente en participante. Reporta cada resultado y cualquier importe no asignado; no confirma todo el grupo ante un fallo parcial. Una prueba con reserva pendiente requiere cambiar/cancelar la existente.",
     parameters: {
       type: "object",
       properties: {

@@ -476,24 +476,34 @@ export async function getCommercialOptions(
 }
 
 export async function getStudioInformation(ctx: AssistantToolContext) {
-  const [{ data: studioDetails, error: studioError }, { data: locations, error: locationError }] =
-    await Promise.all([
-      ctx.supabase
-        .from("studios")
-        .select("contact_phone,contact_email,website_url")
-        .eq("id", ctx.studio.id)
-        .maybeSingle(),
-      ctx.supabase
-        .from("studio_locations")
-        .select("name,address,is_primary")
-        .eq("studio_id", ctx.studio.id)
-        .eq("active", true)
-        .order("is_primary", { ascending: false })
-        .order("created_at")
-        .limit(10),
-    ]);
+  const [
+    { data: studioDetails, error: studioError },
+    { data: locations, error: locationError },
+    { data: preparation, error: preparationError },
+  ] = await Promise.all([
+    ctx.supabase
+      .from("studios")
+      .select("contact_phone,contact_email,website_url")
+      .eq("id", ctx.studio.id)
+      .maybeSingle(),
+    ctx.supabase
+      .from("studio_locations")
+      .select("name,address,is_primary")
+      .eq("studio_id", ctx.studio.id)
+      .eq("active", true)
+      .order("is_primary", { ascending: false })
+      .order("created_at")
+      .limit(10),
+    ctx.supabase
+      .from("assistant_admin_rules")
+      .select("instruction")
+      .eq("studio_id", ctx.studio.id)
+      .eq("rule_key", "first_class_preparation")
+      .eq("enabled", true)
+      .maybeSingle(),
+  ]);
 
-  if (studioError || locationError) {
+  if (studioError || locationError || preparationError) {
     return { ok: false, error: "studio_information_unavailable" };
   }
 
@@ -516,6 +526,7 @@ export async function getStudioInformation(ctx: AssistantToolContext) {
     website_url: studioDetails?.website_url ?? null,
     primary_location: primaryLocation,
     locations: normalizedLocations,
+    first_class_preparation: preparation?.instruction?.trim() || null,
   };
 }
 

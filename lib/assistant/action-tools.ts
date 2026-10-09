@@ -3851,7 +3851,9 @@ export async function executeAssistantActionTool(
         p_reason: args.reason,
         p_source: ctx.turnId,
       });
-      return result.error ? { ok: false, reason_code: "crm_followup_update_failed" } : result.data;
+      return result.error
+        ? { ok: false, reason_code: "crm_followup_update_failed", error_code: result.error.code }
+        : result.data;
     }
     case "prepare_first_class_payment":
       return prepareFirstClassPayment(ctx, args);

@@ -1,0 +1,42 @@
+begin;
+set local role service_role;
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+do $$
+declare source uuid:='9fe23cfa-fb47-4670-afeb-ed4a56433772'; owner uuid; r jsonb; s uuid; st uuid; foreign_student uuid; c uuid; h uuid; result jsonb; policy record; n integer:=0; states jsonb;
+begin
+select user_id into owner from public.studio_memberships where studio_id=source and active and role='owner' limit 1;
+r:=public.service_create_demi_uat_run(source,owner,'M17-all-reasons'); s:=(r->>'studio_id')::uuid;
+st:=(r#>>'{fixtures,people,student_active,student_id}')::uuid;
+select jsonb_build_object('student_type',student_type,'trial_status',trial_status) into states from public.students where id=st;
+perform set_config('request.jwt.claim.sub',owner::text,true);
+perform set_config('request.jwt.claims',jsonb_build_object('role','service_role','sub',owner)::text,true);
+for policy in select reason_code from public.assistant_handoff_policies where studio_id=s and enabled order by reason_code loop
+ c:=gen_random_uuid();
+ insert into public.assistant_conversations(id,studio_id,student_id,channel) values(c,s,st,'internal_demo');
+ result:=public.assistant_create_handoff(s,c,st,policy.reason_code,'UAT: resumen y dato pendiente para revisión manual.');
+ if result->>'ok'<>'true' or result->>'references_saved'<>'true' then raise exception 'create_%:%',policy.reason_code,result; end if;
+ h:=(result->>'handoff_id')::uuid;
+ if not exists(select 1 from public.assistant_handoffs where id=h and studio_id=s and conversation_id=c and student_id=st and reason_code=policy.reason_code and status='open' and context->>'conversation_id'=c::text and context->>'student_id'=st::text and note is not null) then raise exception 'handoff_not_localizable'; end if;
+ result:=public.assistant_create_handoff(s,c,st,policy.reason_code,'UAT: referencia adicional conservada.');
+ if result->>'handoff_id'<>h::text or (select count(*) from public.assistant_handoffs where conversation_id=c)<>1 or not exists(select 1 from public.assistant_handoffs where id=h and note like '%referencia adicional%') then raise exception 'handoff_replay'; end if;
+ result:=public.admin_claim_demi_handoff(s,h);
+ if result->>'ok'<>'true' or not exists(select 1 from public.assistant_conversations where id=c and context->>'human_takeover'='true') then raise exception 'claim_%:%',policy.reason_code,result; end if;
+ result:=public.admin_resolve_demi_handoff(s,h,'');
+ if result->>'reason_code'<>'resolution_note_required' then raise exception 'empty_resolution'; end if;
+ result:=public.admin_resolve_demi_handoff(s,h,'Equipo resolvió el caso UAT y devolvió control. No hubo devolución automática.');
+ if result->>'automatic_control_returned'<>'true' or exists(select 1 from public.assistant_conversations where id=c and context->>'human_takeover'='true') then raise exception 'resolve_%:%',policy.reason_code,result; end if;
+ if (select jsonb_build_object('student_type',student_type,'trial_status',trial_status) from public.students where id=st)<>states then raise exception 'identity_changed'; end if;
+ n:=n+1;
+end loop;
+if n<>9 then raise exception 'expected_nine_reasons:%',n; end if;
+c:=gen_random_uuid();insert into public.assistant_conversations(id,studio_id,student_id,channel) values(c,s,st,'internal_demo');
+result:=public.assistant_create_handoff(source,c,null,'refund_request','Cruce de estudio UAT');
+if result->>'reason_code'<>'conversation_identity_mismatch' then raise exception 'handoff_studio_scope'; end if;
+select id into foreign_student from public.students where studio_id=source limit 1;
+result:=public.assistant_create_handoff(s,c,foreign_student,'refund_request','Cruce de identidad UAT');
+if result->>'reason_code'<>'student_identity_mismatch' then raise exception 'handoff_student_scope'; end if;
+if has_function_privilege('anon','public.assistant_create_handoff(uuid,uuid,uuid,text,text)','EXECUTE') or has_function_privilege('authenticated','private.assistant_create_handoff_base(uuid,uuid,uuid,text,text)','EXECUTE') then raise exception 'handoff_permissions'; end if;
+perform set_config('uat.handoff_all',jsonb_build_object('configured_reasons_passed',n,'scope_and_permissions',true,'manual_refunds_only',true)::text,true);
+end $$;
+select current_setting('uat.handoff_all')::jsonb result;
+rollback;

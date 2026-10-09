@@ -1,4 +1,5 @@
 begin;
+set local role service_role;
 set local request.jwt.claim.role='service_role';
 set local request.jwt.claims='{"role":"service_role"}';
 do $$
@@ -48,9 +49,16 @@ begin
  r:=public.service_schedule_demi_followups(s,c,'prospect','uat-notqualified',t);
  if exists(select 1 from public.service_claim_demi_followups(s,t+interval '3 days',25)) then raise exception 'notqualified_send'; end if;
  results:=results||jsonb_build_array(jsonb_build_object('case','M03','variant','not_qualified_requires_reason_and_stops','passed',true));
+ r:=public.service_update_demi_followup_stage(s,c,'opt_out',null,'uat-combined');
+ if not exists(select 1 from public.crm_followups where studio_id=s and person_id=person and qualification='not_qualified' and qualification_reason='UAT fuera de zona') then raise exception 'optout_lost_qualification'; end if;
+ if not exists(select 1 from public.demi_qualification_history where studio_id=s and person_id=person and qualification='not_qualified' and qualification_reason='UAT fuera de zona') then raise exception 'qualification_history_missing'; end if;
+ update public.person_communication_preferences set retention_enabled=true,promotions_enabled=true where studio_id=s and person_id=person;
+ results:=results||jsonb_build_array(jsonb_build_object('case','M03','variant','combined_rejection_optout_preserves_reason_history','passed',true));
+
 
  insert into public.assistant_turns(studio_id,conversation_id,direction,role,content) values(s,c,'inbound','user','UAT vuelvo a preguntar');
  if not exists(select 1 from public.crm_followups where studio_id=s and person_id=person and qualification='pending' and qualification_reason is null) then raise exception 'reply_no_reactivation'; end if;
+ if not exists(select 1 from public.demi_qualification_history where studio_id=s and person_id=person and qualification='not_qualified' and qualification_reason='UAT fuera de zona') then raise exception 'reactivation_lost_history'; end if;
  r:=public.service_schedule_demi_followups(s,c,'prospect','uat-reply',t);
  select * into f from public.service_claim_demi_followups(s,t+interval '1 day',25);
  if f.id is null then raise exception 'reply_lease_setup'; end if;

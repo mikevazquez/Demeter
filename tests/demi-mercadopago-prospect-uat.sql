@@ -1,7 +1,8 @@
 begin;
+set local role service_role;
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 do $$
-declare s uuid:='04c7022a-7340-4a60-aa66-73bd096cfcfc'; c uuid:='cc2a9e1c-01c7-442e-b281-d0ae3d1ef0ca'; g uuid:='842d61d3-8eae-4895-81de-b3779c6145c8'; r jsonb; request_id uuid; o jsonb; students_before integer; intent uuid;
+declare s uuid:='04c7022a-7340-4a60-aa66-73bd096cfcfc'; c uuid:='cc2a9e1c-01c7-442e-b281-d0ae3d1ef0ca'; g uuid:='842d61d3-8eae-4895-81de-b3779c6145c8'; r jsonb; request_id uuid; o jsonb; students_before integer; intent uuid; notification public.demi_payment_requests%rowtype; attempt integer;
 begin
 if not exists(select 1 from public.demi_uat_runs where studio_id=s) then raise exception 'synthetic_fixture_required'; end if;
 update public.demi_mercadopago_settings set enabled=false where studio_id=s;
@@ -45,6 +46,29 @@ r:=public.service_apply_demi_mercadopago_order(request_id,o);
 if r->>'idempotent'<>'true' then raise exception 'approval_replay:%',r; end if;
 r:=public.service_apply_demi_mercadopago_order(request_id,jsonb_set(o,'{transactions,payments,0,id}','"WRONG-PAYMENT"'));
 if r->>'reason_code'<>'provider_payment_identity_changed' then raise exception 'payment_identity:%',r; end if;
+for attempt in 1..3 loop
+ select * into notification from public.service_claim_demi_payment_notifications(s) where id=request_id;
+ if notification.id is null or notification.notification_attempts<>attempt then raise exception 'notification_claim:%',attempt; end if;
+ r:=public.service_finish_demi_payment_notification(request_id,gen_random_uuid(),true,'uat-notification',null,'UAT pago confirmado');
+ if r->>'reason_code'<>'notification_lease_lost' then raise exception 'notification_lease_guard'; end if;
+ r:=public.service_finish_demi_payment_notification(request_id,notification.notification_lease,false,null,'meta_429',null);
+ if r->>'status'<>(case when attempt=3 then 'review' else 'pending' end) then raise exception 'notification_retry:%',r; end if;
+end loop;
+if exists(select 1 from public.service_claim_demi_payment_notifications(s)) then raise exception 'notification_fourth_attempt'; end if;
+if not exists(select 1 from public.assistant_handoffs where conversation_id=c and status='open' and context->'payment_requests' is not null) then raise exception 'notification_handoff_refs'; end if;
+update public.assistant_handoffs set status='resolved' where conversation_id=c;
+update public.demi_payment_requests set notification_status='pending',notification_attempts=0 where id=request_id;
+select * into notification from public.service_claim_demi_payment_notifications(s) where id=request_id;
+update public.demi_payment_requests set notification_claimed_at=clock_timestamp()-interval '6 minutes' where id=request_id;
+perform public.service_claim_demi_payment_notifications(s);
+if not exists(select 1 from public.demi_payment_requests where id=request_id and notification_status='review' and notification_error='delivery_outcome_unknown') then raise exception 'unknown_delivery_retried'; end if;
+update public.assistant_handoffs set status='resolved' where conversation_id=c;
+update public.demi_payment_requests set notification_status='pending',notification_attempts=0 where id=request_id;
+select * into notification from public.service_claim_demi_payment_notifications(s) where id=request_id;
+r:=public.service_finish_demi_payment_notification(request_id,notification.notification_lease,true,'UAT-NOTIFICATION-ACCEPTED',null,'UAT pago confirmado');
+if r->>'status'<>'sent' or not exists(select 1 from public.assistant_turns where conversation_id=c and channel_message_ref='UAT-NOTIFICATION-ACCEPTED') then raise exception 'notification_not_persisted'; end if;
+r:=public.service_finish_demi_payment_notification(request_id,notification.notification_lease,true,'UAT-NOTIFICATION-ACCEPTED',null,'UAT pago confirmado');
+if r->>'reason_code'<>'notification_lease_lost' or (select count(*) from public.assistant_turns where conversation_id=c and channel_message_ref='UAT-NOTIFICATION-ACCEPTED')<>1 then raise exception 'notification_replay'; end if;
 r:=public.service_complete_demi_group(s,c,g,'[{"name":"UAT Pago Automático","phone":"9990000001"}]');
 if r->>'status'<>'validated' or r->>'ok'<>'true' or r->>'payment_validation_required'<>'false' then raise exception 'paid_completion:%',r; end if;
 select transfer_intent_id into intent from public.demi_group_participants where group_id=g;
@@ -53,5 +77,5 @@ r:=public.service_complete_demi_group(s,c,g,'[{"name":"UAT Pago Automático","ph
 if r->>'idempotent'<>'true' or (select count(*) from public.payments p join public.assistant_transfer_purchase_intents i on i.sale_id=p.sale_id where i.id=intent)<>1 then raise exception 'booking_replay:%',r; end if;
 if has_function_privilege('anon','public.service_apply_demi_mercadopago_order(uuid,jsonb)','EXECUTE') or has_function_privilege('authenticated','public.service_activate_demi_paid_trial(uuid,uuid,uuid,uuid,uuid,integer)','EXECUTE') then raise exception 'permissions'; end if;
 end $$;
-select 'passed' result,18 controls,'synthetic provider data; rollback; not an external payment' scope;
+select 'passed' result,24 controls,'synthetic provider data; rollback; not an external payment' scope;
 rollback;
