@@ -14,9 +14,14 @@ describe("Mercado Pago return origin", () => {
     expect(actions).not.toContain("VERCEL_PROJECT_PRODUCTION_URL");
   });
 
-  it("keeps return origins restricted to Studio Flow Vercel hosts", () => {
+  it("allows the production custom domain and restricted Studio Flow Vercel hosts", () => {
+    const edge = readFileSync("supabase/functions/create-mercadopago-order/index.ts", "utf8");
+
+    expect(actions).toContain('hostname === "demeterfitness.com"');
+    expect(edge).toContain('hostname === "demeterfitness.com"');
     expect(actions).toContain('hostname === "demeterbueno.vercel.app"');
     expect(actions).toContain('hostname.startsWith("demeterbueno-")');
     expect(actions).toContain('hostname.endsWith("-demeter3.vercel.app")');
+    expect(actions.match(/error: "checkout_origin_not_allowed"/g)).toHaveLength(2);
   });
 });
