@@ -16,7 +16,12 @@ const require = createRequire(import.meta.url);
 runInNewContext(compiled, {
   module: sandboxModule,
   exports: sandboxModule.exports,
-  require: (name) => (name === "server-only" ? {} : require(name)),
+  require: (name) =>
+    name === "server-only"
+      ? {}
+      : name === "./uat-scope"
+        ? { demiUatScope: () => null }
+        : require(name),
   Buffer,
   URL,
   fetch,

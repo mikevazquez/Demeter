@@ -1,7 +1,7 @@
 begin;
 set local request.jwt.claims='{"role":"service_role"}';
 do $uat$
-declare owner uuid; run jsonb; s uuid; st uuid; product uuid; ev uuid:=gen_random_uuid(); ev2 uuid:=gen_random_uuid(); mid text:='uat-facebook-'||gen_random_uuid(); mid2 text:='uat-facebook-'||gen_random_uuid(); r jsonb; first_result jsonb; outcomes jsonb:='[]'; attempt uuid:=gen_random_uuid(); amount integer; currency text; pt public.product_templates%rowtype; before_sales integer; before_payments integer; code text; field text; order_id text:='uat-order-'||gen_random_uuid(); payment_id text:='uat-payment-'||gen_random_uuid();
+declare g uuid; receipt uuid:=gen_random_uuid(); participants jsonb:='[ {"name":"UAT Facebook Nueva","phone":"9998885501"} ]'; owner uuid; run jsonb; s uuid; st uuid; product uuid; ev uuid:=gen_random_uuid(); ev2 uuid:=gen_random_uuid(); mid text:='uat-facebook-'||gen_random_uuid(); mid2 text:='uat-facebook-'||gen_random_uuid(); r jsonb; first_result jsonb; outcomes jsonb:='[]'; attempt uuid:=gen_random_uuid(); amount integer; currency text; pt public.product_templates%rowtype; before_sales integer; before_payments integer; code text; field text; order_id text:='uat-order-'||gen_random_uuid(); payment_id text:='uat-payment-'||gen_random_uuid();
 begin
  select user_id into owner from public.studio_memberships where studio_id='9fe23cfa-fb47-4670-afeb-ed4a56433772' and active and role='owner' limit 1;
  run:=public.service_create_demi_uat_run('9fe23cfa-fb47-4670-afeb-ed4a56433772',owner,'connected-channels-uat');s:=(run->>'studio_id')::uuid;
@@ -20,6 +20,27 @@ begin
  r:=public.service_prepare_meta_inbox_message(s,ev2,'facebook_messenger','different-page',mid2,'uat-contact','UAT Facebook','text','Hola',clock_timestamp());
  if r->>'reason_code'<>'source_event_invalid' then raise exception 'fb_account_scope:%',r; end if;
  outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M01','variant','facebook_wrong_page_source_event_blocked','passed',true));
+ r:=public.service_prepare_demi_prospect_payment(s,(first_result->>'assistant_conversation_id')::uuid,(first_result->>'crm_contact_id')::uuid,(run#>>'{fixtures,sessions,available}')::uuid,null);g:=(r->>'group_id')::uuid;
+ if not coalesce((r->>'ok')::boolean,false) or exists(select 1 from public.students where studio_id=s and person_id=(select person_id from public.crm_contacts where id=(first_result->>'crm_contact_id')::uuid)) then raise exception 'fb_payment_before_profile:%',r; end if;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M05','variant','facebook_quote_without_phone_or_student','passed',true));
+ r:=public.service_complete_demi_meta_group(s,(first_result->>'assistant_conversation_id')::uuid,g,participants);
+ if r->>'reason_code'<>'receipt_required_before_participants' or exists(select 1 from public.person_contacts where studio_id=s and value='+529998885501') then raise exception 'fb_phone_before_receipt:%',r; end if;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M05','variant','facebook_phone_and_profile_wait_for_receipt','passed',true));
+ insert into public.assistant_whatsapp_events(id,studio_id,provider,provider_event_id,phone_number_id,contact_wa_id,message_type,media_id,payload_fingerprint) values(receipt,s,'meta_whatsapp','meta-inbox-receipt:uat:'||receipt,'uat-page','uat-contact','image','uat-meta-proof','meta-inbox-source:'||ev2);
+ r:=public.service_record_demi_group_receipt(s,(first_result->>'assistant_conversation_id')::uuid,g,receipt,'meta-inbox-receipt:uat:'||receipt,'uat-meta-proof','UAT/facebook.png',repeat('f',64),15000,'MXN',0.99);
+ if not coalesce((r->>'ok')::boolean,false) then raise exception 'fb_receipt:%',r; end if;
+ r:=public.service_complete_demi_meta_group(s,(first_result->>'assistant_conversation_id')::uuid,g,jsonb_build_array(jsonb_build_object('name','UAT Facebook','phone',right(run#>>'{fixtures,people,student_active,phone}',10))));
+ if r->>'reason_code'<>'participant_identity_requires_review' then raise exception 'fb_phone_hijacks_existing_student:%',r; end if;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M02','variant','facebook_existing_phone_cannot_claim_another_student','passed',true));
+ r:=public.service_complete_demi_meta_group(s,gen_random_uuid(),g,participants);
+ if r->>'reason_code'<>'conversation_identity_mismatch' then raise exception 'fb_foreign_conversation:%',r; end if;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M02','variant','facebook_completion_scoped_to_verified_provider_identity','passed',true));
+ r:=public.service_complete_demi_meta_group(s,(first_result->>'assistant_conversation_id')::uuid,g,participants);
+ if not coalesce((r->>'ok')::boolean,false) or (r->>'reserved_count')::integer<>1 or not exists(select 1 from public.students where studio_id=s and phone='+529998885501' and person_id=(select person_id from public.crm_contacts where id=(first_result->>'crm_contact_id')::uuid)) then raise exception 'fb_first_booking:%',r; end if;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M08','variant','facebook_receipt_then_data_creates_one_trial_reservation','passed',true));
+ r:=public.service_complete_demi_meta_group(s,(first_result->>'assistant_conversation_id')::uuid,g,participants);
+ if not (r->>'idempotent')::boolean or (select count(*) from public.students where studio_id=s and phone='+529998885501')<>1 or (select sum(total_minor) from public.sales where studio_id=s)<>15000 then raise exception 'fb_completion_replay:%',r; end if;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M09','variant','facebook_completion_replay_preserves_one_profile_sale_and_reservation','passed',true));
  perform public.assistant_create_handoff(s,(first_result->>'assistant_conversation_id')::uuid,null,'human_requested','UAT solicitud humana');
  r:=public.service_prepare_meta_inbox_message(s,ev2,'facebook_messenger','uat-page',mid2,'uat-contact','UAT Facebook','text','Necesito ayuda',clock_timestamp());
  if not (r->>'handoff_open')::boolean then raise exception 'fb_handoff_not_returned'; end if;

@@ -87,7 +87,6 @@ export default async function IntegrationsPage() {
       .eq("channel_key", "whatsapp")
       .eq("provider_key", "meta_whatsapp")
       .maybeSingle(),
-
   ]);
 
   const asistianConnected = (asistianEvents ?? 0) > 0 || (asistianMappings ?? 0) > 0;
@@ -145,7 +144,15 @@ export default async function IntegrationsPage() {
             href="/admin/integraciones/meta-whatsapp"
           />
 
-
+          <IntegrationCard
+            mark="FB"
+            name="Facebook / Instagram"
+            description="Mensajes de Facebook e Instagram atendidos por Demi."
+            detail="Configura cada canal de forma independiente."
+            status="Configurable"
+            tone="available"
+            href="/admin/integraciones/meta-inbox"
+          />
         </div>
       </section>
 
@@ -163,15 +170,6 @@ export default async function IntegrationsPage() {
             name="Stripe"
             description="Cobros del estudio a alumnas mediante Stripe."
             detail="La facturación de Studio Flow es independiente de esta futura integración."
-            status="Próximamente"
-            tone="soon"
-          />
-
-          <IntegrationCard
-            mark="FB"
-            name="Facebook / Instagram"
-            description="Conexiones de Meta para captación, mensajes y futuras automatizaciones."
-            detail="Se integrará aquí cuando el flujo esté disponible."
             status="Próximamente"
             tone="soon"
           />

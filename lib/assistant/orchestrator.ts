@@ -76,6 +76,7 @@ type OrchestratorInput = {
   studentCategory?: string | null;
   crmContactId: string | null;
   identityNeedsName?: boolean;
+  channel?: "whatsapp" | "facebook_messenger" | "instagram";
   activationUrl: string | null;
   serviceMode?: boolean;
   history: HistoryMessage[];
@@ -1003,6 +1004,9 @@ export async function runAssistantTurn(input: OrchestratorInput) {
             : input.crmContactId
               ? "Studio Flow tiene un contacto CRM sin una ficha de alumna verificada. Trátalo como prospecto. El contacto ya debe conservar los datos disponibles del canal; no le preguntes su nombre durante la conversación informativa. Responde lo que pidió con la información oficial. Si su primera clase requiere pago previo, prepara primero el pago sin crear ficha de prueba; sólo después del comprobante pide juntos nombre completo y celular faltantes. Si no requiere pago previo, confirma los datos faltantes cuando quiera reservar."
               : "Studio Flow no pudo confirmar si este teléfono corresponde a una ficha o prospecto. No lo adivines. Evita acciones dependientes de identidad y solicita únicamente el dato mínimo necesario o escala si no puede resolverse con seguridad.",
+        ["facebook_messenger", "instagram"].includes(input.channel ?? "")
+          ? "El canal es Meta Inbox. No uses un teléfono escrito en el chat como prueba de identidad. Conserva el contacto verificado por su cuenta del canal; no vincules una ficha existente ni uses sus créditos sin verificación. Para primera clase, el comprobante precede a nombre y celular; usa el flujo de pago y grupo de Studio Flow."
+          : "",
         input.identityNeedsName === true
           ? "El prospecto todavía no tiene un nombre confirmado para una reserva en Studio Flow. NO le preguntes su nombre mientras solo pide información. Conserva el nombre de perfil del canal como nombre provisional del contacto. Cuando quiera reservar, consulta primero el estado de pago del flujo oficial. Si requiere pago previo, no pidas el nombre antes del comprobante; después pide juntos nombre completo y celular faltantes. Si no requiere pago previo, pide el nombre para preparar la reserva."
           : "",

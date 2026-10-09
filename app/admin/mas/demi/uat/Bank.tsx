@@ -211,6 +211,13 @@ export default function Bank({
                   ))}
                 </select>
               </label>
+              <label>
+                Canal de prueba
+                <select name="channel" defaultValue="whatsapp">
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="facebook_messenger">Facebook Messenger</option>
+                </select>
+              </label>
               <p>
                 Teléfono ficticio: <code>{data.run.fixtures.people[persona]?.wa_id}</code>
               </p>

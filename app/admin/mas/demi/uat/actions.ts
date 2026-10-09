@@ -18,6 +18,8 @@ import type {
   MetaDownloadedMedia,
   MetaWhatsAppWebhookConfig,
 } from "@/lib/assistant/meta-whatsapp-channel";
+import { POST as receiveMetaInbox } from "@/app/api/integrations/meta-inbox/webhook/route";
+import type { MetaInboxWebhookConfig } from "@/lib/assistant/meta-inbox-channel";
 import { POST as receiveWhatsApp } from "@/app/api/integrations/meta-whatsapp/webhook/route";
 
 type Json = Record<string, unknown>;
@@ -42,6 +44,9 @@ const TABLES = [
   "assistant_conversations",
   "assistant_turns",
   "assistant_model_calls",
+  "assistant_channel_identities",
+  "assistant_meta_inbox_events",
+  "assistant_meta_inbox_deliveries",
   "assistant_whatsapp_events",
   "assistant_whatsapp_deliveries",
   "assistant_pending_actions",
@@ -180,6 +185,9 @@ export async function getDemiUatRun(id: string) {
 export async function sendDemiUatMessage(form: FormData) {
   const id = String(form.get("runId") ?? "");
   await locked(id, async (ctx) => {
+    const channel = String(form.get("channel") ?? "whatsapp");
+    if (!["whatsapp", "facebook_messenger"].includes(channel))
+      throw new Error("demi_uat_channel_invalid");
     const key = String(form.get("persona") ?? "");
     const person = ctx.run.fixtures.people[key];
     if (!person) throw new Error("demi_uat_persona_invalid");
@@ -212,16 +220,25 @@ export async function sendDemiUatMessage(form: FormData) {
       });
     }
     if (!text && !hasFile) throw new Error("demi_uat_message_required");
+    const attachmentUrl = `https://cdn.fbcdn.net/uat/${mediaId}`;
+    if (hasFile) media.set(attachmentUrl, media.get(mediaId)!);
     const previousId = String(form.get("repeatProviderId") ?? "");
     if (previousId && !/^uat-inbound-[0-9a-f-]{36}$/.test(previousId))
       throw new Error("demi_uat_repeat_invalid");
     if (previousId) {
       const { data } = await ctx.service
-        .from("assistant_whatsapp_events")
+        .from(
+          channel === "facebook_messenger"
+            ? "assistant_meta_inbox_events"
+            : "assistant_whatsapp_events",
+        )
         .select("id")
         .eq("studio_id", ctx.run.studio_id)
         .eq("provider_event_id", previousId)
-        .eq("contact_wa_id", person.wa_id)
+        .eq(
+          channel === "facebook_messenger" ? "provider_contact_id" : "contact_wa_id",
+          person.wa_id,
+        )
         .maybeSingle();
       if (!data) throw new Error("demi_uat_repeat_not_found");
     }
@@ -261,7 +278,7 @@ export async function sendDemiUatMessage(form: FormData) {
           }
         : { text: { body: text } }),
     };
-    const body = JSON.stringify({
+    const whatsappBody = {
       object: "whatsapp_business_account",
       entry: [
         {
@@ -279,20 +296,69 @@ export async function sendDemiUatMessage(form: FormData) {
           ],
         },
       ],
-    });
+    };
+    const inboxConfig: MetaInboxWebhookConfig = {
+      pageAccessToken: "uat-capture-only",
+      pageId: "99900000001",
+      instagramAccessToken: "",
+      instagramUserId: "",
+      graphApiVersion: "v23.0",
+      appSecret: config.appSecret,
+      verifyToken: "uat",
+      pilotContactIds: { facebook_messenger: [], instagram: [] },
+    };
+    const inboxBody = {
+      object: "page",
+      entry: [
+        {
+          id: inboxConfig.pageId,
+          messaging: [
+            {
+              sender: { id: person.wa_id },
+              recipient: { id: inboxConfig.pageId },
+              timestamp: Date.now(),
+              message: {
+                mid: providerId,
+                ...(hasFile
+                  ? {
+                      text,
+                      attachments: [
+                        {
+                          type: file.type === "application/pdf" ? "file" : "image",
+                          payload: { url: attachmentUrl },
+                        },
+                      ],
+                    }
+                  : { text }),
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const body = JSON.stringify(channel === "facebook_messenger" ? inboxBody : whatsappBody);
+
     await record(ctx, "before_message", {
       persona: key,
+      channel,
       provider_id: providerId,
       text,
       file: hasFile ? { name: file.name, size: file.size, type: file.type } : null,
       state: await snapshot(ctx),
     });
     const response = await withDemiUatScope(
-      { runId: id, studioId: ctx.run.studio_id, supabase: ctx.service, config, media },
+      {
+        runId: id,
+        studioId: ctx.run.studio_id,
+        supabase: ctx.service,
+        config,
+        media,
+        ...(channel === "facebook_messenger" ? { metaInboxConfig: inboxConfig } : {}),
+      },
       () =>
-        receiveWhatsApp(
+        (channel === "facebook_messenger" ? receiveMetaInbox : receiveWhatsApp)(
           new Request(
-            `https://demi-uat.invalid/api/integrations/meta-whatsapp/webhook?studio=${ctx.run.studio_id}`,
+            `https://demi-uat.invalid/api/integrations/${channel === "facebook_messenger" ? "meta-inbox" : "meta-whatsapp"}/webhook?studio=${ctx.run.studio_id}`,
             {
               method: "POST",
               headers: {
@@ -306,6 +372,7 @@ export async function sendDemiUatMessage(form: FormData) {
     );
     await record(ctx, "after_message", {
       persona: key,
+      channel,
       provider_id: providerId,
       http_status: response.status,
       result: await response.json(),

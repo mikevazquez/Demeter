@@ -7,6 +7,7 @@ import type {
   MetaTextDeliveryResult,
 } from "./meta-whatsapp-channel";
 import { assertDemiUatEnvironment } from "./uat-environment";
+import type { MetaInboxWebhookConfig } from "./meta-inbox-channel";
 
 type Scope = {
   runId: string;
@@ -14,6 +15,7 @@ type Scope = {
   supabase: SupabaseClient;
   config: MetaWhatsAppWebhookConfig;
   media: Map<string, MetaDownloadedMedia>;
+  metaInboxConfig?: MetaInboxWebhookConfig;
 };
 const storage = new AsyncLocalStorage<Scope>();
 

@@ -1,7 +1,11 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { downloadMetaWhatsAppMedia, type MetaWhatsAppWebhookConfig } from "./meta-whatsapp-channel";
+import {
+  downloadMetaWhatsAppMedia,
+  type MetaWhatsAppWebhookConfig,
+  type MetaDownloadedMedia,
+} from "./meta-whatsapp-channel";
 import { readTransferReceipt } from "./receipt-reader";
 
 export async function groupBookingAction(input: {
@@ -35,12 +39,24 @@ export async function groupBookingAction(input: {
     }
     return data;
   }
-  const { data, error } = await input.supabase.rpc("service_complete_demi_group", {
-    p_studio: input.studioId,
-    p_conversation: input.conversationId,
-    p_group: input.args.group_id,
-    p_participants: input.args.participants,
-  });
+  const conversation = await input.supabase
+    .from("assistant_conversations")
+    .select("channel")
+    .eq("studio_id", input.studioId)
+    .eq("id", input.conversationId)
+    .maybeSingle();
+  if (conversation.error || !conversation.data)
+    return { ok: false, reason_code: "conversation_not_found" };
+  const meta = ["facebook_messenger", "instagram"].includes(conversation.data.channel);
+  const { data, error } = await input.supabase.rpc(
+    meta ? "service_complete_demi_meta_group" : "service_complete_demi_group",
+    {
+      p_studio: input.studioId,
+      p_conversation: input.conversationId,
+      p_group: input.args.group_id,
+      p_participants: input.args.participants,
+    },
+  );
   return error ? { ok: false, reason_code: "group_completion_failed" } : data;
 }
 
@@ -52,7 +68,8 @@ export async function handleDemiGroupReceipt(input: {
   providerMessageId: string;
   mediaId: string | null;
   messageType: string;
-  webhookConfig: MetaWhatsAppWebhookConfig;
+  webhookConfig?: MetaWhatsAppWebhookConfig;
+  downloadedMedia?: MetaDownloadedMedia;
 }) {
   if (!input.mediaId || !["image", "document"].includes(input.messageType))
     return { handled: false as const };
@@ -68,10 +85,14 @@ export async function handleDemiGroupReceipt(input: {
     .maybeSingle();
   if (lookup.error) throw new Error("group_receipt_lookup_failed");
   if (!lookup.data) return { handled: false as const };
-  const media = await downloadMetaWhatsAppMedia({
-    config: input.webhookConfig,
-    mediaId: input.mediaId,
-  });
+  if (!input.downloadedMedia && !input.webhookConfig)
+    throw new Error("group_receipt_media_missing");
+  const media =
+    input.downloadedMedia ??
+    (await downloadMetaWhatsAppMedia({
+      config: input.webhookConfig!,
+      mediaId: input.mediaId,
+    }));
   const digest = createHash("sha256").update(media.bytes).digest("hex");
   const path = `${input.studioId}/groups/${lookup.data.id}/${digest}`;
   const stored = await input.supabase.storage.from("transfer-receipts").upload(path, media.bytes, {
