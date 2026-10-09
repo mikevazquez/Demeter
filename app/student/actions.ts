@@ -76,6 +76,7 @@ function approvedCheckoutOrigin(hostValue: string | null, protoValue: string | n
 
   const hostname = url.hostname.toLowerCase();
   const approvedHost =
+    hostname === "demeterfitness.com" ||
     hostname === "demeterbueno.vercel.app" ||
     (hostname.startsWith("demeterbueno-") && hostname.endsWith("-demeter3.vercel.app"));
 
@@ -560,8 +561,11 @@ export async function createEnrollmentMercadoPagoOrderAction(
   const normalizedRequestKey = clientRequestKey.trim();
   const returnBaseUrl = await mercadoPagoReturnBaseUrl();
 
-  if (!normalizedProductId || !normalizedRequestKey || !returnBaseUrl) {
+  if (!normalizedProductId || !normalizedRequestKey) {
     return { ok: false as const, error: "invalid_request" };
+  }
+  if (!returnBaseUrl) {
+    return { ok: false as const, error: "checkout_origin_not_allowed" };
   }
 
   const { supabase } = await getStudentPortalContext();
