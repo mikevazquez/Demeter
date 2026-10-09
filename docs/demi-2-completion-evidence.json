@@ -27,6 +27,11 @@
             "variant": "two_profiles_reservations_single_allocation"
           },
           {
+            "case": "M09",
+            "passed": true,
+            "variant": "provisional_group_quote_replay_no_new_charge"
+          },
+          {
             "case": "M06",
             "passed": true,
             "variant": "completion_idempotent"
@@ -37,6 +42,16 @@
             "variant": "review_allocations_once"
           },
           {
+            "case": "M09",
+            "passed": true,
+            "variant": "validated_group_quote_replay_no_new_charge"
+          },
+          {
+            "case": "M09",
+            "passed": true,
+            "variant": "cancelled_group_reservation_stays_cancelled_on_replay"
+          },
+          {
             "case": "M06",
             "passed": true,
             "variant": "mixed_existing_credit_and_one_paid_trial"
@@ -45,6 +60,16 @@
             "case": "M06",
             "passed": true,
             "variant": "capacity_changed_partial_success_no_oversell_human_review"
+          },
+          {
+            "case": "M06",
+            "passed": true,
+            "variant": "failed_participant_rolls_back_trial_profile"
+          },
+          {
+            "case": "M09",
+            "passed": true,
+            "variant": "partial_retry_preserves_cancelled_slot_and_counts_only_active_reservation"
           }
         ]
       }
@@ -317,14 +342,77 @@
           }
         ]
       }
+    ],
+    "demi-2-deferred-prospect-uat.sql": [
+      {
+        "results": [
+          {
+            "passed": true,
+            "variant": "payment_quote_keeps_prospect_without_student_or_booking"
+          },
+          {
+            "passed": true,
+            "variant": "quote_replay_no_duplicate_intent"
+          },
+          {
+            "passed": true,
+            "variant": "different_contact_blocked"
+          },
+          {
+            "passed": true,
+            "variant": "participant_creation_requires_proof"
+          },
+          {
+            "passed": true,
+            "variant": "matching_receipt_still_waits_for_personal_data"
+          },
+          {
+            "passed": true,
+            "variant": "different_phone_cannot_replace_verified_identity"
+          },
+          {
+            "passed": true,
+            "variant": "lost_capacity_does_not_create_trial_student"
+          },
+          {
+            "passed": true,
+            "variant": "proof_and_data_create_one_trial_booking_and_link_conversation"
+          },
+          {
+            "passed": true,
+            "variant": "validation_and_replay_charge_once"
+          }
+        ]
+      }
+    ],
+    "demi-2-group-followup-uat.sql": [
+      {
+        "results": [
+          {
+            "case": "M04",
+            "passed": true,
+            "variant": "group_booking_cancels_pending_and_claimed_payer_followups_without_enrolling_payer"
+          },
+          {
+            "case": "M08",
+            "passed": true,
+            "variant": "group_confirmation_reply_does_not_restart_prospect_recovery"
+          },
+          {
+            "case": "M04",
+            "passed": true,
+            "variant": "explicit_crm_schedule_and_worker_cannot_send_group_payer_recovery"
+          }
+        ]
+      }
     ]
   },
   "automated_tests": {
-    "passed": 1037,
-    "total": 1037
+    "passed": 1066,
+    "total": 1066
   },
   "complete_master_cases_approved": 0,
-  "distinct_operational_variants": 49,
+  "distinct_operational_variants": 66,
   "preview_audio": {
     "commit": "0a73af6",
     "actual_openai_transcription": true,
@@ -367,5 +455,115 @@
     "handoff_count": 1,
     "reservations_created": 0,
     "reply_requests_text_or_resend": true
+  },
+  "live_journeys": {
+    "run_id": "3715f544-a9cf-4272-bbf9-f411c85bc062",
+    "group": {
+      "two_actual_reservations": true,
+      "actual_ocr": true,
+      "approved_payments_minor": 30000,
+      "replay_payments_minor": 30000,
+      "repeat_model_commit": "ab99e46",
+      "repeat_keeps_group_count": 1,
+      "repeat_keeps_students": 13,
+      "repeat_keeps_sales_and_payments_minor": 30000,
+      "active_payer_prospect_followups_after_fix": 0
+    },
+    "cancellation": {
+      "reserved_then_cancelled_on_time": true,
+      "credits_restored": 8,
+      "repeat_credits": 8
+    },
+    "human": {
+      "commit": "609a610",
+      "canonical_reason": "human_requested",
+      "claimed": true,
+      "paused_model_calls_added": 0,
+      "paused_assistant_replies_added": 0,
+      "resolved_with_note": true,
+      "resumed_model_calls_added": 2
+    },
+    "sensitive_handoffs": {
+      "refund_request": "resolved_with_note_without_refund",
+      "safety_incident": "open",
+      "actual_refund_executed": false
+    }
+  },
+  "meta_routing": {
+    "callback_host": "demeterfitness.com",
+    "callback_path": "/api/integrations/meta-whatsapp/webhook",
+    "receiver_environment": "production",
+    "separate_sandbox_connection_available": false,
+    "source": "readonly Graph diagnostics and user confirmation",
+    "production_callback_modified": false,
+    "external_inbound_and_audio_verified": false
+  },
+  "live_individual_first_class": {
+    "quote_commit": "56e84d6",
+    "completion_commit": "6ac80c1",
+    "run_id": "95e87aa3-40b4-4655-94c3-2944c78a4b18",
+    "studio_id": "f240d6eb-db4b-4d20-a772-0f900f09bfa6",
+    "students_before_quote": 11,
+    "students_after_receipt_before_data": 11,
+    "students_after_data_and_booking": 12,
+    "actual_ocr": true,
+    "repeated_confirmation_before_receipt_did_not_book": true,
+    "payment_reference_restored_from_scoped_database": true,
+    "same_receipt_retained_after_technical_handoff_resolution": true,
+    "reservation_count": 1,
+    "student_type": "trial",
+    "trial_credit": [
+      {
+        "starts_on": "2026-10-10",
+        "expires_on": "2026-10-17",
+        "credit_limit": 1
+      }
+    ],
+    "sale_minor": 15000,
+    "validated_payments_minor": 15000,
+    "replay_payments_minor": 15000,
+    "portal_access_generated": false,
+    "complete_master_case_approved": false
+  },
+  "live_enrollment_and_qualification": {
+    "run_id": "95e87aa3-40b4-4655-94c3-2944c78a4b18",
+    "commit": "6ac80c1",
+    "expired_enrollment": {
+      "real_model_explained_block": true,
+      "package_credits_preserved": 8,
+      "new_reservations": 0
+    },
+    "not_qualified": {
+      "explicit_rejection_and_reason_persisted": true,
+      "previous_followups_stopped": true,
+      "new_inbound_restores_pending_qualification": true,
+      "previous_reason_retained_in_tool_audit_and_messages": true,
+      "missing_official_preparation_instructions_acknowledged": true
+    }
+  },
+  "latest_validation": {
+    "code_commit": "aa79b88",
+    "typecheck": "passed",
+    "build": "passed",
+    "focused_lint_errors": 0,
+    "focused_lint_existing_warnings": 1,
+    "production_modified": false,
+    "preview_url": "https://demeterbueno-ddxgcq0hs-demeter3.vercel.app",
+    "previous_preview_authenticated_http_200": true
+  },
+  "live_reactivated_first_class": {
+    "run_id": "95e87aa3-40b4-4655-94c3-2944c78a4b18",
+    "commit": "ab99e46",
+    "actual_ocr": true,
+    "students_after_receipt": 12,
+    "students_after_data_and_booking": 13,
+    "status": "provisional",
+    "amount_minor": 15000,
+    "payment_review_pending": true,
+    "revocation_notice_present": true,
+    "replay_commit": "c9223d2",
+    "replay_same_groups_and_students": true,
+    "replay_notice_duplicate_observed": true,
+    "conditional_notice_unit_regression_commit": "aa79b88"
   }
 }
