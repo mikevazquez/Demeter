@@ -442,7 +442,7 @@ async function tryResolveReceiptPackageChoice(input: {
   });
 
   return {
-    reply: `Listo. El comprobante corresponde a ${packageName} y el monto coincide. Activé el paquete provisionalmente; el pago queda pendiente de validación.`,
+    reply: `Listo. El comprobante corresponde a ${packageName} y el monto coincide. Activé el paquete provisionalmente; el pago queda pendiente de validación y el paquete puede ser revocado si la transferencia no se confirma correctamente.`,
     outcome: "receipt_package_confirmed",
   };
 }
@@ -788,7 +788,7 @@ async function activateTransferReceiptIfPending(input: {
     return {
       handled: true as const,
       result: activation,
-      reply: `Gracias. Leí un pago de ${formatReceiptMoney(reading.amountMinor, expectedCurrency)} y por el contexto corresponde a ${packageName}. Activé el paquete provisionalmente; el pago queda pendiente de validación.`,
+      reply: `Gracias. Leí un pago de ${formatReceiptMoney(reading.amountMinor, expectedCurrency)} y por el contexto corresponde a ${packageName}. Activé el paquete provisionalmente; el pago queda pendiente de validación y el paquete puede ser revocado si la transferencia no se confirma correctamente.`,
     };
   }
 

@@ -11,7 +11,7 @@ describe("Demi identity-aware behavior", () => {
       "Studio Flow consultó su etapa actual al recibir este mensaje",
       "get_student_package_status",
       "contacto CRM sin una ficha de alumna",
-      "responde lo que pidió con la información oficial",
+      "Responde lo que pidió con la información oficial",
       "No lo adivines",
     ];
 
