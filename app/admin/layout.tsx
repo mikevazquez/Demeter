@@ -124,6 +124,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                 enabled: true,
                 activeFor: ["/admin/ventas"],
               },
+              { href: "/admin/crm", label: "CRM", enabled: true },
             ]
           : []),
         ...(can(CAPABILITIES.REPORTS_READ)

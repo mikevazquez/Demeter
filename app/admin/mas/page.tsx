@@ -13,6 +13,12 @@ type MoreItem = {
 
 const items: MoreItem[] = [
   {
+    title: "CRM",
+    description: "Contactos, etapas y seguimiento de Demi.",
+    href: "/admin/crm",
+    capability: CAPABILITIES.STUDENTS_READ,
+  },
+  {
     title: "Actividades",
     description: "Qué ofreces, horarios, recursos y forma de acceso.",
     href: "/admin/actividades",
