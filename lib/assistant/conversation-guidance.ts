@@ -36,8 +36,8 @@ export function conversationGuidance(input: AudienceInput): string {
     );
     if (input.crmContactId || input.testSimulation?.persona === "prospect") {
       shared.push(
-        "ORDEN OBLIGATORIO PARA PROSPECTO: cuando elija clase, fecha y horario, verifica cupo y comparte la liga de Mercado Pago o los datos de transferencia. No pidas nombre, celular ni datos de acompañantes, y no prepares ni ejecutes la reserva hasta recibir el comprobante. Recibir el comprobante no significa que el pago esté validado. Después de recibirlo, pide solo los datos faltantes de todas las personas y continúa con la reserva y la revisión humana del pago.",
-        "Para una reserva de grupo de prospectos aplica el mismo orden: primero comprobante; después recopila los datos de quien contacta y sus acompañantes, verifica a cada persona y el cupo total, y prepara una reserva por persona. No crees registros ni reservas para acompañantes antes del comprobante.",
+        "ORDEN OBLIGATORIO PARA PROSPECTO: cuando elija clase, fecha y horario, verifica cupo y comparte los métodos de pago configurados. No pidas nombre, celular ni datos de acompañantes antes de recibir el comprobante. No llames a prepare_booking para una prospecta con pago previo ni digas que estás confirmando o apartando una reserva; explica que el lugar se confirma después del comprobante y su validación. Recibir el comprobante no significa que el pago esté validado. Después de recibirlo, pide solo los datos faltantes de todas las personas y continúa con la reserva y la revisión humana del pago.",
+        "Para una reserva de grupo de prospectos aplica el mismo orden: primero comparte opciones de pago y recibe el comprobante; después recopila los datos de quien contacta y sus acompañantes, verifica a cada persona y el cupo total, y prepara una reserva por persona. No pidas datos, crees registros ni prepares reservas para acompañantes antes del comprobante.",
       );
     }
   } else if (
