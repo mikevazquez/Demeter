@@ -233,29 +233,31 @@ export default async function ContactPage({
         <>
           {!c.studentId && (
             <section className="crm-panel">
-            <h2>Datos del contacto</h2>
-            <dl className="crm-profile-facts">
-              {[
-                ["Nombre", c.name],
-                ["Teléfono", c.phone],
-                ["Correo", c.email],
-                ["Canal de origen", c.channel],
-                ["Último canal", c.lastChannel],
-                ["Ubicación", c.followup.location],
-                ["Interés", c.followup.interest],
-                ["Calificación", qual],
-                [
-                  "Fecha de ingreso",
-                  new Date(c.joinedAt).toLocaleDateString("es-MX", { timeZone: studio.timezone }),
-                ],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <dt>{label}</dt>
-                  <dd>{value || "Sin registrar"}</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
+              <h2>Datos del contacto</h2>
+              <dl className="crm-profile-facts">
+                {[
+                  ["Nombre", c.name],
+                  ["Teléfono", c.phone],
+                  ["Correo", c.email],
+                  ["Canal de origen", c.channel],
+                  ["Último canal", c.lastChannel],
+                  ["Ubicación", c.followup.location],
+                  ["Interés", c.followup.interest],
+                  ["Calificación", qual],
+                  [
+                    "Fecha de ingreso",
+                    new Date(c.joinedAt).toLocaleDateString("es-MX", {
+                      timeZone: studio.timezone,
+                    }),
+                  ],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd>{value || "Sin registrar"}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
           )}
           {!c.studentId && data.canEdit && (
             <section className="crm-panel">
