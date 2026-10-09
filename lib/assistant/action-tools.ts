@@ -263,6 +263,28 @@ export function isExplicitAssistantConfirmation(value: string) {
   return accepted.has(normalized);
 }
 
+export function isExplicitCashPurchaseConfirmation(
+  value: string,
+  summary?: { amount_minor?: number; product_name?: string },
+) {
+  if (isExplicitAssistantConfirmation(value)) return true;
+  if (!value.trim() || /[?¿]/.test(value)) return false;
+  const normalized = normalizeConfirmation(value);
+  const match = normalized.match(
+    /^(?:si )?confirmo la compra del paquete(?: de (\d+) clases)?(?: por (\d+)(?: (\d{1,2}))?(?: mxn| pesos)?)? en efectivo$/,
+  );
+  if (!match) return false;
+  if (summary && match[2]) {
+    const amountMinor = Number(match[2]) * 100 + Number((match[3] ?? "").padEnd(2, "0"));
+    if (amountMinor !== summary.amount_minor) return false;
+  }
+  if (summary && match[1]) {
+    const packageClasses = normalizeConfirmation(summary.product_name ?? "").match(/(\d+) clases/);
+    if (!packageClasses || packageClasses[1] !== match[1]) return false;
+  }
+  return true;
+}
+
 const BOOKING_REASON_MESSAGES: Record<string, string> = {
   session_not_found: "La clase ya no está disponible.",
   student_not_found: "No pude identificar a la alumna.",
@@ -707,15 +729,11 @@ async function prepareCashPackage(ctx: AssistantActionToolContext, args: Record<
 }
 
 async function confirmCashPackage(ctx: AssistantActionToolContext) {
-  if (
-    !ctx.serviceMode ||
-    !ctx.studentId ||
-    !isExplicitAssistantConfirmation(ctx.currentUserMessage)
-  )
+  if (!ctx.serviceMode || !ctx.studentId)
     return { ok: false, reason_code: "explicit_confirmation_required" };
   const { data: pending, error } = await ctx.supabase
     .from("assistant_pending_actions")
-    .select("id,status,action_payload,expires_at")
+    .select("id,status,action_payload,confirmation_summary,expires_at")
     .eq("studio_id", ctx.studio.id)
     .eq("conversation_id", ctx.conversationId)
     .eq("action_type", "commerce.cash_purchase")
@@ -733,6 +751,14 @@ async function confirmCashPackage(ctx: AssistantActionToolContext) {
     (pending.status === "pending" && Date.parse(pending.expires_at) <= Date.now())
   )
     return { ok: false, reason_code: "cash_confirmation_unavailable" };
+  const summary = asObject(pending.confirmation_summary);
+  if (
+    !isExplicitCashPurchaseConfirmation(ctx.currentUserMessage, {
+      amount_minor: Number(summary?.amount_minor ?? payload.expected_amount),
+      product_name: String(summary?.product_name ?? ""),
+    })
+  )
+    return { ok: false, reason_code: "explicit_confirmation_required" };
   const { data: result, error: purchaseError } = await ctx.supabase.rpc(
     "service_create_demi_cash_purchase",
     {

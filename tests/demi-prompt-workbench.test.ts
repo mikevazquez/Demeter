@@ -96,6 +96,7 @@ function orchestratorHarness(
       "./action-tools": {
         executeAssistantActionTool: action,
         isExplicitAssistantConfirmation: actionModule.isExplicitAssistantConfirmation,
+        isExplicitCashPurchaseConfirmation: actionModule.isExplicitCashPurchaseConfirmation,
         parsePostTrialEnrollmentMethod: (message: string) =>
           message.toLocaleLowerCase("es-MX").includes("efectivo") ? "cash" : null,
       },
@@ -358,22 +359,20 @@ describe("Demi prompt workbench", () => {
       summary: { post_trial: true, enrollment_required: true },
     });
     vi.stubEnv("OPENAI_API_KEY", "test");
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            output: [
-              {
-                type: "function_call",
-                name: "prepare_student_access_activation",
-                call_id: "access-1",
-                arguments: "{}",
-              },
-            ],
-          }),
-        ),
-      );
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          output: [
+            {
+              type: "function_call",
+              name: "prepare_student_access_activation",
+              call_id: "access-1",
+              arguments: "{}",
+            },
+          ],
+        }),
+      ),
+    );
     vi.stubGlobal("fetch", fetchMock);
     const result = await h.run(h.input);
     expect(result.reply).toContain("¿Confirmas que active tu acceso?");

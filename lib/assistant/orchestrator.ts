@@ -16,6 +16,7 @@ import {
 import {
   executeAssistantActionTool,
   isExplicitAssistantConfirmation,
+  isExplicitCashPurchaseConfirmation,
   parsePostTrialEnrollmentMethod,
 } from "./action-tools";
 import { executeAssistantReadTool, type AssistantStudioContext } from "./read-tools";
@@ -601,7 +602,8 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
   const currentUserMessage =
     [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
 
-  if (!isExplicitAssistantConfirmation(currentUserMessage)) return null;
+  const genericConfirmation = isExplicitAssistantConfirmation(currentUserMessage);
+  if (!genericConfirmation && !isExplicitCashPurchaseConfirmation(currentUserMessage)) return null;
 
   const { data: pending, error } = await input.supabase
     .from("assistant_pending_actions")
@@ -615,6 +617,7 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
     .maybeSingle();
 
   if (error || !pending) return null;
+  if (!genericConfirmation && pending.action_type !== "commerce.cash_purchase") return null;
 
   const executeToolByAction: Record<string, string> = {
     "booking.create": "execute_booking",
