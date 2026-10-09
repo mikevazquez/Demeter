@@ -372,3 +372,9 @@
   color: #69738b;
   font-size: 11px;
 }
+
+.crm-channel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

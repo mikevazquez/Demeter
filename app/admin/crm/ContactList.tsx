@@ -3,6 +3,44 @@ import Link from "next/link";
 import { useState } from "react";
 import type { CrmContact } from "@/lib/crm/data";
 import { personTypes, typeLabels, stageLabels, nextAction } from "@/lib/crm/demi-state";
+function ChannelIcon({ channel }: { channel: string }) {
+  const common = {
+    width: 16,
+    height: 16,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    "aria-hidden": true as const,
+  };
+  if (channel === "Instagram")
+    return (
+      <svg {...common}>
+        <rect x="3" y="3" width="18" height="18" rx="5" />
+        <circle cx="12" cy="12" r="4" />
+        <circle cx="17.5" cy="6.5" r=".8" fill="currentColor" />
+      </svg>
+    );
+  if (channel === "WhatsApp")
+    return (
+      <svg {...common}>
+        <path d="M4 20l1-4a9 9 0 1 1 4 4z" />
+        <path d="M8 7c0 5 4 9 9 9l1-3-3-1-1 1-3-3 1-1-1-3z" />
+      </svg>
+    );
+  if (channel === "Facebook")
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M13 21V11h4M13 11V8c0-2 1-3 4-3" />
+      </svg>
+    );
+  return (
+    <svg {...common}>
+      <path d="M4 5h16v12H9l-5 4z" />
+    </svg>
+  );
+}
 const qualifications = { pending: "Pendiente", qualified: "Apta", not_qualified: "No apta" };
 export default function ContactList({ contacts }: { contacts: CrmContact[] }) {
   const [query, setQuery] = useState("");
@@ -130,7 +168,10 @@ export default function ContactList({ contacts }: { contacts: CrmContact[] }) {
                 </div>
               </div>
               <div>
-                <span className={`crm-channel ${c.channel.toLowerCase()}`}>{c.channel}</span>
+                <span className={`crm-channel ${c.channel.toLowerCase()}`}>
+                  <ChannelIcon channel={c.channel} />
+                  {c.channel}
+                </span>
                 <small>
                   {new Date(c.createdAt).toLocaleDateString("es-MX", {
                     day: "numeric",

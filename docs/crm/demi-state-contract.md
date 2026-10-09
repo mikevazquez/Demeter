@@ -34,8 +34,14 @@ Commit de referencia: 3f3ab862e191e53cf1172cb484e1e622915b9d7e (8 oct 2026).
 
 `lib/crm/demi-state.ts` implementa el contrato como un reductor puro con eventos identificados, fechas y resultados verificados. No modifica créditos, reservas o pagos; los efectos se mantienen en sus servicios actuales. Doce pruebas verifican transiciones, bloqueos, idempotencia y conservación del historial.
 
-Preparación local en rama `feat/crm-demi-state-model`. Sin migración ejecutada, sin activación de automatizaciones, sin publicación de Studio Flow ni cambios en producción. El prototipo Sites permite revisar la organización y guardar ejemplos locales.
+Integración implementada en `/admin/crm` y `/admin/crm/[personId]` sobre Studio Flow, rama `feat/crm-demi-state-model` basada en main. Usa la sesión administrativa y `students.read`/`students.write`; todas las consultas se limitan al estudio seleccionado. Personas compartidas entre prospectos y alumnas aparecen una sola vez.
 
-Pendiente para integración real: persistencia tenant-scoped y RLS; adaptación explícita desde `crm_contacts.lifecycle_status` y estado de inscripción vigente (no reutilizar `students.lifecycle_status` como tipo CRM); enlace de eventos verificados de reservas, asistencia, pagos e inscripción; emisión de historial; lectura por directorio/ficha/Demi; configuración de secuencias y UAT con base sandbox aislada.
+El tipo y paquete se proyectan desde inscripciones, reservas y adquisiciones reales, sin editar movimientos financieros. La ficha enlaza al perfil operativo existente para reservas, asistencia y ventas; también muestra conversaciones de Demi vinculadas por IDs, sin enlazar por coincidencias de teléfono ni enviar mensajes.
 
-El documento también cambia reglas de inasistencia/crédito frente a políticas anteriores. Esta preparación no aplica esas reglas financieras ni borra historial. Su implementación requiere un alcance de UAT propio y autorización de promoción.
+La migración `20261009160000_crm_demi_followup.sql` se aplicó únicamente a `hedouonyhynuvwbckdlg` (Studio Flow Sandbox). Persiste calificación, motivo, ubicación, interés, notas, próxima acción y solicitud humana. Cada guardado genera una auditoría atómica e inmutable para los usuarios de la aplicación. El RPC valida permisos, pertenencia al estudio y revisión para prevenir actualizaciones perdidas. No se aplicó a producción.
+
+Evidencia: 22 pruebas de contrato/proyección; typecheck y lint del alcance; pruebas SQL con rollback de guardado/auditoría, motivo obligatorio, conflicto de revisión, rechazo entre estudios y escritura anónima. El build Preview valida URL y hash de clave pública del sandbox.
+
+Límites de esta versión: el historial nuevo registra cambios de seguimiento; los históricos de pagos, ventas, reservas e inscripción permanecen en el perfil operativo. La pausa y atención humana son estados de seguimiento en el CRM. No se activaron secuencias comerciales, ni se conectó este estado a todos los proveedores salientes. La reapertura automática ante nuevos mensajes y secuencias de seguimiento necesitan integración de eventos y UAT adicional. No presentar esta versión como automatización completa de Demi.
+
+El documento también cambia reglas de inasistencia/crédito frente a políticas anteriores. Esta integración no aplica esas reglas financieras ni borra historial. Su implementación requiere un alcance de UAT propio y autorización de promoción.

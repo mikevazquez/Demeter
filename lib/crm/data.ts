@@ -14,7 +14,7 @@ export const loadCrm = cache(async () => {
         .from(table)
         .select(select)
         .eq("studio_id", studio.id)
-        .order("id")
+        .order(table === "crm_followups" ? "person_id" : "id")
         .range(offset, offset + 499);
       if (error) throw new Error(`crm_read_failed:${table}:${error.code}`);
       all.push(...(data as unknown as Record<string, unknown>[]));
@@ -82,7 +82,7 @@ export const loadCrm = cache(async () => {
     const state = projectContact({
       today,
       reservation: reservations
-        .filter((v) => v.student_id === s?.id && v.status !== "cancelled")
+        .filter((v) => v.student_id === s?.id)
         .sort((a, b) => String(b.booked_at).localeCompare(String(a.booked_at)))[0] as Parameters<
         typeof projectContact
       >[0]["reservation"],
