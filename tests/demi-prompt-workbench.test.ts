@@ -320,7 +320,7 @@ describe("Demi prompt workbench", () => {
     });
     vi.stubEnv("OPENAI_API_KEY", "test");
     const text =
-      "El pago sigue pendiente de validación. La reserva puede cancelarse si la transferencia no se confirma correctamente.";
+      "El pago sigue pendiente de validación. La reserva podría cancelarse si la transferencia no se confirma correctamente.";
     vi.stubGlobal(
       "fetch",
       vi

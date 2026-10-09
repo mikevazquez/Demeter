@@ -1255,7 +1255,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       const text = outputText(output);
       if (!text) throw new Error("assistant_empty_response");
       const revocationAlreadyExplained =
-        /(?:puede(?:n)?|podr[aá](?:n)?)\s+(?:ser\s+)?(?:cancelad[ao]s?|cancelarse|revocad[ao]s?|revocarse)\b[\s\S]{0,180}\bsi\b[\s\S]{0,100}\bno\b[\s\S]{0,100}(?:valid|confirm)/i.test(
+        /(?:puede(?:n)?|podr[aá](?:n)?|podr[ií]a(?:n)?)\s+(?:ser\s+)?(?:cancelad[ao]s?|cancelarse|revocad[ao]s?|revocarse)\b[\s\S]{0,180}\bsi\b[\s\S]{0,100}\bno\b[\s\S]{0,100}(?:valid|confirm)/i.test(
           text,
         );
       const customerText =
