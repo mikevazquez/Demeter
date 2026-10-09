@@ -1205,6 +1205,95 @@ async function provisionTrialActivationLink(ctx: AssistantActionToolContext, stu
   };
 }
 
+async function replayTrialPayment(
+  ctx: AssistantActionToolContext,
+  executionRef: string,
+  summary: unknown,
+) {
+  const prospect = executionRef.startsWith("prospect-payment:");
+  const id = executionRef.slice(executionRef.indexOf(":") + 1);
+  const lookup = await ctx.supabase
+    .from(prospect ? "demi_group_bookings" : "assistant_transfer_purchase_intents")
+    .select(
+      prospect
+        ? "id,status,amount_minor,currency"
+        : "id,status,amount_minor,currency,reservation_id",
+    )
+    .eq("id", id)
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .maybeSingle();
+  const payment = asObject(lookup.data);
+  if (lookup.error || !payment) return { ok: false, error: "payment_state_unavailable" };
+  const paymentSummary = {
+    ...(asObject(summary) ?? {}),
+    trial_booking: true,
+    payment_before_booking: true,
+    payment_pending: payment.status !== "validated",
+  };
+  if (payment.status === "awaiting_receipt") {
+    const bank = await ctx.supabase
+      .from("studio_bank_transfer_settings")
+      .select("bank_name,account_holder,clabe,account_number,card_number,instructions")
+      .eq("studio_id", ctx.studio.id)
+      .eq("enabled", true)
+      .maybeSingle();
+    if (bank.error || !bank.data)
+      return { ok: false, error: "bank_transfer_details_not_configured" };
+    return {
+      ok: true,
+      already_executed: true,
+      status: "payment_required",
+      reservation_confirmed: false,
+      payment_required: true,
+      amount_minor: payment.amount_minor,
+      currency: payment.currency,
+      bank_details: bank.data,
+      summary: paymentSummary,
+      ...(prospect ? { group_id: id, participant_count: 1 } : { intent_id: id }),
+    };
+  }
+  if (prospect && payment.status === "awaiting_participants")
+    return {
+      ok: true,
+      status: "participant_data_required",
+      reservation_confirmed: false,
+      group_id: id,
+      participant_count: 1,
+      summary: paymentSummary,
+    };
+  if (!["provisional", "provisional_active", "validated"].includes(String(payment.status)))
+    return { ok: false, error: "payment_not_booked", reservation_confirmed: false };
+  let reservationId = String(payment.reservation_id ?? "");
+  if (prospect) {
+    const participant = await ctx.supabase
+      .from("demi_group_participants")
+      .select("reservation_id")
+      .eq("group_id", id)
+      .maybeSingle();
+    if (participant.error) return { ok: false, error: "reservation_state_unavailable" };
+    reservationId = String(participant.data?.reservation_id ?? "");
+  }
+  if (!reservationId)
+    return { ok: false, error: "payment_not_booked", reservation_confirmed: false };
+  const reservation = await ctx.supabase
+    .from("reservations")
+    .select("id,status")
+    .eq("id", reservationId)
+    .eq("studio_id", ctx.studio.id)
+    .maybeSingle();
+  if (reservation.error || reservation.data?.status !== "reserved")
+    return { ok: false, error: "reservation_not_active", reservation_confirmed: false };
+  return {
+    ok: true,
+    status: "executed",
+    already_executed: true,
+    reservation_confirmed: true,
+    reservation_ref: reservationId,
+    summary: paymentSummary,
+  };
+}
+
 async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBookingArgs) {
   void args;
 
@@ -1223,6 +1312,8 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
   }
 
   if (pending.status === "executed") {
+    if (/^(prospect|trial)-payment:/.test(String(pending.execution_ref ?? "")))
+      return replayTrialPayment(ctx, String(pending.execution_ref), pending.confirmation_summary);
     return {
       ok: true,
       status: "executed",
@@ -1302,21 +1393,72 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
         return { ok: false, error: "trial_prepay_requires_service_mode" };
       }
 
-      let paymentStudentId = studentId;
+      const paymentStudentId = studentId;
       if (!paymentStudentId) {
-        const { data: ensuredStudent, error: ensureError } = await ctx.supabase.rpc(
-          "assistant_ensure_trial_student",
-          {
-            target_studio_id: ctx.studio.id,
-            target_crm_contact_id: crmContactId,
+        const bank = await ctx.supabase
+          .from("studio_bank_transfer_settings")
+          .select("bank_name,account_holder,clabe,account_number,card_number,instructions")
+          .eq("studio_id", ctx.studio.id)
+          .eq("enabled", true)
+          .maybeSingle();
+        if (
+          bank.error ||
+          !bank.data ||
+          !bank.data.bank_name ||
+          !bank.data.account_holder ||
+          !(bank.data.clabe || bank.data.account_number || bank.data.card_number)
+        )
+          return { ok: false, error: "bank_transfer_details_not_configured" };
+        const prepared = await ctx.supabase.rpc("service_prepare_demi_prospect_payment", {
+          p_studio: ctx.studio.id,
+          p_conversation: ctx.conversationId,
+          p_contact: crmContactId,
+          p_session: sessionId,
+          p_resource: resourceId,
+        });
+        const payment = asObject(prepared.data);
+        if (prepared.error || payment?.ok !== true || !payment.group_id)
+          return {
+            ok: false,
+            error: "trial_payment_setup_failed",
+            ...safeBookingReason(payment?.reason_code),
+          };
+        const executedAt = new Date().toISOString();
+        const update = await ctx.supabase
+          .from("assistant_pending_actions")
+          .update({
+            status: "executed",
+            confirmed_at: executedAt,
+            executed_at: executedAt,
+            execution_ref: `prospect-payment:${payment.group_id}`,
+            updated_at: executedAt,
+          })
+          .eq("id", pending.id)
+          .eq("studio_id", ctx.studio.id)
+          .eq("status", "pending");
+        if (update.error) return { ok: false, error: "pending_action_update_failed" };
+        return {
+          ok: true,
+          status:
+            payment.status === "awaiting_participants"
+              ? "participant_data_required"
+              : "payment_required",
+          reservation_confirmed: false,
+          payment_required: payment.status === "awaiting_receipt",
+          group_id: payment.group_id,
+          participant_count: 1,
+          amount_minor: payment.amount_minor,
+          currency: payment.currency,
+          bank_details: bank.data,
+          summary: {
+            ...sessionInfo.summary,
+            ...(asObject(pending.confirmation_summary) ?? {}),
+            commercial_status: "payment_pending",
+            payment_pending: true,
+            payment_before_booking: true,
+            trial_booking: true,
           },
-        );
-        const ensured = asObject(ensuredStudent);
-        paymentStudentId = String(ensured?.student_id ?? "") || null;
-
-        if (ensureError || !ensured || ensured.ok !== true || !paymentStudentId) {
-          return { ok: false, error: "trial_identity_provision_failed" };
-        }
+        };
       }
 
       if (ctx.studentId !== paymentStudentId) {

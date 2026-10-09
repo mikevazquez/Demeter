@@ -58,7 +58,7 @@ export async function handleDemiGroupReceipt(input: {
     return { handled: false as const };
   const lookup = await input.supabase
     .from("demi_group_bookings")
-    .select("id,status,amount_minor,currency")
+    .select("id,status,amount_minor,currency,participant_count,prospect_contact_id")
     .eq("studio_id", input.studioId)
     .eq("conversation_id", input.conversationId)
     .eq("status", "awaiting_receipt")
@@ -99,10 +99,15 @@ export async function handleDemiGroupReceipt(input: {
     p_confidence: reading?.confidence ?? 0,
   });
   if (error) throw new Error("group_receipt_record_failed");
-  const reply = data?.ok
-    ? "Recibí el comprobante del total del grupo. El pago queda pendiente de validación del equipo. Ahora envíame juntos el nombre completo y celular mexicano de diez dígitos de cada participante, sin lada. Todavía no he confirmado reservas; revisaré cupo y derechos de cada una."
-    : data?.reason_code === "receipt_amount_mismatch"
-      ? "El comprobante no coincide con el total del grupo. No confirmé reservas. Revisa el importe y envíame el comprobante correcto."
-      : "No pude aceptar este comprobante para el grupo. No confirmé reservas. Envíame un archivo legible o solicita revisión del equipo.";
+  const singleProspect =
+    lookup.data.participant_count === 1 && Boolean(lookup.data.prospect_contact_id);
+  const reply =
+    data?.ok && singleProspect
+      ? "Recibí tu comprobante. El pago queda pendiente de validación del equipo. Ahora envíame juntos tu nombre completo y celular mexicano de diez dígitos, sin lada. Todavía no he confirmado tu reserva; revisaré el cupo antes de crearla."
+      : data?.ok
+        ? "Recibí el comprobante del total del grupo. El pago queda pendiente de validación del equipo. Ahora envíame juntos el nombre completo y celular mexicano de diez dígitos de cada participante, sin lada. Todavía no he confirmado reservas; revisaré cupo y derechos de cada una."
+        : data?.reason_code === "receipt_amount_mismatch"
+          ? "El comprobante no coincide con el total del grupo. No confirmé reservas. Revisa el importe y envíame el comprobante correcto."
+          : "No pude aceptar este comprobante para el grupo. No confirmé reservas. Envíame un archivo legible o solicita revisión del equipo.";
   return { handled: true as const, reply, result: data };
 }
