@@ -22,6 +22,6 @@ describe("Mercado Pago return origin", () => {
     expect(actions).toContain('hostname === "demeterbueno.vercel.app"');
     expect(actions).toContain('hostname.startsWith("demeterbueno-")');
     expect(actions).toContain('hostname.endsWith("-demeter3.vercel.app")');
-    expect(actions).toContain('error: "checkout_origin_not_allowed"');
+    expect(actions.match(/error: "checkout_origin_not_allowed"/g)).toHaveLength(2);
   });
 });
