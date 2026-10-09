@@ -1,5 +1,5 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useState, type ChangeEvent } from "react";
 import { saveFollowup } from "./actions";
 import type { CrmContact } from "@/lib/crm/data";
 import { stageLabels, stages } from "@/lib/crm/demi-state";
@@ -12,6 +12,9 @@ export default function FollowupForm({
 }) {
   const [result, action, pending] = useActionState(saveFollowup, {});
   const f = contact.followup;
+  const [draft, setDraft] = useState(f);
+  const change = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    setDraft({ ...draft, [e.target.name]: e.target.value });
   return (
     <form action={action} className="crm-followup" key={f.revision}>
       <h2>Seguimiento de Demi</h2>
@@ -23,8 +26,9 @@ export default function FollowupForm({
             Etapa del prospecto
             <select
               name="prospect_stage"
-              defaultValue={f.prospect_stage}
-              disabled={contact.state.personType !== "prospect"}
+              value={draft.prospect_stage}
+              onChange={change}
+              disabled={!!contact.reviewReason || contact.state.personType !== "prospect"}
             >
               {stages.prospect
                 .filter((s) => s !== "not_qualified")
@@ -35,12 +39,12 @@ export default function FollowupForm({
                 ))}
             </select>
           </label>
-          {contact.state.personType !== "prospect" && (
+          {(!!contact.reviewReason || contact.state.personType !== "prospect") && (
             <input type="hidden" name="prospect_stage" value={f.prospect_stage} />
           )}
           <label>
             Calificación
-            <select name="qualification" defaultValue={f.qualification}>
+            <select name="qualification" value={draft.qualification} onChange={change}>
               <option value="pending">Pendiente</option>
               <option value="qualified">Apta</option>
               <option value="not_qualified">No apta</option>
@@ -50,22 +54,23 @@ export default function FollowupForm({
             Motivo si no es apta
             <input
               name="qualification_reason"
-              defaultValue={f.qualification_reason}
+              value={draft.qualification_reason}
+              onChange={change}
               maxLength={1000}
               placeholder="Distancia, horarios incompatibles…"
             />
           </label>
           <label>
             Ubicación
-            <input name="location" defaultValue={f.location} maxLength={200} />
+            <input name="location" value={draft.location} onChange={change} maxLength={200} />
           </label>
           <label>
             Interés
-            <input name="interest" defaultValue={f.interest} maxLength={300} />
+            <input name="interest" value={draft.interest} onChange={change} maxLength={300} />
           </label>
           <label>
             Atención humana
-            <select name="human_reason" defaultValue={f.human_reason}>
+            <select name="human_reason" value={draft.human_reason} onChange={change}>
               <option value="">Sin solicitud</option>
               <option value="requested">Solicitada por la persona</option>
               <option value="refund">Reembolso</option>
@@ -77,19 +82,29 @@ export default function FollowupForm({
           </label>
           <label className="crm-wide">
             Resumen para atención humana
-            <textarea name="human_summary" defaultValue={f.human_summary} maxLength={2000} />
+            <textarea
+              name="human_summary"
+              value={draft.human_summary}
+              onChange={change}
+              maxLength={2000}
+            />
           </label>
           <label>
             Próxima acción
-            <input name="next_action" defaultValue={f.next_action} maxLength={500} />
+            <input name="next_action" value={draft.next_action} onChange={change} maxLength={500} />
           </label>
           <label>
             Fecha de seguimiento
-            <input type="date" name="next_action_on" defaultValue={f.next_action_on} />
+            <input
+              type="date"
+              name="next_action_on"
+              value={draft.next_action_on}
+              onChange={change}
+            />
           </label>
           <label className="crm-wide">
             Notas
-            <textarea name="notes" defaultValue={f.notes} maxLength={6000} />
+            <textarea name="notes" value={draft.notes} onChange={change} maxLength={6000} />
           </label>
         </div>
         {canEdit && (

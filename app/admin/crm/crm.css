@@ -378,3 +378,13 @@
   align-items: center;
   gap: 6px;
 }
+
+.crm-text-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #6942cb;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}

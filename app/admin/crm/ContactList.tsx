@@ -51,7 +51,10 @@ export default function ContactList({ contacts }: { contacts: CrmContact[] }) {
   const filtered = contacts
     .filter(
       (c) =>
-        (type === "all" || c.state.personType === type) &&
+        (type === "all" ||
+          (type === "review"
+            ? !!c.reviewReason
+            : !c.reviewReason && c.state.personType === type)) &&
         (channel === "all" || c.channel === channel) &&
         (qualification === "all" || c.state.qualification === qualification) &&
         [c.name, c.phone, c.email, c.channel]
@@ -82,10 +85,21 @@ export default function ContactList({ contacts }: { contacts: CrmContact[] }) {
             onClick={() => setType(type === t ? "all" : t)}
           >
             <span>{typeLabels[t]}</span>
-            <strong>{contacts.filter((c) => c.state.personType === t).length}</strong>
+            <strong>
+              {contacts.filter((c) => !c.reviewReason && c.state.personType === t).length}
+            </strong>
           </button>
         ))}
       </div>
+      {contacts.some((c) => c.reviewReason) && (
+        <p className="crm-help">
+          {contacts.filter((c) => c.reviewReason).length} registros requieren verificar su
+          inscripción antes de asignar un tipo.{" "}
+          <button type="button" className="crm-text-button" onClick={() => setType("review")}>
+            Revisar registros
+          </button>
+        </p>
+      )}
       <section className="crm-panel">
         <div className="crm-filters">
           <label className="crm-search">
@@ -101,6 +115,7 @@ export default function ContactList({ contacts }: { contacts: CrmContact[] }) {
             Tipo
             <select value={type} onChange={(e) => setType(e.target.value)}>
               <option value="all">Todas</option>
+              <option value="review">Por verificar</option>
               {personTypes.map((t) => (
                 <option key={t} value={t}>
                   {typeLabels[t]}
@@ -183,9 +198,9 @@ export default function ContactList({ contacts }: { contacts: CrmContact[] }) {
               </div>
               <div>
                 <span className={`crm-badge ${c.state.personType}`}>
-                  {typeLabels[c.state.personType]}
+                  {c.reviewReason ? "Por verificar" : typeLabels[c.state.personType]}
                 </span>
-                <small>{stageLabels[c.state.stage]}</small>
+                <small>{c.reviewReason || stageLabels[c.state.stage]}</small>
               </div>
               <div>
                 <span className={`crm-badge ${c.state.qualification}`}>
@@ -195,11 +210,13 @@ export default function ContactList({ contacts }: { contacts: CrmContact[] }) {
               </div>
               <div>
                 <span>
-                  {c.state.human ||
-                  c.state.qualification === "not_qualified" ||
-                  c.state.stage === "not_booked"
-                    ? nextAction(c.state)
-                    : c.followup.next_action || nextAction(c.state)}
+                  {c.reviewReason
+                    ? "Verificar inscripción"
+                    : c.state.human ||
+                        c.state.qualification === "not_qualified" ||
+                        c.state.stage === "not_booked"
+                      ? nextAction(c.state)
+                      : c.followup.next_action || nextAction(c.state)}
                 </span>
                 {c.followup.next_action_on && <small>{c.followup.next_action_on}</small>}
               </div>

@@ -56,11 +56,13 @@ export default async function ContactPage({ params }: { params: Promise<{ person
             {c.phone || "Sin teléfono"} {c.email && `· ${c.email}`}
           </p>
         </div>
-        <span className={`crm-badge ${c.state.personType}`}>{typeLabels[c.state.personType]}</span>
+        <span className={`crm-badge ${c.state.personType}`}>
+          {c.reviewReason ? "Por verificar" : typeLabels[c.state.personType]}
+        </span>
       </header>
       <div className="crm-journey" aria-label="Recorrido del contacto">
         {personTypes.map((t) => (
-          <span key={t} className={c.state.personType === t ? "current" : ""}>
+          <span key={t} className={!c.reviewReason && c.state.personType === t ? "current" : ""}>
             {typeLabels[t]}
           </span>
         ))}
@@ -71,7 +73,7 @@ export default async function ContactPage({ params }: { params: Promise<{ person
           <dl className="crm-facts">
             <div>
               <dt>Etapa</dt>
-              <dd>{stageLabels[c.state.stage]}</dd>
+              <dd>{c.reviewReason || stageLabels[c.state.stage]}</dd>
             </div>
             <div>
               <dt>Canal de origen</dt>
@@ -86,11 +88,13 @@ export default async function ContactPage({ params }: { params: Promise<{ person
             <div>
               <dt>Próxima acción</dt>
               <dd>
-                {c.state.human ||
-                c.state.qualification === "not_qualified" ||
-                c.state.stage === "not_booked"
-                  ? nextAction(c.state)
-                  : c.followup.next_action || nextAction(c.state)}
+                {c.reviewReason
+                  ? "Verificar inscripción"
+                  : c.state.human ||
+                      c.state.qualification === "not_qualified" ||
+                      c.state.stage === "not_booked"
+                    ? nextAction(c.state)
+                    : c.followup.next_action || nextAction(c.state)}
               </dd>
             </div>
           </dl>
@@ -143,7 +147,7 @@ export default async function ContactPage({ params }: { params: Promise<{ person
                 </p>
               </div>
             ))
-          ) : (
+          ) : turnsResult.data?.length ? null : (
             <p>Sin conversaciones vinculadas.</p>
           )}
           <p className="crm-help">

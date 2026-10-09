@@ -110,6 +110,10 @@ export const loadCrm = cache(async () => {
           : "Sin identificar";
     return {
       id,
+      reviewReason:
+        s?.student_type === "regular" && state.personType === "prospect"
+          ? "Sin inscripción registrada; revisar el perfil operativo"
+          : null,
       studentId: s ? String(s.id) : null,
       name: String(
         s?.full_name ||

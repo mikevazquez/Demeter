@@ -82,7 +82,7 @@ export function projectContact(input: {
   const f = input.followup;
   if (f) {
     state.qualification = f.qualification as CrmState["qualification"];
-    state.qualificationReason = f.qualification_reason;
+    state.qualificationReason = f.qualification === "not_qualified" ? f.qualification_reason : null;
     if (state.personType === "prospect")
       state.stage =
         state.qualification === "not_qualified"
