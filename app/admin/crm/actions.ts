@@ -95,3 +95,20 @@ export async function saveFollowup(
   revalidatePath(`/admin/crm/${personId}`);
   return { saved: true };
 }
+
+export async function saveInactivityDays(
+  _previous: { error?: string; saved?: boolean },
+  form: FormData,
+): Promise<{ error?: string; saved?: boolean }> {
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const days = Number(form.get("inactivity_days"));
+  if (!Number.isInteger(days) || days < 1 || days > 365)
+    return { error: "Elige un plazo entre 1 y 365 días." };
+  const { error } = await supabase.rpc("admin_set_crm_inactivity_days", {
+    p_studio_id: studio.id,
+    p_days: days,
+  });
+  if (error) return { error: "No se pudo guardar el plazo. Intenta otra vez." };
+  revalidatePath("/admin/crm", "layout");
+  return { saved: true };
+}

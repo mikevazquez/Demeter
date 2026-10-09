@@ -22,6 +22,31 @@ describe("CRM projection from authoritative Studio Flow records", () => {
     }));
   it("prefers renewal over expired enrollment", () =>
     expect(projectContact({ ...base, enrollments: [expired, active] }).personType).toBe("student"));
+  it("keeps a regular student through the 14-day package grace period", () =>
+    expect(
+      projectContact({
+        ...base,
+        studentType: "regular",
+        packages: [{ ...expired, expires_on: "2026-09-25" }],
+      }).personType,
+    ).toBe("student"));
+  it("moves a regular student to Exalumna after the configured 15 package-free days", () =>
+    expect(
+      projectContact({
+        ...base,
+        studentType: "regular",
+        packages: [{ ...expired, expires_on: "2026-09-24" }],
+      }).personType,
+    ).toBe("former_student"));
+  it("uses the configured grace period rather than a hardcoded value", () =>
+    expect(
+      projectContact({
+        ...base,
+        studentType: "regular",
+        inactivityDays: 30,
+        packages: [{ ...expired, expires_on: "2026-09-24" }],
+      }).personType,
+    ).toBe("student"));
   it("expiry day is still valid", () =>
     expect(
       projectContact({ ...base, enrollments: [{ ...active, expires_on: base.today }] }).personType,

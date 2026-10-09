@@ -45,10 +45,12 @@ const qualifications = { pending: "Pendiente", qualified: "Apta", not_qualified:
 export default function ContactList({
   contacts,
   canEdit,
+  canConfigure,
   initialQuery = "",
 }: {
   contacts: CrmContact[];
   canEdit: boolean;
+  canConfigure: boolean;
   initialQuery?: string;
 }) {
   const [query, setQuery] = useState(initialQuery);
@@ -88,11 +90,18 @@ export default function ContactList({
           <h1>CRM de alumnas</h1>
           <p>Identifica a cada contacto y acompaña su siguiente paso.</p>
         </div>
-        {canEdit && (
-          <Link className="crm-primary" href="/admin/crm/nuevo">
-            + Nuevo contacto
-          </Link>
-        )}
+        <div className="crm-contact-actions">
+          {canConfigure && (
+            <Link className="crm-secondary" href="/admin/crm/ajustes">
+              Ajustes
+            </Link>
+          )}
+          {canEdit && (
+            <Link className="crm-primary" href="/admin/crm/nuevo">
+              + Nuevo contacto
+            </Link>
+          )}
+        </div>
       </header>
       <div className="crm-summary">
         {personTypes.map((t) => (

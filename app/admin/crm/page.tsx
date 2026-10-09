@@ -6,7 +6,7 @@ export default async function CrmPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  const [{ contacts, canEdit }, query] = await Promise.all([loadCrm(), searchParams]);
+  const [{ contacts, canEdit, canConfigure }, query] = await Promise.all([loadCrm(), searchParams]);
   const duplicate = contacts.find((c) => c.studentId === query.duplicate);
   const errors: Record<string, string> = {
     first_name_required: "Indica el nombre.",
@@ -29,7 +29,12 @@ export default async function CrmPage({
         </div>
       )}
       {query.deleted && <p role="status">Expediente archivado. Se conservó su historial.</p>}
-      <ContactList contacts={contacts} canEdit={canEdit} initialQuery={query.q} />
+      <ContactList
+        contacts={contacts}
+        canEdit={canEdit}
+        canConfigure={canConfigure}
+        initialQuery={query.q}
+      />
     </>
   );
 }

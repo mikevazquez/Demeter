@@ -9,6 +9,8 @@ export type Validity = {
 export function projectContact(input: {
   today: string;
   studentType?: string | null;
+  studentCreatedOn?: string | null;
+  inactivityDays?: number;
   trialStatus?: string | null;
   reservation?: { id: string; status: string; commercial_status: string } | null;
   paymentStatus?: string | null;
@@ -29,20 +31,52 @@ export function projectContact(input: {
     (!v.starts_on || v.starts_on <= input.today) &&
     (!v.expires_on || v.expires_on >= input.today);
   const enrollment = input.enrollments.find(current);
-  const expired = input.enrollments.find(
+  const expiredEnrollment = input.enrollments.find(
     (v) =>
       !v.refunded_at &&
       (v.status === "expired" ||
         (v.status === "active" && !!v.expires_on && v.expires_on < input.today)),
   );
-  if (enrollment) {
+  const hasActivePackage = input.packages.some(current);
+  const lastPackageDate = input.packages
+    .filter(
+      (v) =>
+        !v.refunded_at && v.status !== "cancelled" && (!v.starts_on || v.starts_on <= input.today),
+    )
+    .map((v) => v.expires_on || v.starts_on)
+    .filter((v): v is string => Boolean(v))
+    .sort()
+    .at(-1);
+  const lastEnrollmentDate = input.enrollments
+    .filter((v) => !v.refunded_at && v.status !== "cancelled")
+    .map((v) => v.starts_on || v.expires_on)
+    .filter((v): v is string => Boolean(v))
+    .sort()
+    .at(-1);
+  const inactiveSince =
+    lastPackageDate || lastEnrollmentDate || input.studentCreatedOn?.slice(0, 10);
+  const inactiveDays = inactiveSince
+    ? Math.floor((Date.parse(input.today) - Date.parse(inactiveSince)) / 86_400_000)
+    : 0;
+  const becameExStudent =
+    input.studentType === "regular" &&
+    !hasActivePackage &&
+    inactiveDays >= (input.inactivityDays ?? 15);
+  if (becameExStudent) {
+    state.personType = "former_student";
+    state.stage = "enrollment_expired";
+  } else if (enrollment) {
     state.personType = "student";
     state.stage = "enrollment_current";
     state.enrollmentId = enrollment.id;
-  } else if (expired) {
+  } else if (expiredEnrollment && input.studentType !== "regular") {
     state.personType = "former_student";
     state.stage = "enrollment_expired";
-    state.enrollmentId = expired.id;
+    state.enrollmentId = expiredEnrollment.id;
+  } else if (input.studentType === "regular") {
+    state.personType = "student";
+    state.stage = "enrollment_current";
+    state.enrollmentId = null;
   } else if (
     input.studentType === "trial" &&
     (input.reservation || ["attended", "no_show"].includes(input.trialStatus || ""))
@@ -59,7 +93,7 @@ export function projectContact(input: {
           ? "not_attended"
           : "scheduled";
   }
-  state.package = input.packages.some(current)
+  state.package = hasActivePackage
     ? "active"
     : input.packages.some((v) => !v.refunded_at && !!v.expires_on && v.expires_on < input.today)
       ? "expired"

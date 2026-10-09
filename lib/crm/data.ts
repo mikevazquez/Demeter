@@ -7,6 +7,13 @@ import { cache } from "react";
 export const loadCrm = cache(async () => {
   const context = await getAdminContext(CAPABILITIES.STUDENTS_READ);
   const { supabase, studio } = context;
+  const lifecycleSettings = await supabase
+    .from("crm_lifecycle_settings")
+    .select("inactivity_days")
+    .eq("studio_id", studio.id)
+    .maybeSingle();
+  if (lifecycleSettings.error) throw new Error("crm_settings_unavailable");
+  const inactivityDays = Number(lifecycleSettings.data?.inactivity_days || 15);
   async function rows(table: string, select: string) {
     const all: Record<string, unknown>[] = [];
     for (let offset = 0; ; offset += 500) {
@@ -91,6 +98,8 @@ export const loadCrm = cache(async () => {
         .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0]?.status as
         string | undefined,
       studentType: s?.student_type as string,
+      studentCreatedOn: s?.created_at as string,
+      inactivityDays,
       trialStatus: s?.trial_status as string,
       enrollments: enrollments.filter((e) => e.student_id === s?.id) as unknown as Parameters<
         typeof projectContact
@@ -154,6 +163,8 @@ export const loadCrm = cache(async () => {
   return {
     contacts: result,
     canEdit: context.can(CAPABILITIES.STUDENTS_WRITE),
+    canConfigure: context.can(CAPABILITIES.SETTINGS_WRITE),
+    inactivityDays,
     studioId: studio.id,
   };
 });

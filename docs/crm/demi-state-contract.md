@@ -23,7 +23,8 @@ Commit de referencia: 3f3ab862e191e53cf1172cb484e1e622915b9d7e (8 oct 2026).
 - Asistencia: mantiene Prueba. Tras asistir, una nueva reserva requiere inscripción.
 - Inscripción activada con pago verificado: Alumna. No exigir que asistencia y pago ocurran en el mismo evento.
 - Paquete vencido: mantiene Alumna y propone renovación de paquete.
-- Inscripción vencida: Exalumna; conserva paquete activo y demás históricos.
+- Alumna regular sin paquete activo durante 15 días: Exalumna; el plazo puede configurarse por estudio. No se cambia el expediente operativo ni sus movimientos.
+- Una inscripción vencida sin paquete sigue la misma ventana de 15 días para alumnas regulares; el historial de inscripción se conserva.
 - Renovar inscripción: vuelve a Alumna.
 - No agendó: sigue Prospecto. No usar para datos incompletos, que mantienen Espera de datos.
 - No clasifica: sigue Prospecto; motivo obligatorio. Pausar seguimiento/promoción.
@@ -42,7 +43,9 @@ La migración `20261009160000_crm_demi_followup.sql` se aplicó únicamente a `h
 
 Los registros heredados de alumnas regulares sin inscripción comprobable se muestran como **Por verificar**, fuera de los contadores de etapas, con próxima acción de conciliar inscripción; no se convierten en prospectos por falta de datos.
 
-Evidencia: 25 pruebas de contrato/proyección; typecheck y lint del alcance; pruebas SQL con rollback de guardado/auditoría, motivo obligatorio, conflicto de revisión, rechazo entre estudios y escritura anónima. El build Preview valida URL y hash de clave pública del sandbox.
+Evidencia: 28 pruebas de contrato/proyección; typecheck y lint del alcance; pruebas SQL con rollback de guardado/auditoría, motivo obligatorio, conflicto de revisión, rechazo entre estudios, escritura anónima e idempotencia del proceso diario. El build Preview valida URL y hash de clave pública del sandbox.
+
+El plazo de inactividad se configura en Ajustes del CRM (1–365 días; 15 por defecto). La lista proyecta Exalumna cuando no hay paquete activo y el plazo se completó. Un proceso diario idempotente registra la transición y la reactivación en `crm_lifecycle_history`; Actividad conserva este historial. No modifica acceso, inscripción, pagos, créditos, ventas ni asistencia. Esta lógica y su configuración están aplicadas únicamente al Studio Flow Sandbox.
 
 Límites de esta versión: el historial nuevo registra cambios de seguimiento; los históricos de pagos, ventas, reservas e inscripción están disponibles en Perfil y Actividad dentro de la ficha CRM. La pausa y atención humana son estados de seguimiento en el CRM. No se activaron secuencias comerciales, ni se conectó este estado a todos los proveedores salientes. La reapertura automática ante nuevos mensajes y secuencias de seguimiento necesitan integración de eventos y UAT adicional. No presentar esta versión como automatización completa de Demi.
 

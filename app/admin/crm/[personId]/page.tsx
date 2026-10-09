@@ -33,6 +33,14 @@ export default async function ContactPage({
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) throw new Error("crm_history_unavailable");
+  const { data: lifecycleHistory, error: lifecycleError } = await supabase
+    .from("crm_lifecycle_history")
+    .select("id,from_type,to_type,inactivity_days,inactive_since,changed_at")
+    .eq("studio_id", studio.id)
+    .eq("person_id", c.id)
+    .order("changed_at", { ascending: false })
+    .limit(50);
+  if (lifecycleError) throw new Error("crm_lifecycle_history_unavailable");
   const { data: threads, error: threadError } = await supabase
     .from("assistant_conversations")
     .select("id,student_id,crm_conversation_id,channel")
@@ -276,6 +284,27 @@ export default async function ContactPage({
       )}
       {tab === "activity" && (
         <>
+          <section className="crm-panel crm-history">
+            <h2>Historial de etapa</h2>
+            {lifecycleHistory?.length ? (
+              lifecycleHistory.map((item) => (
+                <article className="crm-history-item" key={item.id}>
+                  <strong>
+                    {new Date(item.changed_at).toLocaleString("es-MX", {
+                      timeZone: studio.timezone,
+                    })}
+                  </strong>
+                  <p>
+                    {typeLabels[item.from_type as keyof typeof typeLabels]} →{" "}
+                    {typeLabels[item.to_type as keyof typeof typeLabels]} · {item.inactivity_days}{" "}
+                    días sin paquete activo (desde {item.inactive_since})
+                  </p>
+                </article>
+              ))
+            ) : (
+              <p>Todavía no hay cambios de tipo por inactividad.</p>
+            )}
+          </section>
           <section className="crm-panel crm-history">
             <h2>Historial de seguimiento</h2>
             {history?.length ? (
