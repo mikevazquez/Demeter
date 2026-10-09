@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
 import { describe, expect, it, vi } from "vitest";
+import { demiDeliveryRetryPolicy } from "../lib/assistant/delivery-retry-policy";
 import { trialReceiptConfirmation } from "../lib/assistant/receipt-confirmation";
 
 function harness(
@@ -69,6 +70,7 @@ function harness(
     "@/lib/assistant/group-booking": {
       handleDemiGroupReceipt: vi.fn().mockRejectedValue(new Error("Unexpected group receipt")),
     },
+    "@/lib/assistant/delivery-retry-policy": { demiDeliveryRetryPolicy },
     "@/lib/assistant/runtime-config": {},
     "@/lib/assistant/read-tools": {},
     "@/lib/assistant/receipt-reader": { readTransferReceipt: read },
