@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { conversationGuidance } from "../lib/assistant/conversation-guidance";
+import { conversationGuidance, requiresProspectNameBeforeBooking } from "../lib/assistant/conversation-guidance";
 
 describe("Demi conversation guidance for UAT rules", () => {
+  it("waits for payment proof before requesting a prospect name when prepayment is required", () => {
+    expect(requiresProspectNameBeforeBooking(true, true)).toBe(false);
+    expect(requiresProspectNameBeforeBooking(true, false)).toBe(true);
+  });
+
   it("does not request prospect identity or prepare a booking before payment proof", () => {
     const guidance = conversationGuidance({ testSimulation: { persona: "prospect" } });
 

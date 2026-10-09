@@ -4,6 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getCommercialOptions, type AssistantStudioContext } from "./read-tools";
+import { requiresProspectNameBeforeBooking } from "./conversation-guidance";
 import type {
   ExecuteBookingArgs,
   ExecuteCancellationArgs,
@@ -623,15 +624,6 @@ function isSessionBookableNow(session: { status: string; starts_at: string }, no
 }
 
 async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBookingArgs) {
-  if (ctx.identityNeedsName === true && !ctx.studentId) {
-    return {
-      ok: false,
-      reason_code: "prospect_name_required",
-      reason_message:
-        "Antes de reservar, pide el nombre completo y espera a que Studio Flow lo guarde en el CRM.",
-    };
-  }
-
   const sessionId = parseOpaqueRef(args.session_ref, "session");
   if (!sessionId) {
     return { ok: false, error: "invalid_session_ref" };
@@ -666,6 +658,14 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
     if (!prepaymentPolicy.ok) return prepaymentPolicy;
 
     const requirePaymentBeforeBooking = prepaymentPolicy.effectiveRequiresPayment;
+    if (requiresProspectNameBeforeBooking(ctx.identityNeedsName === true && !studentId, requirePaymentBeforeBooking)) {
+      return {
+        ok: false,
+        reason_code: "prospect_name_required",
+        reason_message:
+          "Antes de reservar, pide el nombre completo y espera a que Studio Flow lo guarde en el CRM.",
+      };
+    }
 
     const { data: preview, error: previewError } = await ctx.supabase.rpc(
       "assistant_trial_booking_preview",

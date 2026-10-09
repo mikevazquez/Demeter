@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AssistantStudioContext } from "./read-tools";
 import { isExplicitAssistantConfirmation } from "./action-tools";
 import { isActiveStudentPersona, isFirstVisitPersona, type TestPersona } from "./prompt-workbench";
+import { requiresProspectNameBeforeBooking } from "./conversation-guidance";
 
 type Summary = Record<string, unknown>;
 export type TestSimulation = {
@@ -143,7 +144,7 @@ export async function simulateAssistantAction(
       reason_message: "Tu inscripción está vencida. Puedes renovar la inscripción por separado o elegir un paquete que la incluya. Después podrás reservar una clase.",
     });
   }
-  if (tool === "prepare_booking" && state.identityNeedsName) {
+  if (tool === "prepare_booking" && requiresProspectNameBeforeBooking(state.identityNeedsName, state.paymentBeforeBooking === true)) {
     return result({
       ok: false,
       reason_code: "prospect_name_required",
