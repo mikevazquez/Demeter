@@ -616,8 +616,11 @@ export async function createMercadoPagoOrderAction(
   const normalizedRequestKey = clientRequestKey.trim();
   const returnBaseUrl = await mercadoPagoReturnBaseUrl();
 
-  if (!normalizedProductId || !normalizedRequestKey || !returnBaseUrl) {
+  if (!normalizedProductId || !normalizedRequestKey) {
     return { ok: false as const, error: "invalid_request" };
+  }
+  if (!returnBaseUrl) {
+    return { ok: false as const, error: "checkout_origin_not_allowed" };
   }
 
   const { supabase } = await getStudentPortalContext();
