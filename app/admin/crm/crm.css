@@ -356,6 +356,183 @@
   }
 }
 
+/* Contextual follow-up and operational snapshot in the CRM summary. */
+.flow-crm .crm-recommendation-card,
+.flow-crm .profile360-approved-enrollment {
+  min-width: 0;
+  border: 1px solid #ded4ff;
+  border-radius: 14px;
+  background: #fff;
+  padding: 16px;
+  box-shadow: none;
+}
+.flow-crm .crm-recommendation-card {
+  display: grid;
+  gap: 11px;
+  background: linear-gradient(110deg, #fbf9ff, #fff 66%);
+}
+.flow-crm .crm-recommendation-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.flow-crm .crm-recommendation-heading .eyebrow {
+  margin: 0 0 5px;
+  color: #7657d8;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.flow-crm .crm-recommendation-heading h2 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.35;
+}
+.flow-crm .crm-recommendation-mark {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: #eee8ff;
+  color: #7044db;
+}
+.flow-crm .crm-recommendation-why {
+  padding: 11px 12px;
+  border: 1px solid #e9e3fa;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 12px;
+}
+.flow-crm .crm-recommendation-why strong {
+  color: #202941;
+}
+.flow-crm .crm-recommendation-why p {
+  margin: 4px 0 0;
+  color: #69738b;
+  line-height: 1.5;
+}
+.flow-crm .crm-recommendation-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.flow-crm .crm-recommendation-facts span {
+  padding: 6px 9px;
+  border: 1px solid #e7eaf2;
+  border-radius: 8px;
+  background: #fff;
+  color: #4f5a72;
+  font-size: 11px;
+}
+.flow-crm .crm-recommendation-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+.flow-crm .crm-recommendation-actions > .crm-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 9px 13px;
+  border: 1px solid #7044db;
+  border-radius: 9px;
+  background: #7044db;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.flow-crm .crm-suggested-message summary {
+  color: #594b77;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 650;
+}
+.flow-crm .crm-suggested-message p {
+  max-width: 700px;
+  margin: 8px 0 3px;
+  padding: 10px 12px;
+  border: 1px solid #ece5ff;
+  border-radius: 10px;
+  background: #f5f2ff;
+  color: #35405a;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.flow-crm .crm-suggested-message small,
+.flow-crm .crm-recommendation-footnote {
+  color: #69738b;
+  font-size: 10px;
+}
+.flow-crm .crm-recommendation-footnote {
+  margin: 0;
+}
+.flow-crm .crm-operation-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.flow-crm .crm-operation-cards > .profile360-approved-package,
+.flow-crm .crm-operation-cards > .profile360-approved-enrollment {
+  border-color: #e7eaf2;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: none;
+}
+.flow-crm .crm-enrollment-status {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #f0f2f6;
+  color: #59647a;
+  font-size: 11px;
+  font-weight: 700;
+}
+.flow-crm .crm-enrollment-status.is-active {
+  background: #e8f7ee;
+  color: #17864c;
+}
+.flow-crm .crm-enrollment-facts {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid #eff0f4;
+  color: #69738b;
+  font-size: 11px;
+}
+.flow-crm .crm-enrollment-facts strong {
+  color: #202941;
+  text-align: right;
+}
+.flow-crm .crm-tertiary-action {
+  color: #7044db;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+@media (max-width: 600px) {
+  .flow-crm .crm-recommendation-card,
+  .flow-crm .profile360-approved-enrollment {
+    padding: 13px;
+  }
+  .flow-crm .crm-recommendation-heading h2 {
+    font-size: 15px;
+  }
+  .flow-crm .crm-recommendation-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .flow-crm .crm-operation-cards {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+}
+
 .crm-message {
   padding: 12px;
   border-radius: 12px;

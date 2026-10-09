@@ -17,9 +17,11 @@ export default async function ContactPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const query = await searchParams;
-  const tab = ["conversation", "activity", "profile", "notes", "followup"].includes(query.tab || "")
+  const tab = ["summary", "conversation", "activity", "profile", "notes", "followup"].includes(
+    query.tab || "",
+  )
     ? query.tab!
-    : "conversation";
+    : "summary";
   const { personId } = await params;
   const data = await loadCrm();
   const c = data.contacts.find((c) => c.id === personId);
@@ -71,6 +73,7 @@ export default async function ContactPage({
   ];
   const profileView = query.view ?? "profile";
   const contactSections = [
+    { key: "summary", label: "Resumen", href: `${base}?tab=summary` },
     { key: "conversation", label: "Conversación", href: `${base}?tab=conversation` },
     { key: "followup", label: "Seguimiento", href: `${base}?tab=followup` },
     { key: "profile", label: c.studentId ? "Expediente" : "Datos", href: `${base}?tab=profile` },
@@ -196,6 +199,39 @@ export default async function ContactPage({
           );
         })}
       </nav>
+      {tab === "summary" &&
+        (c.studentId ? (
+          <StudentRecord
+            params={Promise.resolve({ studentId: c.studentId })}
+            searchParams={Promise.resolve({ ...query, view: "summary" })}
+            crmHref={base}
+            hideNavigation
+            crmPersonType={c.state.personType}
+            suggestedChannel={c.lastChannel}
+            recommendationPaused={Boolean(
+              c.state.human || c.state.qualification === "not_qualified",
+            )}
+          />
+        ) : (
+          <section className="crm-panel">
+            <h2>Resumen del contacto</h2>
+            <dl className="crm-profile-facts">
+              {[
+                ["Etapa", typeLabels[c.state.personType]],
+                ["Estado", stageLabels[c.state.stage]],
+                ["Canal de origen", c.channel],
+                ["Teléfono", c.phone],
+                ["Interés", c.followup.interest],
+                ["Próxima acción", c.followup.next_action || nextAction(c.state)],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value || "Sin registrar"}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ))}
       {tab === "profile" && c.studentId && (
         <nav className="crm-profile-nav" aria-label="Secciones del expediente">
           {profileSections.map((item) => (
@@ -301,6 +337,11 @@ export default async function ContactPage({
               searchParams={Promise.resolve({ ...query, view: profileView })}
               crmHref={base}
               hideNavigation
+              crmPersonType={c.state.personType}
+              suggestedChannel={c.lastChannel}
+              recommendationPaused={Boolean(
+                c.state.human || c.state.qualification === "not_qualified",
+              )}
             />
           ) : (
             <section className="crm-panel">
@@ -396,6 +437,11 @@ export default async function ContactPage({
               searchParams={Promise.resolve({ ...query, view: "history" })}
               crmHref={base}
               hideNavigation
+              crmPersonType={c.state.personType}
+              suggestedChannel={c.lastChannel}
+              recommendationPaused={Boolean(
+                c.state.human || c.state.qualification === "not_qualified",
+              )}
             />
           )}
         </>

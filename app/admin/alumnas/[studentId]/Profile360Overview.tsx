@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { FollowupRecommendation } from "@/lib/crm/recommendations";
 
 type Alert = { title: string; detail: string };
 
@@ -33,6 +34,8 @@ type Props = {
   showEvaluations: boolean;
   showDocuments: boolean;
   canSell: boolean;
+  recommendation: FollowupRecommendation | null;
+  suggestedChannel: string;
   currentPackage: {
     name: string;
     unlimited: boolean;
@@ -115,6 +118,8 @@ export default function Profile360Overview({
   showEvaluations,
   showDocuments,
   canSell,
+  recommendation,
+  suggestedChannel,
   currentPackage,
   nextClass,
   historicalValueMinor,
@@ -258,59 +263,156 @@ export default function Profile360Overview({
 
       {activeView === "summary" ? (
         <div className="profile360-approved-summary">
-          <section className="profile360-approved-package">
-            <div className="profile360-approved-card-heading">
-              <div>
-                <p className="eyebrow">PAQUETE ACTUAL</p>
-                <h2>{currentPackage ? currentPackage.name : "Sin paquete activo"}</h2>
+          {recommendation ? (
+            <section className="crm-recommendation-card">
+              <div className="crm-recommendation-heading">
+                <div>
+                  <p className="eyebrow">SIGUIENTE PASO RECOMENDADO</p>
+                  <h2>{recommendation.title}</h2>
+                </div>
+                <span className="crm-recommendation-mark" aria-hidden="true">
+                  ✦
+                </span>
               </div>
-              {currentPackage ? <span className="status-pill">Activo</span> : null}
-            </div>
-
-            {currentPackage ? (
-              <>
-                <div className="profile360-approved-package-row">
-                  <div className="profile360-approved-package-balance">
-                    <strong>
-                      {currentPackage.unlimited
-                        ? "Ilimitado"
-                        : String(currentPackage.availableCredits ?? 0) +
-                          " de " +
-                          String(currentPackage.creditLimit ?? 0)}
-                    </strong>
-                    <span>{currentPackage.unlimited ? "acceso" : "créditos disponibles"}</span>
-                  </div>
-                  <div className="profile360-approved-package-expiry">
-                    <strong>
-                      {currentPackage.expiresOn
-                        ? formatDate(currentPackage.expiresOn, locale)
-                        : "Sin fecha"}
-                    </strong>
-                    <span>vence</span>
-                  </div>
-                </div>
-
-                {!currentPackage.unlimited && currentPackage.creditLimit ? (
-                  <div className="profile360-approved-progress" aria-hidden="true">
-                    <span style={{ width: String(progress) + "%" }} />
-                  </div>
+              <div className="crm-recommendation-why">
+                <strong>Por qué aparece</strong>
+                <p>{recommendation.reason}</p>
+              </div>
+              <div className="crm-recommendation-facts">
+                {recommendation.facts.map((fact) => (
+                  <span key={fact}>{fact}</span>
+                ))}
+              </div>
+              <div className="crm-recommendation-actions">
+                {recommendation.kind === "renewal" && canSell ? (
+                  <Link
+                    className="crm-primary"
+                    href={`/admin/ventas/nueva?student_id=${student.id}`}
+                  >
+                    Preparar renovación
+                  </Link>
+                ) : baseHref ? (
+                  <Link className="crm-primary" href={`${baseHref}?tab=followup`}>
+                    Preparar seguimiento
+                  </Link>
                 ) : null}
+                <details className="crm-suggested-message">
+                  <summary>Ver mensaje sugerido · {suggestedChannel}</summary>
+                  <p>{recommendation.message}</p>
+                  <small>Revísalo antes de usarlo. Esta pantalla no envía mensajes.</small>
+                </details>
+              </div>
+              <p className="crm-recommendation-footnote">
+                Sugerencia basada en los datos registrados. No se envía automáticamente.
+              </p>
+            </section>
+          ) : null}
 
-                <div className="profile360-approved-next">
-                  <span>Próxima clase</span>
-                  <strong>
-                    {nextClass
-                      ? nextClass.name +
-                        " · " +
-                        formatDateTime(nextClass.startsAt, timeZone, locale)
-                      : "Sin próxima clase"}
-                  </strong>
+          <div className={embedded ? "crm-operation-cards" : undefined}>
+            {embedded ? (
+              <section className="profile360-approved-enrollment">
+                <div className="profile360-approved-card-heading">
+                  <div>
+                    <p className="eyebrow">INSCRIPCIÓN</p>
+                    <h2>{currentEnrollment ? "Inscripción activa" : "Inscripción"}</h2>
+                  </div>
+                  <span
+                    className={
+                      currentEnrollment
+                        ? "crm-enrollment-status is-active"
+                        : "crm-enrollment-status"
+                    }
+                  >
+                    {currentEnrollment ? "Activa" : enrollment ? "No vigente" : "Sin registro"}
+                  </span>
                 </div>
-              </>
-            ) : (
-              <p className="profile360-approved-empty">Esta alumna no tiene un paquete vigente.</p>
-            )}
-          </section>
+                {enrollment ? (
+                  <div className="crm-enrollment-facts">
+                    <span>Vigencia</span>
+                    <strong>
+                      {enrollment.expiresOn
+                        ? formatDate(enrollment.expiresOn, locale)
+                        : "Vitalicia"}
+                    </strong>
+                  </div>
+                ) : (
+                  <p className="profile360-approved-empty">No hay una inscripción registrada.</p>
+                )}
+                {canSell && !currentEnrollment ? (
+                  <Link
+                    className="crm-tertiary-action"
+                    href={`/admin/ventas/nueva?student_id=${student.id}`}
+                  >
+                    Registrar inscripción →
+                  </Link>
+                ) : null}
+              </section>
+            ) : null}
+
+            <section className="profile360-approved-package">
+              <div className="profile360-approved-card-heading">
+                <div>
+                  <p className="eyebrow">PAQUETE ACTUAL</p>
+                  <h2>{currentPackage ? currentPackage.name : "Sin paquete activo"}</h2>
+                </div>
+                {currentPackage ? <span className="status-pill">Activo</span> : null}
+              </div>
+
+              {currentPackage ? (
+                <>
+                  <div className="profile360-approved-package-row">
+                    <div className="profile360-approved-package-balance">
+                      <strong>
+                        {currentPackage.unlimited
+                          ? "Ilimitado"
+                          : String(currentPackage.availableCredits ?? 0) +
+                            " de " +
+                            String(currentPackage.creditLimit ?? 0)}
+                      </strong>
+                      <span>{currentPackage.unlimited ? "acceso" : "créditos disponibles"}</span>
+                    </div>
+                    <div className="profile360-approved-package-expiry">
+                      <strong>
+                        {currentPackage.expiresOn
+                          ? formatDate(currentPackage.expiresOn, locale)
+                          : "Sin fecha"}
+                      </strong>
+                      <span>vence</span>
+                    </div>
+                  </div>
+
+                  {!currentPackage.unlimited && currentPackage.creditLimit ? (
+                    <div className="profile360-approved-progress" aria-hidden="true">
+                      <span style={{ width: String(progress) + "%" }} />
+                    </div>
+                  ) : null}
+
+                  <div className="profile360-approved-next">
+                    <span>Próxima clase</span>
+                    <strong>
+                      {nextClass
+                        ? nextClass.name +
+                          " · " +
+                          formatDateTime(nextClass.startsAt, timeZone, locale)
+                        : "Sin próxima clase"}
+                    </strong>
+                  </div>
+                </>
+              ) : (
+                <p className="profile360-approved-empty">
+                  Esta alumna no tiene un paquete vigente.
+                </p>
+              )}
+              {canSell ? (
+                <Link
+                  className="crm-tertiary-action"
+                  href={`/admin/ventas/nueva?student_id=${student.id}`}
+                >
+                  Vender o agregar paquete →
+                </Link>
+              ) : null}
+            </section>
+          </div>
 
           {showEvaluations ? (
             <section className="profile360-technical-levels">

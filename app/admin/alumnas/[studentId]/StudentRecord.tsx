@@ -9,6 +9,8 @@ import StudentEvaluationsPanel from "./StudentEvaluationsPanel";
 import StudentDocumentsPanel from "./StudentDocumentsPanel";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { getFollowupRecommendation } from "@/lib/crm/recommendations";
+import type { PersonType } from "@/lib/crm/demi-state";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
@@ -136,14 +138,31 @@ function localDateKey(timeZone: string) {
   return year + "-" + month + "-" + day;
 }
 
+function localDateFromInstant(value: string, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(value));
+  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${byType.year}-${byType.month}-${byType.day}`;
+}
+
 export default async function StudentRecord({
   params,
   searchParams,
   crmHref,
   hideNavigation = false,
+  crmPersonType,
+  suggestedChannel = "Sin identificar",
+  recommendationPaused = false,
 }: {
   crmHref?: string;
   hideNavigation?: boolean;
+  crmPersonType?: PersonType;
+  suggestedChannel?: string;
+  recommendationPaused?: boolean;
   params: Promise<{ studentId: string }>;
   searchParams: Promise<{
     saved?: string;
@@ -537,6 +556,7 @@ export default async function StudentRecord({
   };
   const packageClassEvents = new Map<string, PackageClassEvent[]>();
   const generalClassEvents: PackageClassEvent[] = [];
+  let lastAttendedOn: string | null = null;
 
   let nextClass: { name: string; startsAt: string } | null = null;
   if (canReadSchedule) {
@@ -586,6 +606,8 @@ export default async function StudentRecord({
       events.sort((a, b) => b.startsAt.localeCompare(a.startsAt));
     }
     generalClassEvents.sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+    const lastAttended = generalClassEvents.find((event) => event.status === "attended");
+    lastAttendedOn = lastAttended ? localDateFromInstant(lastAttended.startsAt, timeZone) : null;
 
     if (currentAcquisition) {
       const upcoming = (packageClassEvents.get(currentAcquisition.id) ?? [])
@@ -955,6 +977,18 @@ export default async function StudentRecord({
       }
     : null;
 
+  const recommendation =
+    crmHref && crmPersonType
+      ? getFollowupRecommendation({
+          personType: crmPersonType,
+          today,
+          name: student.full_name,
+          currentPackage: currentPackageView,
+          lastAttendedOn,
+          paused: recommendationPaused,
+        })
+      : null;
+
   const alerts: Array<{ title: string; detail: string }> = [];
   if (student.lifecycle_status === "active" && !currentAcquisition && !scheduledAcquisition) {
     const latestRelevant = acquisitions.find((item) => !item.refunded_at && item.expires_on);
@@ -1055,6 +1089,8 @@ export default async function StudentRecord({
         showEvaluations={canReadEvaluations}
         showDocuments={canReadDocuments}
         canSell={can(CAPABILITIES.SALES_WRITE)}
+        recommendation={recommendation}
+        suggestedChannel={suggestedChannel}
         currentPackage={currentPackageView}
         nextClass={nextClass}
         historicalValueMinor={historicalValueMinor}

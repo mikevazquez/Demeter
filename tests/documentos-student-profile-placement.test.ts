@@ -8,7 +8,7 @@ function source(path: string) {
 }
 
 describe("DOCUMENTOS-01 person-centric information architecture", () => {
-  const profile = source("app/admin/alumnas/[studentId]/page.tsx");
+  const profile = source("app/admin/alumnas/[studentId]/StudentRecord.tsx");
   const overview = source("app/admin/alumnas/[studentId]/Profile360Overview.tsx");
   const panel = source("app/admin/alumnas/[studentId]/StudentDocumentsPanel.tsx");
   const documentDetail = source("app/admin/documentos/[documentId]/page.tsx");
