@@ -1,4 +1,5 @@
 import "server-only";
+import { demiUatScope, captureDemiUatText } from "./uat-scope";
 
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -112,6 +113,8 @@ function parseWebhookConfig(value: unknown): MetaWhatsAppWebhookConfig | null {
 }
 
 export async function loadMetaWhatsAppWebhookConfig(supabase: SupabaseClient, studioId: string) {
+  const uat = demiUatScope(studioId);
+  if (uat) return uat.config;
   const [{ data, error }, { data: pilotIds, error: pilotError }] = await Promise.all([
     supabase.rpc("service_get_meta_whatsapp_webhook_config", {
       target_studio_id: studioId,
@@ -186,6 +189,13 @@ export async function downloadMetaWhatsAppMedia(input: {
   mediaId: string;
   fetcher?: typeof fetch;
 }): Promise<MetaDownloadedMedia> {
+  const uat = demiUatScope();
+  if (uat) {
+    if (uat.config !== input.config) throw new Error("demi_uat_channel_mismatch");
+    const media = uat.media.get(input.mediaId);
+    if (!media) throw new Error("demi_uat_media_missing");
+    return media;
+  }
   const mediaId = input.mediaId.trim();
   if (!/^\d+$/.test(mediaId)) {
     throw new Error("meta_media_id_invalid");
@@ -384,6 +394,8 @@ export async function sendMetaWhatsAppText(input: {
   text: string;
   fetcher?: typeof fetch;
 }): Promise<MetaTextDeliveryResult> {
+  const captured = await captureDemiUatText(input);
+  if (captured) return captured;
   const recipient = input.recipientWaId.replace(/\D/g, "");
   const text = input.text.trim();
 

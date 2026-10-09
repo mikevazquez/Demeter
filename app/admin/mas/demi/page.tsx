@@ -211,6 +211,7 @@ export default async function DemiDemoPage() {
       <DemiLayers activeInstructions={config.personality_instructions ?? ""} initialInstructions={(versions?.[0]?.kind === "draft" ? versions[0].instructions : config.personality_instructions) ?? ""} />
 
       <section className="demi-advanced-workbench"><h2>Pruebas y operación de Demi</h2><p>Prueba conversaciones en Sandbox, revisa escalamiento y conserva el historial de versiones.</p>
+      {process.env.NEXT_PUBLIC_SUPABASE_URL === "https://hedouonyhynuvwbckdlg.supabase.co" && process.env.VERCEL_ENV !== "production" && <p><Link href="/admin/mas/demi/uat">Abrir banco operativo UAT →</Link></p>}
       <DemiWorkbench
         assistantName={config.assistant_name}
         activeInstructions={config.personality_instructions}
@@ -226,3 +227,4 @@ export default async function DemiDemoPage() {
     </main>
   );
 }
+
