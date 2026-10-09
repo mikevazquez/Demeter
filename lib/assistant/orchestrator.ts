@@ -262,6 +262,19 @@ function formatMoney(amountMinor: unknown, currency: unknown) {
 
 function confirmationReply(toolName: string, result: Record<string, unknown>) {
   if (result.ok !== true) {
+    if (
+      toolName === "execute_booking" &&
+      (result.human_review_created === true || result.handoff_id)
+    )
+      return "No pude confirmar el resultado de la reserva. Creé una solicitud para que el equipo revise el caso antes de volver a intentar.";
+    if (
+      toolName === "execute_booking" &&
+      (result.outcome_unknown === true ||
+        ["booking_execution_failed", "booking_reconciliation_unavailable"].includes(
+          String(result.error),
+        ))
+    )
+      return "No pude confirmar el resultado de la reserva. Revisaré el estado guardado antes de volver a intentar para evitar duplicarla.";
     if (result.original_reservation_preserved === true) {
       return "No pude completar el cambio y tu reserva original permanece intacta. No se hizo ningún movimiento.";
     }

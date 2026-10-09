@@ -476,6 +476,29 @@ describe("Demi prompt workbench", () => {
     expect(h.simulate).not.toHaveBeenCalled();
     expect(h.writes).toEqual(["assistant_tool_executions"]);
   });
+  it.each([
+    { ok: false, error: "booking_execution_failed", outcome_unknown: true },
+    { ok: false, error: "booking_reconciliation_unavailable" },
+    {
+      ok: false,
+      error: "booking_execution_failed",
+      human_review_created: true,
+      handoff_id: "handoff",
+    },
+  ])("does not claim no changes when the booking outcome is unknown: %j", async (failure) => {
+    const h = orchestratorHarness({
+      id: "pending-action",
+      action_type: "booking.create",
+      expires_at: "2099-01-01T00:00:00.000Z",
+    });
+    h.input.testSimulation = undefined;
+    h.action.mockResolvedValue(failure);
+    const result = await h.run(h.input);
+    expect(result.reply).toContain("No pude confirmar el resultado");
+    expect(result.reply).not.toContain("No se hizo ningún cambio");
+    if ("human_review_created" in failure) expect(result.reply).toContain("Creé una solicitud");
+    else expect(result.reply).not.toContain("Creé una solicitud");
+  });
   it("does not ask for a second confirmation after a simulated cancellation executes", async () => {
     const h = orchestratorHarness();
     const summary = {

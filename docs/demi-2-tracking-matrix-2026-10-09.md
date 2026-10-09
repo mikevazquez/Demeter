@@ -1,21 +1,21 @@
 # Matriz de seguimiento Demi 2.0 — 9 octubre 2026
 
-**2/18 casos maestros aprobados (11.1 %); 16 parciales (88.9 %).** M03 y M17 pasaron sus criterios de negocio. El transporte externo permanece en M01 y no se da por aprobado. Cada fila distingue variantes que pasaron de lo que falta para cerrar el caso. Las correcciones detectadas se detallan debajo.
+**3/18 casos maestros aprobados (16.7 %); 15 parciales (83.3 %).** M03, M13 y M17 pasaron sus criterios de negocio. El transporte externo permanece en M01 y no se da por aprobado. Cada fila distingue variantes que pasaron de lo que falta para cerrar el caso. Las correcciones detectadas se detallan debajo.
 
-Validación: 1103/1103 pruebas automáticas, typecheck y compilación correctos; lint sin errores (un aviso preexistente). Histórico: 97 variantes SQL; nueva ejecución de 24 controles de Mercado Pago, nueve motivos humanos y nueve controles de seguimiento con el rol real service_role. Estos conjuntos se solapan y no se suman como casos maestros. Se creó una orden real de prueba de Mercado Pago; compra pendiente del usuario.
+Validación: 1104/1104 pruebas automáticas, typecheck y compilación correctos; lint sin errores (un aviso preexistente). Histórico: 97 variantes SQL; nueva ejecución de 24 controles de Mercado Pago, nueve motivos humanos y nueve controles de seguimiento con el rol real service_role. Estos conjuntos se solapan y no se suman como casos maestros. Se creó una orden real de prueba de Mercado Pago; compra pendiente del usuario.
 
 ## Resumen para promover a producción
 
 | Medida | Resultado | Interpretación |
 | --- | --- | --- |
-| Casos maestros aprobados integralmente | 2/18 (11.1 %) | M03 y M17 tienen evidencia de V1–V3; ver documento de evidencia específico. |
-| Casos maestros parciales | 16/18 (88.9 %) | Los restantes tienen verificaciones aprobadas y pendientes identificados. |
-| Casos maestros por cerrar | 16/18 (88.9 %) | Porcentaje de cierres pendientes, no de esfuerzo ni de implementación restante. |
-| Pruebas automáticas aprobadas en la última ejecución registrada | 1103/1103 (100 %) | Regresión técnica; no son 1086 casos UAT de negocio. |
+| Casos maestros aprobados integralmente | 3/18 (16.7 %) | M03, M13 y M17 tienen evidencia de V1–V3; ver documento de evidencia específico. |
+| Casos maestros parciales | 15/18 (83.3 %) | Los restantes tienen verificaciones aprobadas y pendientes identificados. |
+| Casos maestros por cerrar | 15/18 (83.3 %) | Porcentaje de cierres pendientes, no de esfuerzo ni de implementación restante. |
+| Pruebas automáticas aprobadas en la última ejecución registrada | 1104/1104 (100 %) | Regresión técnica; no son 1104 casos UAT de negocio. |
 | Verificaciones SQL registradas | 97 | Evidencia técnica acumulada; no existe un total exhaustivo de variantes pendientes para calcular su porcentaje. |
 | Decisión de promoción | No lista | Faltan pagos nuevos, transporte externo y variantes de negocio. No se ha publicado esta rama en producción. |
 
-Los resultados son los de la última ejecución guardada, no una nueva corrida de pruebas. No se registran casos maestros cerrados como fallidos: M03 y M17 pasaron y 16 permanecen parciales; los defectos encontrados y corregidos conservan su historial.
+Los resultados son los de la última ejecución guardada, no una nueva corrida de pruebas. No se registran casos maestros cerrados como fallidos: M03, M13 y M17 pasaron y 15 permanecen parciales; los defectos encontrados y corregidos conservan su historial.
 
 ### Política de pagos confirmada con el usuario
 
@@ -47,7 +47,7 @@ La actualización de esta matriz no aprueba un caso ni sustituye su ejecución. 
 | M10 Cancelación            | Parcial | Corte exacto de cinco horas; tardía consume una vez. Prueba inicia en primera clase y conserva vencimiento al mover/cancelar.     | Recordatorio y cancelación completos por transporte externo.                         | Ninguno por ahora.                                           |
 | M11 Asistencia/inscripción | Parcial | Asistencia real; conversión mediante venta interna. Activación y cambio de contraseña llegan al portal sin inscripción pagada.    | Inscripción externa y dos seguimientos conversacionales.                             | Ninguno por ahora.                                           |
 | M12 Rechazo                | Parcial | Revisión rechazada revoca reserva de prueba y conserva histórico.                                                                 | Rechazo de inscripción/paquete y entrega del aviso.                                  | Ninguno por ahora.                                           |
-| M13 Alumna                 | Parcial | Reserva/crédito únicos; ausencia consume una vez. Efectivo crea deuda, primera reserva permitida y segunda bloqueada hasta cobro. | Exclusiones y variantes conversacionales restantes.                                  | Ninguno por ahora.                                           |
+| M13 Alumna | Aprobado | Tres confirmaciones; falta de paquete, vencimiento, créditos agotados y clase excluida; efectivo con una venta, primera reserva, adeudo y ausencia sin doble descuento. | Ninguno en V1–V3; transporte externo se sigue en M01. | Ninguno por ahora. |
 | M14 Recuperación           | Parcial | Motor 7/15/30, inactividad 14 días, deduplicación y parada al renovar.                                                            | Recorridos y entrega real de avisos Meta.                                            | Ninguno por ahora.                                           |
 | M15 Inscripción vencida    | Parcial | Inscripción vencida bloquea reserva con ocho créditos vigentes; clasificación conservada.                                         | Resto de variantes y renovación por pago externo.                                    | Ninguno por ahora.                                           |
 | M16 Retorno                | Parcial | Renovación interna recupera reserva; parada de recuperación con vigencia activa.                                                  | Retorno después de un pago nuevo del proveedor.                                      | Ninguno por ahora.                                           |
@@ -84,8 +84,10 @@ Los pendientes externos no cierran con pruebas internas. El receptor de producci
 - El rechazo con motivo seguido de baja de mensajes ahora conserva No clasifica y su razón. Al reactivarse, conserva el histórico de calificación en una tabla protegida.
 - Se corrigieron instrucciones que aún exigían comprobante para Mercado Pago automático. Bancomer y OXXO a Bancomer mantienen comprobante y validación manual.
 - Se detectó consejo genérico de preparación sin configuración oficial; el getter y el prompt ahora requieren first_class_preparation configurado. Pendiente repetición conversacional en el siguiente preview.
-- Typecheck pasó; regresión específica: 26/26 y regresión completa posterior: 1103/1103. El lint completo detectó un error preexistente en el editor Demi; se corrigió y el lint de los archivos afectados pasó sin errores.
+- Typecheck pasó; regresión específica: 26/26 y regresión completa posterior: 1104/1104. El lint completo detectó un error preexistente en el editor Demi; se corrigió y el lint de los archivos afectados pasó sin errores.
 
 Actualización posterior: M03 y M17 aprobados en el banco UAT; 2/18 casos (11.1 %), 16/18 por cerrar (88.9 %). Transporte externo pendiente en M01. Evidencia: demi-2-m03-evidence-2026-10-09.json. No se ha promovido producción.
 
-La regresión posterior a la consulta completa de disciplinas pasó: 1103/1103; lint global sin errores (18 avisos preexistentes). La preparación oficial ausente también se probó sin pedir explícitamente atención humana: Demi creó technical_block y reconoció el faltante sin consejos inventados.
+La regresión posterior a la consulta completa de disciplinas pasó: 1104/1104; lint global sin errores (18 avisos preexistentes). La preparación oficial ausente también se probó sin pedir explícitamente atención humana: Demi creó technical_block y reconoció el faltante sin consejos inventados.
+
+M13 cerrado en preview 208fa85. El bucle de confirmación en efectivo se corrigió; se validó el importe y paquete mencionados contra el resumen preparado. Regresión 1104/1104. Evidencia: demi-2-m13-confirmations-evidence-2026-10-09.json.
