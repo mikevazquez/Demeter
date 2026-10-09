@@ -912,6 +912,37 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         ),
       ];
 
+  let pendingPaymentContext = "";
+  if (input.serviceMode && !input.improvePrompt && !input.testSimulation) {
+    const pendingPayment = await input.supabase
+      .from("demi_group_bookings")
+      .select(
+        "id,status,session_id,participant_count,amount_minor,currency,receipt_event_id,resource_id",
+      )
+      .eq("studio_id", input.studio.id)
+      .eq("conversation_id", input.conversationId)
+      .in("status", ["awaiting_receipt", "awaiting_participants", "partial"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (pendingPayment.error) throw new Error("demi_payment_context_unavailable");
+    if (pendingPayment.data) {
+      const payment = pendingPayment.data;
+      pendingPaymentContext =
+        "Estado operativo de pago pendiente, leído del estudio y esta conversación. Usa este group_id exacto para continuar; no prepares otro pago ni pidas otro comprobante si receipt_received=true. Después del comprobante y de los datos faltantes, usa complete_group_booking con participant_count personas. No afirmes reserva completa por este estado: " +
+        JSON.stringify({
+          group_id: payment.id,
+          status: payment.status,
+          session_ref: `session:${payment.session_id}`,
+          participant_count: payment.participant_count,
+          amount_minor: payment.amount_minor,
+          currency: payment.currency,
+          receipt_received: Boolean(payment.receipt_event_id),
+          resource_ref: payment.resource_id ? `resource:${payment.resource_id}` : null,
+        });
+    }
+  }
+
   const managedRules = input.improvePrompt
     ? []
     : ((
@@ -950,6 +981,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         "Demi es una sola entidad por estudio: comparte personalidad, conocimiento, herramientas y reglas comerciales en todos los canales. El canal transporta mensajes y adjuntos; no define otra versión de Demi. Usa únicamente la identidad que Studio Flow haya resuelto. Un nombre o perfil de una red social no demuestra que sea una alumna ni autoriza consultar sus datos. No vincules identidades entre canales por similitud de nombres.",
         "El crédito de prueba tiene siete días de vigencia desde la fecha de la primera clase reservada, no desde el comprobante ni desde la cancelación. Una cancelación a tiempo o un reagendado conserva el vencimiento original. Usa las fechas reales del crédito en Studio Flow; no prometas extenderlo. Un crédito consumido o vencido no cubre otra reserva; si la política permite una nueva prueba, requiere un nuevo pago.",
         "Cuando prepare_first_class_payment o execute_booking devuelva group_id y participant_count=1 para una primera clase individual, conserva ese group_id: espera el comprobante y después pide juntos nombre completo y celular; completa con complete_group_booking y un único participante. No crees la ficha antes del comprobante ni anuncies una reserva cuando reservation_confirmed=false.",
+        pendingPaymentContext,
         "Para grupos, usa prepare_group_booking con la clase exacta, número de participantes y número de primeras clases a pagar. No conviertas al pagador en participante automáticamente. Primero da el total y transferencia; espera el comprobante antes de solicitar juntos nombres y celulares faltantes. Sólo después usa complete_group_booking con el group_id. Informa los resultados individuales y cualquier fallo o importe sin asignar; pago recibido sigue en revisión. No confirmes todo el grupo por memoria ni repitas cobros al reintentar.",
         "Usa update_contact_followup cuando cambie la etapa comercial: preguntas, esperando comprobante o datos posteriores. Si afirma que ningún horario le sirve o rechaza expresamente el servicio, registra not_qualified con motivo; vivir lejos por sí solo no basta. Si pide no recibir mensajes registra opt_out. No marques No clasifica por silencio: el worker registra No agendó después de dos seguimientos sin respuesta. Al regresar una persona, conserva su identidad y retoma el flujo desde la información real.",
         "Al iniciar una conversación, conserva la identidad verificada y la etapa que entrega Studio Flow. En WhatsApp se resuelve por teléfono normalizado; en otros canales no presupongas que tienes su teléfono. Si falta una identidad verificada, atiende consultas informativas y pide solo los datos obligatorios cuando quiera reservar; nunca reveles información personal de una ficha no vinculada.",

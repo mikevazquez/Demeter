@@ -29,7 +29,10 @@ function serverModule<T>(path: string, dependencies: Record<string, unknown>) {
   return loadedModule.exports as T;
 }
 
-function fakeDatabase(pendingAction: Record<string, unknown> | null = null) {
+function fakeDatabase(
+  pendingAction: Record<string, unknown> | null = null,
+  pendingPayment: Record<string, unknown> | null = null,
+) {
   const writes: string[] = [];
   const reads: string[] = [];
   const supabase = {
@@ -38,6 +41,7 @@ function fakeDatabase(pendingAction: Record<string, unknown> | null = null) {
       const chain: Record<string, unknown> = {
         select: () => chain,
         eq: () => chain,
+        in: () => chain,
         gte: () => chain,
         gt: () => chain,
         order: () => chain,
@@ -48,7 +52,12 @@ function fakeDatabase(pendingAction: Record<string, unknown> | null = null) {
         },
         single: async () => ({ data: { id: "model-call" }, error: null }),
         maybeSingle: async () => ({
-          data: table === "assistant_pending_actions" ? pendingAction : null,
+          data:
+            table === "assistant_pending_actions"
+              ? pendingAction
+              : table === "demi_group_bookings"
+                ? pendingPayment
+                : null,
           error: null,
         }),
         then: (resolve: (value: unknown) => unknown) =>
@@ -60,11 +69,14 @@ function fakeDatabase(pendingAction: Record<string, unknown> | null = null) {
   return { supabase, reads, writes };
 }
 
-function orchestratorHarness(pendingAction: Record<string, unknown> | null = null) {
+function orchestratorHarness(
+  pendingAction: Record<string, unknown> | null = null,
+  pendingPayment: Record<string, unknown> | null = null,
+) {
   const action = vi.fn().mockRejectedValue(new Error("Real actions must never execute in a test"));
   const simulate = vi.fn().mockResolvedValue({ ok: true, simulated: true });
   const read = vi.fn().mockResolvedValue({ ok: true, activities: [] });
-  const db = fakeDatabase(pendingAction);
+  const db = fakeDatabase(pendingAction, pendingPayment);
   const actionModule = serverModule<typeof import("../lib/assistant/action-tools")>(
     "lib/assistant/action-tools.ts",
     {
@@ -440,6 +452,37 @@ describe("Demi prompt workbench", () => {
       expect(names).toContain("execute_booking");
       for (const name of ["prepare_transfer_package_choice", "prepare_bank_transfer_purchase"])
         expect(names.includes(name)).toBe(Boolean(studentId));
+    },
+  );
+  it.each([false, true])(
+    "restores the persisted payment reference across user messages (receipt=%s)",
+    async (receiptReceived) => {
+      const h = orchestratorHarness(null, {
+        id: "persisted-group",
+        status: receiptReceived ? "awaiting_participants" : "awaiting_receipt",
+        session_id: "session",
+        participant_count: 1,
+        amount_minor: 15000,
+        currency: "MXN",
+        receipt_event_id: receiptReceived ? "event" : null,
+        resource_id: null,
+      });
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      const fetcher = vi
+        .fn()
+        .mockImplementation(async () => new Response(JSON.stringify(reply("Respuesta"))));
+      vi.stubGlobal("fetch", fetcher);
+      await h.run({
+        ...h.input,
+        serviceMode: true,
+        testSimulation: undefined,
+        history: [{ role: "user", content: "Mis datos son UAT Persona, celular 9990000001" }],
+      });
+      const request = JSON.parse(fetcher.mock.calls[0][1].body);
+      expect(request.instructions).toContain('"group_id":"persisted-group"');
+      expect(request.instructions).toContain(`"receipt_received":${receiptReceived}`);
+      expect(request.instructions).toContain("leído del estudio y esta conversación");
+      expect(request.instructions).toContain("complete_group_booking");
     },
   );
   it("blocks IA requests when the budget is exhausted", async () => {
