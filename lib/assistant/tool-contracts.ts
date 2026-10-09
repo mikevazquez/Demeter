@@ -196,6 +196,22 @@ export type PrepareStudentAccessActivationArgs = EmptyArgs;
 export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
   {
     type: "function",
+    name: "prepare_student_access_activation",
+    strict: true,
+    description:
+      "Prepara activar o reenviar el acceso de la alumna identificada después de una asistencia real. Comprueba identidad y estado de cuenta; nunca solicita contraseña ni correo nuevo. Si requiere confirmación, pregunta una sola vez antes de ejecutar en otro turno.",
+    parameters: { type: "object", properties: {}, required: [], additionalProperties: false },
+  },
+  {
+    type: "function",
+    name: "execute_student_access_activation",
+    strict: true,
+    description:
+      "Tras una nueva confirmación explícita, ejecuta la activación preparada para la misma alumna y conversación. Devuelve su enlace seguro para elegir contraseña; no crea ni cobra inscripción.",
+    parameters: { type: "object", properties: {}, required: [], additionalProperties: false },
+  },
+  {
+    type: "function",
     name: "prepare_cash_package_purchase",
     strict: true,
     description:

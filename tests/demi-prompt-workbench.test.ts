@@ -1,3 +1,4 @@
+import { firstClassPaymentInstructions } from "../lib/assistant/first-class-payment-instructions";
 import { resolveEnrollmentStatus } from "../lib/assistant/enrollment-state";
 import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
@@ -101,6 +102,7 @@ function orchestratorHarness(
       "./read-tools": { executeAssistantReadTool: read },
       "./conversation-guidance": { conversationGuidance, needsFirstVisitGuidance },
       "./prompt-workbench": { testPersonaLabel },
+      "./first-class-payment-instructions": { firstClassPaymentInstructions },
       "./tool-contracts": {
         assistantReadToolDefinitions: [{ name: "get_activity_catalog", type: "function" }],
         assistantActionToolDefinitions: [
