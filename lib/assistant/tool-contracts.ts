@@ -243,6 +243,19 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
   },
   {
     type: "function",
+    name: "prepare_first_class_payment",
+    strict: true,
+    description:
+      "Obtiene el precio y los datos bancarios oficiales para un prospecto sin ficha de alumna que solicita su primera clase individual por transferencia. Usa la clase exacta disponible. Sólo prepara el pago: no crea alumna ni reserva, no requiere confirmar una reserva ni elegir paquete. Devuelve group_id para esperar el comprobante y luego completar con un único participante. Si exige recurso, ofrece las opciones devueltas y vuelve a llamar con el recurso elegido.",
+    parameters: {
+      type: "object",
+      properties: { session_ref: { type: "string" }, resource_ref: { type: ["string", "null"] } },
+      required: ["session_ref", "resource_ref"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
     name: "prepare_group_booking",
     strict: true,
     description:
@@ -263,7 +276,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     name: "complete_group_booking",
     strict: true,
     description:
-      "Después de un comprobante grupal aceptado, recibe juntos los datos faltantes de cada participante y crea reservas individuales provisionales con cupo y elegibilidad reales. El pagador no se convierte automáticamente en participante. Reporta cada resultado y cualquier importe no asignado; no confirma todo el grupo ante un fallo parcial. Una prueba con reserva pendiente requiere cambiar/cancelar la existente.",
+      "Después de un comprobante aceptado, completa el group_id: puede ser una primera clase individual preparada con prepare_first_class_payment (un participante) o un grupo. Recibe juntos los datos faltantes de cada participante y crea reservas individuales provisionales con cupo y elegibilidad reales. El pagador no se convierte automáticamente en participante. Reporta cada resultado y cualquier importe no asignado; no confirma todo el grupo ante un fallo parcial. Una prueba con reserva pendiente requiere cambiar/cancelar la existente.",
     parameters: {
       type: "object",
       properties: {

@@ -121,3 +121,121 @@ describe("Repeated booking confirmation uses persisted payment and reservation s
     },
   );
 });
+
+function firstPaymentHarness(studentId: string | null = null, bankEnabled = true) {
+  const source = readFileSync("lib/assistant/action-tools.ts", "utf8").replace(
+    'import "server-only";',
+    "",
+  );
+  const loadedModule = { exports: {} as typeof import("../lib/assistant/action-tools") };
+  new Function(
+    "require",
+    "module",
+    "exports",
+    transformSync(source, { loader: "ts", format: "cjs" }).code,
+  )(() => ({}), loadedModule, loadedModule.exports);
+  const rpc = vi.fn(async () => ({
+    data: {
+      ok: true,
+      group_id: "group",
+      status: "awaiting_receipt",
+      participant_count: 1,
+      amount_minor: 15000,
+      currency: "MXN",
+    },
+    error: null,
+  }));
+  const writes = vi.fn(() => {
+    throw new Error("Payment quote cannot create a student or booking");
+  });
+  const supabase = {
+    rpc,
+    from(table: string) {
+      const rows: Record<string, unknown> = {
+        trial_booking_policies: { require_payment_before_booking: true },
+        assistant_booking_behaviors: { prospect_require_payment_before_booking: true },
+        class_sessions: {
+          id: "session",
+          template_id: "template",
+          starts_at: new Date(Date.now() + 86400000).toISOString(),
+          ends_at: new Date(Date.now() + 90000000).toISOString(),
+          status: "scheduled",
+          requires_resource: false,
+        },
+        class_templates: { name: "UAT", drop_in_price_minor: 15000, credit_cost: 1 },
+        studio_payment_methods: { code: "bank_transfer" },
+        studio_bank_transfer_settings: bankEnabled
+          ? { bank_name: "UAT", account_holder: "UAT", account_number: "0000" }
+          : null,
+      };
+      const chain = {
+        select: () => chain,
+        eq: () => chain,
+        insert: writes,
+        update: writes,
+        maybeSingle: async () => ({ data: rows[table] ?? null, error: null }),
+      };
+      return chain;
+    },
+  };
+  return {
+    rpc,
+    writes,
+    execute: () =>
+      loadedModule.exports.executeAssistantActionTool(
+        {
+          supabase,
+          studio: { id: "studio", currency: "MXN", timezone: "America/Mexico_City" },
+          conversationId: "conversation",
+          turnId: "turn",
+          studentId,
+          crmContactId: "contact",
+          activationUrl: null,
+          serviceMode: true,
+          currentUserMessage: "Quiero mi primera clase por transferencia",
+        } as never,
+        "prepare_first_class_payment",
+        { session_ref: "session:11111111-1111-4111-8111-111111111111", resource_ref: null },
+      ),
+  };
+}
+
+describe("First-class payment prepares only a quote for a verified prospect", () => {
+  it("provides configured bank details without a student, booking or extra confirmation", async () => {
+    const h = firstPaymentHarness();
+    expect(await h.execute()).toMatchObject({
+      ok: true,
+      status: "payment_required",
+      reservation_confirmed: false,
+      group_id: "group",
+      participant_count: 1,
+      amount_minor: 15000,
+      bank_details: { account_number: "0000" },
+    });
+    expect(h.rpc).toHaveBeenCalledWith(
+      "service_prepare_demi_prospect_payment",
+      expect.objectContaining({
+        p_contact: "contact",
+        p_conversation: "conversation",
+        p_studio: "studio",
+      }),
+    );
+    expect(h.writes).not.toHaveBeenCalled();
+  });
+  it("cannot start a new-prospect payment for an existing student", async () => {
+    const h = firstPaymentHarness("student");
+    expect(await h.execute()).toMatchObject({
+      ok: false,
+      reason_code: "verified_prospect_required",
+    });
+    expect(h.rpc).not.toHaveBeenCalled();
+  });
+  it("does not prepare a charge when bank details are missing", async () => {
+    const h = firstPaymentHarness(null, false);
+    expect(await h.execute()).toMatchObject({
+      ok: false,
+      reason_code: "transfer_details_unavailable",
+    });
+    expect(h.rpc).not.toHaveBeenCalled();
+  });
+});

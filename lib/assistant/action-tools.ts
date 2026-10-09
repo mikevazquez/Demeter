@@ -1205,6 +1205,86 @@ async function provisionTrialActivationLink(ctx: AssistantActionToolContext, stu
   };
 }
 
+async function prepareFirstClassPayment(
+  ctx: AssistantActionToolContext,
+  args: Record<string, unknown>,
+) {
+  if (!ctx.serviceMode || ctx.studentId || !ctx.crmContactId)
+    return { ok: false, reason_code: "verified_prospect_required" };
+  const sessionId = parseOpaqueRef(args.session_ref, "session");
+  const resourceId = args.resource_ref ? parseOpaqueRef(args.resource_ref, "resource") : null;
+  if (!sessionId || (args.resource_ref && !resourceId))
+    return { ok: false, reason_code: "invalid_reference" };
+  const policy = await getDemiTrialPrepaymentRequirement(ctx);
+  if (!policy.ok) return policy;
+  if (!policy.effectiveRequiresPayment) return { ok: false, reason_code: "use_prepare_booking" };
+  const info = await getSessionSummary(ctx, sessionId);
+  if (!info || !isSessionBookableNow(info.session))
+    return { ok: false, ...safeBookingReason("session_not_bookable") };
+  if (info.session.requires_resource && !resourceId) {
+    const resources = await getAvailableResourceOptions(ctx, sessionId);
+    if (!resources.ok) return resources;
+    return {
+      ok: false,
+      reason_code: "resource_selection_required",
+      resource_options:
+        resources.options?.map((option) => ({
+          resource_ref: `resource:${option.resource_id}`,
+          label: option.label,
+        })) ?? [],
+    };
+  }
+  const bank = await ctx.supabase
+    .from("studio_bank_transfer_settings")
+    .select("bank_name,account_holder,clabe,account_number,card_number,instructions")
+    .eq("studio_id", ctx.studio.id)
+    .eq("enabled", true)
+    .maybeSingle();
+  const method = await ctx.supabase
+    .from("studio_payment_methods")
+    .select("code")
+    .eq("studio_id", ctx.studio.id)
+    .eq("code", "bank_transfer")
+    .eq("active", true)
+    .maybeSingle();
+  if (
+    method.error ||
+    !method.data ||
+    bank.error ||
+    !bank.data ||
+    !bank.data.bank_name ||
+    !bank.data.account_holder ||
+    !(bank.data.clabe || bank.data.account_number || bank.data.card_number)
+  )
+    return { ok: false, reason_code: "transfer_details_unavailable" };
+  const prepared = await ctx.supabase.rpc("service_prepare_demi_prospect_payment", {
+    p_studio: ctx.studio.id,
+    p_conversation: ctx.conversationId,
+    p_contact: ctx.crmContactId,
+    p_session: sessionId,
+    p_resource: resourceId,
+  });
+  const payment = asObject(prepared.data);
+  if (prepared.error || payment?.ok !== true)
+    return { ok: false, reason_code: payment?.reason_code ?? "trial_payment_setup_failed" };
+  if (!["awaiting_receipt", "awaiting_participants"].includes(String(payment.status)))
+    return { ok: false, reason_code: "payment_requires_review", reservation_confirmed: false };
+  return {
+    ...payment,
+    status:
+      payment.status === "awaiting_receipt" ? "payment_required" : "participant_data_required",
+    reservation_confirmed: false,
+    receipt_required: payment.status === "awaiting_receipt",
+    bank_details: bank.data,
+    summary: {
+      ...info.summary,
+      trial_booking: true,
+      payment_before_booking: true,
+      payment_pending: true,
+    },
+  };
+}
+
 async function replayTrialPayment(
   ctx: AssistantActionToolContext,
   executionRef: string,
@@ -3715,6 +3795,8 @@ export async function executeAssistantActionTool(
       });
       return result.error ? { ok: false, reason_code: "crm_followup_update_failed" } : result.data;
     }
+    case "prepare_first_class_payment":
+      return prepareFirstClassPayment(ctx, args);
     case "prepare_group_booking":
     case "complete_group_booking":
       return groupBookingAction({
