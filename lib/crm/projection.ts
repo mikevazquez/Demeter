@@ -49,10 +49,13 @@ export function projectContact(input: {
   ) {
     state.personType = "trial";
     state.reservationId = input.reservation?.id || null;
+    const attendance = ["attended", "no_show"].includes(input.trialStatus || "")
+      ? input.trialStatus
+      : input.reservation?.status;
     state.stage =
-      (input.reservation?.status || input.trialStatus) === "attended"
+      attendance === "attended"
         ? "attended"
-        : (input.reservation?.status || input.trialStatus) === "no_show"
+        : attendance === "no_show"
           ? "not_attended"
           : "scheduled";
   }

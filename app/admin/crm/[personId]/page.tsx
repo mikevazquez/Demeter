@@ -158,7 +158,7 @@ export default async function ContactPage({
         <ContactReservations
           studentId={c.studentId}
           personId={c.id}
-          trial={c.state.personType === "trial"}
+          trial={c.state.stage === "scheduled"}
         />
       )}
       <nav className="crm-tabs" aria-label="Ficha del contacto">
@@ -213,12 +213,12 @@ export default async function ContactPage({
       )}
       {tab === "followup" && (
         <section className="crm-panel">
-          <FollowupForm key={c.followup.revision} contact={c} canEdit={data.canEdit} />
+          <FollowupForm contact={c} canEdit={data.canEdit} />
         </section>
       )}
       {tab === "notes" && (
         <section className="crm-panel">
-          <FollowupForm key={c.followup.revision} contact={c} canEdit={data.canEdit} notesOnly />
+          <FollowupForm contact={c} canEdit={data.canEdit} notesOnly />
         </section>
       )}
       {tab === "profile" && (
@@ -269,7 +269,7 @@ export default async function ContactPage({
             />
           ) : (
             <section className="crm-panel">
-              <FollowupForm key={c.followup.revision} contact={c} canEdit={data.canEdit} />
+              <FollowupForm contact={c} canEdit={data.canEdit} />
             </section>
           )}
         </>

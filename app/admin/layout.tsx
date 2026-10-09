@@ -278,8 +278,8 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
                 <input
                   name="q"
                   type="search"
-                  placeholder="Buscar alumna…"
-                  aria-label="Buscar alumna"
+                  placeholder="Buscar contacto…"
+                  aria-label="Buscar contacto"
                 />
                 <kbd>⌘K</kbd>
               </form>

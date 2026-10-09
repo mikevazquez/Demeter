@@ -489,11 +489,18 @@
   padding: 20px 0 0;
   min-width: 0;
 }
-.flow-crm .profile360-approved-tabs {
+.flow-crm .admin-ux04-profile360 .profile360-approved-tabs {
   flex-wrap: wrap;
   overflow: visible;
+  margin-inline: 0;
+  max-width: 100%;
+  min-width: 0;
 }
 @media (max-width: 600px) {
+  .flow-crm {
+    padding: 12px 14px 32px;
+    background: white;
+  }
   .crm-tabs {
     gap: 0;
     justify-content: space-between;
