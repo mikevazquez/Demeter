@@ -7,7 +7,7 @@ describe("Demi identity-aware behavior", () => {
 
   it("includes student and prospect identity rules", () => {
     const phrases = [
-      "número de teléfono normalizado es el identificador único",
+      "En WhatsApp se resuelve por teléfono normalizado",
       "Studio Flow consultó su etapa actual al recibir este mensaje",
       "get_student_package_status",
       "contacto CRM sin una ficha de alumna",
