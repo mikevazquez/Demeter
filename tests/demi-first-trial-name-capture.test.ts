@@ -46,9 +46,9 @@ describe("Demi identity, CRM lifecycle, and first trial flow", () => {
     expect(directory).toContain('.eq("lifecycle_status", "prospect")');
     expect(directory).toContain('.eq("student_type", "trial")');
     expect(directory).toContain('.eq("trial_status", "no_show")');
-    expect(directory).toContain('{ key: "trial", label: "Alumnas de prueba", enabled: true }');
+    expect(directory).toContain('{ key: "trial", label: "Prueba", enabled: true }');
     expect(directory).toContain('{ key: "no_show", label: "No show", enabled: true }');
-    expect(directory).toContain('{ key: "prospect", label: "Prospectos", enabled: true }');
+    expect(directory).toContain('{ key: "prospect", label: "Prospecto", enabled: true }');
     expect(directory).toContain('{ key: "expired", label: "Vencidas", enabled: canReadProducts }');
   });
 

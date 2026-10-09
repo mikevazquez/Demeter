@@ -1,10 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
+import RenewalPreparation from "../RenewalPreparation";
+import {
+  channelLabel,
+  contactStageLabels,
+  renewalRecommended,
+  type ContactStage,
+} from "@/lib/student-crm";
+import type { ContactMessage } from "@/lib/student-crm-conversations";
 
 type Alert = { title: string; detail: string };
 
 type Props = {
   activeView:
+    | "conversation"
     | "summary"
     | "packages"
     | "rewards"
@@ -23,6 +32,13 @@ type Props = {
     createdAt: string;
     portalEntered: boolean;
   };
+  stage: ContactStage;
+  canEdit: boolean;
+  canReadProducts: boolean;
+  showRewards: boolean;
+  internalNote: string | null;
+  messages: ContactMessage[];
+  channel?: string;
   birthDate: string | null;
   levelTitle: string | null;
   rewardsAvailable: number | null;
@@ -32,6 +48,7 @@ type Props = {
   canSell: boolean;
   currentPackage: {
     name: string;
+    priceMinor: number | null;
     unlimited: boolean;
     availableCredits: number | null;
     creditLimit: number | null;
@@ -56,38 +73,26 @@ function initials(name: string) {
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
+    .map((part) => part[0].toUpperCase())
     .join("");
 }
-
 function formatDate(value: string | null, locale: string) {
-  if (!value) return "Sin registrar";
-  return new Intl.DateTimeFormat(locale, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value + "T12:00:00Z"));
+  return value
+    ? new Intl.DateTimeFormat(locale, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC",
+      }).format(new Date(value + "T12:00:00Z"))
+    : "Sin vencimiento";
 }
-
 function formatDateTime(value: string, timeZone: string, locale: string) {
   return new Intl.DateTimeFormat(locale, {
     timeZone,
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
+    dateStyle: "medium",
+    timeStyle: "short",
   }).format(new Date(value));
 }
-
-function formatMoney(minor: number | null, locale: string, currency: string) {
-  if (minor === null) return "—";
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(minor / 100);
-}
-
 function localDate(timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone,
@@ -95,13 +100,19 @@ function localDate(timeZone: string) {
     month: "2-digit",
     day: "2-digit",
   }).formatToParts(new Date());
-  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${value.year}-${value.month}-${value.day}`;
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
 }
-
 export default function Profile360Overview({
   activeView,
   student,
+  stage,
+  canEdit,
+  canReadProducts,
+  showRewards,
+  internalNote,
+  messages,
+  channel,
   birthDate,
   levelTitle,
   rewardsAvailable,
@@ -118,270 +129,345 @@ export default function Profile360Overview({
   locale,
   currency,
 }: Props) {
-  const href = (view: string) => "/admin/alumnas/" + student.id + "?view=" + view;
+  const href = (view: string) => `/admin/alumnas/${student.id}?view=${view}`;
   const today = localDate(timeZone);
+  const end = new Date(`${today}T12:00:00Z`);
+  end.setUTCDate(end.getUTCDate() + 7);
+  const recommended =
+    canReadProducts &&
+    renewalRecommended(stage, currentPackage?.expiresOn, today, end.toISOString().slice(0, 10));
   const currentEnrollment =
     enrollment?.status === "active" &&
     (!enrollment.startsOn || enrollment.startsOn <= today) &&
     (!enrollment.expiresOn || enrollment.expiresOn >= today);
-  const usedCredits =
-    currentPackage && !currentPackage.unlimited && currentPackage.creditLimit !== null
-      ? Math.max(0, currentPackage.creditLimit - (currentPackage.availableCredits ?? 0))
-      : null;
+  const credits = currentPackage?.unlimited
+    ? "clases ilimitadas"
+    : `${currentPackage?.availableCredits ?? 0} clases disponibles`;
   const progress =
-    currentPackage &&
-    !currentPackage.unlimited &&
-    currentPackage.creditLimit &&
-    currentPackage.creditLimit > 0 &&
-    usedCredits !== null
-      ? Math.min(100, Math.max(0, Math.round((usedCredits / currentPackage.creditLimit) * 100)))
+    currentPackage?.creditLimit && !currentPackage.unlimited
+      ? Math.min(
+          100,
+          Math.max(
+            0,
+            (1 - (currentPackage.availableCredits ?? 0) / currentPackage.creditLimit) * 100,
+          ),
+        )
       : 0;
-
+  const latest = messages[0];
+  const money = (minor: number) =>
+    new Intl.NumberFormat(locale, { style: "currency", currency }).format(minor / 100);
+  const operationViews = ["packages", "rewards", "evaluations", "documents", "profile"];
+  const steps: ContactStage[] = ["prospect", "trial", "student", "former"];
   return (
     <>
-      <section className="profile360-approved-header">
-        <Link className="profile360-back" href="/admin/alumnas">
-          ← Alumnas
+      <section className="profile360-approved-header crm-contact-header">
+        <Link className="profile360-back crm-back" href="/admin/alumnas">
+          ← Contactos
         </Link>
-
-        <div className="profile360-approved-person">
-          <span className="profile360-avatar" aria-hidden="true">
+        <div className="profile360-approved-person crm-contact-person">
+          <span className="profile360-avatar crm-avatar" aria-hidden="true">
             {initials(student.fullName)}
             {student.userId ? (
               <Image
-                src={"/admin/alumnas/" + student.id + "/avatar"}
+                src={`/admin/alumnas/${student.id}/avatar`}
                 alt=""
-                width={82}
-                height={82}
+                width={50}
+                height={50}
                 unoptimized
               />
             ) : null}
           </span>
-
           <div className="profile360-approved-copy">
             <div className="profile360-approved-title">
               <h1>{student.fullName}</h1>
+              <span className={`crm-pill is-${stage}`}>{contactStageLabels[stage]}</span>
             </div>
-
             <div className="profile360-approved-contact">
+              <span>{channelLabel(channel)}</span>
               <span>{student.phone}</span>
               {student.email ? <span>{student.email}</span> : null}
-              <span>
-                {birthDate ? formatDate(birthDate, locale) + " · " : ""}
-                En el estudio desde{" "}
-                {new Intl.DateTimeFormat(locale, {
-                  month: "short",
-                  year: "numeric",
-                }).format(new Date(student.createdAt))}
-              </span>
+              {birthDate ? <span>{formatDate(birthDate, locale)}</span> : null}
             </div>
           </div>
-
-          <div className="profile360-approved-meta">
-            <span className="profile360-level-pill">
-              {levelTitle ? "Medalla " + levelTitle : "Sin medalla"}
-            </span>
-            <span
-              className={
-                "profile360-state-pill is-" +
-                (student.lifecycleStatus === "inactive" ? "inactive" : "active")
-              }
-            >
-              {student.lifecycleStatus === "inactive" ? "Inactiva" : "Activa"}
-            </span>
-            <span
-              className={
-                "profile360-portal-pill " + (student.portalEntered ? "is-entered" : "is-pending")
-              }
-            >
-              {student.portalEntered ? "Portal: ingresó" : "Portal: sin ingresar"}
-            </span>
-            {canSell && !currentEnrollment ? (
-              <Link
-                className="profile360-edit-link"
-                href={"/admin/ventas/nueva?student_id=" + student.id}
-              >
-                Agregar inscripción
+          <div className="crm-head-actions">
+            {canEdit ? (
+              <Link className="crm-btn" href={href("profile")}>
+                Editar datos
               </Link>
             ) : null}
-            <Link className="profile360-edit-link" href={href("profile")}>
-              Editar
+            <Link className="crm-btn" href={href(canReadProducts ? "packages" : "profile")}>
+              Operación
             </Link>
           </div>
         </div>
       </section>
-
-      <nav className="profile360-approved-tabs" aria-label="Perfil 360">
-        <Link className={activeView === "summary" ? "is-active" : ""} href={href("summary")}>
-          Resumen
-        </Link>
-        <Link className={activeView === "packages" ? "is-active" : ""} href={href("packages")}>
-          Paquetes
-        </Link>
-        <Link className={activeView === "rewards" ? "is-active" : ""} href={href("rewards")}>
-          Progreso
-        </Link>
-        {showEvaluations ? (
+      <ol className="crm-steps" aria-label="Etapa actual del contacto">
+        {steps.map((item) => (
+          <li
+            key={item}
+            className={stage === item ? "is-current" : ""}
+            aria-current={stage === item ? "step" : undefined}
+          >
+            <span className="crm-step-dot" aria-hidden="true" />
+            {contactStageLabels[item]}
+          </li>
+        ))}
+      </ol>
+      <nav className="profile360-approved-tabs crm-tabs" aria-label="Perfil 360">
+        {[
+          {
+            view: "summary",
+            title: "Resumen",
+            active: activeView === "summary" || activeView === "followup",
+          },
+          { view: "conversation", title: "Conversación", active: activeView === "conversation" },
+          {
+            view: canReadProducts ? "packages" : "profile",
+            title: "Operación",
+            active: operationViews.includes(activeView),
+          },
+          { view: "history", title: "Historial", active: activeView === "history" },
+        ].map((tab) => (
           <Link
-            className={activeView === "evaluations" ? "is-active" : ""}
-            href={href("evaluations")}
+            key={tab.view}
+            className={tab.active ? "is-active" : ""}
+            aria-current={tab.active ? "page" : undefined}
+            href={href(tab.view)}
           >
-            Evaluaciones
+            {tab.title}
           </Link>
-        ) : null}
-        {showDocuments ? (
-          <Link className={activeView === "documents" ? "is-active" : ""} href={href("documents")}>
-            Documentos
-          </Link>
-        ) : null}
-        <Link className={activeView === "history" ? "is-active" : ""} href={href("history")}>
-          Actividad
-        </Link>
-        <Link className={activeView === "profile" ? "is-active" : ""} href={href("profile")}>
-          Datos
-        </Link>
+        ))}
       </nav>
-
-      {activeView === "summary" ? (
-        <div className="profile360-approved-summary">
-          <section className="profile360-approved-package">
-            <div className="profile360-approved-card-heading">
-              <div>
-                <p className="eyebrow">PAQUETE ACTUAL</p>
-                <h2>{currentPackage ? currentPackage.name : "Sin paquete activo"}</h2>
-              </div>
-              {currentPackage ? <span className="status-pill">Activo</span> : null}
-            </div>
-
-            {currentPackage ? (
-              <>
-                <div className="profile360-approved-package-row">
-                  <div className="profile360-approved-package-balance">
-                    <strong>
-                      {currentPackage.unlimited
-                        ? "Ilimitado"
-                        : String(currentPackage.availableCredits ?? 0) +
-                          " de " +
-                          String(currentPackage.creditLimit ?? 0)}
-                    </strong>
-                    <span>{currentPackage.unlimited ? "acceso" : "créditos disponibles"}</span>
-                  </div>
-                  <div className="profile360-approved-package-expiry">
-                    <strong>
-                      {currentPackage.expiresOn
-                        ? formatDate(currentPackage.expiresOn, locale)
-                        : "Sin fecha"}
-                    </strong>
-                    <span>vence</span>
-                  </div>
-                </div>
-
-                {!currentPackage.unlimited && currentPackage.creditLimit ? (
-                  <div className="profile360-approved-progress" aria-hidden="true">
-                    <span style={{ width: String(progress) + "%" }} />
-                  </div>
-                ) : null}
-
-                <div className="profile360-approved-next">
-                  <span>Próxima clase</span>
-                  <strong>
-                    {nextClass
-                      ? nextClass.name +
-                        " · " +
-                        formatDateTime(nextClass.startsAt, timeZone, locale)
-                      : "Sin próxima clase"}
-                  </strong>
-                </div>
-              </>
-            ) : (
-              <p className="profile360-approved-empty">Esta alumna no tiene un paquete vigente.</p>
-            )}
-          </section>
-
+      {operationViews.includes(activeView) ? (
+        <nav className="crm-operation-tabs" aria-label="Operación de alumna">
+          {canReadProducts ? (
+            <Link
+              href={href("packages")}
+              aria-current={activeView === "packages" ? "page" : undefined}
+            >
+              Paquetes y créditos
+            </Link>
+          ) : null}
+          {showRewards ? (
+            <Link
+              href={href("rewards")}
+              aria-current={activeView === "rewards" ? "page" : undefined}
+            >
+              Progreso
+            </Link>
+          ) : null}
           {showEvaluations ? (
-            <section className="profile360-technical-levels">
-              <div className="profile360-approved-card-heading">
-                <div>
-                  <p className="eyebrow">NIVELES TÉCNICOS</p>
-                  <h2>Por disciplina</h2>
-                </div>
-                <Link href={href("evaluations")}>Ver evaluaciones →</Link>
-              </div>
-
-              {technicalLevels.length ? (
-                <div className="profile360-technical-level-list">
-                  {technicalLevels.map((item) => (
-                    <div key={item.disciplineName} className="profile360-technical-level-row">
-                      <span>{item.disciplineName}</span>
-                      <strong>{item.levelTitle}</strong>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="profile360-technical-level-empty">
-                  <span>Sin niveles técnicos confirmados.</span>
-                  <Link href={href("evaluations")}>Abrir evaluaciones →</Link>
-                </div>
-              )}
-            </section>
+            <Link
+              href={href("evaluations")}
+              aria-current={activeView === "evaluations" ? "page" : undefined}
+            >
+              Evaluaciones
+            </Link>
           ) : null}
-
-          <section
-            className="profile360-approved-indicators profile360-statistics"
-            aria-label="Estadísticas"
-          >
-            <article>
+          {showDocuments ? (
+            <Link
+              href={href("documents")}
+              aria-current={activeView === "documents" ? "page" : undefined}
+            >
+              Documentos
+            </Link>
+          ) : null}
+          <Link href={href("profile")} aria-current={activeView === "profile" ? "page" : undefined}>
+            Datos y acceso
+          </Link>
+        </nav>
+      ) : null}
+      {activeView === "summary" ? (
+        <section className="profile360-approved-summary crm-stack">
+          {recommended && currentPackage ? (
+            <article className="crm-card crm-recommend">
+              <div className="crm-recommend-head">
+                <div>
+                  <p className="eyebrow">SIGUIENTE PASO RECOMENDADO</p>
+                  <h2>Preparar su renovación antes de que venza el paquete</h2>
+                </div>
+                <span className="crm-pill is-trial">Por vencer</span>
+              </div>
+              <div className="crm-why">
+                <strong>Canal sugerido:</strong>{" "}
+                {channelLabel(channel) === "Sin conversación"
+                  ? "Por confirmar"
+                  : channelLabel(channel)}
+                <br />
+                <strong>Por qué aparece:</strong> su paquete vence{" "}
+                {formatDate(currentPackage.expiresOn, locale)} y tiene {credits}.
+              </div>
+              <RenewalPreparation
+                studentId={student.id}
+                name={student.fullName}
+                packageName={currentPackage.name}
+                expires={formatDate(currentPackage.expiresOn, locale)}
+                credits={credits}
+                price={currentPackage.priceMinor === null ? null : money(currentPackage.priceMinor)}
+                canSell={canSell}
+                channel={channelLabel(channel)}
+              />
+            </article>
+          ) : alerts.length ? (
+            <article className="crm-card crm-recommend">
+              <p className="eyebrow">SIGUIENTE PASO</p>
+              <h2>{alerts[0].title}</h2>
+              <p className="crm-meta">{alerts[0].detail}</p>
+              <Link className="crm-btn" href={href("followup")}>
+                Ver seguimiento →
+              </Link>
+            </article>
+          ) : (
+            <article className="crm-card">
+              <p className="eyebrow">SEGUIMIENTO</p>
+              <h2>Sin seguimiento pendiente</h2>
+              <p className="crm-meta">
+                Consulta su operación e historial para revisar el expediente.
+              </p>
+            </article>
+          )}
+          <div className="crm-grid">
+            <article className="crm-card">
+              <h2>Inscripción</h2>
+              <div className="crm-statusline">
+                <span>Estado</span>
+                <strong>
+                  {currentEnrollment ? "Activa" : enrollment ? "No vigente" : "Sin registro"}
+                </strong>
+              </div>
+              <div className="crm-info">
+                <span>Vigencia</span>
+                <strong>
+                  {enrollment
+                    ? formatDate(enrollment.expiresOn, locale)
+                    : "Sin inscripción registrada"}
+                </strong>
+              </div>
+              {canSell && student.lifecycleStatus !== "inactive" && !currentEnrollment ? (
+                <div className="crm-actions">
+                  <Link className="crm-btn" href={`/admin/ventas/nueva?student_id=${student.id}`}>
+                    Agregar inscripción
+                  </Link>
+                </div>
+              ) : null}
+            </article>
+            <article className="crm-card profile360-approved-package">
+              <h2>Paquete</h2>
+              {canReadProducts ? (
+                currentPackage ? (
+                  <div className="crm-package">
+                    <div className="crm-package-title">
+                      <strong>{currentPackage.name}</strong>
+                      <span className="crm-pill is-student">Activo</span>
+                    </div>
+                    <p className="crm-meta">
+                      {credits} · {formatDate(currentPackage.expiresOn, locale)}
+                    </p>
+                    {!currentPackage.unlimited && currentPackage.creditLimit ? (
+                      <div
+                        className="crm-progress"
+                        role="meter"
+                        aria-label="Créditos consumidos"
+                        aria-valuenow={Math.round(progress)}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                      >
+                        <span style={{ width: `${progress}%` }} />
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="crm-meta">Sin paquete activo</p>
+                )
+              ) : (
+                <p className="crm-meta">Tu rol no permite consultar paquetes.</p>
+              )}
+              {canSell && student.lifecycleStatus !== "inactive" ? (
+                <div className="crm-actions">
+                  <Link
+                    className="crm-btn is-primary"
+                    href={`/admin/ventas/nueva?student_id=${student.id}`}
+                  >
+                    Vender paquete
+                  </Link>
+                  {canReadProducts ? (
+                    <Link className="crm-btn" href={href(canReadProducts ? "packages" : "profile")}>
+                      Ver paquetes
+                    </Link>
+                  ) : null}
+                </div>
+              ) : null}
+            </article>
+          </div>
+          <div className="crm-grid">
+            <article className="crm-card">
+              <h2>Último mensaje</h2>
+              {latest ? (
+                <>
+                  <span className="crm-channel">
+                    {channelLabel(latest.channel)} ·{" "}
+                    {formatDateTime(latest.createdAt, timeZone, locale)}
+                  </span>
+                  <p className="crm-message-excerpt">{latest.content}</p>
+                </>
+              ) : (
+                <p className="crm-meta">Sin mensajes disponibles para este contacto.</p>
+              )}
+              <Link className="crm-btn" href={href("conversation")}>
+                Ver conversación
+              </Link>
+            </article>
+            <article className="crm-card">
+              <h2>Nota interna</h2>
+              <p className="crm-meta">{internalNote || "Sin notas internas registradas."}</p>
+              {canEdit ? (
+                <Link className="crm-btn" href={href("profile") + "#campos-adicionales"}>
+                  Ver datos y notas
+                </Link>
+              ) : null}
+              <h3>Próxima clase</h3>
+              <p className="crm-meta">
+                {nextClass
+                  ? `${nextClass.name} · ${formatDateTime(nextClass.startsAt, timeZone, locale)}`
+                  : "Sin próxima clase"}
+              </p>
+              <h3>Niveles técnicos</h3>
+              {showEvaluations && technicalLevels.length ? (
+                technicalLevels.map((item) => (
+                  <div className="crm-info" key={item.disciplineName}>
+                    <span>{item.disciplineName}</span>
+                    <strong>{item.levelTitle}</strong>
+                  </div>
+                ))
+              ) : (
+                <p className="crm-meta">Sin niveles técnicos disponibles.</p>
+              )}
+              {showEvaluations ? (
+                <Link className="crm-btn" href={href("evaluations")}>
+                  Ver evaluaciones
+                </Link>
+              ) : null}
+            </article>
+          </div>
+          <section className="profile360-approved-indicators crm-summary" aria-label="Estadísticas">
+            <article className="crm-stat">
               <span>Compras históricas</span>
-              <strong>{formatMoney(historicalValueMinor, locale, currency)}</strong>
+              <b>{historicalValueMinor === null ? "—" : money(historicalValueMinor)}</b>
             </article>
-            <article>
+            <article className="crm-stat">
               <span>Recompensas disponibles</span>
-              <strong>{rewardsAvailable === null ? "—" : rewardsAvailable}</strong>
+              <b>{rewardsAvailable ?? "—"}</b>
             </article>
-            <article>
-              <span>Estado de inscripción</span>
-              <strong>
-                {currentEnrollment
-                  ? enrollment?.expiresOn
-                    ? "Vigente"
-                    : "Vitalicia"
-                  : enrollment
-                    ? "No vigente"
-                    : "Sin registro"}
-              </strong>
+            <article className="crm-stat">
+              <span>Medalla</span>
+              <b>{levelTitle ? "Medalla " + levelTitle : "Sin medalla"}</b>
             </article>
-            <article>
-              <span>Desde</span>
-              <strong>
-                {new Intl.DateTimeFormat(locale, {
-                  month: "short",
-                  year: "numeric",
-                }).format(new Date(student.createdAt))}
-              </strong>
+            <article className="crm-stat">
+              <span>Portal</span>
+              <b>{student.portalEntered ? "Ingresó" : "Sin ingresar"}</b>
             </article>
           </section>
-
-          {alerts.length ? (
-            <section className="profile360-approved-alerts">
-              <div className="profile360-approved-card-heading">
-                <div>
-                  <p className="eyebrow">SEGUIMIENTO Y ALERTAS</p>
-                  <h2>Requiere atención</h2>
-                </div>
-                <span className="count-badge">{alerts.length}</span>
-              </div>
-              <div className="profile360-approved-alert-list">
-                {alerts.slice(0, 3).map((alert) => (
-                  <div key={alert.title + alert.detail}>
-                    <strong>{alert.title}</strong>
-                    <span>{alert.detail}</span>
-                  </div>
-                ))}
-              </div>
-              <Link href={href("followup")}>Ver seguimiento →</Link>
-            </section>
-          ) : null}
-        </div>
+        </section>
       ) : null}
     </>
   );

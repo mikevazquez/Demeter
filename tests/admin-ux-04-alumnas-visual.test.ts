@@ -15,7 +15,7 @@ describe("ADMIN-UX-04 Alumnas visual homologation", () => {
   it("uses the approved compact Alumnas V2 hierarchy", () => {
     expect(page).toContain("student-directory-filters");
     expect(page).toContain("student-filter-chip");
-    expect(page).toContain('{ key: "active", label: "Activas", enabled: true }');
+    expect(page).toContain('{ key: "active", label: "Alumna", enabled: true }');
     expect(page).toContain('{ key: "expiring", label: "Por vencer", enabled: canReadProducts }');
     expect(page).toContain('{ key: "expired", label: "Vencidas", enabled: canReadProducts }');
     expect(page).not.toContain("student-directory-kpis");
