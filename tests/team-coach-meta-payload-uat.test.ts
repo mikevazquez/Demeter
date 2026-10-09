@@ -17,7 +17,9 @@ describe("Equipo WhatsApp templates — Meta UAT contracts", () => {
     );
     expect(variables).toContain('case "coach_roster_reminder":');
     expect(variables).toContain("total: safeNumber(variables.roster_count) ?? 0");
-    expect(variables).toContain('alumnas: safeText(variables.roster_names) ?? "Sin alumnas reservadas"');
+    expect(variables).toContain(
+      'alumnas: safeText(variables.roster_names) ?? "Sin alumnas reservadas"',
+    );
   });
 
   it("maps six minimum-cancellation parameters, with actual and required reservations", () => {
@@ -26,10 +28,12 @@ describe("Equipo WhatsApp templates — Meta UAT contracts", () => {
     );
     expect(variables).toContain('case "class_cancelled_coach":');
     expect(variables).toContain("minimo_reservas: safeNumber(variables.minimum_required)");
-    expect(variables).toContain("reservas_al_revisar: safeNumber(variables.reservations_at_review)");
+    expect(variables).toContain(
+      "reservas_al_revisar: safeNumber(variables.reservations_at_review)",
+    );
   });
 
-  it("builds the roster from reserved bookings and resolves the coach phone, not student phone", () => {
+  it("uses reserved bookings and the coach phone, not the student phone", () => {
     expect(engine).toContain('event.event_type === "team.coach_roster_due"');
     expect(engine).toContain('.eq("status", "reserved")');
     expect(engine).toContain("payload.roster_count = studentIds.length");
