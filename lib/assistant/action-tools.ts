@@ -3476,7 +3476,14 @@ async function prepareBankTransferPurchase(
 }
 
 async function escalateToHuman(ctx: AssistantActionToolContext, args: Record<string, unknown>) {
-  const reasonCode = String(args.reason_code ?? "").trim();
+  const requestedReason = String(args.reason_code ?? "").trim();
+  const aliases: Record<string, string> = {
+    user_requested_human: "human_requested",
+    assistant_cannot_resolve: "technical_block",
+    transfer_receipt_review: "receipt_validation_failed",
+    payment_validation: "receipt_validation_failed",
+  };
+  const reasonCode = aliases[requestedReason] ?? requestedReason;
   const note = String(args.note ?? "").trim() || null;
   if (!reasonCode) return { ok: false, error: "handoff_reason_required" };
 

@@ -109,7 +109,7 @@ describe("Meta webhook routing inspection", () => {
           data: [
             {
               object: "whatsapp_business_account",
-              callback_url: "https://sandbox.example.test/api/webhook?studio_id=studio",
+              callback_url: "https://sandbox.example.test/api/webhook?studio=studio",
             },
           ],
         }),

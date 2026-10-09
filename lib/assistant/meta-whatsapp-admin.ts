@@ -415,7 +415,7 @@ export async function getMetaWhatsAppWebhookRouting(studioId: string) {
         source,
         host: url.host,
         path: url.pathname,
-        studio_id: url.searchParams.get("studio_id"),
+        studio_id: url.searchParams.get("studio") ?? url.searchParams.get("studio_id"),
       });
     } catch {
       errors.push("callback_url_invalid");

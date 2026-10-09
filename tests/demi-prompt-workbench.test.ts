@@ -795,3 +795,54 @@ describe("cash purchases require a separate explicit confirmation", () => {
     });
   }
 });
+
+describe("handoff reasons match configured operational policies", () => {
+  it.each([
+    { requested: "user_requested_human", canonical: "human_requested", enabled: true },
+    { requested: "refund_request", canonical: "refund_request", enabled: true },
+    { requested: "human_requested", canonical: "human_requested", enabled: false },
+  ])("uses $canonical and respects its enabled flag", async ({ requested, canonical, enabled }) => {
+    const mod = serverModule<typeof import("../lib/assistant/action-tools")>(
+      "lib/assistant/action-tools.ts",
+      { "node:crypto": {}, "./read-tools": {}, "./group-booking": {} },
+    );
+    const eq = vi.fn();
+    const chain: Record<string, unknown> = {};
+    chain.select = () => chain;
+    chain.eq = (...args: unknown[]) => {
+      eq(...args);
+      return chain;
+    };
+    chain.maybeSingle = async () => ({
+      data: { reason_code: canonical, enabled, blocking: true },
+      error: null,
+    });
+    const rpc = vi.fn(async () => ({ data: { ok: true }, error: null }));
+    const result = await mod.executeAssistantActionTool(
+      {
+        supabase: { from: () => chain, rpc } as never,
+        studio: { id: "studio" } as never,
+        conversationId: "conversation",
+        turnId: "turn",
+        studentId: "student",
+        crmContactId: null,
+        activationUrl: null,
+        serviceMode: true,
+        currentUserMessage: "Quiero atención humana",
+      },
+      "escalate_to_human",
+      { reason_code: requested, note: "Solicitud de prueba" },
+    );
+    expect(eq).toHaveBeenCalledWith("reason_code", canonical);
+    if (enabled) {
+      expect(result).toMatchObject({ ok: true, reason_code: canonical });
+      expect(rpc).toHaveBeenCalledWith(
+        "assistant_create_handoff",
+        expect.objectContaining({ target_reason_code: canonical }),
+      );
+    } else {
+      expect(result).toMatchObject({ ok: false });
+      expect(rpc).not.toHaveBeenCalled();
+    }
+  });
+});

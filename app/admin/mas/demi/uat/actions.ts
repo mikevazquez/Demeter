@@ -617,3 +617,47 @@ export async function sendDemiUatMetaTest(runId: string, recipient: string) {
     return getDemiUatRun(run.id);
   });
 }
+
+export async function reviewDemiUatHandoff(
+  id: string,
+  handoffId: string,
+  decision: string,
+  note: string,
+) {
+  await locked(id, async (ctx) => {
+    if (!["claim", "resolve"].includes(decision))
+      throw new Error("demi_uat_handoff_decision_invalid");
+    const { data, error } = await ctx.service
+      .from("assistant_handoffs")
+      .select("id")
+      .eq("id", handoffId)
+      .eq("studio_id", ctx.run.studio_id)
+      .maybeSingle();
+    if (error || !data) throw new Error("demi_uat_handoff_not_found");
+    const before = await snapshot(ctx);
+    const result =
+      decision === "claim"
+        ? await ctx.supabase.rpc("admin_claim_demi_handoff", {
+            p_studio: ctx.run.studio_id,
+            p_handoff: handoffId,
+          })
+        : await ctx.supabase.rpc("admin_resolve_demi_handoff", {
+            p_studio: ctx.run.studio_id,
+            p_handoff: handoffId,
+            p_note: note,
+          });
+    await record(ctx, "human_control", {
+      handoff_id: handoffId,
+      decision,
+      result: result.data,
+      error: result.error?.message ?? null,
+      before,
+      after: await snapshot(ctx),
+    });
+    if (result.error || !result.data?.ok)
+      throw new Error(
+        result.error?.message ?? result.data?.reason_code ?? "demi_uat_handoff_failed",
+      );
+  });
+  return getDemiUatRun(id);
+}

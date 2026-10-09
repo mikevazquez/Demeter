@@ -11,6 +11,7 @@ import {
   runDemiUatNotifications,
   runDemiUatFollowups,
   reviewDemiUatGroup,
+  reviewDemiUatHandoff,
   reviewDemiUatReceipt,
   markDemiUatAttendance,
   recordDemiUatCase,
@@ -43,6 +44,8 @@ export default function Bank({
   const [runs, setRuns] = useState(initialRuns);
   const [data, setData] = useState<Data | null>(null);
   const [intentId, setIntentId] = useState("");
+  const [handoffId, setHandoffId] = useState("");
+  const [resolutionNote, setResolutionNote] = useState("");
   const [groupId, setGroupId] = useState("");
   const [reservationId, setReservationId] = useState("");
   const [busy, setBusy] = useState(false);
@@ -451,6 +454,39 @@ export default function Bank({
                 Registrar no show
               </button>
             </div>
+          </section>
+          <section>
+            <h2>Control humano del caso UAT</h2>
+            <label>
+              ID del caso humano
+              <input value={handoffId} onChange={(e) => setHandoffId(e.target.value)} />
+            </label>
+            <label>
+              Resolución
+              <textarea
+                value={resolutionNote}
+                onChange={(e) => setResolutionNote(e.target.value)}
+                maxLength={2000}
+              />
+            </label>
+            <button
+              disabled={busy || !handoffId}
+              onClick={() =>
+                perform(() => reviewDemiUatHandoff(data.run.id, handoffId, "claim", ""))
+              }
+            >
+              Tomar caso UAT y pausar Demi
+            </button>
+            <button
+              disabled={busy || !handoffId || resolutionNote.trim().length < 3}
+              onClick={() =>
+                perform(() =>
+                  reviewDemiUatHandoff(data.run.id, handoffId, "resolve", resolutionNote),
+                )
+              }
+            >
+              Resolver caso UAT y devolver el control
+            </button>
           </section>
           <section>
             <h2>Prueba externa de WhatsApp</h2>
