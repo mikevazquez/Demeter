@@ -455,9 +455,9 @@ export default function Bank({
           <section>
             <h2>Prueba externa de WhatsApp</h2>
             <p>
-              Consulta la conexión real con Meta. El envío usa una plantilla aprobada sin variables
-              y llega al número indicado; usa únicamente un destinatario autorizado. La aceptación
-              de Meta todavía no comprueba recepción.
+              Consulta la conexión real con Meta. El envío usa una plantilla aprobada de prueba o
+              bienvenida y llega al número indicado; usa únicamente un destinatario autorizado. La
+              aceptación de Meta todavía no comprueba recepción.
             </p>
             <button disabled={busy} onClick={() => perform(() => checkDemiUatMeta(data.run.id))}>
               Comprobar conexión Meta

@@ -224,6 +224,10 @@ export function isExplicitAssistantConfirmation(value: string) {
     "si por favor",
     "si confirmo",
     "si confirmo la reserva",
+    "si confirmo la compra",
+    "si confirmo la compra del paquete",
+    "si confirmo la compra del paquete en efectivo",
+    "confirmo la compra",
     "confirmo la reserva",
     "si confirma la reserva",
     "si reservame esa clase",
@@ -682,23 +686,21 @@ async function prepareCashPackage(ctx: AssistantActionToolContext, args: Record<
     .eq("action_type", "commerce.cash_purchase")
     .eq("status", "pending");
   if (cancelError) return { ok: false, reason_code: "pending_action_update_failed" };
-  const { error } = await ctx.supabase
-    .from("assistant_pending_actions")
-    .insert({
-      studio_id: ctx.studio.id,
-      conversation_id: ctx.conversationId,
-      action_type: "commerce.cash_purchase",
-      action_token_hash: createHash("sha256").update(randomUUID()).digest("hex"),
-      action_payload: {
-        student_id: ctx.studentId,
-        product_id: product,
-        expected_amount: item.price_minor,
-        prepared_turn_id: ctx.turnId,
-      },
-      confirmation_summary: summary,
-      status: "pending",
-      expires_at: expires,
-    });
+  const { error } = await ctx.supabase.from("assistant_pending_actions").insert({
+    studio_id: ctx.studio.id,
+    conversation_id: ctx.conversationId,
+    action_type: "commerce.cash_purchase",
+    action_token_hash: createHash("sha256").update(randomUUID()).digest("hex"),
+    action_payload: {
+      student_id: ctx.studentId,
+      product_id: product,
+      expected_amount: item.price_minor,
+      prepared_turn_id: ctx.turnId,
+    },
+    confirmation_summary: summary,
+    status: "pending",
+    expires_at: expires,
+  });
   return error
     ? { ok: false, reason_code: "pending_action_create_failed" }
     : { ok: true, status: "confirmation_required", summary, expires_at: expires };

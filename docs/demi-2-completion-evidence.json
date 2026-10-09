@@ -285,11 +285,54 @@
           }
         ]
       }
+    ],
+    "demi-2-recovery-conversion-uat.sql": [
+      {
+        "results": [
+          {
+            "case": "M14",
+            "passed": true,
+            "variant": "real_expired_package_sources_7_15_30_deduplicated_keep_enrollment"
+          },
+          {
+            "case": "M14",
+            "passed": true,
+            "variant": "package_operation_stops_recovery"
+          },
+          {
+            "case": "M14",
+            "passed": true,
+            "variant": "attendance_inactivity_14_days_preserves_regular_type"
+          },
+          {
+            "case": "M11",
+            "passed": true,
+            "variant": "native_paid_enrollment_and_package_promote_trial_to_regular",
+            "external_provider_verified": false
+          }
+        ]
+      }
     ]
   },
   "automated_tests": {
-    "passed": 1029,
-    "total": 1029
+    "passed": 1037,
+    "total": 1037
   },
-  "complete_master_cases_approved": 0
+  "complete_master_cases_approved": 0,
+  "distinct_operational_variants": 48,
+  "preview_audio": {
+    "commit": "0a73af6",
+    "actual_openai_transcription": true,
+    "persisted_user_message": "Hello, what classes are available tomorrow?",
+    "real_model_reply_captured": true,
+    "external_meta_media_download_verified": false
+  },
+  "meta_diagnostics": {
+    "commit": "0a73af6",
+    "graph_connection_verified": true,
+    "subscribed_app_count": 1,
+    "approved_templates": 35,
+    "external_send": "zero-variable test blocked; welcome parameter support in progress",
+    "external_delivery_verified": false
+  }
 }

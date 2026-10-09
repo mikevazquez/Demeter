@@ -306,6 +306,7 @@ export async function sendMetaWhatsAppTemplateTest(input: {
   recipient: string;
   templateName: string;
   languageCode: string;
+  bodyParameters?: string[];
 }) {
   const config = await loadConfig(input.studioId);
   const normalized = normalizeMexicanPhone(input.recipient);
@@ -332,6 +333,16 @@ export async function sendMetaWhatsAppTemplateTest(input: {
         language: {
           code: languageCode,
         },
+        ...(input.bodyParameters?.length
+          ? {
+              components: [
+                {
+                  type: "body",
+                  parameters: input.bodyParameters.map((text) => ({ type: "text", text })),
+                },
+              ],
+            }
+          : {}),
       },
     }),
   });
@@ -342,4 +353,50 @@ export async function sendMetaWhatsAppTemplateTest(input: {
   if (!messageId) throw new Error("meta_test_message_id_missing");
 
   return messageId;
+}
+
+// Read the approved provider definition; never guess parameters for a financial template.
+export async function getMetaWhatsAppUatWelcome(studioId: string) {
+  const config = await loadConfig(studioId);
+  const response = await graphRequest(
+    config,
+    `${config.wabaId}/message_templates?limit=100&fields=name,status,language,components`,
+  );
+  const rows = Array.isArray(response.data) ? response.data : [];
+  for (const preferred of ["demeter_bienvenida", "student_welcome_2", "bienvenida_alumna"]) {
+    for (const item of rows) {
+      if (
+        !isObject(item) ||
+        item.name !== preferred ||
+        item.status !== "APPROVED" ||
+        typeof item.language !== "string" ||
+        !Array.isArray(item.components)
+      )
+        continue;
+      let bodyCount = 0;
+      let compatible = true;
+      for (const component of item.components) {
+        if (!isObject(component)) {
+          compatible = false;
+          break;
+        }
+        if (component.type === "BODY") {
+          const text = String(component.text ?? "");
+          const refs = [...text.matchAll(/\{\{\s*(\d+)\s*\}\}/g)].map((m) => Number(m[1]));
+          if (refs.some((n) => n !== 1) || /\{\{\s*[^\d\s]/.test(text)) compatible = false;
+          bodyCount = refs.length ? 1 : 0;
+        } else if (component.type === "HEADER") {
+          if (component.format !== "TEXT" || /\{\{/.test(JSON.stringify(component)))
+            compatible = false;
+        } else if (/\{\{/.test(JSON.stringify(component))) compatible = false;
+      }
+      if (compatible)
+        return {
+          name: preferred,
+          language: item.language,
+          bodyParameters: bodyCount ? ["Prueba UAT Demi"] : [],
+        };
+    }
+  }
+  return null;
 }

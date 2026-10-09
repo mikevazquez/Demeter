@@ -744,6 +744,15 @@ describe("Demi shared commercial price", () => {
 });
 
 describe("cash purchases require a separate explicit confirmation", () => {
+  it("recognizes a natural cash purchase confirmation", () => {
+    const mod = serverModule<typeof import("../lib/assistant/action-tools")>(
+      "lib/assistant/action-tools.ts",
+      { "node:crypto": {}, "./read-tools": {}, "./group-booking": {} },
+    );
+    expect(
+      mod.isExplicitAssistantConfirmation("Sí, confirmo la compra del paquete en efectivo."),
+    ).toBe(true);
+  });
   for (const [label, message, preparedTurn] of [
     ["questions", "¿Sí puedo pagar después?", "previous"],
     ["negative confirmation", "No confirmo la compra", "previous"],

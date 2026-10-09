@@ -2,6 +2,7 @@
 
 import {
   getMetaWhatsAppAdminDiagnostics,
+  getMetaWhatsAppUatWelcome,
   sendMetaWhatsAppTemplateTest,
 } from "@/lib/assistant/meta-whatsapp-admin";
 import { normalizeMexicanPhone } from "@/lib/phone";
@@ -509,25 +510,23 @@ export async function checkDemiUatMeta(runId: string) {
   const ctx = await ownedRun(runId);
   const run = ctx.run;
   const diagnostics = await getMetaWhatsAppAdminDiagnostics(run.source_studio_id);
-  await ctx.service
-    .from("demi_uat_artifacts")
-    .insert({
-      run_id: run.id,
-      kind: "meta_readiness",
-      payload: {
-        connected: diagnostics.connected,
-        error_code: diagnostics.errorCode,
-        subscribed_app_count: diagnostics.subscribedApps.length,
-        approved_templates: diagnostics.templates
-          .filter((t) => t.status === "APPROVED")
-          .map((t) => ({
-            name: t.name,
-            language: t.language,
-            variable_count: t.variableCount,
-            test_ready: t.testReady,
-          })),
-      },
-    });
+  await ctx.service.from("demi_uat_artifacts").insert({
+    run_id: run.id,
+    kind: "meta_readiness",
+    payload: {
+      connected: diagnostics.connected,
+      error_code: diagnostics.errorCode,
+      subscribed_app_count: diagnostics.subscribedApps.length,
+      approved_templates: diagnostics.templates
+        .filter((t) => t.status === "APPROVED")
+        .map((t) => ({
+          name: t.name,
+          language: t.language,
+          variable_count: t.variableCount,
+          test_ready: t.testReady,
+        })),
+    },
+  });
   return getDemiUatRun(run.id);
 }
 
@@ -537,11 +536,16 @@ export async function sendDemiUatMetaTest(runId: string, recipient: string) {
     const phone = normalizeMexicanPhone(recipient);
     if (!phone) throw new Error("meta_test_phone_invalid");
     const diagnostics = await getMetaWhatsAppAdminDiagnostics(run.source_studio_id);
-    const template = diagnostics.templates.find(
+    const zeroVariable = diagnostics.templates.find(
       (t) => t.status === "APPROVED" && t.testReady && t.variableCount === 0,
     );
+    const template = zeroVariable
+      ? { ...zeroVariable, bodyParameters: [] }
+      : diagnostics.connected
+        ? await getMetaWhatsAppUatWelcome(run.source_studio_id)
+        : null;
     if (!diagnostics.connected || !template)
-      throw new Error(diagnostics.errorCode ?? "meta_zero_variable_template_unavailable");
+      throw new Error(diagnostics.errorCode ?? "meta_compatible_welcome_template_unavailable");
     const { data: existing, error: lookupError } = await ctx.service
       .from("demi_uat_artifacts")
       .select("id")
@@ -575,6 +579,7 @@ export async function sendDemiUatMetaTest(runId: string, recipient: string) {
         recipient: phone,
         templateName: template.name,
         languageCode: template.language,
+        bodyParameters: template.bodyParameters,
       });
       await ctx.service
         .from("demi_uat_artifacts")
