@@ -1,5 +1,5 @@
 {
-  "reason": "User approved replacing pre-V2 Intelligence source-text contracts with executable tests of the approved V2 product (b62b2d0). Database/RLS/action contracts are retained. Other listed renames reflect reviewed route/template/history changes.",
+  "reason": "User approved replacing pre-V2 Intelligence source-text contracts with executable tests of the approved V2 product (b62b2d0). Database/RLS/action contracts are retained. Other listed renames reflect reviewed route/template/history changes. The user-approved Intelligence update replaces five-view navigation contracts with six views and validates real conversation sources while keeping unmeasured qualification explicit.",
   "replacementFile": "tests/inteligencia-v2-runtime.test.tsx",
   "retiredTests": [
     "tests/inteligencia-02-conversion-events.test.ts :: INTEL-02 conversion event intelligence builds conversion intelligence from immutable domain events",
@@ -89,6 +89,30 @@
     {
       "from": "tests/demi-outbound-notifications-contract.test.ts :: (suite setup or collection failure)",
       "to": "tests/demi-outbound-notifications-contract.test.ts :: Demi outbound WhatsApp notifications supports Meta templates for class cancellation and schedule changes"
+    },
+    {
+      "from": "tests/inteligencia-v2-runtime.test.tsx :: Inteligencia V2 runtime shows the same five navigation destinations in alumnas",
+      "to": "tests/inteligencia-v2-runtime.test.tsx :: Inteligencia V2 runtime shows the same six navigation destinations in alumnas"
+    },
+    {
+      "from": "tests/inteligencia-v2-runtime.test.tsx :: Inteligencia V2 runtime shows the same five navigation destinations in clases",
+      "to": "tests/inteligencia-v2-runtime.test.tsx :: Inteligencia V2 runtime shows the same six navigation destinations in clases"
+    },
+    {
+      "from": "tests/inteligencia-v2-runtime.test.tsx :: Inteligencia V2 runtime shows the same five navigation destinations in conversion",
+      "to": "tests/inteligencia-v2-runtime.test.tsx :: Inteligencia V2 runtime shows the same six navigation destinations in conversion"
+    },
+    {
+      "from": "tests/inteligencia-v2-runtime.test.tsx :: Inteligencia V2 runtime shows the same five navigation destinations in dinero",
+      "to": "tests/inteligencia-v2-runtime.test.tsx :: Inteligencia V2 runtime shows the same six navigation destinations in dinero"
+    },
+    {
+      "from": "tests/inteligencia-v2-runtime.test.tsx :: Inteligencia V2 runtime shows the same five navigation destinations in resumen",
+      "to": "tests/inteligencia-v2-runtime.test.tsx :: Inteligencia V2 runtime shows the same six navigation destinations in resumen"
+    },
+    {
+      "from": "tests/inteligencia-v2-runtime.test.tsx :: Inteligencia V2 runtime explains missing lead coverage instead of inventing a lead-to-booking rate",
+      "to": "tests/inteligencia-v2-runtime.test.tsx :: Inteligencia V2 runtime reads real conversations and explains unmeasured qualification"
     }
   ]
 }
