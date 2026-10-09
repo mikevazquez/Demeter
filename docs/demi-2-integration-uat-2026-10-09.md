@@ -110,3 +110,23 @@ Resultado acumulado: **66 variantes operativas distintas y 1066/1066 pruebas aut
 Los 18 casos maestros permanecen parciales: estas variantes no equivalen a aprobación integral. Quedan entrada y audio reales desde Meta, Instagram/Facebook, Mercado Pago externo, acceso/QR y variantes específicas pendientes de la matriz. La única conexión de Meta sigue apuntando a producción; no se modificó el receptor ni se publicó esta rama en producción.
 
 Preview c9223d2 verificado con autenticación: selección del estudio, banco UAT y configuración de seguimientos devolvieron HTTP 200. El reintento del prospecto reactivado mantuvo trece alumnas, los mismos dos grupos y su reserva provisional, sin nuevo cobro. El modelo usó «podría cancelarse» y el servidor duplicó el aviso: aa79b88 amplía el reconocimiento del condicional y cambia la prueba de regresión a esa respuesta real. Preview final: https://demeterbueno-ddxgcq0hs-demeter3.vercel.app.
+
+## UAT de conexiones disponibles: WhatsApp, Facebook y Mercado Pago
+
+Por indicación del usuario se usaron las conexiones existentes de Studio Flow Sandbox; Instagram queda a cargo del usuario. Nueva ejecución aislada 451ec6b5-3c7d-44d4-a0ae-950348839f01. No se cambiaron receptores externos ni se hicieron cargos reales.
+
+| Canal | Pruebas nuevas | Resultado y límite |
+|---|---|---|
+| WhatsApp | Texto con modelo real; repetición del mismo evento; audio WAV; audio inválido; firmas y token inválidos | Pasa. Repetición conserva 1 evento, 2 turnos y 3 llamadas al modelo. Audio válido transcrito por OpenAI; inválido deja handoff y cero reservas para esa persona. El banco inyecta media: no prueba descarga de nota real desde Graph. |
+| Facebook | Cinco variantes de RPC: prospecto sin matrícula, continuidad sin autenticar teléfono escrito, turno duplicado, página incorrecta y atención humana; diez controles ejecutables del extractor/HMAC; tres controles HTTP de firma/token | Pasa. Se probó el preview de la conexión 41ae286, separado del preview Demi 2.0 aa79b88. No acredita todavía recepción/entrega nueva real ni integración de ese adaptador en la rama Demi 2.0. |
+| Mercado Pago | Nueve variantes nativas: orden sin pago, cinco validaciones, aprobación, repetición y cambio de identidad del pago; tres controles HTTP; opciones comerciales con modelo real | Pasa. Una aprobación nativa crea una venta/pago/paquete; repetir no duplica. Operaciones SQL ficticias con ROLLBACK, sin un pago nuevo ante Mercado Pago. |
+
+El acumulado es **80 variantes operativas SQL distintas** (66 anteriores + 14 nuevas). Ocho controles HTTP de seguridad pasan; 47 pruebas focalizadas de WhatsApp/Mercado Pago pasan; diez controles ejecutables de Facebook pasan. La suite general anterior permanece 1066/1066: no se suman estas pruebas de otro checkout como si pertenecieran a esa suite.
+
+La suite antigua de contratos de Facebook dio 11/12: un control exige el texto literal message.is_echo, mientras el código usa message?.is_echo. Se conserva ese fallo y se acredita por prueba ejecutable que los ecos sí se ignoran; no se oculta el fallo ni se cambia la suite para contarla aprobada.
+
+Diagnóstico Graph actualizado: WhatsApp conectado, una app suscrita y 35 plantillas aprobadas. El callback continúa en demeterfitness.com, estudio de producción. Configuración Inbox: página y token Facebook presentes; Instagram ausente. Antecedentes del Sandbox: 22 eventos Facebook procesados, uno con HTTP 401; 19 entregas aceptadas y una con error. Mercado Pago tiene tres intentos aprobados y órdenes previas: antecedentes, no pagos nuevos de este UAT.
+
+El modelo ofreció transferencia cuando el producto ficticio no era online. Tras habilitar online_purchasable sólo en el estudio sintético, ofreció App/Mercado Pago con producto y precio oficiales ($600, ocho clases, treinta días), sin ventas ni pagos. Para primera clase señaló ausencia de enlace externo configurado y no inventó uno. El primer intento concurrente de esa consulta chocó con el bloqueo del banco; su reintento secuencial pasó.
+
+M01, M08, M09, M17 y M18 se amplían con esta evidencia y permanecen parciales. Pendientes: entrada y audio reales Meta, entrega nueva Facebook, pago nuevo/retorno de Mercado Pago y enlace externo para primera clase; Instagram cuando se conecte; integración conjunta del adaptador Facebook con esta rama; además acceso/QR y variantes restantes de la matriz. Evidencia estructurada en demi-connected-channels-evidence-2026-10-09.json.

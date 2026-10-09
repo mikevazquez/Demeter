@@ -405,6 +405,82 @@
           }
         ]
       }
+    ],
+    "demi-connected-channels-uat.sql": [
+      {
+        "results": [
+          {
+            "case": "M01",
+            "passed": true,
+            "variant": "facebook_creates_prospect_identity_without_enrolling"
+          },
+          {
+            "case": "M01",
+            "passed": true,
+            "variant": "facebook_duplicate_event_keeps_identity_and_one_turn"
+          },
+          {
+            "case": "M01",
+            "passed": true,
+            "variant": "facebook_continuity_does_not_authenticate_typed_phone"
+          },
+          {
+            "case": "M01",
+            "passed": true,
+            "variant": "facebook_wrong_page_source_event_blocked"
+          },
+          {
+            "case": "M17",
+            "passed": true,
+            "variant": "facebook_pending_human_attention_preserved"
+          },
+          {
+            "case": "M08",
+            "passed": true,
+            "variant": "mercado_pago_order_created_has_no_sale_or_payment"
+          },
+          {
+            "case": "M08",
+            "passed": true,
+            "variant": "mercado_pago_order_mismatch_rejected_without_fulfillment"
+          },
+          {
+            "case": "M08",
+            "passed": true,
+            "variant": "mercado_pago_reference_mismatch_rejected_without_fulfillment"
+          },
+          {
+            "case": "M08",
+            "passed": true,
+            "variant": "mercado_pago_status_mismatch_rejected_without_fulfillment"
+          },
+          {
+            "case": "M08",
+            "passed": true,
+            "variant": "mercado_pago_amount_mismatch_rejected_without_fulfillment"
+          },
+          {
+            "case": "M08",
+            "passed": true,
+            "variant": "mercado_pago_currency_mismatch_rejected_without_fulfillment"
+          },
+          {
+            "case": "M08",
+            "passed": true,
+            "variant": "mercado_pago_approved_creates_one_sale_payment_and_package"
+          },
+          {
+            "case": "M09",
+            "passed": true,
+            "variant": "mercado_pago_approval_replay_does_not_duplicate_money"
+          },
+          {
+            "case": "M09",
+            "passed": true,
+            "variant": "mercado_pago_paid_order_cannot_change_payment_identity"
+          }
+        ]
+      }
     ]
   },
   "automated_tests": {
@@ -412,7 +488,7 @@
     "total": 1066
   },
   "complete_master_cases_approved": 0,
-  "distinct_operational_variants": 66,
+  "distinct_operational_variants": 80,
   "preview_audio": {
     "commit": "0a73af6",
     "actual_openai_transcription": true,
@@ -565,5 +641,6 @@
     "replay_same_groups_and_students": true,
     "replay_notice_duplicate_observed": true,
     "conditional_notice_unit_regression_commit": "aa79b88"
-  }
+  },
+  "connected_channels_report": "docs/demi-connected-channels-evidence-2026-10-09.json"
 }
