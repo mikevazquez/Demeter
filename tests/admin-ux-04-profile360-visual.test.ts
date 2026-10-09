@@ -8,7 +8,7 @@ function source(path: string) {
 }
 
 describe("ADMIN-UX-04 Profile 360 visual homologation", () => {
-  const page = source("app/admin/alumnas/[studentId]/page.tsx");
+  const page = source("app/admin/alumnas/[studentId]/StudentRecord.tsx");
   const overview = source("app/admin/alumnas/[studentId]/Profile360Overview.tsx");
   const styles = source("app/admin/alumnas/profile-360-admin-ux-04.css");
   const layout = source("app/admin/layout.tsx");

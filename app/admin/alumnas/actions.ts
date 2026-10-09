@@ -70,6 +70,7 @@ export async function createStudent(formData: FormData) {
   }
 
   revalidatePath("/admin/alumnas");
+  revalidatePath("/admin/crm", "layout");
   revalidatePath("/admin");
   redirect(`/admin/alumnas/${studentId}/alta`);
 }
@@ -91,6 +92,7 @@ export async function setStudentLifecycle(formData: FormData) {
   if (error) errorRedirect("lifecycle_failed");
 
   revalidatePath("/admin/alumnas");
+  revalidatePath("/admin/crm", "layout");
   revalidatePath("/admin");
   redirect(`/admin/alumnas?created=${encodeURIComponent(nextStatus)}`);
 }

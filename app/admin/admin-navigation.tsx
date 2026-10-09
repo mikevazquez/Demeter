@@ -52,7 +52,7 @@ function NavIcon({ label }: { label: string }) {
       </svg>
     );
   }
-  if (label === "Alumnas") {
+  if (label === "Alumnas" || label === "CRM") {
     return (
       <svg {...common}>
         <circle cx="9" cy="8" r="3" />
