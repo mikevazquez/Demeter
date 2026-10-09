@@ -10,6 +10,7 @@ function load(rows: unknown[]) {
     phoneNumberId: "test-phone",
     graphApiVersion: "v23.0",
     accessToken: "test-token",
+    appSecret: "test-secret",
   };
   new Function(
     "require",
@@ -72,4 +73,69 @@ describe("Meta UAT uses real compatible approved welcome definitions", () => {
       expect(await h.getMetaWhatsAppUatWelcome("studio")).toBeNull();
     },
   );
+});
+
+describe("Meta webhook routing inspection", () => {
+  it("reports only safe routing fields for WABA overrides", async () => {
+    const h = load([
+      {
+        override_callback_uri:
+          "https://sandbox.example.test/api/webhook?studio_id=studio&verify_token=secret",
+      },
+    ]);
+    const result = await h.getMetaWhatsAppWebhookRouting("studio");
+    expect(result).toEqual({
+      routes: [
+        {
+          source: "waba_override",
+          host: "sandbox.example.test",
+          path: "/api/webhook",
+          studio_id: "studio",
+        },
+      ],
+      error_codes: [],
+      verified: true,
+    });
+    expect(JSON.stringify(result)).not.toContain("secret");
+  });
+  it("reads default app subscriptions with server-side app credentials", async () => {
+    const h = load([]);
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        Response.json({ data: [{ whatsapp_business_api_data: { id: "123" } }] }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          data: [
+            {
+              object: "whatsapp_business_account",
+              callback_url: "https://sandbox.example.test/api/webhook?studio_id=studio",
+            },
+          ],
+        }),
+      );
+    const result = await h.getMetaWhatsAppWebhookRouting("studio");
+    expect(result.verified).toBe(true);
+    expect(vi.mocked(fetch).mock.calls[1][1]?.headers).toMatchObject({
+      authorization: "Bearer 123|test-secret",
+    });
+    expect(JSON.stringify(result)).not.toContain("test-secret");
+  });
+  it("keeps unavailable callback inspection unverified", async () => {
+    const h = load([]);
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        Response.json({ data: [{ whatsapp_business_api_data: { id: "123" } }] }),
+      )
+      .mockResolvedValueOnce(
+        Response.json(
+          { error: { code: 200, message: "private provider details" } },
+          { status: 403 },
+        ),
+      );
+    const result = await h.getMetaWhatsAppWebhookRouting("studio");
+    expect(result.verified).toBe(false);
+    expect(result.error_codes).toHaveLength(1);
+    expect(JSON.stringify(result)).not.toContain("private provider details");
+  });
 });

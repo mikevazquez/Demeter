@@ -3,6 +3,7 @@
 import {
   getMetaWhatsAppAdminDiagnostics,
   getMetaWhatsAppUatWelcome,
+  getMetaWhatsAppWebhookRouting,
   sendMetaWhatsAppTemplateTest,
 } from "@/lib/assistant/meta-whatsapp-admin";
 import { normalizeMexicanPhone } from "@/lib/phone";
@@ -510,11 +511,15 @@ export async function checkDemiUatMeta(runId: string) {
   const ctx = await ownedRun(runId);
   const run = ctx.run;
   const diagnostics = await getMetaWhatsAppAdminDiagnostics(run.source_studio_id);
+  const routing = diagnostics.connected
+    ? await getMetaWhatsAppWebhookRouting(run.source_studio_id)
+    : null;
   await ctx.service.from("demi_uat_artifacts").insert({
     run_id: run.id,
     kind: "meta_readiness",
     payload: {
       connected: diagnostics.connected,
+      webhook_routing: routing,
       error_code: diagnostics.errorCode,
       subscribed_app_count: diagnostics.subscribedApps.length,
       approved_templates: diagnostics.templates

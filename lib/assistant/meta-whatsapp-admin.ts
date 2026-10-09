@@ -400,3 +400,50 @@ export async function getMetaWhatsAppUatWelcome(studioId: string) {
   }
   return null;
 }
+
+export async function getMetaWhatsAppWebhookRouting(studioId: string) {
+  const config = await loadConfig(studioId);
+  const subscriptions = await graphRequest(config, `${config.wabaId}/subscribed_apps?limit=50`);
+  const apps = Array.isArray(subscriptions.data) ? subscriptions.data : [];
+  const routes: { source: string; host: string; path: string; studio_id: string | null }[] = [];
+  const errors: string[] = [];
+  const recordRoute = (value: unknown, source: string) => {
+    if (typeof value !== "string") return;
+    try {
+      const url = new URL(value);
+      routes.push({
+        source,
+        host: url.host,
+        path: url.pathname,
+        studio_id: url.searchParams.get("studio_id"),
+      });
+    } catch {
+      errors.push("callback_url_invalid");
+    }
+  };
+  for (const item of apps) {
+    if (!isObject(item)) continue;
+    if (typeof item.override_callback_uri === "string") {
+      recordRoute(item.override_callback_uri, "waba_override");
+      continue;
+    }
+    const app = isObject(item.whatsapp_business_api_data) ? item.whatsapp_business_api_data : {};
+    const appId = textValue(app.id);
+    if (!appId || !/^\d+$/.test(appId)) {
+      errors.push("subscription_app_id_unavailable");
+      continue;
+    }
+    try {
+      const result = await graphRequest(config, `${appId}/subscriptions`, {
+        headers: { authorization: `Bearer ${appId}|${config.appSecret}` },
+      });
+      const rows = Array.isArray(result.data) ? result.data : [];
+      for (const row of rows)
+        if (isObject(row) && row.object === "whatsapp_business_account")
+          recordRoute(row.callback_url, "app_subscription");
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : "callback_lookup_failed");
+    }
+  }
+  return { routes, error_codes: errors, verified: routes.length > 0 };
+}
