@@ -152,7 +152,8 @@ export const NOTIFICATION_PROCESSES: readonly NotificationProcessDefinition[] = 
   {
     key: "coach-class-roster",
     name: "Lista de alumnas antes de clase",
-    description: "Aviso configurable al coach asignado con clase, fecha, horario, total de alumnas y nombres. Requiere activar la automatización y aprobar la plantilla en Meta.",
+    description:
+      "Aviso configurable al coach asignado con clase, fecha, horario, total de alumnas y nombres. Requiere activar la automatización y aprobar la plantilla en Meta.",
     category: "equipo",
     ruleKeys: ["team.coach_roster_reminder"],
     timingLabel: "2 horas antes · configurable",

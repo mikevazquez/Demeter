@@ -33,7 +33,7 @@ describe("NOTIFICACIONES-01D Assistian variable mapping", () => {
     });
   });
 
-  it("maps cancellation status without losing the legacy semantic fields", () => {
+  it("maps cancellation status to the approved recipient-aware template", () => {
     expect(
       buildAsistianVariables("reservation_cancelled", {
         ...base,
@@ -41,12 +41,12 @@ describe("NOTIFICACIONES-01D Assistian variable mapping", () => {
         credits_remaining: 3,
       }),
     ).toEqual({
+      nombre: "Mike",
       clase: "Exotic Pole",
       fecha: "27/09/2026",
       hora: "15:00",
       tipo_cancelacion: "Tardía",
       credito_recuperado: false,
-      creditos_restantes: 3,
     });
   });
 

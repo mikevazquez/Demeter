@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve, sep } from "node:path";
+import { evaluateTestMigrations } from "./test-suite-migrations.mjs";
 
 const baseSha = process.argv[2] ?? "";
 if (!/^[a-f0-9]{40}$/i.test(baseSha)) {
@@ -56,6 +57,7 @@ function failureDetail(value) {
 function inspectTests(reportText, repoRoot) {
   const report = JSON.parse(reportText);
   const tests = new Set();
+  const passedTests = new Set();
   const failures = new Set();
   const failureDetails = [];
   for (const suite of report.testResults ?? []) {
@@ -64,6 +66,7 @@ function inspectTests(reportText, repoRoot) {
     for (const assertion of assertions) {
       const test = `${file} :: ${assertion.fullName || assertion.title || "(unnamed test)"}`;
       tests.add(test);
+      if (assertion.status === "passed") passedTests.add(test);
       if (assertion.status === "failed") {
         failures.add(test);
         failureDetails.push({ test, detail: failureDetail(assertion) });
@@ -78,6 +81,7 @@ function inspectTests(reportText, repoRoot) {
   }
   return {
     tests: [...tests].sort(),
+    passedTests: [...passedTests].sort(),
     failures: [...failures].sort(),
     failureDetails,
   };
@@ -98,17 +102,24 @@ try {
   const candidateResults = inspectTests(runTests(root, candidateReport), root);
 
   const baseSet = new Set(baseResults.failures);
-  const candidateTestSet = new Set(candidateResults.tests);
   const newFailures = candidateResults.failures.filter((failure) => !baseSet.has(failure));
   const resolvedFailures = baseResults.failures.filter(
     (failure) => !candidateResults.failures.includes(failure),
   );
-  const removedTests = baseResults.tests.filter((test) => !candidateTestSet.has(test));
+  const migrations = JSON.parse(
+    readFileSync(join(root, "scripts/test-suite-migrations.json"), "utf8"),
+  );
+  const migrationResult = evaluateTestMigrations(baseResults, candidateResults, migrations);
+  const removedTests = migrationResult.unapprovedRemovals;
 
   console.log(`Base failures: ${baseResults.failures.length}`);
   console.log(`Candidate failures: ${candidateResults.failures.length}`);
   console.log(`New candidate failures: ${newFailures.length}`);
   console.log(`Base tests missing from candidate: ${removedTests.length}`);
+  console.log(
+    `Explicitly replaced or renamed contracts: ${migrationResult.approvedRemovals.length}`,
+  );
+  for (const error of migrationResult.errors) console.error(error);
   if (resolvedFailures.length) {
     console.log(`No longer failing on candidate: ${resolvedFailures.length}`);
     for (const failure of resolvedFailures) console.log(`  ${failure}`);
@@ -131,7 +142,7 @@ try {
     console.error("The candidate removed or renamed baseline tests:");
     for (const test of removedTests) console.error(`  ${test}`);
   }
-  if (newFailures.length || removedTests.length) {
+  if (newFailures.length || removedTests.length || migrationResult.errors.length) {
     process.exitCode = 1;
   } else {
     console.log("Test ratchet passed: no new failures and no baseline tests removed.");

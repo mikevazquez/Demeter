@@ -181,7 +181,14 @@ export function buildAsistianVariables(
       };
 
     case "coach_roster_reminder":
-      return { coach: safeText(variables.recipient_name) ?? "Coach", clase: safeText(variables.class_name) ?? "Clase", fecha: starts.fecha, hora: starts.hora, total: safeNumber(variables.roster_count) ?? 0, alumnas: safeText(variables.roster_names) ?? "Sin alumnas reservadas" };
+      return {
+        coach: safeText(variables.recipient_name) ?? "Coach",
+        clase: safeText(variables.class_name) ?? "Clase",
+        fecha: starts.fecha,
+        hora: starts.hora,
+        total: safeNumber(variables.roster_count) ?? 0,
+        alumnas: safeText(variables.roster_names) ?? "Sin alumnas reservadas",
+      };
 
     case "class_cancelled_coach":
       return {

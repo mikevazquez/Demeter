@@ -59,16 +59,12 @@ export default async function BusinessProfilePage({
             ← Más
           </Link>
           <h1>Información del estudio</h1>
-          <p>
-            Mantén aquí los datos públicos que Studio Flow y Demi pueden consultar y compartir.
-          </p>
+          <p>Mantén aquí los datos públicos que Studio Flow y Demi pueden consultar y compartir.</p>
         </div>
       </header>
 
       {params.saved === "business" ? (
-        <div className="advanced-v2-notice is-success">
-          Información del estudio actualizada.
-        </div>
+        <div className="advanced-v2-notice is-success">Información del estudio actualizada.</div>
       ) : null}
 
       {params.error ? (
@@ -85,9 +81,7 @@ export default async function BusinessProfilePage({
           contactEmail={
             (studioDetails as { contact_email?: string | null } | null)?.contact_email ?? ""
           }
-          websiteUrl={
-            (studioDetails as { website_url?: string | null } | null)?.website_url ?? ""
-          }
+          websiteUrl={(studioDetails as { website_url?: string | null } | null)?.website_url ?? ""}
           locationName={location?.name ?? "Principal"}
           address={location?.address ?? ""}
         />

@@ -23,7 +23,9 @@ export type ChannelReadinessInput = {
  * provider-specific prerequisites are satisfied. Recipient consent/subscription
  * is checked again at delivery time and is intentionally not inferred here.
  */
-export function getChannelReadiness(input: ChannelReadinessInput): Record<OutboundChannel, ChannelReadiness> {
+export function getChannelReadiness(
+  input: ChannelReadinessInput,
+): Record<OutboundChannel, ChannelReadiness> {
   const pushReady = input.globalEnabled.push && input.pushProviderConfigured;
   const whatsappTemplateCompatible =
     Boolean(input.whatsappTemplateName) &&

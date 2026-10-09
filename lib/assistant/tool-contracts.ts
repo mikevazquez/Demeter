@@ -353,7 +353,8 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
       properties: {
         session_ref: {
           type: ["string", "null"],
-          description: "Referencia session:<uuid> de la clase objetivo cuando exista; null si la persona solo quiere comprar el paquete.",
+          description:
+            "Referencia session:<uuid> de la clase objetivo cuando exista; null si la persona solo quiere comprar el paquete.",
         },
         product_refs: {
           type: "array",
@@ -379,7 +380,8 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
       properties: {
         session_ref: {
           type: ["string", "null"],
-          description: "Referencia session:<uuid> de la clase objetivo; null si la compra no está ligada a una clase.",
+          description:
+            "Referencia session:<uuid> de la clase objetivo; null si la compra no está ligada a una clase.",
         },
         product_ref: {
           type: "string",

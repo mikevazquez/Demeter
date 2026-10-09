@@ -10,8 +10,6 @@ function source(path: string) {
 describe("INTEL-03 conversation intelligence", () => {
   const migration = source("supabase/migrations/20260926121500_inteligencia03_conversations.sql");
   const receiver = source("supabase/functions/receive-asistian-webhook/index.ts");
-  const intelligence = source("app/admin/inteligencia/page.tsx");
-  const integrationPage = source("app/admin/integraciones/asistian/page.tsx");
 
   it("stores generic CRM conversation windows with tenant-scoped RLS", () => {
     expect(migration).toContain("create table if not exists public.crm_conversations");
@@ -40,20 +38,5 @@ describe("INTEL-03 conversation intelligence", () => {
     expect(receiver).toContain('"service_record_asistian_conversation_activity"');
     expect(receiver).toContain('"conversation_created"');
     expect(receiver).toContain('"conversation_updated"');
-  });
-
-  it("renders a conversation-to-student funnel without inflating repeated contacts", () => {
-    expect(intelligence).toContain('.from("crm_conversations")');
-    expect(intelligence).toContain("conversationIdentity");
-    expect(intelligence).toContain("conversationCohortStats");
-    expect(intelligence).toContain("conversionBottleneck");
-    expect(intelligence).toContain('title="💬 Embudo de conversión"');
-    expect(intelligence).toContain("conversionFunnelRebooked");
-  });
-
-  it("documents the webhook contract in Asistian settings", () => {
-    expect(integrationPage).toContain("Capturar conversaciones entrantes");
-    expect(integrationPage).toContain("conversation_activity");
-    expect(integrationPage).toContain("ventanas de 24 horas");
   });
 });

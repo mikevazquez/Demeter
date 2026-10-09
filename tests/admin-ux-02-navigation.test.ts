@@ -49,7 +49,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(layout).toContain('label: "Más"');
     expect(layout).toContain('"/admin/productos"');
     expect(layout).toContain('"/admin/instructores"');
-    expect(layout).toContain('"/admin/automatizaciones"');
+    expect(layout).toContain('"/admin/notificaciones"');
     expect(layout).not.toContain('"/admin/acciones"');
     expect(navigation).toContain("activeFor");
     expect(styles).toContain("grid-auto-flow: column");
@@ -80,7 +80,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   });
 
   it("keeps the old Empresa route only as a compatibility redirect", () => {
-    expect(company).toContain('redirect("/admin/mas")');
+    expect(company).toContain('redirect("/admin/configuracion/empresa")');
     expect(company).not.toContain("Ventas y pagos");
     expect(company).not.toContain("Agenda y actividades");
   });

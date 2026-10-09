@@ -15,7 +15,8 @@ export type MetaDeliveryStatus = {
 
 function object(value: unknown): RecordObject {
   return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? value as RecordObject : {};
+    ? (value as RecordObject)
+    : {};
 }
 function str(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -23,7 +24,7 @@ function str(value: unknown) {
 
 export function extractMetaDeliveryStatuses(body: unknown): MetaDeliveryStatus[] {
   const statuses: MetaDeliveryStatus[] = [];
-  for (const item of Array.isArray(object(body).entry) ? object(body).entry as unknown[] : []) {
+  for (const item of Array.isArray(object(body).entry) ? (object(body).entry as unknown[]) : []) {
     const entry = object(item);
     for (const change of Array.isArray(entry.changes) ? entry.changes : []) {
       const value = object(object(change).value);
@@ -33,7 +34,8 @@ export function extractMetaDeliveryStatuses(body: unknown): MetaDeliveryStatus[]
         const status = object(raw);
         const messageId = str(status.id);
         const statusValue = str(status.status);
-        if (!messageId || !["sent", "delivered", "read", "failed"].includes(statusValue ?? "")) continue;
+        if (!messageId || !["sent", "delivered", "read", "failed"].includes(statusValue ?? ""))
+          continue;
         const error = object(Array.isArray(status.errors) ? status.errors[0] : null);
         statuses.push({
           messageId,
@@ -68,8 +70,10 @@ export async function persistMetaDeliveryStatuses(
   let updated = 0;
   let ignored = 0;
   for (const status of statuses) {
-    if (status.phoneNumberId !== expectedPhoneNumberId ||
-        (status.wabaId && status.wabaId !== expectedWabaId)) {
+    if (
+      status.phoneNumberId !== expectedPhoneNumberId ||
+      (status.wabaId && status.wabaId !== expectedWabaId)
+    ) {
       ignored++;
       continue;
     }
@@ -85,18 +89,28 @@ export async function persistMetaDeliveryStatuses(
 
     for (const delivery of deliveries ?? []) {
       const snapshot = object(delivery.message_snapshot);
-      const priorStatus = str(snapshot.meta_delivery_status) ??
+      const priorStatus =
+        str(snapshot.meta_delivery_status) ??
         (delivery.state === "delivered" ? "delivered" : "accepted");
       if ((RANK[status.status] ?? 0) < (RANK[priorStatus] ?? 0)) continue;
-      const state = status.status === "failed" ? "failed_permanent"
-        : status.status === "delivered" || status.status === "read" ? "delivered" : delivery.state;
-      const { error } = await client.from("notification_deliveries")
+      const state =
+        status.status === "failed"
+          ? "failed_permanent"
+          : status.status === "delivered" || status.status === "read"
+            ? "delivered"
+            : delivery.state;
+      const { error } = await client
+        .from("notification_deliveries")
         .update({
           state,
-          delivered_at: state === "delivered" ? (delivery.delivered_at ?? new Date().toISOString()) : delivery.delivered_at,
+          delivered_at:
+            state === "delivered"
+              ? (delivery.delivered_at ?? new Date().toISOString())
+              : delivery.delivered_at,
           last_error_category: status.status === "failed" ? "provider" : null,
           last_error_code: status.status === "failed" ? (status.errorCode ?? "meta_failed") : null,
-          last_error_safe: status.status === "failed" ? safeDescription(status.errorDescription) : null,
+          last_error_safe:
+            status.status === "failed" ? safeDescription(status.errorDescription) : null,
           message_snapshot: {
             ...snapshot,
             meta_delivery_status: status.status,
@@ -124,15 +138,20 @@ export async function persistMetaDeliveryStatuses(
       const snapshot = object(row.response_snapshot);
       const previous = str(snapshot.meta_delivery_status) ?? "accepted";
       if ((RANK[status.status] ?? 0) < (RANK[previous] ?? 0)) continue;
-      const { error } = await client.from("assistant_whatsapp_deliveries").update({
-        response_snapshot: {
-          ...snapshot,
-          meta_delivery_status: status.status,
-          meta_delivery_timestamp: status.timestamp,
-          meta_error_code: status.status === "failed" ? status.errorCode : null,
-          meta_error_description: status.status === "failed" ? safeDescription(status.errorDescription) : null,
-        },
-      }).eq("id", row.id).eq("studio_id", studioId);
+      const { error } = await client
+        .from("assistant_whatsapp_deliveries")
+        .update({
+          response_snapshot: {
+            ...snapshot,
+            meta_delivery_status: status.status,
+            meta_delivery_timestamp: status.timestamp,
+            meta_error_code: status.status === "failed" ? status.errorCode : null,
+            meta_error_description:
+              status.status === "failed" ? safeDescription(status.errorDescription) : null,
+          },
+        })
+        .eq("id", row.id)
+        .eq("studio_id", studioId);
       if (error) throw error;
       updated++;
     }

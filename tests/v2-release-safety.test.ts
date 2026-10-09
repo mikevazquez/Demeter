@@ -8,7 +8,8 @@ const stableBlobs: Record<string, string> = {
   "app/auth/actions.ts": "90a3b8155c458303cdbb4ac9020bca29b52db354",
   "lib/auth/admin-context.ts": "a7f548fd68204521686dba09eeaed95d11f72254",
   "lib/auth/studio-context-cookie.ts": "ed8605c1d786a8b04b4cd6b799c1853621f3d7d0",
-  "lib/student/portal.ts": "42f2685064277640fd3b7462c80bbfb81a63e371",
+  // d6d4185 added bookingReasonCopyForStudent; the reviewed diff changes no session/auth logic.
+  "lib/student/portal.ts": "ca6f4fdfe22ebcd6f76bd63e9272da70cc014195",
   "lib/supabase/proxy.ts": "e05797beb94e42633777e3c1184bc8b909f570f1",
   "lib/supabase/server.ts": "947e71a1258ec1a7441c8815739fae98d1d5682b",
   "lib/supabase/client.ts": "877a8544a6dfbf0618242c861b07e07e6a943d02",
