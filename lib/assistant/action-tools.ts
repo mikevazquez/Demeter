@@ -1459,6 +1459,48 @@ async function replayTrialPayment(
 }
 
 async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBookingArgs) {
+  let result: Awaited<ReturnType<typeof executeBookingOperation>>;
+  try {
+    result = await executeBookingOperation(ctx, args);
+  } catch {
+    result = { ok: false, error: "booking_execution_failed" };
+  }
+  const value = asObject(result);
+  if (
+    ctx.serviceMode &&
+    value?.ok === false &&
+    ["booking_execution_failed", "booking_eligibility_unavailable"].includes(String(value.error))
+  ) {
+    const { data: pending } = await ctx.supabase
+      .from("assistant_pending_actions")
+      .select("id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("conversation_id", ctx.conversationId)
+      .eq("action_type", "booking.create")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (pending?.id) {
+      const failure = await ctx.supabase.rpc("service_demi_booking_failure_status", {
+        p_studio: ctx.studio.id,
+        p_conversation: ctx.conversationId,
+        p_pending: pending.id,
+        p_turn: ctx.turnId,
+        p_error: String(value.error),
+      });
+      if (!failure.error && failure.data?.ok)
+        return {
+          ...value,
+          ...failure.data,
+          ok: false,
+          human_review_created: Boolean(failure.data.handoff_id),
+        };
+    }
+  }
+  return result;
+}
+
+async function executeBookingOperation(ctx: AssistantActionToolContext, args: ExecuteBookingArgs) {
   void args;
 
   const { data: pending, error: pendingError } = await ctx.supabase
@@ -1789,16 +1831,59 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
   } else {
     if (!studentId) return { ok: false, error: "conversation_identity_changed" };
 
-    const eligibilityRequest = ctx.serviceMode
-      ? await ctx.supabase.rpc("service_booking_eligibility", {
-          target_studio_id: ctx.studio.id,
-          target_session_id: sessionId,
-          target_student_id: studentId,
-        })
-      : await ctx.supabase.rpc("booking_eligibility", {
-          target_session_id: sessionId,
-          target_student_id: studentId,
-        });
+    const existing = await ctx.supabase
+      .from("reservations")
+      .select("id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("student_id", studentId)
+      .eq("session_id", sessionId)
+      .eq("status", "reserved")
+      .limit(1)
+      .maybeSingle();
+    if (existing.error) return { ok: false, error: "booking_reconciliation_unavailable" };
+    if (existing.data?.id) {
+      if (resourceId) {
+        const assignment = await ctx.supabase
+          .from("reservation_resource_assignments")
+          .select("resource_id")
+          .eq("studio_id", ctx.studio.id)
+          .eq("reservation_id", existing.data.id)
+          .is("released_at", null)
+          .maybeSingle();
+        if (assignment.error || assignment.data?.resource_id !== resourceId)
+          return { ok: false, error: "existing_reservation_requires_review" };
+      }
+      reservationId = existing.data.id;
+    }
+    const retryStatus =
+      ctx.serviceMode && !reservationId
+        ? await ctx.supabase.rpc("service_demi_booking_failure_status", {
+            p_studio: ctx.studio.id,
+            p_conversation: ctx.conversationId,
+            p_pending: pending.id,
+            p_turn: ctx.turnId,
+            p_error: null,
+          })
+        : null;
+    if (retryStatus && (retryStatus.error || retryStatus.data?.ok !== true))
+      return { ok: false, error: "booking_retry_status_unavailable" };
+    if (retryStatus?.data?.retry_allowed === false)
+      return { ...retryStatus.data, ok: false, error: "booking_retry_limit_reached" };
+    if (retryStatus?.data?.inject_failure_before === true)
+      return { ok: false, error: "booking_execution_failed", injected_uat_failure: true };
+
+    const eligibilityRequest = reservationId
+      ? { data: { eligible: true }, error: null }
+      : ctx.serviceMode
+        ? await ctx.supabase.rpc("service_booking_eligibility", {
+            target_studio_id: ctx.studio.id,
+            target_session_id: sessionId,
+            target_student_id: studentId,
+          })
+        : await ctx.supabase.rpc("booking_eligibility", {
+            target_session_id: sessionId,
+            target_student_id: studentId,
+          });
     const { data: eligibility, error: eligibilityError } = eligibilityRequest;
     if (eligibilityError) {
       return { ok: false, error: "booking_eligibility_unavailable" };
@@ -1821,7 +1906,9 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
       };
     }
 
-    if (ctx.serviceMode) {
+    if (reservationId) {
+      // Reconciled the earlier successful transaction; no booking RPC or second credit debit.
+    } else if (ctx.serviceMode) {
       const bookingRequest = resourceId
         ? await ctx.supabase.rpc("service_book_student_with_resource", {
             target_studio_id: ctx.studio.id,
@@ -1849,6 +1936,13 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
         };
       }
       reservationId = String(bookingResult.reservation_id);
+      if (retryStatus?.data?.inject_timeout_after === true)
+        return {
+          ok: false,
+          error: "booking_execution_failed",
+          outcome_unknown: true,
+          injected_uat_failure: true,
+        };
     } else {
       if (resourceId) {
         const { data, error: bookingError } = await ctx.supabase.rpc(
