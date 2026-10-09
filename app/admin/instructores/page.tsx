@@ -68,7 +68,9 @@ export default async function InstructorsPage({
       const personContacts = (contacts ?? []).filter(
         (item) => item.person_id === instructor.person_id,
       );
-      const phone = personContacts.find((item) => item.kind === "phone" && item.phone_role === "coach")?.value ?? "";
+      const phone =
+        personContacts.find((item) => item.kind === "phone" && item.phone_role === "coach")
+          ?.value ?? "";
       const email = personContacts.find((item) => item.kind === "email")?.value ?? "";
       return { ...instructor, name, phone, email };
     })

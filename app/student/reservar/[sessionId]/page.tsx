@@ -91,11 +91,7 @@ export default async function StudentSessionDetailPage({
     reason === "enrollment_required" &&
     (enrollmentMode === "single_class_booking" || enrollmentMode === "single_class_next_purchase");
   const sessionDate = localDateKey(new Date(session.starts_at), studio.timezone);
-  const eligibilityCopy = bookingReasonCopyForStudent(
-    reason,
-    snapshot.acquisitions,
-    sessionDate,
-  );
+  const eligibilityCopy = bookingReasonCopyForStudent(reason, snapshot.acquisitions, sessionDate);
   const returnDate =
     query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date) ? query.date : sessionDate;
   const showDropIn =

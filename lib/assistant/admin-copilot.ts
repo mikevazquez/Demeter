@@ -1,12 +1,7 @@
 import "server-only";
 
 export type DemiAdminRuleCategory =
-  | "behavior"
-  | "commercial"
-  | "booking"
-  | "payment"
-  | "communication"
-  | "safety";
+  "behavior" | "commercial" | "booking" | "payment" | "communication" | "safety";
 
 export type DemiAdminAction =
   | {
@@ -67,7 +62,10 @@ function outputText(body: OpenAIResponse) {
 }
 
 function parseJson(text: string) {
-  const cleaned = text.replace(/^\`\`\`json\s*/i, "").replace(/\`\`\`$/i, "").trim();
+  const cleaned = text
+    .replace(/^\`\`\`json\s*/i, "")
+    .replace(/\`\`\`$/i, "")
+    .trim();
   try {
     return JSON.parse(cleaned) as Record<string, unknown>;
   } catch {
@@ -76,7 +74,14 @@ function parseJson(text: string) {
 }
 
 const bookingBehaviorFields = new Set(["prospect_require_payment_before_booking"]);
-const categories = new Set(["behavior", "commercial", "booking", "payment", "communication", "safety"]);
+const categories = new Set([
+  "behavior",
+  "commercial",
+  "booking",
+  "payment",
+  "communication",
+  "safety",
+]);
 
 function cleanPlan(raw: Record<string, unknown> | null): DemiAdminPlan | null {
   if (!raw) return null;
@@ -93,12 +98,20 @@ function cleanPlan(raw: Record<string, unknown> | null): DemiAdminPlan | null {
     if (!item || typeof item !== "object") continue;
     const row = item as Record<string, unknown>;
     const type = String(row.type ?? "");
-    const label = String(row.label ?? "").trim().slice(0, 240) || "Actualizar configuración";
+    const label =
+      String(row.label ?? "")
+        .trim()
+        .slice(0, 240) || "Actualizar configuración";
 
     if (type === "set_booking_behavior") {
       const field = String(row.field ?? "");
       if (!bookingBehaviorFields.has(field) || typeof row.value !== "boolean") continue;
-      actions.push({ type, field: "prospect_require_payment_before_booking", value: row.value, label });
+      actions.push({
+        type,
+        field: "prospect_require_payment_before_booking",
+        value: row.value,
+        label,
+      });
       continue;
     }
 
@@ -115,34 +128,77 @@ function cleanPlan(raw: Record<string, unknown> | null): DemiAdminPlan | null {
     if (type === "set_product") {
       const product_name = String(row.product_name ?? "").trim();
       if (!product_name) continue;
-      const price_minor = typeof row.price_minor === "number" && Number.isInteger(row.price_minor) && row.price_minor >= 0 ? row.price_minor : undefined;
+      const price_minor =
+        typeof row.price_minor === "number" &&
+        Number.isInteger(row.price_minor) &&
+        row.price_minor >= 0
+          ? row.price_minor
+          : undefined;
       const active = typeof row.active === "boolean" ? row.active : undefined;
-      const assistant_visible = typeof row.assistant_visible === "boolean" ? row.assistant_visible : undefined;
-      const online_purchasable = typeof row.online_purchasable === "boolean" ? row.online_purchasable : undefined;
-      if (price_minor === undefined && active === undefined && assistant_visible === undefined && online_purchasable === undefined) continue;
-      actions.push({ type, product_name, price_minor, active, assistant_visible, online_purchasable, label });
+      const assistant_visible =
+        typeof row.assistant_visible === "boolean" ? row.assistant_visible : undefined;
+      const online_purchasable =
+        typeof row.online_purchasable === "boolean" ? row.online_purchasable : undefined;
+      if (
+        price_minor === undefined &&
+        active === undefined &&
+        assistant_visible === undefined &&
+        online_purchasable === undefined
+      )
+        continue;
+      actions.push({
+        type,
+        product_name,
+        price_minor,
+        active,
+        assistant_visible,
+        online_purchasable,
+        label,
+      });
       continue;
     }
 
     if (type === "set_class_price") {
       const activity_name = String(row.activity_name ?? "").trim();
       const price_minor = row.price_minor === null ? null : Number(row.price_minor);
-      if (!activity_name || (price_minor !== null && (!Number.isInteger(price_minor) || price_minor < 0))) continue;
+      if (
+        !activity_name ||
+        (price_minor !== null && (!Number.isInteger(price_minor) || price_minor < 0))
+      )
+        continue;
       actions.push({ type, activity_name, price_minor, label });
       continue;
     }
 
     if (type === "upsert_rule") {
-      const rule_key = String(row.rule_key ?? "").trim().toLowerCase().replace(/[^a-z0-9._-]+/g, "_").slice(0, 120);
+      const rule_key = String(row.rule_key ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, "_")
+        .slice(0, 120);
       const category = String(row.category ?? "behavior");
-      const instruction = String(row.instruction ?? "").trim().slice(0, 2000);
+      const instruction = String(row.instruction ?? "")
+        .trim()
+        .slice(0, 2000);
       if (rule_key.length < 3 || !categories.has(category) || !instruction) continue;
-      actions.push({ type, rule_key, category: category as DemiAdminRuleCategory, instruction, enabled: row.enabled !== false, label });
+      actions.push({
+        type,
+        rule_key,
+        category: category as DemiAdminRuleCategory,
+        instruction,
+        enabled: row.enabled !== false,
+        label,
+      });
     }
   }
 
   if (!summary) return null;
-  return { summary, requires_development: requiresDevelopment, development_reason: developmentReason, actions };
+  return {
+    summary,
+    requires_development: requiresDevelopment,
+    development_reason: developmentReason,
+    actions,
+  };
 }
 
 export async function proposeDemiAdminPlan(input: {

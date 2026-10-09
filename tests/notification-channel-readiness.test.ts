@@ -27,15 +27,15 @@ describe("getChannelReadiness", () => {
   });
 
   it("blocks WhatsApp unless Meta connection, approval, and variable count all match", () => {
-    expect(
-      getChannelReadiness({ ...baseInput, whatsappConnected: false }).whatsapp.ready,
-    ).toBe(false);
+    expect(getChannelReadiness({ ...baseInput, whatsappConnected: false }).whatsapp.ready).toBe(
+      false,
+    );
     expect(
       getChannelReadiness({ ...baseInput, whatsappTemplateStatus: "PENDING" }).whatsapp.ready,
     ).toBe(false);
-    expect(
-      getChannelReadiness({ ...baseInput, whatsappTemplateVariables: 2 }).whatsapp.ready,
-    ).toBe(false);
+    expect(getChannelReadiness({ ...baseInput, whatsappTemplateVariables: 2 }).whatsapp.ready).toBe(
+      false,
+    );
   });
 
   it("blocks a channel when its global preference is off", () => {

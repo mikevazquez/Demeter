@@ -23,8 +23,15 @@ function outputText(body: OpenAIResponse) {
 }
 
 function parseJson(text: string) {
-  const cleaned = text.replace(/^\`\`\`json\s*/i, "").replace(/\`\`\`$/i, "").trim();
-  try { return JSON.parse(cleaned) as Record<string, unknown>; } catch { return null; }
+  const cleaned = text
+    .replace(/^\`\`\`json\s*/i, "")
+    .replace(/\`\`\`$/i, "")
+    .trim();
+  try {
+    return JSON.parse(cleaned) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
 }
 
 export async function readTransferReceipt(input: {
@@ -48,19 +55,24 @@ export async function readTransferReceipt(input: {
     body: JSON.stringify({
       model: input.model || "gpt-5.6",
       store: false,
-      input: [{
-        role: "user",
-        content: [
-          ...content,
-          { type: "input_text", text: "Lee este comprobante de transferencia. Devuelve SOLO JSON con amount_minor (entero en centavos), currency (MXN si se ve o se infiere claramente), date (YYYY-MM-DD o null), reference (folio/referencia o null), bank (banco o null) y confidence (0 a 1). No inventes datos. Si el monto no es legible, amount_minor debe ser null y confidence <= 0.5." },
-        ],
-      }],
+      input: [
+        {
+          role: "user",
+          content: [
+            ...content,
+            {
+              type: "input_text",
+              text: "Lee este comprobante de transferencia. Devuelve SOLO JSON con amount_minor (entero en centavos), currency (MXN si se ve o se infiere claramente), date (YYYY-MM-DD o null), reference (folio/referencia o null), bank (banco o null) y confidence (0 a 1). No inventes datos. Si el monto no es legible, amount_minor debe ser null y confidence <= 0.5.",
+            },
+          ],
+        },
+      ],
       max_output_tokens: 300,
     }),
     cache: "no-store",
   });
   if (!response.ok) throw new Error("receipt_read_failed");
-  const body = await response.json() as OpenAIResponse;
+  const body = (await response.json()) as OpenAIResponse;
   const parsed = parseJson(outputText(body));
   const amountMinor = Number(parsed?.amount_minor);
   const confidence = Number(parsed?.confidence);

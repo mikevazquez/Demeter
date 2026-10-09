@@ -16,13 +16,17 @@ function source(path: string) {
 }
 
 describe("F8 attendance contracts", () => {
-  it("keeps no-show visible in the roster without counting it as occupied capacity", () => {
+  it("preserves closed-session no-shows in historical occupancy while retaining the original walk-in migration", () => {
     const page = source("app/admin/page.tsx");
     const capacityFix = source("supabase/migrations/20260915203911_f8_walkin_capacity_fix.sql");
     const statuses = ["reserved", "attended", "no_show", "cancelled_on_time", "cancelled_late"];
 
-    expect(statuses.filter(isSeatOccupyingReservation)).toEqual(["reserved", "attended"]);
-    expect(countSeatOccupyingReservations(statuses)).toBe(2);
+    expect(statuses.filter(isSeatOccupyingReservation)).toEqual([
+      "reserved",
+      "attended",
+      "no_show",
+    ]);
+    expect(countSeatOccupyingReservations(statuses)).toBe(3);
     expect(countBookedReservations(statuses)).toBe(3);
     expect(page).toContain('.in("status", ["reserved", "attended", "no_show"])');
     expect(page).toContain("countBookedReservations(reservationStatuses)");

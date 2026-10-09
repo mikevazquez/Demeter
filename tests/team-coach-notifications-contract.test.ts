@@ -27,15 +27,24 @@ describe("Equipo notifications sandbox contract", () => {
     expect(engine).toContain("payload.roster_names");
   });
   it("includes both Meta template arguments and inbox rendering", () => {
-    expect(meta).toContain('coach_roster_reminder: ["coach", "clase", "fecha", "hora", "total", "alumnas"]');
+    expect(meta).toContain(
+      'coach_roster_reminder: ["coach", "clase", "fecha", "hora", "total", "alumnas"]',
+    );
     expect(delivery).toContain('case "coach_roster_reminder"');
     expect(catalog).toContain('category: "equipo"');
   });
   it("restores team read/write privileges without exposing records to anon", () => {
-    const grants = src("supabase/migrations/20261008112000_fix_instructor_authenticated_grants.sql");
-    expect(grants).toContain("grant select, insert, update on table public.instructors to authenticated");
-    expect(grants).toContain("grant select, insert, update, delete on table public.instructor_disciplines to authenticated");
-    expect(grants).not.toMatch(/grant\s+.*\s+to\s+anon/i);
+    const grants = src(
+      "supabase/migrations/20261008112000_fix_instructor_authenticated_grants.sql",
+    );
+    expect(grants).toContain(
+      "grant select, insert, update on table public.instructors to authenticated",
+    );
+    expect(grants).toContain(
+      "grant select, insert, update, delete on table public.instructor_disciplines to authenticated",
+    );
+    const statements = grants.replace(/--[^\n]*/g, "");
+    expect(statements).not.toMatch(/\bgrant\b[^;]*\bto\s+anon\b/i);
   });
   it("creates the coach only in the studio selected by the admin", () => {
     const scoped = src("supabase/migrations/20261008113000_scoped_instructor_creation.sql");

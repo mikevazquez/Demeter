@@ -17,7 +17,7 @@ describe("Demi outbound WhatsApp notifications", () => {
   const marketingCatalog = source("lib/notifications/admin-catalog.ts");
   const marketingPage = source("app/admin/notificaciones/marketing/[marketingKey]/page.tsx");
   const marketingTemplateMigration = source(
-    "supabase/migrations/20261007100000_meta_whatsapp_marketing_templates.sql",
+    "supabase/migrations/20261007130000_notification_template_event_coverage.sql",
   );
   const deliveryWorker = source("supabase/functions/notification-delivery-worker/index.ts");
   const packageRecoveryMigration = source(

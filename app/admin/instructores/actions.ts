@@ -33,11 +33,12 @@ export async function createInstructor(formData: FormData) {
   if (error || !data) {
     // Safe diagnostic only; never log names, phone numbers or email addresses.
     console.error("[instructors:create] failed", { code: error?.code ?? "no_result" });
-    const reason = error?.code === "23505"
-      ? "contact_in_use"
-      : error?.code === "42501"
-        ? "not_allowed"
-        : "create_failed";
+    const reason =
+      error?.code === "23505"
+        ? "contact_in_use"
+        : error?.code === "42501"
+          ? "not_allowed"
+          : "create_failed";
     redirect(`/admin/instructores?error=${reason}`);
   }
   revalidatePath("/admin/instructores");

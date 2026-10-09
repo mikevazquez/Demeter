@@ -18,8 +18,8 @@ describe("NOTIFICACIONES-02 operational catalog 27", () => {
     catalog.indexOf("export type MarketingDefinition"),
   );
 
-  it("exposes exactly the 27 approved operational processes with no placeholders", () => {
-    expect(processSection.match(/\n    key: "/g)?.length).toBe(29);
+  it("exposes the operational catalog including the new coach roster reminder without placeholders", () => {
+    expect(processSection.match(/\n    key: "/g)?.length).toBe(30);
     expect(processSection).not.toContain("planned: true");
 
     for (const name of [
@@ -32,7 +32,7 @@ describe("NOTIFICACIONES-02 operational catalog 27", () => {
       "No show",
       "Clase cancelada por el estudio",
       "Cancelación por mínimo de reservas",
-      "Aviso al coach por mínimo de reservas",
+      "Clase cancelada por cupo insuficiente · Coach",
       "Cambio de horario / sesión",
       "Lugar disponible en lista de espera",
       "Lugar de lista de espera vencido",
@@ -51,6 +51,7 @@ describe("NOTIFICACIONES-02 operational catalog 27", () => {
       "Cuenta creada / bienvenida",
       "Restablecimiento de contraseña",
       "Cambio de coach",
+      "Lista de alumnas antes de clase",
       "Cierre extraordinario / día festivo",
     ]) {
       expect(processSection).toContain(name);

@@ -32,8 +32,8 @@ export function BusinessProfileForm({
       <div className="advanced-v2-section-copy">
         <h2>Datos públicos del estudio</h2>
         <p>
-          Demi consulta esta información para responder preguntas sobre ubicación, teléfono,
-          correo y página web.
+          Demi consulta esta información para responder preguntas sobre ubicación, teléfono, correo
+          y página web.
         </p>
       </div>
 
@@ -73,9 +73,7 @@ export function BusinessProfileForm({
 
       <div className="advanced-v2-section-copy">
         <h2>Sede principal</h2>
-        <p>
-          Esta dirección también se usa cuando Demi responde dónde se imparten las clases.
-        </p>
+        <p>Esta dirección también se usa cuando Demi responde dónde se imparten las clases.</p>
       </div>
 
       <label className="advanced-v2-field">

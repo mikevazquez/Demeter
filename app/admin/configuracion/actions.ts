@@ -298,4 +298,3 @@ export async function saveStudioBusinessProfileAction(formData: FormData) {
   revalidatePath("/admin/integraciones/demi");
   redirect("/admin/configuracion/empresa?saved=business");
 }
-

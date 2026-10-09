@@ -88,7 +88,9 @@ export default async function InstructorProfilePage({
   const linkedIds = new Set((links ?? []).map((item) => item.discipline_id));
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item.name]));
   const name = [person?.first_name, person?.last_name].filter(Boolean).join(" ") || "Integrante";
-  const phone = contacts?.find((item) => item.kind === "phone" && item.phone_role === "coach")?.value;
+  const phone = contacts?.find(
+    (item) => item.kind === "phone" && item.phone_role === "coach",
+  )?.value;
   const primaryEmail = contacts?.find(
     (item) => item.kind === "email" && item.is_primary === true,
   )?.value;
@@ -124,9 +126,19 @@ export default async function InstructorProfilePage({
       {query.created ? (
         <div className="team-v2-notice is-success">Integrante creado correctamente.</div>
       ) : null}
-      {query.saved ? <div className="team-v2-notice is-success">{query.saved === "phone" ? "Teléfono guardado correctamente." : "Estado actualizado."}</div> : null}
+      {query.saved ? (
+        <div className="team-v2-notice is-success">
+          {query.saved === "phone" ? "Teléfono guardado correctamente." : "Estado actualizado."}
+        </div>
+      ) : null}
       {query.error ? (
-        <div className="team-v2-notice is-error">{query.error === "phone_in_use" ? "Este número ya está registrado para otro coach. Puede coincidir con el de una alumna, pero no con el de otro coach." : query.error === "phone_invalid" ? "Ingresa un número de celular válido." : "No se pudo guardar el cambio."}</div>
+        <div className="team-v2-notice is-error">
+          {query.error === "phone_in_use"
+            ? "Este número ya está registrado para otro coach. Puede coincidir con el de una alumna, pero no con el de otro coach."
+            : query.error === "phone_invalid"
+              ? "Ingresa un número de celular válido."
+              : "No se pudo guardar el cambio."}
+        </div>
       ) : null}
 
       <section className="team-v2-detail-grid">
@@ -150,10 +162,27 @@ export default async function InstructorProfilePage({
                 <strong>Teléfono</strong>
                 <span>{phone || "Sin teléfono"}</span>
                 {canWrite ? (
-                  <form action={updateInstructorPhone} style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+                  <form
+                    action={updateInstructorPhone}
+                    style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}
+                  >
                     <input type="hidden" name="instructor_id" value={instructor.id} />
-                    <input name="phone" type="tel" aria-label="Teléfono del coach" placeholder="33 1234 5678" defaultValue={phone ?? ""} style={{ minWidth: 160, padding: 8, border: "1px solid #aaa", borderRadius: 8 }} />
-                    <button type="submit" style={{ padding: "8px 12px", borderRadius: 8 }}>Guardar teléfono</button>
+                    <input
+                      name="phone"
+                      type="tel"
+                      aria-label="Teléfono del coach"
+                      placeholder="33 1234 5678"
+                      defaultValue={phone ?? ""}
+                      style={{
+                        minWidth: 160,
+                        padding: 8,
+                        border: "1px solid #aaa",
+                        borderRadius: 8,
+                      }}
+                    />
+                    <button type="submit" style={{ padding: "8px 12px", borderRadius: 8 }}>
+                      Guardar teléfono
+                    </button>
                   </form>
                 ) : null}
               </div>
