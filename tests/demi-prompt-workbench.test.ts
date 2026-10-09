@@ -107,9 +107,10 @@ function orchestratorHarness(
           "execute_booking",
           "prepare_transfer_package_choice",
           "prepare_bank_transfer_purchase",
+          "complete_group_booking",
         ].map((name) => ({ name, type: "function" })),
         assistantReadToolNames: new Set(["get_activity_catalog"]),
-        assistantActionToolNames: new Set(["execute_booking"]),
+        assistantActionToolNames: new Set(["execute_booking", "complete_group_booking"]),
       },
     },
   );
@@ -274,6 +275,41 @@ describe("Demi prompt workbench", () => {
       ),
     ).toBe(true);
   });
+  it.each([
+    { status: "provisional", reserved_count: 1, payment_validation_required: true, expected: true },
+    { status: "partial", reserved_count: 1, payment_validation_required: true, expected: true },
+    { status: "validated", reserved_count: 1, payment_validation_required: false, expected: false },
+    { status: "partial", reserved_count: 0, payment_validation_required: true, expected: false },
+  ])(
+    "adds a revocation notice only for actual provisional transfer reservations ($status/$reserved_count)",
+    async (result) => {
+      const h = orchestratorHarness();
+      h.simulate.mockResolvedValue({ ok: result.status !== "partial", ...result });
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      vi.stubGlobal(
+        "fetch",
+        vi
+          .fn()
+          .mockResolvedValueOnce(
+            new Response(
+              JSON.stringify({
+                output: [
+                  {
+                    type: "function_call",
+                    name: "complete_group_booking",
+                    call_id: "call-1",
+                    arguments: "{}",
+                  },
+                ],
+              }),
+            ),
+          )
+          .mockResolvedValueOnce(new Response(JSON.stringify(reply("Resultado registrado.")))),
+      );
+      const outcome = await h.run(h.input);
+      expect(outcome.reply.includes("pueden cancelarse si no se valida")).toBe(result.expected);
+    },
+  );
   it("executes a pending simulated action on one explicit confirmation", async () => {
     const h = orchestratorHarness();
     const summary = {
@@ -454,12 +490,13 @@ describe("Demi prompt workbench", () => {
         expect(names.includes(name)).toBe(Boolean(studentId));
     },
   );
-  it.each([false, true])(
-    "restores the persisted payment reference across user messages (receipt=%s)",
-    async (receiptReceived) => {
+  it.each(["awaiting_receipt", "awaiting_participants", "provisional", "validated"])(
+    "restores the persisted payment reference across user messages (status=%s)",
+    async (status) => {
+      const receiptReceived = status !== "awaiting_receipt";
       const h = orchestratorHarness(null, {
         id: "persisted-group",
-        status: receiptReceived ? "awaiting_participants" : "awaiting_receipt",
+        status,
         session_id: "session",
         participant_count: 1,
         amount_minor: 15000,

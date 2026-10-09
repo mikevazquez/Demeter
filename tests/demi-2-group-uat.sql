@@ -29,6 +29,9 @@ begin
  if (select count(*) from public.demi_group_participants where group_id=g and reservation_id is not null)<>2 then raise exception 'group_reservations'; end if;
  if (select sum(total_minor) from public.sales where studio_id=s)<>30000 then raise exception 'group_total_duplicated'; end if;
  out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','two_profiles_reservations_single_allocation','passed',true));
+ r:=public.service_prepare_demi_group(s,c,session,2,2);
+ if r->>'group_id'<>g::text or r->>'status'<>'provisional' or (r->>'payment_required')::boolean or (select count(*) from public.demi_group_bookings where studio_id=s and conversation_id=c)<>1 then raise exception 'provisional_quote_replay:%',r; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M09','variant','provisional_group_quote_replay_no_new_charge','passed',true));
  r:=public.service_complete_demi_group(s,c,g,people);
  if not coalesce((r->>'ok')::boolean,false) or (select sum(total_minor) from public.sales where studio_id=s)<>30000 then raise exception 'group_replay:%',r; end if;
  out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','completion_idempotent','passed',true));
@@ -39,6 +42,15 @@ begin
  r:=public.admin_review_demi_group(g,'approved','UAT replay');
  if (select sum(amount_minor) from public.payments where studio_id=s)<>30000 then raise exception 'group_double_payment'; end if;
  out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','review_allocations_once','passed',true));
+ r:=public.service_prepare_demi_group(s,c,session,2,2);
+ if r->>'group_id'<>g::text or r->>'status'<>'validated' or (r->>'payment_required')::boolean or (select count(*) from public.demi_group_bookings where studio_id=s and conversation_id=c)<>1 then raise exception 'validated_quote_replay:%',r; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M09','variant','validated_group_quote_replay_no_new_charge','passed',true));
+ perform public.service_cancel_reservation(s,(select student_id from public.demi_group_participants where group_id=g and ordinal=1),(select reservation_id from public.demi_group_participants where group_id=g and ordinal=1),'UAT cancel one group reservation');
+ r:=public.service_complete_demi_group(s,c,g,people);
+ if (r->>'reserved_count')::integer<>1 or not exists(select 1 from jsonb_array_elements(r->'participants') p where p->>'reservation_status'='cancelled_on_time' and p->>'reservation_confirmed'='false') then raise exception 'cancelled_group_replay:%',r; end if;
+ r:=public.service_prepare_demi_group(s,c,session,2,2);
+ if r->>'group_id'<>g::text or (r->>'reserved_count')::integer<>1 or (r->>'reservation_confirmed')::boolean or not (r->>'existing_group_requires_review')::boolean or (select sum(amount_minor) from public.payments where studio_id=s)<>30000 then raise exception 'cancelled_group_requote:%',r; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M09','variant','cancelled_group_reservation_stays_cancelled_on_replay','passed',true));
  -- A regular student's own credit must not be charged as another trial transfer.
  c:=gen_random_uuid(); event:=gen_random_uuid();
  insert into public.assistant_conversations(id,studio_id,channel) values(c,s,'internal_demo');

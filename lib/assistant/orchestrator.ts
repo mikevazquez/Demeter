@@ -921,7 +921,13 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       )
       .eq("studio_id", input.studio.id)
       .eq("conversation_id", input.conversationId)
-      .in("status", ["awaiting_receipt", "awaiting_participants", "partial"])
+      .in("status", [
+        "awaiting_receipt",
+        "awaiting_participants",
+        "partial",
+        "provisional",
+        "validated",
+      ])
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -929,7 +935,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     if (pendingPayment.data) {
       const payment = pendingPayment.data;
       pendingPaymentContext =
-        "Estado operativo de pago pendiente, leído del estudio y esta conversación. Usa este group_id exacto para continuar; no prepares otro pago ni pidas otro comprobante si receipt_received=true. Después del comprobante y de los datos faltantes, usa complete_group_booking con participant_count personas. No afirmes reserva completa por este estado: " +
+        "Estado operativo de pago pendiente, leído del estudio y esta conversación. Usa este group_id exacto para continuar; no prepares otro pago ni pidas otro comprobante si receipt_received=true. Después del comprobante y de los datos faltantes, usa complete_group_booking con participant_count personas. Si el grupo ya está provisional o validado, recupera sus reservas en lugar de preparar otro pago por un reintento. El estado del pago no acredita una reserva activa: usa el reserved_count y reservation_confirmed actuales de las herramientas; una reserva cancelada permanece cancelada. No afirmes reserva completa por este estado: " +
         JSON.stringify({
           group_id: payment.id,
           status: payment.status,
@@ -1110,6 +1116,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
   }));
 
   let toolCallsThisTurn = 0;
+  let provisionalTransferBooking = false;
   const testDeadline = Date.now() + 90_000;
 
   for (let attempt = 0; attempt < input.config.max_model_calls_per_turn; attempt += 1) {
@@ -1247,7 +1254,10 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     if (functionCalls.length === 0) {
       const text = outputText(output);
       if (!text) throw new Error("assistant_empty_response");
-      const safeReply = await ensureHumanHandoffForReply(input, trace, text, modelCallId);
+      const customerText = provisionalTransferBooking
+        ? `${text}\n\nEl pago continúa en revisión. Las reservas que dependen de ese pago pueden cancelarse si no se valida.`
+        : text;
+      const safeReply = await ensureHumanHandoffForReply(input, trace, customerText, modelCallId);
       return { reply: safeReply, trace };
     }
     if (functionCalls.length > 1) {
@@ -1340,6 +1350,13 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     toolCallsThisTurn += 1;
 
     const resultObject = asObject(result);
+    if (
+      toolName === "complete_group_booking" &&
+      ["provisional", "partial"].includes(String(resultObject?.status)) &&
+      resultObject?.payment_validation_required === true &&
+      Number(resultObject.reserved_count) > 0
+    )
+      provisionalTransferBooking = true;
     const auditStatus =
       toolStatus === "error"
         ? "error"
