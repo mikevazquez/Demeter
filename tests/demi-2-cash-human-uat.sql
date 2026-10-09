@@ -29,6 +29,14 @@ begin
  if result->>'reason_code'<>'payment_pending' or exists(select 1 from public.reservations where studio_id=s and student_id=student and session_id=alt) then raise exception 'cash_second_booking:%',result; end if;
  outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M13','variant','first_booking_starts_validity_second_blocked_until_collection','passed',true));
  perform set_config('request.jwt.claim.sub',owner::text,true); perform set_config('request.jwt.claims',jsonb_build_object('role','service_role','sub',owner)::text,true);
+ update public.class_sessions set starts_at=now()-interval '10 minutes',ends_at=now()+interval '50 minutes' where id=session;
+ result:=public.set_attendance_status(reservation,'no_show','UAT efectivo no show');
+ if not coalesce((result->>'ok')::boolean,false) or (select coalesce(sum(quantity),0) from public.credit_ledger where acquisition_id=acquisition)<>7 or exists(select 1 from public.payments where sale_id=sale) then raise exception 'cash_no_show:%',result; end if;
+ result:=public.set_attendance_status(reservation,'no_show','UAT ausencia repetida');
+ if (select coalesce(sum(quantity),0) from public.credit_ledger where acquisition_id=acquisition)<>7 then raise exception 'cash_no_show_double_credit'; end if;
+ result:=public.service_book_student(s,alt,student);
+ if result->>'reason_code'<>'payment_pending' then raise exception 'cash_no_show_debt_lost:%',result; end if;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M13','variant','cash_no_show_consumes_once_and_keeps_debt','passed',true));
  perform public.register_sale_payment(sale,price,'cash','UAT ficticio', 'Cobro ficticio real en tabla, rollback');
  if (select coalesce(sum(amount_minor),0) from public.payments where sale_id=sale and kind='payment')<>price then raise exception 'cash_collection_missing'; end if;
  result:=public.service_book_student(s,alt,student);

@@ -70,6 +70,11 @@
           {
             "case": "M13",
             "passed": true,
+            "variant": "cash_no_show_consumes_once_and_keeps_debt"
+          },
+          {
+            "case": "M13",
+            "passed": true,
             "variant": "actual_collection_unlocks_second_booking_without_reset"
           },
           {
@@ -319,7 +324,7 @@
     "total": 1037
   },
   "complete_master_cases_approved": 0,
-  "distinct_operational_variants": 48,
+  "distinct_operational_variants": 49,
   "preview_audio": {
     "commit": "0a73af6",
     "actual_openai_transcription": true,
@@ -332,7 +337,35 @@
     "graph_connection_verified": true,
     "subscribed_app_count": 1,
     "approved_templates": 35,
-    "external_send": "zero-variable test blocked; welcome parameter support in progress",
-    "external_delivery_verified": false
+    "external_send": "accepted: approved demeter_bienvenida, es_MX, authorized recipient ending 1878",
+    "external_delivery_verified": true,
+    "send_commit": "61807b1",
+    "delivery_verification_method": "user_confirmation"
+  },
+  "preview_cash": {
+    "commit": "61807b1",
+    "natural_confirmation_executed": true,
+    "cash_purchases": 1,
+    "sale_total_minor": 60000,
+    "payments": 0,
+    "package_starts_on": null,
+    "package_expires_on": null
+  },
+  "preview_human_page": {
+    "commit": "61807b1",
+    "status": 200
+  },
+  "uat_master_matrix": {
+    "cases": 18,
+    "status": "partial",
+    "reviewer": "authenticated Sandbox owner",
+    "run_id": "45c95aa6-6ebf-4531-954f-3aceadc85d47"
+  },
+  "preview_audio_failure": {
+    "commit": "61807b1",
+    "invalid_audio_rejected_by_real_provider": true,
+    "handoff_count": 1,
+    "reservations_created": 0,
+    "reply_requests_text_or_resend": true
   }
 }
