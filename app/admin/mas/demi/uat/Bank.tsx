@@ -170,7 +170,7 @@ export default function Bank({
                 />
               </label>
               <label>
-                Comprobante ficticio (imagen o PDF, máximo 4 MB)
+                Comprobante ficticio (imagen o PDF, máximo 900 KB)
                 <input
                   name="file"
                   type="file"

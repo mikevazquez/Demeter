@@ -161,7 +161,7 @@ export async function sendDemiUatMessage(form: FormData) {
     const hasFile = file instanceof File && file.size > 0;
     if (hasFile) {
       if (
-        file.size > 4 * 1024 * 1024 ||
+        file.size > 900 * 1024 ||
         !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(file.type)
       )
         throw new Error("demi_uat_invalid_receipt");

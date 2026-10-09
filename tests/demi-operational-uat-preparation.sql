@@ -10,6 +10,7 @@ begin
  if studio=source then raise exception 'isolation_failed'; end if;
  select count(*) into n from public.class_sessions where studio_id=studio; if n<>6 then raise exception 'sessions_fixture_failed:%',n; end if;
  select count(*) into n from public.students where studio_id=studio; if n<>11 then raise exception 'students_fixture_failed:%',n; end if;
+ if not coalesce((public.service_booking_eligibility(studio,(select id from public.class_sessions where studio_id=studio and notes='UAT available'),(select id from public.students where studio_id=studio and full_name='UAT student_active'))->>'eligible')::boolean,false) then raise exception 'active_package_fixture_ineligible'; end if;
  if not private.studio_has_module(studio,'notifications') then raise exception 'notifications_module_unavailable'; end if;
  if not public.service_acquire_demi_uat_run(run_id,owner,source) then raise exception 'lease_failed'; end if;
  if public.service_acquire_demi_uat_run(run_id,owner,source) then raise exception 'concurrent_lease_failed'; end if;
