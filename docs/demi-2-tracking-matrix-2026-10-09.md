@@ -84,6 +84,6 @@ Los pendientes externos no cierran con pruebas internas. El receptor de producci
 - El rechazo con motivo seguido de baja de mensajes ahora conserva No clasifica y su razón. Al reactivarse, conserva el histórico de calificación en una tabla protegida.
 - Se corrigieron instrucciones que aún exigían comprobante para Mercado Pago automático. Bancomer y OXXO a Bancomer mantienen comprobante y validación manual.
 - Se detectó consejo genérico de preparación sin configuración oficial; el getter y el prompt ahora requieren first_class_preparation configurado. Pendiente repetición conversacional en el siguiente preview.
-- Typecheck pasó; regresión específica: 26/26. La última regresión completa sigue siendo 1103/1103 antes de estos últimos ajustes; no se presenta como una nueva ejecución completa.
+- Typecheck pasó; regresión específica: 26/26 y regresión completa posterior: 1103/1103. El lint completo detectó un error preexistente en el editor Demi; se corrigió y el lint de los archivos afectados pasó sin errores.
 
 Se conservan 0/18 cierres integrales hasta terminar las variantes y el transporte externo que corresponden. No se ha promovido producción.
