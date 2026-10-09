@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { readIntelligenceRows, readIntelligenceSessions } from "@/lib/intelligence-query";
+import { TrendChart, SortableTable } from "@/components/intelligence/charts";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-type ViewKey = "resumen" | "dinero" | "alumnas" | "conversion" | "clases";
+type ViewKey = "resumen" | "dinero" | "alumnas" | "conversion" | "clases" | "asistencia";
 
 type Tone = "neutral" | "positive" | "warning" | "danger" | "info";
 
@@ -41,6 +43,7 @@ type SaleRow = {
 type PaymentRow = {
   sale_id: string;
   kind: string;
+  method: string;
   amount_minor: number;
   created_at: string;
 };
@@ -94,11 +97,12 @@ type OnboardingRow = {
 };
 
 const views: { key: ViewKey; label: string }[] = [
-  { key: "resumen", label: "Ahora" },
-  { key: "dinero", label: "Ventas" },
-  { key: "alumnas", label: "Alumnas" },
-  { key: "conversion", label: "Conversión" },
+  { key: "resumen", label: "Resumen" },
+  { key: "asistencia", label: "Asistencia" },
   { key: "clases", label: "Clases" },
+  { key: "dinero", label: "Pagos" },
+  { key: "conversion", label: "Conversión" },
+  { key: "alumnas", label: "Retención" },
 ];
 
 const DAY = 86_400_000;
@@ -121,6 +125,8 @@ function clampDays(value: string | undefined) {
 }
 
 function validView(value: string | undefined): ViewKey {
+  if (value === "pagos") return "dinero";
+  if (value === "retencion") return "alumnas";
   return views.some((item) => item.key === value) ? (value as ViewKey) : "resumen";
 }
 
@@ -157,8 +163,13 @@ function pointsDelta(current: number, previous: number) {
   return (delta >= 0 ? "↑ " : "↓ ") + Math.abs(delta).toFixed(1) + " pp";
 }
 
-function isoDateKey(value: Date) {
-  return value.toISOString().slice(0, 10);
+function isoDateKey(value: Date, timeZone: string) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(value);
 }
 
 function daysSince(dateKey: string | null, now: Date) {
@@ -177,17 +188,20 @@ function MetricCard({
   label,
   value,
   delta,
+  href,
   tone = "neutral",
 }: {
   label: string;
   value: string;
   delta: string;
   tone?: Tone;
+  href?: string;
 }) {
   return (
     <article className={"intel-metric is-" + tone}>
       <span>{label}</span>
       <strong>{value}</strong>
+      {href ? <Link className="intel-metric-link" href={href} aria-label={"Ver " + label} /> : null}
       <small>{delta}</small>
     </article>
   );
@@ -261,7 +275,7 @@ function BarRow({
   display: string;
   tone?: "accent" | "success" | "warning" | "danger" | "info";
 }) {
-  const width = max > 0 ? Math.max(2, Math.min(100, (value / max) * 100)) : 0;
+  const width = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   return (
     <div className="intel-bar-row">
       <div className="intel-bar-label">
@@ -275,10 +289,6 @@ function BarRow({
   );
 }
 
-function EmptyMetric({ label }: { label: string }) {
-  return <MetricCard label={label} value="—" delta="Fuente pendiente" tone="warning" />;
-}
-
 function viewHref(view: ViewKey, days: number) {
   return "/admin/inteligencia?view=" + view + "&days=" + days;
 }
@@ -289,10 +299,11 @@ function periodHref(view: ViewKey, days: number) {
 
 function titleFor(view: ViewKey) {
   const map: Record<ViewKey, [string, string]> = {
-    resumen: ["Ahora", "Lo importante del estudio y lo que necesita tu atención."],
-    dinero: ["Ventas", "Cobros, ventas y saldos pendientes del periodo."],
-    alumnas: ["Alumnas", "Actividad, renovación y alumnas que requieren seguimiento."],
+    resumen: ["Resumen del estudio", "Lo importante del estudio y lo que necesita tu atención."],
+    dinero: ["Pagos", "Cobros, ventas y saldos pendientes del periodo."],
+    alumnas: ["Retención", "Actividad, renovación y alumnas que requieren seguimiento."],
     conversion: ["Conversión", "Del primer contacto y la clase de prueba hasta la compra."],
+    asistencia: ["Asistencia", "Quién viene, a qué clase y en qué horario."],
     clases: ["Clases", "Ocupación, asistencia, cancelaciones y demanda por horario."],
   };
   return map[view];
@@ -301,7 +312,7 @@ function titleFor(view: ViewKey) {
 export default async function IntelligencePage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; days?: string }>;
+  searchParams: Promise<{ view?: string; days?: string; discipline?: string }>;
 }) {
   const [params, { supabase, studio }] = await Promise.all([
     searchParams,
@@ -316,19 +327,19 @@ export default async function IntelligencePage({
   const currentStart = new Date(now.getTime() - days * DAY);
   const previousStart = new Date(currentStart.getTime() - days * DAY);
   const rangeStartIso = previousStart.toISOString();
-  const currentStartIso = currentStart.toISOString();
-  const currentStartDate = isoDateKey(currentStart);
-  const previousStartDate = isoDateKey(previousStart);
-  const todayDate = isoDateKey(now);
+  const currentStartDate = isoDateKey(currentStart, timeZone);
+  const previousStartDate = isoDateKey(previousStart, timeZone);
+  const todayDate = isoDateKey(now, timeZone);
 
   const needsStudents = view !== "clases";
-  const needsAcquisitions = view === "resumen" || view === "alumnas";
+  const needsAcquisitions = view === "resumen" || view === "alumnas" || view === "dinero";
   const needsSales = view === "resumen" || view === "dinero";
   const needsPayments = view === "resumen" || view === "dinero";
   const needsSaleLines = view === "resumen" || view === "dinero";
-  const needsSessions = view === "resumen" || view === "alumnas" || view === "clases";
-  const needsTemplates = view === "resumen" || view === "clases";
-  const needsProductTemplates = view === "resumen" || view === "alumnas";
+  const needsSessions =
+    view === "resumen" || view === "alumnas" || view === "clases" || view === "asistencia";
+  const needsTemplates = true;
+  const needsProductTemplates = needsAcquisitions;
   const needsOnboarding = view === "alumnas";
 
   const [
@@ -341,97 +352,186 @@ export default async function IntelligencePage({
     templatesResult,
     productTemplatesResult,
     onboardingResult,
+    conversationsResult,
+    methodsResult,
+    policyResult,
   ] = await Promise.all([
     needsStudents
-      ? supabase
-          .from("students")
-          .select("id,full_name,active,lifecycle_status,student_type,trial_status,created_at")
-          .eq("studio_id", studio.id)
+      ? readIntelligenceRows(
+          supabase
+            .from("students")
+            .select("id,full_name,active,lifecycle_status,student_type,trial_status,created_at")
+            .eq("studio_id", studio.id),
+        )
       : Promise.resolve({ data: [] as StudentRow[] }),
     needsAcquisitions
-      ? supabase
-          .from("product_acquisitions")
-          .select(
-            "id,student_id,product_template_id,status,starts_on,expires_on,created_at,refunded_at",
-          )
-          .eq("studio_id", studio.id)
-          .is("refunded_at", null)
-          .neq("status", "cancelled")
-          .order("created_at", { ascending: true })
+      ? readIntelligenceRows(
+          supabase
+            .from("product_acquisitions")
+            .select(
+              "id,student_id,product_template_id,status,starts_on,expires_on,created_at,refunded_at",
+            )
+            .eq("studio_id", studio.id)
+            .is("refunded_at", null)
+            .neq("status", "cancelled")
+            .order("created_at", { ascending: true }),
+        )
       : Promise.resolve({ data: [] as AcquisitionRow[] }),
     needsSales
-      ? supabase
-          .from("sales")
-          .select("id,student_id,folio,status,total_minor,currency,created_at")
-          .eq("studio_id", studio.id)
-          .gte("created_at", rangeStartIso)
-          .order("created_at", { ascending: false })
+      ? readIntelligenceRows(
+          supabase
+            .from("sales")
+            .select("id,student_id,folio,status,total_minor,currency,created_at")
+            .eq("studio_id", studio.id)
+            .order("created_at", { ascending: false }),
+        )
       : Promise.resolve({ data: [] as SaleRow[] }),
     needsPayments
-      ? supabase
-          .from("payments")
-          .select("sale_id,kind,amount_minor,created_at")
-          .eq("studio_id", studio.id)
-          .gte("created_at", rangeStartIso)
+      ? readIntelligenceRows(
+          supabase
+            .from("payments")
+            .select("sale_id,kind,method,amount_minor,created_at")
+            .eq("studio_id", studio.id),
+        )
       : Promise.resolve({ data: [] as PaymentRow[] }),
     needsSaleLines
-      ? supabase
-          .from("sale_lines")
-          .select(
-            "sale_id,product_template_id,product_name,line_total_minor,refunded_at,created_at",
-          )
-          .eq("studio_id", studio.id)
-          .is("refunded_at", null)
-          .gte("created_at", rangeStartIso)
+      ? readIntelligenceRows(
+          supabase
+            .from("sale_lines")
+            .select(
+              "sale_id,product_template_id,product_name,line_total_minor,refunded_at,created_at",
+            )
+            .eq("studio_id", studio.id)
+            .is("refunded_at", null),
+        )
       : Promise.resolve({ data: [] as SaleLineRow[] }),
     needsSessions
-      ? supabase
-          .from("class_sessions")
-          .select("id,template_id,starts_at,capacity,status")
-          .eq("studio_id", studio.id)
-          .neq("status", "cancelled")
-          .gte("starts_at", rangeStartIso)
-          .lt("starts_at", currentEnd.toISOString())
-          .order("starts_at")
+      ? readIntelligenceRows(
+          supabase
+            .from("class_sessions")
+            .select("id,template_id,starts_at,capacity,status")
+            .eq("studio_id", studio.id)
+            .neq("status", "cancelled")
+            .gte("starts_at", rangeStartIso)
+            .lt("starts_at", currentEnd.toISOString())
+            .order("starts_at"),
+        )
       : Promise.resolve({ data: [] as SessionRow[] }),
     needsTemplates
-      ? supabase.from("class_templates").select("id,name,color_hex").eq("studio_id", studio.id)
+      ? readIntelligenceRows(
+          supabase.from("class_templates").select("id,name,color_hex").eq("studio_id", studio.id),
+        )
       : Promise.resolve({ data: [] as ClassTemplateRow[] }),
     needsProductTemplates
-      ? supabase
-          .from("product_templates")
-          .select("id,product_type,name")
-          .eq("studio_id", studio.id)
-          .in("product_type", [...commercialProductTypes])
+      ? readIntelligenceRows(
+          supabase
+            .from("product_templates")
+            .select("id,product_type,name")
+            .eq("studio_id", studio.id)
+            .in("product_type", [...commercialProductTypes]),
+        )
       : Promise.resolve({ data: [] as ProductTemplateRow[] }),
     needsOnboarding
-      ? supabase
-          .from("reward_onboarding")
-          .select(
-            "student_id,documents_completed_at,profile_completed_at,first_reservation_at,first_attendance_at,app_installed_at,notifications_enabled_at,completed_at",
-          )
-          .eq("studio_id", studio.id)
+      ? readIntelligenceRows(
+          supabase
+            .from("reward_onboarding")
+            .select(
+              "student_id,documents_completed_at,profile_completed_at,first_reservation_at,first_attendance_at,app_installed_at,notifications_enabled_at,completed_at",
+            )
+            .eq("studio_id", studio.id),
+        )
       : Promise.resolve({ data: [] as OnboardingRow[] }),
+    view === "conversion"
+      ? readIntelligenceRows(
+          supabase
+            .from("crm_conversations")
+            .select("id,student_id,provider_contact_id,contact_phone,source,started_at")
+            .eq("studio_id", studio.id)
+            .gte("started_at", rangeStartIso)
+            .lt("started_at", currentEnd.toISOString()),
+        )
+      : Promise.resolve({ data: [] }),
+    needsPayments
+      ? readIntelligenceRows(
+          supabase.from("studio_payment_methods").select("code,name").eq("studio_id", studio.id),
+        )
+      : Promise.resolve({ data: [] }),
+    readIntelligenceRows(
+      supabase
+        .from("studio_operating_policies")
+        .select("cancellation_cutoff_minutes")
+        .eq("studio_id", studio.id),
+    ),
   ]);
 
+  const cancellationCutoff = (
+    policyResult.data?.[0] as { cancellation_cutoff_minutes: number } | undefined
+  )?.cancellation_cutoff_minutes;
   const students = (studentsResult.data ?? []) as StudentRow[];
   const acquisitions = (acquisitionsResult.data ?? []) as AcquisitionRow[];
   const sales = (salesResult.data ?? []) as SaleRow[];
   const payments = (paymentsResult.data ?? []) as PaymentRow[];
   const saleLines = (linesResult.data ?? []) as SaleLineRow[];
-  const sessions = (sessionsResult.data ?? []) as SessionRow[];
+  const allSessions = (sessionsResult.data ?? []) as SessionRow[];
+  const discipline = ((templatesResult.data ?? []) as ClassTemplateRow[]).some(
+    (t) => t.id === params.discipline,
+  )
+    ? params.discipline!
+    : "";
+  const sessions = allSessions.filter(
+    (item) => view === "alumnas" || !discipline || item.template_id === discipline,
+  );
   const templates = (templatesResult.data ?? []) as ClassTemplateRow[];
   const productTemplates = (productTemplatesResult.data ?? []) as ProductTemplateRow[];
   const onboarding = (onboardingResult.data ?? []) as OnboardingRow[];
 
   const sessionIds = sessions.map((session) => session.id);
-  const reservationsResult = sessionIds.length
-    ? await supabase
-        .from("reservations")
-        .select("id,session_id,student_id,status,booked_at")
-        .in("session_id", sessionIds)
-    : { data: [] as ReservationRow[] };
+  const [reservationsResult, waitlistResult] = await Promise.all([
+    sessionIds.length
+      ? readIntelligenceSessions(sessionIds, (ids) =>
+          supabase
+            .from("reservations")
+            .select("id,session_id,student_id,status,booked_at")
+            .eq("studio_id", studio.id)
+            .in("session_id", ids),
+        )
+      : Promise.resolve({ data: [] as ReservationRow[] }),
+    sessionIds.length
+      ? readIntelligenceSessions(sessionIds, (ids) =>
+          supabase
+            .from("class_waitlist_entries")
+            .select("id,session_id,status")
+            .eq("studio_id", studio.id)
+            .in("session_id", ids),
+        )
+      : Promise.resolve({ data: [] }),
+  ]);
 
+  const failedSources = [
+    studentsResult,
+    acquisitionsResult,
+    salesResult,
+    paymentsResult,
+    linesResult,
+    sessionsResult,
+    templatesResult,
+    productTemplatesResult,
+    onboardingResult,
+    reservationsResult,
+    waitlistResult,
+    conversationsResult,
+  ].some((result) => "error" in result && result.error);
+  if (failedSources)
+    return (
+      <main className="intel-page">
+        <h1>Inteligencia</h1>
+        <p role="alert">
+          No pudimos consultar todos los datos del estudio. Intenta de nuevo para ver métricas
+          completas.
+        </p>
+        <Link href="/admin/inteligencia">Volver a intentar</Link>
+      </main>
+    );
   const reservations = (reservationsResult.data ?? []) as ReservationRow[];
   const templateMap = new Map(templates.map((item) => [item.id, item]));
   const productTemplateMap = new Map(productTemplates.map((item) => [item.id, item]));
@@ -504,7 +604,10 @@ export default async function IntelligencePage({
     );
   }
 
-  const pendingCurrent = currentSales.reduce((sum, sale) => {
+  const pendingSales = sales.filter(
+    (sale) => sale.status === "confirmed" && new Date(sale.created_at) < currentEnd,
+  );
+  const pendingCurrent = pendingSales.reduce((sum, sale) => {
     const collectible = collectibleBySale.get(sale.id) ?? sale.total_minor;
     const paid = paymentBySale.get(sale.id) ?? 0;
     return sum + Math.max(collectible - paid, 0);
@@ -516,7 +619,7 @@ export default async function IntelligencePage({
       if (item.refunded_at || item.status === "cancelled") continue;
       const start = item.starts_on ?? item.created_at.slice(0, 10);
       const end = item.expires_on;
-      if (start > atDate) continue;
+      if (start > atDate || item.created_at.slice(0, 10) > atDate) continue;
       if (end && end < atDate) continue;
       studentIds.add(item.student_id);
     }
@@ -597,6 +700,8 @@ export default async function IntelligencePage({
     let attended = 0;
     let noShow = 0;
     let cancelled = 0;
+    let onTime = 0;
+    let late = 0;
     let reservationEvents = 0;
 
     for (const session of rows) {
@@ -610,14 +715,21 @@ export default async function IntelligencePage({
         if (reservation.status === "attended") attended += 1;
         if (reservation.status === "no_show") noShow += 1;
         if (userCancellationStatuses.has(reservation.status)) cancelled += 1;
+        if (reservation.status === "cancelled_on_time") onTime += 1;
+        if (reservation.status === "cancelled_late") late += 1;
       }
     }
 
     return {
-      occupancy: safeRate(occupied, capacity),
-      attendance: safeRate(attended, attended + noShow),
+      occupancy: safeRate(attended, capacity),
+      attendance: safeRate(attended, attended + noShow + late + (occupied - attended - noShow)),
       cancellation: safeRate(cancelled, reservationEvents),
-      noShow: safeRate(noShow, attended + noShow),
+      noShow: safeRate(noShow, occupied),
+      onTime,
+      late,
+      noShowCount: noShow,
+      reservations: reservationEvents,
+      cancelled,
       attended,
       occupied,
       capacity,
@@ -635,6 +747,7 @@ export default async function IntelligencePage({
       occupied: number;
       attended: number;
       noShow: number;
+      late: number;
       cancelled: number;
       total: number;
       color: string;
@@ -651,6 +764,7 @@ export default async function IntelligencePage({
       occupied: 0,
       attended: 0,
       noShow: 0,
+      late: 0,
       cancelled: 0,
       total: 0,
       color: template?.color_hex ?? "#FF0A8A",
@@ -662,6 +776,7 @@ export default async function IntelligencePage({
       if (occupiedStatuses.has(reservation.status)) current.occupied += 1;
       if (reservation.status === "attended") current.attended += 1;
       if (reservation.status === "no_show") current.noShow += 1;
+      if (reservation.status === "cancelled_late") current.late += 1;
       if (userCancellationStatuses.has(reservation.status)) current.cancelled += 1;
     }
     classAggregate.set(key, current);
@@ -670,8 +785,8 @@ export default async function IntelligencePage({
   const classRows = [...classAggregate.values()]
     .map((item) => ({
       ...item,
-      occupancy: safeRate(item.occupied, item.capacity),
-      attendance: safeRate(item.attended, item.attended + item.noShow),
+      occupancy: safeRate(item.attended, item.capacity),
+      attendance: safeRate(item.attended, item.occupied + item.late),
       cancellation: safeRate(item.cancelled, item.total),
     }))
     .sort((a, b) => b.occupancy - a.occupancy);
@@ -693,8 +808,8 @@ export default async function IntelligencePage({
       }).format(date),
     );
     const part = hour < 12 ? "Mañana" : hour < 17 ? "Tarde" : "Noche";
-    const used = (reservationsBySession.get(session.id) ?? []).filter((item) =>
-      occupiedStatuses.has(item.status),
+    const used = (reservationsBySession.get(session.id) ?? []).filter(
+      (item) => item.status === "attended",
     ).length;
     daypart[part][0] += used;
     daypart[part][1] += session.capacity ?? 0;
@@ -730,7 +845,7 @@ export default async function IntelligencePage({
       !item.refunded_at &&
       item.status !== "cancelled" &&
       Boolean(
-        item.expires_on && item.expires_on >= currentStartDate && item.expires_on <= todayDate,
+        item.expires_on && item.expires_on >= currentStartDate && item.expires_on < todayDate,
       ),
   );
   const expiredPrevious = commercialAcquisitions.filter(
@@ -744,7 +859,7 @@ export default async function IntelligencePage({
       ),
   );
 
-  function renewalStats(expiredRows: AcquisitionRow[]) {
+  function renewalStats(expiredRows: AcquisitionRow[], cutoff = currentEnd) {
     const expiryByStudent = new Map<string, AcquisitionRow>();
     for (const row of expiredRows) {
       const previous = expiryByStudent.get(row.student_id);
@@ -762,7 +877,10 @@ export default async function IntelligencePage({
     for (const expired of expiryByStudent.values()) {
       const later = (acquisitionsByStudent.get(expired.student_id) ?? []).some((candidate) => {
         if (candidate.id === expired.id) return false;
-        if (new Date(candidate.created_at).getTime() <= new Date(expired.created_at).getTime()) {
+        if (
+          new Date(candidate.created_at).getTime() >= cutoff.getTime() ||
+          new Date(candidate.created_at).getTime() <= new Date(expired.created_at).getTime()
+        ) {
           return false;
         }
         if (!candidate.expires_on || !expired.expires_on) return false;
@@ -781,9 +899,7 @@ export default async function IntelligencePage({
   }
 
   const renewal = renewalStats(expiredCurrent);
-  const previousRenewal = renewalStats(expiredPrevious);
-  const churn = renewal.expired > 0 ? 100 - renewal.rate : 0;
-  const previousChurn = previousRenewal.expired > 0 ? 100 - previousRenewal.rate : 0;
+  const previousRenewal = renewalStats(expiredPrevious, currentStart);
   const weeklyFrequency =
     activeStudents > 0 ? currentClassMetrics.attended / activeStudents / Math.max(days / 7, 1) : 0;
 
@@ -797,8 +913,8 @@ export default async function IntelligencePage({
     )
       continue;
     productRevenue.set(
-      line.product_name,
-      (productRevenue.get(line.product_name) ?? 0) + line.line_total_minor,
+      line.product_name ?? "Producto",
+      (productRevenue.get(line.product_name ?? "Producto") ?? 0) + line.line_total_minor,
     );
   }
   const productRows = [...productRevenue.entries()]
@@ -808,25 +924,25 @@ export default async function IntelligencePage({
 
   const recentSales = currentSales.slice(0, 6);
 
-  const periodBuckets = Array.from({ length: Math.min(days, 30) }, (_, index) => {
-    const bucketDate = new Date(currentStart.getTime() + index * DAY);
-    const key = isoDateKey(bucketDate);
-    const amount = currentPayments
-      .filter((item) => item.created_at.slice(0, 10) === key)
-      .reduce(
-        (sum, item) => sum + (item.kind === "refund" ? -item.amount_minor : item.amount_minor),
-        0,
-      );
+  const bucketStep = days > 30 ? 7 : 1;
+  const periodBuckets = Array.from({ length: Math.ceil(days / bucketStep) }, (_, index) => {
+    const start = new Date(currentStart.getTime() + index * bucketStep * DAY);
+    const end = new Date(Math.min(currentEnd.getTime(), start.getTime() + bucketStep * DAY));
+    const rows = currentPayments.filter((item) => isBetween(item.created_at, start, end));
+    const cm = classMetrics(
+      currentSessions.filter((item) => isBetween(item.starts_at, start, end)),
+    );
     return {
-      key,
-      label: new Intl.DateTimeFormat(locale, {
-        day: "numeric",
-        month: "short",
-      }).format(bucketDate),
-      amount,
+      key: start.toISOString(),
+      label: new Intl.DateTimeFormat(locale, { timeZone, day: "numeric", month: "short" }).format(
+        start,
+      ),
+      amount: netPayments(rows),
+      cm,
+      active: activeCommercialStudentCount(isoDateKey(end, timeZone)),
+      rows,
     };
   });
-  const maxDailyRevenue = Math.max(...periodBuckets.map((item) => item.amount), 1);
 
   const highestDemand = classRows[0];
   const lowestDemand = [...classRows].sort((a, b) => a.occupancy - b.occupancy)[0];
@@ -857,6 +973,123 @@ export default async function IntelligencePage({
     })
     .sort((a, b) => a.completed - b.completed || a.name.localeCompare(b.name));
 
+  const waitlist = (waitlistResult.data ?? []) as {
+    id: string;
+    session_id: string;
+    status: string;
+  }[];
+  const currentSessionIds = new Set(currentSessions.map((row) => row.id));
+  const waiting = waitlist.filter(
+    (row) => currentSessionIds.has(row.session_id) && row.status !== "cancelled",
+  );
+  const methodNames = new Map(
+    ((methodsResult.data ?? []) as { code: string; name: string }[]).map((m) => [m.code, m.name]),
+  );
+  const methodCodes = [...new Set(currentPayments.map((p) => p.method ?? "unknown"))];
+  const methodLabel = (code: string) =>
+    methodNames.get(code) ??
+    (
+      {
+        cash: "Efectivo",
+        bank_transfer: "Transferencia",
+        card: "Tarjeta",
+        mercadopago: "Mercado Pago",
+        unknown: "Sin método registrado",
+      } as Record<string, string>
+    )[code] ??
+    code;
+  const paymentMethods = [...new Set(methodCodes.map(methodLabel))];
+  const chartProps = { locale, currency: studio.currency };
+  const labels = periodBuckets.map((b) => b.label);
+  const topStudents = new Map<string, number>();
+  for (const r of reservations)
+    if (r.student_id && r.status === "attended" && currentSessionIds.has(r.session_id))
+      topStudents.set(r.student_id, (topStudents.get(r.student_id) ?? 0) + 1);
+  const studentNames = new Map(students.map((student) => [student.id, student.full_name]));
+  const heat = new Map<
+    string,
+    { day: number; hour: string; attended: number; capacity: number; names: Set<string> }
+  >();
+  const slots = new Map<string, { label: string; name: string; rows: SessionRow[] }>();
+  const weekdayNames = Array.from({ length: 7 }, (_, i) =>
+    new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(
+      new Date(Date.UTC(2026, 9, 4 + i)),
+    ),
+  );
+  for (const session of currentSessions) {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(new Date(session.starts_at));
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+    const day = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(get("weekday"));
+    const hour = get("hour") + ":" + get("minute");
+    const key = day + "-" + hour;
+    const name = templateMap.get(session.template_id)?.name ?? "Clase";
+    const cell = heat.get(key) ?? { day, hour, attended: 0, capacity: 0, names: new Set<string>() };
+    cell.capacity += session.capacity ?? 0;
+    cell.attended += classMetrics([session]).attended;
+    cell.names.add(name);
+    heat.set(key, cell);
+    const slotKey = key + "-" + session.template_id;
+    const slot = slots.get(slotKey) ?? { label: weekdayNames[day] + " " + hour, name, rows: [] };
+    slot.rows.push(session);
+    slots.set(slotKey, slot);
+  }
+  const heatHours = [...new Set([...heat.values()].map((cell) => cell.hour))].sort();
+  const soonDate = isoDateKey(new Date(now.getTime() + 7 * DAY), timeZone);
+  const expiringSoon = commercialAcquisitions.filter(
+    (row) =>
+      row.status === "active" &&
+      row.expires_on &&
+      row.expires_on >= todayDate &&
+      row.expires_on <= soonDate,
+  );
+  type Conversation = {
+    id: string;
+    student_id: string | null;
+    provider_contact_id: string | null;
+    contact_phone: string | null;
+    source: string | null;
+    started_at: string;
+  };
+  const conversations = (conversationsResult.data ?? []) as Conversation[];
+  const leadMap = new Map<string, Conversation>();
+  for (const row of [...conversations].sort((a, b) => a.started_at.localeCompare(b.started_at))) {
+    const key = row.student_id ?? row.provider_contact_id ?? row.contact_phone ?? row.id;
+    if (!leadMap.has(key)) leadMap.set(key, row);
+  }
+  const leads = [...leadMap.values()].filter((row) =>
+    isBetween(row.started_at, currentStart, currentEnd),
+  );
+  const sources = [...new Set(leads.map((row) => row.source ?? "Sin origen registrado"))];
+  const convertedLead = (row: Conversation) =>
+    Boolean(
+      row.student_id &&
+      students.some(
+        (student) => student.id === row.student_id && student.trial_status === "converted",
+      ),
+    );
+  const firstPackageByStudent = new Map<string, AcquisitionRow>();
+  for (const row of commercialAcquisitions) {
+    if (
+      !["package", "membership"].includes(
+        productTemplateMap.get(row.product_template_id)?.product_type ?? "",
+      )
+    )
+      continue;
+    const existing = firstPackageByStudent.get(row.student_id);
+    if (!existing || row.created_at < existing.created_at)
+      firstPackageByStudent.set(row.student_id, row);
+  }
+  const newPackages = [...firstPackageByStudent.values()].filter((row) =>
+    isBetween(row.created_at, currentStart, currentEnd),
+  ).length;
+  const hrefFor = (target: ViewKey) =>
+    viewHref(target, days) + (discipline ? "&discipline=" + encodeURIComponent(discipline) : "");
   const [pageTitle, pageDescription] = titleFor(view);
 
   return (
@@ -871,7 +1104,11 @@ export default async function IntelligencePage({
           {[7, 30, 90].map((value) => (
             <Link
               key={value}
-              href={periodHref(view, value)}
+              href={
+                periodHref(view, value) +
+                (discipline ? "&discipline=" + encodeURIComponent(discipline) : "")
+              }
+              aria-current={days === value ? "true" : undefined}
               className={days === value ? "is-active" : undefined}
             >
               {value} días
@@ -884,7 +1121,11 @@ export default async function IntelligencePage({
         {views.map((item) => (
           <Link
             key={item.key}
-            href={viewHref(item.key, days)}
+            href={
+              viewHref(item.key, days) +
+              (discipline ? "&discipline=" + encodeURIComponent(discipline) : "")
+            }
+            aria-current={view === item.key ? "page" : undefined}
             className={view === item.key ? "is-active" : undefined}
           >
             {item.label}
@@ -892,32 +1133,101 @@ export default async function IntelligencePage({
         ))}
       </nav>
 
+      <form className="intel-filters" action="/admin/inteligencia">
+        <input type="hidden" name="view" value={view} />
+        <input type="hidden" name="days" value={days} />
+        <label htmlFor="intel-discipline">Disciplina</label>
+        <select id="intel-discipline" name="discipline" defaultValue={discipline}>
+          <option value="">Todas</option>
+          {templates.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </select>
+        <button type="submit" className="intel-toggle">
+          Aplicar
+        </button>
+        <span>
+          {new Intl.DateTimeFormat(locale, { timeZone, day: "numeric", month: "short" }).format(
+            currentStart,
+          )}{" "}
+          –{" "}
+          {new Intl.DateTimeFormat(locale, {
+            timeZone,
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          }).format(currentEnd)}
+        </span>
+      </form>
+      {view === "dinero" || view === "alumnas" || view === "conversion" ? (
+        <p className="intel-source-note">
+          El filtro de disciplina se aplica a asistencia y clases. Los pagos, la retención y la
+          conversión muestran el total del estudio.
+        </p>
+      ) : null}
+
       {view === "resumen" ? (
         <>
           <section className="intel-kpi-grid">
             <MetricCard
               label="Ingresos cobrados"
+              href={hrefFor("dinero")}
               value={money(currentRevenue, studio.currency, locale)}
               delta={deltaText(currentRevenue, previousRevenue)}
               tone={currentRevenue >= previousRevenue ? "positive" : "danger"}
             />
             <MetricCard
               label="Alumnas activas"
+              href={hrefFor("alumnas")}
               value={String(activeStudents)}
               delta={deltaText(activeStudents, previousActiveStudents)}
               tone="positive"
             />
             <MetricCard
               label="Conversión de prueba"
+              href={hrefFor("conversion")}
               value={pct(trialConversion, locale)}
               delta={pointsDelta(trialConversion, previousTrialConversion)}
               tone={trialConversion >= previousTrialConversion ? "positive" : "warning"}
             />
             <MetricCard
               label="Ocupación"
+              href={hrefFor("asistencia")}
               value={pct(currentClassMetrics.occupancy, locale)}
               delta={pointsDelta(currentClassMetrics.occupancy, previousClassMetrics.occupancy)}
               tone={currentClassMetrics.occupancy >= 70 ? "positive" : "warning"}
+            />
+            <MetricCard
+              label="Asistencia"
+              value={pct(currentClassMetrics.attendance, locale)}
+              delta={pointsDelta(currentClassMetrics.attendance, previousClassMetrics.attendance)}
+              href={hrefFor("asistencia")}
+              tone="positive"
+            />
+            <MetricCard
+              label="Clases reservadas"
+              value={String(currentClassMetrics.reservations)}
+              delta={deltaText(currentClassMetrics.reservations, previousClassMetrics.reservations)}
+              href={hrefFor("clases")}
+            />
+            <MetricCard
+              label="Cancelaciones"
+              value={pct(currentClassMetrics.cancellation, locale)}
+              delta={pointsDelta(
+                currentClassMetrics.cancellation,
+                previousClassMetrics.cancellation,
+              )}
+              href={hrefFor("clases")}
+              tone="warning"
+            />
+            <MetricCard
+              label="No show"
+              value={pct(currentClassMetrics.noShow, locale)}
+              delta={pointsDelta(currentClassMetrics.noShow, previousClassMetrics.noShow)}
+              href={hrefFor("asistencia")}
+              tone="danger"
             />
           </section>
 
@@ -951,7 +1261,38 @@ export default async function IntelligencePage({
                         pct(highestCancellation.cancellation, locale) +
                         "."
                       }
-                      href={viewHref("clases", days)}
+                      href={hrefFor("clases")}
+                    />
+                  ) : null}
+                  {lowestDemand && lowestDemand.occupancy < 60 ? (
+                    <Insight
+                      tone="warning"
+                      title={lowestDemand.name + " tiene lugares disponibles"}
+                      body={
+                        "Ocupación del periodo: " +
+                        pct(lowestDemand.occupancy, locale) +
+                        ". Revisa horarios y promoción."
+                      }
+                      href={hrefFor("clases")}
+                    />
+                  ) : null}
+                  {currentClassMetrics.noShow > 10 ? (
+                    <Insight
+                      tone="danger"
+                      title="Revisar inasistencias"
+                      body={
+                        pct(currentClassMetrics.noShow, locale) +
+                        " de no show. Revisa el seguimiento y los recordatorios configurados."
+                      }
+                      href={hrefFor("asistencia")}
+                    />
+                  ) : null}
+                  {waiting.length ? (
+                    <Insight
+                      tone="info"
+                      title={waiting.length + " solicitudes de lista de espera"}
+                      body="Hay demanda adicional para las clases del periodo. Revisa la capacidad por horario."
+                      href={hrefFor("clases")}
                     />
                   ) : null}
                   {pendingCurrent > 0 ? (
@@ -960,9 +1301,9 @@ export default async function IntelligencePage({
                       title="💳 Cobranza pendiente"
                       body={
                         money(pendingCurrent, studio.currency, locale) +
-                        " continúan sin cobrar en ventas del periodo."
+                        " continúan sin cobrar en ventas confirmadas."
                       }
-                      href={viewHref("dinero", days)}
+                      href={hrefFor("dinero")}
                     />
                   ) : null}
                 </div>
@@ -972,17 +1313,20 @@ export default async function IntelligencePage({
                 title="Movimiento de ingresos"
                 description="Cobros menos reembolsos registrados en el periodo."
               >
-                <div className="intel-bars">
-                  {periodBuckets.slice(-14).map((item) => (
-                    <BarRow
-                      key={item.key}
-                      label={item.label}
-                      value={Math.max(item.amount, 0)}
-                      max={maxDailyRevenue}
-                      display={money(item.amount, studio.currency, locale)}
-                    />
-                  ))}
-                </div>
+                <TrendChart
+                  title="Ingresos del periodo"
+                  labels={periodBuckets.map((b) => b.label)}
+                  series={[
+                    {
+                      name: "Cobros netos",
+                      values: periodBuckets.map((b) => b.amount),
+                      tone: "accent",
+                    },
+                  ]}
+                  locale={locale}
+                  currency={studio.currency}
+                  format="money"
+                />
               </Section>
             </div>
 
@@ -1015,8 +1359,8 @@ export default async function IntelligencePage({
                   />
                 </div>
                 <div className="intel-source-note">
-                  Registro → reserva todavía no tiene una fuente de leads previa a la clase de
-                  prueba.
+                  La vista Conversión incluye conversaciones registradas y su origen cuando existe
+                  un vínculo verificable.
                 </div>
               </Section>
 
@@ -1066,22 +1410,96 @@ export default async function IntelligencePage({
               delta={deltaText(currentRefunds, previousRefunds)}
               tone={currentRefunds > previousRefunds ? "danger" : "neutral"}
             />
+            <MetricCard
+              label="Pagos recibidos"
+              value={String(currentPayments.filter((p) => p.kind !== "refund").length)}
+              delta={deltaText(
+                currentPayments.filter((p) => p.kind !== "refund").length,
+                previousPayments.filter((p) => p.kind !== "refund").length,
+              )}
+            />
+            <MetricCard
+              label="Primer paquete"
+              value={String(newPackages)}
+              delta="Alumnas con su primer paquete o membresía en el periodo"
+            />
           </section>
 
+          <TrendChart
+            title="Ingresos por método de pago"
+            labels={labels}
+            series={paymentMethods.map((label, i) => ({
+              name: label,
+              values: periodBuckets.map((b) =>
+                netPayments(b.rows.filter((p) => methodLabel(p.method ?? "unknown") === label)),
+              ),
+              tone: (["info", "success", "warning", "accent"] as const)[i % 4],
+            }))}
+            format="money"
+            {...chartProps}
+          />
+          <Section title="Cómo pagan">
+            <div className="intel-bars">
+              {paymentMethods.map((label) => {
+                const amount = netPayments(
+                  currentPayments.filter((p) => methodLabel(p.method ?? "unknown") === label),
+                );
+                return (
+                  <BarRow
+                    key={label}
+                    label={label}
+                    value={Math.max(amount, 0)}
+                    max={Math.max(currentRevenue, 0)}
+                    display={money(amount, studio.currency, locale)}
+                    tone="info"
+                  />
+                );
+              })}
+            </div>
+          </Section>
+          <Section
+            title="Pagos pendientes"
+            description="Saldos abiertos de todas las ventas confirmadas, incluidos los anteriores al periodo."
+          >
+            <div className="intel-data-table">
+              {pendingSales.map((sale) => {
+                const balance = Math.max(
+                  (collectibleBySale.get(sale.id) ?? sale.total_minor) -
+                    (paymentBySale.get(sale.id) ?? 0),
+                  0,
+                );
+                return balance > 0 ? (
+                  <Link
+                    key={sale.id}
+                    href={"/admin/ventas/" + sale.id}
+                    className="intel-data-row intel-sales-grid"
+                  >
+                    <span>{sale.folio}</span>
+                    <span>{studentNames.get(sale.student_id) ?? "Alumna"}</span>
+                    <strong>{money(balance, sale.currency, locale)}</strong>
+                  </Link>
+                ) : null;
+              })}
+            </div>
+            {pendingCurrent === 0 ? <p className="intel-empty">No hay pagos pendientes.</p> : null}
+          </Section>
           <div className="intel-two-column">
             <div className="intel-stack">
               <Section title="Ingresos cobrados" description="Cobros netos por día.">
-                <div className="intel-bars">
-                  {periodBuckets.slice(-14).map((item) => (
-                    <BarRow
-                      key={item.key}
-                      label={item.label}
-                      value={Math.max(item.amount, 0)}
-                      max={maxDailyRevenue}
-                      display={money(item.amount, studio.currency, locale)}
-                    />
-                  ))}
-                </div>
+                <TrendChart
+                  title="Ingresos del periodo"
+                  labels={periodBuckets.map((b) => b.label)}
+                  series={[
+                    {
+                      name: "Cobros netos",
+                      values: periodBuckets.map((b) => b.amount),
+                      tone: "accent",
+                    },
+                  ]}
+                  locale={locale}
+                  currency={studio.currency}
+                  format="money"
+                />
               </Section>
 
               <Section title="Ventas recientes">
@@ -1136,13 +1554,13 @@ export default async function IntelligencePage({
                     title={
                       pendingCurrent > 0
                         ? "⚠️ Hay saldo pendiente"
-                        : "✓ Ventas del periodo sin saldo pendiente"
+                        : "✓ Ventas confirmadas sin saldo pendiente"
                     }
                     body={
                       pendingCurrent > 0
                         ? money(pendingCurrent, studio.currency, locale) +
                           " no han sido cobrados todavía."
-                        : "No detectamos saldo abierto en las ventas del periodo."
+                        : "No detectamos saldo abierto en ventas confirmadas."
                     }
                     href="/admin/ventas"
                   />
@@ -1190,6 +1608,95 @@ export default async function IntelligencePage({
             />
           </section>
 
+          <section className="intel-kpi-grid">
+            <MetricCard
+              label="Renovación"
+              value={pct(renewal.rate, locale)}
+              delta={pointsDelta(renewal.rate, previousRenewal.rate)}
+              tone="positive"
+            />
+            <MetricCard
+              label="Alumnas con vencimiento"
+              value={String(renewal.expired)}
+              delta={deltaText(renewal.expired, previousRenewal.expired)}
+            />
+            <MetricCard
+              label="No renovaron"
+              value={String(renewal.notRenewed)}
+              delta={deltaText(renewal.notRenewed, previousRenewal.notRenewed)}
+              tone="warning"
+            />
+          </section>
+          <TrendChart
+            title="Alumnas con producto vigente"
+            labels={labels}
+            series={[
+              { name: "Activas", values: periodBuckets.map((b) => b.active), tone: "success" },
+            ]}
+            {...chartProps}
+          />
+          <Section title="Vencen en los próximos 7 días">
+            {expiringSoon.length ? (
+              <div className="intel-risk-list">
+                {expiringSoon.map((row) => (
+                  <Link
+                    key={row.id}
+                    href={"/admin/alumnas/" + row.student_id}
+                    className="intel-risk-row"
+                  >
+                    <span>
+                      {studentNames.get(row.student_id) ?? "Alumna"}
+                      <small>
+                        {productTemplateMap.get(row.product_template_id)?.name ?? "Producto"}
+                      </small>
+                    </span>
+                    <b>{row.expires_on}</b>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="intel-empty">No hay productos por vencer esta semana.</p>
+            )}
+          </Section>
+          <Section title="Antigüedad de alumnas activas">
+            <div className="intel-bars">
+              {[
+                ["0 a 3 meses", 0, 90],
+                ["3 a 6 meses", 90, 180],
+                ["6 a 12 meses", 180, 365],
+                ["Más de 1 año", 365, Infinity],
+              ].map(([label, min, max]) => {
+                const count = students.filter((student) => {
+                  const age = (now.getTime() - new Date(student.created_at).getTime()) / DAY;
+                  return (
+                    age >= Number(min) &&
+                    age < Number(max) &&
+                    commercialAcquisitions.some(
+                      (row) =>
+                        row.student_id === student.id &&
+                        (row.starts_on ?? row.created_at.slice(0, 10)) <= todayDate &&
+                        (!row.expires_on || row.expires_on >= todayDate),
+                    )
+                  );
+                }).length;
+                return (
+                  <BarRow
+                    key={String(label)}
+                    label={String(label)}
+                    value={count}
+                    max={activeStudents}
+                    display={String(count)}
+                    tone="success"
+                  />
+                );
+              })}
+            </div>
+          </Section>
+          <p className="intel-source-note">
+            Renovación = alumnas con otro producto comercial posterior que extiende su vigencia /
+            alumnas con producto vencido. Cada alumna cuenta una vez; se excluyen productos
+            cancelados y reembolsados.
+          </p>
           <div className="intel-two-column">
             <div className="intel-stack">
               <Section title="Estado de alumnas">
@@ -1355,6 +1862,55 @@ export default async function IntelligencePage({
             />
           </section>
 
+          <TrendChart
+            title="Contactos y compras atribuidas"
+            labels={labels}
+            series={[
+              {
+                name: "Contactos",
+                values: periodBuckets.map((_, i) => {
+                  const start = new Date(currentStart.getTime() + i * bucketStep * DAY);
+                  const end = new Date(
+                    Math.min(currentEnd.getTime(), start.getTime() + bucketStep * DAY),
+                  );
+                  return leads.filter((row) => isBetween(row.started_at, start, end)).length;
+                }),
+                tone: "info",
+              },
+              {
+                name: "Compraron",
+                values: periodBuckets.map((_, i) => {
+                  const start = new Date(currentStart.getTime() + i * bucketStep * DAY);
+                  const end = new Date(
+                    Math.min(currentEnd.getTime(), start.getTime() + bucketStep * DAY),
+                  );
+                  return leads.filter(
+                    (row) => isBetween(row.started_at, start, end) && convertedLead(row),
+                  ).length;
+                }),
+                tone: "accent",
+              },
+            ]}
+            {...chartProps}
+          />
+          <p className="intel-source-note">
+            Las compras atribuidas pertenecen a la cohorte de contactos del periodo; no representan
+            la fecha de cobro.
+          </p>
+          <MetricCard
+            label="No show en prueba"
+            value={pct(
+              safeRate(
+                trialNoShow,
+                trialCurrent.filter((s) =>
+                  ["attended", "converted", "no_show", "pending"].includes(s.trial_status ?? ""),
+                ).length,
+              ),
+              locale,
+            )}
+            delta="Pruebas con no show / pruebas no canceladas"
+            tone="danger"
+          />
           <div className="intel-two-column">
             <div className="intel-stack">
               <Section
@@ -1386,12 +1942,50 @@ export default async function IntelligencePage({
                 </div>
               </Section>
 
-              <Section title="Fuente pendiente: leads">
-                <div className="intel-source-note is-large">
-                  Para medir <strong>registro → reserva</strong> necesitamos persistir el lead antes
-                  de que exista una clase de prueba. Hoy Studio Flow comienza a tener trazabilidad
-                  cuando la prueba ya fue creada.
-                </div>
+              <Section
+                title="Prospectos y origen"
+                description="Contactos únicos en conversaciones registradas, agrupados por su primer contacto dentro del rango consultado."
+              >
+                {leads.length ? (
+                  <>
+                    <MetricCard
+                      label="Prospectos registrados"
+                      value={String(leads.length)}
+                      delta="Una persona cuenta una vez"
+                    />
+                    <MetricCard
+                      label="Contacto → paquete"
+                      value={pct(
+                        safeRate(leads.filter(convertedLead).length, leads.length),
+                        locale,
+                      )}
+                      delta="Conversaciones vinculadas a alumnas convertidas"
+                    />
+                    <SortableTable
+                      locale={locale}
+                      initialSort={{ column: 3, direction: -1 }}
+                      title="Conversión por origen"
+                      columns={["Origen", "Contactos", "Compraron", "Conversión %"]}
+                      rows={sources.map((source) => {
+                        const rows = leads.filter(
+                          (row) => (row.source ?? "Sin origen registrado") === source,
+                        );
+                        const buyers = rows.filter(convertedLead).length;
+                        return [source, rows.length, buyers, safeRate(buyers, rows.length)];
+                      })}
+                    />
+                  </>
+                ) : (
+                  <p className="intel-empty">
+                    No hay conversaciones registradas en el periodo. El embudo de pruebas sigue
+                    disponible.
+                  </p>
+                )}
+                <p className="intel-source-note">
+                  Las conversaciones sin vínculo a una alumna no se atribuyen a compras. La
+                  calificación y el escalamiento a una persona no cuentan todavía con un evento
+                  medible.
+                </p>
               </Section>
             </div>
 
@@ -1420,6 +2014,129 @@ export default async function IntelligencePage({
         </>
       ) : null}
 
+      {view === "asistencia" ? (
+        <>
+          <section className="intel-kpi-grid">
+            <MetricCard
+              label="Asistencia"
+              value={pct(currentClassMetrics.attendance, locale)}
+              delta={pointsDelta(currentClassMetrics.attendance, previousClassMetrics.attendance)}
+              tone="positive"
+            />
+            <MetricCard
+              label="Visitas al estudio"
+              value={String(currentClassMetrics.attended)}
+              delta={deltaText(currentClassMetrics.attended, previousClassMetrics.attended)}
+            />
+            <MetricCard
+              label="No show"
+              value={pct(currentClassMetrics.noShow, locale)}
+              delta={pointsDelta(currentClassMetrics.noShow, previousClassMetrics.noShow)}
+              tone="danger"
+            />
+            <MetricCard
+              label="Promedio por clase"
+              value={new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(
+                currentClassMetrics.attended / (currentSessions.length || 1),
+              )}
+              delta="Asistencias entre clases del periodo"
+            />
+          </section>
+          <TrendChart
+            title="Asistencia y no show"
+            labels={labels}
+            series={[
+              {
+                name: "Asistencia",
+                values: periodBuckets.map((b) => b.cm.attendance),
+                tone: "success",
+              },
+              { name: "No show", values: periodBuckets.map((b) => b.cm.noShow), tone: "danger" },
+            ]}
+            format="percent"
+            {...chartProps}
+          />
+          <div className="intel-two-column">
+            <Section
+              title="Ocupación por día y hora"
+              description="Asistencias entre lugares disponibles. Toca una celda para ver la disciplina."
+            >
+              {heatHours.length ? (
+                <div className="intel-table-scroll">
+                  <table className="intel-table intel-heat">
+                    <thead>
+                      <tr>
+                        <th>Día</th>
+                        {heatHours.map((hour) => (
+                          <th key={hour}>{hour}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[1, 2, 3, 4, 5, 6, 0].map((day) => (
+                        <tr key={day}>
+                          <th scope="row">{weekdayNames[day]}</th>
+                          {heatHours.map((hour) => {
+                            const cell = heat.get(day + "-" + hour);
+                            const rate = cell ? safeRate(cell.attended, cell.capacity) : 0;
+                            return (
+                              <td key={hour}>
+                                {cell ? (
+                                  <details
+                                    className={
+                                      rate >= 75 ? "is-high" : rate < 40 ? "is-low" : "is-medium"
+                                    }
+                                  >
+                                    <summary>{pct(rate, locale)}</summary>
+                                    <span>
+                                      {[...cell.names].join(", ")} · {cell.attended}/{cell.capacity}{" "}
+                                      lugares
+                                    </span>
+                                  </details>
+                                ) : (
+                                  "—"
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="intel-empty">Sin clases en el periodo.</p>
+              )}
+            </Section>
+            <Section title="Asistencia por disciplina">
+              <div className="intel-bars">
+                {classRows.map((row) => (
+                  <BarRow
+                    key={row.name}
+                    label={row.name}
+                    value={row.attendance}
+                    max={100}
+                    display={pct(row.attendance, locale)}
+                    tone="success"
+                  />
+                ))}
+              </div>
+            </Section>
+          </div>
+          <SortableTable
+            locale={locale}
+            initialSort={{ column: 1, direction: -1 }}
+            title="Alumnas más constantes"
+            columns={["Alumna", "Clases tomadas"]}
+            rows={[...topStudents].map(([id, count]) => [studentNames.get(id) ?? "Alumna", count])}
+          />
+          <p className="intel-source-note">
+            Asistencia = asistió / reservas no canceladas a tiempo. Ocupación = asistió / capacidad.
+            No show = no asistió / reservas sin cancelación. Se usan los estados registrados por el
+            estudio.
+          </p>
+        </>
+      ) : null}
       {view === "clases" ? (
         <>
           <section className="intel-kpi-grid">
@@ -1452,6 +2169,107 @@ export default async function IntelligencePage({
             />
           </section>
 
+          <section className="intel-kpi-grid">
+            <MetricCard
+              label="Clases impartidas"
+              value={String(currentSessions.length)}
+              delta={deltaText(currentSessions.length, previousSessions.length)}
+            />
+            <MetricCard
+              label="Reservas"
+              value={String(currentClassMetrics.reservations)}
+              delta={deltaText(currentClassMetrics.reservations, previousClassMetrics.reservations)}
+            />
+            <MetricCard
+              label="Canceladas a tiempo"
+              value={String(currentClassMetrics.onTime)}
+              delta={deltaText(currentClassMetrics.onTime, previousClassMetrics.onTime)}
+              tone="info"
+            />
+            <MetricCard
+              label="Canceladas tarde"
+              value={String(currentClassMetrics.late)}
+              delta={deltaText(currentClassMetrics.late, previousClassMetrics.late)}
+              tone="danger"
+            />
+            <MetricCard
+              label="Lista de espera"
+              value={String(waiting.length)}
+              delta="Solicitudes no canceladas para clases del periodo"
+            />
+          </section>
+          <TrendChart
+            title="¿Qué pasó con cada reserva?"
+            labels={labels}
+            stacked
+            series={[
+              { name: "Asistió", values: periodBuckets.map((b) => b.cm.attended), tone: "success" },
+              {
+                name: "No show",
+                values: periodBuckets.map((b) => b.cm.noShowCount),
+                tone: "danger",
+              },
+              {
+                name: "Canceló a tiempo",
+                values: periodBuckets.map((b) => b.cm.onTime),
+                tone: "info",
+              },
+              {
+                name: "Canceló tarde",
+                values: periodBuckets.map((b) => b.cm.late),
+                tone: "warning",
+              },
+              {
+                name: "Sin resultado",
+                values: periodBuckets.map((b) => b.cm.occupied - b.cm.attended - b.cm.noShowCount),
+                tone: "accent",
+              },
+              {
+                name: "Canceló el estudio",
+                values: periodBuckets.map(
+                  (b) => b.cm.reservations - b.cm.occupied - b.cm.onTime - b.cm.late,
+                ),
+                tone: "info",
+              },
+            ]}
+            {...chartProps}
+          />
+          <SortableTable
+            locale={locale}
+            initialSort={{ column: 2, direction: -1 }}
+            title="Rendimiento por horario"
+            columns={[
+              "Horario",
+              "Disciplina",
+              "Ocupación %",
+              "Cancelación %",
+              "Espera / clase",
+              "Estado",
+            ]}
+            rows={[...slots.values()].map((slot) => {
+              const cm = classMetrics(slot.rows);
+              const ids = new Set(slot.rows.map((row) => row.id));
+              return [
+                slot.label,
+                slot.name,
+                cm.occupancy,
+                cm.cancellation,
+                waiting.filter((row) => ids.has(row.session_id)).length / slot.rows.length,
+                cm.occupancy >= 75 ? "Alta" : cm.occupancy < 55 ? "Baja" : "Estable",
+              ];
+            })}
+          />
+          <p className="intel-source-note">
+            Cancelar tarde:{" "}
+            {cancellationCutoff == null
+              ? "según la política de reservas del estudio"
+              : "menos de " +
+                new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(
+                  cancellationCutoff / 60,
+                ) +
+                " horas de anticipación"}
+            . Ocupación = asistencias / lugares disponibles.
+          </p>
           <div className="intel-two-column">
             <div className="intel-stack">
               <Section

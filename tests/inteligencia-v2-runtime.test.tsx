@@ -30,6 +30,7 @@ function seed(table: string, rows: Row[]) {
 // every fixture unconditionally. Tenant and period predicates can therefore fail.
 function from(table: string) {
   let rows = tables[table] ?? [];
+  let range: [number, number] | null = null;
   const query = {
     select(...args: unknown[]) {
       calls.push({ table, method: "select", args });
@@ -68,8 +69,15 @@ function from(table: string) {
       );
       return query;
     },
+    range(from: number, to: number) {
+      range = [from, to];
+      return query;
+    },
     then(resolve: (value: { data: Row[]; error: null }) => unknown) {
-      return Promise.resolve({ data: rows, error: null }).then(resolve);
+      return Promise.resolve({
+        data: range ? rows.slice(range[0], range[1] + 1) : rows,
+        error: null,
+      }).then(resolve);
     },
   };
   calls.push({ table, method: "from", args: [] });
@@ -142,7 +150,7 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("Inteligencia V2 runtime", () => {
-  it.each(["resumen", "dinero", "alumnas", "conversion", "clases"])(
+  it.each(["resumen", "dinero", "alumnas", "conversion", "clases", "asistencia"])(
     "requires reports.read for %s",
     async (view) => {
       await render(view);
@@ -150,7 +158,7 @@ describe("Inteligencia V2 runtime", () => {
     },
   );
 
-  it.each(["resumen", "dinero", "alumnas", "conversion", "clases"])(
+  it.each(["resumen", "dinero", "alumnas", "conversion", "clases", "asistencia"])(
     "scopes all direct table reads to the studio in %s",
     async (view) => {
       await render(view);
@@ -160,7 +168,7 @@ describe("Inteligencia V2 runtime", () => {
     },
   );
 
-  it.each(["resumen", "dinero", "alumnas", "conversion", "clases"])(
+  it.each(["resumen", "dinero", "alumnas", "conversion", "clases", "asistencia"])(
     "renders finite empty metrics for %s",
     async (view) => {
       const html = await render(view);
@@ -183,11 +191,11 @@ describe("Inteligencia V2 runtime", () => {
     },
   );
 
-  it.each(["resumen", "dinero", "alumnas", "conversion", "clases"])(
-    "shows the same five navigation destinations in %s",
+  it.each(["resumen", "dinero", "alumnas", "conversion", "clases", "asistencia"])(
+    "shows the same six navigation destinations in %s",
     async (view) => {
       const html = await render(view);
-      for (const target of ["resumen", "dinero", "alumnas", "conversion", "clases"]) {
+      for (const target of ["resumen", "dinero", "alumnas", "conversion", "clases", "asistencia"]) {
         expect(html).toContain(`view=${target}&amp;days=30`);
       }
       expect(html).not.toContain("view=marketing");
@@ -251,17 +259,17 @@ describe("Inteligencia V2 runtime", () => {
     expect(html).toContain("1 clases de prueba terminaron en no show");
   });
 
-  it("explains missing lead coverage instead of inventing a lead-to-booking rate", async () => {
+  it("reads real conversations and explains unmeasured qualification", async () => {
     const html = await render("conversion");
-    expect(html).toContain("Fuente pendiente: leads");
-    expect(html).toContain("persistir el lead antes");
-    expect(calls.some((c) => c.table === "crm_conversations")).toBe(false);
+    expect(html).toContain("No hay conversaciones registradas");
+    expect(html).toContain("no cuentan todavía con un evento medible");
+    expect(calls.some((c) => c.table === "crm_conversations")).toBe(true);
   });
 
   it.each([
-    ["reserved", "10%", "0", "0%", "0%"],
+    ["reserved", "0%", "0", "0%", "0%"],
     ["attended", "10%", "1", "0%", "0%"],
-    ["no_show", "10%", "0", "0%", "100%"],
+    ["no_show", "0%", "0", "0%", "100%"],
     ["cancelled_on_time", "0%", "0", "100%", "0%"],
     ["cancelled_late", "0%", "0", "100%", "0%"],
     ["cancelled_by_studio", "0%", "0", "0%", "0%"],
@@ -453,5 +461,83 @@ describe("Inteligencia V2 runtime", () => {
     expect(html).toContain("No hay onboarding pendiente.");
     expect(html).toContain("Onboarding completo");
     expect(html).toContain("1/1");
+  });
+});
+
+describe("Inteligencia metrics reference", () => {
+  it("counts actual attendance rather than bookings as occupancy", async () => {
+    seed("class_sessions", [session()]);
+    seed(
+      "reservations",
+      ["attended", "no_show", "reserved", "cancelled_late", "cancelled_on_time"].map(
+        (status, i) => ({ id: String(i), session_id: "session", status }),
+      ),
+    );
+    const html = await render("asistencia");
+    expect(metric(html, "Asistencia")).toBe("25%");
+    expect(metric(html, "No show")).toBe("33.3%");
+    expect(metric(await render("clases"), "Ocupación")).toBe("10%");
+  });
+  it("paginates more than 1000 source rows", async () => {
+    seed(
+      "class_sessions",
+      Array.from({ length: 1001 }, (_, i) => session({ id: String(i) })),
+    );
+    expect(metric(await render("clases"), "Clases impartidas")).toBe("1001");
+  });
+  it("includes earlier unpaid sales and their earlier payments in outstanding balance", async () => {
+    seed("sales", [
+      { id: "old", status: "confirmed", total_minor: 10000, created_at: "2026-01-01T00:00:00Z" },
+    ]);
+    seed("payments", [
+      { sale_id: "old", kind: "payment", amount_minor: 2500, created_at: "2026-01-02T00:00:00Z" },
+    ]);
+    expect(metric(await render("dinero"), "Pendiente de cobro")).toBe("MX$75");
+  });
+  it("deduplicates conversations and shows conversion by registered origin", async () => {
+    seed("students", [student("Ana", { trial_status: "converted" })]);
+    seed(
+      "crm_conversations",
+      [1, 2].map((id) => ({
+        id: String(id),
+        student_id: "Ana",
+        source: "Instagram",
+        started_at: current,
+      })),
+    );
+    const html = await render("conversion");
+    expect(metric(html, "Prospectos registrados")).toBe("1");
+    expect(metric(html, "Contacto → paquete")).toBe("100%");
+    expect(html).toContain("Instagram");
+  });
+  it("retains the last week of the 90-day period", async () => {
+    seed("payments", [
+      { kind: "payment", method: "cash", amount_minor: 54300, created_at: current },
+    ]);
+    const html = await render("dinero", "90");
+    expect(html).toContain("Oct 3");
+    expect(html).toContain("MX$543");
+  });
+  it("accepts canonical payment and retention aliases", async () => {
+    expect(await render("pagos")).toContain("Pagos pendientes");
+    expect(await render("retencion")).toContain("Vencen en los próximos 7 días");
+  });
+  it("filters class metrics by discipline while leaving payments studio-wide", async () => {
+    seed("class_templates", [
+      { id: "pole", name: "Pole" },
+      { id: "flex", name: "Flex" },
+    ]);
+    seed("class_sessions", [session(), session({ id: "flex", template_id: "flex" })]);
+    seed("reservations", [
+      { id: "one", session_id: "session", status: "attended" },
+      { id: "two", session_id: "flex", status: "attended" },
+    ]);
+    const html = renderToStaticMarkup(
+      await IntelligencePage({
+        searchParams: Promise.resolve({ view: "asistencia", discipline: "pole" }),
+      }),
+    );
+    expect(metric(html, "Visitas al estudio")).toBe("1");
+    expect(html).toContain("discipline=pole");
   });
 });
