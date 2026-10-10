@@ -1,3 +1,8 @@
+import {
+  partitionWhatsAppPilot,
+  dispatchWhatsAppPilot,
+  signPilotRelayBody,
+} from "@/lib/assistant/whatsapp-pilot-relay";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
@@ -1006,7 +1011,7 @@ export async function GET(request: Request) {
   });
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<Response> {
   const studioId = studioIdFromRequest(request);
   if (!studioId) return json({ error: "invalid_studio" }, 400);
 
@@ -1044,6 +1049,30 @@ export async function POST(request: Request) {
     body = JSON.parse(rawBody);
   } catch {
     return json({ error: "invalid_json" }, 400);
+  }
+
+  const pilotPartition = partitionWhatsAppPilot(body, {
+    enabled: process.env.DEMI_M18_WHATSAPP_PILOT_RELAY === "true",
+    studioId,
+    phoneNumberId: webhookConfig.phoneNumberId,
+    wabaId: webhookConfig.wabaId,
+  });
+  if (pilotPartition) {
+    // The ordinary handler runs concurrently and receives no pilot records.
+    // Its second partition is empty, so recursion terminates after one step.
+    return dispatchWhatsAppPilot(pilotPartition, webhookConfig.appSecret, (productionBody) => {
+      const productionRaw = JSON.stringify(productionBody);
+      return POST(
+        new Request(request.url, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-hub-signature-256": signPilotRelayBody(productionRaw, webhookConfig.appSecret),
+          },
+          body: productionRaw,
+        }),
+      );
+    });
   }
 
   // Meta sends outbound delivery receipts separately from inbound messages.
