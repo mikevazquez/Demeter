@@ -7,6 +7,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 
 import {
   diagnoseMetaInboxApp,
+  diagnoseInstagramSavedToken,
   manageInstagramWebhookSubscription,
   saveInstagramSigningSecret,
   saveMetaInboxConnection,
@@ -380,6 +381,33 @@ export default async function MetaInboxIntegrationPage({
           </button>
         </form>
       </section>
+
+      {studio.id === "9fe23cfa-fb47-4670-afeb-ed4a56433772" &&
+        process.env.VERCEL_ENV === "preview" ? (
+        <section className="integration-detail-v2-card">
+          <div className="integration-detail-v2-card-heading">
+            <div>
+              <h2>Diagnóstico del token de Instagram · Sandbox</h2>
+              <p>Comprueba directamente con Meta que el token guardado siga vigente y pertenezca a @demeter_fitness_studio, sin mostrarlo ni reemplazarlo.</p>
+            </div>
+          </div>
+          {queryValue(params.instagram_token_check) ? (
+            <div className="integration-detail-v2-notice" role="status">
+              {({
+                valid: "Meta confirma que el token es válido y pertenece a @demeter_fitness_studio.",
+                wrong_account: "El token corresponde a otra cuenta o no coincide con la conexión.",
+                rejected: "Meta rechazó el token guardado; revisa si expiró o fue revocado.",
+                missing: "Faltan credenciales de Instagram para verificar.",
+                unavailable: "No fue posible completar la comprobación. Reintenta.",
+                restricted: "Disponible solamente en Sandbox.",
+              } as Record<string,string>)[queryValue(params.instagram_token_check) ?? ""] ?? "Resultado desconocido."}
+            </div>
+          ) : null}
+          <form action={diagnoseInstagramSavedToken}>
+            <button className="integration-detail-v2-button" type="submit">Verificar token guardado con Meta</button>
+          </form>
+        </section>
+      ) : null}
 
       {studio.id === "9fe23cfa-fb47-4670-afeb-ed4a56433772" &&
         process.env.VERCEL_ENV === "preview" ? (
