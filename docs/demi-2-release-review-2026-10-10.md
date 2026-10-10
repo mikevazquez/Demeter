@@ -42,3 +42,5 @@ Activación preparada en `demi-2-production-activation-2026-10-10.sql`; ensayo c
 Revisión final: plantilla Meta APPROVED, id1811619843369512, solicitud HTTP48313. Promoción preparada en PR262, no fusionada; autorizar primero piloto WhatsApp 3323291878 y mantener clientes fuera hasta entrada/salida/audio/comprobante correctos. Facebook/Instagram diferidos.
 
 Cierre de pago tardío: trabajador Sandbox demi-payment-worker v7 publicado. WhatsApp fuera de las 24 horas usa la plantilla aprobada y enlaza exactamente el texto de pago/alternativa/reserva; sin plantilla, no envía texto fuera de ventana. Facebook/Instagram conservan sus ventanas vigentes. Dos pruebas nuevas del trabajador aprobadas (11 en total).
+
+Control del repositorio: todas las pruebas de base y candidata pasan. El comparador detectó un nombre de prueba cambiado en el contrato de primera reserva; se restauró su nombre original conservando las comprobaciones de disponibilidad antes de datos y la nueva regla de comprobante antes del nombre. No se omitió ni deshabilitó ninguna prueba.

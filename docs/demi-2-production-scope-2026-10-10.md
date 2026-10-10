@@ -15,7 +15,7 @@ Se ejecutó `tests/demi-2-identity-uat.sql` en Sandbox con roles reales service_
 
 La vinculación completamente automática por teléfono declarado **no está implementada ni acreditada**. El flujo vigente utiliza verificación presencial, WhatsApp verificado o portal existente, registrada por el equipo. Registrar un nombre de usuario de red social en el perfil no equivale a verificar el identificador de mensajería.
 
-## Tres casos parciales y efecto en producción
+## Revisión de canales, pago y efecto en producción
 
 | Caso                    | Alcance pendiente                                                                                                                                                                                                                  | Decisión                                                                                                                                                             |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -25,6 +25,6 @@ La vinculación completamente automática por teléfono declarado **no está imp
 
 El conteo íntegro vigente es **16/18 aprobados, 2 parciales**. M05 pasó con detección periódica autenticada, reserva automática y aviso capturado en el nuevo pago de prueba; no se acredita webhook firmado. Excluir Instagram no convierte automáticamente M01/M18 en aprobados. No se ha promovido producción ni habilitado el relevo piloto WhatsApp #261.
 
-Recomendación: preparar la promoción de Demi → Studio Flow, conservar Instagram deshabilitado y cerrar M05 antes de activar la automatización MP. Comprobar entrada/salida de la versión candidata en WhatsApp antes de habilitarlo para clientes. Facebook requiere renovar su token; esta dependencia pertenece al canal.
+Recomendación: promover Demi → Studio Flow primero al piloto autorizado de WhatsApp. M05 está aprobado; Facebook e Instagram permanecen sin activar. Comprobar entrada/salida de la versión candidata en WhatsApp antes de habilitarlo para clientes. Facebook requiere renovar su token; esta dependencia pertenece al canal.
 
 Actualización de salida: la plantilla nueva de seguimiento está APPROVED en Meta. Preparación de activación probada con ROLLBACK en Sandbox: producto nuevo $150/7 días, 21 claves de plantilla y seguimientos deshabilitados durante el piloto. No ejecutar configuración de producción antes de autorización.
