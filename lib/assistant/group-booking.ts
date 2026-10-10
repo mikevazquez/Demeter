@@ -104,7 +104,16 @@ export async function groupBookingAction(input: {
       p_participants: input.args.participants,
     },
   );
-  return error ? { ok: false, reason_code: "group_completion_failed" } : data;
+  if (error) return { ok: false, reason_code: "group_completion_failed" };
+  if (Number(data?.reserved_count) > 0) {
+    const details = await input.supabase.rpc("service_get_demi_group_class_details", {
+      p_studio: input.studioId,
+      p_conversation: input.conversationId,
+      p_group: input.args.group_id,
+    });
+    return { ...data, class_details: details.error ? null : details.data };
+  }
+  return data;
 }
 
 export async function handleDemiGroupReceipt(input: {
@@ -177,7 +186,7 @@ export async function handleDemiGroupReceipt(input: {
         : data?.reason_code === "partial_payment_received"
           ? `Recibí comprobantes por ${new Intl.NumberFormat("es-MX", { style: "currency", currency: lookup.data.currency }).format(data.received_amount_minor / 100)}. Queda por cubrir ${new Intl.NumberFormat("es-MX", { style: "currency", currency: lookup.data.currency }).format(data.remaining_amount_minor / 100)}. Los comprobantes están pendientes de validación del equipo. Envíame el comprobante de la diferencia; todavía no confirmé reservas.`
           : data?.reason_code === "receipt_amount_mismatch"
-          ? "El comprobante no coincide con el total del grupo. No confirmé reservas. Revisa el importe y envíame el comprobante correcto."
-          : "No pude aceptar este comprobante para el grupo. No confirmé reservas. Envíame un archivo legible o solicita revisión del equipo.";
+            ? "El comprobante no coincide con el total del grupo. No confirmé reservas. Revisa el importe y envíame el comprobante correcto."
+            : "No pude aceptar este comprobante para el grupo. No confirmé reservas. Envíame un archivo legible o solicita revisión del equipo.";
   return { handled: true as const, reply, result: data };
 }
