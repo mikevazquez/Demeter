@@ -10,7 +10,7 @@ Validación candidata vigente: 1178/1178 pruebas automáticas en 179 archivos, t
 
 Modelo/OCR real: transferencia con clase pasada conservó el mismo comprobante y creó una única reserva provisional en otra sesión disponible, sin nuevo cobro ni handoff. Candidata integrada con producción: 1178 pruebas y tipos aprobados; build y smoke registrados en la revisión. No se publicó producción.
 
-Plantilla `demeter_demi_seguimiento_v1` enviada a Meta y detectada en estado PENDING; no se envió a alumnos. Los seguimientos dentro de las 24 horas desde un mensaje entrante usan texto específico; fuera de esa ventana requieren plantilla aprobada. La activación permanece pendiente de esa aprobación y del piloto del receptor WhatsApp.
+Plantilla `demeter_demi_seguimiento_v1` enviada a Meta y confirmada APPROVED por Meta; no se envió a alumnos. Los seguimientos dentro de las 24 horas desde un mensaje entrante usan texto específico; fuera de esa ventana requieren plantilla aprobada. La activación permanece pendiente de autorización y del piloto del receptor WhatsApp.
 
 Las secciones siguientes conservan antecedentes; sus fechas/contadores describen evidencia anterior. Esta sección y la tabla maestra son el estado vigente.
 
@@ -24,12 +24,12 @@ El usuario separó el núcleo Demi → Studio Flow de la habilitación de canale
 
 ## Resumen para promover a producción
 
-| Medida                              | Resultado      | Interpretación                                                                                                                         |
-| ----------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Casos maestros aprobados            | 16/18 (88.9 %) | M02, M03, M04, M05, M06, M07, M08, M09, M10, M11, M12, M13, M14, M15, M16 y M17.                                                       |
-| Casos maestros parciales/por cerrar | 2/18 (11.1 %)  | M01 y M18.                                                                                                                             |
-| Pruebas automáticas                 | 1178/1178      | Regresión técnica; no son casos UAT de negocio.                                                                                        |
-| Decisión de promoción               | No lista       | Pendientes: plantilla Meta y transporte del piloto WhatsApp; Facebook/Instagram diferidos. Esta rama no se ha publicado en producción. |
+| Medida                              | Resultado      | Interpretación                                                                                                                        |
+| ----------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Casos maestros aprobados            | 16/18 (88.9 %) | M02, M03, M04, M05, M06, M07, M08, M09, M10, M11, M12, M13, M14, M15, M16 y M17.                                                      |
+| Casos maestros parciales/por cerrar | 2/18 (11.1 %)  | M01 y M18.                                                                                                                            |
+| Pruebas automáticas                 | 1178/1178      | Regresión técnica; no son casos UAT de negocio.                                                                                       |
+| Decisión de promoción               | No lista       | Pendiente de autorización y transporte del piloto WhatsApp; Facebook/Instagram diferidos. Esta rama no se ha publicado en producción. |
 
 ### Política de pagos confirmada con el usuario
 

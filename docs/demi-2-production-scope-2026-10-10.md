@@ -27,4 +27,4 @@ El conteo íntegro vigente es **16/18 aprobados, 2 parciales**. M05 pasó con de
 
 Recomendación: preparar la promoción de Demi → Studio Flow, conservar Instagram deshabilitado y cerrar M05 antes de activar la automatización MP. Comprobar entrada/salida de la versión candidata en WhatsApp antes de habilitarlo para clientes. Facebook requiere renovar su token; esta dependencia pertenece al canal.
 
-Actualización de salida: la plantilla nueva de seguimiento está PENDING en Meta. Preparación de activación probada con ROLLBACK en Sandbox: producto nuevo $150/7 días, 21 claves de plantilla y seguimientos deshabilitados durante el piloto. No ejecutar configuración de producción antes de autorización.
+Actualización de salida: la plantilla nueva de seguimiento está APPROVED en Meta. Preparación de activación probada con ROLLBACK en Sandbox: producto nuevo $150/7 días, 21 claves de plantilla y seguimientos deshabilitados durante el piloto. No ejecutar configuración de producción antes de autorización.
