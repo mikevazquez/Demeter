@@ -21,13 +21,21 @@ function harness(
           ? [{ id: "job", lease_token: "lease", kind: "prospect", step: 1, attempt_count: 1 }]
           : name === "service_revalidate_demi_followup"
             ? { eligible: options.revalidate !== false, reason_code: "contact_replied" }
-            : name === "service_capture_demi_uat_delivery"
-              ? { failed: options.failDelivery === true, artifact_id: "capture" }
-              : name === "service_finish_demi_followup"
-                ? { ok: true, status: "accepted" }
-                : name === "service_get_meta_whatsapp_webhook_config"
-                  ? { access_token: "test", phone_number_id: "test", graph_api_version: "v23.0" }
-                  : 0;
+            : name === "service_get_demi_followup_message"
+              ? {
+                  ok: true,
+                  stage: "information",
+                  text: "Seguimiento UAT",
+                  template_key: "prospect_information_1",
+                  source_ref: "source",
+                }
+              : name === "service_capture_demi_uat_delivery"
+                ? { failed: options.failDelivery === true, artifact_id: "capture" }
+                : name === "service_finish_demi_followup"
+                  ? { ok: true, status: "accepted" }
+                  : name === "service_get_meta_whatsapp_webhook_config"
+                    ? { access_token: "test", phone_number_id: "test", graph_api_version: "v23.0" }
+                    : 0;
     return { data, error: null };
   });
   const chain = {

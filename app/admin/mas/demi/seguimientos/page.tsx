@@ -66,7 +66,12 @@ export default async function Followups({
         </p>
         <p>
           Para WhatsApp se requieren plantillas aprobadas en Meta. Configura cada mensaje por tipo y
-          paso, por ejemplo: {`{"prospect_1":{"name":"seguimiento_prospecto","language":"es_MX"}}`}.
+          paso. Para prospectos distingue información, comprobante y datos faltantes con las claves
+          prospect_information_1, prospect_awaiting_receipt_1 y prospect_awaiting_participants_1;
+          repite con _2 para el segundo seguimiento. Una plantilla genérica no sustituye los
+          recordatorios de comprobante o datos. Si la plantilla aprobada tiene una sola variable de
+          texto en el cuerpo, usa bind_message_body: true para incluir el mensaje de la etapa
+          actual.
         </p>
         <label>
           Plantillas de WhatsApp

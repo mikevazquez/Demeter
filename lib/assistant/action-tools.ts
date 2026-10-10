@@ -29,6 +29,7 @@ type AssistantActionToolContext = {
   studentId: string | null;
   crmContactId: string | null;
   identityNeedsName?: boolean;
+  channel?: string;
   activationUrl: string | null;
   serviceMode?: boolean;
   currentUserMessage: string;
@@ -781,6 +782,18 @@ async function confirmCashPackage(ctx: AssistantActionToolContext) {
 }
 
 async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBookingArgs) {
+  if (
+    ctx.serviceMode &&
+    !ctx.studentId &&
+    ["facebook_messenger", "instagram"].includes(ctx.channel ?? "")
+  ) {
+    const identity = await ctx.supabase.rpc("service_check_demi_minimal_identity", {
+      p_studio: ctx.studio.id,
+      p_conversation: ctx.conversationId,
+    });
+    if (identity.error || identity.data?.ok !== true)
+      return identity.error ? { ok: false, reason_code: "identity_lookup_failed" } : identity.data;
+  }
   const sessionId = parseOpaqueRef(args.session_ref, "session");
   if (!sessionId) {
     return { ok: false, error: "invalid_session_ref" };
@@ -3970,6 +3983,16 @@ export async function executeAssistantActionTool(
   args: Record<string, unknown>,
 ) {
   switch (toolName) {
+    case "identify_meta_contact": {
+      if (!ctx.serviceMode || !["facebook_messenger", "instagram"].includes(ctx.channel ?? ""))
+        return { ok: false, reason_code: "meta_conversation_required" };
+      const result = await ctx.supabase.rpc("service_identify_demi_meta_contact", {
+        p_studio: ctx.studio.id,
+        p_conversation: ctx.conversationId,
+        p_phone: args.phone,
+      });
+      return result.error ? { ok: false, reason_code: "identity_lookup_failed" } : result.data;
+    }
     case "update_contact_followup": {
       const result = await ctx.supabase.rpc("service_update_demi_followup_stage", {
         p_studio: ctx.studio.id,

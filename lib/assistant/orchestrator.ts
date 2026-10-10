@@ -510,6 +510,7 @@ async function tryServerSideTransferPackageChoice(input: OrchestratorInput, trac
         studentId: input.studentId,
         crmContactId: input.crmContactId,
         identityNeedsName: input.identityNeedsName === true,
+        channel: input.channel,
         activationUrl: input.activationUrl,
         serviceMode: input.serviceMode === true,
         currentUserMessage,
@@ -656,6 +657,7 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
         studentId: input.studentId,
         crmContactId: input.crmContactId,
         identityNeedsName: input.identityNeedsName === true,
+        channel: input.channel,
         activationUrl: input.activationUrl,
         serviceMode: input.serviceMode === true,
         currentUserMessage,
@@ -797,6 +799,7 @@ async function tryServerSidePostTrialEnrollmentMethod(
         studentId: input.studentId,
         crmContactId: input.crmContactId,
         identityNeedsName: input.identityNeedsName === true,
+        channel: input.channel,
         activationUrl: input.activationUrl,
         serviceMode: input.serviceMode === true,
         currentUserMessage,
@@ -1034,7 +1037,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
               ? "Studio Flow tiene un contacto CRM sin una ficha de alumna verificada. Trátalo como prospecto. El contacto ya debe conservar los datos disponibles del canal; no le preguntes su nombre durante la conversación informativa. Responde lo que pidió con la información oficial. Si su primera clase requiere pago previo, prepara primero el pago sin crear ficha de prueba; sólo después del comprobante bancario o payment_verified=true de Mercado Pago pide juntos nombre completo y celular faltantes. Si no requiere pago previo, confirma los datos faltantes cuando quiera reservar."
               : "Studio Flow no pudo confirmar si este teléfono corresponde a una ficha o prospecto. No lo adivines. Evita acciones dependientes de identidad y solicita únicamente el dato mínimo necesario o escala si no puede resolverse con seguridad.",
         ["facebook_messenger", "instagram"].includes(input.channel ?? "")
-          ? "El canal es Meta Inbox. No uses un teléfono escrito en el chat como prueba de identidad. Conserva el contacto verificado por su cuenta del canal; no vincules una ficha existente ni uses sus créditos sin verificación. Para primera clase, el comprobante bancario o payment_verified=true de Mercado Pago precede a los datos faltantes; usa el flujo de pago y grupo de Studio Flow."
+          ? "El canal es Meta Inbox. Si la cuenta no está vinculada a una alumna y quiere reservar, antes de ofrecer pago pide únicamente el celular de diez dígitos para identificarla y llama identify_meta_contact. Acepta el celular con +52 sin volver a pedir lada. Esto es búsqueda mínima, no datos completos de reserva. Si devuelve identity_verification_required, comunica el caso humano sólo si human_review_created=true y no reveles datos del registro encontrado. Si minimal_identification_completed=true puedes seguir como prospecto sin preguntar nombre antes del pago. No uses un teléfono escrito en el chat como prueba de identidad. Conserva el contacto verificado por su cuenta del canal; no vincules una ficha existente ni uses sus créditos sin verificación. Para primera clase, el comprobante bancario o payment_verified=true de Mercado Pago precede a los datos faltantes; usa el flujo de pago y grupo de Studio Flow."
           : "",
         input.identityNeedsName === true
           ? "El prospecto todavía no tiene un nombre confirmado para una reserva en Studio Flow. NO le preguntes su nombre mientras solo pide información. Conserva el nombre de perfil del canal como nombre provisional del contacto. Cuando quiera reservar, consulta primero el estado de pago del flujo oficial. Si requiere pago previo, no pidas el nombre antes del comprobante bancario o payment_verified=true de Mercado Pago; después pide juntos nombre completo y celular faltantes. Si no requiere pago previo, pide el nombre para preparar la reserva."
@@ -1373,6 +1376,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
                 studentId: input.studentId,
                 crmContactId: input.crmContactId,
                 identityNeedsName: input.identityNeedsName === true,
+                channel: input.channel,
                 activationUrl: input.activationUrl,
                 serviceMode: input.serviceMode === true,
                 currentUserMessage,

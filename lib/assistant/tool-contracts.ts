@@ -196,6 +196,19 @@ export type PrepareStudentAccessActivationArgs = EmptyArgs;
 export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
   {
     type: "function",
+    name: "identify_meta_contact",
+    strict: true,
+    description:
+      "Busca la identidad de una cuenta de Facebook/Instagram aún no vinculada usando sólo su celular. Antes de ofrecer pagos cuando quiera reservar, pide únicamente diez dígitos; acepta también +52 sin volver a pedir lada. No pide nombre completo ni datos de reserva. Un teléfono escrito no autentica una ficha existente: si requiere verificación, informa el caso humano real, sin divulgar nombres, paquetes ni saldos. Una búsqueda sin coincidencia permite seguir como prospecto; no crea alumna ni reserva.",
+    parameters: {
+      type: "object",
+      properties: { phone: { type: "string" } },
+      required: ["phone"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
     name: "prepare_student_access_activation",
     strict: true,
     description:

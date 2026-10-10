@@ -63,6 +63,13 @@ Deno.serve(async (request: Request) => {
           outcomes.push({ id: job.id, status: "cancelled", reason: check.data?.reason_code });
           continue;
         }
+        const message = await client.rpc("service_get_demi_followup_message", {
+          p_id: job.id,
+          p_token: job.lease_token,
+          p_now: now,
+        });
+        if (message.error || message.data?.ok !== true || !message.data.text)
+          throw new Error("followup_content_unavailable");
         if (capture) {
           const result = await client.rpc("service_capture_demi_uat_delivery", {
             p_studio: studio,
@@ -73,6 +80,10 @@ Deno.serve(async (request: Request) => {
               step: job.step,
               attempt: job.attempt_count,
               captured: true,
+              stage: message.data.stage,
+              text: message.data.text,
+              source_ref: message.data.source_ref,
+              template_key: message.data.template_key,
             },
           });
           if (result.error) throw new Error("followup_capture_failed");
@@ -104,7 +115,12 @@ Deno.serve(async (request: Request) => {
             .single();
           if (settings.error || thread.error || config.error || pilot.error || assistant.error)
             throw new Error("meta_context_unavailable");
-          const template = settings.data.templates?.[`${job.kind}_${job.step}`];
+          // Receipt/data reminders must never silently use a generic sales template.
+          const template =
+            settings.data.templates?.[message.data.template_key] ??
+            (message.data.stage === "information"
+              ? settings.data.templates?.[`${job.kind}_${job.step}`]
+              : null);
           const recipient = thread.data.external_thread_ref;
           if (thread.data.channel !== "whatsapp" || !/^[1-9][0-9]{7,14}$/.test(recipient ?? ""))
             throw new Error("verified_whatsapp_recipient_required");
@@ -131,7 +147,10 @@ Deno.serve(async (request: Request) => {
                 template: {
                   name: template.name,
                   language: { code: template.language ?? config.data.language_code ?? "es_MX" },
-                  components: template.components ?? [],
+                  components:
+                    template.bind_message_body === true
+                      ? [{ type: "body", parameters: [{ type: "text", text: message.data.text }] }]
+                      : (template.components ?? []),
                 },
               }),
               signal: AbortSignal.timeout(20000),

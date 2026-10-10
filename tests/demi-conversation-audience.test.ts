@@ -51,7 +51,7 @@ describe("Demi first visit audience", () => {
     const guidance = conversationGuidance({ crmContactId: "contact" });
     expect(guidance).toContain("no respondas pidiendo únicamente su nombre");
     expect(guidance).toContain("search_class_availability en ese mismo turno");
-    expect(guidance).toContain("No pidas nombre, celular ni datos de acompañantes antes de recibir el comprobante");
+    expect(guidance).toContain("No pidas nombre ni datos completos de acompañantes antes de recibir el comprobante");
     expect(guidance).toContain("Nunca conviertas 'gracias'");
     expect(guidance).toContain("en una orden de reserva");
   });
