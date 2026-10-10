@@ -185,7 +185,8 @@ export async function saveMetaInboxConnection(formData: FormData) {
       redirect("/admin/integraciones/meta-inbox?connection=error&code=instagram_profile_invalid");
     }
     if (studio.id === "9fe23cfa-fb47-4670-afeb-ed4a56433772" && resolvedUsername !== "demeter_fitness_studio") {
-      redirect("/admin/integraciones/meta-inbox?connection=error&code=instagram_wrong_account");
+      const safeUsername = /^[a-z0-9._]{1,30}$/.test(resolvedUsername) ? resolvedUsername : "unknown";
+      redirect(`/admin/integraciones/meta-inbox?connection=error&code=instagram_wrong_account&instagram_username=${encodeURIComponent(safeUsername)}`);
     }
     if (instagramUserId && instagramUserId !== resolvedId) {
       redirect("/admin/integraciones/meta-inbox?connection=error&code=instagram_id_mismatch");
