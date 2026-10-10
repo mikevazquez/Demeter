@@ -309,6 +309,13 @@ export async function sendDemiUatMessage(form: FormData) {
       verifyToken: "uat",
       pilotContactIds: { facebook_messenger: [], instagram: [] },
     };
+    const inboxAttachmentType = hasFile
+      ? file.type.startsWith("audio/")
+        ? "audio"
+        : file.type === "application/pdf"
+          ? "file"
+          : "image"
+      : null;
     const inboxAccountId =
       channel === "instagram" ? inboxConfig.instagramUserId : inboxConfig.pageId;
     const inboxBody = {
@@ -331,12 +338,7 @@ export async function sendDemiUatMessage(form: FormData) {
                           type:
                             attachmentScenario === "unsupported"
                               ? "location"
-                              : attachmentScenario ||
-                                (file.type.startsWith("audio/")
-                                  ? "audio"
-                                  : file.type === "application/pdf"
-                                    ? "file"
-                                    : "image"),
+                              : attachmentScenario || inboxAttachmentType,
                           payload: { url: attachmentUrl },
                         },
                       ],
