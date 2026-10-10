@@ -424,11 +424,21 @@ export async function diagnoseInstagramSavedToken() {
       const raw: unknown = await response.json().catch(() => null);
       const profile = raw && typeof raw === "object" && !Array.isArray(raw)
         ? raw as Record<string, unknown> : {};
-      result = response.ok
-        ? String(profile.id ?? profile.user_id ?? "") === accountId &&
-          String(profile.username ?? "").toLowerCase() === "demeter_fitness_studio"
-          ? "valid" : "wrong_account"
-        : response.status === 400 || response.status === 401 ? "rejected" : "unavailable";
+      if (!response.ok) {
+        result = response.status === 400 || response.status === 401 ? "rejected" : "unavailable";
+      } else {
+        // Keep identity resolution identical to saveMetaInboxConnection: Instagram
+        // may return both id and user_id, which are not necessarily interchangeable.
+        const resolvedId = String(profile.user_id ?? profile.id ?? "").trim();
+        const resolvedUsername = String(profile.username ?? "").trim().replace(/^@/, "").toLowerCase();
+        if (resolvedUsername !== "demeter_fitness_studio") {
+          result = "wrong_account";
+        } else if (resolvedId !== accountId) {
+          result = "id_mismatch";
+        } else {
+          result = "valid";
+        }
+      }
     }
   } catch {
     result = "unavailable";
