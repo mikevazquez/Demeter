@@ -190,8 +190,12 @@ export async function sendDemiUatMessage(form: FormData) {
   const id = String(form.get("runId") ?? "");
   await locked(id, async (ctx) => {
     const channel = String(form.get("channel") ?? "whatsapp");
-    if (!["whatsapp", "facebook_messenger"].includes(channel))
+    if (!["whatsapp", "facebook_messenger", "instagram"].includes(channel))
       throw new Error("demi_uat_channel_invalid");
+    const isInbox = channel !== "whatsapp";
+    const attachmentScenario = String(form.get("attachmentScenario") ?? "");
+    if (attachmentScenario && (!isInbox || !["video", "unsupported"].includes(attachmentScenario)))
+      throw new Error("demi_uat_attachment_scenario_invalid");
     const key = String(form.get("persona") ?? "");
     const person = ctx.run.fixtures.people[key];
     if (!person) throw new Error("demi_uat_persona_invalid");
@@ -201,6 +205,7 @@ export async function sendDemiUatMessage(form: FormData) {
     const media = new Map<string, MetaDownloadedMedia>();
     const mediaId = String(Date.now());
     const hasFile = file instanceof File && file.size > 0;
+    if (hasFile && attachmentScenario) throw new Error("demi_uat_attachment_scenario_with_file");
     if (hasFile) {
       if (
         file.size > 900 * 1024 ||
@@ -223,7 +228,7 @@ export async function sendDemiUatMessage(form: FormData) {
         fileSize: file.size,
       });
     }
-    if (!text && !hasFile) throw new Error("demi_uat_message_required");
+    if (!text && !hasFile && !attachmentScenario) throw new Error("demi_uat_message_required");
     const attachmentUrl = `https://cdn.fbcdn.net/uat/${mediaId}`;
     if (hasFile) media.set(attachmentUrl, media.get(mediaId)!);
     const previousId = String(form.get("repeatProviderId") ?? "");
@@ -231,18 +236,11 @@ export async function sendDemiUatMessage(form: FormData) {
       throw new Error("demi_uat_repeat_invalid");
     if (previousId) {
       const { data } = await ctx.service
-        .from(
-          channel === "facebook_messenger"
-            ? "assistant_meta_inbox_events"
-            : "assistant_whatsapp_events",
-        )
+        .from(isInbox ? "assistant_meta_inbox_events" : "assistant_whatsapp_events")
         .select("id")
         .eq("studio_id", ctx.run.studio_id)
         .eq("provider_event_id", previousId)
-        .eq(
-          channel === "facebook_messenger" ? "provider_contact_id" : "contact_wa_id",
-          person.wa_id,
-        )
+        .eq(isInbox ? "provider_contact_id" : "contact_wa_id", person.wa_id)
         .maybeSingle();
       if (!data) throw new Error("demi_uat_repeat_not_found");
     }
@@ -304,35 +302,41 @@ export async function sendDemiUatMessage(form: FormData) {
     const inboxConfig: MetaInboxWebhookConfig = {
       pageAccessToken: "uat-capture-only",
       pageId: "99900000001",
-      instagramAccessToken: "",
-      instagramUserId: "",
+      instagramAccessToken: "uat-capture-only",
+      instagramUserId: "99900000003",
       graphApiVersion: "v23.0",
       appSecret: config.appSecret,
       verifyToken: "uat",
       pilotContactIds: { facebook_messenger: [], instagram: [] },
     };
+    const inboxAccountId =
+      channel === "instagram" ? inboxConfig.instagramUserId : inboxConfig.pageId;
     const inboxBody = {
-      object: "page",
+      object: channel === "instagram" ? "instagram" : "page",
       entry: [
         {
-          id: inboxConfig.pageId,
+          id: inboxAccountId,
           messaging: [
             {
               sender: { id: person.wa_id },
-              recipient: { id: inboxConfig.pageId },
+              recipient: { id: inboxAccountId },
               timestamp: Date.now(),
               message: {
                 mid: providerId,
-                ...(hasFile
+                ...(hasFile || attachmentScenario
                   ? {
                       text,
                       attachments: [
                         {
-                          type: file.type.startsWith("audio/")
-                            ? "audio"
-                            : file.type === "application/pdf"
-                              ? "file"
-                              : "image",
+                          type:
+                            attachmentScenario === "unsupported"
+                              ? "location"
+                              : attachmentScenario ||
+                                (file.type.startsWith("audio/")
+                                  ? "audio"
+                                  : file.type === "application/pdf"
+                                    ? "file"
+                                    : "image"),
                           payload: { url: attachmentUrl },
                         },
                       ],
@@ -344,11 +348,12 @@ export async function sendDemiUatMessage(form: FormData) {
         },
       ],
     };
-    const body = JSON.stringify(channel === "facebook_messenger" ? inboxBody : whatsappBody);
+    const body = JSON.stringify(isInbox ? inboxBody : whatsappBody);
 
     await record(ctx, "before_message", {
       persona: key,
       channel,
+      attachment_scenario: attachmentScenario || null,
       provider_id: providerId,
       text,
       file: hasFile ? { name: file.name, size: file.size, type: file.type } : null,
@@ -361,12 +366,12 @@ export async function sendDemiUatMessage(form: FormData) {
         supabase: ctx.service,
         config,
         media,
-        ...(channel === "facebook_messenger" ? { metaInboxConfig: inboxConfig } : {}),
+        ...(isInbox ? { metaInboxConfig: inboxConfig } : {}),
       },
       () =>
-        (channel === "facebook_messenger" ? receiveMetaInbox : receiveWhatsApp)(
+        (isInbox ? receiveMetaInbox : receiveWhatsApp)(
           new Request(
-            `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"}/api/integrations/${channel === "facebook_messenger" ? "meta-inbox" : "meta-whatsapp"}/webhook?studio=${ctx.run.studio_id}`,
+            `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"}/api/integrations/${isInbox ? "meta-inbox" : "meta-whatsapp"}/webhook?studio=${ctx.run.studio_id}`,
             {
               method: "POST",
               headers: {
@@ -381,6 +386,7 @@ export async function sendDemiUatMessage(form: FormData) {
     await record(ctx, "after_message", {
       persona: key,
       channel,
+      attachment_scenario: attachmentScenario || null,
       provider_id: providerId,
       http_status: response.status,
       result: await response.json(),

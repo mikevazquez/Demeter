@@ -67,8 +67,8 @@ export default function Bank({
     }
   }
   const outbound =
-    data?.artifacts.filter(
-      (a) => a.kind === "whatsapp_reply" || a.kind === "notification_delivery",
+    data?.artifacts.filter((a) =>
+      ["whatsapp_reply", "facebook_reply", "notification_delivery"].includes(a.kind),
     ) ?? [];
   const inbound = data?.artifacts.filter((a) => a.kind === "after_message") ?? [];
   function exportEvidence() {
@@ -216,6 +216,15 @@ export default function Bank({
                 <select name="channel" defaultValue="whatsapp">
                   <option value="whatsapp">WhatsApp</option>
                   <option value="facebook_messenger">Facebook Messenger</option>
+                  <option value="instagram">Instagram</option>
+                </select>
+              </label>
+              <label>
+                Adjunto simulado de Meta (Facebook o Instagram)
+                <select name="attachmentScenario" defaultValue="">
+                  <option value="">Archivo cargado o mensaje escrito</option>
+                  <option value="video">Video no soportado</option>
+                  <option value="unsupported">Formato desconocido</option>
                 </select>
               </label>
               <p>
