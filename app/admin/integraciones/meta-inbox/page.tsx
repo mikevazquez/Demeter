@@ -8,6 +8,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import {
   diagnoseMetaInboxApp,
   manageInstagramWebhookSubscription,
+  saveInstagramSigningSecret,
   saveMetaInboxConnection,
   saveMetaInboxPilotContacts,
 } from "./actions";
@@ -379,6 +380,36 @@ export default async function MetaInboxIntegrationPage({
           </button>
         </form>
       </section>
+
+      {studio.id === "9fe23cfa-fb47-4670-afeb-ed4a56433772" &&
+        process.env.VERCEL_ENV === "preview" ? (
+        <section className="integration-detail-v2-card">
+          <div className="integration-detail-v2-card-heading">
+            <div>
+              <h2>Firma de seguridad de Instagram (Sandbox)</h2>
+              <p>La app Demeter-IG utiliza su propio App Secret para firmar eventos. Guárdalo aquí una sola vez; no alteres el secreto existente de Messenger.</p>
+            </div>
+          </div>
+          {queryValue(params.instagram_secret) ? (
+            <div className="integration-detail-v2-notice" role="status">
+              {({
+                saved: "Se guardó el App Secret de Instagram de forma segura. Repite la prueba de Meta.",
+                invalid: "El secreto no tiene una longitud válida.",
+                failed: "No se pudo guardar el secreto. Revisa los permisos.",
+                restricted: "Solo disponible en Sandbox.",
+              } as Record<string,string>)[queryValue(params.instagram_secret) ?? ""] ?? "Sin resultado."}
+            </div>
+          ) : null}
+          <form className="integration-detail-v2-form" action={saveInstagramSigningSecret}>
+            <label className="integration-detail-v2-field">
+              <span>App Secret de Demeter-IG (Instagram, no Messenger)</span>
+              <input name="instagram_app_secret" type="password" autoComplete="new-password" required minLength={16} maxLength={512} />
+              <small>Obténlo en Meta for Developers → Demeter-IG → Configuración → Básica → Clave secreta. No lo envíes por chat.</small>
+            </label>
+            <button className="integration-detail-v2-button" type="submit">Guardar secreto de Instagram</button>
+          </form>
+        </section>
+      ) : null}
 
       <section className="integration-detail-v2-card">
         <div className="integration-detail-v2-card-heading">
