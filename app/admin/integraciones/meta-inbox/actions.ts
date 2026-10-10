@@ -477,33 +477,50 @@ export async function diagnoseInstagramConversationsRead() {
         !/^v\d+\.\d+$/.test(version)) {
       result = "missing";
     } else {
-      const url = new URL(`https://graph.instagram.com/${version}/${accountId}/conversations`);
-      url.searchParams.set("limit", "10");
-      url.searchParams.set("fields", "id,updated_time");
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          authorization: `Bearer ${accessToken}`,
-          accept: "application/json",
-        },
-        cache: "no-store",
-        signal: AbortSignal.timeout(12000),
-      });
-      const responseData: unknown = await response.json().catch(() => null);
-      const body = responseData && typeof responseData === "object" &&
-        !Array.isArray(responseData) ? responseData as Record<string, unknown> : {};
-      if (response.ok && Array.isArray(body.data)) {
-        result = body.data.length > 0 ? "readable" : "empty";
-      } else if (!response.ok) {
-        const metaError = body.error && typeof body.error === "object" &&
+      // Compare the account-id and /me variants with an explicit Instagram
+      // platform, as documented by the Instagram Conversations API.
+      // Only the response status and whether data exists are retained.
+      async function probeConversations(path: string) {
+        const url = new URL(`https://graph.instagram.com/${version}/${path}/conversations`);
+        url.searchParams.set("platform", "instagram");
+        url.searchParams.set("limit", "10");
+        url.searchParams.set("fields", "id,updated_time");
+        const response = await fetch(url, {
+          method: "GET",
+          headers: { authorization: `Bearer ${accessToken}`, accept: "application/json" },
+          cache: "no-store",
+          signal: AbortSignal.timeout(12000),
+        });
+        const raw: unknown = await response.json().catch(() => null);
+        const body = raw && typeof raw === "object" && !Array.isArray(raw)
+          ? raw as Record<string, unknown> : {};
+        const errorObject = body.error && typeof body.error === "object" &&
           !Array.isArray(body.error) ? body.error as Record<string, unknown> : {};
-        const metaCode = Number(metaError.code);
-        result = metaCode === 190 || response.status === 401
-          ? "token_rejected"
-          : metaCode === 10 || metaCode === 200
-            ? "permission_denied" : "api_rejected";
+        return {
+          ok: response.ok && Array.isArray(body.data),
+          hasConversations: response.ok && Array.isArray(body.data) && body.data.length > 0,
+          status: response.status,
+          errorCode: Number(errorObject.code),
+        };
+      }
+      const results = await Promise.allSettled([
+        probeConversations(accountId),
+        probeConversations("me"),
+      ]);
+      const probes = results.map((item) =>
+        item.status === "fulfilled" ? item.value : null,
+      );
+      if (probes.some((probe) => probe?.hasConversations)) {
+        result = probes[0]?.hasConversations ? "readable" : "readable_via_me";
+      } else if (probes.some((probe) => probe?.ok)) {
+        result = "empty";
+      } else if (probes.some((probe) => probe?.errorCode === 190 || probe?.status === 401)) {
+        result = "token_rejected";
+      } else if (probes.some((probe) =>
+        probe?.errorCode === 10 || probe?.errorCode === 200)) {
+        result = "permission_denied";
       } else {
-        result = "invalid_response";
+        result = "api_rejected";
       }
     }
   } catch {
