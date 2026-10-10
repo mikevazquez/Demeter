@@ -16,14 +16,12 @@ afterEach(() => {
 });
 async function read(fields: Record<string, unknown>, mimeType = "image/png") {
   vi.stubEnv("OPENAI_API_KEY", "test-key");
-  const fetch = vi
-    .fn()
-    .mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        output: [{ content: [{ type: "output_text", text: JSON.stringify(fields) }] }],
-      }),
-    });
+  const fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      output: [{ content: [{ type: "output_text", text: JSON.stringify(fields) }] }],
+    }),
+  });
   vi.stubGlobal("fetch", fetch);
   const reading = await loaded.exports.readTransferReceipt({
     bytes: new Uint8Array([1, 2]),
