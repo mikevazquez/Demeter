@@ -23,7 +23,7 @@ M05 aprobado en negocio mediante reconciliación periódica autenticada. M01/M18
 
 Modelo/OCR real en run 22ceadbc-83cb-49d6-96be-38ce34640af3: clase pasada después del comprobante, alternativa lunes12/18:00, mismo grupo/comprobante, una ficha nueva y una reserva provisional; conserva revisión manual Bancomer, sin nuevo cobro ni handoff. Smoke de la candidata integrada dpl_HF7oNeVoK878718bNuHnsS24hmn7 pasó login, banco UAT, configuración y respuesta real del modelo HTTP200.
 
-Última corrección de transporte: los seguimientos dentro de 24 horas desde mensaje entrante envían el texto exacto; los mensajes salientes no amplían la ventana. Fuera de ella se exige plantilla aprobada. Cuatro controles nuevos (6h, frontera24h,48h,fecha futura) pasaron; 1178/1178 regresiones, tipos y build aprobados. Trabajador de seguimiento Sandbox v6 publicado. Nueva plantilla `demeter_demi_seguimiento_v1`, id1811619843369512, enviada a revisión y confirmada APPROVED por Meta; no se habilitó ni envió a clientes. La aprobación fue verificada por consulta autenticada, HTTP200. Falta activar configuración y probar transporte en el piloto autorizado.
+Última corrección de transporte: los seguimientos dentro de 24 horas desde mensaje entrante envían el texto exacto; los mensajes salientes no amplían la ventana. Fuera de ella se exige plantilla aprobada. Cuatro controles nuevos (6h, frontera24h,48h,fecha futura) pasaron; 1180/1180 regresiones, tipos y build aprobados. Trabajador de seguimiento Sandbox v6 publicado. Nueva plantilla `demeter_demi_seguimiento_v1`, id1811619843369512, enviada a revisión y confirmada APPROVED por Meta; no se habilitó ni envió a clientes. La aprobación fue verificada por consulta autenticada, HTTP200. Falta activar configuración y probar transporte en el piloto autorizado.
 
 ## Paquete y orden de promoción
 
@@ -40,3 +40,5 @@ Reversión: deshabilitar automatizaciones y Demi, volver al despliegue anterior 
 Activación preparada en `demi-2-production-activation-2026-10-10.sql`; ensayo con ROLLBACK en estudio sintético aprobó producto nuevo $150, política de prepago y 21 claves de plantilla. Seguimientos deshabilitados hasta aprobación Meta y piloto. No se aplicó a producción.
 
 Revisión final: plantilla Meta APPROVED, id1811619843369512, solicitud HTTP48313. Promoción preparada en PR262, no fusionada; autorizar primero piloto WhatsApp 3323291878 y mantener clientes fuera hasta entrada/salida/audio/comprobante correctos. Facebook/Instagram diferidos.
+
+Cierre de pago tardío: trabajador Sandbox demi-payment-worker v7 publicado. WhatsApp fuera de las 24 horas usa la plantilla aprobada y enlaza exactamente el texto de pago/alternativa/reserva; sin plantilla, no envía texto fuera de ventana. Facebook/Instagram conservan sus ventanas vigentes. Dos pruebas nuevas del trabajador aprobadas (11 en total).

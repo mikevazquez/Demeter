@@ -6,6 +6,8 @@ function harness(
     live?: boolean;
     eligible?: boolean;
     payment?: "missing_data" | "alternative" | "reserved";
+    inboundAgeMs?: number;
+    approvedTemplate?: boolean;
     send?: () => Promise<Response>;
   } = {},
 ) {
@@ -105,8 +107,20 @@ function harness(
               : table === "students"
                 ? { person_id: "person" }
                 : table === "assistant_turns"
-                  ? { created_at: new Date().toISOString() }
-                  : { whatsapp_blocked: false },
+                  ? { created_at: new Date(Date.now() - (options.inboundAgeMs ?? 0)).toISOString() }
+                  : table === "demi_followup_settings"
+                    ? {
+                        templates: options.approvedTemplate
+                          ? {
+                              prospect_awaiting_participants_1: {
+                                name: "approved_payment",
+                                language: "es_MX",
+                                bind_message_body: true,
+                              },
+                            }
+                          : {},
+                      }
+                    : { whatsapp_blocked: false },
           error: null,
         }),
         then: (resolve: (v: unknown) => unknown) =>
@@ -123,8 +137,8 @@ function harness(
       return chain;
     },
   };
-  const send = vi.fn(
-    options.send ?? (async () => Response.json({ messages: [{ id: "accepted" }] })),
+  const send = vi.fn((_url: string, _init: RequestInit) =>
+    (options.send ?? (async () => Response.json({ messages: [{ id: "accepted" }] })))(),
   );
   new Function(
     "require",
@@ -239,6 +253,29 @@ describe("receipt review notification worker", () => {
 });
 
 describe("approved payment booking notification", () => {
+  it("sends the verified late-payment result using an approved WhatsApp template outside 24 hours", async () => {
+    const h = harness({
+      live: true,
+      payment: "alternative",
+      inboundAgeMs: 48 * 3600000,
+      approvedTemplate: true,
+    });
+    expect((await h.request()).status).toBe(200);
+    expect(h.send).toHaveBeenCalledTimes(1);
+    const payload = JSON.parse(String(h.send.mock.calls[0][1].body));
+    expect(payload.type).toBe("template");
+    expect(payload.template.name).toBe("approved_payment");
+    expect(payload.template.components[0].parameters[0].text).toContain("sin volver a cobrarte");
+  });
+  it("preserves the approved payment without sending unapproved text outside the service window", async () => {
+    const h = harness({ live: true, payment: "alternative", inboundAgeMs: 48 * 3600000 });
+    expect((await h.request()).status).toBe(200);
+    expect(h.send).not.toHaveBeenCalled();
+    expect(h.rpc).toHaveBeenCalledWith(
+      "service_finish_demi_payment_notification",
+      expect.objectContaining({ p_accepted: false, p_error: "approved_payment_template_required" }),
+    );
+  });
   it("keeps missing personal data pending without claiming a reservation", async () => {
     const h = harness({ payment: "missing_data" });
     expect((await h.request()).status).toBe(200);

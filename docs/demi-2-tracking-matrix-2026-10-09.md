@@ -2,13 +2,13 @@
 
 **16/18 casos maestros aprobados (88.9 %); 2 parciales (11.1 %).** M02, M03, M04, M05, M06, M07, M08, M09, M10, M11, M12, M13, M14, M15, M16 y M17 pasaron sus criterios de negocio. Las capturas de Sandbox no acreditan transporte externo: éste permanece en M01/M18. Los pendientes de cada caso se indican abajo.
 
-Validación candidata vigente: 1178/1178 pruebas automáticas en 179 archivos, typecheck sin errores. Inscripción y avisos: 21 controles nativos con roles reales service_role/authenticated. Identidad, grupos, recuperación y contenido de seguimientos tienen evidencia separada. Las pruebas técnicas no se suman como casos maestros. El pago de prueba de $150 de Mercado Pago fue verificado contra el proveedor y aplicado; webhook externo y entrega real siguen pendientes.
+Validación candidata vigente: 1180/1180 pruebas automáticas en 179 archivos, typecheck sin errores. Inscripción y avisos: 21 controles nativos con roles reales service_role/authenticated. Identidad, grupos, recuperación y contenido de seguimientos tienen evidencia separada. Las pruebas técnicas no se suman como casos maestros. El pago de prueba de $150 de Mercado Pago fue verificado contra el proveedor y aplicado; webhook externo y entrega real siguen pendientes.
 
 ## Candidata integrada y flujo sin hold — cierre 10 octubre 2026
 
 [Revisión de promoción](demi-2-release-review-2026-10-10.md): cinco recorridos nativos aprobaron. El comprador completó el nuevo pago de prueba; a las 22:45 UTC el cron detectó la aprobación por consulta autenticada a Mercado Pago, continuó la reserva y capturó el aviso, sin aplicación manual. Una reserva, un pago, un aviso y un intento; crédito desde 11/10 hasta 18/10. **M05 aprobado en negocio con reconciliación automática periódica**; webhook firmado es una variante pendiente, no el mecanismo necesario para este recorrido. Transporte externo se sigue en M01/M18.
 
-Modelo/OCR real: transferencia con clase pasada conservó el mismo comprobante y creó una única reserva provisional en otra sesión disponible, sin nuevo cobro ni handoff. Candidata integrada con producción: 1178 pruebas y tipos aprobados; build y smoke registrados en la revisión. No se publicó producción.
+Modelo/OCR real: transferencia con clase pasada conservó el mismo comprobante y creó una única reserva provisional en otra sesión disponible, sin nuevo cobro ni handoff. Candidata integrada con producción: 1180 pruebas y tipos aprobados; build y smoke registrados en la revisión. No se publicó producción.
 
 Plantilla `demeter_demi_seguimiento_v1` enviada a Meta y confirmada APPROVED por Meta; no se envió a alumnos. Los seguimientos dentro de las 24 horas desde un mensaje entrante usan texto específico; fuera de esa ventana requieren plantilla aprobada. La activación permanece pendiente de autorización y del piloto del receptor WhatsApp.
 
@@ -28,7 +28,7 @@ El usuario separó el núcleo Demi → Studio Flow de la habilitación de canale
 | ----------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | Casos maestros aprobados            | 16/18 (88.9 %) | M02, M03, M04, M05, M06, M07, M08, M09, M10, M11, M12, M13, M14, M15, M16 y M17.                                                      |
 | Casos maestros parciales/por cerrar | 2/18 (11.1 %)  | M01 y M18.                                                                                                                            |
-| Pruebas automáticas                 | 1178/1178      | Regresión técnica; no son casos UAT de negocio.                                                                                       |
+| Pruebas automáticas                 | 1180/1180      | Regresión técnica; no son casos UAT de negocio.                                                                                       |
 | Decisión de promoción               | No lista       | Pendiente de autorización y transporte del piloto WhatsApp; Facebook/Instagram diferidos. Esta rama no se ha publicado en producción. |
 
 ### Política de pagos confirmada con el usuario

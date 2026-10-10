@@ -216,16 +216,15 @@ Deno.serve(async (request: Request) => {
             .select("created_at")
             .eq("studio_id", studio)
             .eq("conversation_id", payment.conversation_id)
+            .eq("direction", "inbound")
             .eq("role", "user")
             .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle();
-          if (
-            lastInbound.error ||
-            !lastInbound.data ||
-            Date.now() - Date.parse(lastInbound.data.created_at) >= 24 * 3600 * 1000
-          )
-            throw new Error("messaging_window_expired");
+          if (lastInbound.error) throw new Error("messaging_window_lookup_failed");
+          const inboundAge = Date.now() - Date.parse(lastInbound.data?.created_at ?? "");
+          const serviceWindowOpen =
+            Number.isFinite(inboundAge) && inboundAge >= 0 && inboundAge < 24 * 3600 * 1000;
           const mode = await client
             .from("assistant_configs")
             .select("mode")
@@ -264,7 +263,28 @@ Deno.serve(async (request: Request) => {
               type: "text",
               text: { body: text },
             };
+            if (!serviceWindowOpen) {
+              const settings = await client
+                .from("demi_followup_settings")
+                .select("templates")
+                .eq("studio_id", studio)
+                .maybeSingle();
+              const template = settings.data?.templates?.prospect_awaiting_participants_1;
+              if (settings.error || !template?.name || template.bind_message_body !== true)
+                throw new Error("approved_payment_template_required");
+              payload = {
+                messaging_product: "whatsapp",
+                to: recipient,
+                type: "template",
+                template: {
+                  name: template.name,
+                  language: { code: template.language ?? "es_MX" },
+                  components: [{ type: "body", parameters: [{ type: "text", text }] }],
+                },
+              };
+            }
           } else if (["facebook_messenger", "instagram"].includes(thread.data.channel)) {
+            if (!serviceWindowOpen) throw new Error("messaging_window_expired");
             const config = await client.rpc("service_get_meta_inbox_webhook_config", {
               target_studio_id: studio,
             });
