@@ -84,5 +84,11 @@
     "demi-followup-worker",
     "mercadopago-webhook"
   ],
-  "activation": "Only after approval: deploy dependencies, keep channels disabled, validate project/studio mappings and credentials, then enable WhatsApp scope. Facebook/Instagram deferred."
+  "activation": "Only after approval: deploy dependencies, keep channels disabled, validate project/studio mappings and credentials, then enable WhatsApp scope. Facebook/Instagram deferred.",
+  "activation_script": "docs/demi-2-production-activation-2026-10-10.sql",
+  "activation_gates": [
+    "explicit_user_production_authorization",
+    "Meta followup template APPROVED",
+    "native WhatsApp pilot entry/output/audio/receipt smoke before customer activation"
+  ]
 }

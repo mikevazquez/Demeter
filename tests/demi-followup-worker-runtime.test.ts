@@ -9,6 +9,9 @@ function harness(
     failDelivery?: boolean;
     revalidate?: boolean;
     realTransport?: boolean;
+    inboundAgeMs?: number;
+    missingTemplate?: boolean;
+    stage?: string;
     send?: () => Promise<Response>;
   } = {},
 ) {
@@ -24,7 +27,7 @@ function harness(
             : name === "service_get_demi_followup_message"
               ? {
                   ok: true,
-                  stage: "information",
+                  stage: options.stage ?? "information",
                   text: "Seguimiento UAT",
                   template_key: "prospect_information_1",
                   source_ref: "source",
@@ -42,9 +45,10 @@ function harness(
     select: () => chain,
     eq: () => chain,
     limit: () => chain,
+    order: () => chain,
     single: async () => ({
       data: {
-        templates: { prospect_1: { name: "approved" } },
+        templates: options.missingTemplate ? {} : { prospect_1: { name: "approved" } },
         channel: "whatsapp",
         external_thread_ref: "523323291878",
         mode: "active",
@@ -52,14 +56,36 @@ function harness(
       error: null,
     }),
     maybeSingle: async () => ({
-      data: options.realTransport ? null : { id: "run" },
+      data: options.realTransport
+        ? options.inboundAgeMs === undefined
+          ? null
+          : { created_at: new Date(Date.now() - options.inboundAgeMs).toISOString() }
+        : { id: "run" },
       error: options.scopeError ? { message: "failure" } : null,
     }),
   };
-  const client = { rpc, from: () => chain };
+  const client = {
+    rpc,
+    from: (table: string) =>
+      table === "demi_uat_runs"
+        ? {
+            ...chain,
+            select: () => ({
+              eq: () => ({
+                limit: () => ({
+                  maybeSingle: async () => ({
+                    data: options.realTransport ? null : { id: "run" },
+                    error: options.scopeError ? { message: "failure" } : null,
+                  }),
+                }),
+              }),
+            }),
+          }
+        : chain,
+  };
   const source = readFileSync("supabase/functions/demi-followup-worker/index.ts", "utf8");
-  const send = vi.fn(
-    options.send ?? (() => Promise.resolve(Response.json({ messages: [{ id: "sent" }] }))),
+  const send = vi.fn((_url: string, _init: RequestInit) =>
+    (options.send ?? (() => Promise.resolve(Response.json({ messages: [{ id: "sent" }] }))))(),
   );
   new Function(
     "require",
@@ -98,6 +124,32 @@ function harness(
   return { rpc, request, send };
 }
 describe("Demi followup worker", () => {
+  it("sends the exact payment reminder inside the inbound service window without a sales template", async () => {
+    const h = harness({
+      realTransport: true,
+      inboundAgeMs: 6 * 3600000,
+      missingTemplate: true,
+      stage: "awaiting_receipt",
+    });
+    expect((await h.request()).status).toBe(200);
+    expect(h.send).toHaveBeenCalledTimes(1);
+    const payload = JSON.parse(String(h.send.mock.calls[0][1].body));
+    expect(payload.type).toBe("text");
+    expect(payload.text.body).toBe("Seguimiento UAT");
+    expect(payload.template).toBeUndefined();
+  });
+  it.each([86400000, 48 * 3600000, -3600000])(
+    "requires an approved template when inbound age is %s",
+    async (inboundAgeMs) => {
+      const h = harness({ realTransport: true, inboundAgeMs, missingTemplate: true });
+      expect((await h.request()).status).toBe(200);
+      expect(h.send).not.toHaveBeenCalled();
+      expect(h.rpc).toHaveBeenCalledWith(
+        "service_finish_demi_followup",
+        expect.objectContaining({ p_accepted: false, p_error: "approved_template_required" }),
+      );
+    },
+  );
   it.each([
     [
       "network interruption",

@@ -105,6 +105,16 @@ Deno.serve(async (request: Request) => {
           const config = await client.rpc("service_get_meta_whatsapp_webhook_config", {
             target_studio_id: studio,
           });
+          const inbound = await client
+            .from("assistant_turns")
+            .select("created_at")
+            .eq("studio_id", studio)
+            .eq("conversation_id", job.conversation_id)
+            .eq("direction", "inbound")
+            .eq("role", "user")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
           const pilot = await client.rpc("service_get_meta_whatsapp_pilot_wa_ids", {
             target_studio_id: studio,
           });
@@ -113,8 +123,20 @@ Deno.serve(async (request: Request) => {
             .select("mode")
             .eq("studio_id", studio)
             .single();
-          if (settings.error || thread.error || config.error || pilot.error || assistant.error)
+          if (
+            settings.error ||
+            thread.error ||
+            config.error ||
+            pilot.error ||
+            assistant.error ||
+            inbound.error
+          )
             throw new Error("meta_context_unavailable");
+          // Only an inbound user message opens the 24-hour customer-service window.
+          // Outbound reminders must not extend that window.
+          const inboundAge = Date.now() - Date.parse(inbound.data?.created_at ?? "");
+          const serviceWindowOpen =
+            Number.isFinite(inboundAge) && inboundAge >= 0 && inboundAge < 86400000;
           // Receipt/data reminders must never silently use a generic sales template.
           const template =
             settings.data.templates?.[message.data.template_key] ??
@@ -129,8 +151,9 @@ Deno.serve(async (request: Request) => {
             !(assistant.data.mode === "pilot" && (pilot.data ?? []).includes(recipient))
           )
             throw new Error("assistant_channel_not_active");
-          if (!template?.name || !config.data?.access_token || !config.data?.phone_number_id)
-            throw new Error("approved_template_required");
+          if (!config.data?.access_token || !config.data?.phone_number_id)
+            throw new Error("meta_context_unavailable");
+          if (!serviceWindowOpen && !template?.name) throw new Error("approved_template_required");
           sendStarted = true;
           const result = await fetch(
             `https://graph.facebook.com/${config.data.graph_api_version}/${config.data.phone_number_id}/messages`,
@@ -143,15 +166,29 @@ Deno.serve(async (request: Request) => {
               body: JSON.stringify({
                 messaging_product: "whatsapp",
                 to: recipient,
-                type: "template",
-                template: {
-                  name: template.name,
-                  language: { code: template.language ?? config.data.language_code ?? "es_MX" },
-                  components:
-                    template.bind_message_body === true
-                      ? [{ type: "body", parameters: [{ type: "text", text: message.data.text }] }]
-                      : (template.components ?? []),
-                },
+                ...(serviceWindowOpen
+                  ? {
+                      type: "text",
+                      text: { body: message.data.text },
+                    }
+                  : {
+                      type: "template",
+                      template: {
+                        name: template.name,
+                        language: {
+                          code: template.language ?? config.data.language_code ?? "es_MX",
+                        },
+                        components:
+                          template.bind_message_body === true
+                            ? [
+                                {
+                                  type: "body",
+                                  parameters: [{ type: "text", text: message.data.text }],
+                                },
+                              ]
+                            : (template.components ?? []),
+                      },
+                    }),
               }),
               signal: AbortSignal.timeout(20000),
             },
