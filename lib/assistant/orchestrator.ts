@@ -1481,7 +1481,12 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       };
     }
 
-    if (toolName === "prepare_first_class_payment" && resultObject?.ok === true) {
+    if (
+      ["prepare_first_class_payment", "prepare_booking"].includes(toolName) &&
+      resultObject?.ok === true &&
+      (toolName === "prepare_first_class_payment" ||
+        resultObject.previous_payment_reusable === false)
+    ) {
       const instructions = firstClassPaymentInstructions(
         resultObject,
         [...input.history].reverse().find((message) => message.role === "user")?.content ?? "",

@@ -903,6 +903,13 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
       const reasonCode = String(previewObject?.reason_code ?? "booking_not_eligible");
 
       if (reasonCode === "trial_credit_payment_required" && studentId && ctx.serviceMode) {
+        await ctx.supabase
+          .from("assistant_pending_actions")
+          .update({ status: "cancelled", updated_at: new Date().toISOString() })
+          .eq("studio_id", ctx.studio.id)
+          .eq("conversation_id", ctx.conversationId)
+          .eq("action_type", "booking.create")
+          .eq("status", "pending");
         const prepared = await ctx.supabase.rpc("service_prepare_trial_transfer", {
           target_studio_id: ctx.studio.id,
           target_conversation_id: ctx.conversationId,
@@ -1293,7 +1300,19 @@ async function prepareFirstClassPayment(
     )
   )
     return { ok: false, reason_code: "use_prepare_group_booking_for_other_person" };
-  if (!ctx.serviceMode || ctx.studentId || !ctx.crmContactId)
+  if (ctx.serviceMode && ctx.studentId) {
+    // A returning trial retains its verified identity; it is never a new prospect.
+    const student = await ctx.supabase
+      .from("students")
+      .select("student_type")
+      .eq("studio_id", ctx.studio.id)
+      .eq("id", ctx.studentId)
+      .maybeSingle();
+    if (student.error || student.data?.student_type !== "trial")
+      return { ok: false, reason_code: "trial_identity_required" };
+    return prepareBooking(ctx, { session_ref: String(args.session_ref ?? "") });
+  }
+  if (!ctx.serviceMode || !ctx.crmContactId)
     return { ok: false, reason_code: "verified_prospect_required" };
   const sessionId = parseOpaqueRef(args.session_ref, "session");
   const resourceId = args.resource_ref ? parseOpaqueRef(args.resource_ref, "resource") : null;
