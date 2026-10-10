@@ -3,10 +3,7 @@
   "status": "passed",
   "model_version": "61e7605",
   "native_controls": 20,
-  "native_roles": [
-    "service_role",
-    "authenticated"
-  ],
+  "native_roles": ["service_role", "authenticated"],
   "renewal_run": "2738cb12-0f2d-4837-bf0f-310a57efbc1b",
   "exhausted_run": "cf7c4ee9-f7a4-4cf6-8b05-16c9def0aa60",
   "before": {

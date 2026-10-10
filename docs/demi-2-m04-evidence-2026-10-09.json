@@ -5,10 +5,7 @@
   "worker_version": 5,
   "scope": "Sandbox; actual model and worker; captured transport. External transport remains M01.",
   "information_run": "06cc70c2-b1c5-46f9-9428-d74d22e25307",
-  "information_steps": [
-    24,
-    48
-  ],
+  "information_steps": [24, 48],
   "information_captures": 2,
   "after_second_crm_stage": "not_booked",
   "repeat_third_captures": 0,

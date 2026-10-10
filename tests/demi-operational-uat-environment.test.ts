@@ -30,12 +30,10 @@ function scope(failed = false) {
     config,
     media: new Map(),
     supabase: {
-      rpc: vi
-        .fn()
-        .mockResolvedValue({
-          data: { artifact_id: "artifact", failed, captured: true },
-          error: null,
-        }),
+      rpc: vi.fn().mockResolvedValue({
+        data: { artifact_id: "artifact", failed, captured: true },
+        error: null,
+      }),
     } as unknown as SupabaseClient,
   };
 }

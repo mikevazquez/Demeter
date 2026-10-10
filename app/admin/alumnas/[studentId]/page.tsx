@@ -467,18 +467,29 @@ export default async function StudentProfilePage({
     : { data: [] };
   const transferPurchaseRows = transferPurchases ?? [];
   const groupReceiptReviews = await getTransferGroupReceiptReviews(
-    supabase, studio.id, canReadSales ? transferPurchaseRows.map((p) => p.id) : [],
+    supabase,
+    studio.id,
+    canReadSales ? transferPurchaseRows.map((p) => p.id) : [],
   );
   const groupReceiptUrlMap = new Map<string, string>();
   if (canReadSales && groupReceiptReviews.available) {
-    const paths = [...new Set([...groupReceiptReviews.byIntent.values()].flatMap((g) => g.documents.map((d) => d.path)))];
+    const paths = [
+      ...new Set(
+        [...groupReceiptReviews.byIntent.values()].flatMap((g) => g.documents.map((d) => d.path)),
+      ),
+    ];
     if (paths.length) {
       const service = createServiceClient();
-      const signed = await Promise.all(paths.map(async (path) => {
-        const { data, error } = await service.storage.from("transfer-receipts").createSignedUrl(path, 600);
-        return { path, url: error ? null : data?.signedUrl };
-      }));
-      for (const document of signed) if (document.url) groupReceiptUrlMap.set(document.path, document.url);
+      const signed = await Promise.all(
+        paths.map(async (path) => {
+          const { data, error } = await service.storage
+            .from("transfer-receipts")
+            .createSignedUrl(path, 600);
+          return { path, url: error ? null : data?.signedUrl };
+        }),
+      );
+      for (const document of signed)
+        if (document.url) groupReceiptUrlMap.set(document.path, document.url);
     }
   }
   const transferReceiptUrlMap = new Map<string, string>();
@@ -1494,22 +1505,50 @@ export default async function StudentProfilePage({
                             ) : null}
                             {!groupReceiptReviews.available ? (
                               <p className="mt-3 text-xs text-amber-300">
-                                No se pudo cargar toda la evidencia. Vuelve a intentarlo antes de validar.
+                                No se pudo cargar toda la evidencia. Vuelve a intentarlo antes de
+                                validar.
                               </p>
                             ) : groupReview ? (
                               <div className="mt-3 rounded-2xl border border-white/10 p-3">
                                 <p className="text-xs text-zinc-300">
-                                  Comprobantes del grupo · Total: {new Intl.NumberFormat(locale, { style: "currency", currency: groupReview.currency }).format(groupReview.amountMinor / 100)}.
-                                  {" "}Esta compra tiene asignados {amount}. Revisa todos los documentos.
+                                  Comprobantes del grupo · Total:{" "}
+                                  {new Intl.NumberFormat(locale, {
+                                    style: "currency",
+                                    currency: groupReview.currency,
+                                  }).format(groupReview.amountMinor / 100)}
+                                  . Esta compra tiene asignados {amount}. Revisa todos los
+                                  documentos.
                                 </p>
                                 <ul className="mt-2 grid gap-2">
                                   {groupReview.documents.map((document, index) => (
                                     <li key={document.id} className="text-xs text-zinc-400">
-                                      Documento {index + 1}: {document.amountMinor == null ? "Importe ilegible" : new Intl.NumberFormat(locale, { style: "currency", currency: groupReview.currency }).format(document.amountMinor / 100)}
-                                      {" · "}{document.status === "received" ? "Recibido" : document.status === "unreadable" ? "Ilegible" : "Importe o moneda no coincide"}
+                                      Documento {index + 1}:{" "}
+                                      {document.amountMinor == null
+                                        ? "Importe ilegible"
+                                        : new Intl.NumberFormat(locale, {
+                                            style: "currency",
+                                            currency: groupReview.currency,
+                                          }).format(document.amountMinor / 100)}
+                                      {" · "}
+                                      {document.status === "received"
+                                        ? "Recibido"
+                                        : document.status === "unreadable"
+                                          ? "Ilegible"
+                                          : "Importe o moneda no coincide"}
                                       {groupReceiptUrlMap.get(document.path) ? (
-                                        <a href={groupReceiptUrlMap.get(document.path)} target="_blank" rel="noreferrer" className="ml-2 font-semibold text-fuchsia-300">Abrir comprobante</a>
-                                      ) : <span className="ml-2 text-amber-300">Archivo no disponible</span>}
+                                        <a
+                                          href={groupReceiptUrlMap.get(document.path)}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="ml-2 font-semibold text-fuchsia-300"
+                                        >
+                                          Abrir comprobante
+                                        </a>
+                                      ) : (
+                                        <span className="ml-2 text-amber-300">
+                                          Archivo no disponible
+                                        </span>
+                                      )}
                                     </li>
                                   ))}
                                 </ul>
@@ -1557,7 +1596,12 @@ export default async function StudentProfilePage({
                           </span>
                         </div>
 
-                        {item.status === "provisional_active" && canManageSales && groupReceiptReviews.available && (!groupReview || (groupReview.documents.length > 0 && groupReview.documents.every((d) => groupReceiptUrlMap.has(d.path)))) ? (
+                        {item.status === "provisional_active" &&
+                        canManageSales &&
+                        groupReceiptReviews.available &&
+                        (!groupReview ||
+                          (groupReview.documents.length > 0 &&
+                            groupReview.documents.every((d) => groupReceiptUrlMap.has(d.path)))) ? (
                           <form
                             action={reviewStudentTransferPurchaseAction}
                             className="mt-4 flex flex-wrap gap-2"

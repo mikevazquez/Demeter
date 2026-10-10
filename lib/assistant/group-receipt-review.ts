@@ -25,8 +25,18 @@ export async function getTransferGroupReceiptReviews(
   const groupIds = [...new Set((participants.data ?? []).map((p) => String(p.group_id)))];
   if (!groupIds.length) return { available: true, byIntent };
   const [groups, receipts] = await Promise.all([
-    supabase.from("demi_group_bookings").select("id,amount_minor,currency").eq("studio_id", studioId).in("id", groupIds),
-    supabase.from("demi_group_receipts").select("id,group_id,storage_path,amount_minor,status").eq("studio_id", studioId).in("group_id", groupIds).order("created_at").limit(201),
+    supabase
+      .from("demi_group_bookings")
+      .select("id,amount_minor,currency")
+      .eq("studio_id", studioId)
+      .in("id", groupIds),
+    supabase
+      .from("demi_group_receipts")
+      .select("id,group_id,storage_path,amount_minor,status")
+      .eq("studio_id", studioId)
+      .in("group_id", groupIds)
+      .order("created_at")
+      .limit(201),
   ]);
   if (groups.error || receipts.error || (receipts.data?.length ?? 0) > 200)
     return { available: false, byIntent };
@@ -38,12 +48,14 @@ export async function getTransferGroupReceiptReviews(
       groupId: group.id,
       amountMinor: group.amount_minor,
       currency: group.currency,
-      documents: (receipts.data ?? []).filter((r) => r.group_id === group.id).map((r) => ({
-        id: r.id,
-        path: r.storage_path,
-        amountMinor: r.amount_minor,
-        status: r.status,
-      })),
+      documents: (receipts.data ?? [])
+        .filter((r) => r.group_id === group.id)
+        .map((r) => ({
+          id: r.id,
+          path: r.storage_path,
+          amountMinor: r.amount_minor,
+          status: r.status,
+        })),
     });
   }
   return { available: true, byIntent };

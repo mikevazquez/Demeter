@@ -62,13 +62,15 @@ export default async function MetaInboxIntegrationPage({
   // The sandbox Meta webhook must use its public, stable hostname.
   // Deployment preview URLs may require Vercel authentication, which Meta cannot complete.
   const sandboxWebhookHost =
-    studio.id === "9fe23cfa-fb47-4670-afeb-ed4a56433772" &&
-    process.env.VERCEL_ENV === "preview"
+    studio.id === "9fe23cfa-fb47-4670-afeb-ed4a56433772" && process.env.VERCEL_ENV === "preview"
       ? "https://meta-sandbox.demeterfitness.com"
       : null;
   const callbackBaseUrl = sandboxWebhookHost || (host ? `${protocol}://${host}` : "");
   const callbackUrl = callbackBaseUrl
-    ? new URL(`/api/integrations/meta-inbox/webhook?studio=${studio.id}`, callbackBaseUrl).toString()
+    ? new URL(
+        `/api/integrations/meta-inbox/webhook?studio=${studio.id}`,
+        callbackBaseUrl,
+      ).toString()
     : "";
 
   const connectionResult = queryValue(params.connection);
@@ -109,7 +111,10 @@ export default async function MetaInboxIntegrationPage({
           guardado de forma segura; listo para probar Messenger.
         </div>
       ) : connectionResult === "saved" ? (
-        <div className="integration-detail-v2-notice" role="status">Conexión guardada de forma segura. {instagramUserId ? "Instagram Direct configurado." : "Instagram Direct sigue pendiente."}</div>
+        <div className="integration-detail-v2-notice" role="status">
+          Conexión guardada de forma segura.{" "}
+          {instagramUserId ? "Instagram Direct configurado." : "Instagram Direct sigue pendiente."}
+        </div>
       ) : connectionResult === "error" ? (
         <div className="integration-detail-v2-notice is-error">
           {resultCode === "page_token_wrong_app" ? (
@@ -167,9 +172,29 @@ export default async function MetaInboxIntegrationPage({
               intentarlo cuando Meta esté disponible.
             </>
           ) : resultCode === "instagram_wrong_account" ? (
-            <>Meta identificó el token como perteneciente a @{queryValue(params.instagram_username) || "una cuenta diferente"}, no a @demeter_fitness_studio. No se modificó la conexión. Comprueba qué cuenta seleccionaste al generar el token.</>
+            <>
+              Meta identificó el token como perteneciente a @
+              {queryValue(params.instagram_username) || "una cuenta diferente"}, no a
+              @demeter_fitness_studio. No se modificó la conexión. Comprueba qué cuenta
+              seleccionaste al generar el token.
+            </>
           ) : resultCode?.startsWith("instagram_") ? (
-            <>No se pudo validar Instagram: {({ instagram_token_format: "pega solo el token, sin prefijos ni espacios", instagram_token_rejected: "Meta rechazó el token; verifica que siga vigente", instagram_profile_unavailable: "no fue posible consultar el perfil en Meta", instagram_profile_invalid: "Meta no devolvió un identificador válido", instagram_wrong_account: "el token no corresponde a @demeter_fitness_studio", instagram_id_mismatch: "el identificador escrito no coincide con la cuenta autorizada", instagram_token_required: "se necesita el token para verificar el identificador" } as Record<string, string>)[resultCode] ?? resultCode}. No se modificó la conexión.</>
+            <>
+              No se pudo validar Instagram:{" "}
+              {(
+                {
+                  instagram_token_format: "pega solo el token, sin prefijos ni espacios",
+                  instagram_token_rejected: "Meta rechazó el token; verifica que siga vigente",
+                  instagram_profile_unavailable: "no fue posible consultar el perfil en Meta",
+                  instagram_profile_invalid: "Meta no devolvió un identificador válido",
+                  instagram_wrong_account: "el token no corresponde a @demeter_fitness_studio",
+                  instagram_id_mismatch:
+                    "el identificador escrito no coincide con la cuenta autorizada",
+                  instagram_token_required: "se necesita el token para verificar el identificador",
+                } as Record<string, string>
+              )[resultCode] ?? resultCode}
+              . No se modificó la conexión.
+            </>
           ) : resultCode === "page_credentials_pair_required" ? (
             <>
               Para reemplazar el token de Messenger, introduce tanto Facebook Page Access Token como
@@ -384,56 +409,76 @@ export default async function MetaInboxIntegrationPage({
       </section>
 
       {studio.id === "9fe23cfa-fb47-4670-afeb-ed4a56433772" &&
-        process.env.VERCEL_ENV === "preview" ? (
+      process.env.VERCEL_ENV === "preview" ? (
         <section className="integration-detail-v2-card">
           <div className="integration-detail-v2-card-heading">
             <div>
               <h2>Diagnóstico del token de Instagram · Sandbox</h2>
-              <p>Comprueba directamente con Meta que el token guardado siga vigente y pertenezca a @demeter_fitness_studio, sin mostrarlo ni reemplazarlo.</p>
+              <p>
+                Comprueba directamente con Meta que el token guardado siga vigente y pertenezca a
+                @demeter_fitness_studio, sin mostrarlo ni reemplazarlo.
+              </p>
             </div>
           </div>
           {queryValue(params.instagram_token_check) ? (
             <div className="integration-detail-v2-notice" role="status">
-              {({
-                valid: "Meta confirma que el token es válido y pertenece a @demeter_fitness_studio.",
-                wrong_account: "Meta respondió con una cuenta de Instagram diferente a @demeter_fitness_studio.",
-                id_mismatch: "La cuenta de Instagram es correcta, pero su ID no coincide con el guardado. Requiere reconciliar la conexión sin cambiar Messenger.",
-                rejected: "Meta rechazó el token guardado; revisa si expiró o fue revocado.",
-                missing: "Faltan credenciales de Instagram para verificar.",
-                unavailable: "No fue posible completar la comprobación. Reintenta.",
-                restricted: "Disponible solamente en Sandbox.",
-              } as Record<string,string>)[queryValue(params.instagram_token_check) ?? ""] ?? "Resultado desconocido."}
+              {(
+                {
+                  valid:
+                    "Meta confirma que el token es válido y pertenece a @demeter_fitness_studio.",
+                  wrong_account:
+                    "Meta respondió con una cuenta de Instagram diferente a @demeter_fitness_studio.",
+                  id_mismatch:
+                    "La cuenta de Instagram es correcta, pero su ID no coincide con el guardado. Requiere reconciliar la conexión sin cambiar Messenger.",
+                  rejected: "Meta rechazó el token guardado; revisa si expiró o fue revocado.",
+                  missing: "Faltan credenciales de Instagram para verificar.",
+                  unavailable: "No fue posible completar la comprobación. Reintenta.",
+                  restricted: "Disponible solamente en Sandbox.",
+                } as Record<string, string>
+              )[queryValue(params.instagram_token_check) ?? ""] ?? "Resultado desconocido."}
             </div>
           ) : null}
           <form action={diagnoseInstagramSavedToken}>
-            <button className="integration-detail-v2-button" type="submit">Verificar token guardado con Meta</button>
+            <button className="integration-detail-v2-button" type="submit">
+              Verificar token guardado con Meta
+            </button>
           </form>
         </section>
       ) : null}
 
       {studio.id === "9fe23cfa-fb47-4670-afeb-ed4a56433772" &&
-        process.env.VERCEL_ENV === "preview" ? (
+      process.env.VERCEL_ENV === "preview" ? (
         <section className="integration-detail-v2-card">
           <div className="integration-detail-v2-card-heading">
             <div>
               <h2>Diagnóstico de mensajería de Instagram · Sandbox</h2>
-              <p>Consulta únicamente si la API puede leer la lista de conversaciones. No envía mensajes, no cambia permisos y no muestra conversaciones ni datos personales.</p>
+              <p>
+                Consulta únicamente si la API puede leer la lista de conversaciones. No envía
+                mensajes, no cambia permisos y no muestra conversaciones ni datos personales.
+              </p>
             </div>
           </div>
           {queryValue(params.instagram_inbox_check) ? (
             <div className="integration-detail-v2-notice" role="status">
-              {({
-                readable: "La API devuelve conversaciones usando el identificador de la cuenta. El siguiente diagnóstico será la entrega de webhooks.",
-                readable_via_me: "La API devuelve conversaciones con /me pero no con el ID almacenado. Necesitamos ajustar el identificador de consulta, sin cambiar el token.",
-                empty: "Meta permitió la consulta con platform=instagram tanto por ID como por /me, pero la API no expuso conversaciones. Revisaremos permisos efectivos y restricciones de las cuentas de prueba.",
-                token_rejected: "Meta rechazó el acceso del token para consultar conversaciones.",
-                permission_denied: "Meta negó el acceso a conversaciones. Se debe revisar el permiso instagram_business_manage_messages del token.",
-                api_rejected: "Meta rechazó la consulta de conversaciones. Revisaremos el endpoint y la autorización.",
-                invalid_response: "Meta respondió sin una lista de conversaciones verificable.",
-                missing: "No hay configuración suficiente para consultar Meta.",
-                unavailable: "La consulta no pudo completarse. Inténtalo nuevamente.",
-                restricted: "Solo disponible en el Sandbox de Demeter.",
-              } as Record<string, string>)[queryValue(params.instagram_inbox_check) ?? ""] ?? "Sin resultado."}
+              {(
+                {
+                  readable:
+                    "La API devuelve conversaciones usando el identificador de la cuenta. El siguiente diagnóstico será la entrega de webhooks.",
+                  readable_via_me:
+                    "La API devuelve conversaciones con /me pero no con el ID almacenado. Necesitamos ajustar el identificador de consulta, sin cambiar el token.",
+                  empty:
+                    "Meta permitió la consulta con platform=instagram tanto por ID como por /me, pero la API no expuso conversaciones. Revisaremos permisos efectivos y restricciones de las cuentas de prueba.",
+                  token_rejected: "Meta rechazó el acceso del token para consultar conversaciones.",
+                  permission_denied:
+                    "Meta negó el acceso a conversaciones. Se debe revisar el permiso instagram_business_manage_messages del token.",
+                  api_rejected:
+                    "Meta rechazó la consulta de conversaciones. Revisaremos el endpoint y la autorización.",
+                  invalid_response: "Meta respondió sin una lista de conversaciones verificable.",
+                  missing: "No hay configuración suficiente para consultar Meta.",
+                  unavailable: "La consulta no pudo completarse. Inténtalo nuevamente.",
+                  restricted: "Solo disponible en el Sandbox de Demeter.",
+                } as Record<string, string>
+              )[queryValue(params.instagram_inbox_check) ?? ""] ?? "Sin resultado."}
             </div>
           ) : null}
           <form action={diagnoseInstagramConversationsRead}>
@@ -445,31 +490,49 @@ export default async function MetaInboxIntegrationPage({
       ) : null}
 
       {studio.id === "9fe23cfa-fb47-4670-afeb-ed4a56433772" &&
-        process.env.VERCEL_ENV === "preview" ? (
+      process.env.VERCEL_ENV === "preview" ? (
         <section className="integration-detail-v2-card">
           <div className="integration-detail-v2-card-heading">
             <div>
               <h2>Firma de seguridad de Instagram (Sandbox)</h2>
-              <p>La app Demeter-IG utiliza su propio App Secret para firmar eventos. Guárdalo aquí una sola vez; no alteres el secreto existente de Messenger.</p>
+              <p>
+                La app Demeter-IG utiliza su propio App Secret para firmar eventos. Guárdalo aquí
+                una sola vez; no alteres el secreto existente de Messenger.
+              </p>
             </div>
           </div>
           {queryValue(params.instagram_secret) ? (
             <div className="integration-detail-v2-notice" role="status">
-              {({
-                saved: "Se guardó el App Secret de Instagram de forma segura. Repite la prueba de Meta.",
-                invalid: "El secreto no tiene una longitud válida.",
-                failed: "No se pudo guardar el secreto. Revisa los permisos.",
-                restricted: "Solo disponible en Sandbox.",
-              } as Record<string,string>)[queryValue(params.instagram_secret) ?? ""] ?? "Sin resultado."}
+              {(
+                {
+                  saved:
+                    "Se guardó el App Secret de Instagram de forma segura. Repite la prueba de Meta.",
+                  invalid: "El secreto no tiene una longitud válida.",
+                  failed: "No se pudo guardar el secreto. Revisa los permisos.",
+                  restricted: "Solo disponible en Sandbox.",
+                } as Record<string, string>
+              )[queryValue(params.instagram_secret) ?? ""] ?? "Sin resultado."}
             </div>
           ) : null}
           <form className="integration-detail-v2-form" action={saveInstagramSigningSecret}>
             <label className="integration-detail-v2-field">
               <span>App Secret de Demeter-IG (Instagram, no Messenger)</span>
-              <input name="instagram_app_secret" type="password" autoComplete="new-password" required minLength={16} maxLength={512} />
-              <small>Obténlo en Meta for Developers → Demeter-IG → Configuración → Básica → Clave secreta. No lo envíes por chat.</small>
+              <input
+                name="instagram_app_secret"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={16}
+                maxLength={512}
+              />
+              <small>
+                Obténlo en Meta for Developers → Demeter-IG → Configuración → Básica → Clave
+                secreta. No lo envíes por chat.
+              </small>
             </label>
-            <button className="integration-detail-v2-button" type="submit">Guardar secreto de Instagram</button>
+            <button className="integration-detail-v2-button" type="submit">
+              Guardar secreto de Instagram
+            </button>
           </form>
         </section>
       ) : null}
@@ -478,30 +541,48 @@ export default async function MetaInboxIntegrationPage({
         <div className="integration-detail-v2-card-heading">
           <div>
             <h2>Instagram · suscripción de mensajes (Sandbox)</h2>
-            <p>Comprueba y activa la suscripción de la cuenta profesional a los eventos de mensajes. Las credenciales permanecen en el servidor; Messenger no se modifica.</p>
+            <p>
+              Comprueba y activa la suscripción de la cuenta profesional a los eventos de mensajes.
+              Las credenciales permanecen en el servidor; Messenger no se modifica.
+            </p>
           </div>
         </div>
         {queryValue(params.ig_subscription) ? (
           <div className="integration-detail-v2-notice" role="status">
-            {({
-              active: "Meta confirma que la cuenta ya está suscrita a messages.",
-              not_active: "La cuenta todavía no figura suscrita a messages. Puedes activarla aquí.",
-              subscribed: "Meta aceptó la suscripción. Comprueba el estado y prueba un mensaje nuevo.",
-              missing_credentials: "Falta el token o ID de Instagram en la conexión segura.",
-              token_rejected: "Meta rechazó el token de Instagram.",
-              meta_error: "Meta rechazó la operación; revisa los permisos y el estado de la aplicación.",
-              unconfirmed: "Meta respondió sin confirmar la suscripción. Comprueba el estado.",
-              restricted: "Esta operación solo está habilitada en el Sandbox de Demeter.",
-              invalid: "Operación no permitida.",
-              unavailable: "No se pudo consultar Meta. Inténtalo nuevamente.",
-            } as Record<string, string>)[queryValue(params.ig_subscription) ?? ""] ?? "Resultado desconocido."}
+            {(
+              {
+                active: "Meta confirma que la cuenta ya está suscrita a messages.",
+                not_active:
+                  "La cuenta todavía no figura suscrita a messages. Puedes activarla aquí.",
+                subscribed:
+                  "Meta aceptó la suscripción. Comprueba el estado y prueba un mensaje nuevo.",
+                missing_credentials: "Falta el token o ID de Instagram en la conexión segura.",
+                token_rejected: "Meta rechazó el token de Instagram.",
+                meta_error:
+                  "Meta rechazó la operación; revisa los permisos y el estado de la aplicación.",
+                unconfirmed: "Meta respondió sin confirmar la suscripción. Comprueba el estado.",
+                restricted: "Esta operación solo está habilitada en el Sandbox de Demeter.",
+                invalid: "Operación no permitida.",
+                unavailable: "No se pudo consultar Meta. Inténtalo nuevamente.",
+              } as Record<string, string>
+            )[queryValue(params.ig_subscription) ?? ""] ?? "Resultado desconocido."}
           </div>
         ) : null}
         <form action={manageInstagramWebhookSubscription} className="integration-detail-v2-form">
-          <button className="integration-detail-v2-button" type="submit" name="operation" value="check">
+          <button
+            className="integration-detail-v2-button"
+            type="submit"
+            name="operation"
+            value="check"
+          >
             Comprobar suscripción de Instagram
           </button>
-          <button className="integration-detail-v2-button" type="submit" name="operation" value="subscribe">
+          <button
+            className="integration-detail-v2-button"
+            type="submit"
+            name="operation"
+            value="subscribe"
+          >
             Activar mensajes de Instagram
           </button>
         </form>
@@ -524,9 +605,7 @@ export default async function MetaInboxIntegrationPage({
               <span>Callback URL de este entorno</span>
               <input type="text" readOnly value={callbackUrl} />
             </label>
-            {verifyToken ? (
-              <VerifyTokenCopy token={verifyToken} />
-            ) : null}
+            {verifyToken ? <VerifyTokenCopy token={verifyToken} /> : null}
           </div>
         ) : null}
 

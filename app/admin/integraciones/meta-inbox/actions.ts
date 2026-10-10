@@ -157,36 +157,64 @@ export async function saveMetaInboxConnection(formData: FormData) {
   // server instead of requiring the administrator to copy it from Meta.
   // Never log the token or include it in a query string or a redirect.
   if (instagramAccessToken) {
-    if (instagramAccessToken.startsWith("Bearer ") || instagramAccessToken.startsWith("http") || instagramAccessToken.includes(" ") || instagramAccessToken.includes("\n")) {
+    if (
+      instagramAccessToken.startsWith("Bearer ") ||
+      instagramAccessToken.startsWith("http") ||
+      instagramAccessToken.includes(" ") ||
+      instagramAccessToken.includes("\n")
+    ) {
       redirect("/admin/integraciones/meta-inbox?connection=error&code=instagram_token_format");
     }
     let resolvedId = "";
     let resolvedUsername = "";
     try {
-      const response = await fetch(`https://graph.instagram.com/${graphApiVersion}/me?fields=id,user_id,username`, {
-        headers: { authorization: `Bearer ${instagramAccessToken}`, accept: "application/json" },
-        cache: "no-store",
-        signal: AbortSignal.timeout(10000),
-      });
+      const response = await fetch(
+        `https://graph.instagram.com/${graphApiVersion}/me?fields=id,user_id,username`,
+        {
+          headers: { authorization: `Bearer ${instagramAccessToken}`, accept: "application/json" },
+          cache: "no-store",
+          signal: AbortSignal.timeout(10000),
+        },
+      );
       if (!response.ok) {
         redirect("/admin/integraciones/meta-inbox?connection=error&code=instagram_token_rejected");
       }
       const payload: unknown = await response.json();
-      const profile = payload && typeof payload === "object" && !Array.isArray(payload)
-        ? payload as Record<string, unknown> : null;
+      const profile =
+        payload && typeof payload === "object" && !Array.isArray(payload)
+          ? (payload as Record<string, unknown>)
+          : null;
       resolvedId = String(profile?.user_id ?? profile?.id ?? "").trim();
-      resolvedUsername = String(profile?.username ?? "").trim().replace(/^@/, "").toLowerCase();
+      resolvedUsername = String(profile?.username ?? "")
+        .trim()
+        .replace(/^@/, "")
+        .toLowerCase();
     } catch (error) {
       // Next.js redirect throws a special control-flow error: do not swallow it.
-      if (error && typeof error === "object" && "digest" in error && String(error.digest).startsWith("NEXT_REDIRECT")) throw error;
-      redirect("/admin/integraciones/meta-inbox?connection=error&code=instagram_profile_unavailable");
+      if (
+        error &&
+        typeof error === "object" &&
+        "digest" in error &&
+        String(error.digest).startsWith("NEXT_REDIRECT")
+      )
+        throw error;
+      redirect(
+        "/admin/integraciones/meta-inbox?connection=error&code=instagram_profile_unavailable",
+      );
     }
     if (!/^[0-9]{5,32}$/.test(resolvedId)) {
       redirect("/admin/integraciones/meta-inbox?connection=error&code=instagram_profile_invalid");
     }
-    if (studio.id === "9fe23cfa-fb47-4670-afeb-ed4a56433772" && resolvedUsername !== "demeter_fitness_studio") {
-      const safeUsername = /^[a-z0-9._]{1,30}$/.test(resolvedUsername) ? resolvedUsername : "unknown";
-      redirect(`/admin/integraciones/meta-inbox?connection=error&code=instagram_wrong_account&instagram_username=${encodeURIComponent(safeUsername)}`);
+    if (
+      studio.id === "9fe23cfa-fb47-4670-afeb-ed4a56433772" &&
+      resolvedUsername !== "demeter_fitness_studio"
+    ) {
+      const safeUsername = /^[a-z0-9._]{1,30}$/.test(resolvedUsername)
+        ? resolvedUsername
+        : "unknown";
+      redirect(
+        `/admin/integraciones/meta-inbox?connection=error&code=instagram_wrong_account&instagram_username=${encodeURIComponent(safeUsername)}`,
+      );
     }
     if (instagramUserId && instagramUserId !== resolvedId) {
       redirect("/admin/integraciones/meta-inbox?connection=error&code=instagram_id_mismatch");
@@ -326,7 +354,10 @@ export async function manageInstagramWebhookSubscription(formData: FormData) {
   }
 
   const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
-  if (studio.id !== "9fe23cfa-fb47-4670-afeb-ed4a56433772" || process.env.VERCEL_ENV !== "preview") {
+  if (
+    studio.id !== "9fe23cfa-fb47-4670-afeb-ed4a56433772" ||
+    process.env.VERCEL_ENV !== "preview"
+  ) {
     redirect("/admin/integraciones/meta-inbox?ig_subscription=restricted");
   }
 
@@ -336,11 +367,18 @@ export async function manageInstagramWebhookSubscription(formData: FormData) {
     const { data, error } = await service.rpc("service_get_meta_inbox_webhook_config", {
       target_studio_id: studio.id,
     });
-    const config = data && typeof data === "object" && !Array.isArray(data)
-      ? data as Record<string, unknown> : null;
-    const token = typeof config?.instagram_access_token === "string" ? config.instagram_access_token.trim() : "";
-    const accountId = typeof config?.instagram_user_id === "string" ? config.instagram_user_id.trim() : "";
-    const version = typeof config?.graph_api_version === "string" ? config.graph_api_version.trim() : "";
+    const config =
+      data && typeof data === "object" && !Array.isArray(data)
+        ? (data as Record<string, unknown>)
+        : null;
+    const token =
+      typeof config?.instagram_access_token === "string"
+        ? config.instagram_access_token.trim()
+        : "";
+    const accountId =
+      typeof config?.instagram_user_id === "string" ? config.instagram_user_id.trim() : "";
+    const version =
+      typeof config?.graph_api_version === "string" ? config.graph_api_version.trim() : "";
     if (error || !token || !/^\d+$/.test(accountId) || !/^v\d+\.\d+$/.test(version)) {
       outcome = "missing_credentials";
     } else {
@@ -350,15 +388,21 @@ export async function manageInstagramWebhookSubscription(formData: FormData) {
         headers: {
           authorization: `Bearer ${token}`,
           accept: "application/json",
-          ...(operation === "subscribe" ? { "content-type": "application/x-www-form-urlencoded" } : {}),
+          ...(operation === "subscribe"
+            ? { "content-type": "application/x-www-form-urlencoded" }
+            : {}),
         },
-        ...(operation === "subscribe" ? { body: new URLSearchParams({ subscribed_fields: "messages" }) } : {}),
+        ...(operation === "subscribe"
+          ? { body: new URLSearchParams({ subscribed_fields: "messages" }) }
+          : {}),
         cache: "no-store",
         signal: AbortSignal.timeout(12000),
       });
       const payload: unknown = await response.json().catch(() => null);
-      const result = payload && typeof payload === "object" && !Array.isArray(payload)
-        ? payload as Record<string, unknown> : {};
+      const result =
+        payload && typeof payload === "object" && !Array.isArray(payload)
+          ? (payload as Record<string, unknown>)
+          : {};
       if (!response.ok) {
         outcome = response.status === 401 ? "token_rejected" : "meta_error";
       } else if (operation === "subscribe") {
@@ -369,7 +413,9 @@ export async function manageInstagramWebhookSubscription(formData: FormData) {
           if (!entry || typeof entry !== "object") return false;
           const fields = (entry as Record<string, unknown>).subscribed_fields;
           return Array.isArray(fields) && fields.includes("messages");
-        }) ? "active" : "not_active";
+        })
+          ? "active"
+          : "not_active";
       }
     }
   } catch {
@@ -383,7 +429,10 @@ export async function manageInstagramWebhookSubscription(formData: FormData) {
 export async function saveInstagramSigningSecret(formData: FormData) {
   const secret = String(formData.get("instagram_app_secret") ?? "").trim();
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
-  if (studio.id !== "9fe23cfa-fb47-4670-afeb-ed4a56433772" || process.env.VERCEL_ENV !== "preview") {
+  if (
+    studio.id !== "9fe23cfa-fb47-4670-afeb-ed4a56433772" ||
+    process.env.VERCEL_ENV !== "preview"
+  ) {
     redirect("/admin/integraciones/meta-inbox?instagram_secret=restricted");
   }
   if (secret.length < 16 || secret.length > 512) {
@@ -400,37 +449,56 @@ export async function saveInstagramSigningSecret(formData: FormData) {
 /** Verify the saved Instagram credential without revealing it to the browser. */
 export async function diagnoseInstagramSavedToken() {
   const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
-  if (studio.id !== "9fe23cfa-fb47-4670-afeb-ed4a56433772" || process.env.VERCEL_ENV !== "preview") {
+  if (
+    studio.id !== "9fe23cfa-fb47-4670-afeb-ed4a56433772" ||
+    process.env.VERCEL_ENV !== "preview"
+  ) {
     redirect("/admin/integraciones/meta-inbox?instagram_token_check=restricted");
   }
   let result = "unavailable";
   try {
-    const { data, error } = await createServiceClient().rpc("service_get_meta_inbox_webhook_config", {
-      target_studio_id: studio.id,
-    });
-    const config = data && typeof data === "object" && !Array.isArray(data)
-      ? data as Record<string, unknown> : {};
-    const token = typeof config.instagram_access_token === "string" ? config.instagram_access_token.trim() : "";
-    const accountId = typeof config.instagram_user_id === "string" ? config.instagram_user_id.trim() : "";
-    const version = typeof config.graph_api_version === "string" ? config.graph_api_version.trim() : "";
+    const { data, error } = await createServiceClient().rpc(
+      "service_get_meta_inbox_webhook_config",
+      {
+        target_studio_id: studio.id,
+      },
+    );
+    const config =
+      data && typeof data === "object" && !Array.isArray(data)
+        ? (data as Record<string, unknown>)
+        : {};
+    const token =
+      typeof config.instagram_access_token === "string" ? config.instagram_access_token.trim() : "";
+    const accountId =
+      typeof config.instagram_user_id === "string" ? config.instagram_user_id.trim() : "";
+    const version =
+      typeof config.graph_api_version === "string" ? config.graph_api_version.trim() : "";
     if (error || !token || !/^\d+$/.test(accountId) || !/^v\d+\.\d+$/.test(version)) {
       result = "missing";
     } else {
-      const response = await fetch(`https://graph.instagram.com/${version}/me?fields=id,user_id,username`, {
-        headers: { authorization: `Bearer ${token}`, accept: "application/json" },
-        cache: "no-store",
-        signal: AbortSignal.timeout(12000),
-      });
+      const response = await fetch(
+        `https://graph.instagram.com/${version}/me?fields=id,user_id,username`,
+        {
+          headers: { authorization: `Bearer ${token}`, accept: "application/json" },
+          cache: "no-store",
+          signal: AbortSignal.timeout(12000),
+        },
+      );
       const raw: unknown = await response.json().catch(() => null);
-      const profile = raw && typeof raw === "object" && !Array.isArray(raw)
-        ? raw as Record<string, unknown> : {};
+      const profile =
+        raw && typeof raw === "object" && !Array.isArray(raw)
+          ? (raw as Record<string, unknown>)
+          : {};
       if (!response.ok) {
         result = response.status === 400 || response.status === 401 ? "rejected" : "unavailable";
       } else {
         // Keep identity resolution identical to saveMetaInboxConnection: Instagram
         // may return both id and user_id, which are not necessarily interchangeable.
         const resolvedId = String(profile.user_id ?? profile.id ?? "").trim();
-        const resolvedUsername = String(profile.username ?? "").trim().replace(/^@/, "").toLowerCase();
+        const resolvedUsername = String(profile.username ?? "")
+          .trim()
+          .replace(/^@/, "")
+          .toLowerCase();
         if (resolvedUsername !== "demeter_fitness_studio") {
           result = "wrong_account";
         } else if (resolvedId !== accountId) {
@@ -446,7 +514,6 @@ export async function diagnoseInstagramSavedToken() {
   redirect(`/admin/integraciones/meta-inbox?instagram_token_check=${result}`);
 }
 
-
 /**
  * Read-only Instagram Conversations API probe for the Demeter sandbox.
  * Confirms messaging permission without returning conversations, usernames,
@@ -454,8 +521,10 @@ export async function diagnoseInstagramSavedToken() {
  */
 export async function diagnoseInstagramConversationsRead() {
   const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
-  if (studio.id !== "9fe23cfa-fb47-4670-afeb-ed4a56433772" ||
-      process.env.VERCEL_ENV !== "preview") {
+  if (
+    studio.id !== "9fe23cfa-fb47-4670-afeb-ed4a56433772" ||
+    process.env.VERCEL_ENV !== "preview"
+  ) {
     redirect("/admin/integraciones/meta-inbox?instagram_inbox_check=restricted");
   }
 
@@ -465,16 +534,17 @@ export async function diagnoseInstagramConversationsRead() {
     const { data, error } = await service.rpc("service_get_meta_inbox_webhook_config", {
       target_studio_id: studio.id,
     });
-    const config = data && typeof data === "object" && !Array.isArray(data)
-      ? data as Record<string, unknown> : {};
-    const accessToken = typeof config.instagram_access_token === "string"
-      ? config.instagram_access_token.trim() : "";
-    const accountId = typeof config.instagram_user_id === "string"
-      ? config.instagram_user_id.trim() : "";
-    const version = typeof config.graph_api_version === "string"
-      ? config.graph_api_version.trim() : "";
-    if (error || !accessToken || !/^\d{5,32}$/.test(accountId) ||
-        !/^v\d+\.\d+$/.test(version)) {
+    const config =
+      data && typeof data === "object" && !Array.isArray(data)
+        ? (data as Record<string, unknown>)
+        : {};
+    const accessToken =
+      typeof config.instagram_access_token === "string" ? config.instagram_access_token.trim() : "";
+    const accountId =
+      typeof config.instagram_user_id === "string" ? config.instagram_user_id.trim() : "";
+    const version =
+      typeof config.graph_api_version === "string" ? config.graph_api_version.trim() : "";
+    if (error || !accessToken || !/^\d{5,32}$/.test(accountId) || !/^v\d+\.\d+$/.test(version)) {
       result = "missing";
     } else {
       // Compare the account-id and /me variants with an explicit Instagram
@@ -492,10 +562,14 @@ export async function diagnoseInstagramConversationsRead() {
           signal: AbortSignal.timeout(12000),
         });
         const raw: unknown = await response.json().catch(() => null);
-        const body = raw && typeof raw === "object" && !Array.isArray(raw)
-          ? raw as Record<string, unknown> : {};
-        const errorObject = body.error && typeof body.error === "object" &&
-          !Array.isArray(body.error) ? body.error as Record<string, unknown> : {};
+        const body =
+          raw && typeof raw === "object" && !Array.isArray(raw)
+            ? (raw as Record<string, unknown>)
+            : {};
+        const errorObject =
+          body.error && typeof body.error === "object" && !Array.isArray(body.error)
+            ? (body.error as Record<string, unknown>)
+            : {};
         return {
           ok: response.ok && Array.isArray(body.data),
           hasConversations: response.ok && Array.isArray(body.data) && body.data.length > 0,
@@ -507,17 +581,14 @@ export async function diagnoseInstagramConversationsRead() {
         probeConversations(accountId),
         probeConversations("me"),
       ]);
-      const probes = results.map((item) =>
-        item.status === "fulfilled" ? item.value : null,
-      );
+      const probes = results.map((item) => (item.status === "fulfilled" ? item.value : null));
       if (probes.some((probe) => probe?.hasConversations)) {
         result = probes[0]?.hasConversations ? "readable" : "readable_via_me";
       } else if (probes.some((probe) => probe?.ok)) {
         result = "empty";
       } else if (probes.some((probe) => probe?.errorCode === 190 || probe?.status === 401)) {
         result = "token_rejected";
-      } else if (probes.some((probe) =>
-        probe?.errorCode === 10 || probe?.errorCode === 200)) {
+      } else if (probes.some((probe) => probe?.errorCode === 10 || probe?.errorCode === 200)) {
         result = "permission_denied";
       } else {
         result = "api_rejected";

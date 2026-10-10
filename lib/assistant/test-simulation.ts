@@ -103,7 +103,12 @@ export function simulatedReadTool(state: TestSimulation, tool: string) {
       student_state: {
         category,
         ...(state.persona === "former_student"
-          ? { lifecycle_status: "inactive", enrollment_status: "expired", has_current_package: false, has_expired_package: true }
+          ? {
+              lifecycle_status: "inactive",
+              enrollment_status: "expired",
+              has_current_package: false,
+              has_expired_package: true,
+            }
           : {}),
       },
       current_package: hasActivePackage
@@ -135,12 +140,17 @@ export async function simulateAssistantAction(
 ) {
   const { state } = input;
   const result = (data: Summary): Summary & { simulated: true } => ({ simulated: true, ...data });
-  if (tool === "prepare_booking" && isFirstVisitPersona(state.persona) && state.reservations.length > 0) {
+  if (
+    tool === "prepare_booking" &&
+    isFirstVisitPersona(state.persona) &&
+    state.reservations.length > 0
+  ) {
     return result({
       ok: false,
       error: "trial_reservation_exists",
       reason_code: "trial_reservation_exists",
-      reason_message: "Ya tienes una clase de prueba reservada. Puedes modificar o cancelar esa reserva, pero no crear otra hasta completar tu inscripción.",
+      reason_message:
+        "Ya tienes una clase de prueba reservada. Puedes modificar o cancelar esa reserva, pero no crear otra hasta completar tu inscripción.",
     });
   }
   if (tool === "prepare_booking" && state.persona === "former_student") {
@@ -148,10 +158,15 @@ export async function simulateAssistantAction(
       ok: false,
       error: "enrollment_required",
       reason_code: "enrollment_required",
-      reason_message: "Tu inscripción está vencida. Puedes renovar la inscripción por separado o elegir un paquete que la incluya. Después podrás reservar una clase.",
+      reason_message:
+        "Tu inscripción está vencida. Puedes renovar la inscripción por separado o elegir un paquete que la incluya. Después podrás reservar una clase.",
     });
   }
-  if (tool === "prepare_booking" && state.identityNeedsName && state.paymentBeforeBooking !== true) {
+  if (
+    tool === "prepare_booking" &&
+    state.identityNeedsName &&
+    state.paymentBeforeBooking !== true
+  ) {
     return result({
       ok: false,
       reason_code: "prospect_name_required",

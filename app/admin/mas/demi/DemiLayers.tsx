@@ -2,15 +2,54 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { activateDemiPrompt, saveDemiPrompt } from "@/app/admin/integraciones/demi/workbench-actions";
+import {
+  activateDemiPrompt,
+  saveDemiPrompt,
+} from "@/app/admin/integraciones/demi/workbench-actions";
 
 const layers = [
-  { id: "personality", number: "01", title: "Personalidad", mode: "Editable", intro: "La voz cálida, divertida y honesta de Demi." },
-  { id: "context", number: "02", title: "Contexto", mode: "Mixta", intro: "Conversación, identidad, estado e historial sin repetir preguntas." },
-  { id: "objectives", number: "03", title: "Objetivos por estado", mode: "Editable", intro: "El siguiente paso útil según el tipo y etapa de la persona." },
-  { id: "cases", number: "04", title: "Casos y decisiones", mode: "Mixta", intro: "Reglas del recorrido, excepciones y mensajes configurables." },
-  { id: "truth", number: "05", title: "Fuente de verdad", mode: "Consulta", intro: "Datos vigentes que Demi debe consultar en Studio Flow." },
-  { id: "execution", number: "06", title: "Ejecución y verificación", mode: "Mixta", intro: "Acciones seguras, resultados comprobables, trazabilidad y escalamiento." },
+  {
+    id: "personality",
+    number: "01",
+    title: "Personalidad",
+    mode: "Editable",
+    intro: "La voz cálida, divertida y honesta de Demi.",
+  },
+  {
+    id: "context",
+    number: "02",
+    title: "Contexto",
+    mode: "Mixta",
+    intro: "Conversación, identidad, estado e historial sin repetir preguntas.",
+  },
+  {
+    id: "objectives",
+    number: "03",
+    title: "Objetivos por estado",
+    mode: "Editable",
+    intro: "El siguiente paso útil según el tipo y etapa de la persona.",
+  },
+  {
+    id: "cases",
+    number: "04",
+    title: "Casos y decisiones",
+    mode: "Mixta",
+    intro: "Reglas del recorrido, excepciones y mensajes configurables.",
+  },
+  {
+    id: "truth",
+    number: "05",
+    title: "Fuente de verdad",
+    mode: "Consulta",
+    intro: "Datos vigentes que Demi debe consultar en Studio Flow.",
+  },
+  {
+    id: "execution",
+    number: "06",
+    title: "Ejecución y verificación",
+    mode: "Mixta",
+    intro: "Acciones seguras, resultados comprobables, trazabilidad y escalamiento.",
+  },
 ] as const;
 
 type LayerId = (typeof layers)[number]["id"];
@@ -75,23 +114,43 @@ const end = "\n=== FIN DE CAPAS DEMI 2.0 ===";
 
 function extractLayers(instructions: string): LayerValues {
   const found: Partial<LayerValues> = {};
-  const match = instructions.match(/=== DEMI 2\.0 · CAPAS CONFIGURADAS ===([\s\S]*?)=== FIN DE CAPAS DEMI 2\.0 ===/);
+  const match = instructions.match(
+    /=== DEMI 2\.0 · CAPAS CONFIGURADAS ===([\s\S]*?)=== FIN DE CAPAS DEMI 2\.0 ===/,
+  );
   if (!match) return defaults;
   for (const layer of layers) {
     if (layer.id === "truth") continue;
-    const section = match[1].match(new RegExp(`\\[${layer.id.toUpperCase()}\\]([\\s\\S]*?)\\[\\/${layer.id.toUpperCase()}\\]`));
+    const section = match[1].match(
+      new RegExp(`\\[${layer.id.toUpperCase()}\\]([\\s\\S]*?)\\[\\/${layer.id.toUpperCase()}\\]`),
+    );
     if (section) found[layer.id] = section[1].trim();
   }
   return { ...defaults, ...found };
 }
 
 function serialize(base: string, values: LayerValues) {
-  const cleanBase = base.replace(/\n\n=== DEMI 2\.0 · CAPAS CONFIGURADAS ===[\s\S]*?=== FIN DE CAPAS DEMI 2\.0 ===/g, "").trim();
-  const body = layers.filter(layer => layer.id !== "truth").map(layer => `[${layer.id.toUpperCase()}]\n${values[layer.id]}\n[/${layer.id.toUpperCase()}]`).join("\n\n");
+  const cleanBase = base
+    .replace(
+      /\n\n=== DEMI 2\.0 · CAPAS CONFIGURADAS ===[\s\S]*?=== FIN DE CAPAS DEMI 2\.0 ===/g,
+      "",
+    )
+    .trim();
+  const body = layers
+    .filter((layer) => layer.id !== "truth")
+    .map(
+      (layer) => `[${layer.id.toUpperCase()}]\n${values[layer.id]}\n[/${layer.id.toUpperCase()}]`,
+    )
+    .join("\n\n");
   return `${cleanBase}${start}\n${body}\n\n[TRUTH]\nConsulta siempre la información vigente de Studio Flow: ${truthSources.map(([name]) => name.toLowerCase()).join(", ")}. Esta capa es de solo lectura y no se define con datos manuales.\n[/TRUTH]\n${end}`;
 }
 
-export default function DemiLayers({ activeInstructions, initialInstructions }: { activeInstructions: string; initialInstructions: string }) {
+export default function DemiLayers({
+  activeInstructions,
+  initialInstructions,
+}: {
+  activeInstructions: string;
+  initialInstructions: string;
+}) {
   const router = useRouter();
   const [selected, setSelected] = useState<LayerId>("personality");
   const [values, setValues] = useState<LayerValues>(() => extractLayers(initialInstructions));
@@ -99,43 +158,177 @@ export default function DemiLayers({ activeInstructions, initialInstructions }: 
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [uat, setUat] = useState<Record<number, boolean>>({});
-  const changed = useMemo(() => serialize(activeInstructions, values) !== activeInstructions, [activeInstructions, values]);
-  const current = layers.find(layer => layer.id === selected)!;
+  const changed = useMemo(
+    () => serialize(activeInstructions, values) !== activeInstructions,
+    [activeInstructions, values],
+  );
+  const current = layers.find((layer) => layer.id === selected)!;
 
   async function saveDraft() {
-    setBusy(true); setNotice("");
+    setBusy(true);
+    setNotice("");
     try {
-      const result = await saveDemiPrompt(serialize(activeInstructions, values), "Demi 2.0 · configuración por capas");
-      if (!result.ok) { setNotice("No se pudo guardar el borrador. Revisa la conexión e inténtalo de nuevo."); return; }
+      const result = await saveDemiPrompt(
+        serialize(activeInstructions, values),
+        "Demi 2.0 · configuración por capas",
+      );
+      if (!result.ok) {
+        setNotice("No se pudo guardar el borrador. Revisa la conexión e inténtalo de nuevo.");
+        return;
+      }
       setDraftId(result.version.id);
       setNotice("Borrador guardado en Studio Flow. La versión activa no cambió.");
-    } catch { setNotice("No se pudo guardar el borrador. Inténtalo de nuevo."); }
-    finally { setBusy(false); }
+    } catch {
+      setNotice("No se pudo guardar el borrador. Inténtalo de nuevo.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function activateDraft() {
-    if (!draftId || !window.confirm("¿Activar estas instrucciones de Demi 2.0 en este entorno Sandbox?")) return;
-    setBusy(true); setNotice("");
+    if (
+      !draftId ||
+      !window.confirm("¿Activar estas instrucciones de Demi 2.0 en este entorno Sandbox?")
+    )
+      return;
+    setBusy(true);
+    setNotice("");
     try {
       const result = await activateDemiPrompt(draftId, activeInstructions);
-      if (!result.ok) { setNotice("La activación no se completó. Recarga la página y revisa la versión activa."); return; }
+      if (!result.ok) {
+        setNotice("La activación no se completó. Recarga la página y revisa la versión activa.");
+        return;
+      }
       setNotice("Demi 2.0 quedó activa en Sandbox.");
       router.refresh();
-    } catch { setNotice("La activación no se completó. Inténtalo de nuevo."); }
-    finally { setBusy(false); }
+    } catch {
+      setNotice("La activación no se completó. Inténtalo de nuevo.");
+    } finally {
+      setBusy(false);
+    }
   }
 
-  return <section className="demi-layers" aria-label="Capas de Demi 2.0">
-    <header className="dl-header"><div><span className="dl-eyebrow">DEMI 2.0 · CONFIGURACIÓN</span><h2>Seis capas para una conversación</h2><p>Define el comportamiento de Demi. Studio Flow conserva la información vigente y valida cada acción.</p></div><span className="dl-env">Sandbox</span></header>
-    <div className="dl-layout">
-      <nav className="dl-nav" aria-label="Capas de Demi">{layers.map(layer => <button type="button" key={layer.id} aria-current={selected === layer.id ? "step" : undefined} onClick={() => setSelected(layer.id)}><span>{layer.number}</span><b>{layer.title}</b><small>{layer.mode}</small></button>)}</nav>
-      <div className="dl-panel"><div className="dl-title"><span>{current.number} / 06 · {current.mode.toUpperCase()}</span><h3>{current.title}</h3><p>{current.intro}</p></div>
-        {selected === "truth" ? <div className="dl-truth"><p className="dl-callout">Demi consulta estos datos en Studio Flow. Aquí no se sobrescriben ni se inventan.</p>{truthSources.map(([label,source]) => <div className="dl-source" key={label}><b>{label}</b><span>{source}</span><small>Solo lectura</small></div>)}</div>
-        : <label className="dl-editor">Instrucciones de esta capa<textarea value={values[selected]} onChange={event => {setDraftId(""); setValues(currentValues => ({...currentValues,[selected]:event.target.value}));}} rows={selected === "cases" ? 24 : selected === "context" || selected === "execution" ? 12 : 8} disabled={busy}/><small>El contenido se guarda como borrador y requiere activación en Sandbox.</small></label>}
-        {selected === "cases" && <div className="dl-uat"><h4>Lista UAT de Demi</h4><p>Marca cada escenario después de ejecutarlo en el banco de pruebas; estas marcas solo indican revisión en curso.</p>{uatCases.map((item,index)=><label key={item}><input type="checkbox" checked={!!uat[index]} onChange={() => setUat(state => ({...state,[index]:!state[index]}))}/><span>{item}</span></label>)}</div>}
-        {selected === "execution" && <div className="dl-callout">Los reintentos quedan limitados a tres. Los motivos de quejas, temas sensibles, reembolso, solicitud explícita y fallo persistente derivan a atención humana. Ser alumna por sí solo no escala el caso.</div>}
+  return (
+    <section className="demi-layers" aria-label="Capas de Demi 2.0">
+      <header className="dl-header">
+        <div>
+          <span className="dl-eyebrow">DEMI 2.0 · CONFIGURACIÓN</span>
+          <h2>Seis capas para una conversación</h2>
+          <p>
+            Define el comportamiento de Demi. Studio Flow conserva la información vigente y valida
+            cada acción.
+          </p>
+        </div>
+        <span className="dl-env">Sandbox</span>
+      </header>
+      <div className="dl-layout">
+        <nav className="dl-nav" aria-label="Capas de Demi">
+          {layers.map((layer) => (
+            <button
+              type="button"
+              key={layer.id}
+              aria-current={selected === layer.id ? "step" : undefined}
+              onClick={() => setSelected(layer.id)}
+            >
+              <span>{layer.number}</span>
+              <b>{layer.title}</b>
+              <small>{layer.mode}</small>
+            </button>
+          ))}
+        </nav>
+        <div className="dl-panel">
+          <div className="dl-title">
+            <span>
+              {current.number} / 06 · {current.mode.toUpperCase()}
+            </span>
+            <h3>{current.title}</h3>
+            <p>{current.intro}</p>
+          </div>
+          {selected === "truth" ? (
+            <div className="dl-truth">
+              <p className="dl-callout">
+                Demi consulta estos datos en Studio Flow. Aquí no se sobrescriben ni se inventan.
+              </p>
+              {truthSources.map(([label, source]) => (
+                <div className="dl-source" key={label}>
+                  <b>{label}</b>
+                  <span>{source}</span>
+                  <small>Solo lectura</small>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <label className="dl-editor">
+              Instrucciones de esta capa
+              <textarea
+                value={values[selected]}
+                onChange={(event) => {
+                  setDraftId("");
+                  setValues((currentValues) => ({
+                    ...currentValues,
+                    [selected]: event.target.value,
+                  }));
+                }}
+                rows={
+                  selected === "cases"
+                    ? 24
+                    : selected === "context" || selected === "execution"
+                      ? 12
+                      : 8
+                }
+                disabled={busy}
+              />
+              <small>El contenido se guarda como borrador y requiere activación en Sandbox.</small>
+            </label>
+          )}
+          {selected === "cases" && (
+            <div className="dl-uat">
+              <h4>Lista UAT de Demi</h4>
+              <p>
+                Marca cada escenario después de ejecutarlo en el banco de pruebas; estas marcas solo
+                indican revisión en curso.
+              </p>
+              {uatCases.map((item, index) => (
+                <label key={item}>
+                  <input
+                    type="checkbox"
+                    checked={!!uat[index]}
+                    onChange={() => setUat((state) => ({ ...state, [index]: !state[index] }))}
+                  />
+                  <span>{item}</span>
+                </label>
+              ))}
+            </div>
+          )}
+          {selected === "execution" && (
+            <div className="dl-callout">
+              Los reintentos quedan limitados a tres. Los motivos de quejas, temas sensibles,
+              reembolso, solicitud explícita y fallo persistente derivan a atención humana. Ser
+              alumna por sí solo no escala el caso.
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-    <footer className="dl-save"><div><b>{changed ? "Hay cambios por guardar" : "Instrucciones cargadas"}</b><small>Las pruebas de conversación usan el banco de pruebas de Demi.</small></div><div><button type="button" onClick={saveDraft} disabled={busy || !changed}>{busy ? "Guardando…" : "Guardar borrador"}</button><button type="button" className="dl-primary" onClick={activateDraft} disabled={busy || !draftId}>{busy ? "Procesando…" : "Activar en Sandbox"}</button></div>{notice && <p aria-live="polite">{notice}</p>}</footer>
-  </section>;
+      <footer className="dl-save">
+        <div>
+          <b>{changed ? "Hay cambios por guardar" : "Instrucciones cargadas"}</b>
+          <small>Las pruebas de conversación usan el banco de pruebas de Demi.</small>
+        </div>
+        <div>
+          <button type="button" onClick={saveDraft} disabled={busy || !changed}>
+            {busy ? "Guardando…" : "Guardar borrador"}
+          </button>
+          <button
+            type="button"
+            className="dl-primary"
+            onClick={activateDraft}
+            disabled={busy || !draftId}
+          >
+            {busy ? "Procesando…" : "Activar en Sandbox"}
+          </button>
+        </div>
+        {notice && <p aria-live="polite">{notice}</p>}
+      </footer>
+    </section>
+  );
 }
