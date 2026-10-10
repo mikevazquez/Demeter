@@ -55,11 +55,16 @@ export default async function MetaInboxIntegrationPage({
   const host = forwardedHost || requestHeaders.get("host")?.trim();
   const forwardedProto = requestHeaders.get("x-forwarded-proto")?.split(",")[0]?.trim();
   const protocol = forwardedProto === "http" ? "http" : "https";
-  const callbackUrl = host
-    ? new URL(
-        `/api/integrations/meta-inbox/webhook?studio=${studio.id}`,
-        `${protocol}://${host}`,
-      ).toString()
+  // The sandbox Meta webhook must use its public, stable hostname.
+  // Deployment preview URLs may require Vercel authentication, which Meta cannot complete.
+  const sandboxWebhookHost =
+    studio.id === "9fe23cfa-fb47-4670-afeb-ed4a56433772" &&
+    process.env.VERCEL_ENV === "preview"
+      ? "https://meta-sandbox.demeterfitness.com"
+      : null;
+  const callbackBaseUrl = sandboxWebhookHost || (host ? `${protocol}://${host}` : "");
+  const callbackUrl = callbackBaseUrl
+    ? new URL(`/api/integrations/meta-inbox/webhook?studio=${studio.id}`, callbackBaseUrl).toString()
     : "";
 
   const connectionResult = queryValue(params.connection);
