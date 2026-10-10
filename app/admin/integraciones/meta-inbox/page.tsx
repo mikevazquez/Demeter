@@ -99,7 +99,7 @@ export default async function MetaInboxIntegrationPage({
           guardado de forma segura; listo para probar Messenger.
         </div>
       ) : connectionResult === "saved" ? (
-        <div className="integration-detail-v2-notice">Conexión guardada de forma segura.</div>
+        <div className="integration-detail-v2-notice" role="status">Conexión guardada de forma segura. {instagramUserId ? "Instagram Direct configurado." : "Instagram Direct sigue pendiente."}</div>
       ) : connectionResult === "error" ? (
         <div className="integration-detail-v2-notice is-error">
           {resultCode === "page_token_wrong_app" ? (
