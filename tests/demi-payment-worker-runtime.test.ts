@@ -2,7 +2,12 @@ import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
 import { describe, expect, it, vi } from "vitest";
 function harness(
-  options: { live?: boolean; eligible?: boolean; send?: () => Promise<Response> } = {},
+  options: {
+    live?: boolean;
+    eligible?: boolean;
+    payment?: "missing_data" | "alternative" | "reserved";
+    send?: () => Promise<Response>;
+  } = {},
 ) {
   let handler!: (request: Request) => Promise<Response>;
   const notice = {
@@ -21,18 +26,49 @@ function harness(
     async (name: string, _args?: unknown): Promise<{ data: unknown; error: null }> => ({
       data:
         name === "service_claim_demi_payment_notifications"
-          ? []
+          ? options.payment
+            ? [
+                {
+                  id: "payment",
+                  conversation_id: "conversation",
+                  group_id: "group",
+                  amount_minor: 15000,
+                  currency: "MXN",
+                  notification_lease: "lease",
+                  notification_attempts: 1,
+                },
+              ]
+            : []
           : name === "service_claim_demi_receipt_review_notices"
-            ? [notice]
+            ? options.payment
+              ? []
+              : [notice]
             : name === "service_revalidate_demi_receipt_review_notice"
               ? { eligible: options.eligible !== false }
-              : name === "service_capture_demi_uat_delivery"
-                ? { artifact_id: "captured", failed: false }
-                : name === "service_get_meta_whatsapp_webhook_config"
-                  ? { access_token: "test", phone_number_id: "test", graph_api_version: "v23.0" }
-                  : name === "service_get_meta_whatsapp_pilot_wa_ids"
-                    ? []
-                    : { ok: true, status: "sent" },
+              : name === "service_resume_demi_paid_group"
+                ? options.payment === "alternative"
+                  ? { alternative_required: true, payment_received: true }
+                  : { ok: true }
+                : name === "service_get_demi_group_class_details"
+                  ? {
+                      activity: "Pole Fitness",
+                      date: "2026-10-11",
+                      starts_at_local: "11:30",
+                      ends_at_local: "12:30",
+                      location: "Principal",
+                      address: "Dirección oficial UAT",
+                    }
+                  : name === "service_capture_demi_uat_delivery"
+                    ? { artifact_id: "captured", failed: false }
+                    : name === "service_get_meta_whatsapp_webhook_config"
+                      ? {
+                          access_token: "test",
+                          phone_number_id: "test",
+                          graph_api_version: "v23.0",
+                        }
+                      : name === "service_get_meta_whatsapp_pilot_wa_ids"
+                        ? []
+                        : { ok: true, status: "sent" },
       error: null,
     }),
   );
@@ -42,19 +78,22 @@ function harness(
       const chain = {
         select: () => chain,
         eq: () => chain,
+        in: () => chain,
         limit: () => chain,
         order: () => chain,
         single: async () => ({
           data:
             table === "assistant_configs"
               ? { mode: "active" }
-              : {
-                  channel: "whatsapp",
-                  context: {},
-                  external_thread_ref: "523323291878",
-                  status: "open",
-                  student_id: "student",
-                },
+              : table === "demi_group_bookings"
+                ? { status: "validated", participant_count: 1 }
+                : {
+                    channel: "whatsapp",
+                    context: {},
+                    external_thread_ref: "523323291878",
+                    status: "open",
+                    student_id: "student",
+                  },
           error: null,
         }),
         maybeSingle: async () => ({
@@ -71,7 +110,15 @@ function harness(
           error: null,
         }),
         then: (resolve: (v: unknown) => unknown) =>
-          Promise.resolve({ data: [], error: null }).then(resolve),
+          Promise.resolve({
+            data:
+              options.payment === "reserved" && table === "demi_group_participants"
+                ? [{ reservation_id: "reservation" }]
+                : options.payment === "reserved" && table === "reservations"
+                  ? [{ id: "reservation", status: "reserved" }]
+                  : [],
+            error: null,
+          }).then(resolve),
       };
       return chain;
     },
@@ -187,6 +234,56 @@ describe("receipt review notification worker", () => {
     );
     expect(h.rpc.mock.calls.some(([n]) => n === "service_apply_demi_mercadopago_order")).toBe(
       false,
+    );
+  });
+});
+
+describe("approved payment booking notification", () => {
+  it("keeps missing personal data pending without claiming a reservation", async () => {
+    const h = harness({ payment: "missing_data" });
+    expect((await h.request()).status).toBe(200);
+    expect(h.rpc).toHaveBeenCalledWith("service_resume_demi_paid_group", {
+      p_studio: "11111111-1111-4111-8111-111111111111",
+      p_conversation: "conversation",
+      p_group: "group",
+    });
+    expect(h.rpc).toHaveBeenCalledWith(
+      "service_finish_demi_payment_notification",
+      expect.objectContaining({
+        p_accepted: true,
+        p_text: expect.stringContaining("datos faltantes"),
+      }),
+    );
+  });
+  it("acknowledges the payment and offers another schedule without a new charge", async () => {
+    const h = harness({ payment: "alternative" });
+    expect((await h.request()).status).toBe(200);
+    expect(h.rpc).toHaveBeenCalledWith(
+      "service_finish_demi_payment_notification",
+      expect.objectContaining({
+        p_accepted: true,
+        p_text: expect.stringContaining("sin volver a cobrarte"),
+      }),
+    );
+    expect(
+      h.rpc.mock.calls.some(
+        ([name]) => name.includes("refund") || name.includes("create_demi_cash"),
+      ),
+    ).toBe(false);
+  });
+  it("includes only official class details after observing an active reservation", async () => {
+    const h = harness({ payment: "reserved" });
+    expect((await h.request()).status).toBe(200);
+    expect(h.rpc).toHaveBeenCalledWith(
+      "service_finish_demi_payment_notification",
+      expect.objectContaining({
+        p_accepted: true,
+        p_text: expect.stringContaining("Pole Fitness: 2026-10-11, de 11:30 a 12:30"),
+      }),
+    );
+    expect(h.rpc).toHaveBeenCalledWith(
+      "service_finish_demi_payment_notification",
+      expect.objectContaining({ p_text: expect.stringContaining("Dirección oficial UAT") }),
     );
   });
 });

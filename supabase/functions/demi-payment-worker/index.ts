@@ -37,7 +37,7 @@ Deno.serve(async (request: Request) => {
         .from("demi_payment_requests")
         .select("id,provider_order_id")
         .eq("studio_id", studio)
-        .in("status", ["order_created", "pending", "error"])
+        .in("status", ["order_created", "pending", "rejected", "error"])
         .not("provider_order_id", "is", null)
         .order("last_checked_at", { ascending: true, nullsFirst: true })
         .limit(10);
@@ -144,6 +144,15 @@ Deno.serve(async (request: Request) => {
         if (preference.error || preference.data?.whatsapp_blocked)
           throw new Error("payment_channel_blocked");
         if (!payment.review_notice) {
+          const resumed = await client.rpc("service_resume_demi_paid_group", {
+            p_studio: studio,
+            p_conversation: payment.conversation_id,
+            p_group: payment.group_id,
+          });
+          if (resumed.error) throw new Error("payment_booking_resume_failed");
+          if (resumed.data?.alternative_required === true) {
+            text = `Mercado Pago confirmó tu pago de ${amount}. El horario que solicitaste ya no está disponible. Tu pago se conserva; podemos elegir otro horario disponible y ayudarte a agendar, sin volver a cobrarte.`;
+          }
           const group = await client
             .from("demi_group_bookings")
             .select("status,participant_count")
@@ -168,6 +177,19 @@ Deno.serve(async (request: Request) => {
               (item) => item.status === "reserved",
             ).length;
             text = `Mercado Pago confirmó tu pago de ${amount}. No necesitas enviar comprobante. Hay ${reserved} de ${group.data.participant_count} reservas activas para esta solicitud; puedes consultar sus detalles por este chat.`;
+            if (reserved > 0) {
+              const details = await client.rpc("service_get_demi_group_class_details", {
+                p_studio: studio,
+                p_conversation: payment.conversation_id,
+                p_group: payment.group_id,
+              });
+              if (details.error || !details.data)
+                throw new Error("payment_class_details_unavailable");
+              const d = details.data;
+              text += `\n${d.activity}: ${d.date}, de ${d.starts_at_local} a ${d.ends_at_local}.`;
+              if (d.location) text += `\nSede: ${d.location}.`;
+              if (d.address) text += `\nDirección: ${d.address}.`;
+            }
           }
         }
         if (capture) {
