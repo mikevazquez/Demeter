@@ -8,6 +8,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import {
   diagnoseMetaInboxApp,
   diagnoseInstagramSavedToken,
+  diagnoseInstagramConversationsRead,
   manageInstagramWebhookSubscription,
   saveInstagramSigningSecret,
   saveMetaInboxConnection,
@@ -406,6 +407,38 @@ export default async function MetaInboxIntegrationPage({
           ) : null}
           <form action={diagnoseInstagramSavedToken}>
             <button className="integration-detail-v2-button" type="submit">Verificar token guardado con Meta</button>
+          </form>
+        </section>
+      ) : null}
+
+      {studio.id === "9fe23cfa-fb47-4670-afeb-ed4a56433772" &&
+        process.env.VERCEL_ENV === "preview" ? (
+        <section className="integration-detail-v2-card">
+          <div className="integration-detail-v2-card-heading">
+            <div>
+              <h2>Diagnóstico de mensajería de Instagram · Sandbox</h2>
+              <p>Consulta únicamente si la API puede leer la lista de conversaciones. No envía mensajes, no cambia permisos y no muestra conversaciones ni datos personales.</p>
+            </div>
+          </div>
+          {queryValue(params.instagram_inbox_check) ? (
+            <div className="integration-detail-v2-notice" role="status">
+              {({
+                readable: "Meta permitió consultar las conversaciones. El token sí tiene acceso a la bandeja; investigaremos la entrega de webhooks.",
+                empty: "Meta permitió consultar la bandeja, pero devolvió cero conversaciones en esta consulta.",
+                token_rejected: "Meta rechazó el acceso del token para consultar conversaciones.",
+                permission_denied: "Meta negó el acceso a conversaciones. Se debe revisar el permiso instagram_business_manage_messages del token.",
+                api_rejected: "Meta rechazó la consulta de conversaciones. Revisaremos el endpoint y la autorización.",
+                invalid_response: "Meta respondió sin una lista de conversaciones verificable.",
+                missing: "No hay configuración suficiente para consultar Meta.",
+                unavailable: "La consulta no pudo completarse. Inténtalo nuevamente.",
+                restricted: "Solo disponible en el Sandbox de Demeter.",
+              } as Record<string, string>)[queryValue(params.instagram_inbox_check) ?? ""] ?? "Sin resultado."}
+            </div>
+          ) : null}
+          <form action={diagnoseInstagramConversationsRead}>
+            <button className="integration-detail-v2-button" type="submit">
+              Comprobar acceso a conversaciones de Instagram
+            </button>
           </form>
         </section>
       ) : null}
