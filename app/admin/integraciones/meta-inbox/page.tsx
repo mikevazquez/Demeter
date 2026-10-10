@@ -156,6 +156,8 @@ export default async function MetaInboxIntegrationPage({
               No se pudo verificar el token con Meta. No se modificaron las credenciales; vuelve a
               intentarlo cuando Meta esté disponible.
             </>
+          ) : resultCode === "instagram_wrong_account" ? (
+            <>Meta identificó el token como perteneciente a @{queryValue(params.instagram_username) || "una cuenta diferente"}, no a @demeter_fitness_studio. No se modificó la conexión. Comprueba qué cuenta seleccionaste al generar el token.</>
           ) : resultCode?.startsWith("instagram_") ? (
             <>No se pudo validar Instagram: {({ instagram_token_format: "pega solo el token, sin prefijos ni espacios", instagram_token_rejected: "Meta rechazó el token; verifica que siga vigente", instagram_profile_unavailable: "no fue posible consultar el perfil en Meta", instagram_profile_invalid: "Meta no devolvió un identificador válido", instagram_wrong_account: "el token no corresponde a @demeter_fitness_studio", instagram_id_mismatch: "el identificador escrito no coincide con la cuenta autorizada", instagram_token_required: "se necesita el token para verificar el identificador" } as Record<string, string>)[resultCode] ?? resultCode}. No se modificó la conexión.</>
           ) : resultCode === "page_credentials_pair_required" ? (
