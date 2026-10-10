@@ -1,3 +1,5 @@
+> Sustituida por la decisión posterior del usuario: no hay hold ni promesa de espacio. Véase demi-2-release-review-2026-10-10.md. Este texto se conserva como historial y no como regla vigente.
+
 # Política confirmada de intención de reserva y pago
 
 Corrección explícita del usuario: los seguimientos de pago son a las **2 y 6 horas desde la solicitud de pago**, máximo dos intentos. No son seguimientos de prospecto de 24/48 horas. La intención permanece durante 24 horas; enviar el segundo recordatorio no la vence anticipadamente.

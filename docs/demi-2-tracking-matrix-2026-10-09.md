@@ -4,6 +4,10 @@
 
 Validación: 1159/1159 pruebas automáticas en 179 archivos, typecheck sin errores. Inscripción y avisos: 21 controles nativos con roles reales service_role/authenticated. Identidad, grupos, recuperación y contenido de seguimientos tienen evidencia separada. Las pruebas técnicas no se suman como casos maestros. El pago de prueba de $150 de Mercado Pago fue verificado contra el proveedor y aplicado; webhook externo y entrega real siguen pendientes.
 
+## Candidata integrada y flujo sin hold — 10 octubre 2026
+
+[Revisión de promoción](demi-2-release-review-2026-10-10.md): cinco recorridos nativos nuevos aprobaron; recordatorios de pago 2/6 h, conservación de pago y alternativa sin otro cobro. Candidata integrada con main: 1174 pruebas, tipos y build aprobados. Trabajador Sandbox v6 publicado. Nuevo pago externo con proceso programado pendiente del comprador; no se eleva el conteo maestro ni se afirma entrega por WhatsApp.
+
 ## Double check de candidata — 10 octubre 2026
 
 [Resultado detallado](demi-2-candidate-double-check-2026-10-10.md): 1159 pruebas, typecheck y build aprobados; 24 controles MP y siete de enlace público aprobados. Los pagos externos de primera clase $150 e inscripción $200 siguen acreditados; no se encontró compra externa de paquete en los checkout UAT de este origen. Hay reconciliación periódica como alternativa al webhook; su existencia no acredita todavía ejecución autónoma externa ni entrega real del aviso. Facebook/Instagram diferidos; las migraciones nuevas aún no están en producción.
