@@ -143,3 +143,11 @@ Regresión final: 1157/1157 pruebas,179 archivos; typecheck pasó. No se ha publ
 ## Inscripción externa completada — 10 octubre 2026
 
 El usuario completó el checkout de $200 MXN. La página de retorno consultó Mercado Pago desde el servidor y recibió processed/accredited; el intento quedó approved. Se verificaron una venta, un pago y una inscripción activa del 9 octubre 2026 al 9 octubre 2027. Repetir la verificación conservó esos registros. La alumna pasó de trial a regular; sus adquisiciones previas, vencimientos y saldo cero no cambiaron, y no se agregó paquete ni crédito. El portal y Demi confirmaron la inscripción activa. M11 quedó aprobado en el banco UAT. No se registró webhook externo: ese pendiente permanece en M05. Estado vigente: 15/18 (83.3 %), M01/M05/M18 parciales. Las referencias anteriores a order_created describen el estado previo al pago.
+
+## M18 — receptor Instagram y formatos no soportados
+
+Se amplió el banco UAT para Instagram y escenarios de video/formato desconocido. En el run e465d3fa-8dc7-4334-805a-7655a4497d0e, estudio 733468d5-44e5-4738-a2f2-6239ff1740a2, el audio OGG pasó transcripción real persistida y respuesta con horarios/domicilio oficiales. Video en Instagram y formato desconocido en Facebook devolvieron limitación explícita: cero reservas/pagos nuevos y ninguna ficha nueva; las dos reservas existentes pertenecen a la plantilla inicial.
+
+Un PDF enviado mediante sobre sintético del receptor Instagram pasó OCR ($150), solicitud de datos y una ficha/reserva provisional con sede/domicilio oficial, sin pago financiero aprobado. Esto prueba el manejo interno del archivo, no que la aplicación Instagram permita transportar PDF. La prueba externa de Instagram usará los formatos que soporte la plataforma; PDF se acredita externamente en WhatsApp/Facebook cuando esté disponible.
+
+La nueva vista previa pasó 1157 pruebas en 179 archivos, typecheck y lint de los archivos modificados sin errores. La conexión fuente de Facebook sigue configurada con un piloto; Instagram todavía no aparece configurado en Sandbox. El callback compartido de WhatsApp sigue apuntando al receptor de producción. M18 mantiene estado parcial hasta probar transporte externo; el total sigue en 15/18 (83.3 %).

@@ -1,15 +1,59 @@
 {
   "status": "partial",
-  "runs": ["2d5c24b7-d22e-48f8-9770-6901ff39bd58", "2738cb12-0f2d-4837-bf0f-310a57efbc1b"],
+  "runs": [
+    "2d5c24b7-d22e-48f8-9770-6901ff39bd58",
+    "2738cb12-0f2d-4837-bf0f-310a57efbc1b",
+    "e465d3fa-8dc7-4334-805a-7655a4497d0e"
+  ],
   "internal_passed": [
     "whatsapp_ogg_transcription_and_response",
     "facebook_mp3_transcription_and_response",
     "whatsapp_pdf_ocr_and_reservation",
     "whatsapp_jpeg_ocr_and_reservation",
     "facebook_webp_ocr_and_reservation",
-    "illegible_retained_without_amount_or_reservation"
+    "illegible_retained_without_amount_or_reservation",
+    "instagram_ogg_real_transcription_and_response",
+    "instagram_video_declared_unsupported_without_booking_or_payment",
+    "facebook_unknown_attachment_declared_unsupported_without_booking_or_payment",
+    "instagram_pdf_synthetic_envelope_ocr_awaiting_participants",
+    "instagram_pdf_synthetic_envelope_one_provisional_reservation"
   ],
   "unsupported_formats": "explicit_fallback_and_classification_controls",
   "pending": ["external_meta_media_transport"],
-  "external_delivery_verified": false
+  "external_delivery_verified": false,
+  "latest_readiness": {
+    "facebook_configured": true,
+    "facebook_pilot_count": 1,
+    "instagram_configured": false,
+    "instagram_pilot_count": 0,
+    "whatsapp_receiver_host": "demeterfitness.com",
+    "whatsapp_receiver_studio": "f1d69ae2-84c5-4b76-b77c-d792c9318225",
+    "whatsapp_receiver_environment": "production"
+  },
+  "bank_changes": [
+    "instagram_channel",
+    "inbox_video_and_unknown_attachment_scenarios",
+    "display_meta_inbox_captured_replies"
+  ],
+  "instagram_runtime": {
+    "studio_id": "733468d5-44e5-4738-a2f2-6239ff1740a2",
+    "preview_commit": "841a776e7e0eb1f8518d37b685f1714862a9bd3e",
+    "audio_transcript_persisted": true,
+    "video_http_status": 200,
+    "unknown_facebook_http_status": 200,
+    "students_after_audio_video_unknown": 11,
+    "groups_after_audio_video_unknown": 0,
+    "payments_after_audio_video_unknown": 0,
+    "external_delivery": false,
+    "reservations_after_audio_video_unknown": 2,
+    "reservations_created_by_audio_video_unknown": 0,
+    "pdf_platform_transport_verified": false,
+    "pdf_group_id": "66540407-7f14-42c4-b210-c6a26d536799",
+    "pdf_ocr_amount_minor": 15000,
+    "group_status": "provisional",
+    "students_after_pdf": 12,
+    "reservations_after_pdf": 3,
+    "sales_after_pdf": 1,
+    "payments_after_pdf": 0
+  }
 }
