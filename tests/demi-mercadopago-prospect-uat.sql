@@ -2,9 +2,15 @@ begin;
 set local role service_role;
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 do $$
-declare s uuid:='04c7022a-7340-4a60-aa66-73bd096cfcfc'; c uuid:='cc2a9e1c-01c7-442e-b281-d0ae3d1ef0ca'; g uuid:='842d61d3-8eae-4895-81de-b3779c6145c8'; r jsonb; request_id uuid; o jsonb; students_before integer; intent uuid; notification public.demi_payment_requests%rowtype; attempt integer;
+declare s uuid; c uuid:=gen_random_uuid(); g uuid; r jsonb; request_id uuid; o jsonb; students_before integer; intent uuid; notification public.demi_payment_requests%rowtype; attempt integer; run jsonb; owner uuid;
 begin
-if not exists(select 1 from public.demi_uat_runs where studio_id=s) then raise exception 'synthetic_fixture_required'; end if;
+select user_id into owner from public.studio_memberships where studio_id='9fe23cfa-fb47-4670-afeb-ed4a56433772' and role='owner' and active limit 1;
+run:=public.service_create_demi_uat_run('9fe23cfa-fb47-4670-afeb-ed4a56433772',owner,'mp-isolated-regression');
+s:=(run->>'studio_id')::uuid;
+insert into public.assistant_conversations(id,studio_id,channel,external_thread_ref) values(c,s,'whatsapp','mp-isolated-'||c);
+r:=public.service_prepare_demi_group(s,c,(run#>>'{fixtures,sessions,available}')::uuid,1,1);
+if r->>'ok'<>'true' then raise exception 'fresh_group:%',r; end if;
+g:=(r->>'group_id')::uuid;
 update public.demi_mercadopago_settings set enabled=false where studio_id=s;
 delete from public.demi_payment_requests where group_id=g;
 select count(*) into students_before from public.students where studio_id=s;

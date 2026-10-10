@@ -4,6 +4,10 @@
 
 Validación: 1159/1159 pruebas automáticas en 179 archivos, typecheck sin errores. Inscripción y avisos: 21 controles nativos con roles reales service_role/authenticated. Identidad, grupos, recuperación y contenido de seguimientos tienen evidencia separada. Las pruebas técnicas no se suman como casos maestros. El pago de prueba de $150 de Mercado Pago fue verificado contra el proveedor y aplicado; webhook externo y entrega real siguen pendientes.
 
+## Double check de candidata — 10 octubre 2026
+
+[Resultado detallado](demi-2-candidate-double-check-2026-10-10.md): 1159 pruebas, typecheck y build aprobados; 24 controles MP y siete de enlace público aprobados. Los pagos externos de primera clase $150 e inscripción $200 siguen acreditados; no se encontró compra externa de paquete en los checkout UAT de este origen. Hay reconciliación periódica como alternativa al webhook; su existencia no acredita todavía ejecución autónoma externa ni entrega real del aviso. Facebook/Instagram diferidos; las migraciones nuevas aún no están en producción.
+
 ## Alcance de promoción actualizado — 10 octubre 2026
 
 El usuario separó el núcleo Demi → Studio Flow de la habilitación de canales y difirió expresamente Instagram. Véase [revisión de producción e identidad](demi-2-production-scope-2026-10-10.md): nueve grupos de controles nativos de identidad pasaron sin cambios en Demi. M01/M18 bloquean la habilitación del canal o formato sin validar; M05 sigue siendo pendiente de negocio para automatización MP. El conteo completo permanece 15/18. Facebook recibió la imagen sin intención de pago, pero después Meta invalidó el token (190/460); requiere renovarlo.
