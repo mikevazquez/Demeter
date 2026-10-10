@@ -381,9 +381,36 @@ export async function POST(request: Request) {
     return json({ error: "receiver_not_configured" }, 503);
   }
 
+  // Distinct Instagram Login and Facebook app secrets. Never accept a payload using
+  // the other application's key; inspect the untrusted type only to select the key.
+  let unsignedPayload: unknown;
+  try {
+    unsignedPayload = JSON.parse(rawBody);
+  } catch {
+    return json({ error: "invalid_json" }, 400);
+  }
+  const unsignedObject =
+    unsignedPayload && typeof unsignedPayload === "object" && !Array.isArray(unsignedPayload)
+      ? unsignedPayload as Record<string, unknown> : {};
+  const unsignedProvider = unsignedObject.object === "instagram"
+    ? "instagram" : unsignedObject.object === "page" ? "facebook_messenger" : null;
+  if (!unsignedProvider) return json({ error: "unknown_provider" }, 400);
+  let signatureSecret = webhookConfig.appSecret;
+  if (unsignedProvider === "instagram") {
+    // Instagram-specific secret is stored in a separate vault record.
+    const { data: instagramSecret, error: instagramSecretError } = await supabase.rpc(
+      "service_get_meta_instagram_app_secret",
+      { target_studio_id: studioId },
+    );
+    if (instagramSecretError || typeof instagramSecret !== "string" || !instagramSecret) {
+      console.warn("[demi-meta-inbox] instagram_app_secret_missing");
+      return json({ error: "instagram_app_secret_missing" }, 503);
+    }
+    signatureSecret = instagramSecret;
+  }
   if (
     !verifyMetaInboxWebhookSignature(
-      webhookConfig.appSecret,
+      signatureSecret,
       rawBytes,
       request.headers.get("x-hub-signature-256"),
     )
