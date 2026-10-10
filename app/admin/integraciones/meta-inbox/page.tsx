@@ -156,6 +156,8 @@ export default async function MetaInboxIntegrationPage({
               No se pudo verificar el token con Meta. No se modificaron las credenciales; vuelve a
               intentarlo cuando Meta esté disponible.
             </>
+          ) : resultCode?.startsWith("instagram_") ? (
+            <>No se pudo validar Instagram: {({ instagram_token_format: "pega solo el token, sin prefijos ni espacios", instagram_token_rejected: "Meta rechazó el token; verifica que siga vigente", instagram_profile_unavailable: "no fue posible consultar el perfil en Meta", instagram_profile_invalid: "Meta no devolvió un identificador válido", instagram_wrong_account: "el token no corresponde a @demeter_fitness_studio", instagram_id_mismatch: "el identificador escrito no coincide con la cuenta autorizada", instagram_token_required: "se necesita el token para verificar el identificador" } as Record<string, string>)[resultCode] ?? resultCode}. No se modificó la conexión.</>
           ) : resultCode === "page_credentials_pair_required" ? (
             <>
               Para reemplazar el token de Messenger, introduce tanto Facebook Page Access Token como
@@ -325,11 +327,11 @@ export default async function MetaInboxIntegrationPage({
           </label>
 
           <label className="integration-detail-v2-field">
-            <span>Instagram User ID</span>
+            <span>Instagram User ID (opcional, se obtiene automáticamente)</span>
             <input
               type="text"
               name="instagram_user_id"
-
+              placeholder="Se detectará al guardar el token"
               inputMode="numeric"
               autoComplete="off"
             />
@@ -355,7 +357,7 @@ export default async function MetaInboxIntegrationPage({
           <label className="integration-detail-v2-field">
             <span>Verify token</span>
             <input
-              type="text"
+              type="password"
               name="verify_token"
               defaultValue={verifyToken}
               autoComplete="off"
@@ -389,7 +391,7 @@ export default async function MetaInboxIntegrationPage({
             {verifyToken ? (
               <label className="integration-detail-v2-field">
                 <span>Verify token</span>
-                <input type="text" readOnly value={verifyToken} />
+                <input type="password" readOnly value={verifyToken} />
               </label>
             ) : null}
           </div>
