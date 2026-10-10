@@ -1,6 +1,6 @@
 # Matriz de seguimiento Demi 2.0 — 9 octubre 2026
 
-**5/18 casos maestros aprobados (27.8 %); 13 parciales (72.2 %).** M03, M06, M09, M13 y M17 pasaron sus criterios de negocio. El transporte externo permanece en M01 y no se da por aprobado. Cada fila distingue variantes que pasaron de lo que falta para cerrar el caso. Las correcciones detectadas se detallan debajo.
+**7/18 casos maestros aprobados (38.9 %); 11 parciales (61.1 %).** M02, M03, M06, M07, M09, M13 y M17 pasaron sus criterios de negocio. El transporte externo permanece en M01 y no se da por aprobado. Cada fila distingue variantes que pasaron de lo que falta para cerrar el caso. Las correcciones detectadas se detallan debajo.
 
 Validación: 1135/1135 pruebas automáticas, typecheck y compilación correctos; lint sin errores (un aviso preexistente). Histórico: 97 variantes SQL; nueva ejecución de 24 controles de Mercado Pago, nueve motivos humanos y nueve controles de seguimiento con el rol real service_role. Estos conjuntos se solapan y no se suman como casos maestros. El usuario completó el pago de prueba de $150 MXN: verificado contra Mercado Pago como processed/accredited y asociado a su solicitud. Webhook externo y entrega real del aviso aún pendientes.
 
@@ -8,14 +8,14 @@ Validación: 1135/1135 pruebas automáticas, typecheck y compilación correctos;
 
 | Medida | Resultado | Interpretación |
 | --- | --- | --- |
-| Casos maestros aprobados integralmente | 5/18 (27.8 %) | M03, M06, M09, M13 y M17 tienen evidencia de V1–V3; ver documento de evidencia específico. |
-| Casos maestros parciales | 13/18 (72.2 %) | Los restantes tienen verificaciones aprobadas y pendientes identificados. |
-| Casos maestros por cerrar | 13/18 (72.2 %) | Porcentaje de cierres pendientes, no de esfuerzo ni de implementación restante. |
+| Casos maestros aprobados integralmente | 7/18 (38.9 %) | M02, M03, M06, M07, M09, M13 y M17 tienen evidencia de V1–V3; ver documento de evidencia específico. |
+| Casos maestros parciales | 11/18 (61.1 %) | Los restantes tienen verificaciones aprobadas y pendientes identificados. |
+| Casos maestros por cerrar | 11/18 (61.1 %) | Porcentaje de cierres pendientes, no de esfuerzo ni de implementación restante. |
 | Pruebas automáticas aprobadas en la última ejecución registrada | 1135/1135 (100 %) | Regresión técnica; no son 1130 casos UAT de negocio. |
 | Verificaciones SQL registradas | 97 | Evidencia técnica acumulada; no existe un total exhaustivo de variantes pendientes para calcular su porcentaje. |
 | Decisión de promoción | No lista | Faltan pagos nuevos, transporte externo y variantes de negocio. No se ha publicado esta rama en producción. |
 
-Los resultados son los de la última ejecución guardada, no una nueva corrida de pruebas. No se registran casos maestros cerrados como fallidos: M03, M06, M09, M13 y M17 pasaron y 13 permanecen parciales; los defectos encontrados y corregidos conservan su historial.
+Los resultados son los de la última ejecución guardada, no una nueva corrida de pruebas. No se registran casos maestros cerrados como fallidos: M02, M03, M06, M07, M09, M13 y M17 pasaron y 11 permanecen parciales; los defectos encontrados y corregidos conservan su historial.
 
 ### Política de pagos confirmada con el usuario
 
@@ -36,12 +36,12 @@ La actualización de esta matriz no aprueba un caso ni sustituye su ejecución. 
 | Caso                       | Estado  | Ya pasó                                                                                                                           | Pendiente de mi lado                                                                 | Accionable de tu lado                                        |
 | -------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
 | M01 Canales                | Parcial | Bienvenida WhatsApp recibida; Facebook integrado y recorrido interno completo.                                                    | Entrada y entrega reales de Meta en los canales conectados.                          | Conectar Instagram.                                          |
-| M02 Identidad              | Parcial | Cruces de estudio/conversación y apropiación de teléfonos existentes bloqueados.                                                  | Ambigüedad conversacional y vínculo verificado entre canales.                        | Ninguno por ahora.                                           |
+| M02 Identidad | Aprobado | Búsqueda mínima, número inválido y normalizado; ficha existente sólo tras verificación humana en interfaz; ocho créditos recuperados sin duplicar perfil ni perder historial. | Ninguno en V1–V3; transporte externo en M01. | Ninguno. |
 | M03 No clasifica           | Aprobado | V1–V3: configuración oficial, disciplina distinta, distancia sin descarte, rechazo/opt-out y retorno con histórico; faltantes canalizados. | Ninguno en el caso de negocio; transporte externo se sigue en M01. | Ninguno por ahora.                                           |
 | M04 Seguimientos           | Parcial | Dos mensajes, intervalos, deduplicación y cancelación de pendientes/reclamados.                                                   | Recorrido conversacional completo y entrega real de seguimientos.                    | Ninguno por ahora.                                           |
 | M05 Pago antes de datos    | Parcial | WhatsApp/Facebook: comprobante antes de ficha/reserva; enlace público con siete controles SQL y formulario verificado.            | Liga individual y validación automática MP implementadas; 24 controles nativos pasaron. Pago nuevo de $150 verificado por consulta al proveedor; falta webhook real y entrega externa del aviso. Bancomer/OXXO a Bancomer mantienen comprobante y revisión manual. | Pago de prueba completado; sin nueva acción solicitada por ahora. |
 | M06 Grupo | Aprobado | D15–D20 y V1–V3: documentos conjuntos/separados, pagador externo al grupo, crédito propio, datos/pagos parciales, teléfono compartido y cupo cambiado con éxito parcial preservado y caso humano. Revisión manual y repetición sin doble pago. | Ninguno de negocio en las variantes definidas; Mercado Pago nuevo en M05 y transporte en M01/M18. | Ninguno. |
-| M07 Cupo/reembolso         | Parcial | Sin cupo no se prepara cobro; solicitud persistente de reembolso y atención humana.                                               | Alternativas conversacionales y referencias para devolución manual después de pago.        | Ninguno por ahora.                                           |
+| M07 Cupo/devolución manual | Aprobado | Clase llena y alternativa real; cupo ocupado después del comprobante detectado; refund_request real con documento, pago y sesión, sin sobrecupo ni devolución automática. | Ninguno en V1–V3; devolución ejecutada manualmente por el equipo. | Ninguno para el UAT. |
 | M08 Primera reserva        | Parcial | Una ficha/reserva/pago; repetición conserva validación. QR nativo y portal propio, sin QR de otra alumna.                         | Entrega de acceso/QR por los canales externos.                                       | Ninguno por ahora.                                           |
 | M09 Fallos/reintentos | Aprobado | V1–V3: tres fallos previos sin reserva/débito, timeout recuperado sin duplicados, salida fallida auditada y caso humano al tercero; cuarto evento sin nueva ejecución. WhatsApp y Facebook. | Ninguno de negocio; transporte externo en M01. | Ninguno. |
 | M10 Cancelación            | Parcial | Corte exacto de cinco horas; tardía consume una vez. Prueba inicia en primera clase y conserva vencimiento al mover/cancelar.     | Recordatorio y cancelación completos por transporte externo.                         | Ninguno por ahora.                                           |
@@ -121,3 +121,7 @@ Se corrigió el worker para no volver a enviar ante interrupción de red, respue
 ## Pago nuevo verificado — 9 octubre, 20:38 (Ciudad de México)
 
 El usuario completó la compra de prueba de $150 MXN. El worker consultó directamente la orden de Mercado Pago y verificó processed/accredited, importe, moneda y referencia. La solicitud ec322d58-ba7b-4c78-9656-436696e1c10d quedó approved; el grupo quedó awaiting_participants, con cero participantes asignados. El aviso quedó capturado una vez en Sandbox, no entregado externamente. Repetir el worker devolvió cero operaciones y conservó un intento y un turno de aviso. No hay webhook auditado para esta orden: la consulta/reconciliación sí pasó, el transporte del webhook aún no. M05 permanece parcial y el total conserva 5/18.
+
+## Cierres adicionales — 9 octubre (Ciudad de México)
+
+M02 y M07 aprobados y registrados en el banco operativo. Avance: 7/18 (38.9 %), once casos parciales. Identidad: seis controles nativos con roles reales y 21 de canales; interfaz de verificación y conversación de retorno pasaron. Seguimientos: cuatro controles de contenido por etapa y nueve de tiempos/paradas pasaron; worker versión 5 aplicado en Sandbox. M04 permanece parcial por entrega externa y repetición completa del worker con conversaciones. El pago real de prueba de Mercado Pago continuó hasta una ficha de prueba, una reserva validada y un pago de $150; sin comprobante. Repetir el mensaje conserva esos registros. Webhook y entrega externa permanecen pendientes en M05.

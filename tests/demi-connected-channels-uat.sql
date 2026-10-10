@@ -20,9 +20,12 @@ begin
  r:=public.service_prepare_meta_inbox_message(s,ev2,'facebook_messenger','different-page',mid2,'uat-contact','UAT Facebook','text','Hola',clock_timestamp());
  if r->>'reason_code'<>'source_event_invalid' then raise exception 'fb_account_scope:%',r; end if;
  outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M01','variant','facebook_wrong_page_source_event_blocked','passed',true));
+ r:=public.service_identify_demi_meta_contact(s,(first_result->>'assistant_conversation_id')::uuid,'+52 9998885501');
+ if r->>'minimal_identification_completed'<>'true' or exists(select 1 from public.person_contacts where studio_id=s and value='+529998885501') then raise exception 'fb_minimal_claim_not_safe:%',r; end if;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M02','variant','facebook_minimal_phone_claim_before_quote_not_authentication','passed',true));
  r:=public.service_prepare_demi_prospect_payment(s,(first_result->>'assistant_conversation_id')::uuid,(first_result->>'crm_contact_id')::uuid,(run#>>'{fixtures,sessions,available}')::uuid,null);g:=(r->>'group_id')::uuid;
  if not coalesce((r->>'ok')::boolean,false) or exists(select 1 from public.students where studio_id=s and person_id=(select person_id from public.crm_contacts where id=(first_result->>'crm_contact_id')::uuid)) then raise exception 'fb_payment_before_profile:%',r; end if;
- outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M05','variant','facebook_quote_without_phone_or_student','passed',true));
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M05','variant','facebook_quote_after_minimal_search_without_authoritative_phone_or_student','passed',true));
  r:=public.service_complete_demi_meta_group(s,(first_result->>'assistant_conversation_id')::uuid,g,participants);
  if r->>'reason_code'<>'receipt_required_before_participants' or exists(select 1 from public.person_contacts where studio_id=s and value='+529998885501') then raise exception 'fb_phone_before_receipt:%',r; end if;
  outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M05','variant','facebook_phone_and_profile_wait_for_receipt','passed',true));
