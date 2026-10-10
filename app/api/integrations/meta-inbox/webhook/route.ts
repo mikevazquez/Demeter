@@ -439,7 +439,32 @@ export async function POST(request: Request) {
         ? (body as { object: string }).object.slice(0, 24)
         : "unknown",
   });
-  if (!messages.length) return json({ ok: true, accepted: true, messages: 0 });
+  if (!messages.length) {
+    // Safe structural diagnostic after signature validation. Never log IDs, message
+    // content, tokens, signatures or the webhook body.
+    const root = body && typeof body === "object" && !Array.isArray(body)
+      ? body as Record<string, unknown> : {};
+    const entries = Array.isArray(root.entry) ? root.entry : [];
+    const shapes = entries.slice(0, 10).map((rawEntry) => {
+      const entry = rawEntry && typeof rawEntry === "object" && !Array.isArray(rawEntry)
+        ? rawEntry as Record<string, unknown> : {};
+      const messaging = Array.isArray(entry.messaging) ? entry.messaging : [];
+      const changes = Array.isArray(entry.changes) ? entry.changes : [];
+      return {
+        messaging_count: messaging.length,
+        changes_count: changes.length,
+        events_with_sender: messaging.filter((item) => item && typeof item === "object" && "sender" in item).length,
+        events_with_message: messaging.filter((item) => item && typeof item === "object" && "message" in item).length,
+      };
+    });
+    console.info("[demi-meta-inbox] zero_messages_shape", {
+      entry_count: entries.length,
+      sample_field_present: typeof root.field === "string",
+      sample_value_present: Boolean(root.value),
+      entry_shapes: shapes,
+    });
+    return json({ ok: true, accepted: true, messages: 0 });
+  }
 
   let runtimeContext;
   try {
