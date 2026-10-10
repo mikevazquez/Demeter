@@ -76,6 +76,7 @@ function validReturnBaseUrl(value: unknown) {
 
   const hostname = url.hostname.toLowerCase();
   const approvedHost =
+    hostname === "demeterfitness.com" ||
     hostname === "demeterbueno.vercel.app" ||
     (hostname.startsWith("demeterbueno-") && hostname.endsWith("-demeter3.vercel.app"));
 
