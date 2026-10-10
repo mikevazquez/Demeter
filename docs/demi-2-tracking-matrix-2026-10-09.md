@@ -2,7 +2,7 @@
 
 **15/18 casos maestros aprobados (83.3 %); 3 parciales (16.7 %).** M02, M03, M04, M06, M07, M08, M09, M10, M11, M12, M13, M14, M15, M16 y M17 pasaron sus criterios de negocio. Las capturas de Sandbox no acreditan transporte externo: éste permanece en M01/M18. Los pendientes de cada caso se indican abajo.
 
-Validación: 1157/1157 pruebas automáticas en 179 archivos, typecheck sin errores. Inscripción y avisos: 21 controles nativos con roles reales service_role/authenticated. Identidad, grupos, recuperación y contenido de seguimientos tienen evidencia separada. Las pruebas técnicas no se suman como casos maestros. El pago de prueba de $150 de Mercado Pago fue verificado contra el proveedor y aplicado; webhook externo y entrega real siguen pendientes.
+Validación: 1159/1159 pruebas automáticas en 179 archivos, typecheck sin errores. Inscripción y avisos: 21 controles nativos con roles reales service_role/authenticated. Identidad, grupos, recuperación y contenido de seguimientos tienen evidencia separada. Las pruebas técnicas no se suman como casos maestros. El pago de prueba de $150 de Mercado Pago fue verificado contra el proveedor y aplicado; webhook externo y entrega real siguen pendientes.
 
 ## Resumen para promover a producción
 
@@ -10,7 +10,7 @@ Validación: 1157/1157 pruebas automáticas en 179 archivos, typecheck sin error
 | ----------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------- |
 | Casos maestros aprobados            | 15/18 (83.3 %) | M02, M03, M04, M06, M07, M08, M09, M10, M11, M12, M13, M14, M15, M16 y M17.                               |
 | Casos maestros parciales/por cerrar | 3/18 (16.7 %)  | M01, M05 y M18.                                                                                           |
-| Pruebas automáticas                 | 1157/1157      | Regresión técnica; no son casos UAT de negocio.                                                           |
+| Pruebas automáticas                 | 1159/1159      | Regresión técnica; no son casos UAT de negocio.                                                           |
 | Decisión de promoción               | No lista       | Quedan tres casos parciales con validación externa pendiente. Esta rama no se ha publicado en producción. |
 
 ### Política de pagos confirmada con el usuario
@@ -131,7 +131,7 @@ M10, M11, M12 y M16 se registraron como aprobados en el banco operativo, con evi
 - M11: run `34cfe3c4-c343-4f14-a41c-e034e4502ec7`; dos seguimientos capturados, revisión de documento en UI y conversión sin activar paquete o prueba adicional. Compra nueva de Mercado Pago permanece pendiente.
 - M18: PDF real procesado por OCR, identidad ya conocida y reserva provisional con ubicación oficial en run `2d5c24b7-d22e-48f8-9770-6901ff39bd58`. Se implementó audio separado de comprobantes en Facebook/Instagram; pruebas de transporte externo continúan pendientes.
 
-Regresión final: 1157/1157 pruebas,179 archivos; typecheck pasó. No se ha publicado esta rama en producción.
+Regresión final: 1159/1159 pruebas,179 archivos; typecheck pasó. No se ha publicado esta rama en producción.
 
 ## Cierre de preparación interna — 10 octubre 2026
 
@@ -151,3 +151,15 @@ Se amplió el banco UAT para Instagram y escenarios de video/formato desconocido
 Un PDF enviado mediante sobre sintético del receptor Instagram pasó OCR ($150), solicitud de datos y una ficha/reserva provisional con sede/domicilio oficial, sin pago financiero aprobado. Esto prueba el manejo interno del archivo, no que la aplicación Instagram permita transportar PDF. La prueba externa de Instagram usará los formatos que soporte la plataforma; PDF se acredita externamente en WhatsApp/Facebook cuando esté disponible.
 
 La nueva vista previa pasó 1157 pruebas en 179 archivos, typecheck y lint de los archivos modificados sin errores. La conexión fuente de Facebook sigue configurada con un piloto; Instagram todavía no aparece configurado en Sandbox. El callback compartido de WhatsApp sigue apuntando al receptor de producción. M18 mantiene estado parcial hasta probar transporte externo; el total sigue en 15/18 (83.3 %).
+
+## M18 — audio externo de Facebook corregido y aprobado
+
+Se confirmó la suscripción Page a meta-sandbox.demeterfitness.com y se actualizó sólo ese alias a la versión candidata de Sandbox. El receptor respondió HTTP 200 al challenge; producción conservó su despliegue y callback. La consulta de suscripción con token Page devolvió falta de pages_manage_metadata; la consulta de la app confirmó el callback. El primer intento de salida de Messenger se rechazó por ventana cerrada (10/2018278); el usuario escribió desde el piloto y se abrió la respuesta normal.
+
+El primer audio externo llegó y produjo atención técnica: Meta lo rotuló audio/ogg pero los bytes eran MP4/Opus. La corrección detecta el contenedor real para MIME/extensión de transcripción, sin transformar ni alterar la grabación y sin admitir otros tipos de archivos. Se probó el mismo audio y se publicó el arreglo en el receptor Sandbox; el caso técnico se resolvió desde la interfaz normal. El usuario reenvió el audio: transcripción exacta, horarios/domicilio oficiales y respuesta aceptada por Meta y confirmada por el usuario. Únicamente search_class_availability y get_studio_information se ejecutaron; no hubo operación de reserva ni pago.
+
+Evento externo aprobado ad87d83d-fe21-4249-b21d-4f3d983179e0; evento fallido conservado 7f9fb9e0-79ff-4d4c-9d3a-9e9c3dcb60bf. Despliegue receptor dpl_NwgpYkeDVCdtZzrjNySatwiLmkzz. Regresión 1159 pruebas en 179 archivos, typecheck y lint de archivos modificados sin errores. Audio Facebook aprobado como variante; M18 permanece parcial por archivos Facebook y transporte WhatsApp/Instagram.
+
+Se prepara aparte un ajuste exclusivo de WhatsApp para el número piloto 3323291878, sobre la versión de producción; no incluye Demi 2.0 completo. La conexión compartida sigue apuntando a producción y no se modifica antes de habilitar ese ajuste. El receptor WhatsApp de Sandbox pasó challenge HTTP 200 y su piloto está configurado. Total vigente: 15/18 (83.3 %).
+
+WhatsApp: ajuste aislado listo para revisar en PR #261 (https://github.com/mikevazquez/Demeter/pull/261), desactivado por defecto. Diez controles de separación y 1008 pruebas completas sobre la base de producción pasaron; requiere autorización de publicación/habilitación porque modifica ese receptor. El PR #259 mantiene Demi 2.0 completo en Sandbox. Para la siguiente prueba externa de archivos Facebook se preparó tests/fixtures/demi-m18-receipt-150.png, documento ficticio sin valor ni pago real.
