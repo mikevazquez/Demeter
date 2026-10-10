@@ -8,6 +8,8 @@ function harness(
     scopeError?: boolean;
     failDelivery?: boolean;
     revalidate?: boolean;
+    realTransport?: boolean;
+    send?: () => Promise<Response>;
   } = {},
 ) {
   let handler: (request: Request) => Promise<Response>;
@@ -23,21 +25,40 @@ function harness(
               ? { failed: options.failDelivery === true, artifact_id: "capture" }
               : name === "service_finish_demi_followup"
                 ? { ok: true, status: "accepted" }
-                : 0;
+                : name === "service_get_meta_whatsapp_webhook_config"
+                  ? { access_token: "test", phone_number_id: "test", graph_api_version: "v23.0" }
+                  : 0;
     return { data, error: null };
   });
   const chain = {
     select: () => chain,
     eq: () => chain,
     limit: () => chain,
+    single: async () => ({
+      data: {
+        templates: { prospect_1: { name: "approved" } },
+        channel: "whatsapp",
+        external_thread_ref: "523323291878",
+        mode: "active",
+      },
+      error: null,
+    }),
     maybeSingle: async () => ({
-      data: { id: "run" },
+      data: options.realTransport ? null : { id: "run" },
       error: options.scopeError ? { message: "failure" } : null,
     }),
   };
   const client = { rpc, from: () => chain };
   const source = readFileSync("supabase/functions/demi-followup-worker/index.ts", "utf8");
-  new Function("require", "Deno", transformSync(source, { loader: "ts", format: "cjs" }).code)(
+  const send = vi.fn(
+    options.send ?? (() => Promise.resolve(Response.json({ messages: [{ id: "sent" }] }))),
+  );
+  new Function(
+    "require",
+    "Deno",
+    "fetch",
+    transformSync(source, { loader: "ts", format: "cjs" }).code,
+  )(
     (name: string) => {
       if (name !== "npm:@supabase/supabase-js@2.116.0") throw new Error(name);
       return { createClient: () => client };
@@ -53,6 +74,7 @@ function harness(
         handler = fn;
       },
     },
+    send,
   );
   const request = (headers: Record<string, string> = { authorization: "Bearer test-service" }) =>
     handler(
@@ -61,13 +83,42 @@ function harness(
         headers,
         body: JSON.stringify({
           studio_id: "11111111-1111-4111-8111-111111111111",
-          as_of: "2026-10-10T12:00:00Z",
+          ...(!options.realTransport ? { as_of: "2026-10-10T12:00:00Z" } : {}),
         }),
       }),
     );
-  return { rpc, request };
+  return { rpc, request, send };
 }
 describe("Demi followup worker", () => {
+  it.each([
+    [
+      "network interruption",
+      async () => {
+        throw new TypeError("network interrupted");
+      },
+    ],
+    ["missing provider ID", async () => Response.json({ messages: [] })],
+    ["malformed body", async () => new Response("incomplete", { status: 200 })],
+    ["unacknowledged server failure", async () => Response.json({}, { status: 502 })],
+  ] as const)("preserves the lease for human review after %s", async (_, send) => {
+    const h = harness({ realTransport: true, send });
+    const response = await h.request();
+    expect(response.status).toBe(200);
+    expect((await response.json()).outcomes[0].status).toBe("unknown");
+    expect(h.send).toHaveBeenCalledTimes(1);
+    expect(h.rpc.mock.calls.some(([name]) => name === "service_finish_demi_followup")).toBe(false);
+  });
+  it("records an explicit provider rejection as a known failure", async () => {
+    const h = harness({
+      realTransport: true,
+      send: async () => Response.json({ error: { code: 131030 } }, { status: 400 }),
+    });
+    expect((await h.request()).status).toBe(200);
+    expect(h.rpc).toHaveBeenCalledWith(
+      "service_finish_demi_followup",
+      expect.objectContaining({ p_accepted: false, p_error: "meta_131030" }),
+    );
+  });
   it("rejects unauthenticated requests before reading tenant data", async () => {
     const h = harness();
     expect((await h.request({})).status).toBe(401);

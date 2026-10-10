@@ -50,6 +50,7 @@ Deno.serve(async (request: Request) => {
       let accepted = false;
       let provider: string | null = null;
       let error: string | null = null;
+      let sendStarted = false;
       try {
         // Check the lease and stop conditions immediately before calling Meta.
         const check = await client.rpc("service_revalidate_demi_followup", {
@@ -114,6 +115,7 @@ Deno.serve(async (request: Request) => {
             throw new Error("assistant_channel_not_active");
           if (!template?.name || !config.data?.access_token || !config.data?.phone_number_id)
             throw new Error("approved_template_required");
+          sendStarted = true;
           const result = await fetch(
             `https://graph.facebook.com/${config.data.graph_api_version}/${config.data.phone_number_id}/messages`,
             {
@@ -137,12 +139,16 @@ Deno.serve(async (request: Request) => {
           );
           const payload = await result.json();
           accepted = result.ok && Boolean(payload.messages?.[0]?.id);
+          if (!accepted && (result.ok || !payload.error?.code))
+            throw new Error("delivery_outcome_unknown");
+          sendStarted = false;
           provider = accepted ? payload.messages[0].id : null;
           error = accepted ? null : `meta_${payload.error?.code ?? result.status}`;
         }
       } catch (failure) {
-        // A timed out network send has an unknown outcome; leave its lease for human review.
-        if (failure instanceof Error && ["TimeoutError", "AbortError"].includes(failure.name)) {
+        // An interrupted send or unacknowledged response may already have reached Meta.
+        // The persisted lease expires into a human case, without another send.
+        if (sendStarted) {
           outcomes.push({ id: job.id, status: "unknown", code: "delivery_outcome_unknown" });
           continue;
         }

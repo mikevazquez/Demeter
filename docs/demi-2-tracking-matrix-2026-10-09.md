@@ -2,7 +2,7 @@
 
 **5/18 casos maestros aprobados (27.8 %); 13 parciales (72.2 %).** M03, M06, M09, M13 y M17 pasaron sus criterios de negocio. El transporte externo permanece en M01 y no se da por aprobado. Cada fila distingue variantes que pasaron de lo que falta para cerrar el caso. Las correcciones detectadas se detallan debajo.
 
-Validación: 1130/1130 pruebas automáticas, typecheck y compilación correctos; lint sin errores (un aviso preexistente). Histórico: 97 variantes SQL; nueva ejecución de 24 controles de Mercado Pago, nueve motivos humanos y nueve controles de seguimiento con el rol real service_role. Estos conjuntos se solapan y no se suman como casos maestros. Se creó una orden real de prueba de Mercado Pago; compra pendiente del usuario.
+Validación: 1135/1135 pruebas automáticas, typecheck y compilación correctos; lint sin errores (un aviso preexistente). Histórico: 97 variantes SQL; nueva ejecución de 24 controles de Mercado Pago, nueve motivos humanos y nueve controles de seguimiento con el rol real service_role. Estos conjuntos se solapan y no se suman como casos maestros. Se creó una orden real de prueba de Mercado Pago; compra pendiente del usuario.
 
 ## Resumen para promover a producción
 
@@ -11,7 +11,7 @@ Validación: 1130/1130 pruebas automáticas, typecheck y compilación correctos;
 | Casos maestros aprobados integralmente | 5/18 (27.8 %) | M03, M06, M09, M13 y M17 tienen evidencia de V1–V3; ver documento de evidencia específico. |
 | Casos maestros parciales | 13/18 (72.2 %) | Los restantes tienen verificaciones aprobadas y pendientes identificados. |
 | Casos maestros por cerrar | 13/18 (72.2 %) | Porcentaje de cierres pendientes, no de esfuerzo ni de implementación restante. |
-| Pruebas automáticas aprobadas en la última ejecución registrada | 1130/1130 (100 %) | Regresión técnica; no son 1130 casos UAT de negocio. |
+| Pruebas automáticas aprobadas en la última ejecución registrada | 1135/1135 (100 %) | Regresión técnica; no son 1130 casos UAT de negocio. |
 | Verificaciones SQL registradas | 97 | Evidencia técnica acumulada; no existe un total exhaustivo de variantes pendientes para calcular su porcentaje. |
 | Decisión de promoción | No lista | Faltan pagos nuevos, transporte externo y variantes de negocio. No se ha publicado esta rama en producción. |
 
@@ -108,8 +108,12 @@ Conversación de comprobantes separados en c516581: primero $150 y diferencia $1
 
 D16 se repitió después de la corrección en 279a14f: una ficha y reserva sólo para la destinataria; quien paga conserva su rol de pagador. D17 creó una reserva con un crédito existente y otra primera clase de $150, sin duplicar a la alumna. Se detectaron dos respuestas incorrectas: llamar provisionales ambas reservas del grupo mixto y prometer registrar dos participantes con el mismo celular. Se corrigieron las instrucciones y se añadió una acción de revisión humana antes de cobrar cuando el teléfono compartido es explícito. Falta repetir esas respuestas y el cambio de cupo; M06 permanece parcial.
 
-La revisión manual ahora consulta todos los documentos del grupo, muestra el total y la asignación de cada compra y no habilita validación si no carga la evidencia completa. La prueba nativa con rol authenticated comprobó cuatro documentos visibles para el responsable y cero para un usuario ajeno; UPDATE/DELETE del servicio están revocados. Regresión 1130/1130, typecheck y lint sin errores. No se ha modificado producción.
+La revisión manual ahora consulta todos los documentos del grupo, muestra el total y la asignación de cada compra y no habilita validación si no carga la evidencia completa. La prueba nativa con rol authenticated comprobó cuatro documentos visibles para el responsable y cero para un usuario ajeno; UPDATE/DELETE del servicio están revocados. Regresión 1135/1135, typecheck y lint sin errores. No se ha modificado producción.
 
-Repetición en 119d286: grupo mixto distingue reserva confirmada con crédito propio de reserva provisional por transferencia; teléfono compartido crea caso humano y pide esperar antes de pagar. La ficha de una participante muestra los dos documentos de $150, total $300 y asignación $150; ambos archivos privados abrieron HTTP 200. El cambio de cupo conserva una reserva, impide la segunda y registra $150 sin asignar con caso group_partial. Se añadió human_review_created/handoff_id al resultado nativo y se corrigió la explicación de la pausa humana; pendiente repetición de esa última respuesta. Regresión posterior 1130/1130 y 18 controles nativos pasaron, incluyendo correspondencia del handoff devuelto con el caso realmente persistido.
+Repetición en 119d286: grupo mixto distingue reserva confirmada con crédito propio de reserva provisional por transferencia; teléfono compartido crea caso humano y pide esperar antes de pagar. La ficha de una participante muestra los dos documentos de $150, total $300 y asignación $150; ambos archivos privados abrieron HTTP 200. El cambio de cupo conserva una reserva, impide la segunda y registra $150 sin asignar con caso group_partial. Se añadió human_review_created/handoff_id al resultado nativo y se corrigió la explicación de la pausa humana; pendiente repetición de esa última respuesta. Regresión posterior 1135/1135 y 18 controles nativos pasaron, incluyendo correspondencia del handoff devuelto con el caso realmente persistido.
 
 M06 aprobado en c6c9592: la última repetición informó la reserva parcial y el caso humano real, sin ofrecer nuevas operaciones durante su control. Un mensaje posterior no produjo llamada al modelo, respuesta, reserva ni cobro. Evidencia: demi-2-m06-evidence-2026-10-10.json. Avance vigente: 5/18 aprobados (27.8 %), 13/18 por cerrar (72.2 %).
+
+## Seguimientos — resultado desconocido del proveedor
+
+Se corrigió el worker para no volver a enviar ante interrupción de red, respuesta malformada, éxito sin identificador o fallo sin rechazo explícito. Conserva el lease: el mecanismo nativo vence la operación y crea revisión humana. Un rechazo explícito de Meta conserva el flujo de fallo conocido. Once pruebas del worker pasaron; regresión completa 1135/1135 y typecheck correctos. Worker versión 4 aplicado únicamente en Sandbox. M04 sigue parcial: esta corrección no acredita contenido por etapa ni transporte externo.
