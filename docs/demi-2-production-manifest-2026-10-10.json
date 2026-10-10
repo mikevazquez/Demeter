@@ -1,6 +1,6 @@
 {
   "project_id": "qfhojvgvhrbautvczffq",
-  "status": "prepared_not_applied",
+  "status": "authorized_deploying",
   "order": "explicit_dependency_order_not_blanket_db_push",
   "migrations": [
     "supabase/migrations/20261007162000_demi_meta_inbox_multichannel.sql",
@@ -22,6 +22,7 @@
     "supabase/migrations/20261009163431_demi_2_followup_dispatch.sql",
     "supabase/migrations/20261009164055_demi_2_runtime_hardening.sql",
     "supabase/migrations/20261009164357_demi_2_followup_configuration.sql",
+    "supabase/migrations/20261010230538_demi_whatsapp_referral_production_dependency.sql",
     "supabase/migrations/20261009164630_demi_2_service_permissions.sql",
     "supabase/migrations/20261009165842_demi_2_followup_reply_source.sql",
     "supabase/migrations/20261009172113_demi_2_human_control.sql",
