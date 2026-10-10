@@ -157,7 +157,7 @@ export async function saveMetaInboxConnection(formData: FormData) {
   // server instead of requiring the administrator to copy it from Meta.
   // Never log the token or include it in a query string or a redirect.
   if (instagramAccessToken) {
-    if (/^(?:Bearer\\s+|https?:\\/\\/|["'])/i.test(instagramAccessToken) || /\\s/.test(instagramAccessToken)) {
+    if (instagramAccessToken.startsWith("Bearer ") || instagramAccessToken.startsWith("http") || instagramAccessToken.includes(" ") || instagramAccessToken.includes("\n")) {
       redirect("/admin/integraciones/meta-inbox?connection=error&code=instagram_token_format");
     }
     let resolvedId = "";
