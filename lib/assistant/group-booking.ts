@@ -6,7 +6,7 @@ import {
   type MetaWhatsAppWebhookConfig,
   type MetaDownloadedMedia,
 } from "./meta-whatsapp-channel";
-import { readTransferReceipt } from "./receipt-reader";
+import { readTransferReceipt, rejectedTransferReceiptReply } from "./receipt-reader";
 import { hasExplicitSharedParticipantPhone } from "./participant-contact-intent";
 
 export async function groupBookingAction(input: {
@@ -162,6 +162,14 @@ export async function handleDemiGroupReceipt(input: {
   } catch {
     /* Retain file and request a readable replacement. */
   }
+  const rejectedReply = rejectedTransferReceiptReply(reading);
+  if (rejectedReply)
+    return {
+      handled: true as const,
+      reply: rejectedReply,
+      result: { ok: false, reason_code: "receipt_not_payment_evidence" },
+    };
+
   const { data, error } = await input.supabase.rpc("service_record_demi_group_receipt", {
     p_studio: input.studioId,
     p_conversation: input.conversationId,

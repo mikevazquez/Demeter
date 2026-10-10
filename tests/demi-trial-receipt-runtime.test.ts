@@ -4,11 +4,22 @@ import { describe, expect, it, vi } from "vitest";
 import { demiDeliveryRetryPolicy } from "../lib/assistant/delivery-retry-policy";
 import { trialReceiptConfirmation } from "../lib/assistant/receipt-confirmation";
 
+const receiptReader = { exports: {} as typeof import("../lib/assistant/receipt-reader") };
+new Function(
+  "module",
+  "exports",
+  transformSync(
+    readFileSync("lib/assistant/receipt-reader.ts", "utf8").replace('import "server-only";', ""),
+    { loader: "ts", format: "cjs" },
+  ).code,
+)(receiptReader, receiptReader.exports);
+
 function harness(
   amount = 15000,
   confidence = 0.99,
   storageFails = false,
   activationReason?: string,
+  nonPaymentReason?: "sample_or_no_value",
 ) {
   const bytes = new Uint8Array([137, 80, 78, 71]);
   const upload = vi.fn(async () => ({
@@ -62,6 +73,7 @@ function harness(
     reference: null,
     bank: null,
     confidence,
+    nonPaymentReason,
   }));
   const access = vi.fn(async () => ({ already_has_access: true }));
   const deps: Record<string, unknown> = {
@@ -76,7 +88,7 @@ function harness(
     "@/lib/assistant/delivery-retry-policy": { demiDeliveryRetryPolicy },
     "@/lib/assistant/runtime-config": {},
     "@/lib/assistant/read-tools": {},
-    "@/lib/assistant/receipt-reader": { readTransferReceipt: read },
+    "@/lib/assistant/receipt-reader": { ...receiptReader.exports, readTransferReceipt: read },
     "@/lib/assistant/receipt-confirmation": { trialReceiptConfirmation },
     "@/lib/assistant/student-access": { provisionStudentAccessWithServiceClient: access },
     "@/lib/assistant/meta-whatsapp-channel": {
@@ -181,4 +193,14 @@ describe("Demi first-class receipt processing", () => {
     expect((await h.run()).reply).toContain("ese lugar dejó de estar disponible");
     expect(h.access).not.toHaveBeenCalled();
   });
+});
+
+it("rejects explicitly fictitious evidence before storage or any payment/reservation mutation", async () => {
+  const h = harness(15000, 0.99, false, undefined, "sample_or_no_value");
+  const result = await h.run();
+  expect(result.handled).toBe(true);
+  expect(result.reply).toContain("no la acepté");
+  expect(h.upload).not.toHaveBeenCalled();
+  expect(h.supabase.rpc).not.toHaveBeenCalled();
+  expect(h.updates).toEqual([]);
 });
