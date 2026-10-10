@@ -30,6 +30,7 @@ export type MetaInboxInboundMessage = {
   messageType: "text" | "postback" | "attachment" | "unknown";
   text: string;
   attachmentUrl: string | null;
+  attachmentType?: "image" | "file" | "audio" | "video" | "unsupported" | null;
 };
 
 export type MetaInboxDeliveryResult =
@@ -198,6 +199,7 @@ export function extractMetaInboxMessages(body: unknown): MetaInboxInboundMessage
       let text = "";
       let providerMessageId = "";
       let attachmentUrl: string | null = null;
+      let attachmentType: MetaInboxInboundMessage["attachmentType"] = null;
 
       if (message) {
         providerMessageId = safeText(message.mid) ?? "";
@@ -206,9 +208,14 @@ export function extractMetaInboxMessages(body: unknown): MetaInboxInboundMessage
         const firstAttachment = isObject(attachments[0]) ? attachments[0] : null;
         const payload =
           firstAttachment && isObject(firstAttachment.payload) ? firstAttachment.payload : {};
-        if (firstAttachment && ["image", "file"].includes(String(firstAttachment.type ?? ""))) {
+        if (firstAttachment) {
           messageType = "attachment";
-          text = directText ? `[archivo recibido] ${directText}` : "[archivo recibido]";
+          const type = String(firstAttachment.type ?? "");
+          attachmentType = ["image", "file", "audio", "video"].includes(type)
+            ? (type as "image" | "file" | "audio" | "video")
+            : "unsupported";
+          const marker = attachmentType === "audio" ? "[audio recibido]" : "[archivo recibido]";
+          text = directText ? `${marker} ${directText}` : marker;
           attachmentUrl = safeText(payload.url);
         } else if (directText) {
           messageType = "text";
@@ -244,6 +251,7 @@ export function extractMetaInboxMessages(body: unknown): MetaInboxInboundMessage
         messageType,
         text,
         attachmentUrl,
+        attachmentType,
       });
     }
   }
@@ -257,7 +265,10 @@ const META_RECEIPT_MIMES = new Set(["image/jpeg", "image/png", "image/webp", "ap
  * Meta supplies a short-lived CDN URL in a signed webhook. Never fetch an
  * arbitrary user-provided URL; allow only Meta CDN hostnames and no redirects.
  */
-export async function downloadMetaInboxAttachment(urlText: string) {
+export async function downloadMetaInboxAttachment(
+  urlText: string,
+  kind: "receipt" | "audio" = "receipt",
+) {
   const injected = demiUatScope()?.media.get(urlText);
   if (injected) return injected;
   let url: URL;
@@ -286,7 +297,11 @@ export async function downloadMetaInboxAttachment(urlText: string) {
   const advertised = Number(response.headers.get("content-length") ?? "0");
   if (advertised > 10 * 1024 * 1024) throw new Error("meta_attachment_too_large");
   const mimeType = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
-  if (!META_RECEIPT_MIMES.has(mimeType)) throw new Error("meta_attachment_type_unsupported");
+  const allowedMimes =
+    kind === "audio"
+      ? new Set(["audio/ogg", "audio/mpeg", "audio/mp4", "audio/wav", "audio/webm"])
+      : META_RECEIPT_MIMES;
+  if (!allowedMimes.has(mimeType)) throw new Error("meta_attachment_type_unsupported");
   const bytes = new Uint8Array(await response.arrayBuffer());
   if (!bytes.length || bytes.byteLength > 10 * 1024 * 1024) {
     throw new Error("meta_attachment_size_invalid");

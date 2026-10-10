@@ -28,6 +28,9 @@ function load() {
   );
   return {
     download,
+    transcribeBytes: (
+      loadedModule.exports as { transcribeDemiAudioBytes: (media: unknown) => Promise<string> }
+    ).transcribeDemiAudioBytes,
     transcribe: (
       loadedModule.exports as { transcribeDemiAudio: (input: unknown) => Promise<string> }
     ).transcribeDemiAudio,
@@ -52,6 +55,31 @@ describe("Demi audio transcription", () => {
     expect(form.get("language")).toBe("es");
     expect((form.get("file") as File).name).toBe("audio.ogg");
   });
+  it("transcribes a downloaded Meta inbox audio without looking up WhatsApp media", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "test-key");
+    const request = vi.fn(async () => Response.json({ text: "Información de clases, por favor." }));
+    vi.stubGlobal("fetch", request);
+    const h = load();
+    expect(await h.transcribeBytes({ bytes: new Uint8Array([1, 2]), mimeType: "audio/mpeg" })).toBe(
+      "Información de clases, por favor.",
+    );
+    expect(h.download).not.toHaveBeenCalled();
+    const body = (request.mock.calls[0] as unknown as [string, RequestInit])[1].body as FormData;
+    expect((body.get("file") as File).name).toBe("audio.mp3");
+  });
+  it.each(["application/pdf", "video/mp4", "text/html"])(
+    "does not reinterpret %s as audio",
+    async (mimeType) => {
+      vi.stubEnv("OPENAI_API_KEY", "test-key");
+      const request = vi.fn();
+      vi.stubGlobal("fetch", request);
+      const h = load();
+      await expect(h.transcribeBytes({ bytes: new Uint8Array([1]), mimeType })).rejects.toThrow(
+        "audio_media_invalid",
+      );
+      expect(request).not.toHaveBeenCalled();
+    },
+  );
   it("does not download private media when the transcription provider is unavailable", async () => {
     vi.stubEnv("OPENAI_API_KEY", "");
     const h = load();

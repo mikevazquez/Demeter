@@ -1,9 +1,11 @@
+import { transcribeDemiAudioBytes } from "@/lib/assistant/audio-transcription";
 import { demiDeliveryRetryPolicy } from "@/lib/assistant/delivery-retry-policy";
 import { handleDemiMetaInboxReceipt } from "@/lib/assistant/meta-inbox-receipt";
 import { demiUatScope } from "@/lib/assistant/uat-scope";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
 import {
+  downloadMetaInboxAttachment,
   extractMetaInboxMessages,
   loadMetaInboxWebhookConfig,
   metaInboxSha256,
@@ -674,6 +676,40 @@ export async function POST(request: Request) {
       continue;
     }
 
+    let audioFailureReply: { reply: string; outcome: string } | null = null;
+    if (message.messageType === "attachment" && message.attachmentType === "audio") {
+      try {
+        if (!message.attachmentUrl) throw new Error("audio_url_missing");
+        const media = await downloadMetaInboxAttachment(message.attachmentUrl, "audio");
+        const transcript = await transcribeDemiAudioBytes(media);
+        const saved = await supabase
+          .from("assistant_turns")
+          .update({ content: transcript })
+          .eq("id", inboundTurnId)
+          .eq("studio_id", studioId)
+          .eq("conversation_id", conversationId);
+        if (saved.error) throw new Error("audio_transcript_persist_failed");
+        message.text = transcript;
+      } catch {
+        const human = await supabase.rpc("assistant_create_handoff", {
+          target_studio_id: studioId,
+          target_conversation_id: conversationId,
+          target_student_id: studentId,
+          target_reason_code: "technical_block",
+          target_note:
+            "No se pudo transcribir el audio de Meta; no se ejecutó ninguna reserva ni pago.",
+        });
+        audioFailureReply = {
+          reply:
+            "Recibí tu audio, pero no pude transcribirlo. Puedes reenviarlo o escribir tu solicitud." +
+            (!human.error && human.data?.ok === true
+              ? " El caso quedó con el equipo para revisión."
+              : " No confirmé ninguna reserva ni pago."),
+          outcome: "meta_audio_review",
+        };
+      }
+    }
+
     const { data: recentTurns, error: historyError } = await supabase
       .from("assistant_turns")
       .select("role,content,created_at")
@@ -702,8 +738,24 @@ export async function POST(request: Request) {
       }));
 
     // Share Demi 2.0's payment-first state and native reservation operation.
-    let deterministicReply: { reply: string; outcome: string } | null = null;
-    if (sendReplies && message.messageType === "attachment") {
+    let deterministicReply: { reply: string; outcome: string } | null = audioFailureReply;
+    if (
+      sendReplies &&
+      message.messageType === "attachment" &&
+      ["video", "unsupported"].includes(String(message.attachmentType))
+    ) {
+      deterministicReply = {
+        reply:
+          "Ese formato de archivo no está soportado. Envía tu solicitud por escrito o el comprobante como imagen o PDF. No confirmé ninguna reserva ni pago.",
+        outcome: "meta_attachment_unsupported",
+      };
+    }
+    if (
+      sendReplies &&
+      message.messageType === "attachment" &&
+      message.attachmentType !== "audio" &&
+      !deterministicReply
+    ) {
       try {
         const receipt = await handleDemiMetaInboxReceipt({
           supabase,
@@ -875,8 +927,7 @@ export async function POST(request: Request) {
         target_student_id: null,
         target_reason_code: "technical_block",
         target_note:
-          "Meta aceptó la respuesta pero falló su registro local. No reenviar. Evento: " +
-          event.id,
+          "Meta aceptó la respuesta pero falló su registro local. No reenviar. Evento: " + event.id,
       });
       continue;
     }

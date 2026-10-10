@@ -119,16 +119,19 @@ async function record(ctx: Awaited<ReturnType<typeof ownedRun>>, kind: string, p
   if (error) throw new Error("demi_uat_evidence_failed");
 }
 async function snapshot(ctx: Awaited<ReturnType<typeof ownedRun>>) {
-  const entries = await Promise.all(
-    TABLES.map(async (table) => {
-      const { data, error } = await ctx.service
-        .from(table)
-        .select("*")
-        .eq("studio_id", ctx.run.studio_id)
-        .limit(300);
-      return [table, error ? { error: error.message } : data] as const;
-    }),
-  );
+  const entries: Array<readonly [string, unknown]> = [];
+  for (let offset = 0; offset < TABLES.length; offset += 6) {
+    const batch = await Promise.all(
+      TABLES.slice(offset, offset + 6).map(async (table) => {
+        const query = () =>
+          ctx.service.from(table).select("*").eq("studio_id", ctx.run.studio_id).limit(300);
+        let result = await query();
+        if (result.error) result = await query();
+        return [table, result.error ? { error: result.error.message } : result.data] as const;
+      }),
+    );
+    entries.push(...batch);
+  }
   return Object.fromEntries(entries);
 }
 
@@ -325,7 +328,11 @@ export async function sendDemiUatMessage(form: FormData) {
                       text,
                       attachments: [
                         {
-                          type: file.type === "application/pdf" ? "file" : "image",
+                          type: file.type.startsWith("audio/")
+                            ? "audio"
+                            : file.type === "application/pdf"
+                              ? "file"
+                              : "image",
                           payload: { url: attachmentUrl },
                         },
                       ],
