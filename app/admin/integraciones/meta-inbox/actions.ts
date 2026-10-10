@@ -396,3 +396,42 @@ export async function saveInstagramSigningSecret(formData: FormData) {
   revalidatePath("/admin/integraciones/meta-inbox");
   redirect(`/admin/integraciones/meta-inbox?instagram_secret=${error ? "failed" : "saved"}`);
 }
+
+/** Verify the saved Instagram credential without revealing it to the browser. */
+export async function diagnoseInstagramSavedToken() {
+  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  if (studio.id !== "9fe23cfa-fb47-4670-afeb-ed4a56433772" || process.env.VERCEL_ENV !== "preview") {
+    redirect("/admin/integraciones/meta-inbox?instagram_token_check=restricted");
+  }
+  let result = "unavailable";
+  try {
+    const { data, error } = await createServiceClient().rpc("service_get_meta_inbox_webhook_config", {
+      target_studio_id: studio.id,
+    });
+    const config = data && typeof data === "object" && !Array.isArray(data)
+      ? data as Record<string, unknown> : {};
+    const token = typeof config.instagram_access_token === "string" ? config.instagram_access_token.trim() : "";
+    const accountId = typeof config.instagram_user_id === "string" ? config.instagram_user_id.trim() : "";
+    const version = typeof config.graph_api_version === "string" ? config.graph_api_version.trim() : "";
+    if (error || !token || !/^\d+$/.test(accountId) || !/^v\d+\.\d+$/.test(version)) {
+      result = "missing";
+    } else {
+      const response = await fetch(`https://graph.instagram.com/${version}/me?fields=id,user_id,username`, {
+        headers: { authorization: `Bearer ${token}`, accept: "application/json" },
+        cache: "no-store",
+        signal: AbortSignal.timeout(12000),
+      });
+      const raw: unknown = await response.json().catch(() => null);
+      const profile = raw && typeof raw === "object" && !Array.isArray(raw)
+        ? raw as Record<string, unknown> : {};
+      result = response.ok
+        ? String(profile.id ?? profile.user_id ?? "") === accountId &&
+          String(profile.username ?? "").toLowerCase() === "demeter_fitness_studio"
+          ? "valid" : "wrong_account"
+        : response.status === 400 || response.status === 401 ? "rejected" : "unavailable";
+    }
+  } catch {
+    result = "unavailable";
+  }
+  redirect(`/admin/integraciones/meta-inbox?instagram_token_check=${result}`);
+}
