@@ -20,7 +20,7 @@ export async function saveMetaInboxConnection(formData: FormData) {
   const pageId = String(formData.get("page_id") ?? "").trim();
   const metaAppId = String(formData.get("meta_app_id") ?? "").trim();
   const instagramAccessToken = String(formData.get("instagram_access_token") ?? "").trim();
-  const instagramUserId = String(formData.get("instagram_user_id") ?? "").trim();
+  let instagramUserId = String(formData.get("instagram_user_id") ?? "").trim();
   const graphApiVersion = String(formData.get("graph_api_version") ?? "").trim();
   const appSecret = String(formData.get("app_secret") ?? "").trim();
   const verifyToken = String(formData.get("verify_token") ?? "").trim();
@@ -151,6 +151,48 @@ export async function saveMetaInboxConnection(formData: FormData) {
         `/admin/integraciones/meta-inbox?connection=error&code=page_token_${pageTokenStatus}`,
       );
     }
+  }
+
+  // Instagram Login tokens identify the professional account. Resolve its ID on the
+  // server instead of requiring the administrator to copy it from Meta.
+  // Never log the token or include it in a query string or a redirect.
+  if (instagramAccessToken) {
+    if (/^(?:Bearer\\s+|https?:\\/\\/|["'])/i.test(instagramAccessToken) || /\\s/.test(instagramAccessToken)) {
+      redirect("/admin/integraciones/meta-inbox?connection=error&code=instagram_token_format");
+    }
+    let resolvedId = "";
+    let resolvedUsername = "";
+    try {
+      const response = await fetch(`https://graph.instagram.com/${graphApiVersion}/me?fields=id,user_id,username`, {
+        headers: { authorization: `Bearer ${instagramAccessToken}`, accept: "application/json" },
+        cache: "no-store",
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!response.ok) {
+        redirect("/admin/integraciones/meta-inbox?connection=error&code=instagram_token_rejected");
+      }
+      const payload: unknown = await response.json();
+      const profile = payload && typeof payload === "object" && !Array.isArray(payload)
+        ? payload as Record<string, unknown> : null;
+      resolvedId = String(profile?.user_id ?? profile?.id ?? "").trim();
+      resolvedUsername = String(profile?.username ?? "").trim().replace(/^@/, "").toLowerCase();
+    } catch (error) {
+      // Next.js redirect throws a special control-flow error: do not swallow it.
+      if (error && typeof error === "object" && "digest" in error && String(error.digest).startsWith("NEXT_REDIRECT")) throw error;
+      redirect("/admin/integraciones/meta-inbox?connection=error&code=instagram_profile_unavailable");
+    }
+    if (!/^[0-9]{5,32}$/.test(resolvedId)) {
+      redirect("/admin/integraciones/meta-inbox?connection=error&code=instagram_profile_invalid");
+    }
+    if (studio.id === "9fe23cfa-fb47-4670-afeb-ed4a56433772" && resolvedUsername !== "demeter_fitness_studio") {
+      redirect("/admin/integraciones/meta-inbox?connection=error&code=instagram_wrong_account");
+    }
+    if (instagramUserId && instagramUserId !== resolvedId) {
+      redirect("/admin/integraciones/meta-inbox?connection=error&code=instagram_id_mismatch");
+    }
+    instagramUserId = resolvedId;
+  } else if (instagramUserId) {
+    redirect("/admin/integraciones/meta-inbox?connection=error&code=instagram_token_required");
   }
 
   const { error } = await supabase.rpc("admin_set_meta_inbox_connection", {
