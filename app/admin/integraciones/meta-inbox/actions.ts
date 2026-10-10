@@ -378,3 +378,21 @@ export async function manageInstagramWebhookSubscription(formData: FormData) {
   revalidatePath("/admin/integraciones/meta-inbox");
   redirect(`/admin/integraciones/meta-inbox?ig_subscription=${outcome}`);
 }
+
+/** Store the Instagram application's signing secret independently from Messenger. */
+export async function saveInstagramSigningSecret(formData: FormData) {
+  const secret = String(formData.get("instagram_app_secret") ?? "").trim();
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  if (studio.id !== "9fe23cfa-fb47-4670-afeb-ed4a56433772" || process.env.VERCEL_ENV !== "preview") {
+    redirect("/admin/integraciones/meta-inbox?instagram_secret=restricted");
+  }
+  if (secret.length < 16 || secret.length > 512) {
+    redirect("/admin/integraciones/meta-inbox?instagram_secret=invalid");
+  }
+  const { error } = await supabase.rpc("admin_set_meta_instagram_app_secret", {
+    target_studio_id: studio.id,
+    target_app_secret: secret,
+  });
+  revalidatePath("/admin/integraciones/meta-inbox");
+  redirect(`/admin/integraciones/meta-inbox?instagram_secret=${error ? "failed" : "saved"}`);
+}
