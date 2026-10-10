@@ -1,0 +1,2 @@
+alter table public.assistant_pending_actions drop constraint assistant_pending_actions_action_type_check;
+alter table public.assistant_pending_actions add constraint assistant_pending_actions_action_type_check check(action_type in ('booking.create','booking.cancel','booking.reschedule','waitlist.join','account.activate','enrollment.resolve','commerce.transfer_package_choice','commerce.cash_purchase'));

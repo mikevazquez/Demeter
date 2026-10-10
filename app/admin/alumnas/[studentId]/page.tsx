@@ -1,3 +1,5 @@
+import { getTransferGroupReceiptReviews } from "@/lib/assistant/group-receipt-review";
+import { resolveEnrollmentStatus } from "@/lib/assistant/enrollment-state";
 import Link from "next/link";
 import { contactStage } from "@/lib/student-crm";
 import { contactConversations } from "@/lib/student-crm-conversations";
@@ -251,6 +253,7 @@ export default async function StudentProfilePage({
     supabase
       .from("student_enrollments")
       .select("id,status,starts_on,expires_on,created_at")
+      .is("refunded_at", null)
       .eq("studio_id", studio.id)
       .eq("student_id", student.id)
       .order("created_at", { ascending: false }),
@@ -463,6 +466,21 @@ export default async function StudentProfilePage({
         .limit(20)
     : { data: [] };
   const transferPurchaseRows = transferPurchases ?? [];
+  const groupReceiptReviews = await getTransferGroupReceiptReviews(
+    supabase, studio.id, canReadSales ? transferPurchaseRows.map((p) => p.id) : [],
+  );
+  const groupReceiptUrlMap = new Map<string, string>();
+  if (canReadSales && groupReceiptReviews.available) {
+    const paths = [...new Set([...groupReceiptReviews.byIntent.values()].flatMap((g) => g.documents.map((d) => d.path)))];
+    if (paths.length) {
+      const service = createServiceClient();
+      const signed = await Promise.all(paths.map(async (path) => {
+        const { data, error } = await service.storage.from("transfer-receipts").createSignedUrl(path, 600);
+        return { path, url: error ? null : data?.signedUrl };
+      }));
+      for (const document of signed) if (document.url) groupReceiptUrlMap.set(document.path, document.url);
+    }
+  }
   const transferReceiptUrlMap = new Map<string, string>();
   if (canReadSales) {
     const receiptRows = transferPurchaseRows.filter(
@@ -667,6 +685,7 @@ export default async function StudentProfilePage({
     pendingBalanceMinor = confirmedSales.reduce((sum, sale) => sum + sale.balanceMinor, 0);
   }
 
+  if (enrollmentRowsResult.error) throw new Error("crm_enrollment_unavailable");
   const enrollmentRows = enrollmentRowsResult.data ?? [];
   const enrollment =
     enrollmentRows.find(
@@ -1007,7 +1026,7 @@ export default async function StudentProfilePage({
           : "El paquete está bloqueado por una condición de pago pendiente.",
     });
   }
-  if (enrollment && enrollment.status !== "active") {
+  if (enrollment && resolveEnrollmentStatus(enrollmentRows, today) !== "active") {
     alerts.push({
       title: "Inscripción no vigente",
       detail: enrollment.expires_on
@@ -1046,7 +1065,10 @@ export default async function StudentProfilePage({
     <main className="dashboard-shell profile360-page admin-ux04-profile360 crm-page">
       <Profile360Overview
         activeView={view}
-        stage={contactStage(student)}
+        stage={contactStage({
+          ...student,
+          enrollment_status: resolveEnrollmentStatus(enrollmentRows, today),
+        })}
         canEdit={canEdit}
         canReadProducts={canReadProducts}
         showRewards={canReadRewards}
@@ -1426,6 +1448,7 @@ export default async function StudentProfilePage({
               {transferPurchaseRows.length ? (
                 <div className="grid gap-3">
                   {transferPurchaseRows.map((item) => {
+                    const groupReview = groupReceiptReviews.byIntent.get(item.id);
                     const amount = new Intl.NumberFormat(locale, {
                       style: "currency",
                       currency: item.currency ?? currency,
@@ -1469,7 +1492,29 @@ export default async function StudentProfilePage({
                             {item.review_note ? (
                               <p className="mt-2 text-xs text-zinc-400">{item.review_note}</p>
                             ) : null}
-                            {transferReceiptUrlMap.get(item.id) ? (
+                            {!groupReceiptReviews.available ? (
+                              <p className="mt-3 text-xs text-amber-300">
+                                No se pudo cargar toda la evidencia. Vuelve a intentarlo antes de validar.
+                              </p>
+                            ) : groupReview ? (
+                              <div className="mt-3 rounded-2xl border border-white/10 p-3">
+                                <p className="text-xs text-zinc-300">
+                                  Comprobantes del grupo · Total: {new Intl.NumberFormat(locale, { style: "currency", currency: groupReview.currency }).format(groupReview.amountMinor / 100)}.
+                                  {" "}Esta compra tiene asignados {amount}. Revisa todos los documentos.
+                                </p>
+                                <ul className="mt-2 grid gap-2">
+                                  {groupReview.documents.map((document, index) => (
+                                    <li key={document.id} className="text-xs text-zinc-400">
+                                      Documento {index + 1}: {document.amountMinor == null ? "Importe ilegible" : new Intl.NumberFormat(locale, { style: "currency", currency: groupReview.currency }).format(document.amountMinor / 100)}
+                                      {" · "}{document.status === "received" ? "Recibido" : document.status === "unreadable" ? "Ilegible" : "Importe o moneda no coincide"}
+                                      {groupReceiptUrlMap.get(document.path) ? (
+                                        <a href={groupReceiptUrlMap.get(document.path)} target="_blank" rel="noreferrer" className="ml-2 font-semibold text-fuchsia-300">Abrir comprobante</a>
+                                      ) : <span className="ml-2 text-amber-300">Archivo no disponible</span>}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ) : transferReceiptUrlMap.get(item.id) ? (
                               <div className="mt-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
                                 <iframe
                                   title={`Comprobante de transferencia de ${packageName}`}
@@ -1512,7 +1557,7 @@ export default async function StudentProfilePage({
                           </span>
                         </div>
 
-                        {item.status === "provisional_active" && canManageSales ? (
+                        {item.status === "provisional_active" && canManageSales && groupReceiptReviews.available && (!groupReview || (groupReview.documents.length > 0 && groupReview.documents.every((d) => groupReceiptUrlMap.has(d.path)))) ? (
                           <form
                             action={reviewStudentTransferPurchaseAction}
                             className="mt-4 flex flex-wrap gap-2"

@@ -38,7 +38,7 @@ export async function saveDemiPrompt(instructions: string, note: string) {
     .select("id,kind,instructions,note,created_at")
     .single();
   if (error || !data) return { ok: false as const, error: "prompt_storage_unavailable" };
-  revalidatePath("/admin/integraciones/demi");
+  revalidatePath("/admin/mas/demi");
   return { ok: true as const, version: data };
 }
 
@@ -52,7 +52,7 @@ export async function activateDemiPrompt(versionId: string, expectedActive: stri
   if (error) return { ok: false as const, error: "request_failed" };
   const result = data as { ok: boolean; error?: string } | null;
   if (!result?.ok) return { ok: false as const, error: result?.error ?? "request_failed" };
-  revalidatePath("/admin/integraciones/demi");
+  revalidatePath("/admin/mas/demi");
   return { ok: true as const };
 }
 
@@ -252,7 +252,7 @@ export async function setDemiHandoffPolicy(policyId: string, enabled: boolean) {
     .eq("studio_id", studio.id)
     .eq("id", policyId);
   if (error) return { ok: false as const, error: "request_failed" };
-  revalidatePath("/admin/integraciones/demi");
+  revalidatePath("/admin/mas/demi");
   return { ok: true as const };
 }
 
@@ -279,7 +279,7 @@ export async function reviewDemiLearning(proposalId: string, decision: "approved
     .eq("id", proposalId)
     .eq("status", "pending");
   if (error) return { ok: false as const, error: "request_failed" };
-  revalidatePath("/admin/integraciones/demi");
+  revalidatePath("/admin/mas/demi");
   return {
     ok: true as const,
     proposedInstruction: decision === "approved" ? proposal.proposed_instruction : null,
@@ -377,7 +377,7 @@ export async function proposeDemiAdminChange(instructionInput: string) {
       .select("id,instruction,summary,plan,status,created_at")
       .single();
     if (error || !request) return { ok: false as const, error: "request_failed" };
-    revalidatePath("/admin/integraciones/demi");
+    revalidatePath("/admin/mas/demi");
     return { ok: true as const, request: { ...request, plan: request.plan as DemiAdminPlan } };
   } catch (error) {
     const code = error instanceof Error ? error.message : "request_failed";
@@ -411,11 +411,11 @@ export async function applyDemiAdminChange(requestIdInput: string) {
       .eq("studio_id", studio.id)
       .eq("id", requestId)
       .eq("status", "proposed");
-    revalidatePath("/admin/integraciones/demi");
+    revalidatePath("/admin/mas/demi");
     return { ok: false as const, error: "request_failed" };
   }
 
-  revalidatePath("/admin/integraciones/demi");
+  revalidatePath("/admin/mas/demi");
   return { ok: true as const };
 }
 
@@ -429,6 +429,6 @@ export async function rejectDemiAdminChange(requestIdInput: string) {
     .eq("id", requestId)
     .eq("status", "proposed");
   if (error) return { ok: false as const, error: "request_failed" };
-  revalidatePath("/admin/integraciones/demi");
+  revalidatePath("/admin/mas/demi");
   return { ok: true as const };
 }

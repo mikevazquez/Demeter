@@ -11,8 +11,9 @@ export function contactStage(student: {
   lifecycle_status: string;
   student_type?: string | null;
   trial_status?: string | null;
+  enrollment_status?: "active" | "expired" | "missing";
 }): ContactStage {
-  if (student.lifecycle_status === "inactive") return "former";
+  if (student.enrollment_status === "expired") return "former";
   if (student.student_type === "trial" && student.trial_status !== "converted") return "trial";
   return "student";
 }

@@ -1,0 +1,51 @@
+-- Native financial review under real roles; synthetic data rolled back.
+begin;
+set local role service_role;
+set local request.jwt.claims='{"role":"service_role"}';
+set local request.jwt.claim.role='service_role';
+do $$
+declare owner uuid; run jsonb; s uuid; c uuid:=gen_random_uuid(); e uuid; g uuid; r jsonb; trial_intent uuid; st uuid; old_a uuid; new_a uuid; intent uuid; reservation uuid; today date; old_packages jsonb; before_credits jsonb; outcomes jsonb:='[]';
+begin
+ select user_id into owner from public.studio_memberships where studio_id='9fe23cfa-fb47-4670-afeb-ed4a56433772' and role='owner' and active limit 1;
+ run:=public.service_create_demi_uat_run('9fe23cfa-fb47-4670-afeb-ed4a56433772',owner,'M12-scope');s:=(run->>'studio_id')::uuid;
+ select (clock_timestamp() at time zone timezone)::date into today from public.studios where id=s;
+ insert into public.assistant_conversations(id,studio_id,channel) values(c,s,'whatsapp');
+ r:=public.service_prepare_demi_group(s,c,(run#>>'{fixtures,sessions,available}')::uuid,1,1);g:=(r->>'group_id')::uuid;
+ e:=gen_random_uuid();insert into public.assistant_whatsapp_events(id,studio_id,provider,provider_event_id,phone_number_id,contact_wa_id,message_type,media_id,payload_fingerprint) values(e,s,'meta_whatsapp','M12-'||e,'uat','529998881111','image','uat','M12-group');
+ r:=public.service_record_demi_group_receipt(s,c,g,e,'M12-'||e,'uat',s||'/group.png',repeat('c',64),15000,'MXN',0.99);
+ r:=public.service_complete_demi_group(s,c,g,'[{"name":"M12 Primera UAT","phone":"9998881111"}]');
+ if not coalesce((r->>'ok')::boolean,false) then raise exception 'group_setup:%',r; end if;
+ select transfer_intent_id into trial_intent from public.demi_group_participants where group_id=g and ordinal=1;
+ execute 'set local role authenticated';perform set_config('request.jwt.claims',jsonb_build_object('role','authenticated','sub',owner)::text,true);perform set_config('request.jwt.claim.role','authenticated',true);perform set_config('request.jwt.claim.sub',owner::text,true);
+ r:=public.admin_review_transfer_purchase(trial_intent,'rejected','UAT: documento no corresponde al ingreso');
+ if not coalesce((r->>'ok')::boolean,false) or (select status from public.demi_group_bookings where id=g)<>'rejected' or not exists(select 1 from public.demi_group_receipts where group_id=g) then raise exception 'parent_rejection_or_history:%',r; end if;
+ execute 'set local role service_role';perform set_config('request.jwt.claims','{"role":"service_role"}',true);perform set_config('request.jwt.claim.role','service_role',true);
+ r:=public.service_complete_demi_group(s,c,g,'[{"name":"M12 Primera UAT","phone":"9998881111"}]');
+ if coalesce((r->>'ok')::boolean,false) then raise exception 'rejected_group_replayed'; end if;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M12','variant','individual_rejection_retires_parent_context_keeps_history','passed',true));
+ -- Keep an unrelated legitimate package: it expires today, while the target class is tomorrow.
+ st:=(run#>>'{fixtures,people,student_active,student_id}')::uuid;
+ select id into old_a from public.product_acquisitions where studio_id=s and student_id=st;
+ update public.product_acquisitions set expires_on=today where id=old_a;
+ select to_jsonb(a) into old_packages from public.product_acquisitions a where id=old_a;
+ select jsonb_agg(to_jsonb(l) order by l.id) into before_credits from public.credit_ledger l where acquisition_id=old_a;
+ c:=gen_random_uuid();insert into public.assistant_conversations(id,studio_id,student_id,channel) values(c,s,st,'whatsapp');
+ r:=public.service_prepare_transfer_purchase(s,c,st,(run#>>'{fixtures,sessions,alternative}')::uuid,(run#>>'{fixtures,products,package}')::uuid);intent:=(r->>'intent_id')::uuid;
+ if not coalesce((r->>'ok')::boolean,false) then raise exception 'package_prepare:%',r; end if;
+ e:=gen_random_uuid();insert into public.assistant_whatsapp_events(id,studio_id,provider,provider_event_id,phone_number_id,contact_wa_id,message_type,media_id,payload_fingerprint) values(e,s,'meta_whatsapp','M12-'||e,'uat','529990000008','image','uat','M12-package');
+ update public.assistant_transfer_purchase_intents set receipt_amount_matches=true,receipt_detected_amount_minor=60000,receipt_detected_currency='MXN',receipt_read_confidence=0.99,receipt_storage_path=s||'/new-package-proof.png' where id=intent;
+ r:=public.service_activate_transfer_receipt(s,c,st,e,'M12-'||e,'uat');new_a:=(r->>'acquisition_id')::uuid;
+ if not coalesce((r->>'ok')::boolean,false) or new_a is null or new_a=old_a then raise exception 'package_activation:%',r; end if;
+ r:=public.service_book_student(s,(run#>>'{fixtures,sessions,alternative}')::uuid,st);reservation:=(r->>'reservation_id')::uuid;
+ if not coalesce((r->>'eligible')::boolean,false) or (r->>'acquisition_id')::uuid<>new_a then raise exception 'conditional_package_booking:%',r; end if;
+ execute 'set local role authenticated';perform set_config('request.jwt.claims',jsonb_build_object('role','authenticated','sub',owner)::text,true);perform set_config('request.jwt.claim.role','authenticated',true);perform set_config('request.jwt.claim.sub',owner::text,true);
+ r:=public.admin_review_transfer_purchase(intent,'rejected','UAT: paquete nuevo no pagado');
+ if not coalesce((r->>'ok')::boolean,false) or (select status::text from public.reservations where id=reservation)<>'cancelled_by_studio' or (select status from public.product_acquisitions where id=new_a)<>'cancelled' then raise exception 'package_scope_revoke:%',r; end if;
+ if (select to_jsonb(a) from public.product_acquisitions a where id=old_a) is distinct from old_packages or (select jsonb_agg(to_jsonb(l) order by l.id) from public.credit_ledger l where acquisition_id=old_a) is distinct from before_credits or (select student_type::text from public.students where id=st)<>'regular' then raise exception 'legitimate_history_revoked'; end if;
+ r:=public.admin_review_transfer_purchase(intent,'rejected','UAT replay');
+ if (select count(*) from public.demi_receipt_review_notices where source_id=intent and decision='rejected')<>1 or exists(select 1 from public.payments where sale_id=(select sale_id from public.assistant_transfer_purchase_intents where id=intent)) then raise exception 'duplicate_rejection_or_payment'; end if;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M12','variant','package_rejection_revokes_only_linked_reservation_preserves_legitimate_package_and_regular_type','passed',true));
+ perform set_config('uat.rejection_scope_results',outcomes::text,true);
+end $$;
+select current_setting('uat.rejection_scope_results')::jsonb results;
+rollback;

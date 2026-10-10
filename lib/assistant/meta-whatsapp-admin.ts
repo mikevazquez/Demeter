@@ -306,6 +306,7 @@ export async function sendMetaWhatsAppTemplateTest(input: {
   recipient: string;
   templateName: string;
   languageCode: string;
+  bodyParameters?: string[];
 }) {
   const config = await loadConfig(input.studioId);
   const normalized = normalizeMexicanPhone(input.recipient);
@@ -332,6 +333,16 @@ export async function sendMetaWhatsAppTemplateTest(input: {
         language: {
           code: languageCode,
         },
+        ...(input.bodyParameters?.length
+          ? {
+              components: [
+                {
+                  type: "body",
+                  parameters: input.bodyParameters.map((text) => ({ type: "text", text })),
+                },
+              ],
+            }
+          : {}),
       },
     }),
   });
@@ -342,4 +353,97 @@ export async function sendMetaWhatsAppTemplateTest(input: {
   if (!messageId) throw new Error("meta_test_message_id_missing");
 
   return messageId;
+}
+
+// Read the approved provider definition; never guess parameters for a financial template.
+export async function getMetaWhatsAppUatWelcome(studioId: string) {
+  const config = await loadConfig(studioId);
+  const response = await graphRequest(
+    config,
+    `${config.wabaId}/message_templates?limit=100&fields=name,status,language,components`,
+  );
+  const rows = Array.isArray(response.data) ? response.data : [];
+  for (const preferred of ["demeter_bienvenida", "student_welcome_2", "bienvenida_alumna"]) {
+    for (const item of rows) {
+      if (
+        !isObject(item) ||
+        item.name !== preferred ||
+        item.status !== "APPROVED" ||
+        typeof item.language !== "string" ||
+        !Array.isArray(item.components)
+      )
+        continue;
+      let bodyCount = 0;
+      let compatible = true;
+      for (const component of item.components) {
+        if (!isObject(component)) {
+          compatible = false;
+          break;
+        }
+        if (component.type === "BODY") {
+          const text = String(component.text ?? "");
+          const refs = [...text.matchAll(/\{\{\s*(\d+)\s*\}\}/g)].map((m) => Number(m[1]));
+          if (refs.some((n) => n !== 1) || /\{\{\s*[^\d\s]/.test(text)) compatible = false;
+          bodyCount = refs.length ? 1 : 0;
+        } else if (component.type === "HEADER") {
+          if (component.format !== "TEXT" || /\{\{/.test(JSON.stringify(component)))
+            compatible = false;
+        } else if (/\{\{/.test(JSON.stringify(component))) compatible = false;
+      }
+      if (compatible)
+        return {
+          name: preferred,
+          language: item.language,
+          bodyParameters: bodyCount ? ["Prueba UAT Demi"] : [],
+        };
+    }
+  }
+  return null;
+}
+
+export async function getMetaWhatsAppWebhookRouting(studioId: string) {
+  const config = await loadConfig(studioId);
+  const subscriptions = await graphRequest(config, `${config.wabaId}/subscribed_apps?limit=50`);
+  const apps = Array.isArray(subscriptions.data) ? subscriptions.data : [];
+  const routes: { source: string; host: string; path: string; studio_id: string | null }[] = [];
+  const errors: string[] = [];
+  const recordRoute = (value: unknown, source: string) => {
+    if (typeof value !== "string") return;
+    try {
+      const url = new URL(value);
+      routes.push({
+        source,
+        host: url.host,
+        path: url.pathname,
+        studio_id: url.searchParams.get("studio") ?? url.searchParams.get("studio_id"),
+      });
+    } catch {
+      errors.push("callback_url_invalid");
+    }
+  };
+  for (const item of apps) {
+    if (!isObject(item)) continue;
+    if (typeof item.override_callback_uri === "string") {
+      recordRoute(item.override_callback_uri, "waba_override");
+      continue;
+    }
+    const app = isObject(item.whatsapp_business_api_data) ? item.whatsapp_business_api_data : {};
+    const appId = textValue(app.id);
+    if (!appId || !/^\d+$/.test(appId)) {
+      errors.push("subscription_app_id_unavailable");
+      continue;
+    }
+    try {
+      const result = await graphRequest(config, `${appId}/subscriptions`, {
+        headers: { authorization: `Bearer ${appId}|${config.appSecret}` },
+      });
+      const rows = Array.isArray(result.data) ? result.data : [];
+      for (const row of rows)
+        if (isObject(row) && row.object === "whatsapp_business_account")
+          recordRoute(row.callback_url, "app_subscription");
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : "callback_lookup_failed");
+    }
+  }
+  return { routes, error_codes: errors, verified: routes.length > 0 };
 }

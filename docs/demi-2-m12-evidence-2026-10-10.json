@@ -1,0 +1,34 @@
+{
+  "case": "M12",
+  "status": "passed",
+  "runs": ["06cc70c2-b1c5-46f9-9428-d74d22e25307", "2738cb12-0f2d-4837-bf0f-310a57efbc1b"],
+  "native": [
+    {
+      "results": [
+        {
+          "case": "M12",
+          "passed": true,
+          "variant": "individual_rejection_retires_parent_context_keeps_history"
+        },
+        {
+          "case": "M12",
+          "passed": true,
+          "variant": "package_rejection_revokes_only_linked_reservation_preserves_legitimate_package_and_regular_type"
+        }
+      ]
+    }
+  ],
+  "variants": ["first_trial", "enrollment", "package"],
+  "new_payments_minor": [15000, 20000, 60000],
+  "old_legitimate_package": {
+    "acquisition": "9be4f57c-7434-4a97-a8fe-de978db9ea2e",
+    "credits": 8,
+    "expires": "2026-11-07",
+    "status": "active"
+  },
+  "rejected_notice_delivered": "captured",
+  "notices_once": true,
+  "individual_rejection_updates_parent": true,
+  "rejected_documents_and_cancelled_reservations_preserved": true,
+  "external_transport_verified": false
+}

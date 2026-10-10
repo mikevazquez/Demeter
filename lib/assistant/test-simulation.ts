@@ -100,7 +100,12 @@ export function simulatedReadTool(state: TestSimulation, tool: string) {
     return {
       ok: true,
       simulated: true,
-      student_state: { category },
+      student_state: {
+        category,
+        ...(state.persona === "former_student"
+          ? { lifecycle_status: "inactive", enrollment_status: "expired", has_current_package: false, has_expired_package: true }
+          : {}),
+      },
       current_package: hasActivePackage
         ? {
             name: "Paquete de prueba: 8 clases",
@@ -130,7 +135,23 @@ export async function simulateAssistantAction(
 ) {
   const { state } = input;
   const result = (data: Summary): Summary & { simulated: true } => ({ simulated: true, ...data });
-  if (tool === "prepare_booking" && state.identityNeedsName) {
+  if (tool === "prepare_booking" && isFirstVisitPersona(state.persona) && state.reservations.length > 0) {
+    return result({
+      ok: false,
+      error: "trial_reservation_exists",
+      reason_code: "trial_reservation_exists",
+      reason_message: "Ya tienes una clase de prueba reservada. Puedes modificar o cancelar esa reserva, pero no crear otra hasta completar tu inscripción.",
+    });
+  }
+  if (tool === "prepare_booking" && state.persona === "former_student") {
+    return result({
+      ok: false,
+      error: "enrollment_required",
+      reason_code: "enrollment_required",
+      reason_message: "Tu inscripción está vencida. Puedes renovar la inscripción por separado o elegir un paquete que la incluya. Después podrás reservar una clase.",
+    });
+  }
+  if (tool === "prepare_booking" && state.identityNeedsName && state.paymentBeforeBooking !== true) {
     return result({
       ok: false,
       reason_code: "prospect_name_required",
@@ -263,7 +284,7 @@ export async function simulateAssistantAction(
       error ||
       !session ||
       session.status !== "scheduled" ||
-      new Date(session.starts_at).getTime() <= Date.now()
+      new Date(session.starts_at).getTime() <= Date.now() + 30 * 60_000
     ) {
       return result({ ok: false, error: "session_unavailable" });
     }

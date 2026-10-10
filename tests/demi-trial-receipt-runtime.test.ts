@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
 import { describe, expect, it, vi } from "vitest";
+import { demiDeliveryRetryPolicy } from "../lib/assistant/delivery-retry-policy";
 import { trialReceiptConfirmation } from "../lib/assistant/receipt-confirmation";
 
 function harness(
@@ -65,6 +66,14 @@ function harness(
   const access = vi.fn(async () => ({ already_has_access: true }));
   const deps: Record<string, unknown> = {
     "@/lib/assistant/orchestrator": {},
+    "@/lib/assistant/audio-transcription": { transcribeDemiAudio: vi.fn() },
+    "@/lib/assistant/enrollment-payment": {
+      handleDemiEnrollmentReceipt: vi.fn().mockResolvedValue({ handled: false }),
+    },
+    "@/lib/assistant/group-booking": {
+      handleDemiGroupReceipt: vi.fn().mockRejectedValue(new Error("Unexpected group receipt")),
+    },
+    "@/lib/assistant/delivery-retry-policy": { demiDeliveryRetryPolicy },
     "@/lib/assistant/runtime-config": {},
     "@/lib/assistant/read-tools": {},
     "@/lib/assistant/receipt-reader": { readTransferReceipt: read },

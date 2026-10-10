@@ -1,4 +1,5 @@
 import "server-only";
+import { demiUatScope, captureDemiUatText } from "./uat-scope";
 
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -112,6 +113,8 @@ function parseWebhookConfig(value: unknown): MetaWhatsAppWebhookConfig | null {
 }
 
 export async function loadMetaWhatsAppWebhookConfig(supabase: SupabaseClient, studioId: string) {
+  const uat = demiUatScope(studioId);
+  if (uat) return uat.config;
   const [{ data, error }, { data: pilotIds, error: pilotError }] = await Promise.all([
     supabase.rpc("service_get_meta_whatsapp_webhook_config", {
       target_studio_id: studioId,
@@ -167,12 +170,30 @@ export function sha256Hex(value: string) {
 
 export type MetaDownloadedMedia = {
   bytes: Uint8Array;
-  mimeType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf";
+  mimeType:
+    | "image/jpeg"
+    | "image/png"
+    | "image/webp"
+    | "application/pdf"
+    | "audio/ogg"
+    | "audio/mpeg"
+    | "audio/mp4"
+    | "audio/wav"
+    | "audio/webm";
   fileSize: number;
 };
 
-function receiptMimeType(value: unknown): MetaDownloadedMedia["mimeType"] | null {
-  const normalized = safeText(value)?.toLowerCase();
+function receiptMimeType(
+  value: unknown,
+  kind: "receipt" | "audio" = "receipt",
+): MetaDownloadedMedia["mimeType"] | null {
+  const normalized = safeText(value)?.toLowerCase().split(";")[0].trim();
+  if (kind === "audio")
+    return ["audio/ogg", "audio/mpeg", "audio/mp4", "audio/wav", "audio/webm"].includes(
+      normalized ?? "",
+    )
+      ? (normalized as MetaDownloadedMedia["mimeType"])
+      : null;
   return normalized === "image/jpeg" ||
     normalized === "image/png" ||
     normalized === "image/webp" ||
@@ -184,8 +205,22 @@ function receiptMimeType(value: unknown): MetaDownloadedMedia["mimeType"] | null
 export async function downloadMetaWhatsAppMedia(input: {
   config: MetaWhatsAppWebhookConfig;
   mediaId: string;
+  kind?: "receipt" | "audio";
   fetcher?: typeof fetch;
 }): Promise<MetaDownloadedMedia> {
+  const uat = demiUatScope();
+  if (uat) {
+    if (uat.config !== input.config) throw new Error("demi_uat_channel_mismatch");
+    const media = uat.media.get(input.mediaId);
+    if (!media) throw new Error("demi_uat_media_missing");
+    if (
+      !receiptMimeType(media.mimeType, input.kind) ||
+      media.fileSize > 10 * 1024 * 1024 ||
+      media.bytes.byteLength === 0
+    )
+      throw new Error("meta_media_type_unsupported");
+    return media;
+  }
   const mediaId = input.mediaId.trim();
   if (!/^\d+$/.test(mediaId)) {
     throw new Error("meta_media_id_invalid");
@@ -212,7 +247,7 @@ export async function downloadMetaWhatsAppMedia(input: {
 
   const metadata = isObject(metadataBody) ? metadataBody : {};
   const downloadUrl = safeText(metadata.url);
-  const mimeType = receiptMimeType(metadata.mime_type);
+  const mimeType = receiptMimeType(metadata.mime_type, input.kind);
   const advertisedSize =
     typeof metadata.file_size === "number" && Number.isFinite(metadata.file_size)
       ? metadata.file_size
@@ -384,6 +419,8 @@ export async function sendMetaWhatsAppText(input: {
   text: string;
   fetcher?: typeof fetch;
 }): Promise<MetaTextDeliveryResult> {
+  const captured = await captureDemiUatText(input);
+  if (captured) return captured;
   const recipient = input.recipientWaId.replace(/\D/g, "");
   const text = input.text.trim();
 

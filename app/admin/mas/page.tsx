@@ -13,6 +13,12 @@ type MoreItem = {
 
 const items: MoreItem[] = [
   {
+    title: "Demi",
+    description: "Personalidad, objetivos, reglas, pruebas y atención del asistente del estudio.",
+    href: "/admin/mas/demi",
+    ownerOnly: true,
+  },
+  {
     title: "Actividades",
     description: "Qué ofreces, horarios, recursos y forma de acceso.",
     href: "/admin/actividades",

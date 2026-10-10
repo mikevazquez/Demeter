@@ -1,3 +1,4 @@
+import { resolveEnrollmentStatus } from "./enrollment-state";
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -186,12 +187,14 @@ export async function searchClassAvailability(
   }
 
   const activityNeedle = rawArgs.activity_query ? normalize(rawArgs.activity_query) : null;
+  const earliestBookableStart = Date.now() + 30 * 60_000;
   const exactTemplateMatchExists = activityNeedle
     ? templates.some((item) => normalize(item.name) === activityNeedle)
     : false;
   const matches = [];
 
   for (const session of sessions ?? []) {
+    if (new Date(session.starts_at).getTime() <= earliestBookableStart) continue;
     const template = templateMap.get(session.template_id);
     if (!template?.active) continue;
     const discipline = template.discipline_id
@@ -397,6 +400,9 @@ export async function getCommercialOptions(
     );
 
     products = products.filter((item) => {
+      // Enrollment is independent of class/discipline scope. Filtering it out
+      // made renewal disappear when a former student selected a real class.
+      if (item.product_type === "enrollment") return true;
       const scopeMatch =
         activityMatches.has(item.id) ||
         (!activityScopedProducts.has(item.id) && disciplineMatches.has(item.id));
@@ -473,24 +479,41 @@ export async function getCommercialOptions(
 }
 
 export async function getStudioInformation(ctx: AssistantToolContext) {
-  const [{ data: studioDetails, error: studioError }, { data: locations, error: locationError }] =
-    await Promise.all([
-      ctx.supabase
-        .from("studios")
-        .select("contact_phone,contact_email,website_url")
-        .eq("id", ctx.studio.id)
-        .maybeSingle(),
-      ctx.supabase
-        .from("studio_locations")
-        .select("name,address,is_primary")
-        .eq("studio_id", ctx.studio.id)
-        .eq("active", true)
-        .order("is_primary", { ascending: false })
-        .order("created_at")
-        .limit(10),
-    ]);
+  const [
+    { data: studioDetails, error: studioError },
+    { data: locations, error: locationError },
+    { data: preparation, error: preparationError },
+    { data: disciplines, error: disciplinesError },
+  ] = await Promise.all([
+    ctx.supabase
+      .from("studios")
+      .select("contact_phone,contact_email,website_url")
+      .eq("id", ctx.studio.id)
+      .maybeSingle(),
+    ctx.supabase
+      .from("studio_locations")
+      .select("name,address,is_primary")
+      .eq("studio_id", ctx.studio.id)
+      .eq("active", true)
+      .order("is_primary", { ascending: false })
+      .order("created_at")
+      .limit(10),
+    ctx.supabase
+      .from("assistant_admin_rules")
+      .select("instruction")
+      .eq("studio_id", ctx.studio.id)
+      .eq("rule_key", "first_class_preparation")
+      .eq("enabled", true)
+      .maybeSingle(),
+    ctx.supabase
+      .from("disciplines")
+      .select("id,name")
+      .eq("studio_id", ctx.studio.id)
+      .eq("active", true)
+      .order("name"),
+  ]);
 
-  if (studioError || locationError) {
+  if (studioError || locationError || preparationError || disciplinesError) {
     return { ok: false, error: "studio_information_unavailable" };
   }
 
@@ -513,6 +536,8 @@ export async function getStudioInformation(ctx: AssistantToolContext) {
     website_url: studioDetails?.website_url ?? null,
     primary_location: primaryLocation,
     locations: normalizedLocations,
+    first_class_preparation: preparation?.instruction?.trim() || null,
+    active_disciplines: disciplines ?? [],
   };
 }
 
@@ -546,27 +571,36 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
   }
 
   const today = localParts(new Date().toISOString(), ctx.studio.timezone).date;
-  const [{ data: student, error: studentError }, { data: acquisitions, error: acquisitionsError }] =
-    await Promise.all([
-      ctx.supabase
-        .from("students")
-        .select("lifecycle_status,student_type,trial_status")
-        .eq("studio_id", ctx.studio.id)
-        .eq("id", ctx.studentId)
-        .maybeSingle(),
-      ctx.supabase
-        .from("product_acquisitions")
-        .select(
-          "id,product_template_id,status,starts_on,expires_on,credit_limit,unlimited,access_blocked,created_at",
-        )
-        .eq("studio_id", ctx.studio.id)
-        .eq("student_id", ctx.studentId)
-        .is("refunded_at", null)
-        .order("created_at", { ascending: false })
-        .limit(20),
-    ]);
+  const [
+    { data: student, error: studentError },
+    { data: acquisitions, error: acquisitionsError },
+    { data: enrollments, error: enrollmentsError },
+  ] = await Promise.all([
+    ctx.supabase
+      .from("students")
+      .select("lifecycle_status,student_type,trial_status")
+      .eq("studio_id", ctx.studio.id)
+      .eq("id", ctx.studentId)
+      .maybeSingle(),
+    ctx.supabase
+      .from("product_acquisitions")
+      .select(
+        "id,product_template_id,status,starts_on,expires_on,credit_limit,unlimited,access_blocked,created_at",
+      )
+      .eq("studio_id", ctx.studio.id)
+      .eq("student_id", ctx.studentId)
+      .is("refunded_at", null)
+      .order("created_at", { ascending: false })
+      .limit(20),
+    ctx.supabase
+      .from("student_enrollments")
+      .select("status,starts_on,expires_on")
+      .eq("studio_id", ctx.studio.id)
+      .eq("student_id", ctx.studentId)
+      .is("refunded_at", null),
+  ]);
 
-  if (studentError || acquisitionsError || !student) {
+  if (studentError || acquisitionsError || enrollmentsError || !student) {
     return { ok: false, error: "package_status_unavailable" };
   }
 
@@ -579,17 +613,46 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
   const hasExpiredPackage = (acquisitions ?? []).some((item) =>
     Boolean(item.expires_on && item.expires_on < today),
   );
+  const enrollmentStatus = resolveEnrollmentStatus(enrollments ?? [], today);
+  let enrollmentRenewalOption: Record<string, unknown> | null = null;
+  if (enrollmentStatus !== "active") {
+    const policy = await ctx.supabase
+      .from("enrollment_policies")
+      .select("enabled,enrollment_product_template_id")
+      .eq("studio_id", ctx.studio.id)
+      .maybeSingle();
+    if (policy.error) return { ok: false, error: "enrollment_option_unavailable" };
+    if (policy.data?.enabled && policy.data.enrollment_product_template_id) {
+      const product = await ctx.supabase
+        .from("product_templates")
+        .select("id,name,price_minor,currency,validity_days")
+        .eq("studio_id", ctx.studio.id)
+        .eq("id", policy.data.enrollment_product_template_id)
+        .eq("active", true)
+        .eq("product_type", "enrollment")
+        .maybeSingle();
+      if (product.error) return { ok: false, error: "enrollment_option_unavailable" };
+      if (product.data && product.data.price_minor > 0)
+        enrollmentRenewalOption = {
+          ...product.data,
+          product_ref: `product:${product.data.id}`,
+          required_by_policy: true,
+        };
+    }
+  }
+
   let studentCategory = "student";
   if (student.student_type === "trial") {
     if (student.trial_status === "no_show") studentCategory = "trial_no_show";
     else if (student.trial_status === "attended") studentCategory = "trial_attended";
     else if (student.trial_status === "cancelled") studentCategory = "trial_cancelled";
     else studentCategory = "trial_pending";
-  } else if (student.lifecycle_status === "inactive" || (!current.length && hasExpiredPackage)) {
+  } else if (enrollmentStatus === "expired") {
     studentCategory = "former_student";
   }
   const studentState = {
     category: studentCategory,
+    enrollment_status: enrollmentStatus,
     lifecycle_status: student.lifecycle_status,
     student_type: student.student_type,
     trial_status: student.trial_status,
@@ -601,6 +664,7 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
     return {
       ok: true,
       student_state: studentState,
+      enrollment_renewal_option: enrollmentRenewalOption,
       current_package: null,
       packages: [],
     };
@@ -661,6 +725,7 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
   return {
     ok: true,
     student_state: studentState,
+    enrollment_renewal_option: enrollmentRenewalOption,
     current_package: currentPackage,
     packages,
   };

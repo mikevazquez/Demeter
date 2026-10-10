@@ -1,6 +1,10 @@
+import { demiDeliveryRetryPolicy } from "@/lib/assistant/delivery-retry-policy";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
+import { transcribeDemiAudio } from "@/lib/assistant/audio-transcription";
+import { handleDemiGroupReceipt } from "@/lib/assistant/group-booking";
+import { handleDemiEnrollmentReceipt } from "@/lib/assistant/enrollment-payment";
 import { readTransferReceipt } from "@/lib/assistant/receipt-reader";
 import { trialReceiptConfirmation } from "@/lib/assistant/receipt-confirmation";
 import { provisionStudentAccessWithServiceClient } from "@/lib/assistant/student-access";
@@ -103,7 +107,7 @@ async function captureEvent(input: {
     .from("assistant_whatsapp_events")
     .insert(row)
     .select(
-      "id,processing_status,attempt_count,assistant_conversation_id,inbound_turn_id,outbound_turn_id",
+      "id,processing_status,attempt_count,assistant_conversation_id,inbound_turn_id,outbound_turn_id,processing_result",
     )
     .single();
 
@@ -116,7 +120,7 @@ async function captureEvent(input: {
   const { data: existing, error: lookupError } = await input.supabase
     .from("assistant_whatsapp_events")
     .select(
-      "id,processing_status,attempt_count,assistant_conversation_id,inbound_turn_id,outbound_turn_id",
+      "id,processing_status,attempt_count,assistant_conversation_id,inbound_turn_id,outbound_turn_id,processing_result",
     )
     .eq("studio_id", input.studioId)
     .eq("provider", "meta_whatsapp")
@@ -151,6 +155,14 @@ async function hasBlockingOpenHandoff(input: {
   studioId: string;
   conversationId: string;
 }) {
+  const conversation = await input.supabase
+    .from("assistant_conversations")
+    .select("context")
+    .eq("studio_id", input.studioId)
+    .eq("id", input.conversationId)
+    .maybeSingle();
+  if (conversation.error) throw new Error("human_control_lookup_failed");
+  if (conversation.data?.context?.human_takeover === true) return true;
   const { data, error } = await input.supabase
     .from("assistant_handoffs")
     .select("reason_code")
@@ -941,13 +953,13 @@ async function recordFailedDelivery(input: {
   httpStatus?: number;
   responseSnapshot: JsonObject;
 }) {
-  const { count } = await input.supabase
+  const { count, error: countError } = await input.supabase
     .from("assistant_whatsapp_deliveries")
     .select("id", { count: "exact", head: true })
     .eq("studio_id", input.studioId)
     .eq("event_id", input.eventId);
 
-  await input.supabase.from("assistant_whatsapp_deliveries").insert({
+  const storedFailure = await input.supabase.from("assistant_whatsapp_deliveries").insert({
     studio_id: input.studioId,
     event_id: input.eventId,
     conversation_id: input.conversationId,
@@ -962,14 +974,38 @@ async function recordFailedDelivery(input: {
     response_snapshot: input.responseSnapshot,
   });
 
+  if (countError || storedFailure.error) throw new Error("delivery_failure_audit_unavailable");
+  const { data: settings } = await input.supabase
+    .from("demi_operation_retry_settings")
+    .select("delivery_failure_limit")
+    .eq("studio_id", input.studioId)
+    .maybeSingle();
+  const policy = demiDeliveryRetryPolicy({
+    errorCode: input.errorCode,
+    retryable: input.retryable,
+    attempt: (count ?? 0) + 1,
+    limit: settings?.delivery_failure_limit ?? 3,
+  });
+  if (policy.requiresReview)
+    await input.supabase.rpc("assistant_create_handoff", {
+      target_studio_id: input.studioId,
+      target_conversation_id: input.conversationId,
+      target_student_id: null,
+      target_reason_code: "technical_block",
+      target_note: `Confirmación no entregada. Evento: ${input.eventId}; intento ${(count ?? 0) + 1}/${policy.attemptLimit}; error ${input.errorCode}; resultado desconocido: ${policy.outcomeUnknown}. No se repitió la operación de reserva.`,
+    });
   await markEvent(input.supabase, input.studioId, input.eventId, {
-    processing_status: "error",
+    processing_status: policy.requiresReview ? "human_review" : "error",
     processing_result: {
       outcome: "delivery_failed",
-      retryable: input.retryable,
+      retryable: policy.retryAllowed,
+      cached_reply: input.reply,
+      outcome_unknown: policy.outcomeUnknown,
+      attempt_limit: policy.attemptLimit,
     },
     last_error_code: input.errorCode,
   });
+  return policy;
 }
 
 export async function GET(request: Request) {
@@ -1204,11 +1240,29 @@ export async function POST(request: Request) {
       continue;
     }
 
-    await markEvent(supabase, studioId, event.id, {
-      processing_status: "processing",
-      attempt_count: Number(event.attempt_count ?? 0) + 1,
-      last_error_code: null,
-    });
+    const claimed = await supabase
+      .from("assistant_whatsapp_events")
+      .update({
+        processing_status: "processing",
+        attempt_count: Number(event.attempt_count ?? 0) + 1,
+        last_error_code: null,
+      })
+      .eq("studio_id", studioId)
+      .eq("id", event.id)
+      .in("processing_status", ["captured", "error"])
+      .select("id")
+      .maybeSingle();
+    if (claimed.error) {
+      retryableFailure = true;
+      continue;
+    }
+    if (!claimed.data) {
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "duplicate_in_progress",
+      });
+      continue;
+    }
 
     const { data: preparedData, error: preparedError } = await supabase.rpc(
       "service_prepare_meta_whatsapp_message",
@@ -1292,6 +1346,70 @@ export async function POST(request: Request) {
       });
     }
 
+    const previousResult = isObject(event.processing_result) ? event.processing_result : {};
+    const cachedReply =
+      typeof previousResult.cached_reply === "string" ? previousResult.cached_reply : null;
+    if (sendReplies && cachedReply) {
+      const delivery = await sendMetaWhatsAppText({
+        config: webhookConfig,
+        recipientWaId: message.fromWaId,
+        text: cachedReply,
+      });
+      if (delivery.status === "error") {
+        const failurePolicy = await recordFailedDelivery({
+          supabase,
+          studioId,
+          eventId: event.id,
+          conversationId,
+          recipientWaId: message.fromWaId,
+          reply: cachedReply,
+          errorCode: delivery.errorCode,
+          retryable: delivery.retryable,
+          httpStatus: delivery.httpStatus,
+          responseSnapshot: delivery.responseSnapshot,
+        });
+        retryableFailure = retryableFailure || failurePolicy.retryAllowed;
+      } else {
+        try {
+          await persistAcceptedReply({
+            supabase,
+            studioId,
+            eventId: event.id,
+            conversationId,
+            inboundTurnId,
+            recipientWaId: message.fromWaId,
+            reply: cachedReply,
+            providerMessageId: delivery.providerMessageId,
+            httpStatus: delivery.httpStatus,
+            responseSnapshot: delivery.responseSnapshot,
+          });
+        } catch {
+          await markEvent(supabase, studioId, event.id, {
+            processing_status: "human_review",
+            processing_result: {
+              outcome: "reply_persist_failed_after_send",
+              provider_message_id: delivery.providerMessageId,
+            },
+            last_error_code: "reply_persist_failed_after_send",
+          });
+          await supabase.rpc("assistant_create_handoff", {
+            target_studio_id: studioId,
+            target_conversation_id: conversationId,
+            target_student_id: null,
+            target_reason_code: "technical_block",
+            target_note:
+              "Meta aceptó la confirmación pero falló su registro local. No reenviar. Evento: " +
+              event.id,
+          });
+        }
+      }
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "cached_reply_retry",
+      });
+      continue;
+    }
+
     if (message.messageType === "unsupported") {
       const isClickToWhatsApp =
         message.referralSourceType === "ad" || message.referralSourceType === "post";
@@ -1314,7 +1432,7 @@ export async function POST(request: Request) {
         });
 
         if (delivery.status === "error") {
-          await recordFailedDelivery({
+          const failurePolicy = await recordFailedDelivery({
             supabase,
             studioId,
             eventId: event.id,
@@ -1326,7 +1444,7 @@ export async function POST(request: Request) {
             httpStatus: delivery.httpStatus,
             responseSnapshot: delivery.responseSnapshot,
           });
-          retryableFailure = retryableFailure || delivery.retryable;
+          retryableFailure = retryableFailure || failurePolicy.retryAllowed;
           continue;
         }
 
@@ -1366,24 +1484,71 @@ export async function POST(request: Request) {
       continue;
     }
 
-    if (message.mediaId || META_MEDIA_MESSAGE_TYPES.has(message.messageType)) {
+    let audioTranscribed = false;
+    if (message.messageType === "audio" && message.mediaId) {
+      try {
+        const transcript = await transcribeDemiAudio({
+          config: webhookConfig,
+          mediaId: message.mediaId,
+        });
+        const { error: transcriptError } = await supabase
+          .from("assistant_turns")
+          .update({ content: transcript })
+          .eq("id", inboundTurnId)
+          .eq("studio_id", studioId)
+          .eq("conversation_id", conversationId)
+          .eq("role", "user");
+        if (transcriptError) throw new Error("audio_transcript_persist_failed");
+        message.text = transcript;
+        audioTranscribed = true;
+      } catch {
+        // Unreadable audio follows the persisted human-review flow; it cannot trigger a booking.
+      }
+    }
+    if (
+      !audioTranscribed &&
+      (message.mediaId || META_MEDIA_MESSAGE_TYPES.has(message.messageType))
+    ) {
       let transferReceipt: Awaited<ReturnType<typeof activateTransferReceiptIfPending>> | null =
         null;
 
       try {
-        transferReceipt = await activateTransferReceiptIfPending({
+        const groupReceipt = await handleDemiGroupReceipt({
           supabase,
           studioId,
           conversationId,
-          studentId,
           eventId: event.id,
           providerMessageId: message.providerMessageId,
           mediaId: message.mediaId,
           messageType: message.messageType,
-          messageText: message.text,
           webhookConfig,
-          activationUrl: new URL("/login/student/activar", request.url).toString(),
         });
+        transferReceipt = groupReceipt.handled
+          ? groupReceipt
+          : await handleDemiEnrollmentReceipt({
+              supabase,
+              studioId,
+              conversationId,
+              eventId: event.id,
+              providerMessageId: message.providerMessageId,
+              mediaId: message.mediaId,
+              messageType: message.messageType,
+              webhookConfig,
+            });
+        if (!transferReceipt.handled)
+          transferReceipt = await activateTransferReceiptIfPending({
+            supabase,
+            studioId,
+            conversationId,
+            studentId,
+            eventId: event.id,
+            providerMessageId: message.providerMessageId,
+            mediaId: message.mediaId,
+            messageType: message.messageType,
+            messageText: message.text,
+            webhookConfig,
+            activationUrl: new URL("/login/student/activar", request.url).toString(),
+          });
       } catch {
         retryableFailure = true;
         await markEvent(supabase, studioId, event.id, {
@@ -1426,9 +1591,12 @@ export async function POST(request: Request) {
             caption,
           );
 
-        reply = paymentLanguage
-          ? "Recibí tu comprobante. No pude asociarlo automáticamente a una compra pendiente, así que lo dejé para validación del pago."
-          : "Recibí tu archivo. Lo dejé para revisión.";
+        reply =
+          message.messageType === "audio"
+            ? "Recibí tu audio, pero no pude transcribirlo. ¿Puedes reenviarlo o escribirlo? Lo dejé para revisión del equipo."
+            : paymentLanguage
+              ? "Recibí tu comprobante. No pude asociarlo automáticamente a una compra pendiente, así que lo dejé para validación del pago."
+              : "Recibí tu archivo. Lo dejé para revisión.";
 
         deterministicOutcome = "media_handoff";
       }
@@ -1441,7 +1609,7 @@ export async function POST(request: Request) {
         });
 
         if (delivery.status === "error") {
-          await recordFailedDelivery({
+          const failurePolicy = await recordFailedDelivery({
             supabase,
             studioId,
             eventId: event.id,
@@ -1453,7 +1621,7 @@ export async function POST(request: Request) {
             httpStatus: delivery.httpStatus,
             responseSnapshot: delivery.responseSnapshot,
           });
-          retryableFailure = retryableFailure || delivery.retryable;
+          retryableFailure = retryableFailure || failurePolicy.retryAllowed;
           continue;
         }
 
@@ -1503,7 +1671,7 @@ export async function POST(request: Request) {
           text: reply,
         });
         if (delivery.status === "error") {
-          await recordFailedDelivery({
+          const failurePolicy = await recordFailedDelivery({
             supabase,
             studioId,
             eventId: event.id,
@@ -1515,7 +1683,7 @@ export async function POST(request: Request) {
             httpStatus: delivery.httpStatus,
             responseSnapshot: delivery.responseSnapshot,
           });
-          retryableFailure = retryableFailure || delivery.retryable;
+          retryableFailure = retryableFailure || failurePolicy.retryAllowed;
           continue;
         }
         await persistAcceptedReply({
@@ -1707,7 +1875,7 @@ export async function POST(request: Request) {
     });
 
     if (delivery.status === "error") {
-      await recordFailedDelivery({
+      const failurePolicy = await recordFailedDelivery({
         supabase,
         studioId,
         eventId: event.id,
@@ -1719,11 +1887,11 @@ export async function POST(request: Request) {
         httpStatus: delivery.httpStatus,
         responseSnapshot: delivery.responseSnapshot,
       });
-      retryableFailure = retryableFailure || delivery.retryable;
+      retryableFailure = retryableFailure || failurePolicy.retryAllowed;
       outcomes.push({
         provider_message_id: message.providerMessageId,
         outcome: "delivery_failed",
-        retryable: delivery.retryable,
+        retryable: failurePolicy.retryAllowed,
       });
       continue;
     }
@@ -1745,9 +1913,20 @@ export async function POST(request: Request) {
     } catch {
       retryableFailure = true;
       await markEvent(supabase, studioId, event.id, {
-        processing_status: "error",
-        processing_result: { outcome: "reply_persist_failed_after_send" },
+        processing_status: "human_review",
+        processing_result: {
+          outcome: "reply_persist_failed_after_send",
+          provider_message_id: delivery.providerMessageId,
+        },
         last_error_code: "reply_persist_failed_after_send",
+      });
+      await supabase.rpc("assistant_create_handoff", {
+        target_studio_id: studioId,
+        target_conversation_id: conversationId,
+        target_student_id: null,
+        target_reason_code: "technical_block",
+        target_note:
+          "Meta aceptó la respuesta pero falló su registro local. No reenviar. Evento: " + event.id,
       });
       continue;
     }

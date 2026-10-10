@@ -1,0 +1,43 @@
+{
+  "case_id": "M03",
+  "business_uat_status": "passed",
+  "transport_scope": "WhatsApp adapter, synthetic incoming event and captured response; external transport tracked separately in M01",
+  "native_controls": "Actual service_role: qualification and reason persist, optout stops campaigns, reactivation preserves historical reason and disabled preferences.",
+  "variants": [
+    {
+      "variant": "m03_fixed_optout",
+      "run_id": "c6faf020-1768-48fa-b792-de9e90223980",
+      "studio_id": "fc7e3077-ac6f-473d-b276-004723fed4a8",
+      "reply_captured": "Listo, guardé que ningún horario te funciona y que no contratarás las clases. También di de baja los seguimientos y no recibirás más mensajes.",
+      "passed": true
+    },
+    {
+      "variant": "m03_official_information",
+      "run_id": "c6faf020-1768-48fa-b792-de9e90223980",
+      "studio_id": "fc7e3077-ac6f-473d-b276-004723fed4a8",
+      "reply_captured": "¡Hola! 😊\n\nActualmente ofrecen Pole Fitness. La sede configurada es Sede UAT, en “Dirección ficticia UAT 123, no acudir”; es una dirección de prueba, así que no vayas físicamente ahí.\n\nPara preparar tu primera clase: llega 12 minutos antes y lleva una toalla pequeña.\n\nSi quieres, puedo revisar los horarios disponibles de Pole Fitness.",
+      "passed": true
+    },
+    {
+      "variant": "m03_catalog_fixed",
+      "run_id": "c6faf020-1768-48fa-b792-de9e90223980",
+      "studio_id": "fc7e3077-ac6f-473d-b276-004723fed4a8",
+      "reply_captured": "Sí, consulté la configuración activa actual: además de Pole Fitness, ofrecemos Danza UAT. Tu interés en probar Danza UAT sigue vigente; vivir lejos no lo descarta.\n\nPor ahora no estoy afirmando que haya horarios disponibles, solo que la disciplina está activa en el estudio.",
+      "passed": true
+    },
+    {
+      "variant": "m03_return",
+      "run_id": "c6faf020-1768-48fa-b792-de9e90223980",
+      "studio_id": "fc7e3077-ac6f-473d-b276-004723fed4a8",
+      "reply_captured": "Claro, mantengo tu baja de mensajes de seguimiento y sólo responderé cuando escribas aquí.\n\nEstos son los próximos horarios disponibles de Pole Fitness:\n\n• Viernes 9 de octubre: 9:03 p. m. y 11:03 p. m.\n• Sábado 10 de octubre: 6:00 p. m.\n• Domingo 11 de octubre: 6:00 p. m.\n\n¿Cuál horario prefieres para tu primera clase?",
+      "passed": true
+    },
+    {
+      "variant": "m03_missing_unprompted",
+      "run_id": "51565041-92b1-4509-8852-0c3d5bbe2fbd",
+      "studio_id": "097dadb6-28e3-48a8-b951-199655550a11",
+      "reply_captured": "Hola. Por el momento no están configuradas en Studio Flow las indicaciones oficiales sobre ropa y preparación para la primera clase. Ya pasé la consulta a atención humana dentro de este mismo chat para que te compartan la información correcta.",
+      "passed": true
+    }
+  ]
+}

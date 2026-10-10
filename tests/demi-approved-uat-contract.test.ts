@@ -15,7 +15,7 @@ describe("Demi approved UAT behavior", () => {
   it("keeps named activity searches scoped to the exact activity when possible", () => {
     expect(reads).toContain("exactTemplateMatchExists");
     expect(reads).toContain("templateName === activityNeedle");
-    expect(orchestrator).toContain("no mezcles actividades no relacionadas");
+    expect(orchestrator).toContain("no mezcles otras actividades");
     expect(contracts).toContain("conserva ese nombre exacto en activity_query");
   });
 

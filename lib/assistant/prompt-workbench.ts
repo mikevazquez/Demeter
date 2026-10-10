@@ -35,7 +35,7 @@ export function testPersonaLabel(persona: TestPersona): string {
     trial_attended: "persona que ya asistió a su prueba",
     student: "alumna activa con paquete ficticio de 8 clases",
     student_reserved: "alumna activa con paquete y reserva ficticios",
-    former_student: "exalumna sin paquete activo",
+    former_student: "exalumna con inscripción vencida, sin permiso para reservar clases nuevas y sin paquete activo",
     unresolved_identity: "persona sin identidad resuelta",
   };
   return labels[persona];

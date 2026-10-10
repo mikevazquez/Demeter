@@ -1,0 +1,1007 @@
+import { transcribeDemiAudioBytes } from "@/lib/assistant/audio-transcription";
+import { demiDeliveryRetryPolicy } from "@/lib/assistant/delivery-retry-policy";
+import { handleDemiMetaInboxReceipt } from "@/lib/assistant/meta-inbox-receipt";
+import { demiUatScope } from "@/lib/assistant/uat-scope";
+import { runAssistantTurn } from "@/lib/assistant/orchestrator";
+import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
+import {
+  downloadMetaInboxAttachment,
+  extractMetaInboxMessages,
+  loadMetaInboxWebhookConfig,
+  metaInboxSha256,
+  sendMetaInboxText,
+  verifyMetaInboxWebhookSignature,
+  verifyMetaInboxWebhookToken,
+  type MetaInboxProvider,
+} from "@/lib/assistant/meta-inbox-channel";
+import { createServiceClient } from "@/lib/supabase/service";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+type JsonObject = Record<string, unknown>;
+
+function isObject(value: unknown): value is JsonObject {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function json(body: JsonObject, status = 200) {
+  return Response.json(body, { status });
+}
+
+function studioIdFromRequest(request: Request) {
+  const studioId = new URL(request.url).searchParams.get("studio")?.trim() ?? "";
+  return UUID_RE.test(studioId) ? studioId : null;
+}
+
+function providerTimestamp(value: string | null) {
+  if (!value || !/^\d{9,13}$/.test(value)) return null;
+  const raw = Number(value);
+  if (!Number.isFinite(raw)) return null;
+  const milliseconds = value.length <= 10 ? raw * 1000 : raw;
+  const date = new Date(milliseconds);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+async function markEvent(
+  supabase: ReturnType<typeof createServiceClient>,
+  studioId: string,
+  eventId: string,
+  patch: JsonObject,
+) {
+  await supabase
+    .from("assistant_meta_inbox_events")
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", eventId)
+    .eq("studio_id", studioId);
+}
+
+async function captureEvent(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  studioId: string;
+  provider: MetaInboxProvider;
+  providerMessageId: string;
+  providerAccountId: string;
+  providerContactId: string;
+  messageType: string;
+  text: string;
+  timestamp: string | null;
+  rawBody: string;
+}) {
+  const row = {
+    studio_id: input.studioId,
+    provider: input.provider,
+    provider_event_id: input.providerMessageId,
+    provider_account_id: input.providerAccountId,
+    provider_contact_id: input.providerContactId,
+    message_type: input.messageType,
+    body_preview: input.text.slice(0, 500),
+    provider_timestamp: providerTimestamp(input.timestamp),
+    payload_fingerprint: metaInboxSha256(`${input.rawBody}\nmessage:${input.providerMessageId}`),
+    processing_status: "captured",
+  };
+
+  const { data, error } = await input.supabase
+    .from("assistant_meta_inbox_events")
+    .insert(row)
+    .select(
+      "id,processing_status,attempt_count,assistant_conversation_id,inbound_turn_id,outbound_turn_id,processing_result",
+    )
+    .single();
+
+  if (!error && data) return data;
+  if (error?.code !== "23505") throw new Error("meta_inbox_event_capture_failed");
+
+  const { data: existing, error: lookupError } = await input.supabase
+    .from("assistant_meta_inbox_events")
+    .select(
+      "id,processing_status,attempt_count,assistant_conversation_id,inbound_turn_id,outbound_turn_id,processing_result",
+    )
+    .eq("studio_id", input.studioId)
+    .eq("provider", input.provider)
+    .eq("provider_event_id", input.providerMessageId)
+    .maybeSingle();
+
+  if (lookupError || !existing) throw new Error("meta_inbox_event_lookup_failed");
+  return existing;
+}
+
+async function loadRuntimeContext(
+  supabase: ReturnType<typeof createServiceClient>,
+  studioId: string,
+) {
+  const [{ data: studio, error: studioError }, { data: config, error: configError }] =
+    await Promise.all([
+      supabase.from("studios").select("id,name,timezone,currency").eq("id", studioId).maybeSingle(),
+      supabase
+        .from("assistant_configs")
+        .select(
+          "assistant_name,mode,model,reasoning_effort,personality_instructions,monthly_budget_usd_micros,conversation_budget_usd_micros,max_model_calls_per_turn,max_tool_calls_per_turn",
+        )
+        .eq("studio_id", studioId)
+        .maybeSingle(),
+    ]);
+
+  if (studioError || !studio) throw new Error("studio_not_found");
+  if (configError || !config) throw new Error("assistant_not_configured");
+  return { studio, config };
+}
+
+async function hasBlockingOpenHandoff(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  studioId: string;
+  conversationId: string;
+}) {
+  const { data, error } = await input.supabase
+    .from("assistant_handoffs")
+    .select("reason_code")
+    .eq("studio_id", input.studioId)
+    .eq("conversation_id", input.conversationId)
+    .eq("status", "open");
+  if (error) throw new Error("assistant_handoff_lookup_failed");
+
+  const reasons = [
+    ...new Set((data ?? []).map((row) => String(row.reason_code ?? "")).filter(Boolean)),
+  ];
+  if (!reasons.length) return false;
+
+  const { data: policies, error: policyError } = await input.supabase
+    .from("assistant_handoff_policies")
+    .select("reason_code,enabled,blocking")
+    .eq("studio_id", input.studioId)
+    .in("reason_code", reasons);
+  if (policyError) throw new Error("assistant_handoff_policy_lookup_failed");
+
+  const byReason = new Map((policies ?? []).map((row) => [row.reason_code, row]));
+  return reasons.some((reason) => {
+    const policy = byReason.get(reason);
+    return !policy || (policy.enabled === true && policy.blocking === true);
+  });
+}
+
+async function persistAcceptedReply(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  studioId: string;
+  eventId: string;
+  provider: MetaInboxProvider;
+  conversationId: string;
+  reply: string;
+  recipientId: string;
+  providerMessageId: string;
+  httpStatus: number;
+  responseSnapshot: JsonObject;
+  trace?: unknown;
+}) {
+  const { data: outboundTurn, error: turnError } = await input.supabase
+    .from("assistant_turns")
+    .insert({
+      studio_id: input.studioId,
+      conversation_id: input.conversationId,
+      direction: "outbound",
+      role: "assistant",
+      content: input.reply,
+      sanitized: true,
+      channel_message_ref: input.providerMessageId,
+    })
+    .select("id")
+    .single();
+
+  if (turnError || !outboundTurn) throw new Error("assistant_reply_persist_failed");
+
+  await input.supabase.from("assistant_meta_inbox_deliveries").insert({
+    studio_id: input.studioId,
+    event_id: input.eventId,
+    conversation_id: input.conversationId,
+    turn_id: outboundTurn.id,
+    provider: input.provider,
+    recipient_id: input.recipientId,
+    provider_message_id: input.providerMessageId,
+    text_fingerprint: metaInboxSha256(input.reply),
+    attempt_number: 1,
+    status: "accepted",
+    error_code: null,
+    http_status: input.httpStatus,
+    response_snapshot: input.responseSnapshot,
+  });
+
+  await input.supabase
+    .from("assistant_conversations")
+    .update({
+      last_activity_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.conversationId)
+    .eq("studio_id", input.studioId);
+
+  await markEvent(input.supabase, input.studioId, input.eventId, {
+    processing_status: "processed",
+    outbound_turn_id: outboundTurn.id,
+    processing_result: {
+      outcome: "replied",
+      provider_message_id: input.providerMessageId,
+      trace: input.trace ?? null,
+    },
+    last_error_code: null,
+    processed_at: new Date().toISOString(),
+  });
+}
+
+async function recordFailedDelivery(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  studioId: string;
+  eventId: string;
+  provider: MetaInboxProvider;
+  conversationId: string;
+  recipientId: string;
+  reply: string;
+  errorCode: string;
+  retryable: boolean;
+  httpStatus?: number;
+  responseSnapshot: JsonObject;
+}) {
+  const { count, error: countError } = await input.supabase
+    .from("assistant_meta_inbox_deliveries")
+    .select("id", { count: "exact", head: true })
+    .eq("studio_id", input.studioId)
+    .eq("event_id", input.eventId);
+
+  const storedFailure = await input.supabase.from("assistant_meta_inbox_deliveries").insert({
+    studio_id: input.studioId,
+    event_id: input.eventId,
+    conversation_id: input.conversationId,
+    turn_id: null,
+    provider: input.provider,
+    recipient_id: input.recipientId,
+    provider_message_id: null,
+    text_fingerprint: metaInboxSha256(input.reply),
+    attempt_number: (count ?? 0) + 1,
+    status: "error",
+    error_code: input.errorCode,
+    http_status: input.httpStatus ?? null,
+    response_snapshot: input.responseSnapshot,
+  });
+
+  if (countError || storedFailure.error) throw new Error("delivery_failure_audit_unavailable");
+  const { data: settings } = await input.supabase
+    .from("demi_operation_retry_settings")
+    .select("delivery_failure_limit")
+    .eq("studio_id", input.studioId)
+    .maybeSingle();
+  const policy = demiDeliveryRetryPolicy({
+    errorCode: input.errorCode,
+    retryable: input.retryable,
+    attempt: (count ?? 0) + 1,
+    limit: settings?.delivery_failure_limit ?? 3,
+  });
+  if (policy.requiresReview)
+    await input.supabase.rpc("assistant_create_handoff", {
+      target_studio_id: input.studioId,
+      target_conversation_id: input.conversationId,
+      target_student_id: null,
+      target_reason_code: "technical_block",
+      target_note: `Confirmación no entregada. Evento: ${input.eventId}; intento ${(count ?? 0) + 1}/${policy.attemptLimit}; error ${input.errorCode}; resultado desconocido: ${policy.outcomeUnknown}. No se repitió la operación de reserva.`,
+    });
+  await markEvent(input.supabase, input.studioId, input.eventId, {
+    processing_status: policy.requiresReview ? "human_review" : "error",
+    processing_result: {
+      outcome: "delivery_failed",
+      retryable: policy.retryAllowed,
+      cached_reply: input.reply,
+      outcome_unknown: policy.outcomeUnknown,
+      attempt_limit: policy.attemptLimit,
+    },
+    last_error_code: input.errorCode,
+  });
+  return policy;
+}
+
+export async function GET(request: Request) {
+  const studioId = studioIdFromRequest(request);
+  if (!studioId) return new Response("invalid_studio", { status: 400 });
+
+  let supabase: ReturnType<typeof createServiceClient>;
+  try {
+    supabase = demiUatScope(studioId)?.supabase ?? createServiceClient();
+  } catch {
+    return new Response("receiver_not_configured", { status: 503 });
+  }
+
+  let config;
+  try {
+    config = await loadMetaInboxWebhookConfig(supabase, studioId);
+  } catch {
+    return new Response("receiver_not_configured", { status: 503 });
+  }
+  if (!config) return new Response("receiver_not_configured", { status: 503 });
+
+  const url = new URL(request.url);
+  // Operational probe for DNS/TLS validation. Never bypass Meta's challenge
+  // check for requests containing webhook verification parameters.
+  if (
+    url.searchParams.get("health") === "meta-inbox" &&
+    !url.searchParams.has("hub.mode") &&
+    !url.searchParams.has("hub.verify_token") &&
+    !url.searchParams.has("hub.challenge")
+  ) {
+    return new Response("meta-inbox-ready", {
+      status: 200,
+      headers: {
+        "content-type": "text/plain; charset=utf-8",
+        "cache-control": "no-store",
+      },
+    });
+  }
+  const mode = url.searchParams.get("hub.mode");
+  const token = url.searchParams.get("hub.verify_token");
+  const challenge = url.searchParams.get("hub.challenge");
+
+  if (
+    mode !== "subscribe" ||
+    !challenge ||
+    !verifyMetaInboxWebhookToken(config.verifyToken, token)
+  ) {
+    return new Response("forbidden", { status: 403 });
+  }
+
+  return new Response(challenge, {
+    status: 200,
+    headers: { "content-type": "text/plain; charset=utf-8" },
+  });
+}
+
+export async function POST(request: Request) {
+  // Operational diagnostics contain only delivery stages and counts, never message bodies,
+  // sender identifiers, access tokens, or signature values.
+  console.info("[demi-meta-inbox] incoming_post");
+  const studioId = studioIdFromRequest(request);
+  if (!studioId) {
+    console.warn("[demi-meta-inbox] invalid_studio");
+    return json({ error: "invalid_studio" }, 400);
+  }
+
+  let supabase: ReturnType<typeof createServiceClient>;
+  try {
+    supabase = demiUatScope(studioId)?.supabase ?? createServiceClient();
+  } catch {
+    return json({ error: "receiver_not_configured" }, 503);
+  }
+
+  const rawBytes = Buffer.from(await request.arrayBuffer());
+  const rawBody = rawBytes.toString("utf8");
+  let webhookConfig;
+  try {
+    webhookConfig = await loadMetaInboxWebhookConfig(supabase, studioId);
+  } catch {
+    return json({ error: "receiver_not_configured" }, 503);
+  }
+  if (!webhookConfig) {
+    console.warn("[demi-meta-inbox] missing_webhook_config");
+    return json({ error: "receiver_not_configured" }, 503);
+  }
+
+  // Distinct Instagram Login and Facebook app secrets. Never accept a payload using
+  // the other application's key; inspect the untrusted type only to select the key.
+  let unsignedPayload: unknown;
+  try {
+    unsignedPayload = JSON.parse(rawBody);
+  } catch {
+    return json({ error: "invalid_json" }, 400);
+  }
+  const unsignedObject =
+    unsignedPayload && typeof unsignedPayload === "object" && !Array.isArray(unsignedPayload)
+      ? unsignedPayload as Record<string, unknown> : {};
+  const unsignedProvider = unsignedObject.object === "instagram"
+    ? "instagram" : unsignedObject.object === "page" ? "facebook_messenger" : null;
+  if (!unsignedProvider) return json({ error: "unknown_provider" }, 400);
+  let signatureSecret = webhookConfig.appSecret;
+  if (unsignedProvider === "instagram") {
+    // Instagram-specific secret is stored in a separate vault record.
+    const { data: instagramSecret, error: instagramSecretError } = await supabase.rpc(
+      "service_get_meta_instagram_app_secret",
+      { target_studio_id: studioId },
+    );
+    if (instagramSecretError || typeof instagramSecret !== "string" || !instagramSecret) {
+      console.warn("[demi-meta-inbox] instagram_app_secret_missing");
+      return json({ error: "instagram_app_secret_missing" }, 503);
+    }
+    signatureSecret = instagramSecret;
+  }
+  if (
+    !verifyMetaInboxWebhookSignature(
+      signatureSecret,
+      rawBytes,
+      request.headers.get("x-hub-signature-256"),
+    )
+  ) {
+    console.warn("[demi-meta-inbox] invalid_signature", {
+      has_signature_header: request.headers.has("x-hub-signature-256"),
+      valid_signature_header_format: /^sha256=[0-9a-f]{64}$/i.test(
+        request.headers.get("x-hub-signature-256")?.trim() ?? "",
+      ),
+    });
+    return json({ error: "invalid_signature" }, 401);
+  }
+
+  let body: unknown;
+  try {
+    body = JSON.parse(rawBody);
+  } catch {
+    return json({ error: "invalid_json" }, 400);
+  }
+
+  const messages = extractMetaInboxMessages(body);
+  console.info("[demi-meta-inbox] signature_valid", {
+    message_count: messages.length,
+    object_type:
+      typeof (body as { object?: unknown })?.object === "string"
+        ? (body as { object: string }).object.slice(0, 24)
+        : "unknown",
+  });
+  if (!messages.length) {
+    // Safe structural diagnostic after signature validation. Never log IDs, message
+    // content, tokens, signatures or the webhook body.
+    const root = body && typeof body === "object" && !Array.isArray(body)
+      ? body as Record<string, unknown> : {};
+    const entries = Array.isArray(root.entry) ? root.entry : [];
+    const shapes = entries.slice(0, 10).map((rawEntry) => {
+      const entry = rawEntry && typeof rawEntry === "object" && !Array.isArray(rawEntry)
+        ? rawEntry as Record<string, unknown> : {};
+      const messaging = Array.isArray(entry.messaging) ? entry.messaging : [];
+      const changes = Array.isArray(entry.changes) ? entry.changes : [];
+      return {
+        messaging_count: messaging.length,
+        changes_count: changes.length,
+        events_with_sender: messaging.filter((item) => item && typeof item === "object" && "sender" in item).length,
+        events_with_message: messaging.filter((item) => item && typeof item === "object" && "message" in item).length,
+      };
+    });
+    console.info("[demi-meta-inbox] zero_messages_shape", {
+      entry_count: entries.length,
+      sample_field_present: typeof root.field === "string",
+      sample_value_present: Boolean(root.value),
+      entry_shapes: shapes,
+    });
+    return json({ ok: true, accepted: true, messages: 0 });
+  }
+
+  let runtimeContext;
+  try {
+    runtimeContext = await loadRuntimeContext(supabase, studioId);
+  } catch (error) {
+    return json(
+      { error: error instanceof Error ? error.message : "assistant_runtime_unavailable" },
+      503,
+    );
+  }
+
+  const liveMode = String(runtimeContext.config.mode ?? "");
+  const sendReplies = liveMode === "pilot" || liveMode === "active";
+  const runAssistant = sendReplies || liveMode === "shadow";
+  console.info("[demi-meta-inbox] runtime_mode", {
+    mode: liveMode,
+    message_count: messages.length,
+  });
+  let retryableFailure = false;
+  const outcomes: JsonObject[] = [];
+
+  // Demo/off acknowledges Meta without storing customer content.
+  if (!runAssistant) {
+    return json({
+      ok: true,
+      accepted: true,
+      messages: messages.length,
+      outcomes: messages.map((message) => ({
+        provider_message_id: message.providerMessageId,
+        outcome: "assistant_mode_not_live",
+        mode: liveMode,
+      })),
+    });
+  }
+
+  for (const message of messages) {
+    if (!["text", "postback", "attachment"].includes(message.messageType) || !message.text.trim()) {
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "unsupported_message_type",
+      });
+      continue;
+    }
+
+    const expectedAccountId =
+      message.provider === "instagram" ? webhookConfig.instagramUserId : webhookConfig.pageId;
+    if (message.providerAccountId !== expectedAccountId) {
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "provider_account_mismatch",
+      });
+      continue;
+    }
+
+    if (
+      liveMode === "pilot" &&
+      !webhookConfig.pilotContactIds[message.provider].includes(message.providerContactId)
+    ) {
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "pilot_contact_not_allowed",
+      });
+      continue;
+    }
+
+    let event;
+    try {
+      event = await captureEvent({
+        supabase,
+        studioId,
+        provider: message.provider,
+        providerMessageId: message.providerMessageId,
+        providerAccountId: message.providerAccountId,
+        providerContactId: message.providerContactId,
+        messageType: message.messageType,
+        text: message.text,
+        timestamp: message.timestamp,
+        rawBody,
+      });
+    } catch {
+      retryableFailure = true;
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "capture_failed",
+      });
+      continue;
+    }
+
+    if (["processed", "ignored", "human_review"].includes(event.processing_status)) {
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "duplicate_already_handled",
+      });
+      continue;
+    }
+    if (event.processing_status === "processing") {
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "duplicate_in_progress",
+      });
+      continue;
+    }
+
+    const claimed = await supabase
+      .from("assistant_meta_inbox_events")
+      .update({
+        processing_status: "processing",
+        attempt_count: Number(event.attempt_count ?? 0) + 1,
+        last_error_code: null,
+      })
+      .eq("studio_id", studioId)
+      .eq("id", event.id)
+      .in("processing_status", ["captured", "error"])
+      .select("id")
+      .maybeSingle();
+    if (claimed.error) {
+      retryableFailure = true;
+      continue;
+    }
+    if (!claimed.data) {
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "duplicate_in_progress",
+      });
+      continue;
+    }
+
+    const { data: preparedData, error: preparedError } = await supabase.rpc(
+      "service_prepare_meta_inbox_message",
+      {
+        target_studio_id: studioId,
+        target_event_id: event.id,
+        target_provider: message.provider,
+        target_provider_account_id: message.providerAccountId,
+        target_provider_message_id: message.providerMessageId,
+        target_provider_contact_id: message.providerContactId,
+        target_display_name: message.displayName,
+        target_message_type: message.messageType,
+        target_message_text: message.text,
+        target_activity_at: providerTimestamp(message.timestamp) ?? new Date().toISOString(),
+      },
+    );
+
+    const prepared = isObject(preparedData) ? preparedData : null;
+    if (preparedError || !prepared || prepared.ok !== true) {
+      retryableFailure = true;
+      await markEvent(supabase, studioId, event.id, {
+        processing_status: "error",
+        processing_result: { outcome: "prepare_failed" },
+        last_error_code: "meta_inbox_message_prepare_failed",
+      });
+      continue;
+    }
+
+    const conversationId = String(prepared.assistant_conversation_id ?? "").trim();
+    const inboundTurnId = String(prepared.inbound_turn_id ?? "").trim();
+    const studentId = String(prepared.student_id ?? "").trim() || null;
+    const crmContactId = String(prepared.crm_contact_id ?? "").trim() || null;
+    const identityNeedsName = prepared.identity_needs_name === true;
+
+    if (!conversationId || !inboundTurnId) {
+      retryableFailure = true;
+      await markEvent(supabase, studioId, event.id, {
+        processing_status: "error",
+        processing_result: { outcome: "identity_incomplete" },
+        last_error_code: "assistant_identity_incomplete",
+      });
+      continue;
+    }
+
+    if (prepared.handoff_open === true) {
+      let blockingHandoff = true;
+      try {
+        blockingHandoff = await hasBlockingOpenHandoff({ supabase, studioId, conversationId });
+      } catch {
+        retryableFailure = true;
+        await markEvent(supabase, studioId, event.id, {
+          processing_status: "error",
+          processing_result: { outcome: "handoff_lookup_failed" },
+          last_error_code: "assistant_handoff_lookup_failed",
+        });
+        continue;
+      }
+      if (blockingHandoff) {
+        await markEvent(supabase, studioId, event.id, {
+          processing_status: "human_review",
+          processing_result: { outcome: "human_takeover_active" },
+          processed_at: new Date().toISOString(),
+        });
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "human_takeover_active",
+        });
+        continue;
+      }
+    }
+
+    const previousResult = isObject(event.processing_result) ? event.processing_result : {};
+    const cachedReply =
+      typeof previousResult.cached_reply === "string" ? previousResult.cached_reply : null;
+    if (sendReplies && cachedReply) {
+      const delivery = await sendMetaInboxText({
+        config: webhookConfig,
+        provider: message.provider,
+        recipientId: message.providerContactId,
+        text: cachedReply,
+      });
+      if (delivery.status === "error") {
+        const failurePolicy = await recordFailedDelivery({
+          supabase,
+          studioId,
+          eventId: event.id,
+          conversationId,
+          provider: message.provider,
+          recipientId: message.providerContactId,
+          reply: cachedReply,
+          errorCode: delivery.errorCode,
+          retryable: delivery.retryable,
+          httpStatus: delivery.httpStatus,
+          responseSnapshot: delivery.responseSnapshot,
+        });
+        retryableFailure = retryableFailure || failurePolicy.retryAllowed;
+      } else {
+        try {
+          await persistAcceptedReply({
+            supabase,
+            studioId,
+            eventId: event.id,
+            conversationId,
+            provider: message.provider,
+            recipientId: message.providerContactId,
+            reply: cachedReply,
+            providerMessageId: delivery.providerMessageId,
+            httpStatus: delivery.httpStatus,
+            responseSnapshot: delivery.responseSnapshot,
+          });
+        } catch {
+          await markEvent(supabase, studioId, event.id, {
+            processing_status: "human_review",
+            processing_result: {
+              outcome: "reply_persist_failed_after_send",
+              provider_message_id: delivery.providerMessageId,
+            },
+            last_error_code: "reply_persist_failed_after_send",
+          });
+          await supabase.rpc("assistant_create_handoff", {
+            target_studio_id: studioId,
+            target_conversation_id: conversationId,
+            target_student_id: null,
+            target_reason_code: "technical_block",
+            target_note:
+              "Meta aceptó la confirmación pero falló su registro local. No reenviar. Evento: " +
+              event.id,
+          });
+        }
+      }
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "cached_reply_retry",
+      });
+      continue;
+    }
+
+    let audioFailureReply: { reply: string; outcome: string } | null = null;
+    if (message.messageType === "attachment" && message.attachmentType === "audio") {
+      try {
+        if (!message.attachmentUrl) throw new Error("audio_url_missing");
+        const media = await downloadMetaInboxAttachment(message.attachmentUrl, "audio");
+        const transcript = await transcribeDemiAudioBytes(media);
+        const saved = await supabase
+          .from("assistant_turns")
+          .update({ content: transcript })
+          .eq("id", inboundTurnId)
+          .eq("studio_id", studioId)
+          .eq("conversation_id", conversationId);
+        if (saved.error) throw new Error("audio_transcript_persist_failed");
+        message.text = transcript;
+      } catch (error) {
+        const errorCode =
+          error instanceof Error && /^(audio_|meta_attachment_)[a-z0-9_]+$/.test(error.message)
+            ? error.message
+            : "meta_audio_failed";
+        console.warn("[demi-meta-inbox] audio_failed", {
+          studio_id: studioId,
+          event_id: event.id,
+          error_code: errorCode,
+        });
+        const human = await supabase.rpc("assistant_create_handoff", {
+          target_studio_id: studioId,
+          target_conversation_id: conversationId,
+          target_student_id: studentId,
+          target_reason_code: "technical_block",
+          target_note:
+            "No se pudo transcribir el audio de Meta; no se ejecutó ninguna reserva ni pago. Código: " +
+            errorCode,
+        });
+        audioFailureReply = {
+          reply:
+            "Recibí tu audio, pero no pude transcribirlo. Puedes reenviarlo o escribir tu solicitud." +
+            (!human.error && human.data?.ok === true
+              ? " El caso quedó con el equipo para revisión."
+              : " No confirmé ninguna reserva ni pago."),
+          outcome: "meta_audio_review",
+        };
+      }
+    }
+
+    const { data: recentTurns, error: historyError } = await supabase
+      .from("assistant_turns")
+      .select("role,content,created_at")
+      .eq("studio_id", studioId)
+      .eq("conversation_id", conversationId)
+      .in("role", ["user", "assistant"])
+      .order("created_at", { ascending: false })
+      .limit(12);
+
+    if (historyError) {
+      retryableFailure = true;
+      await markEvent(supabase, studioId, event.id, {
+        processing_status: "error",
+        processing_result: { outcome: "history_failed" },
+        last_error_code: "conversation_history_failed",
+      });
+      continue;
+    }
+
+    const history = (recentTurns ?? [])
+      .slice()
+      .reverse()
+      .map((item) => ({
+        role: item.role as "user" | "assistant",
+        content: item.content,
+      }));
+
+    // Share Demi 2.0's payment-first state and native reservation operation.
+    let deterministicReply: { reply: string; outcome: string } | null = audioFailureReply;
+    if (
+      sendReplies &&
+      message.messageType === "attachment" &&
+      ["video", "unsupported"].includes(String(message.attachmentType))
+    ) {
+      deterministicReply = {
+        reply:
+          "Ese formato de archivo no está soportado. Envía tu solicitud por escrito o el comprobante como imagen o PDF. No confirmé ninguna reserva ni pago.",
+        outcome: "meta_attachment_unsupported",
+      };
+    }
+    if (
+      sendReplies &&
+      message.messageType === "attachment" &&
+      message.attachmentType !== "audio" &&
+      !deterministicReply
+    ) {
+      try {
+        const receipt = await handleDemiMetaInboxReceipt({
+          supabase,
+          studioId,
+          conversationId,
+          eventId: event.id,
+          message,
+        });
+        if (receipt.handled)
+          deterministicReply = { reply: receipt.reply, outcome: "meta_group_receipt" };
+      } catch {
+        await supabase.rpc("assistant_create_handoff", {
+          target_studio_id: studioId,
+          target_conversation_id: conversationId,
+          target_student_id: studentId,
+          target_reason_code: "receipt_validation_failed",
+          target_note:
+            "No se pudo descargar o asociar el adjunto de Meta; no se confirmó una reserva.",
+        });
+        deterministicReply = {
+          reply:
+            "No pude procesar ese archivo. Envíalo otra vez como imagen o PDF del comprobante, o pide ayuda al equipo. No confirmé ninguna reserva.",
+          outcome: "meta_attachment_review",
+        };
+      }
+      if (!deterministicReply)
+        deterministicReply = {
+          reply:
+            "Recibí el archivo, pero no tengo un pago pendiente para asociarlo. Dime qué clase quieres tomar y revisamos la disponibilidad.",
+          outcome: "meta_attachment_unmatched",
+        };
+    }
+
+    let studentCategory: string | null = null;
+    if (studentId) {
+      try {
+        const studentStatus = await getStudentPackageStatus({
+          supabase,
+          studio: {
+            id: runtimeContext.studio.id,
+            name: runtimeContext.studio.name,
+            timezone: runtimeContext.studio.timezone,
+            currency: runtimeContext.studio.currency,
+          },
+          studentId,
+        });
+        if (studentStatus.ok === true && isObject(studentStatus.student_state)) {
+          studentCategory = String(studentStatus.student_state.category ?? "") || null;
+        }
+      } catch {
+        studentCategory = null;
+      }
+    }
+
+    let assistantResult;
+    try {
+      assistantResult = deterministicReply
+        ? { reply: deterministicReply.reply, trace: { deterministic: deterministicReply.outcome } }
+        : await runAssistantTurn({
+            supabase,
+            studio: {
+              id: runtimeContext.studio.id,
+              name: runtimeContext.studio.name,
+              timezone: runtimeContext.studio.timezone,
+              currency: runtimeContext.studio.currency,
+            },
+            config: {
+              assistant_name: runtimeContext.config.assistant_name,
+              model: runtimeContext.config.model,
+              reasoning_effort: runtimeContext.config.reasoning_effort as
+                "none" | "low" | "medium" | "high",
+              personality_instructions: runtimeContext.config.personality_instructions,
+              monthly_budget_usd_micros: runtimeContext.config.monthly_budget_usd_micros,
+              conversation_budget_usd_micros: runtimeContext.config.conversation_budget_usd_micros,
+              max_model_calls_per_turn: runtimeContext.config.max_model_calls_per_turn,
+              max_tool_calls_per_turn: runtimeContext.config.max_tool_calls_per_turn,
+            },
+            conversationId,
+            turnId: inboundTurnId,
+            studentId,
+            studentCategory,
+            crmContactId,
+            identityNeedsName,
+            channel: message.channel,
+            activationUrl: new URL("/login/student/activar", request.url).toString(),
+            serviceMode: true,
+            history,
+          });
+    } catch (error) {
+      retryableFailure = true;
+      await markEvent(supabase, studioId, event.id, {
+        processing_status: "error",
+        processing_result: { outcome: "assistant_failed" },
+        last_error_code: error instanceof Error ? error.message : "assistant_failed",
+      });
+      continue;
+    }
+
+    if (!sendReplies) {
+      await markEvent(supabase, studioId, event.id, {
+        processing_status: "processed",
+        processing_result: { outcome: "shadow_completed", trace: assistantResult.trace },
+        processed_at: new Date().toISOString(),
+      });
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "shadow_completed",
+      });
+      continue;
+    }
+
+    const delivery = await sendMetaInboxText({
+      config: webhookConfig,
+      provider: message.provider,
+      recipientId: message.providerContactId,
+      text: assistantResult.reply,
+    });
+
+    if (delivery.status === "error") {
+      const failurePolicy = await recordFailedDelivery({
+        supabase,
+        studioId,
+        eventId: event.id,
+        provider: message.provider,
+        conversationId,
+        recipientId: message.providerContactId,
+        reply: assistantResult.reply,
+        errorCode: delivery.errorCode,
+        retryable: delivery.retryable,
+        httpStatus: delivery.httpStatus,
+        responseSnapshot: delivery.responseSnapshot,
+      });
+      retryableFailure = retryableFailure || failurePolicy.retryAllowed;
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "delivery_failed",
+        retryable: failurePolicy.retryAllowed,
+      });
+      continue;
+    }
+
+    try {
+      await persistAcceptedReply({
+        supabase,
+        studioId,
+        eventId: event.id,
+        provider: message.provider,
+        conversationId,
+        reply: assistantResult.reply,
+        recipientId: message.providerContactId,
+        providerMessageId: delivery.providerMessageId,
+        httpStatus: delivery.httpStatus,
+        responseSnapshot: delivery.responseSnapshot,
+        trace: assistantResult.trace,
+      });
+    } catch {
+      retryableFailure = true;
+      await markEvent(supabase, studioId, event.id, {
+        processing_status: "human_review",
+        processing_result: {
+          outcome: "reply_persist_failed_after_send",
+          provider_message_id: delivery.providerMessageId,
+        },
+        last_error_code: "reply_persist_failed_after_send",
+      });
+      await supabase.rpc("assistant_create_handoff", {
+        target_studio_id: studioId,
+        target_conversation_id: conversationId,
+        target_student_id: null,
+        target_reason_code: "technical_block",
+        target_note:
+          "Meta aceptó la respuesta pero falló su registro local. No reenviar. Evento: " + event.id,
+      });
+      continue;
+    }
+
+    outcomes.push({
+      provider_message_id: message.providerMessageId,
+      outcome: "replied",
+    });
+  }
+
+  return json(
+    { ok: !retryableFailure, accepted: true, messages: messages.length, outcomes },
+    retryableFailure ? 500 : 200,
+  );
+}

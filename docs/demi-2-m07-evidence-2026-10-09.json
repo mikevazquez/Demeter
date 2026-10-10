@@ -1,0 +1,121 @@
+{
+  "case": "M07",
+  "business_status": "passed",
+  "run_id": "03c4dce0-b7c9-4939-8c3b-9783d9e28a55",
+  "studio_id": "ccc42e77-bdfa-4f46-a064-240a73a0c882",
+  "scope": "Synthetic Sandbox, actual model and adapters; external transport remains M01/M18. Refund execution manual.",
+  "version": "e1517aa",
+  "conversations": [
+    {
+      "variant": "m07_full_unique",
+      "reply": "La clase de Pole Fitness de mañana, sábado 10 de octubre, a las 18:00 está llena. No hay lugar disponible en ese horario.",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "906cf235-80b3-4e45-ae9c-52026ef6e132",
+          "status": "awaiting_receipt",
+          "amount_minor": 15000
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m07_alternative",
+      "reply": "La alternativa disponible de Pole Fitness mañana, sábado 10 de octubre, es:\n\n19:00 a 20:00\n\nLa clase de las 18:00 sigue llena.",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "906cf235-80b3-4e45-ae9c-52026ef6e132",
+          "status": "awaiting_receipt",
+          "amount_minor": 15000
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m07_choose",
+      "reply": "El importe de tu primera clase es $150.00.\n\nTransferencia o depósito OXXO directamente a la cuenta bancaria:\nBANCO FICTICIO UAT — NO TRANSFERIR\nPRUEBA SIN VALOR\nCuenta: 0000\nNo realizar pagos reales.\n\nEnvíame el comprobante por este mismo chat. El equipo validará el pago manualmente. Después de revisarlo te pediré los datos faltantes para reservar. Todavía no hay una reserva confirmada ni un lugar retenido.",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "906cf235-80b3-4e45-ae9c-52026ef6e132",
+          "status": "awaiting_receipt",
+          "amount_minor": 15000
+        },
+        {
+          "id": "e61d693e-3e91-47a9-8521-7fa0d42e2fcb",
+          "status": "awaiting_receipt",
+          "amount_minor": 15000
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m07_paid",
+      "reply": "Recibí tu comprobante. El pago queda pendiente de validación del equipo. Ahora envíame juntos tu nombre completo y celular mexicano de diez dígitos que todavía falten, sin lada; usaré los datos ya conocidos. Todavía no he confirmado tu reserva; revisaré el cupo antes de crearla.",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "e61d693e-3e91-47a9-8521-7fa0d42e2fcb",
+          "status": "awaiting_participants",
+          "amount_minor": 15000
+        },
+        {
+          "id": "906cf235-80b3-4e45-ae9c-52026ef6e132",
+          "status": "awaiting_receipt",
+          "amount_minor": 15000
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m07_after_payment_capacity",
+      "reply": "Sí consulté de nuevo: la clase de Pole Fitness de mañana, sábado 10 de octubre, a las 19:00 ya está llena.\n\nLas alternativas disponibles mañana son:\n• 00:48 a 01:48\n• 02:48 a 03:48\n\nEl comprobante ya quedó recibido y pendiente de validación; todavía no hay reserva confirmada.",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "e61d693e-3e91-47a9-8521-7fa0d42e2fcb",
+          "status": "awaiting_participants",
+          "amount_minor": 15000
+        },
+        {
+          "id": "906cf235-80b3-4e45-ae9c-52026ef6e132",
+          "status": "awaiting_receipt",
+          "amount_minor": 15000
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m07_refund",
+      "reply": "Ya envié tu solicitud de devolución a atención humana dentro de este mismo chat. El comprobante queda en revisión y no crearé otra reserva ni prometeré un plazo de devolución.",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "e61d693e-3e91-47a9-8521-7fa0d42e2fcb",
+          "status": "awaiting_participants",
+          "amount_minor": 15000
+        },
+        {
+          "id": "906cf235-80b3-4e45-ae9c-52026ef6e132",
+          "status": "awaiting_receipt",
+          "amount_minor": 15000
+        }
+      ],
+      "human_cases": [
+        {
+          "id": "5418b46c-ec00-454b-b183-d0683d73443b",
+          "reason": "refund_request",
+          "status": "open"
+        }
+      ]
+    }
+  ],
+  "capacity_race": {
+    "capacity": 1,
+    "reserved": 1,
+    "payer_group_participants": 0,
+    "refund_case_id": "5418b46c-ec00-454b-b183-d0683d73443b",
+    "group_session_receipt_references_verified": true
+  }
+}

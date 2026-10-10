@@ -103,6 +103,19 @@ export default function DemiWorkbench({
     endRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [messages, busy]);
 
+  const incomingPromptKey = JSON.stringify([activeInstructions, versions[0]?.id]);
+  const [previousPromptKey, setPreviousPromptKey] = useState(incomingPromptKey);
+  if (previousPromptKey !== incomingPromptKey) {
+    setPreviousPromptKey(incomingPromptKey);
+    const nextInitial = versions[0]?.kind === "draft" ? versions[0] : null;
+    setDraft(nextInitial?.instructions ?? activeInstructions);
+    setSaved(nextInitial);
+    setHistory(versions);
+    setConversationId(null);
+    setMessages([]);
+    setMessage("");
+  }
+
   function clearTest() {
     setConversationId(null);
     setMessages([]);
