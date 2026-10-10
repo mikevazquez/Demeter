@@ -98,6 +98,7 @@ begin
  update public.class_sessions set capacity=(select count(*)+1 from public.reservations where session_id=session and status='reserved') where id=session;
  r:=public.service_complete_demi_group(s,c,g,'[{"name":"UAT Parcial Uno","phone":"9998880004"},{"name":"UAT Parcial Dos","phone":"9998880005"}]'::jsonb);
  if r->>'status'<>'partial' or (r->>'reserved_count')::integer<>1 or (r->>'unallocated_minor')::integer<>15000 then raise exception 'partial_result:%',r; end if;
+ if not coalesce((r->>'human_review_created')::boolean,false) or not exists(select 1 from public.assistant_handoffs where id=(r->>'handoff_id')::uuid and studio_id=s and conversation_id=c and status='open') then raise exception 'partial_handoff_claim_not_persisted:%',r; end if;
  if (select count(*) from public.demi_group_participants where group_id=g and reservation_id is not null)<>1 or not exists(select 1 from public.assistant_handoffs where studio_id=s and conversation_id=c and reason_code='group_partial' and status='open') then raise exception 'partial_oversold_or_lost_handoff'; end if;
  out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','capacity_changed_partial_success_no_oversell_human_review','passed',true));
  if exists(select 1 from public.students where studio_id=s and phone='+529998880005') then raise exception 'failed_group_participant_became_trial'; end if;
