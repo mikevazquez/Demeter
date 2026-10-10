@@ -395,7 +395,8 @@ export default async function MetaInboxIntegrationPage({
             <div className="integration-detail-v2-notice" role="status">
               {({
                 valid: "Meta confirma que el token es válido y pertenece a @demeter_fitness_studio.",
-                wrong_account: "El token corresponde a otra cuenta o no coincide con la conexión.",
+                wrong_account: "Meta respondió con una cuenta de Instagram diferente a @demeter_fitness_studio.",
+                id_mismatch: "La cuenta de Instagram es correcta, pero su ID no coincide con el guardado. Requiere reconciliar la conexión sin cambiar Messenger.",
                 rejected: "Meta rechazó el token guardado; revisa si expiró o fue revocado.",
                 missing: "Faltan credenciales de Instagram para verificar.",
                 unavailable: "No fue posible completar la comprobación. Reintenta.",
