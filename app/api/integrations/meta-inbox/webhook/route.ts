@@ -690,14 +690,24 @@ export async function POST(request: Request) {
           .eq("conversation_id", conversationId);
         if (saved.error) throw new Error("audio_transcript_persist_failed");
         message.text = transcript;
-      } catch {
+      } catch (error) {
+        const errorCode =
+          error instanceof Error && /^(audio_|meta_attachment_)[a-z0-9_]+$/.test(error.message)
+            ? error.message
+            : "meta_audio_failed";
+        console.warn("[demi-meta-inbox] audio_failed", {
+          studio_id: studioId,
+          event_id: event.id,
+          error_code: errorCode,
+        });
         const human = await supabase.rpc("assistant_create_handoff", {
           target_studio_id: studioId,
           target_conversation_id: conversationId,
           target_student_id: studentId,
           target_reason_code: "technical_block",
           target_note:
-            "No se pudo transcribir el audio de Meta; no se ejecutó ninguna reserva ni pago.",
+            "No se pudo transcribir el audio de Meta; no se ejecutó ninguna reserva ni pago. Código: " +
+            errorCode,
         });
         audioFailureReply = {
           reply:

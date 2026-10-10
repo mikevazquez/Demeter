@@ -55,6 +55,26 @@ describe("Demi audio transcription", () => {
     expect(form.get("language")).toBe("es");
     expect((form.get("file") as File).name).toBe("audio.ogg");
   });
+  it.each([
+    ["audio/ogg", [0, 0, 0, 28, 102, 116, 121, 112, 105, 115, 111, 109], "audio/mp4", "audio.m4a"],
+    ["audio/mp4", [79, 103, 103, 83, 0, 0, 0, 0], "audio/ogg", "audio.ogg"],
+  ])(
+    "uses the recording container when Meta mislabels %s",
+    async (declared, bytes, actual, filename) => {
+      vi.stubEnv("OPENAI_API_KEY", "test-key");
+      const request = vi.fn(async () => Response.json({ text: "Información, por favor." }));
+      vi.stubGlobal("fetch", request);
+      await load().transcribeBytes({
+        bytes: new Uint8Array(bytes as number[]),
+        mimeType: declared,
+      });
+      const form = (request.mock.calls[0] as unknown as [string, RequestInit])[1].body as FormData;
+      const file = form.get("file") as File;
+      expect(file.name).toBe(filename);
+      expect(file.type).toBe(actual);
+      expect(new Uint8Array(await file.arrayBuffer())).toEqual(new Uint8Array(bytes as number[]));
+    },
+  );
   it("transcribes a downloaded Meta inbox audio without looking up WhatsApp media", async () => {
     vi.stubEnv("OPENAI_API_KEY", "test-key");
     const request = vi.fn(async () => Response.json({ text: "Información de clases, por favor." }));

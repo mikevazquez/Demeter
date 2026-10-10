@@ -26,14 +26,26 @@ export async function transcribeDemiAudioBytes(
     media.bytes.byteLength > 10 * 1024 * 1024
   )
     throw new Error("audio_media_invalid");
+  // Meta may label an MP4/Opus recording as audio/ogg. Use the actual
+  // container to choose the multipart filename; do not broaden accepted MIME types.
+  const ascii = (start: number, end: number) =>
+    String.fromCharCode(...media.bytes.subarray(start, end));
+  const mimeType =
+    media.bytes.length >= 12 && ascii(4, 8) === "ftyp"
+      ? "audio/mp4"
+      : ascii(0, 4) === "OggS"
+        ? "audio/ogg"
+        : ascii(0, 4) === "RIFF" && ascii(8, 12) === "WAVE"
+          ? "audio/wav"
+          : media.mimeType;
   const extension =
-    media.mimeType === "audio/ogg"
+    mimeType === "audio/ogg"
       ? "ogg"
-      : media.mimeType === "audio/mpeg"
+      : mimeType === "audio/mpeg"
         ? "mp3"
-        : media.mimeType === "audio/mp4"
+        : mimeType === "audio/mp4"
           ? "m4a"
-          : media.mimeType === "audio/webm"
+          : mimeType === "audio/webm"
             ? "webm"
             : "wav";
   const form = new FormData();
@@ -41,7 +53,7 @@ export async function transcribeDemiAudioBytes(
   form.set("language", "es");
   form.set(
     "file",
-    new Blob([new Uint8Array(media.bytes)], { type: media.mimeType }),
+    new Blob([new Uint8Array(media.bytes)], { type: mimeType }),
     `audio.${extension}`,
   );
   const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
