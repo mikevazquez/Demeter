@@ -75,8 +75,10 @@ export async function handleDemiEnrollmentReceipt(input: {
           ? "Ese comprobante ya quedó pendiente de revisión; no se activó la inscripción ni se duplicó el pago."
           : result?.status === "rejected"
             ? "Ese documento fue rechazado. Envía un comprobante nuevo y correcto; no se activará la inscripción hasta validar el pago."
-            : result?.reason_code === "receipt_amount_mismatch"
-              ? "El importe o moneda del comprobante no coincide con la inscripción. No activé derechos. Envía el documento correcto."
-              : "No pude aceptar este comprobante de inscripción. Conservé el documento, sin activar derechos. Envía uno legible o solicita revisión del equipo.";
+            : result?.reason_code === "receipt_already_used"
+              ? "Ese comprobante ya corresponde a otra solicitud de pago. No lo apliqué otra vez. Envía un documento nuevo que corresponda a esta inscripción."
+              : result?.reason_code === "receipt_amount_mismatch"
+                ? "El importe o moneda del comprobante no coincide con la inscripción. No activé derechos. Envía el documento correcto."
+                : "No pude aceptar este comprobante de inscripción. Conservé el documento, sin activar derechos. Envía uno legible o solicita revisión del equipo.";
   return { handled: true as const, result, reply };
 }

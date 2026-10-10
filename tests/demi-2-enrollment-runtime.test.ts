@@ -108,3 +108,18 @@ describe("Demi 2.0 enrollment and natural confirmation", () => {
     },
   );
 });
+
+// A confirmation of the exact pending reservation needs only one reply.
+it.each(["Sí, confirmo esa reserva.", "Confirmo esta reserva."])(
+  "accepts unambiguous reservation confirmation: %s",
+  (reply) => {
+    expect(isExplicitAssistantConfirmation(reply)).toBe(true);
+  },
+);
+it.each([
+  "No confirmo esa reserva",
+  "¿Confirmo esa reserva?",
+  "Si confirmo esa reserva, ¿cuánto pago?",
+])("rejects negative or conditional reservation confirmation: %s", (reply) => {
+  expect(isExplicitAssistantConfirmation(reply)).toBe(false);
+});

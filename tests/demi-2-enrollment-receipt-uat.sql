@@ -67,5 +67,28 @@ begin
  r:=public.admin_review_demi_enrollment_receipt(s,receipt,'approved','Reintento de revisión UAT');
  if r->>'idempotent'<>'true' or (r->>'sale_id')::uuid<>sale or (select count(*) from public.payments where sale_id=sale)<>1 then raise exception 'duplicate_payment:%',r; end if;
 end $$;
-select jsonb_build_object('passed',true,'controls',array['local_expiry_fixture','intent_idempotency','owned_conversation','human_case_with_receipt','receipt_replay','reject_no_rights','rejected_cannot_approve','corrected_receipt','enrollment_only_sale','package_unchanged','approval_replay_single_payment']) as result;
+set local role service_role;
+set local request.jwt.claim.role='service_role';
+set local request.jwt.claims='{"role":"service_role"}';
+do $$
+declare s uuid:=current_setting('uat.enro_studio')::uuid; n public.demi_receipt_review_notices%rowtype; r jsonb;
+begin
+ if (select count(*) from public.demi_receipt_review_notices where studio_id=s)<>2 then raise exception 'review_notice_dedup'; end if;
+ if exists(select 1 from public.service_claim_demi_receipt_review_notices(s)) then raise exception 'notice_sent_while_human_open'; end if;
+ update public.assistant_handoffs set status='resolved' where studio_id=s and status='open';
+ for n in select * from public.service_claim_demi_receipt_review_notices(s) loop
+  r:=public.service_revalidate_demi_receipt_review_notice(n.id,n.notification_lease);
+  if n.decision='rejected' then if r->>'eligible'<>'false' then raise exception 'superseded_rejection_sent'; end if;
+  else
+   if r->>'eligible'<>'true' then raise exception 'approval_notice_not_eligible'; end if;
+   r:=public.service_finish_demi_receipt_review_notice(n.id,gen_random_uuid(),true,'uat:wrong',null,n.notification_text);
+   if r->>'reason_code'<>'notification_lease_lost' then raise exception 'foreign_notice_lease'; end if;
+   r:=public.service_finish_demi_receipt_review_notice(n.id,n.notification_lease,true,'uat:approved',null,n.notification_text);
+   if r->>'status'<>'sent' then raise exception 'notice_finish:%',r; end if;
+   r:=public.service_finish_demi_receipt_review_notice(n.id,n.notification_lease,true,'uat:approved',null,n.notification_text);
+   if r->>'reason_code'<>'notification_lease_lost' then raise exception 'notice_replay'; end if;
+  end if;
+ end loop;
+end $$;
+select jsonb_build_object('passed',true,'controls',array['local_expiry_fixture','intent_idempotency','owned_conversation','human_case_with_receipt','receipt_replay','reject_no_rights','rejected_cannot_approve','corrected_receipt','enrollment_only_sale','package_unchanged','approval_replay_single_payment','notice_dedup','human_pause','superseded_rejection_suppressed','owned_notice_lease','notice_finish_replay']) as result;
 rollback;

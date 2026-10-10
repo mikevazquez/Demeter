@@ -69,16 +69,42 @@ Deno.serve(async (request: Request) => {
       p_studio: studio,
     });
     if (claimed.error) throw new Error("payment_notification_claim_failed");
-    for (const payment of claimed.data ?? []) {
+    const reviewed = await client.rpc("service_claim_demi_receipt_review_notices", {
+      p_studio: studio,
+    });
+    if (reviewed.error) throw new Error("receipt_review_notification_claim_failed");
+    const jobs = [
+      ...(claimed.data ?? []).map((job: Record<string, unknown>) => ({
+        ...job,
+        review_notice: false,
+      })),
+      ...(reviewed.data ?? []).map((job: Record<string, unknown>) => ({
+        ...job,
+        review_notice: true,
+      })),
+    ];
+    for (const payment of jobs) {
       const amount = new Intl.NumberFormat("es-MX", {
         style: "currency",
         currency: payment.currency,
       }).format(payment.amount_minor / 100);
       let text = `Mercado Pago confirmó tu pago de ${amount}. No necesitas enviar comprobante. Continúa por este chat con los datos faltantes de quienes asistirán; verificaré el cupo antes de confirmar la reserva. Todavía no hay un lugar retenido.`;
+      if (payment.review_notice) text = payment.notification_text;
       let accepted = false;
       let provider: string | null = null;
       let error: string | null = null;
       try {
+        if (payment.review_notice) {
+          const current = await client.rpc("service_revalidate_demi_receipt_review_notice", {
+            p_request: payment.id,
+            p_lease: payment.notification_lease,
+          });
+          if (current.error) throw new Error("receipt_review_revalidation_failed");
+          if (!current.data?.eligible) {
+            outcomes.push({ id: payment.id, status: "superseded" });
+            continue;
+          }
+        }
         const thread = await client
           .from("assistant_conversations")
           .select("channel,context,external_thread_ref,status,student_id")
@@ -117,37 +143,42 @@ Deno.serve(async (request: Request) => {
           .maybeSingle();
         if (preference.error || preference.data?.whatsapp_blocked)
           throw new Error("payment_channel_blocked");
-        const group = await client
-          .from("demi_group_bookings")
-          .select("status,participant_count")
-          .eq("id", payment.group_id)
-          .eq("studio_id", studio)
-          .single();
-        const participants = await client
-          .from("demi_group_participants")
-          .select("reservation_id")
-          .eq("group_id", payment.group_id);
-        if (group.error || participants.error)
-          throw new Error("payment_booking_context_unavailable");
-        const ids = (participants.data ?? []).map((item) => item.reservation_id).filter(Boolean);
-        if (ids.length) {
-          const reservations = await client
-            .from("reservations")
-            .select("id,status")
+        if (!payment.review_notice) {
+          const group = await client
+            .from("demi_group_bookings")
+            .select("status,participant_count")
+            .eq("id", payment.group_id)
             .eq("studio_id", studio)
-            .in("id", ids);
-          if (reservations.error) throw new Error("payment_booking_context_unavailable");
-          const reserved = (reservations.data ?? []).filter(
-            (item) => item.status === "reserved",
-          ).length;
-          text = `Mercado Pago confirmó tu pago de ${amount}. No necesitas enviar comprobante. Hay ${reserved} de ${group.data.participant_count} reservas activas para esta solicitud; puedes consultar sus detalles por este chat.`;
+            .single();
+          const participants = await client
+            .from("demi_group_participants")
+            .select("reservation_id")
+            .eq("group_id", payment.group_id);
+          if (group.error || participants.error)
+            throw new Error("payment_booking_context_unavailable");
+          const ids = (participants.data ?? []).map((item) => item.reservation_id).filter(Boolean);
+          if (ids.length) {
+            const reservations = await client
+              .from("reservations")
+              .select("id,status")
+              .eq("studio_id", studio)
+              .in("id", ids);
+            if (reservations.error) throw new Error("payment_booking_context_unavailable");
+            const reserved = (reservations.data ?? []).filter(
+              (item) => item.status === "reserved",
+            ).length;
+            text = `Mercado Pago confirmó tu pago de ${amount}. No necesitas enviar comprobante. Hay ${reserved} de ${group.data.participant_count} reservas activas para esta solicitud; puedes consultar sus detalles por este chat.`;
+          }
         }
         if (capture) {
           const captured = await client.rpc("service_capture_demi_uat_delivery", {
             p_studio: studio,
-            p_kind: "demi_payment_confirmation",
+            p_kind: payment.review_notice ? "demi_receipt_review" : "demi_payment_confirmation",
             p_payload: {
               request_id: payment.id,
+              source_kind: payment.source_kind ?? null,
+              source_id: payment.source_id ?? null,
+              decision: payment.decision ?? null,
               channel: thread.data.channel,
               text,
               attempt: payment.notification_attempts,
@@ -276,14 +307,19 @@ Deno.serve(async (request: Request) => {
         }
         error = failure instanceof Error ? failure.message : "payment_notification_failed";
       }
-      const finished = await client.rpc("service_finish_demi_payment_notification", {
-        p_request: payment.id,
-        p_lease: payment.notification_lease,
-        p_accepted: accepted,
-        p_provider: provider,
-        p_error: error,
-        p_text: text,
-      });
+      const finished = await client.rpc(
+        payment.review_notice
+          ? "service_finish_demi_receipt_review_notice"
+          : "service_finish_demi_payment_notification",
+        {
+          p_request: payment.id,
+          p_lease: payment.notification_lease,
+          p_accepted: accepted,
+          p_provider: provider,
+          p_error: error,
+          p_text: text,
+        },
+      );
       if (finished.error) throw new Error("payment_notification_result_failed");
       outcomes.push({ id: payment.id, notification: finished.data });
     }
