@@ -279,7 +279,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     name: "prepare_group_booking",
     strict: true,
     description:
-      "Prepara el total de una reserva grupal o de una reserva sólo para otra persona (participant_count=1). El pagador que no asiste no es participante ni adquiere prueba. Antes del comprobante bancario o pago Mercado Pago verificado solicita sólo clase, número de participantes y cuántas pagarán primera clase; no pidas nombres ni celulares. Las alumnas con créditos se validan individualmente después. No crea reservas ni retiene cupo. Devuelve group_id y datos bancarios o external_checkout. Si automatic_verification=true y receipt_required=false, espera confirmación del proveedor sin pedir comprobante.",
+      "Prepara el total de una reserva grupal o de una reserva sólo para otra persona (participant_count=1). El pagador que no asiste no es participante ni adquiere prueba. Dos participantes con el mismo teléfono requieren atención humana antes de cobrar o registrar; no prometas unicidad por nombre ni inventes teléfonos. Antes del comprobante bancario o pago Mercado Pago verificado solicita sólo clase, número de participantes y cuántas pagarán primera clase; no pidas nombres ni celulares. Las alumnas con créditos se validan individualmente después. No crea reservas ni retiene cupo. Devuelve group_id y datos bancarios o external_checkout. Si automatic_verification=true y receipt_required=false, espera confirmación del proveedor sin pedir comprobante.",
     parameters: {
       type: "object",
       properties: {
@@ -296,7 +296,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     name: "complete_group_booking",
     strict: true,
     description:
-      "Después de comprobante bancario aceptado o payment_verified=true de Mercado Pago, completa el group_id: puede ser una primera clase individual preparada con prepare_first_class_payment (un participante) o un grupo. Recibe juntos los datos faltantes de cada participante y crea reservas individuales con cupo y elegibilidad reales; la transferencia es provisional y el pago Mercado Pago verificado no requiere revisión manual. El pagador no se convierte automáticamente en participante. Reporta cada resultado y cualquier importe no asignado; no confirma todo el grupo ante un fallo parcial. Una prueba con reserva pendiente requiere cambiar/cancelar la existente.",
+      "Después de comprobante bancario aceptado o payment_verified=true de Mercado Pago, completa el group_id: puede ser una primera clase individual preparada con prepare_first_class_payment (un participante) o un grupo. Recibe juntos los datos faltantes de cada participante y crea reservas individuales con cupo y elegibilidad reales; la transferencia es provisional y el pago Mercado Pago verificado no requiere revisión manual. El pagador no se convierte automáticamente en participante. En grupos mixtos, informa confirmada la reserva cubierta por créditos propios y provisional sólo la cubierta por una transferencia pendiente; el rechazo de esa transferencia no afecta la reserva con créditos propios. Reporta cada resultado y cualquier importe no asignado; no confirma todo el grupo ante un fallo parcial. Una prueba con reserva pendiente requiere cambiar/cancelar la existente.",
     parameters: {
       type: "object",
       properties: {

@@ -2,7 +2,7 @@
 
 **4/18 casos maestros aprobados (22.2 %); 14 parciales (77.8 %).** M03, M09, M13 y M17 pasaron sus criterios de negocio. El transporte externo permanece en M01 y no se da por aprobado. Cada fila distingue variantes que pasaron de lo que falta para cerrar el caso. Las correcciones detectadas se detallan debajo.
 
-Validación: 1119/1119 pruebas automáticas, typecheck y compilación correctos; lint sin errores (un aviso preexistente). Histórico: 97 variantes SQL; nueva ejecución de 24 controles de Mercado Pago, nueve motivos humanos y nueve controles de seguimiento con el rol real service_role. Estos conjuntos se solapan y no se suman como casos maestros. Se creó una orden real de prueba de Mercado Pago; compra pendiente del usuario.
+Validación: 1130/1130 pruebas automáticas, typecheck y compilación correctos; lint sin errores (un aviso preexistente). Histórico: 97 variantes SQL; nueva ejecución de 24 controles de Mercado Pago, nueve motivos humanos y nueve controles de seguimiento con el rol real service_role. Estos conjuntos se solapan y no se suman como casos maestros. Se creó una orden real de prueba de Mercado Pago; compra pendiente del usuario.
 
 ## Resumen para promover a producción
 
@@ -11,7 +11,7 @@ Validación: 1119/1119 pruebas automáticas, typecheck y compilación correctos;
 | Casos maestros aprobados integralmente | 4/18 (22.2 %) | M03, M09, M13 y M17 tienen evidencia de V1–V3; ver documento de evidencia específico. |
 | Casos maestros parciales | 14/18 (77.8 %) | Los restantes tienen verificaciones aprobadas y pendientes identificados. |
 | Casos maestros por cerrar | 14/18 (77.8 %) | Porcentaje de cierres pendientes, no de esfuerzo ni de implementación restante. |
-| Pruebas automáticas aprobadas en la última ejecución registrada | 1119/1119 (100 %) | Regresión técnica; no son 1119 casos UAT de negocio. |
+| Pruebas automáticas aprobadas en la última ejecución registrada | 1130/1130 (100 %) | Regresión técnica; no son 1130 casos UAT de negocio. |
 | Verificaciones SQL registradas | 97 | Evidencia técnica acumulada; no existe un total exhaustivo de variantes pendientes para calcular su porcentaje. |
 | Decisión de promoción | No lista | Faltan pagos nuevos, transporte externo y variantes de negocio. No se ha publicado esta rama en producción. |
 
@@ -103,3 +103,9 @@ M09 aprobado en preview 7da8dd0: el evento repetido conservó la respuesta, no e
 Comprobantes separados: corrección aplicada exclusivamente en Sandbox; 18 controles nativos pasaron con SET LOCAL ROLE service_role y ROLLBACK. Se conserva cada archivo ilegible o válido, los importes parciales no habilitan fichas, la misma evidencia no se suma dos veces y la suma completa sigue en revisión manual. La atención humana conserva referencias a todos los documentos. M06 sigue parcial hasta la repetición conversacional.
 
 Conversación de comprobantes separados en c516581: primero $150 y diferencia $150 sin fichas; reenvío del mismo documento mantiene $150; segundo comprobante alcanza $300 y habilita pedir datos. Datos incompletos no crean fichas ni reservas; al completarlos, dos fichas y dos reservas provisionales, sin inscribir al pagador. Se detectó D16 seleccionando la primera clase del pagador en lugar de la destinataria: se añadió recipient_mode y una validación de acción que exige prepare_group_booking para otra persona. Regresión 1119/1119, typecheck y lint sin errores. D16 sigue pendiente de repetición. Se retiraron los permisos UPDATE/DELETE heredados para conservar los documentos como evidencia inmutable.
+
+## Variantes de grupo — 10 octubre, 00:06 UTC
+
+D16 se repitió después de la corrección en 279a14f: una ficha y reserva sólo para la destinataria; quien paga conserva su rol de pagador. D17 creó una reserva con un crédito existente y otra primera clase de $150, sin duplicar a la alumna. Se detectaron dos respuestas incorrectas: llamar provisionales ambas reservas del grupo mixto y prometer registrar dos participantes con el mismo celular. Se corrigieron las instrucciones y se añadió una acción de revisión humana antes de cobrar cuando el teléfono compartido es explícito. Falta repetir esas respuestas y el cambio de cupo; M06 permanece parcial.
+
+La revisión manual ahora consulta todos los documentos del grupo, muestra el total y la asignación de cada compra y no habilita validación si no carga la evidencia completa. La prueba nativa con rol authenticated comprobó cuatro documentos visibles para el responsable y cero para un usuario ajeno; UPDATE/DELETE del servicio están revocados. Regresión 1130/1130, typecheck y lint sin errores. No se ha modificado producción.

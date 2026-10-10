@@ -7,6 +7,7 @@ import {
   type MetaDownloadedMedia,
 } from "./meta-whatsapp-channel";
 import { readTransferReceipt } from "./receipt-reader";
+import { hasExplicitSharedParticipantPhone } from "./participant-contact-intent";
 
 export async function groupBookingAction(input: {
   supabase: SupabaseClient;
@@ -17,6 +18,23 @@ export async function groupBookingAction(input: {
   currentUserMessage?: string;
 }) {
   if (input.tool === "prepare_group_booking") {
+    if (hasExplicitSharedParticipantPhone(input.currentUserMessage ?? "")) {
+      const handoff = await input.supabase.rpc("assistant_create_handoff", {
+        target_studio_id: input.studioId,
+        target_conversation_id: input.conversationId,
+        target_student_id: null,
+        target_reason_code: "technical_block",
+        target_note:
+          "Dos participantes comparten teléfono. Verificar identidades y contactos con un humano antes de solicitar pago o crear fichas. No inventar teléfonos ni fusionar personas.",
+      });
+      return {
+        ok: false,
+        reason_code: "shared_participant_phone_requires_human",
+        human_review_created: !handoff.error && handoff.data?.ok === true,
+        handoff_id: handoff.data?.handoff_id ?? null,
+        reservation_confirmed: false,
+      };
+    }
     const session = /^session:([0-9a-f-]{36})$/i.exec(String(input.args.session_ref ?? ""));
     if (!session) return { ok: false, reason_code: "invalid_session_ref" };
     const { data, error } = await input.supabase.rpc("service_prepare_demi_group", {
@@ -153,9 +171,9 @@ export async function handleDemiGroupReceipt(input: {
     lookup.data.participant_count === 1 && Boolean(lookup.data.prospect_contact_id);
   const reply =
     data?.ok && singleProspect
-      ? "Recibí tu comprobante. El pago queda pendiente de validación del equipo. Ahora envíame juntos tu nombre completo y celular mexicano de diez dígitos, sin lada. Todavía no he confirmado tu reserva; revisaré el cupo antes de crearla."
+      ? "Recibí tu comprobante. El pago queda pendiente de validación del equipo. Ahora envíame juntos tu nombre completo y celular mexicano de diez dígitos que todavía falten, sin lada; usaré los datos ya conocidos. Todavía no he confirmado tu reserva; revisaré el cupo antes de crearla."
       : data?.ok
-        ? "Recibí comprobantes por el total del grupo. El pago queda pendiente de validación del equipo. Ahora envíame juntos el nombre completo y celular mexicano de diez dígitos de cada participante, sin lada. Todavía no he confirmado reservas; revisaré cupo y derechos de cada una."
+        ? "Recibí comprobantes por el total del grupo. El pago queda pendiente de validación del equipo. Ahora envíame juntos los nombres completos y celulares mexicanos de diez dígitos que falten de las participantes, sin lada; usaré los datos ya conocidos. Todavía no he confirmado reservas; revisaré cupo y derechos de cada una."
         : data?.reason_code === "partial_payment_received"
           ? `Recibí comprobantes por ${new Intl.NumberFormat("es-MX", { style: "currency", currency: lookup.data.currency }).format(data.received_amount_minor / 100)}. Queda por cubrir ${new Intl.NumberFormat("es-MX", { style: "currency", currency: lookup.data.currency }).format(data.remaining_amount_minor / 100)}. Los comprobantes están pendientes de validación del equipo. Envíame el comprobante de la diferencia; todavía no confirmé reservas.`
           : data?.reason_code === "receipt_amount_mismatch"
