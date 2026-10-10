@@ -1,8 +1,9 @@
 begin;
+set local role service_role;
 set local request.jwt.claim.role='service_role';
 set local request.jwt.claims='{"role":"service_role"}';
 do $$
-declare source uuid:='9fe23cfa-fb47-4670-afeb-ed4a56433772'; actor uuid; run jsonb; s uuid; c uuid:=gen_random_uuid(); event uuid:=gen_random_uuid(); session uuid; g uuid; r jsonb; out jsonb:='[]'; a uuid; student uuid; reservation uuid; starts date; expiry date; target uuid; people jsonb:='[{"name":"UAT Grupo Uno","phone":"9998880001"},{"name":"UAT Grupo Dos","phone":"9998880002"}]';
+declare source uuid:='9fe23cfa-fb47-4670-afeb-ed4a56433772'; actor uuid; run jsonb; s uuid; c uuid:=gen_random_uuid(); event uuid:=gen_random_uuid(); session uuid; g uuid; r jsonb; out jsonb:='[]'; a uuid; student uuid; reservation uuid; starts date; expiry date; target uuid; old_a uuid; intent uuid; fresh jsonb; previous_reservation uuid; people jsonb:='[{"name":"UAT Grupo Uno","phone":"9998880001"},{"name":"UAT Grupo Dos","phone":"9998880002"}]';
 begin
  select user_id into actor from public.studio_memberships where studio_id=source and active and role='owner' limit 1;
  run:=public.service_create_demi_uat_run(source,actor,'group-uat');s:=(run->>'studio_id')::uuid;session:=(run#>>'{fixtures,sessions,available}')::uuid;
@@ -17,9 +18,11 @@ begin
  insert into public.assistant_whatsapp_events(id,studio_id,provider,provider_event_id,phone_number_id,contact_wa_id,message_type,media_id,payload_fingerprint)
  values(event,s,'meta_whatsapp','group-'||event,'uat','99900000000','image','group-media','group-uat');
  r:=public.service_record_demi_group_receipt(s,c,g,event,'group-'||event,'group-media','UAT/group.png',repeat('a',64),15000,'MXN',0.99);
- if r->>'reason_code'<>'receipt_amount_mismatch' then raise exception 'group_amount:%',r; end if;
+ if r->>'reason_code'<>'partial_payment_received' then raise exception 'group_amount:%',r; end if;
  out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','partial_amount_blocked','passed',true));
- r:=public.service_record_demi_group_receipt(s,c,g,event,'group-'||event,'group-media','UAT/group.png',repeat('a',64),30000,'MXN',0.99);
+ event:=gen_random_uuid();
+ insert into public.assistant_whatsapp_events(id,studio_id,provider,provider_event_id,phone_number_id,contact_wa_id,message_type,media_id,payload_fingerprint) values(event,s,'meta_whatsapp','group-'||event,'uat','99900000000','image','group-media-second','group-uat-second');
+ r:=public.service_record_demi_group_receipt(s,c,g,event,'group-'||event,'group-media-second','UAT/group-second.png',repeat('b',64),15000,'MXN',0.99);
  if not coalesce((r->>'ok')::boolean,false) then raise exception 'group_receipt:%',r; end if;
  r:=public.service_complete_demi_group(s,c,g,people);
  if not coalesce((r->>'ok')::boolean,false) or (r->>'reserved_count')::integer<>2 then raise exception 'group_complete:%',r; end if;
@@ -62,6 +65,54 @@ begin
  if coalesce((r->>'eligible')::boolean,false) then raise exception 'expired_trial_allowed:%',r; end if;
  if (select expires_on from public.product_acquisitions where id=a)<>expiry then raise exception 'expired_trial_reset'; end if;
  out:=out||jsonb_build_array(jsonb_build_object('case','M10','variant','paid_trial_after_expiry_blocked','passed',true));
+ -- Reopen a future fixture within the original trial validity, then test exact cutoff and consumption.
+ update public.class_sessions set starts_at=now()+interval '2 days',ends_at=now()+interval '2 days 1 hour' where id=target;
+ r:=public.service_book_student(s,target,student);
+ if not coalesce((r->>'eligible')::boolean,false) then raise exception 'trial_exact_setup:%',r; end if;
+ reservation:=(r->>'reservation_id')::uuid;
+ update public.class_sessions set starts_at=now()+interval '5 hours',ends_at=now()+interval '6 hours' where id=target;
+ r:=public.service_cancel_reservation(s,student,reservation,'UAT exactly five hours');
+ if (select status::text from public.reservations where id=reservation)<>'cancelled_on_time' or (select sum(quantity) from public.credit_ledger where acquisition_id=a)<>1 then raise exception 'trial_exact_cutoff:%',r; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M10','variant','paid_trial_exact_5_hours_restores_once','passed',true));
+ r:=public.service_book_student(s,target,student); reservation:=(r->>'reservation_id')::uuid;
+ update public.class_sessions set starts_at=now()+interval '4 hours',ends_at=now()+interval '5 hours' where id=target;
+ r:=public.service_cancel_reservation(s,student,reservation,'UAT late paid trial');
+ r:=public.service_cancel_reservation(s,student,reservation,'UAT repeated late cancellation');
+ if (select status::text from public.reservations where id=reservation)<>'cancelled_late' or (select sum(quantity) from public.credit_ledger where acquisition_id=a)<>0 then raise exception 'trial_late_consumption:%',r; end if;
+ previous_reservation:=reservation; old_a:=a;
+ r:=public.assistant_trial_booking_preview(s,target,student,null);
+ if r->>'reason_code'<>'trial_credit_payment_required' then raise exception 'trial_unpaid_fallback:%',r; end if;
+ r:=public.assistant_confirm_trial_booking(s,target,student,null,c);
+ if coalesce((r->>'ok')::boolean,false) or r->>'reason_code'<>'trial_credit_payment_required' then raise exception 'trial_stale_confirmation:%',r; end if;
+ r:=public.service_book_student(s,target,student);
+ if coalesce((r->>'eligible')::boolean,false) then raise exception 'trial_exhausted_regular_booking:%',r; end if;
+ if (select sum(quantity) from public.credit_ledger where acquisition_id=a)<>0 or (select expires_on from public.product_acquisitions where id=a)<>expiry then raise exception 'consumed_trial_mutated'; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M10','variant','late_credit_exhaustion_blocks_unpaid_and_stale_confirmation','passed',true));
+ -- A new matched proof creates one separate credit and leaves the old payment/reservation intact.
+ update public.assistant_conversations set student_id=student where id=c;
+ fresh:=public.service_prepare_trial_transfer(s,c,student,target,null);intent:=(fresh->>'intent_id')::uuid;
+ if not coalesce((fresh->>'ok')::boolean,false) then raise exception 'new_trial_payment_prepare:%',fresh; end if;
+ event:=gen_random_uuid();
+ insert into public.assistant_whatsapp_events(id,studio_id,provider,provider_event_id,phone_number_id,contact_wa_id,message_type,media_id,payload_fingerprint) values(event,s,'meta_whatsapp','new-trial-'||event,'uat','9998880001','image','new-trial-media','new-trial-proof');
+ update public.assistant_transfer_purchase_intents set receipt_amount_matches=true where id=intent;
+ fresh:=public.service_activate_trial_transfer_receipt(s,c,student,intent,event,'new-trial-'||event,'new-trial-media');
+ if not coalesce((fresh->>'ok')::boolean,false) then raise exception 'fresh_payment_activation:%',fresh; end if;
+ select acquisition_id into a from public.assistant_transfer_purchase_intents where id=intent;
+ if a is null or a=old_a or (select sum(quantity) from public.credit_ledger where acquisition_id=a)<>0 or (select count(*) from public.credit_ledger where acquisition_id=a and movement_type='grant')<>1 then raise exception 'fresh_trial_credit_not_distinct'; end if;
+ fresh:=public.service_activate_trial_transfer_receipt(s,c,student,intent,event,'new-trial-'||event,'new-trial-media');
+ if not coalesce((fresh->>'idempotent')::boolean,false) or (select count(*) from public.credit_ledger where acquisition_id=a and movement_type='grant')<>1 or (select expires_on from public.product_acquisitions where id=old_a)<>expiry or (select status::text from public.reservations where id=previous_reservation)<>'cancelled_late' then raise exception 'fresh_trial_replay_or_history:%',fresh; end if;
+ if nullif(current_setting('demi.trial_payment_activation',true),'') is not null then raise exception 'payment_activation_scope_leaked'; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M10','variant','fresh_payment_separate_credit_replay_preserves_consumed_history','passed',true));
+ -- The second paid participant misses class: no extra debit and no first-trial bypass.
+ select gp.student_id,gp.reservation_id,ti.acquisition_id into student,reservation,a from public.demi_group_participants gp join public.assistant_transfer_purchase_intents ti on ti.id=gp.transfer_intent_id where gp.group_id=g and gp.ordinal=2;
+ update public.class_sessions set starts_at=now()-interval '10 minutes',ends_at=now()+interval '50 minutes' where id=session;
+ r:=public.set_attendance_status(reservation,'no_show','UAT paid trial absence');
+ if not coalesce((r->>'ok')::boolean,false) then raise exception 'paid_trial_no_show:%',r; end if;
+ r:=public.set_attendance_status(reservation,'no_show','UAT absence replay');
+ if (select sum(quantity) from public.credit_ledger where acquisition_id=a)<>0 or (select status::text from public.reservations where id=reservation)<>'no_show' then raise exception 'paid_trial_absence_double_consumed'; end if;
+ r:=public.assistant_trial_booking_preview(s,target,student,null);
+ if r->>'reason_code'<>'trial_credit_payment_required' then raise exception 'paid_trial_absence_reuse:%',r; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M10','variant','paid_trial_absence_consumed_once_preserved_requires_new_payment','passed',true));
  perform set_config('uat.group_results',out::text,true);
 end $$;
 select current_setting('uat.group_results')::jsonb as results;

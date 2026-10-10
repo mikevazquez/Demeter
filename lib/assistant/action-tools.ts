@@ -313,6 +313,10 @@ const BOOKING_REASON_MESSAGES: Record<string, string> = {
     "Ya tienes una clase de prueba reservada. Solo puedes tener una reserva de prueba activa a la vez.",
   trial_completed_enrollment_required:
     "Ya asististe a tu primera clase de prueba. Para volver a reservar necesitas completar la inscripción.",
+  trial_credit_payment_required:
+    "El crédito de prueba anterior ya se consumió o venció. Necesitas un pago nuevo para volver a reservar; el pago anterior no se puede reutilizar.",
+  trial_credit_requires_standard_booking:
+    "La clase debe reservarse con el crédito de prueba vigente, sin crear otra excepción de pago.",
   trial_prepayment_required:
     "Como en dos ocasiones anteriores reservaste una clase y no pudiste asistir, para volver a agendar necesitamos el pago anticipado de la siguiente clase.",
 };
@@ -897,6 +901,36 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
         !prepaidTrialOverridesLegacyNoShowBlock)
     ) {
       const reasonCode = String(previewObject?.reason_code ?? "booking_not_eligible");
+
+      if (reasonCode === "trial_credit_payment_required" && studentId && ctx.serviceMode) {
+        const prepared = await ctx.supabase.rpc("service_prepare_trial_transfer", {
+          target_studio_id: ctx.studio.id,
+          target_conversation_id: ctx.conversationId,
+          target_student_id: studentId,
+          target_session_id: sessionId,
+          target_resource_id: null,
+        });
+        const payment = asObject(prepared.data);
+        if (prepared.error || payment?.ok !== true) {
+          return {
+            ok: false,
+            error: "trial_payment_setup_failed",
+            ...safeBookingReason(payment?.reason_code),
+          };
+        }
+        return {
+          ok: true,
+          status: "payment_required",
+          reservation_confirmed: false,
+          payment_required: true,
+          previous_payment_reusable: false,
+          ...safeBookingReason(reasonCode),
+          intent_id: payment.intent_id,
+          amount_minor: payment.amount_minor,
+          currency: payment.currency,
+          bank_details: payment.bank_details,
+        };
+      }
 
       if (reasonCode === "trial_prepayment_required") {
         return {
@@ -1615,6 +1649,33 @@ async function executeBookingOperation(ctx: AssistantActionToolContext, args: Ex
   let finalStudentId = studentId;
 
   if (trialException) {
+    // A previously prepared confirmation cannot bypass a consumed or expired paid trial.
+    const preview = await ctx.supabase.rpc("assistant_trial_booking_preview", {
+      target_studio_id: ctx.studio.id,
+      target_session_id: sessionId,
+      target_student_id: studentId,
+      target_crm_contact_id: studentId ? null : crmContactId,
+    });
+    const eligibility = asObject(preview.data);
+    if (preview.error) return { ok: false, error: "trial_credit_unavailable" };
+    if (
+      ["trial_credit_payment_required", "trial_credit_requires_standard_booking"].includes(
+        String(eligibility?.reason_code),
+      )
+    ) {
+      await ctx.supabase
+        .from("assistant_pending_actions")
+        .update({ status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("id", pending.id)
+        .eq("studio_id", ctx.studio.id)
+        .eq("status", "pending");
+      return {
+        ok: false,
+        error: "booking_not_eligible",
+        ...safeBookingReason(eligibility?.reason_code),
+        reservation_confirmed: false,
+      };
+    }
     const prepaymentPolicy = await getDemiTrialPrepaymentRequirement(ctx);
     if (!prepaymentPolicy.ok) return prepaymentPolicy;
 
