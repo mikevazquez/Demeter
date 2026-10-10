@@ -341,7 +341,7 @@ export async function manageInstagramWebhookSubscription(formData: FormData) {
     const token = typeof config?.instagram_access_token === "string" ? config.instagram_access_token.trim() : "";
     const accountId = typeof config?.instagram_user_id === "string" ? config.instagram_user_id.trim() : "";
     const version = typeof config?.graph_api_version === "string" ? config.graph_api_version.trim() : "";
-    if (error || !token || !/^\\d+$/.test(accountId) || !/^v\\d+\\.\\d+$/.test(version)) {
+    if (error || !token || !/^\d+$/.test(accountId) || !/^v\d+\.\d+$/.test(version)) {
       outcome = "missing_credentials";
     } else {
       const url = `https://graph.instagram.com/${version}/${accountId}/subscribed_apps`;
