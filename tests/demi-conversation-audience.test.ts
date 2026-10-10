@@ -47,7 +47,7 @@ describe("Demi first visit audience", () => {
     );
   });
 
-  it("moves a first booking request to real class options and waits for payment proof before the name", () => {
+  it("moves an explicit first booking request to real class options before collecting the name", () => {
     const guidance = conversationGuidance({ crmContactId: "contact" });
     expect(guidance).toContain("no respondas pidiendo únicamente su nombre");
     expect(guidance).toContain("search_class_availability en ese mismo turno");
