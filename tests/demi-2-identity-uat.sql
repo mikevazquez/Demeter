@@ -41,6 +41,8 @@ begin
  if not exists(select 1 from public.assistant_handoffs where id=h and status='open' and context#>'{identity_verification,candidate_person_ids}' @> jsonb_build_array((select person_id from public.students where id=st))) then raise exception 'identity_case_refs_missing'; end if;
  if (select count(*) from public.students where studio_id=s)<>n then raise exception 'duplicate_profile'; end if;
  results:=results||jsonb_build_array(jsonb_build_object('variant','existing_phone_real_human_no_pii_no_auto_link','passed',true));
+ perform set_config('uat.identity_student_snapshot',(select to_jsonb(x)::text from public.students x where id=st),true);
+ perform set_config('uat.identity_business_snapshot',(select jsonb_build_object('sales',(select coalesce(jsonb_agg(to_jsonb(x) order by x.id),'[]') from public.sales x where studio_id=s),'reservations',(select coalesce(jsonb_agg(to_jsonb(x) order by x.id),'[]') from public.reservations x where studio_id=s),'acquisitions',(select coalesce(jsonb_agg(to_jsonb(x) order by x.id),'[]') from public.product_acquisitions x where studio_id=s))::text),true);
  perform set_config('uat.identity_studio',s::text,true); perform set_config('uat.identity_owner',owner::text,true);
  perform set_config('uat.identity_handoff',h::text,true); perform set_config('uat.identity_conversation',c::text,true);
  perform set_config('uat.identity_student',st::text,true); perform set_config('uat.identity_count',n::text,true);
@@ -74,6 +76,37 @@ begin
  if r->>'ok'<>'true' then raise exception 'identity_resume:%',r; end if;
  results:=results||jsonb_build_array(jsonb_build_object('variant','verified_identity_case_resolves_and_resumes','passed',true));
  perform set_config('uat.identity_results',results::text,true);
+end $$;
+
+set local role service_role;
+set local request.jwt.claims='{"role":"service_role"}';
+set local request.jwt.claim.role='service_role';
+do $$
+declare s uuid:=current_setting('uat.identity_studio')::uuid; st uuid:=current_setting('uat.identity_student')::uuid;
+ e uuid:=gen_random_uuid(); r jsonb; snapshot jsonb; provider text; first_identity text; prospect_person uuid;
+begin
+ if (select to_jsonb(x) from public.students x where id=st) is distinct from current_setting('uat.identity_student_snapshot')::jsonb then raise exception 'student_profile_modified'; end if;
+ select jsonb_build_object('sales',(select coalesce(jsonb_agg(to_jsonb(x) order by x.id),'[]') from public.sales x where studio_id=s),'reservations',(select coalesce(jsonb_agg(to_jsonb(x) order by x.id),'[]') from public.reservations x where studio_id=s),'acquisitions',(select coalesce(jsonb_agg(to_jsonb(x) order by x.id),'[]') from public.product_acquisitions x where studio_id=s)) into snapshot;
+ if snapshot is distinct from current_setting('uat.identity_business_snapshot')::jsonb then raise exception 'existing_business_records_modified'; end if;
+ insert into public.assistant_meta_inbox_events(id,studio_id,provider,provider_event_id,provider_account_id,provider_contact_id,message_type,payload_fingerprint) values(e,s,'facebook_messenger',e::text,'11111','22222','text','identity-uat');
+ r:=public.service_prepare_meta_inbox_message(s,e,'facebook_messenger','11111',e::text,'22222',null,'text','Hola otra vez',clock_timestamp());
+ if r->>'ok'<>'true' or r->>'student_id'<>st::text or r->>'assistant_conversation_id'<>current_setting('uat.identity_conversation') then raise exception 'returning_channel_not_recognized:%',r; end if;
+ if (select count(*) from public.students where studio_id=s)<>current_setting('uat.identity_count')::integer then raise exception 'returning_channel_duplicate'; end if;
+ for provider in select unnest(array['facebook_messenger','instagram']) loop
+  e:=gen_random_uuid();
+  insert into public.assistant_meta_inbox_events(id,studio_id,provider,provider_event_id,provider_account_id,provider_contact_id,message_type,payload_fingerprint) values(e,s,provider,e::text,'33333','44444','text','identity-uat');
+  r:=public.service_prepare_meta_inbox_message(s,e,provider,'33333',e::text,'44444',null,'text','Hola',clock_timestamp());
+  if r->>'ok'<>'true' or r->>'student_id' is not null then raise exception 'new_channel_requires_student:%',r; end if;
+  first_identity:=r->>'identity_id';
+  select person_id into prospect_person from public.assistant_channel_identities where id=first_identity::uuid;
+  if exists(select 1 from public.person_contacts where person_id=prospect_person and kind='phone') then raise exception 'fabricated_prospect_phone'; end if;
+  e:=gen_random_uuid();
+  insert into public.assistant_meta_inbox_events(id,studio_id,provider,provider_event_id,provider_account_id,provider_contact_id,message_type,payload_fingerprint) values(e,s,provider,e::text,'33333','44444','text','identity-uat');
+  r:=public.service_prepare_meta_inbox_message(s,e,provider,'33333',e::text,'44444',null,'text','Hola de nuevo',clock_timestamp());
+  if r->>'identity_id'<>first_identity or (select count(*) from public.students where studio_id=s)<>current_setting('uat.identity_count')::integer then raise exception 'new_channel_duplicate'; end if;
+ end loop;
+ if (select count(*) from public.assistant_channel_identities where studio_id=s and provider_account_id='33333' and provider_contact_id='44444')<>2 then raise exception 'channel_namespaces_collide'; end if;
+ perform set_config('uat.identity_results',(current_setting('uat.identity_results')::jsonb||jsonb_build_array(jsonb_build_object('variant','facebook_instagram_prospect_without_phone_idempotent_separate_namespaces','passed',true),jsonb_build_object('variant','student_sales_reservations_acquisitions_unchanged','passed',true),jsonb_build_object('variant','subsequent_native_channel_message_recognizes_same_student','passed',true)))::text,true);
 end $$;
 select current_setting('uat.identity_results')::jsonb as results;
 rollback;
