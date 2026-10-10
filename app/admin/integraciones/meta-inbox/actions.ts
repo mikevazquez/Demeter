@@ -314,3 +314,67 @@ export async function diagnoseMetaInboxApp(formData: FormData) {
     `/admin/integraciones/meta-inbox?app_check=${result}&app_id=${encodeURIComponent(appId)}`,
   );
 }
+
+/**
+ * Instagram Login subscription check / activation. Only the Demeter sandbox studio.
+ * Tokens are read from the server-side vault and never returned to the browser.
+ */
+export async function manageInstagramWebhookSubscription(formData: FormData) {
+  const operation = String(formData.get("operation") ?? "");
+  if (operation !== "check" && operation !== "subscribe") {
+    redirect("/admin/integraciones/meta-inbox?ig_subscription=invalid");
+  }
+
+  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  if (studio.id !== "9fe23cfa-fb47-4670-afeb-ed4a56433772" || process.env.VERCEL_ENV !== "preview") {
+    redirect("/admin/integraciones/meta-inbox?ig_subscription=restricted");
+  }
+
+  let outcome = "unavailable";
+  try {
+    const service = createServiceClient();
+    const { data, error } = await service.rpc("service_get_meta_inbox_webhook_config", {
+      target_studio_id: studio.id,
+    });
+    const config = data && typeof data === "object" && !Array.isArray(data)
+      ? data as Record<string, unknown> : null;
+    const token = typeof config?.instagram_access_token === "string" ? config.instagram_access_token.trim() : "";
+    const accountId = typeof config?.instagram_user_id === "string" ? config.instagram_user_id.trim() : "";
+    const version = typeof config?.graph_api_version === "string" ? config.graph_api_version.trim() : "";
+    if (error || !token || !/^\\d+$/.test(accountId) || !/^v\\d+\\.\\d+$/.test(version)) {
+      outcome = "missing_credentials";
+    } else {
+      const url = `https://graph.instagram.com/${version}/${accountId}/subscribed_apps`;
+      const response = await fetch(url, {
+        method: operation === "subscribe" ? "POST" : "GET",
+        headers: {
+          authorization: `Bearer ${token}`,
+          accept: "application/json",
+          ...(operation === "subscribe" ? { "content-type": "application/x-www-form-urlencoded" } : {}),
+        },
+        ...(operation === "subscribe" ? { body: new URLSearchParams({ subscribed_fields: "messages" }) } : {}),
+        cache: "no-store",
+        signal: AbortSignal.timeout(12000),
+      });
+      const payload: unknown = await response.json().catch(() => null);
+      const result = payload && typeof payload === "object" && !Array.isArray(payload)
+        ? payload as Record<string, unknown> : {};
+      if (!response.ok) {
+        outcome = response.status === 401 ? "token_rejected" : "meta_error";
+      } else if (operation === "subscribe") {
+        outcome = result.success === true ? "subscribed" : "unconfirmed";
+      } else {
+        const entries = Array.isArray(result.data) ? result.data : [];
+        outcome = entries.some((entry) => {
+          if (!entry || typeof entry !== "object") return false;
+          const fields = (entry as Record<string, unknown>).subscribed_fields;
+          return Array.isArray(fields) && fields.includes("messages");
+        }) ? "active" : "not_active";
+      }
+    }
+  } catch {
+    outcome = "unavailable";
+  }
+  revalidatePath("/admin/integraciones/meta-inbox");
+  redirect(`/admin/integraciones/meta-inbox?ig_subscription=${outcome}`);
+}
