@@ -64,6 +64,28 @@ describe("Meta inbox audio classification and bounded download", () => {
       text: "[audio recibido]",
     });
   });
+  it.each(["video", "location"])("marks %s as a non-receipt attachment", (type) => {
+    const messages = load().extractMetaInboxMessages({
+      object: "page",
+      entry: [
+        {
+          id: "account",
+          messaging: [
+            {
+              sender: { id: "person" },
+              recipient: { id: "account" },
+              message: {
+                mid: "unsupported-id",
+                attachments: [{ type, payload: { url: "https://cdn.fbcdn.net/attachment" } }],
+              },
+            },
+          ],
+        },
+      ],
+    });
+    expect(messages).toHaveLength(1);
+    expect(messages[0].attachmentType).toBe(type === "video" ? "video" : "unsupported");
+  });
   it("accepts the audio MIME only on the audio download path", async () => {
     const request = vi.fn(
       async () =>

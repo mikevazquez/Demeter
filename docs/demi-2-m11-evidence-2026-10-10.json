@@ -1,0 +1,14 @@
+{
+  "status": "partial",
+  "run_id": "06cc70c2-b1c5-46f9-9428-d74d22e25307",
+  "actual_attendance": true,
+  "portal_activation": "passed",
+  "checkout": "order_created",
+  "order_id": "ORDTST01M4J0YNW1CJWFQ4JB4DSVVGKY",
+  "attempt_id": "79a7d407-055b-4e0d-ab2a-99fc429f1987",
+  "amount_minor": 20000,
+  "currency": "MXN",
+  "product_type": "enrollment",
+  "enrollments_before_payment": 0,
+  "pending": ["external_test_buyer_payment", "provider_confirmation_and_application"]
+}

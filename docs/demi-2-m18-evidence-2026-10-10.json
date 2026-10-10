@@ -1,0 +1,15 @@
+{
+  "status": "partial",
+  "runs": ["2d5c24b7-d22e-48f8-9770-6901ff39bd58", "2738cb12-0f2d-4837-bf0f-310a57efbc1b"],
+  "internal_passed": [
+    "whatsapp_ogg_transcription_and_response",
+    "facebook_mp3_transcription_and_response",
+    "whatsapp_pdf_ocr_and_reservation",
+    "whatsapp_jpeg_ocr_and_reservation",
+    "facebook_webp_ocr_and_reservation",
+    "illegible_retained_without_amount_or_reservation"
+  ],
+  "unsupported_formats": "explicit_fallback_and_classification_controls",
+  "pending": ["external_meta_media_transport"],
+  "external_delivery_verified": false
+}
