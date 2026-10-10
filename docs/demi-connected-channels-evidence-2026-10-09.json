@@ -1,0 +1,241 @@
+{
+  "date_local": "2026-10-09",
+  "timezone": "America/Mexico_City",
+  "environment": "Sandbox",
+  "source_studio": "9fe23cfa-fb47-4670-afeb-ed4a56433772",
+  "demi_code_sha": "aa79b88829d8194ba98871961e3ec5f99cbb6ca0",
+  "facebook_code_sha": "41ae286f14657c5b51899e1a03dfeffdcb90cf39",
+  "native_sql": [
+    {
+      "results": [
+        {
+          "case": "M01",
+          "passed": true,
+          "variant": "facebook_creates_prospect_identity_without_enrolling"
+        },
+        {
+          "case": "M01",
+          "passed": true,
+          "variant": "facebook_duplicate_event_keeps_identity_and_one_turn"
+        },
+        {
+          "case": "M01",
+          "passed": true,
+          "variant": "facebook_continuity_does_not_authenticate_typed_phone"
+        },
+        {
+          "case": "M01",
+          "passed": true,
+          "variant": "facebook_wrong_page_source_event_blocked"
+        },
+        {
+          "case": "M17",
+          "passed": true,
+          "variant": "facebook_pending_human_attention_preserved"
+        },
+        {
+          "case": "M08",
+          "passed": true,
+          "variant": "mercado_pago_order_created_has_no_sale_or_payment"
+        },
+        {
+          "case": "M08",
+          "passed": true,
+          "variant": "mercado_pago_order_mismatch_rejected_without_fulfillment"
+        },
+        {
+          "case": "M08",
+          "passed": true,
+          "variant": "mercado_pago_reference_mismatch_rejected_without_fulfillment"
+        },
+        {
+          "case": "M08",
+          "passed": true,
+          "variant": "mercado_pago_status_mismatch_rejected_without_fulfillment"
+        },
+        {
+          "case": "M08",
+          "passed": true,
+          "variant": "mercado_pago_amount_mismatch_rejected_without_fulfillment"
+        },
+        {
+          "case": "M08",
+          "passed": true,
+          "variant": "mercado_pago_currency_mismatch_rejected_without_fulfillment"
+        },
+        {
+          "case": "M08",
+          "passed": true,
+          "variant": "mercado_pago_approved_creates_one_sale_payment_and_package"
+        },
+        {
+          "case": "M09",
+          "passed": true,
+          "variant": "mercado_pago_approval_replay_does_not_duplicate_money"
+        },
+        {
+          "case": "M09",
+          "passed": true,
+          "variant": "mercado_pago_paid_order_cannot_change_payment_identity"
+        }
+      ]
+    }
+  ],
+  "native_sql_passed": 14,
+  "http_security": [
+    {
+      "name": "whatsapp_unsigned",
+      "status": 401,
+      "body": "{\"error\":\"invalid_signature\"}",
+      "passed": true
+    },
+    {
+      "name": "whatsapp_wrong_verification_token",
+      "status": 403,
+      "body": "forbidden",
+      "passed": true
+    },
+    {
+      "name": "mercado_pago_unsigned",
+      "status": 401,
+      "body": "{\"error\":\"invalid_signature\"}",
+      "passed": true
+    },
+    {
+      "name": "mercado_pago_forged_signature",
+      "status": 401,
+      "body": "{\"error\":\"invalid_signature\"}",
+      "passed": true
+    },
+    {
+      "name": "mercado_pago_create_unauthenticated",
+      "status": 401,
+      "body": "{\"code\":\"UNAUTHORIZED_NO_AUTH_HEADER\",\"message\":\"Missing authorization header\"}",
+      "passed": true
+    },
+    {
+      "name": "facebook_unsigned",
+      "status": 401,
+      "body": "{\"error\":\"invalid_signature\"}",
+      "passed": true
+    },
+    {
+      "name": "facebook_wrong_verify_token",
+      "status": 403,
+      "body": "forbidden",
+      "passed": true
+    },
+    {
+      "name": "facebook_forged_signature",
+      "status": 401,
+      "body": "{\"error\":\"invalid_signature\"}",
+      "passed": true
+    }
+  ],
+  "facebook_runtime": {
+    "source_sha256": "b60f60e07738a2627944d55454445a5eecb5d8debb35ef34061d97bf48bb5413",
+    "results": [
+      {
+        "variant": "facebook_extract_text_and_scoped_identity",
+        "passed": true
+      },
+      {
+        "variant": "facebook_ignore_echo",
+        "passed": true
+      },
+      {
+        "variant": "facebook_ignore_page_as_sender",
+        "passed": true
+      },
+      {
+        "variant": "facebook_ignore_other_provider_envelope",
+        "passed": true
+      },
+      {
+        "variant": "facebook_postback_preserves_title",
+        "passed": true
+      },
+      {
+        "variant": "facebook_image_preserves_attachment_reference",
+        "passed": true
+      },
+      {
+        "variant": "facebook_missing_id_generates_stable_event_reference",
+        "passed": true
+      },
+      {
+        "variant": "facebook_valid_hmac_accepted",
+        "passed": true
+      },
+      {
+        "variant": "facebook_modified_body_rejects_signature",
+        "passed": true
+      },
+      {
+        "variant": "facebook_verify_token_compared_exactly",
+        "passed": true
+      }
+    ]
+  },
+  "live_whatsapp": {
+    "runId": "451ec6b5-3c7d-44d4-a0ae-950348839f01",
+    "studioId": "ccee4f3f-f389-4c32-be87-2f4bf4b93e27",
+    "duplicate": {
+      "baseline": {
+        "events": 1,
+        "turns": 2,
+        "calls": 3,
+        "reservations": 2
+      },
+      "after": {
+        "events": 1,
+        "turns": 2,
+        "calls": 3,
+        "reservations": 2
+      }
+    },
+    "invalid_audio_handoff": true,
+    "invalid_audio_reservations": 0
+  },
+  "focused_whatsapp_mercado_pago_tests": {
+    "passed": 47,
+    "total": 47
+  },
+  "historical_facebook_contract_tests": {
+    "passed": 11,
+    "failed": 1,
+    "total": 12,
+    "failure": "Test searches message.is_echo; actual source uses message?.is_echo. Runtime ignore_echo test passes. Original failure retained."
+  },
+  "live_payment_options": {
+    "disabled_product_does_not_offer_app": true,
+    "enabled_synthetic_product_offers_app_mercado_pago": true,
+    "sales_created": 0,
+    "payments_created": 0,
+    "prospect_external_link_not_invented": true
+  },
+  "external_limits": {
+    "new_real_meta_inbound": false,
+    "new_real_meta_audio_download": false,
+    "new_real_facebook_delivery": false,
+    "new_real_mercado_pago_payment": false,
+    "whatsapp_callback_points_to_production": true,
+    "instagram_connected": false
+  },
+  "production_modified": false,
+  "complete_master_cases_approved": 0,
+  "bank_cases_recorded": {
+    "run_id": "451ec6b5-3c7d-44d4-a0ae-950348839f01",
+    "cases": ["M01", "M08", "M09", "M17", "M18"],
+    "status": "partial"
+  },
+  "facebook_adapter_integrated_in_demi_2_branch": true,
+  "latest_followup_evidence": "docs/demi-2-followup-evidence-2026-10-09.json",
+  "latest_integrated_facebook_live": {
+    "passed": true,
+    "commit": "565c72",
+    "contract_tests_passed": 12,
+    "contract_tests_failed": 0,
+    "external_inbound": false
+  }
+}

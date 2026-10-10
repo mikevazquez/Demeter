@@ -1,0 +1,49 @@
+{
+  "case": "M16",
+  "status": "passed",
+  "runs": [
+    "cf7c4ee9-f7a4-4cf6-8b05-16c9def0aa60",
+    "bf283433-ee2a-482f-bcbc-fab8e2ef5907",
+    "2738cb12-0f2d-4837-bf0f-310a57efbc1b"
+  ],
+  "native": [
+    {
+      "results": [
+        {
+          "case": "M16",
+          "passed": true,
+          "variant": "valid",
+          "no_new_trial": true,
+          "manual_renewal": true,
+          "recovery_cancelled_immediately": true,
+          "packages_and_credit_ledger_unchanged": true
+        },
+        {
+          "case": "M16",
+          "passed": true,
+          "variant": "expired",
+          "no_new_trial": true,
+          "manual_renewal": true,
+          "recovery_cancelled_immediately": true,
+          "packages_and_credit_ledger_unchanged": true
+        },
+        {
+          "case": "M16",
+          "passed": true,
+          "variant": "exhausted",
+          "no_new_trial": true,
+          "manual_renewal": true,
+          "recovery_cancelled_immediately": true,
+          "packages_and_credit_ledger_unchanged": true
+        }
+      ]
+    }
+  ],
+  "renewal_method": "manual_bank_transfer_review",
+  "preserves_package_history_and_expiry": true,
+  "no_trial_restart": true,
+  "enrollment_recovery_days": [7, 15, 30],
+  "stop_after_contact_reply_and_native_renewal": true,
+  "opt_out_verified": true,
+  "external_transport_verified": false
+}

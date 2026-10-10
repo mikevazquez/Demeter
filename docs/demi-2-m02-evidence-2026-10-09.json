@@ -1,0 +1,104 @@
+{
+  "case": "M02",
+  "business_status": "passed",
+  "run_id": "7866bfe0-ae00-4282-8453-0bdb4a333985",
+  "studio_id": "d507edfe-ac54-4055-a9fb-e30d74561dac",
+  "scope": "Synthetic Sandbox, actual model and adapters; external transport remains M01/M18. Refund execution manual.",
+  "version": "e1517aa",
+  "conversations": [
+    {
+      "variant": "m02_information",
+      "reply": "Actualmente tienen Pole Fitness.\n\nLa primera clase cuesta $150 MXN y se paga por transferencia. La inscripción no se requiere para esta primera clase.",
+      "student_count": 11,
+      "groups": [],
+      "human_cases": []
+    },
+    {
+      "variant": "m02_request",
+      "reply": "Encontré una clase de Pole Fitness mañana, sábado 10 de octubre, a las 18:00. Está disponible.\n\nPara identificar tu cuenta antes de compartirte las opciones de pago, ¿me compartes tu celular de 10 dígitos?",
+      "student_count": 11,
+      "groups": [],
+      "human_cases": []
+    },
+    {
+      "variant": "m02_invalid",
+      "reply": "Necesito un celular mexicano de 10 dígitos para identificar tu cuenta. ¿Me compartes el número completo, por favor?",
+      "student_count": 11,
+      "groups": [],
+      "human_cases": []
+    },
+    {
+      "variant": "m02_normalized",
+      "reply": "El importe de tu primera clase es $150.00.\n\nTransferencia o depósito OXXO directamente a la cuenta bancaria:\nBANCO FICTICIO UAT — NO TRANSFERIR\nPRUEBA SIN VALOR\nCuenta: 0000\nNo realizar pagos reales.\n\nEnvíame el comprobante por este mismo chat. El equipo validará el pago manualmente. Después de revisarlo te pediré los datos faltantes para reservar. Todavía no hay una reserva confirmada ni un lugar retenido.",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "8f6243d4-58c2-4aa0-bb50-685f2fd3ce78",
+          "status": "awaiting_receipt",
+          "amount_minor": 15000
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m02_existing_request",
+      "reply": "Para localizar tu ficha de alumna necesito tu celular de 10 dígitos, por favor.",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "8f6243d4-58c2-4aa0-bb50-685f2fd3ce78",
+          "status": "awaiting_receipt",
+          "amount_minor": 15000
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m02_existing_phone",
+      "reply": "Tu cuenta requiere verificación antes de consultar tus créditos o reservar con tu paquete. Ya se generó la revisión con el equipo dentro de este mismo chat; por seguridad, no puedo mostrar datos de la cuenta hasta que concluya.",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "8f6243d4-58c2-4aa0-bb50-685f2fd3ce78",
+          "status": "awaiting_receipt",
+          "amount_minor": 15000
+        }
+      ],
+      "human_cases": [
+        {
+          "id": "3bdaab36-3b15-415c-a8d6-08ac65521b19",
+          "reason": "technical_block",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "variant": "m02_existing_resumed",
+      "reply": "Te quedan 8 clases de tu Paquete UAT 8 clases. Está vigente del 9 de octubre al 8 de noviembre de 2026.",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "8f6243d4-58c2-4aa0-bb50-685f2fd3ce78",
+          "status": "awaiting_receipt",
+          "amount_minor": 15000
+        }
+      ],
+      "human_cases": [
+        {
+          "id": "3bdaab36-3b15-415c-a8d6-08ac65521b19",
+          "reason": "technical_block",
+          "status": "resolved"
+        }
+      ]
+    }
+  ],
+  "staff_ui": {
+    "page_status": 200,
+    "verification_form": true,
+    "save_status": 200,
+    "saved_notice": true,
+    "error_notice": false
+  },
+  "native_controls": 6,
+  "connected_channel_controls": 21
+}

@@ -1,0 +1,20 @@
+{
+  "case": "M04",
+  "status": "passed",
+  "version": "61e7605",
+  "worker_version": 5,
+  "scope": "Sandbox; actual model and worker; captured transport. External transport remains M01.",
+  "information_run": "06cc70c2-b1c5-46f9-9428-d74d22e25307",
+  "information_steps": [24, 48],
+  "information_captures": 2,
+  "after_second_crm_stage": "not_booked",
+  "repeat_third_captures": 0,
+  "receipt_run": "03c4dce0-b7c9-4939-8c3b-9783d9e28a55",
+  "receipt_stage": "awaiting_receipt",
+  "partial_participant_stage": "awaiting_participants",
+  "partial_participant_actual_model_saved_name": "Ana Seguimiento UAT",
+  "partial_participant_capture": "Para continuar faltan: celular de diez dígitos de la persona 1. ¿Puedes compartirlos? Todavía debemos verificar el cupo antes de confirmar.",
+  "native_controls": "Nine followup controls and four stage-content controls passed under actual service_role; stop on reply/reservation/opt-out covered.",
+  "recorded_bank_result": true,
+  "fixed_defect": "Actual model originally did not persist partial participant data, so the followup asked for the known name. System/tool guidance now persists incomplete data through the protected completion tool; native validation prevents premature profiles/reservations."
+}

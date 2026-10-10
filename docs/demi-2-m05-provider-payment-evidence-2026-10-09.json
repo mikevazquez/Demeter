@@ -1,0 +1,25 @@
+{
+  "case": "M05",
+  "request_id": "ec322d58-ba7b-4c78-9656-436696e1c10d",
+  "verified_at": "2026-10-10T02:38:26.05977Z",
+  "amount_minor": 15000,
+  "currency": "MXN",
+  "provider_status": "processed",
+  "provider_status_detail": "accredited",
+  "verification_source": "authenticated_provider_order_lookup_via_sandbox_worker",
+  "request_status": "approved",
+  "group_status": "awaiting_participants",
+  "allocated_participants": 0,
+  "notification_transport": "sandbox_capture",
+  "notification_attempts": 1,
+  "outbound_turns": 1,
+  "repeat_worker_http_status": 200,
+  "repeat_worker_outcomes": [],
+  "audited_webhooks": 0,
+  "master_status": "partial",
+  "remaining": [
+    "external_authenticated_webhook",
+    "real_outbound_payment_notification",
+    "remaining_payment_business_variants"
+  ]
+}

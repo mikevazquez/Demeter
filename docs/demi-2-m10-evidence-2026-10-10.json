@@ -1,0 +1,91 @@
+{
+  "case": "M10",
+  "status": "passed",
+  "environment": "Sandbox",
+  "run_id": "69d2860a-b4ba-459b-86ef-064a96339553",
+  "native": [
+    {
+      "results": [
+        {
+          "case": "M06",
+          "passed": true,
+          "variant": "payment_first_no_profiles"
+        },
+        {
+          "case": "M06",
+          "passed": true,
+          "variant": "partial_amount_blocked"
+        },
+        {
+          "case": "M06",
+          "passed": true,
+          "variant": "two_profiles_reservations_single_allocation"
+        },
+        {
+          "case": "M06",
+          "passed": true,
+          "variant": "completion_idempotent"
+        },
+        {
+          "case": "M06",
+          "passed": true,
+          "variant": "review_allocations_once"
+        },
+        {
+          "case": "M10",
+          "passed": true,
+          "variant": "trial_credit_first_class_anchor"
+        },
+        {
+          "case": "M10",
+          "passed": true,
+          "variant": "paid_trial_rebook_preserves_expiry"
+        },
+        {
+          "case": "M10",
+          "passed": true,
+          "variant": "paid_trial_reschedule_preserves_expiry"
+        },
+        {
+          "case": "M10",
+          "passed": true,
+          "variant": "paid_trial_after_expiry_blocked"
+        },
+        {
+          "case": "M10",
+          "passed": true,
+          "variant": "paid_trial_exact_5_hours_restores_once"
+        },
+        {
+          "case": "M10",
+          "passed": true,
+          "variant": "late_credit_exhaustion_blocks_unpaid_and_stale_confirmation"
+        },
+        {
+          "case": "M10",
+          "passed": true,
+          "variant": "fresh_payment_separate_credit_replay_preserves_consumed_history"
+        },
+        {
+          "case": "M10",
+          "passed": true,
+          "variant": "paid_trial_absence_consumed_once_preserved_requires_new_payment"
+        }
+      ]
+    }
+  ],
+  "observed": {
+    "reminder": "captured_whatsapp_and_inbox",
+    "timely_cancel": true,
+    "reschedule_preserves_expiry": true,
+    "late_cancel_consumes_credit_once": true,
+    "no_show_preserved_consumes_once": true,
+    "old_acquisition": "19da7dba-a757-40c5-b421-4799a493207a",
+    "old_starts": "2026-10-10",
+    "old_expires": "2026-10-17",
+    "new_acquisition": "92f0ffeb-8604-49d2-b49c-84295912109b",
+    "new_reservation": "f300df2d-f548-46ba-989b-17851e24294a",
+    "new_payment_required": true
+  },
+  "external_transport_verified": false
+}

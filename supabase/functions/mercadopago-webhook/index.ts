@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+declare const EdgeRuntime: { waitUntil(task: Promise<unknown>): void };
 
 type MercadoPagoPayment = {
   id?: unknown;
@@ -388,6 +389,37 @@ Deno.serve(async (request) => {
     if (!orderId || orderId !== queryDataId || !externalReference) {
       await markEvent("error", "provider_order_identity_invalid");
       return jsonResponse({ error: "provider_order_identity_invalid" }, 502);
+    }
+
+    if (externalReference.startsWith("demi_")) {
+      const lookup = await supabase
+        .from("demi_payment_requests")
+        .select("id,studio_id,provider_order_id")
+        .eq("external_reference", externalReference)
+        .maybeSingle();
+      if (
+        lookup.error ||
+        !lookup.data ||
+        (lookup.data.provider_order_id && lookup.data.provider_order_id !== orderId)
+      ) {
+        await markEvent("error", "demi_payment_identity_mismatch");
+        return jsonResponse({ error: "demi_payment_identity_mismatch" }, 409);
+      }
+      const applied = await supabase.rpc("service_apply_demi_mercadopago_order", {
+        p_request: lookup.data.id,
+        p_order: order,
+      });
+      if (applied.error || applied.data?.ok !== true) {
+        await markEvent("error", applied.data?.reason_code ?? "demi_payment_application_failed");
+        return jsonResponse({ error: "demi_payment_application_failed" }, 409);
+      }
+      await markEvent("processed", `demi_${applied.data.status}`);
+      if (applied.data.status === "approved") {
+        await supabase.functions.invoke("demi-payment-worker", {
+          body: { studio_id: lookup.data.studio_id },
+        });
+      }
+      return jsonResponse({ ok: true, result: applied.data.status });
     }
 
     const { data: attemptData, error: attemptError } = await supabase

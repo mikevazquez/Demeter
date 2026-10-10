@@ -4,6 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getCommercialOptions, type AssistantStudioContext } from "./read-tools";
+import { groupBookingAction } from "./group-booking";
 import type {
   ExecuteBookingArgs,
   ExecuteCancellationArgs,
@@ -28,6 +29,7 @@ type AssistantActionToolContext = {
   studentId: string | null;
   crmContactId: string | null;
   identityNeedsName?: boolean;
+  channel?: string;
   activationUrl: string | null;
   serviceMode?: boolean;
   currentUserMessage: string;
@@ -222,6 +224,18 @@ export function isExplicitAssistantConfirmation(value: string) {
     "si",
     "si por favor",
     "si confirmo",
+    "si confirmo la reserva",
+    "si confirmo esa reserva",
+    "confirmo esa reserva",
+    "si confirmo esta reserva",
+    "confirmo esta reserva",
+    "si confirmo la compra",
+    "si confirmo la compra del paquete",
+    "si confirmo la compra del paquete en efectivo",
+    "confirmo la compra",
+    "confirmo la reserva",
+    "si confirma la reserva",
+    "si reservame esa clase",
     "si preparame los datos para transferir",
     "si prepara los datos para transferir",
     "si enviame los datos para transferir",
@@ -254,6 +268,28 @@ export function isExplicitAssistantConfirmation(value: string) {
   return accepted.has(normalized);
 }
 
+export function isExplicitCashPurchaseConfirmation(
+  value: string,
+  summary?: { amount_minor?: number; product_name?: string },
+) {
+  if (isExplicitAssistantConfirmation(value)) return true;
+  if (!value.trim() || /[?¿]/.test(value)) return false;
+  const normalized = normalizeConfirmation(value);
+  const match = normalized.match(
+    /^(?:si )?confirmo la compra del paquete(?: de (\d+) clases)?(?: por (\d+)(?: (\d{1,2}))?(?: mxn| pesos)?)? en efectivo$/,
+  );
+  if (!match) return false;
+  if (summary && match[2]) {
+    const amountMinor = Number(match[2]) * 100 + Number((match[3] ?? "").padEnd(2, "0"));
+    if (amountMinor !== summary.amount_minor) return false;
+  }
+  if (summary && match[1]) {
+    const packageClasses = normalizeConfirmation(summary.product_name ?? "").match(/(\d+) clases/);
+    if (!packageClasses || packageClasses[1] !== match[1]) return false;
+  }
+  return true;
+}
+
 const BOOKING_REASON_MESSAGES: Record<string, string> = {
   session_not_found: "La clase ya no está disponible.",
   student_not_found: "No pude identificar a la alumna.",
@@ -277,6 +313,10 @@ const BOOKING_REASON_MESSAGES: Record<string, string> = {
     "Ya tienes una clase de prueba reservada. Solo puedes tener una reserva de prueba activa a la vez.",
   trial_completed_enrollment_required:
     "Ya asististe a tu primera clase de prueba. Para volver a reservar necesitas completar la inscripción.",
+  trial_credit_payment_required:
+    "El crédito de prueba anterior ya se consumió o venció. Necesitas un pago nuevo para volver a reservar; el pago anterior no se puede reutilizar.",
+  trial_credit_requires_standard_booking:
+    "La clase debe reservarse con el crédito de prueba vigente, sin crear otra excepción de pago.",
   trial_prepayment_required:
     "Como en dos ocasiones anteriores reservaste una clase y no pudiste asistir, para volver a agendar necesitamos el pago anticipado de la siguiente clase.",
 };
@@ -618,16 +658,150 @@ async function getDemiTrialPrepaymentRequirement(ctx: AssistantActionToolContext
   };
 }
 
-async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBookingArgs) {
-  if (ctx.identityNeedsName === true && !ctx.studentId) {
-    return {
-      ok: false,
-      reason_code: "prospect_name_required",
-      reason_message:
-        "Antes de reservar, pide el nombre completo y espera a que Studio Flow lo guarde en el CRM.",
-    };
-  }
+function isSessionBookableNow(session: { status: string; starts_at: string }, now = Date.now()) {
+  return (
+    session.status === "scheduled" && new Date(session.starts_at).getTime() > now + 30 * 60_000
+  );
+}
 
+async function prepareCashPackage(ctx: AssistantActionToolContext, args: Record<string, unknown>) {
+  const product = parseOpaqueRef(args.product_ref, "product");
+  if (!ctx.serviceMode || !ctx.studentId || !product)
+    return { ok: false, reason_code: "cash_students_only" };
+  const { data: student } = await ctx.supabase
+    .from("students")
+    .select("student_type,active,lifecycle_status")
+    .eq("studio_id", ctx.studio.id)
+    .eq("id", ctx.studentId)
+    .maybeSingle();
+  const { data: item } = await ctx.supabase
+    .from("product_templates")
+    .select("id,name,price_minor,currency,product_type")
+    .eq("studio_id", ctx.studio.id)
+    .eq("id", product)
+    .eq("active", true)
+    .eq("assistant_visible", true)
+    .maybeSingle();
+  if (
+    !student?.active ||
+    student.lifecycle_status !== "active" ||
+    student.student_type !== "regular" ||
+    !item ||
+    !["package", "membership"].includes(item.product_type) ||
+    item.price_minor <= 0
+  )
+    return { ok: false, reason_code: "cash_package_not_available" };
+  const { data: method } = await ctx.supabase
+    .from("studio_payment_methods")
+    .select("code")
+    .eq("studio_id", ctx.studio.id)
+    .eq("code", "cash")
+    .eq("active", true)
+    .maybeSingle();
+  if (!method) return { ok: false, reason_code: "cash_payment_disabled" };
+  const summary = {
+    product_name: item.name,
+    amount_minor: item.price_minor,
+    currency: item.currency,
+    payment_received: false,
+    first_reservation_allowed: true,
+    second_reservation_requires_payment: true,
+    starts_with_first_reservation: true,
+  };
+  const expires = new Date(Date.now() + 600000).toISOString();
+  const { error: cancelError } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .update({ status: "cancelled" })
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("action_type", "commerce.cash_purchase")
+    .eq("status", "pending");
+  if (cancelError) return { ok: false, reason_code: "pending_action_update_failed" };
+  const { error } = await ctx.supabase.from("assistant_pending_actions").insert({
+    studio_id: ctx.studio.id,
+    conversation_id: ctx.conversationId,
+    action_type: "commerce.cash_purchase",
+    action_token_hash: createHash("sha256").update(randomUUID()).digest("hex"),
+    action_payload: {
+      student_id: ctx.studentId,
+      product_id: product,
+      expected_amount: item.price_minor,
+      prepared_turn_id: ctx.turnId,
+    },
+    confirmation_summary: summary,
+    status: "pending",
+    expires_at: expires,
+  });
+  return error
+    ? { ok: false, reason_code: "pending_action_create_failed" }
+    : { ok: true, status: "confirmation_required", summary, expires_at: expires };
+}
+
+async function confirmCashPackage(ctx: AssistantActionToolContext) {
+  if (!ctx.serviceMode || !ctx.studentId)
+    return { ok: false, reason_code: "explicit_confirmation_required" };
+  const { data: pending, error } = await ctx.supabase
+    .from("assistant_pending_actions")
+    .select("id,status,action_payload,confirmation_summary,expires_at")
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("action_type", "commerce.cash_purchase")
+    .in("status", ["pending", "executed"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const payload = asObject(pending?.action_payload);
+  if (
+    error ||
+    !pending ||
+    !payload ||
+    payload.student_id !== ctx.studentId ||
+    payload.prepared_turn_id === ctx.turnId ||
+    (pending.status === "pending" && Date.parse(pending.expires_at) <= Date.now())
+  )
+    return { ok: false, reason_code: "cash_confirmation_unavailable" };
+  const summary = asObject(pending.confirmation_summary);
+  if (
+    !isExplicitCashPurchaseConfirmation(ctx.currentUserMessage, {
+      amount_minor: Number(summary?.amount_minor ?? payload.expected_amount),
+      product_name: String(summary?.product_name ?? ""),
+    })
+  )
+    return { ok: false, reason_code: "explicit_confirmation_required" };
+  const { data: result, error: purchaseError } = await ctx.supabase.rpc(
+    "service_create_demi_cash_purchase",
+    {
+      p_studio: ctx.studio.id,
+      p_conversation: ctx.conversationId,
+      p_student: ctx.studentId,
+      p_product: payload.product_id,
+      p_key: pending.id,
+      p_expected_amount: payload.expected_amount,
+    },
+  );
+  if (purchaseError) return { ok: false, reason_code: "cash_purchase_failed" };
+  if (result?.ok)
+    await ctx.supabase
+      .from("assistant_pending_actions")
+      .update({ status: "executed", updated_at: new Date().toISOString() })
+      .eq("id", pending.id)
+      .eq("studio_id", ctx.studio.id);
+  return result;
+}
+
+async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBookingArgs) {
+  if (
+    ctx.serviceMode &&
+    !ctx.studentId &&
+    ["facebook_messenger", "instagram"].includes(ctx.channel ?? "")
+  ) {
+    const identity = await ctx.supabase.rpc("service_check_demi_minimal_identity", {
+      p_studio: ctx.studio.id,
+      p_conversation: ctx.conversationId,
+    });
+    if (identity.error || identity.data?.ok !== true)
+      return identity.error ? { ok: false, reason_code: "identity_lookup_failed" } : identity.data;
+  }
   const sessionId = parseOpaqueRef(args.session_ref, "session");
   if (!sessionId) {
     return { ok: false, error: "invalid_session_ref" };
@@ -636,6 +810,13 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
   const sessionInfo = await getSessionSummary(ctx, sessionId);
   if (!sessionInfo) {
     return { ok: false, error: "session_not_found" };
+  }
+  if (!isSessionBookableNow(sessionInfo.session)) {
+    return {
+      ok: false,
+      error: "booking_not_eligible",
+      ...safeBookingReason("session_not_bookable"),
+    };
   }
 
   const studentId = ctx.studentId;
@@ -651,14 +832,50 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
     resolvedStudentType = student?.student_type ?? null;
   }
 
+  let hasPaidTrialCredit = false;
+  if (studentId && resolvedStudentType === "trial") {
+    const { data: paidTrials, error: paidCreditError } = await ctx.supabase
+      .from("assistant_transfer_purchase_intents")
+      .select("acquisition_id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("student_id", studentId)
+      .eq("intent_kind", "trial_class")
+      .in("status", ["provisional_active", "validated"])
+      .not("acquisition_id", "is", null)
+      .limit(1);
+    if (paidCreditError) return { ok: false, error: "trial_credit_unavailable" };
+    if (paidTrials?.length) {
+      const creditEligibility = ctx.serviceMode
+        ? await ctx.supabase.rpc("service_booking_eligibility", {
+            target_studio_id: ctx.studio.id,
+            target_session_id: sessionId,
+            target_student_id: studentId,
+          })
+        : await ctx.supabase.rpc("booking_eligibility", {
+            target_session_id: sessionId,
+            target_student_id: studentId,
+          });
+      if (creditEligibility.error) return { ok: false, error: "trial_credit_unavailable" };
+      hasPaidTrialCredit = asObject(creditEligibility.data)?.eligible === true;
+    }
+  }
   const shouldEvaluateTrial =
-    Boolean(ctx.crmContactId && !studentId) || resolvedStudentType === "trial";
+    Boolean(ctx.crmContactId && !studentId) ||
+    (resolvedStudentType === "trial" && !hasPaidTrialCredit);
 
   if (shouldEvaluateTrial) {
     const prepaymentPolicy = await getDemiTrialPrepaymentRequirement(ctx);
     if (!prepaymentPolicy.ok) return prepaymentPolicy;
 
     const requirePaymentBeforeBooking = prepaymentPolicy.effectiveRequiresPayment;
+    if (ctx.identityNeedsName === true && !studentId && !requirePaymentBeforeBooking) {
+      return {
+        ok: false,
+        reason_code: "prospect_name_required",
+        reason_message:
+          "Antes de reservar, pide el nombre completo y espera a que Studio Flow lo guarde en el CRM.",
+      };
+    }
 
     const { data: preview, error: previewError } = await ctx.supabase.rpc(
       "assistant_trial_booking_preview",
@@ -684,6 +901,43 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
         !prepaidTrialOverridesLegacyNoShowBlock)
     ) {
       const reasonCode = String(previewObject?.reason_code ?? "booking_not_eligible");
+
+      if (reasonCode === "trial_credit_payment_required" && studentId && ctx.serviceMode) {
+        await ctx.supabase
+          .from("assistant_pending_actions")
+          .update({ status: "cancelled", updated_at: new Date().toISOString() })
+          .eq("studio_id", ctx.studio.id)
+          .eq("conversation_id", ctx.conversationId)
+          .eq("action_type", "booking.create")
+          .eq("status", "pending");
+        const prepared = await ctx.supabase.rpc("service_prepare_trial_transfer", {
+          target_studio_id: ctx.studio.id,
+          target_conversation_id: ctx.conversationId,
+          target_student_id: studentId,
+          target_session_id: sessionId,
+          target_resource_id: null,
+        });
+        const payment = asObject(prepared.data);
+        if (prepared.error || payment?.ok !== true) {
+          return {
+            ok: false,
+            error: "trial_payment_setup_failed",
+            ...safeBookingReason(payment?.reason_code),
+          };
+        }
+        return {
+          ok: true,
+          status: "payment_required",
+          reservation_confirmed: false,
+          payment_required: true,
+          previous_payment_reusable: false,
+          ...safeBookingReason(reasonCode),
+          intent_id: payment.intent_id,
+          amount_minor: payment.amount_minor,
+          currency: payment.currency,
+          bank_details: payment.bank_details,
+        };
+      }
 
       if (reasonCode === "trial_prepayment_required") {
         return {
@@ -1035,7 +1289,295 @@ async function provisionTrialActivationLink(ctx: AssistantActionToolContext, stu
   };
 }
 
+async function prepareFirstClassPayment(
+  ctx: AssistantActionToolContext,
+  args: Record<string, unknown>,
+) {
+  if (
+    args.recipient_mode === "other" ||
+    /(?:s[oó]lo para otra persona|yo no asistir[eé]|no voy a asistir|no asisto|para mi (?:amiga|amigo|hermana|hermano|hija|hijo))/i.test(
+      ctx.currentUserMessage,
+    )
+  )
+    return { ok: false, reason_code: "use_prepare_group_booking_for_other_person" };
+  if (ctx.serviceMode && ctx.studentId) {
+    // A returning trial retains its verified identity; it is never a new prospect.
+    const student = await ctx.supabase
+      .from("students")
+      .select("student_type")
+      .eq("studio_id", ctx.studio.id)
+      .eq("id", ctx.studentId)
+      .maybeSingle();
+    if (student.error || student.data?.student_type !== "trial")
+      return { ok: false, reason_code: "trial_identity_required" };
+    return prepareBooking(ctx, { session_ref: String(args.session_ref ?? "") });
+  }
+  if (!ctx.serviceMode || !ctx.crmContactId)
+    return { ok: false, reason_code: "verified_prospect_required" };
+  const sessionId = parseOpaqueRef(args.session_ref, "session");
+  const resourceId = args.resource_ref ? parseOpaqueRef(args.resource_ref, "resource") : null;
+  if (!sessionId || (args.resource_ref && !resourceId))
+    return { ok: false, reason_code: "invalid_reference" };
+  const policy = await getDemiTrialPrepaymentRequirement(ctx);
+  if (!policy.ok) return policy;
+  if (!policy.effectiveRequiresPayment) return { ok: false, reason_code: "use_prepare_booking" };
+  const info = await getSessionSummary(ctx, sessionId);
+  if (!info || !isSessionBookableNow(info.session))
+    return { ok: false, ...safeBookingReason("session_not_bookable") };
+  if (info.session.requires_resource && !resourceId) {
+    const resources = await getAvailableResourceOptions(ctx, sessionId);
+    if (!resources.ok) return resources;
+    return {
+      ok: false,
+      reason_code: "resource_selection_required",
+      resource_options:
+        resources.options?.map((option) => ({
+          resource_ref: `resource:${option.resource_id}`,
+          label: option.label,
+        })) ?? [],
+    };
+  }
+  const bank = await ctx.supabase
+    .from("studio_bank_transfer_settings")
+    .select("bank_name,account_holder,clabe,account_number,card_number,instructions")
+    .eq("studio_id", ctx.studio.id)
+    .eq("enabled", true)
+    .maybeSingle();
+  const method = await ctx.supabase
+    .from("studio_payment_methods")
+    .select("code")
+    .eq("studio_id", ctx.studio.id)
+    .eq("code", "bank_transfer")
+    .eq("active", true)
+    .maybeSingle();
+  const bankAvailable =
+    !method.error &&
+    Boolean(method.data) &&
+    !bank.error &&
+    Boolean(
+      bank.data?.bank_name &&
+      bank.data?.account_holder &&
+      (bank.data?.clabe || bank.data?.account_number || bank.data?.card_number),
+    );
+  const options = await ctx.supabase.rpc("service_get_demi_first_class_payment_options", {
+    p_studio: ctx.studio.id,
+    p_session: sessionId,
+  });
+  const externalCheckout = !options.error
+    ? asObject(asObject(options.data)?.external_checkout)
+    : null;
+  const autoSetting = await ctx.supabase
+    .from("demi_mercadopago_settings")
+    .select("enabled")
+    .eq("studio_id", ctx.studio.id)
+    .maybeSingle();
+  const automaticAvailable = !autoSetting.error && autoSetting.data?.enabled === true;
+  const manualRequested = /transferencia|bancomer|bbva|oxxo|dep[oó]sito/i.test(
+    ctx.currentUserMessage,
+  );
+  if (!bankAvailable && !externalCheckout && !automaticAvailable)
+    return { ok: false, reason_code: "transfer_details_unavailable" };
+  const prepared = await ctx.supabase.rpc("service_prepare_demi_prospect_payment", {
+    p_studio: ctx.studio.id,
+    p_conversation: ctx.conversationId,
+    p_contact: ctx.crmContactId,
+    p_session: sessionId,
+    p_resource: resourceId,
+  });
+  const payment = asObject(prepared.data);
+  if (prepared.error || payment?.ok !== true)
+    return { ok: false, reason_code: payment?.reason_code ?? "trial_payment_setup_failed" };
+  if (!["awaiting_receipt", "awaiting_participants"].includes(String(payment.status)))
+    return { ok: false, reason_code: "payment_requires_review", reservation_confirmed: false };
+  let automaticCheckout: Record<string, unknown> | null = null;
+  if (automaticAvailable && !manualRequested && payment.status === "awaiting_receipt") {
+    const order = await ctx.supabase.functions.invoke("create-demi-mercadopago-order", {
+      body: {
+        studio_id: ctx.studio.id,
+        conversation_id: ctx.conversationId,
+        group_id: payment.group_id,
+      },
+    });
+    if (order.error || order.data?.ok !== true)
+      return {
+        ok: false,
+        reason_code: order.data?.error ?? "automatic_checkout_unavailable",
+        reservation_confirmed: false,
+      };
+    automaticCheckout = asObject(order.data.external_checkout);
+  }
+  const providerProof = await ctx.supabase
+    .from("demi_payment_requests")
+    .select("status")
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .eq("group_id", payment.group_id)
+    .maybeSingle();
+  const paidAutomatically = !providerProof.error && providerProof.data?.status === "approved";
+  const matchingCheckout =
+    automaticCheckout ??
+    (externalCheckout?.amount_minor === payment.amount_minor &&
+    externalCheckout?.currency === payment.currency
+      ? externalCheckout
+      : null);
+  if (!bankAvailable && !matchingCheckout)
+    return {
+      ok: false,
+      reason_code: "external_checkout_amount_mismatch",
+      reservation_confirmed: false,
+    };
+  return {
+    ...payment,
+    status:
+      payment.status === "awaiting_receipt" && !paidAutomatically
+        ? "payment_required"
+        : "participant_data_required",
+    reservation_confirmed: false,
+    receipt_required: payment.status === "awaiting_receipt" && !automaticCheckout,
+    payment_verified: paidAutomatically,
+    bank_details: bankAvailable ? bank.data : null,
+    external_checkout: matchingCheckout,
+    summary: {
+      ...info.summary,
+      trial_booking: true,
+      payment_before_booking: true,
+      payment_pending: !paidAutomatically,
+    },
+  };
+}
+
+async function replayTrialPayment(
+  ctx: AssistantActionToolContext,
+  executionRef: string,
+  summary: unknown,
+) {
+  const prospect = executionRef.startsWith("prospect-payment:");
+  const id = executionRef.slice(executionRef.indexOf(":") + 1);
+  const lookup = await ctx.supabase
+    .from(prospect ? "demi_group_bookings" : "assistant_transfer_purchase_intents")
+    .select(
+      prospect
+        ? "id,status,amount_minor,currency"
+        : "id,status,amount_minor,currency,reservation_id",
+    )
+    .eq("id", id)
+    .eq("studio_id", ctx.studio.id)
+    .eq("conversation_id", ctx.conversationId)
+    .maybeSingle();
+  const payment = asObject(lookup.data);
+  if (lookup.error || !payment) return { ok: false, error: "payment_state_unavailable" };
+  const paymentSummary = {
+    ...(asObject(summary) ?? {}),
+    trial_booking: true,
+    payment_before_booking: true,
+    payment_pending: payment.status !== "validated",
+  };
+  if (payment.status === "awaiting_receipt") {
+    const bank = await ctx.supabase
+      .from("studio_bank_transfer_settings")
+      .select("bank_name,account_holder,clabe,account_number,card_number,instructions")
+      .eq("studio_id", ctx.studio.id)
+      .eq("enabled", true)
+      .maybeSingle();
+    if (bank.error || !bank.data)
+      return { ok: false, error: "bank_transfer_details_not_configured" };
+    return {
+      ok: true,
+      already_executed: true,
+      status: "payment_required",
+      reservation_confirmed: false,
+      payment_required: true,
+      amount_minor: payment.amount_minor,
+      currency: payment.currency,
+      bank_details: bank.data,
+      summary: paymentSummary,
+      ...(prospect ? { group_id: id, participant_count: 1 } : { intent_id: id }),
+    };
+  }
+  if (prospect && payment.status === "awaiting_participants")
+    return {
+      ok: true,
+      status: "participant_data_required",
+      reservation_confirmed: false,
+      group_id: id,
+      participant_count: 1,
+      summary: paymentSummary,
+    };
+  if (!["provisional", "provisional_active", "validated"].includes(String(payment.status)))
+    return { ok: false, error: "payment_not_booked", reservation_confirmed: false };
+  let reservationId = String(payment.reservation_id ?? "");
+  if (prospect) {
+    const participant = await ctx.supabase
+      .from("demi_group_participants")
+      .select("reservation_id")
+      .eq("group_id", id)
+      .maybeSingle();
+    if (participant.error) return { ok: false, error: "reservation_state_unavailable" };
+    reservationId = String(participant.data?.reservation_id ?? "");
+  }
+  if (!reservationId)
+    return { ok: false, error: "payment_not_booked", reservation_confirmed: false };
+  const reservation = await ctx.supabase
+    .from("reservations")
+    .select("id,status")
+    .eq("id", reservationId)
+    .eq("studio_id", ctx.studio.id)
+    .maybeSingle();
+  if (reservation.error || reservation.data?.status !== "reserved")
+    return { ok: false, error: "reservation_not_active", reservation_confirmed: false };
+  return {
+    ok: true,
+    status: "executed",
+    already_executed: true,
+    reservation_confirmed: true,
+    reservation_ref: reservationId,
+    summary: paymentSummary,
+  };
+}
+
 async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBookingArgs) {
+  let result: Awaited<ReturnType<typeof executeBookingOperation>>;
+  try {
+    result = await executeBookingOperation(ctx, args);
+  } catch {
+    result = { ok: false, error: "booking_execution_failed" };
+  }
+  const value = asObject(result);
+  if (
+    ctx.serviceMode &&
+    value?.ok === false &&
+    ["booking_execution_failed", "booking_eligibility_unavailable"].includes(String(value.error))
+  ) {
+    const { data: pending } = await ctx.supabase
+      .from("assistant_pending_actions")
+      .select("id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("conversation_id", ctx.conversationId)
+      .eq("action_type", "booking.create")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (pending?.id) {
+      const failure = await ctx.supabase.rpc("service_demi_booking_failure_status", {
+        p_studio: ctx.studio.id,
+        p_conversation: ctx.conversationId,
+        p_pending: pending.id,
+        p_turn: ctx.turnId,
+        p_error: String(value.error),
+      });
+      if (!failure.error && failure.data?.ok)
+        return {
+          ...value,
+          ...failure.data,
+          ok: false,
+          human_review_created: Boolean(failure.data.handoff_id),
+        };
+    }
+  }
+  return result;
+}
+
+async function executeBookingOperation(ctx: AssistantActionToolContext, args: ExecuteBookingArgs) {
   void args;
 
   const { data: pending, error: pendingError } = await ctx.supabase
@@ -1053,6 +1595,8 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
   }
 
   if (pending.status === "executed") {
+    if (/^(prospect|trial)-payment:/.test(String(pending.execution_ref ?? "")))
+      return replayTrialPayment(ctx, String(pending.execution_ref), pending.confirmation_summary);
     return {
       ok: true,
       status: "executed",
@@ -1106,6 +1650,13 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
   if (!sessionInfo) {
     return { ok: false, error: "session_not_found" };
   }
+  if (!isSessionBookableNow(sessionInfo.session)) {
+    return {
+      ok: false,
+      error: "booking_not_eligible",
+      ...safeBookingReason("session_not_bookable"),
+    };
+  }
   const resourceId = String(payload.resource_id ?? "") || null;
   const resourceLabel = String(payload.resource_label ?? "") || null;
   if (sessionInfo.session.requires_resource && !resourceId) {
@@ -1117,6 +1668,33 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
   let finalStudentId = studentId;
 
   if (trialException) {
+    // A previously prepared confirmation cannot bypass a consumed or expired paid trial.
+    const preview = await ctx.supabase.rpc("assistant_trial_booking_preview", {
+      target_studio_id: ctx.studio.id,
+      target_session_id: sessionId,
+      target_student_id: studentId,
+      target_crm_contact_id: studentId ? null : crmContactId,
+    });
+    const eligibility = asObject(preview.data);
+    if (preview.error) return { ok: false, error: "trial_credit_unavailable" };
+    if (
+      ["trial_credit_payment_required", "trial_credit_requires_standard_booking"].includes(
+        String(eligibility?.reason_code),
+      )
+    ) {
+      await ctx.supabase
+        .from("assistant_pending_actions")
+        .update({ status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("id", pending.id)
+        .eq("studio_id", ctx.studio.id)
+        .eq("status", "pending");
+      return {
+        ok: false,
+        error: "booking_not_eligible",
+        ...safeBookingReason(eligibility?.reason_code),
+        reservation_confirmed: false,
+      };
+    }
     const prepaymentPolicy = await getDemiTrialPrepaymentRequirement(ctx);
     if (!prepaymentPolicy.ok) return prepaymentPolicy;
 
@@ -1125,21 +1703,72 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
         return { ok: false, error: "trial_prepay_requires_service_mode" };
       }
 
-      let paymentStudentId = studentId;
+      const paymentStudentId = studentId;
       if (!paymentStudentId) {
-        const { data: ensuredStudent, error: ensureError } = await ctx.supabase.rpc(
-          "assistant_ensure_trial_student",
-          {
-            target_studio_id: ctx.studio.id,
-            target_crm_contact_id: crmContactId,
+        const bank = await ctx.supabase
+          .from("studio_bank_transfer_settings")
+          .select("bank_name,account_holder,clabe,account_number,card_number,instructions")
+          .eq("studio_id", ctx.studio.id)
+          .eq("enabled", true)
+          .maybeSingle();
+        if (
+          bank.error ||
+          !bank.data ||
+          !bank.data.bank_name ||
+          !bank.data.account_holder ||
+          !(bank.data.clabe || bank.data.account_number || bank.data.card_number)
+        )
+          return { ok: false, error: "bank_transfer_details_not_configured" };
+        const prepared = await ctx.supabase.rpc("service_prepare_demi_prospect_payment", {
+          p_studio: ctx.studio.id,
+          p_conversation: ctx.conversationId,
+          p_contact: crmContactId,
+          p_session: sessionId,
+          p_resource: resourceId,
+        });
+        const payment = asObject(prepared.data);
+        if (prepared.error || payment?.ok !== true || !payment.group_id)
+          return {
+            ok: false,
+            error: "trial_payment_setup_failed",
+            ...safeBookingReason(payment?.reason_code),
+          };
+        const executedAt = new Date().toISOString();
+        const update = await ctx.supabase
+          .from("assistant_pending_actions")
+          .update({
+            status: "executed",
+            confirmed_at: executedAt,
+            executed_at: executedAt,
+            execution_ref: `prospect-payment:${payment.group_id}`,
+            updated_at: executedAt,
+          })
+          .eq("id", pending.id)
+          .eq("studio_id", ctx.studio.id)
+          .eq("status", "pending");
+        if (update.error) return { ok: false, error: "pending_action_update_failed" };
+        return {
+          ok: true,
+          status:
+            payment.status === "awaiting_participants"
+              ? "participant_data_required"
+              : "payment_required",
+          reservation_confirmed: false,
+          payment_required: payment.status === "awaiting_receipt",
+          group_id: payment.group_id,
+          participant_count: 1,
+          amount_minor: payment.amount_minor,
+          currency: payment.currency,
+          bank_details: bank.data,
+          summary: {
+            ...sessionInfo.summary,
+            ...(asObject(pending.confirmation_summary) ?? {}),
+            commercial_status: "payment_pending",
+            payment_pending: true,
+            payment_before_booking: true,
+            trial_booking: true,
           },
-        );
-        const ensured = asObject(ensuredStudent);
-        paymentStudentId = String(ensured?.student_id ?? "") || null;
-
-        if (ensureError || !ensured || ensured.ok !== true || !paymentStudentId) {
-          return { ok: false, error: "trial_identity_provision_failed" };
-        }
+        };
       }
 
       if (ctx.studentId !== paymentStudentId) {
@@ -1306,16 +1935,59 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
   } else {
     if (!studentId) return { ok: false, error: "conversation_identity_changed" };
 
-    const eligibilityRequest = ctx.serviceMode
-      ? await ctx.supabase.rpc("service_booking_eligibility", {
-          target_studio_id: ctx.studio.id,
-          target_session_id: sessionId,
-          target_student_id: studentId,
-        })
-      : await ctx.supabase.rpc("booking_eligibility", {
-          target_session_id: sessionId,
-          target_student_id: studentId,
-        });
+    const existing = await ctx.supabase
+      .from("reservations")
+      .select("id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("student_id", studentId)
+      .eq("session_id", sessionId)
+      .eq("status", "reserved")
+      .limit(1)
+      .maybeSingle();
+    if (existing.error) return { ok: false, error: "booking_reconciliation_unavailable" };
+    if (existing.data?.id) {
+      if (resourceId) {
+        const assignment = await ctx.supabase
+          .from("reservation_resource_assignments")
+          .select("resource_id")
+          .eq("studio_id", ctx.studio.id)
+          .eq("reservation_id", existing.data.id)
+          .is("released_at", null)
+          .maybeSingle();
+        if (assignment.error || assignment.data?.resource_id !== resourceId)
+          return { ok: false, error: "existing_reservation_requires_review" };
+      }
+      reservationId = existing.data.id;
+    }
+    const retryStatus =
+      ctx.serviceMode && !reservationId
+        ? await ctx.supabase.rpc("service_demi_booking_failure_status", {
+            p_studio: ctx.studio.id,
+            p_conversation: ctx.conversationId,
+            p_pending: pending.id,
+            p_turn: ctx.turnId,
+            p_error: null,
+          })
+        : null;
+    if (retryStatus && (retryStatus.error || retryStatus.data?.ok !== true))
+      return { ok: false, error: "booking_retry_status_unavailable" };
+    if (retryStatus?.data?.retry_allowed === false)
+      return { ...retryStatus.data, ok: false, error: "booking_retry_limit_reached" };
+    if (retryStatus?.data?.inject_failure_before === true)
+      return { ok: false, error: "booking_execution_failed", injected_uat_failure: true };
+
+    const eligibilityRequest = reservationId
+      ? { data: { eligible: true }, error: null }
+      : ctx.serviceMode
+        ? await ctx.supabase.rpc("service_booking_eligibility", {
+            target_studio_id: ctx.studio.id,
+            target_session_id: sessionId,
+            target_student_id: studentId,
+          })
+        : await ctx.supabase.rpc("booking_eligibility", {
+            target_session_id: sessionId,
+            target_student_id: studentId,
+          });
     const { data: eligibility, error: eligibilityError } = eligibilityRequest;
     if (eligibilityError) {
       return { ok: false, error: "booking_eligibility_unavailable" };
@@ -1338,7 +2010,9 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
       };
     }
 
-    if (ctx.serviceMode) {
+    if (reservationId) {
+      // Reconciled the earlier successful transaction; no booking RPC or second credit debit.
+    } else if (ctx.serviceMode) {
       const bookingRequest = resourceId
         ? await ctx.supabase.rpc("service_book_student_with_resource", {
             target_studio_id: ctx.studio.id,
@@ -1366,6 +2040,13 @@ async function executeBooking(ctx: AssistantActionToolContext, args: ExecuteBook
         };
       }
       reservationId = String(bookingResult.reservation_id);
+      if (retryStatus?.data?.inject_timeout_after === true)
+        return {
+          ok: false,
+          error: "booking_execution_failed",
+          outcome_unknown: true,
+          injected_uat_failure: true,
+        };
     } else {
       if (resourceId) {
         const { data, error: bookingError } = await ctx.supabase.rpc(
@@ -3299,7 +3980,14 @@ async function prepareBankTransferPurchase(
 }
 
 async function escalateToHuman(ctx: AssistantActionToolContext, args: Record<string, unknown>) {
-  const reasonCode = String(args.reason_code ?? "").trim();
+  const requestedReason = String(args.reason_code ?? "").trim();
+  const aliases: Record<string, string> = {
+    user_requested_human: "human_requested",
+    assistant_cannot_resolve: "technical_block",
+    transfer_receipt_review: "receipt_validation_failed",
+    payment_validation: "receipt_validation_failed",
+  };
+  const reasonCode = aliases[requestedReason] ?? requestedReason;
   const note = String(args.note ?? "").trim() || null;
   if (!reasonCode) return { ok: false, error: "handoff_reason_required" };
 
@@ -3379,6 +4067,72 @@ export async function executeAssistantActionTool(
   args: Record<string, unknown>,
 ) {
   switch (toolName) {
+    case "prepare_enrollment_payment": {
+      if (!ctx.serviceMode || !ctx.studentId)
+        return { ok: false, reason_code: "verified_student_required" };
+      const result = await ctx.supabase.rpc("service_prepare_demi_enrollment_payment", {
+        p_studio: ctx.studio.id,
+        p_conversation: ctx.conversationId,
+        p_student: ctx.studentId,
+        p_method: args.payment_method,
+      });
+      if (result.error) return { ok: false, reason_code: "enrollment_payment_prepare_failed" };
+      if (result.data?.ok && args.payment_method === "app") {
+        const access = await provisionStudentAccessWithServiceClient(
+          ctx,
+          ctx.studentId,
+          "provision",
+        );
+        if (!access.already_has_access && (!access.generated || !access.activation_url))
+          return { ok: false, reason_code: "enrollment_access_unavailable" };
+        return {
+          ...result.data,
+          activation_url: access.activation_url,
+          app_url: ctx.activationUrl
+            ? new URL("/student/paquete?inscripcion=1", ctx.activationUrl).toString()
+            : null,
+        };
+      }
+      return result.data;
+    }
+    case "identify_meta_contact": {
+      if (!ctx.serviceMode || !["facebook_messenger", "instagram"].includes(ctx.channel ?? ""))
+        return { ok: false, reason_code: "meta_conversation_required" };
+      const result = await ctx.supabase.rpc("service_identify_demi_meta_contact", {
+        p_studio: ctx.studio.id,
+        p_conversation: ctx.conversationId,
+        p_phone: args.phone,
+      });
+      return result.error ? { ok: false, reason_code: "identity_lookup_failed" } : result.data;
+    }
+    case "update_contact_followup": {
+      const result = await ctx.supabase.rpc("service_update_demi_followup_stage", {
+        p_studio: ctx.studio.id,
+        p_conversation: ctx.conversationId,
+        p_stage: args.stage,
+        p_reason: args.reason,
+        p_source: ctx.turnId,
+      });
+      return result.error
+        ? { ok: false, reason_code: "crm_followup_update_failed", error_code: result.error.code }
+        : result.data;
+    }
+    case "prepare_first_class_payment":
+      return prepareFirstClassPayment(ctx, args);
+    case "prepare_group_booking":
+    case "complete_group_booking":
+      return groupBookingAction({
+        supabase: ctx.supabase,
+        studioId: ctx.studio.id,
+        conversationId: ctx.conversationId,
+        tool: toolName,
+        args,
+        currentUserMessage: ctx.currentUserMessage,
+      });
+    case "prepare_cash_package_purchase":
+      return prepareCashPackage(ctx, args as Record<string, unknown>);
+    case "confirm_cash_package_purchase":
+      return confirmCashPackage(ctx);
     case "prepare_booking":
       return prepareBooking(ctx, args as PrepareBookingArgs);
     case "execute_booking":

@@ -1,0 +1,308 @@
+{
+  "case": "M09",
+  "business_status": "passed",
+  "version": "7da8dd0",
+  "configured_booking_failure_limit": 3,
+  "configured_delivery_failure_limit": 3,
+  "scope": "Synthetic Sandbox with actual model, channel adapters and native persistence; provider transport remains M01",
+  "booking_variants": [
+    {
+      "mode": "before",
+      "attempt": 1,
+      "run_id": "cc76e7f2-8d4f-485c-8b58-4d5a2b02ada4",
+      "studio_id": "b63a79d5-bbfa-4e16-8fbc-fb46ad472eb2",
+      "reservations": 0,
+      "credits": 8,
+      "reply_captured": "No pude confirmar el resultado de la reserva. Revisaré el estado guardado antes de volver a intentar para evitar duplicarla.",
+      "handoff": [],
+      "new_model_calls": 0
+    },
+    {
+      "mode": "before",
+      "attempt": 2,
+      "run_id": "cc76e7f2-8d4f-485c-8b58-4d5a2b02ada4",
+      "studio_id": "b63a79d5-bbfa-4e16-8fbc-fb46ad472eb2",
+      "reservations": 0,
+      "credits": 8,
+      "reply_captured": "No pude confirmar el resultado de la reserva. Revisaré el estado guardado antes de volver a intentar para evitar duplicarla.",
+      "handoff": [],
+      "new_model_calls": 0
+    },
+    {
+      "mode": "before",
+      "attempt": 3,
+      "run_id": "cc76e7f2-8d4f-485c-8b58-4d5a2b02ada4",
+      "studio_id": "b63a79d5-bbfa-4e16-8fbc-fb46ad472eb2",
+      "reservations": 0,
+      "credits": 8,
+      "reply_captured": "No pude confirmar el resultado de la reserva. Creé una solicitud para que el equipo revise el caso antes de volver a intentar.",
+      "handoff": [
+        {
+          "reason": "technical_block",
+          "status": "open"
+        }
+      ],
+      "new_model_calls": 0
+    },
+    {
+      "mode": "before",
+      "attempt": 4,
+      "run_id": "cc76e7f2-8d4f-485c-8b58-4d5a2b02ada4",
+      "studio_id": "b63a79d5-bbfa-4e16-8fbc-fb46ad472eb2",
+      "reservations": 0,
+      "credits": 8,
+      "handoff": [
+        {
+          "reason": "technical_block",
+          "status": "open"
+        }
+      ],
+      "new_model_calls": 0
+    },
+    {
+      "mode": "after",
+      "attempt": 1,
+      "run_id": "4291dfd2-b859-4a3b-a5fb-8ab60a1c8241",
+      "studio_id": "4b72aeee-40dc-4b29-9110-b588bf55b6cc",
+      "reservations": 1,
+      "credits": 7,
+      "reply_captured": "No pude confirmar el resultado de la reserva. Revisaré el estado guardado antes de volver a intentar para evitar duplicarla.",
+      "handoff": [],
+      "new_model_calls": 0
+    },
+    {
+      "mode": "after",
+      "attempt": 2,
+      "run_id": "4291dfd2-b859-4a3b-a5fb-8ab60a1c8241",
+      "studio_id": "4b72aeee-40dc-4b29-9110-b588bf55b6cc",
+      "reservations": 1,
+      "credits": 7,
+      "reply_captured": "Listo. Tu reserva de Pole Fitness UAT quedó confirmada para el viernes, 9 de octubre, de 9:31 p. m. a 10:31 p. m..",
+      "handoff": [],
+      "new_model_calls": 0
+    }
+  ],
+  "delivery_variants": [
+    {
+      "channel": "whatsapp",
+      "attempt": 1,
+      "run_id": "4291dfd2-b859-4a3b-a5fb-8ab60a1c8241",
+      "http_status": 500,
+      "result": {
+        "ok": false,
+        "accepted": true,
+        "messages": 1,
+        "outcomes": [
+          {
+            "outcome": "delivery_failed",
+            "retryable": true,
+            "provider_message_id": "uat-inbound-142521af-9e9e-4220-af0d-89347a068f49"
+          }
+        ]
+      },
+      "new_model_calls": 2,
+      "failed_deliveries": 1,
+      "reservations": 1,
+      "credits": 7,
+      "handoffs": []
+    },
+    {
+      "channel": "whatsapp",
+      "attempt": 2,
+      "run_id": "4291dfd2-b859-4a3b-a5fb-8ab60a1c8241",
+      "http_status": 500,
+      "result": {
+        "ok": false,
+        "accepted": true,
+        "messages": 1,
+        "outcomes": [
+          {
+            "outcome": "cached_reply_retry",
+            "provider_message_id": "uat-inbound-142521af-9e9e-4220-af0d-89347a068f49"
+          }
+        ]
+      },
+      "new_model_calls": 0,
+      "failed_deliveries": 2,
+      "reservations": 1,
+      "credits": 7,
+      "handoffs": []
+    },
+    {
+      "channel": "whatsapp",
+      "attempt": 3,
+      "run_id": "4291dfd2-b859-4a3b-a5fb-8ab60a1c8241",
+      "http_status": 200,
+      "result": {
+        "ok": true,
+        "accepted": true,
+        "messages": 1,
+        "outcomes": [
+          {
+            "outcome": "cached_reply_retry",
+            "provider_message_id": "uat-inbound-142521af-9e9e-4220-af0d-89347a068f49"
+          }
+        ]
+      },
+      "new_model_calls": 0,
+      "failed_deliveries": 3,
+      "reservations": 1,
+      "credits": 7,
+      "handoffs": [
+        {
+          "reason": "technical_block",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "channel": "whatsapp",
+      "attempt": 4,
+      "run_id": "4291dfd2-b859-4a3b-a5fb-8ab60a1c8241",
+      "http_status": 200,
+      "result": {
+        "ok": true,
+        "accepted": true,
+        "messages": 1,
+        "outcomes": [
+          {
+            "outcome": "duplicate_already_handled",
+            "provider_message_id": "uat-inbound-142521af-9e9e-4220-af0d-89347a068f49"
+          }
+        ]
+      },
+      "new_model_calls": 0,
+      "failed_deliveries": 3,
+      "reservations": 1,
+      "credits": 7,
+      "handoffs": [
+        {
+          "reason": "technical_block",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "channel": "facebook_messenger",
+      "attempt": 1,
+      "run_id": "cc76e7f2-8d4f-485c-8b58-4d5a2b02ada4",
+      "http_status": 500,
+      "result": {
+        "ok": false,
+        "accepted": true,
+        "messages": 1,
+        "outcomes": [
+          {
+            "outcome": "delivery_failed",
+            "retryable": true,
+            "provider_message_id": "uat-inbound-cc627cec-c9eb-415a-8c56-650dc7db0e68"
+          }
+        ]
+      },
+      "new_model_calls": 2,
+      "failed_deliveries": 1,
+      "reservations": 0,
+      "credits": 8,
+      "handoffs": [
+        {
+          "reason": "technical_block",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "channel": "facebook_messenger",
+      "attempt": 2,
+      "run_id": "cc76e7f2-8d4f-485c-8b58-4d5a2b02ada4",
+      "http_status": 500,
+      "result": {
+        "ok": false,
+        "accepted": true,
+        "messages": 1,
+        "outcomes": [
+          {
+            "outcome": "cached_reply_retry",
+            "provider_message_id": "uat-inbound-cc627cec-c9eb-415a-8c56-650dc7db0e68"
+          }
+        ]
+      },
+      "new_model_calls": 0,
+      "failed_deliveries": 2,
+      "reservations": 0,
+      "credits": 8,
+      "handoffs": [
+        {
+          "reason": "technical_block",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "channel": "facebook_messenger",
+      "attempt": 3,
+      "run_id": "cc76e7f2-8d4f-485c-8b58-4d5a2b02ada4",
+      "http_status": 200,
+      "result": {
+        "ok": true,
+        "accepted": true,
+        "messages": 1,
+        "outcomes": [
+          {
+            "outcome": "cached_reply_retry",
+            "provider_message_id": "uat-inbound-cc627cec-c9eb-415a-8c56-650dc7db0e68"
+          }
+        ]
+      },
+      "new_model_calls": 0,
+      "failed_deliveries": 3,
+      "reservations": 0,
+      "credits": 8,
+      "handoffs": [
+        {
+          "reason": "technical_block",
+          "status": "open"
+        },
+        {
+          "reason": "technical_block",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "channel": "facebook_messenger",
+      "attempt": 4,
+      "run_id": "cc76e7f2-8d4f-485c-8b58-4d5a2b02ada4",
+      "http_status": 200,
+      "result": {
+        "ok": true,
+        "accepted": true,
+        "messages": 1,
+        "outcomes": [
+          {
+            "outcome": "duplicate_already_handled",
+            "provider_message_id": "uat-inbound-cc627cec-c9eb-415a-8c56-650dc7db0e68"
+          }
+        ]
+      },
+      "new_model_calls": 0,
+      "failed_deliveries": 3,
+      "reservations": 0,
+      "credits": 8,
+      "handoffs": [
+        {
+          "reason": "technical_block",
+          "status": "open"
+        },
+        {
+          "reason": "technical_block",
+          "status": "open"
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "automated_tests": 1117,
+    "automated_passed": 1117,
+    "typecheck": "passed"
+  }
+}

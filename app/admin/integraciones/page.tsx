@@ -59,7 +59,6 @@ export default async function IntegrationsPage() {
     { count: mercadoPagoAttempts },
     { count: onlineProducts },
     { data: whatsappProvider },
-    { data: demiConfig },
   ] = await Promise.all([
     supabase
       .from("asistian_webhook_events")
@@ -87,11 +86,6 @@ export default async function IntegrationsPage() {
       .eq("studio_id", studio.id)
       .eq("channel_key", "whatsapp")
       .eq("provider_key", "meta_whatsapp")
-      .maybeSingle(),
-    supabase
-      .from("assistant_configs")
-      .select("assistant_name,mode,model")
-      .eq("studio_id", studio.id)
       .maybeSingle(),
   ]);
 
@@ -151,17 +145,13 @@ export default async function IntegrationsPage() {
           />
 
           <IntegrationCard
-            mark="D"
-            name={demiConfig?.assistant_name ?? "Demi"}
-            description="Instrucciones, mejoras con IA y pruebas de conversación."
-            detail={
-              demiConfig
-                ? `${demiConfig.model} · modo ${demiConfig.mode}`
-                : "Configura el asistente para este estudio"
-            }
-            status={demiConfig?.mode === "demo" ? "Demo" : "Configurar"}
-            tone={demiConfig?.mode === "demo" ? "active" : "available"}
-            href="/admin/integraciones/demi"
+            mark="FB"
+            name="Facebook / Instagram"
+            description="Mensajes de Facebook e Instagram atendidos por Demi."
+            detail="Configura cada canal de forma independiente."
+            status="Configurable"
+            tone="available"
+            href="/admin/integraciones/meta-inbox"
           />
         </div>
       </section>
@@ -180,15 +170,6 @@ export default async function IntegrationsPage() {
             name="Stripe"
             description="Cobros del estudio a alumnas mediante Stripe."
             detail="La facturación de Studio Flow es independiente de esta futura integración."
-            status="Próximamente"
-            tone="soon"
-          />
-
-          <IntegrationCard
-            mark="FB"
-            name="Facebook / Instagram"
-            description="Conexiones de Meta para captación, mensajes y futuras automatizaciones."
-            detail="Se integrará aquí cuando el flujo esté disponible."
             status="Próximamente"
             tone="soon"
           />

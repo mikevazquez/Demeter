@@ -1,0 +1,92 @@
+{
+  "case_id": "M13",
+  "master_status": "passed",
+  "three_confirmation_variants": [
+    {
+      "confirmation": "Sí",
+      "run_id": "1b72b4fc-612a-4256-939d-74b9479cde76",
+      "studio_id": "8eb2efb6-5de1-4b44-89a5-8eea93d678ca",
+      "reservations_before": 0,
+      "reservations_after": 1,
+      "reservations_after_repeat": 1,
+      "passed": true,
+      "reply_captured": "Listo. Tu reserva de Pole Fitness UAT quedó confirmada para el viernes, 9 de octubre, de 9:10 p. m. a 10:10 p. m.."
+    },
+    {
+      "confirmation": "Sí, confirmo",
+      "run_id": "3824b915-e141-45f7-8cdc-d1fee42f38c6",
+      "studio_id": "87edd33d-9e7d-421c-a9ac-c7b9be6a55ac",
+      "reservations_before": 0,
+      "reservations_after": 1,
+      "reservations_after_repeat": 1,
+      "passed": true,
+      "reply_captured": "Listo. Tu reserva de Pole Fitness UAT quedó confirmada para el viernes, 9 de octubre, de 9:10 p. m. a 10:10 p. m.."
+    },
+    {
+      "confirmation": "Sí, confirmo la reserva",
+      "run_id": "7718f256-a7c1-4b2d-9cf9-f6ca7aca0122",
+      "studio_id": "8d68290d-1e6b-4af2-9dab-6d724c715a2a",
+      "reservations_before": 0,
+      "reservations_after": 1,
+      "reservations_after_repeat": 1,
+      "passed": true,
+      "reply_captured": "Listo. Tu reserva de Pole Fitness UAT quedó confirmada para el viernes, 9 de octubre, de 9:14 p. m. a 10:14 p. m.."
+    }
+  ],
+  "additional_variants": [
+    {
+      "variant": "m13_expired_package",
+      "run_id": "c6faf020-1768-48fa-b792-de9e90223980",
+      "reply_captured": "No tienes un paquete vigente ni créditos disponibles; tu paquete anterior ya venció.\n\nLa próxima clase de Pole Fitness disponible es hoy, 9 de octubre, de 21:03 a 22:03.\n\nOpciones vigentes:\n• Clase individual: $150 MXN\n• Paquete de 8 clases, con vigencia de 30 días: $600 MXN\n\n¿Cuál prefieres para continuar con la reserva?",
+      "passed": true
+    },
+    {
+      "variant": "m13_exhausted",
+      "run_id": "51565041-92b1-4509-8852-0c3d5bbe2fbd",
+      "reply_captured": "Tu paquete actual es “Paquete UAT 8 clases”, vigente del 8 de octubre al 7 de noviembre de 2026. Tienes 0 créditos disponibles; ya se agotaron las 8 clases.\n\nHay estos horarios disponibles de Pole Fitness:\n\n• Hoy, 9 de octubre, 21:07 a 22:07\n• Hoy, 9 de octubre, 23:07 a 00:07\n• Sábado 10 de octubre, 18:00 a 19:00\n• Domingo 11 de octubre, 18:00 a 19:00\n\nLa clase del sábado a las 18:00 que aparece duplicada está llena.\n\nCon tu paquete actual no se puede reservar porque no tienes créditos disponibles. Para una clase de Pole Fitness, las opciones vigentes son:\n\n• Clase suelta: $150 MXN\n• Paquete de 8 clases: $600 MXN, con vigencia de 30 días\n\nPor ahora, Studio Flow tiene configurada la opción de pago por transferencia. Dime qué horario quieres y te preparo la reserva y la opción correspondiente.",
+      "passed": true
+    },
+    {
+      "variant": "m13_excluded_class",
+      "run_id": "51565041-92b1-4509-8852-0c3d5bbe2fbd",
+      "reply_captured": "Tu paquete actual, “Paquete UAT 8 clases”, no cubre la actividad Danza UAT. La restricción exacta es que el paquete vigente no aplica para esa actividad.\n\nNo se descontó ningún crédito ni se creó la reserva. La clase disponible es mañana, 10 de octubre, a las 17:16.",
+      "passed": true
+    },
+    {
+      "variant": "m13_no_package_fixed",
+      "run_id": "51565041-92b1-4509-8852-0c3d5bbe2fbd",
+      "reply_captured": "Consulté tu ficha: tienes inscripción activa, pero no tienes un paquete vigente ni clases disponibles para reservar. Por eso Studio Flow no puede cubrir la clase con tus derechos actuales.\n\nLa siguiente clase disponible de Pole Fitness es hoy, 9 de octubre, a las 23:07; hay lugar.\n\nOpciones vigentes para alumnas:\n• Clase suelta: $150 MXN, válida por 30 días.\n• Paquete de 8 clases: $600 MXN, válido por 30 días.\n\nPara esta clase, el método disponible es transferencia bancaria. Todavía no se ha creado la reserva. ¿Cuál opción prefieres?",
+      "passed": true
+    },
+    {
+      "variant": "m13_cash_confirm_fixed",
+      "run_id": "51565041-92b1-4509-8852-0c3d5bbe2fbd",
+      "reply_captured": "Registré tu paquete con el efectivo pendiente de cobro. Puedes reservar una primera clase; para una segunda reserva tendrás que cubrir el adeudo. La vigencia inicia en la primera clase reservada.",
+      "passed": true
+    },
+    {
+      "variant": "m13_cash_first_confirm",
+      "run_id": "51565041-92b1-4509-8852-0c3d5bbe2fbd",
+      "reply_captured": "Listo. Tu reserva de Pole Fitness UAT quedó confirmada para el viernes, 9 de octubre, de 9:07 p. m. a 10:07 p. m..",
+      "passed": true
+    },
+    {
+      "variant": "m13_cash_debt",
+      "run_id": "51565041-92b1-4509-8852-0c3d5bbe2fbd",
+      "reply_captured": "La clase de Pole Fitness de mañana, 10 de octubre, a las 18:00 sí tiene lugar, pero tu reserva está bloqueada porque el paquete sigue pendiente de pago en efectivo.\n\nPrimero necesitas liquidar los $600 MXN en el estudio. Después podrás usar las clases restantes del paquete para reservar.",
+      "passed": true
+    }
+  ],
+  "cash_absence_and_replay": {
+    "reservation_id": "83190fa6-74c1-4dcb-be7d-4e04b9197754",
+    "status": "no_show",
+    "credits_after": 7,
+    "credits_after_repeat": 7,
+    "starts_on": "2026-10-09",
+    "expires_on": "2026-11-08",
+    "sales_minor": 60000,
+    "payments": 0,
+    "passed": true
+  },
+  "native_controls": "Cash collection, first use, second-booking debt, absence and idempotency passed with real service role and authorized admin. External transport remains M01."
+}

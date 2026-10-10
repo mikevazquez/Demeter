@@ -1,0 +1,574 @@
+{
+  "case": "M06",
+  "business_status": "passed",
+  "final_version": "c6c9592",
+  "scope": "Isolated Sandbox native UAT with actual model and adapters; Bancomer documents/manual approval. External Mercado Pago payment remains M05; transport remains M01/M18. Refund execution is manual and out of scope.",
+  "criteria": [
+    "D15 joint total and separate documents reconciled once",
+    "D16 payer separated from sole other participant",
+    "D17 existing student uses one credit, new participant uses transfer",
+    "D18 partial documents/data do not create profiles or full reservations",
+    "D19 shared phone creates human review without invented contact or merge",
+    "D20 capacity race preserves one success, no second profile/reservation, 150 MXN unallocated and actual human case"
+  ],
+  "conversations": [
+    {
+      "variant": "m06_separate_prepare",
+      "run_id": "3e959474-5843-4321-b45f-742e7cadafcb",
+      "studio_id": "6bbd302a-40c5-4788-be19-5ebc4b0a0f49",
+      "reply": "Encontré Pole Fitness para mañana, sábado 10 de octubre, de 6:00 a 7:00 p. m. Hay lugar para las dos participantes.\n\nEl total es de $300 MXN: dos transferencias de $150 cada una. Tú puedes pagar ambas; no se te registrará como participante.\n\nImportante: los datos bancarios disponibles son de prueba y dicen “NO TRANSFERIR”, así que no realices pagos reales con ellos. Envíame los comprobantes por este chat cuando tengas los datos correctos de pago. Después te pediré juntos el nombre completo y celular de cada participante para completar la reserva.",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "79628b84-03ae-4f65-87eb-405d7c0add94",
+          "status": "awaiting_receipt",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m06_separate_first",
+      "run_id": "3e959474-5843-4321-b45f-742e7cadafcb",
+      "studio_id": "6bbd302a-40c5-4788-be19-5ebc4b0a0f49",
+      "reply": "Recibí comprobantes por $150.00. Queda por cubrir $150.00. Los comprobantes están pendientes de validación del equipo. Envíame el comprobante de la diferencia; todavía no confirmé reservas.",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "79628b84-03ae-4f65-87eb-405d7c0add94",
+          "status": "awaiting_receipt",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m06_separate_first_repeat",
+      "run_id": "3e959474-5843-4321-b45f-742e7cadafcb",
+      "studio_id": "6bbd302a-40c5-4788-be19-5ebc4b0a0f49",
+      "reply": "Recibí comprobantes por $150.00. Queda por cubrir $150.00. Los comprobantes están pendientes de validación del equipo. Envíame el comprobante de la diferencia; todavía no confirmé reservas.",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "79628b84-03ae-4f65-87eb-405d7c0add94",
+          "status": "awaiting_receipt",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m06_separate_second",
+      "run_id": "3e959474-5843-4321-b45f-742e7cadafcb",
+      "studio_id": "6bbd302a-40c5-4788-be19-5ebc4b0a0f49",
+      "reply": "Recibí el comprobante del total del grupo. El pago queda pendiente de validación del equipo. Ahora envíame juntos el nombre completo y celular mexicano de diez dígitos de cada participante, sin lada. Todavía no he confirmado reservas; revisaré cupo y derechos de cada una.",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "79628b84-03ae-4f65-87eb-405d7c0add94",
+          "status": "awaiting_participants",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m06_separate_partial_data",
+      "run_id": "3e959474-5843-4321-b45f-742e7cadafcb",
+      "studio_id": "6bbd302a-40c5-4788-be19-5ebc4b0a0f49",
+      "reply": "Anoté a UAT Grupo Ana con el celular 9998882011. ¿Cuál es el celular mexicano de diez dígitos de UAT Grupo Beto?",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "79628b84-03ae-4f65-87eb-405d7c0add94",
+          "status": "awaiting_participants",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m06_separate_complete",
+      "run_id": "3e959474-5843-4321-b45f-742e7cadafcb",
+      "studio_id": "6bbd302a-40c5-4788-be19-5ebc4b0a0f49",
+      "reply": "Listo: quedaron creadas provisionalmente las dos reservas para Pole Fitness de mañana, sábado 10 de octubre, de 6:00 a 7:00 p. m.:\n\n• UAT Grupo Ana — 9998882011\n• UAT Grupo Beto — 9998882012\n\nEl total de $300 MXN quedó asignado correctamente. Los comprobantes siguen pendientes de validación; las reservas pueden cancelarse si la transferencia no se confirma. Tú quedas únicamente como la persona pagadora, no como participante.",
+      "student_count": 13,
+      "groups": [
+        {
+          "id": "79628b84-03ae-4f65-87eb-405d7c0add94",
+          "status": "provisional",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m06_for_other_fixed",
+      "run_id": "3e959474-5843-4321-b45f-742e7cadafcb",
+      "studio_id": "6bbd302a-40c5-4788-be19-5ebc4b0a0f49",
+      "reply": "Sí, mañana sábado 10 de octubre hay una clase disponible de Pole Fitness de 18:00 a 19:00.\n\nPreparé el pago para una sola participante nueva por $150 MXN, únicamente para ella. Tú no quedas como participante.\n\nDatos para transferencia Bancomer:\nBanco FICTICIO UAT — NO TRANSFERIR\nTitular: PRUEBA SIN VALOR\nCuenta: 0000\nNo realices pagos; estos datos son de prueba.\n\nEnvíame el comprobante por este mismo chat. Después te pediré el nombre completo y celular de 10 dígitos de la participante. La reserva aún no está confirmada ni apartada.",
+      "student_count": 13,
+      "groups": [
+        {
+          "id": "79628b84-03ae-4f65-87eb-405d7c0add94",
+          "status": "provisional",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        },
+        {
+          "id": "fdad377b-d353-4f0e-bf91-6910de3ed112",
+          "status": "rejected",
+          "amount_minor": 15000,
+          "participant_count": 1,
+          "transfer_count": 1
+        },
+        {
+          "id": "15f38815-0519-4af5-aa51-1df7cf3d0c10",
+          "status": "awaiting_receipt",
+          "amount_minor": 15000,
+          "participant_count": 1,
+          "transfer_count": 1
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m06_for_other_receipt",
+      "run_id": "3e959474-5843-4321-b45f-742e7cadafcb",
+      "studio_id": "6bbd302a-40c5-4788-be19-5ebc4b0a0f49",
+      "reply": "Recibí comprobantes por el total del grupo. El pago queda pendiente de validación del equipo. Ahora envíame juntos el nombre completo y celular mexicano de diez dígitos de cada participante, sin lada. Todavía no he confirmado reservas; revisaré cupo y derechos de cada una.",
+      "student_count": 13,
+      "groups": [
+        {
+          "id": "79628b84-03ae-4f65-87eb-405d7c0add94",
+          "status": "provisional",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        },
+        {
+          "id": "fdad377b-d353-4f0e-bf91-6910de3ed112",
+          "status": "rejected",
+          "amount_minor": 15000,
+          "participant_count": 1,
+          "transfer_count": 1
+        },
+        {
+          "id": "15f38815-0519-4af5-aa51-1df7cf3d0c10",
+          "status": "awaiting_participants",
+          "amount_minor": 15000,
+          "participant_count": 1,
+          "transfer_count": 1
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m06_for_other_complete",
+      "run_id": "3e959474-5843-4321-b45f-742e7cadafcb",
+      "studio_id": "6bbd302a-40c5-4788-be19-5ebc4b0a0f49",
+      "reply": "La reserva quedó creada provisionalmente para UAT Destinataria Clara en Pole Fitness, por $150.\n\nTú apareces únicamente como quien paga; no quedaste como participante. El comprobante sigue pendiente de validación manual del equipo, por lo que la reserva puede cancelarse si la transferencia no se confirma.",
+      "student_count": 14,
+      "groups": [
+        {
+          "id": "79628b84-03ae-4f65-87eb-405d7c0add94",
+          "status": "provisional",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        },
+        {
+          "id": "fdad377b-d353-4f0e-bf91-6910de3ed112",
+          "status": "rejected",
+          "amount_minor": 15000,
+          "participant_count": 1,
+          "transfer_count": 1
+        },
+        {
+          "id": "15f38815-0519-4af5-aa51-1df7cf3d0c10",
+          "status": "provisional",
+          "amount_minor": 15000,
+          "participant_count": 1,
+          "transfer_count": 1
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m06_mixed_prepare",
+      "run_id": "3e959474-5843-4321-b45f-742e7cadafcb",
+      "studio_id": "6bbd302a-40c5-4788-be19-5ebc4b0a0f49",
+      "reply": "Encontré Pole Fitness el domingo 11 de octubre a las 18:00.\n\nPara las dos participantes, tu clase se cubriría con un crédito de tu paquete y tu amiga pagaría $150 MXN por transferencia Bancomer.\n\nLa reserva todavía no está confirmada. El sistema generó estas instrucciones de prueba:\n\nBanco: BANCO FICTICIO UAT — NO TRANSFERIR\nTitular: PRUEBA SIN VALOR\nCuenta: 0000\n\nNo realicen pagos reales. Envíame por este chat el comprobante de la transferencia; después te pediré juntos los nombres completos y celulares de ambas para completar la reserva.",
+      "student_count": 14,
+      "groups": [
+        {
+          "id": "79628b84-03ae-4f65-87eb-405d7c0add94",
+          "status": "provisional",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        },
+        {
+          "id": "fdad377b-d353-4f0e-bf91-6910de3ed112",
+          "status": "rejected",
+          "amount_minor": 15000,
+          "participant_count": 1,
+          "transfer_count": 1
+        },
+        {
+          "id": "15f38815-0519-4af5-aa51-1df7cf3d0c10",
+          "status": "provisional",
+          "amount_minor": 15000,
+          "participant_count": 1,
+          "transfer_count": 1
+        },
+        {
+          "id": "4c7b604d-9d51-4f0b-b524-dab50ea86db6",
+          "status": "awaiting_receipt",
+          "amount_minor": 15000,
+          "participant_count": 2,
+          "transfer_count": 1
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m06_mixed_receipt",
+      "run_id": "3e959474-5843-4321-b45f-742e7cadafcb",
+      "studio_id": "6bbd302a-40c5-4788-be19-5ebc4b0a0f49",
+      "reply": "Recibí comprobantes por el total del grupo. El pago queda pendiente de validación del equipo. Ahora envíame juntos el nombre completo y celular mexicano de diez dígitos de cada participante, sin lada. Todavía no he confirmado reservas; revisaré cupo y derechos de cada una.",
+      "student_count": 14,
+      "groups": [
+        {
+          "id": "79628b84-03ae-4f65-87eb-405d7c0add94",
+          "status": "provisional",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        },
+        {
+          "id": "fdad377b-d353-4f0e-bf91-6910de3ed112",
+          "status": "rejected",
+          "amount_minor": 15000,
+          "participant_count": 1,
+          "transfer_count": 1
+        },
+        {
+          "id": "15f38815-0519-4af5-aa51-1df7cf3d0c10",
+          "status": "provisional",
+          "amount_minor": 15000,
+          "participant_count": 1,
+          "transfer_count": 1
+        },
+        {
+          "id": "4c7b604d-9d51-4f0b-b524-dab50ea86db6",
+          "status": "awaiting_participants",
+          "amount_minor": 15000,
+          "participant_count": 2,
+          "transfer_count": 1
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m06_mixed_complete",
+      "run_id": "3e959474-5843-4321-b45f-742e7cadafcb",
+      "studio_id": "6bbd302a-40c5-4788-be19-5ebc4b0a0f49",
+      "reply": "Listo: quedaron 2 reservas provisionales para Pole Fitness del domingo 11 de octubre a las 18:00.\n\n• UAT student_active: reserva con 1 crédito de tu paquete.\n• UAT Amiga Diana: primera clase por $150 MXN, cubierta por el comprobante; el pago queda pendiente de validación.\n\nEl comprobante fue asignado completo y no quedó saldo pendiente de asignar. La reserva de Diana podría cancelarse si la transferencia no se valida correctamente.",
+      "student_count": 15,
+      "groups": [
+        {
+          "id": "79628b84-03ae-4f65-87eb-405d7c0add94",
+          "status": "provisional",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        },
+        {
+          "id": "fdad377b-d353-4f0e-bf91-6910de3ed112",
+          "status": "rejected",
+          "amount_minor": 15000,
+          "participant_count": 1,
+          "transfer_count": 1
+        },
+        {
+          "id": "15f38815-0519-4af5-aa51-1df7cf3d0c10",
+          "status": "provisional",
+          "amount_minor": 15000,
+          "participant_count": 1,
+          "transfer_count": 1
+        },
+        {
+          "id": "4c7b604d-9d51-4f0b-b524-dab50ea86db6",
+          "status": "provisional",
+          "amount_minor": 15000,
+          "participant_count": 2,
+          "transfer_count": 1
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m06_mixed_status_fixed",
+      "run_id": "3e959474-5843-4321-b45f-742e7cadafcb",
+      "studio_id": "6bbd302a-40c5-4788-be19-5ebc4b0a0f49",
+      "reply": "Sí. La reserva de UAT student_active está confirmada y usa 1 crédito del paquete:\n\nPole Fitness UAT\nDomingo 11 de octubre, 18:00\n\nLa reserva de UAT Amiga Diana queda provisional y depende de que se valide la transferencia de $150. No creé reservas nuevas ni hice otro cobro.",
+      "student_count": 15,
+      "groups": [
+        {
+          "id": "79628b84-03ae-4f65-87eb-405d7c0add94",
+          "status": "provisional",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        },
+        {
+          "id": "fdad377b-d353-4f0e-bf91-6910de3ed112",
+          "status": "rejected",
+          "amount_minor": 15000,
+          "participant_count": 1,
+          "transfer_count": 1
+        },
+        {
+          "id": "15f38815-0519-4af5-aa51-1df7cf3d0c10",
+          "status": "provisional",
+          "amount_minor": 15000,
+          "participant_count": 1,
+          "transfer_count": 1
+        },
+        {
+          "id": "4c7b604d-9d51-4f0b-b524-dab50ea86db6",
+          "status": "provisional",
+          "amount_minor": 15000,
+          "participant_count": 2,
+          "transfer_count": 1
+        },
+        {
+          "id": "171664b1-ea7b-488e-870f-404f149eb10f",
+          "status": "awaiting_receipt",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m06_shared_fixed",
+      "run_id": "3e959474-5843-4321-b45f-742e7cadafcb",
+      "studio_id": "6bbd302a-40c5-4788-be19-5ebc4b0a0f49",
+      "reply": "Sí, necesitamos revisión del equipo antes de cobrar o registrar la reserva. No inventaremos otro número ni las registraremos como una sola persona.\n\nYa envié el caso a atención humana dentro de este mismo chat para verificar cómo registrar correctamente a ambas participantes. Por favor, espera esa revisión antes de hacer la transferencia.",
+      "student_count": 15,
+      "groups": [
+        {
+          "id": "79628b84-03ae-4f65-87eb-405d7c0add94",
+          "status": "provisional",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        },
+        {
+          "id": "fdad377b-d353-4f0e-bf91-6910de3ed112",
+          "status": "rejected",
+          "amount_minor": 15000,
+          "participant_count": 1,
+          "transfer_count": 1
+        },
+        {
+          "id": "15f38815-0519-4af5-aa51-1df7cf3d0c10",
+          "status": "provisional",
+          "amount_minor": 15000,
+          "participant_count": 1,
+          "transfer_count": 1
+        },
+        {
+          "id": "4c7b604d-9d51-4f0b-b524-dab50ea86db6",
+          "status": "provisional",
+          "amount_minor": 15000,
+          "participant_count": 2,
+          "transfer_count": 1
+        },
+        {
+          "id": "171664b1-ea7b-488e-870f-404f149eb10f",
+          "status": "awaiting_receipt",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        }
+      ],
+      "human_cases": [
+        {
+          "reason": "human_requested",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "variant": "m06_partial_prepare",
+      "run_id": "52b2391d-9a47-4dc3-b378-15bc16f7311c",
+      "studio_id": "e03b0650-e26d-4af2-a416-d015a1b3d206",
+      "reply": "Listo: preparé el pago para 2 primeras clases de Pole Fitness mañana, 10 de octubre, a las 18:00.\n\nTotal: $300 MXN por transferencia.\n\nImportante: los datos bancarios devueltos son de prueba y no debes realizar un pago real:\nBanco: BANCO FICTICIO UAT — NO TRANSFERIR\nTitular: PRUEBA SIN VALOR\nCuenta: 0000\n\nNo se ha creado la reserva todavía. Como este flujo requiere comprobante, envíalo por este mismo chat; después te pediré juntos los nombres completos y celulares de las dos participantes.",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "059c3be2-fb92-4c6f-a0c7-fae316ddc47a",
+          "status": "awaiting_receipt",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m06_partial_receipt",
+      "run_id": "52b2391d-9a47-4dc3-b378-15bc16f7311c",
+      "studio_id": "e03b0650-e26d-4af2-a416-d015a1b3d206",
+      "reply": "Recibí comprobantes por el total del grupo. El pago queda pendiente de validación del equipo. Ahora envíame juntos el nombre completo y celular mexicano de diez dígitos de cada participante, sin lada. Todavía no he confirmado reservas; revisaré cupo y derechos de cada una.",
+      "student_count": 11,
+      "groups": [
+        {
+          "id": "059c3be2-fb92-4c6f-a0c7-fae316ddc47a",
+          "status": "awaiting_participants",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        }
+      ],
+      "human_cases": []
+    },
+    {
+      "variant": "m06_partial_fixed",
+      "run_id": "52b2391d-9a47-4dc3-b378-15bc16f7311c",
+      "studio_id": "e03b0650-e26d-4af2-a416-d015a1b3d206",
+      "reply": "La reserva quedó parcial, sin volver a cobrar:\n\n• Elena: reserva provisional activa para Pole Fitness mañana a las 18:00. El pago sigue pendiente de validación.\n• Fabiola: no pudo reservarse porque la clase está llena.\n• $150 MXN quedaron sin asignar.\n\nEl caso ya fue canalizado al equipo para revisión dentro de este chat. No se harán nuevos cobros ni movimientos mientras esté en revisión.\n\nEl pago continúa en revisión. Las reservas que dependen de ese pago pueden cancelarse si no se valida.",
+      "student_count": 12,
+      "groups": [
+        {
+          "id": "059c3be2-fb92-4c6f-a0c7-fae316ddc47a",
+          "status": "partial",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        }
+      ],
+      "human_cases": [
+        {
+          "reason": "group_partial",
+          "status": "resolved"
+        },
+        {
+          "reason": "group_partial",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "variant": "m06_partial_paused",
+      "run_id": "52b2391d-9a47-4dc3-b378-15bc16f7311c",
+      "studio_id": "e03b0650-e26d-4af2-a416-d015a1b3d206",
+      "reply": null,
+      "student_count": 12,
+      "groups": [
+        {
+          "id": "059c3be2-fb92-4c6f-a0c7-fae316ddc47a",
+          "status": "partial",
+          "amount_minor": 30000,
+          "participant_count": 2,
+          "transfer_count": 2
+        }
+      ],
+      "human_cases": [
+        {
+          "reason": "group_partial",
+          "status": "resolved"
+        },
+        {
+          "reason": "group_partial",
+          "status": "open"
+        }
+      ]
+    }
+  ],
+  "manual_reviews": [
+    {
+      "group_id": "79628b84-03ae-4f65-87eb-405d7c0add94",
+      "status": "validated",
+      "amount_minor": 30000,
+      "payment_count_after": 2,
+      "payment_count_after_replay": 2,
+      "payment_total_minor": 30000
+    },
+    {
+      "group_id": "15f38815-0519-4af5-aa51-1df7cf3d0c10",
+      "status": "validated",
+      "amount_minor": 15000,
+      "payment_count_after": 3,
+      "payment_count_after_replay": 3,
+      "payment_total_minor": 45000
+    },
+    {
+      "group_id": "4c7b604d-9d51-4f0b-b524-dab50ea86db6",
+      "status": "validated",
+      "amount_minor": 15000,
+      "payment_count_after": 4,
+      "payment_count_after_replay": 4,
+      "payment_total_minor": 60000
+    }
+  ],
+  "staff_profile_document_access": {
+    "version": "119d286",
+    "run_id": "3e959474-5843-4321-b45f-742e7cadafcb",
+    "studio_id": "6bbd302a-40c5-4788-be19-5ebc4b0a0f49",
+    "student_id": "d4ede476-a635-447c-b16d-6137fb35435d",
+    "http_status": 200,
+    "all_group_evidence_visible": true,
+    "group_total_visible": true,
+    "own_allocation_visible": true,
+    "signed_documents": [
+      {
+        "http_status": 200,
+        "mime_type": "image/png",
+        "bytes": 34270
+      },
+      {
+        "http_status": 200,
+        "mime_type": "image/png",
+        "bytes": 34415
+      }
+    ]
+  },
+  "paused_message": {
+    "new_model_calls": 0,
+    "new_outbound_replies": 0,
+    "student_count": 12,
+    "group_status": "partial"
+  },
+  "regression": {
+    "tests_passed": 1130,
+    "total": 1130,
+    "typecheck": "passed",
+    "lint_errors": 0
+  },
+  "corrected_defects": [
+    "Separated receipts were previously rejected",
+    "Detailed payer-only request selected own first-class flow",
+    "Mixed group reply incorrectly called credit-covered booking provisional",
+    "Shared phone reply promised unsupported duplication",
+    "Partial group reply offered more automated booking during human control",
+    "Manual review displayed only last group document"
+  ]
+}

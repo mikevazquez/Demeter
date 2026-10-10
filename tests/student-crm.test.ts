@@ -4,7 +4,9 @@ import { contactStage, renewalRecommended, channelLabel } from "../lib/student-c
 describe("CRM contact stages and renewal signals", () => {
   it.each([
     [{ lifecycle_status: "active" }, "student"],
-    [{ lifecycle_status: "inactive", student_type: "trial" }, "former"],
+    [{ lifecycle_status: "inactive", student_type: "trial" }, "trial"],
+    [{ lifecycle_status: "active", enrollment_status: "expired" as const }, "former"],
+    [{ lifecycle_status: "inactive", enrollment_status: "active" as const }, "student"],
     [{ lifecycle_status: "active", student_type: "trial", trial_status: "no_show" }, "trial"],
     [{ lifecycle_status: "active", student_type: "trial", trial_status: "converted" }, "student"],
   ])("classifies the recorded lifecycle %j", (record, stage) => {

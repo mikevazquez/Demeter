@@ -1,0 +1,96 @@
+{
+  "scope": "Sandbox actual service_role, transaction rollback",
+  "master_status": "M06 remains partial pending conversation variants",
+  "results": [
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "payment_first_no_profiles"
+    },
+    {
+      "case": "M05",
+      "passed": true,
+      "variant": "unreadable_document_preserved_no_profiles"
+    },
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "partial_amount_blocked"
+    },
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "partial_receipt_replay_no_profiles_or_recount"
+    },
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "same_document_amount_immutable"
+    },
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "separate_proofs_retained_sum_to_total"
+    },
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "shared_phone_blocks_identity_merge"
+    },
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "two_profiles_reservations_single_allocation"
+    },
+    {
+      "case": "M09",
+      "passed": true,
+      "variant": "provisional_group_quote_replay_no_new_charge"
+    },
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "completion_idempotent"
+    },
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "review_allocations_once"
+    },
+    {
+      "case": "M09",
+      "passed": true,
+      "variant": "validated_group_quote_replay_no_new_charge"
+    },
+    {
+      "case": "M09",
+      "passed": true,
+      "variant": "cancelled_group_reservation_stays_cancelled_on_replay"
+    },
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "mixed_existing_credit_and_one_paid_trial"
+    },
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "partial_proof_cannot_fund_another_group"
+    },
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "capacity_changed_partial_success_no_oversell_human_review"
+    },
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "failed_participant_rolls_back_trial_profile"
+    },
+    {
+      "case": "M09",
+      "passed": true,
+      "variant": "partial_retry_preserves_cancelled_slot_and_counts_only_active_reservation"
+    }
+  ]
+}

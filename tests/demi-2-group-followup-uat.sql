@@ -1,0 +1,37 @@
+begin;
+set local request.jwt.claim.role='service_role';
+set local request.jwt.claims='{"role":"service_role"}';
+do $$
+declare actor uuid; run jsonb; s uuid; person uuid; contact uuid; c uuid:=gen_random_uuid(); session uuid; event uuid:=gen_random_uuid(); g uuid; r jsonb; f public.demi_followups%rowtype; t timestamptz:=clock_timestamp(); out jsonb:='[]';
+begin
+ select user_id into actor from public.studio_memberships where studio_id='9fe23cfa-fb47-4670-afeb-ed4a56433772' and active and role='owner' limit 1;
+ run:=public.service_create_demi_uat_run('9fe23cfa-fb47-4670-afeb-ed4a56433772',actor,'group-followup-uat');s:=(run->>'studio_id')::uuid;
+ person:=(run#>>'{fixtures,people,prospect_existing,person_id}')::uuid;
+ select id into contact from public.crm_contacts where studio_id=s and person_id=person;
+ session:=(run#>>'{fixtures,sessions,available}')::uuid;
+ insert into public.assistant_conversations(id,studio_id,channel,context) values(c,s,'whatsapp',jsonb_build_object('crm_contact_id',contact));
+ r:=public.service_schedule_demi_followups(s,c,'prospect','group-before-booking',t);
+ select * into f from public.service_claim_demi_followups(s,t+interval '1 day',25);
+ if f.id is null then raise exception 'processing_fixture_missing'; end if;
+ r:=public.service_prepare_demi_group(s,c,session,2,2);g:=(r->>'group_id')::uuid;
+ insert into public.assistant_whatsapp_events(id,studio_id,provider,provider_event_id,phone_number_id,contact_wa_id,message_type,media_id,payload_fingerprint) values(event,s,'meta_whatsapp','group-followup-'||event,'uat','529990000002','image','group-followup-media','group-followup-uat');
+ r:=public.service_record_demi_group_receipt(s,c,g,event,'group-followup-'||event,'group-followup-media','UAT/group-followup.png',repeat('e',64),30000,'MXN',0.99);
+ r:=public.service_complete_demi_group(s,c,g,'[{"name":"UAT Participante Uno","phone":"9998883031"},{"name":"UAT Participante Dos","phone":"9998883032"}]');
+ if not coalesce((r->>'ok')::boolean,false) then raise exception 'group_booking:%',r; end if;
+ if exists(select 1 from public.students where studio_id=s and person_id=person) then raise exception 'payer_became_participant'; end if;
+ if (select count(*) from public.demi_followups where conversation_id=c and state='cancelled' and reason_code='group_reservation_exists' and lease_token is null)<>2 then raise exception 'pending_and_processing_not_cancelled'; end if;
+ r:=public.service_revalidate_demi_followup(f.id,f.lease_token,t+interval '1 day');
+ if coalesce((r->>'eligible')::boolean,false) then raise exception 'already_claimed_followup_can_dispatch:%',r; end if;
+ if private.demi_followup_stop_reason(f,t)<>'group_reservation_exists' then raise exception 'worker_stop_reason_missing'; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M04','variant','group_booking_cancels_pending_and_claimed_payer_followups_without_enrolling_payer','passed',true));
+ insert into public.assistant_turns(studio_id,conversation_id,direction,role,content) values(s,c,'outbound','assistant','UAT grupo reservado; pago en revisión.');
+ if (select count(*) from public.demi_followups where conversation_id=c)<>4 or exists(select 1 from public.demi_followups where conversation_id=c and state in ('pending','processing')) then raise exception 'assistant_reply_restarted_group_marketing'; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M08','variant','group_confirmation_reply_does_not_restart_prospect_recovery','passed',true));
+ r:=public.service_schedule_demi_followups(s,c,'prospect','group-after-booking',t);
+ if (r->>'steps')::integer<>0 or r->>'reason_code'<>'group_reservation_exists' or (select count(*) from public.demi_followups where conversation_id=c)<>4 then raise exception 'explicit_schedule_restarted_group_marketing:%',r; end if;
+ if exists(select 1 from public.service_claim_demi_followups(s,t+interval '2 days',25)) then raise exception 'worker_claimed_group_payer'; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M04','variant','explicit_crm_schedule_and_worker_cannot_send_group_payer_recovery','passed',true));
+ perform set_config('uat.group_followup_results',out::text,true);
+end $$;
+select current_setting('uat.group_followup_results')::jsonb as results;
+rollback;

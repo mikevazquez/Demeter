@@ -101,7 +101,7 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
     type: "function",
     name: "get_studio_information",
     description:
-      "Consulta el nombre, sede principal, domicilio, teléfono, correo y página web configurados por el estudio. Úsala siempre que pregunten dónde está el estudio, cómo llegar, cuál es su dirección, teléfono, correo, web o datos de contacto. No inventes datos que no estén configurados.",
+      "Consulta las disciplinas activas, preparación oficial para la primera clase, nombre, sede, domicilio, teléfono, correo y página web configurados. Úsala siempre al preguntar disciplinas o preparación, ubicación o contacto. active_disciplines define la oferta, aunque falten horarios. Si falta la preparación o el dato solicitado, reconoce el faltante y ejecuta escalate_to_human con human_requested para que el equipo responda la consulta; no inventes indicaciones.",
     strict: true,
     parameters: {
       type: "object",
@@ -194,6 +194,156 @@ export type RecordTrialPaymentPreferenceArgs = {
 export type PrepareStudentAccessActivationArgs = EmptyArgs;
 
 export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
+  {
+    type: "function",
+    name: "prepare_enrollment_payment",
+    strict: true,
+    description:
+      "Prepara inscripción o renovación para la alumna identificada, sin comprar otro paquete ni reservar clase. Requiere prueba asistida o alumna regular. Consulta primero inscripción y paquete. Para bank_transfer devuelve precio oficial y cuenta Bancomer: comprobante y revisión manual antes de activar. Para app devuelve acceso al checkout del portal sólo si está habilitado; el interés o enlace no activa derechos. Conserva créditos y vencimiento del paquete existente.",
+    parameters: {
+      type: "object",
+      properties: { payment_method: { type: "string", enum: ["bank_transfer", "app"] } },
+      required: ["payment_method"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "identify_meta_contact",
+    strict: true,
+    description:
+      "Busca la identidad de una cuenta de Facebook/Instagram aún no vinculada usando sólo su celular. Antes de ofrecer pagos cuando quiera reservar, pide únicamente diez dígitos; acepta también +52 sin volver a pedir lada. No pide nombre completo ni datos de reserva. Un teléfono escrito no autentica una ficha existente: si requiere verificación, informa el caso humano real, sin divulgar nombres, paquetes ni saldos. Una búsqueda sin coincidencia permite seguir como prospecto; no crea alumna ni reserva.",
+    parameters: {
+      type: "object",
+      properties: { phone: { type: "string" } },
+      required: ["phone"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "prepare_student_access_activation",
+    strict: true,
+    description:
+      "Prepara activar o reenviar el acceso de la alumna identificada después de una asistencia real. Comprueba identidad y estado de cuenta; nunca solicita contraseña ni correo nuevo. Si requiere confirmación, pregunta una sola vez antes de ejecutar en otro turno.",
+    parameters: { type: "object", properties: {}, required: [], additionalProperties: false },
+  },
+  {
+    type: "function",
+    name: "execute_student_access_activation",
+    strict: true,
+    description:
+      "Tras una nueva confirmación explícita, ejecuta la activación preparada para la misma alumna y conversación. Devuelve su enlace seguro para elegir contraseña; no crea ni cobra inscripción.",
+    parameters: { type: "object", properties: {}, required: [], additionalProperties: false },
+  },
+  {
+    type: "function",
+    name: "prepare_cash_package_purchase",
+    strict: true,
+    description:
+      "Prepara compra de paquete en efectivo para una alumna regular identificada. Usa product_ref real consultada. Explica el precio, deuda pendiente y que se permite una primera reserva; una segunda requiere cobrar el adeudo. La vigencia inicia en la primera clase reservada. Pide confirmación explícita antes de crear venta o créditos.",
+    parameters: {
+      type: "object",
+      properties: { product_ref: { type: "string" } },
+      required: ["product_ref"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "confirm_cash_package_purchase",
+    strict: true,
+    description:
+      "Confirma la compra en efectivo preparada en un turno anterior tras un sí explícito. Registra deuda y paquete; nunca registra efectivo recibido. No usar para pruebas ni prospectos.",
+    parameters: { type: "object", properties: {}, required: [], additionalProperties: false },
+  },
+  {
+    type: "function",
+    name: "update_contact_followup",
+    strict: true,
+    description:
+      "Persiste etapa CRM y seguimientos de un prospecto o prueba. No clasifica exige rechazo o incompatibilidad explícitos y un motivo; el silencio usa not_booked tras dos seguimientos, nunca not_qualified. opt_out conserva la preferencia de no enviar recuperación ni promociones. No inventes que se programó o actualizó si la herramienta falla.",
+    parameters: {
+      type: "object",
+      properties: {
+        stage: {
+          type: "string",
+          enum: [
+            "answering_questions",
+            "awaiting_receipt",
+            "awaiting_participant_data",
+            "not_booked",
+            "not_qualified",
+            "opt_out",
+          ],
+        },
+        reason: { type: ["string", "null"] },
+      },
+      required: ["stage", "reason"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "prepare_first_class_payment",
+    strict: true,
+    description:
+      "Sólo para la primera clase de quien conversa y también asistirá (recipient_mode=self). Si paga para otra persona (recipient_mode=other), usa prepare_group_booking con participant_count=1; no asocies al pagador como participante. Obtiene el precio y los métodos oficiales para la primera clase de un prospecto sin ficha de alumna: transferencia/depósito a Bancomer o liga individual de Mercado Pago cuando está habilitada. Usa la clase exacta disponible. Sólo prepara el pago: no crea alumna ni reserva, no requiere confirmar una reserva ni elegir paquete. Devuelve group_id: espera comprobante bancario o payment_verified=true de Mercado Pago y después completa con los datos faltantes de un único participante. Si automatic_verification=true y receipt_required=false, no solicites comprobante. Si exige recurso, ofrece las opciones devueltas y vuelve a llamar con el recurso elegido.",
+    parameters: {
+      type: "object",
+      properties: {
+        session_ref: { type: "string" },
+        resource_ref: { type: ["string", "null"] },
+        recipient_mode: { type: "string", enum: ["self", "other"] },
+      },
+      required: ["session_ref", "resource_ref", "recipient_mode"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "prepare_group_booking",
+    strict: true,
+    description:
+      "Prepara el total de una reserva grupal o de una reserva sólo para otra persona (participant_count=1). El pagador que no asiste no es participante ni adquiere prueba. Dos participantes con el mismo teléfono requieren atención humana antes de cobrar o registrar; no prometas unicidad por nombre ni inventes teléfonos. Antes del comprobante bancario o pago Mercado Pago verificado solicita sólo clase, número de participantes y cuántas pagarán primera clase; no pidas nombres ni celulares. Las alumnas con créditos se validan individualmente después. No crea reservas ni retiene cupo. Devuelve group_id y datos bancarios o external_checkout. Si automatic_verification=true y receipt_required=false, espera confirmación del proveedor sin pedir comprobante.",
+    parameters: {
+      type: "object",
+      properties: {
+        session_ref: { type: "string" },
+        participant_count: { type: "integer" },
+        transfer_count: { type: "integer" },
+      },
+      required: ["session_ref", "participant_count", "transfer_count"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "complete_group_booking",
+    strict: true,
+    description:
+      "Después de comprobante bancario aceptado o payment_verified=true de Mercado Pago, completa el group_id: puede ser una primera clase individual preparada con prepare_first_class_payment (un participante) o un grupo. Si llegan datos incompletos después del pago, llama esta herramienta con las personas conocidas y una cadena vacía en cada nombre o celular faltante, sin inventarlos: el bloqueo guarda lo recibido para pedir únicamente lo que falte. Recibe juntos los datos faltantes de cada participante y crea reservas individuales con cupo y elegibilidad reales; la transferencia es provisional y el pago Mercado Pago verificado no requiere revisión manual. El pagador no se convierte automáticamente en participante. En grupos mixtos, informa confirmada la reserva cubierta por créditos propios y provisional sólo la cubierta por una transferencia pendiente; el rechazo de esa transferencia no afecta la reserva con créditos propios. Reporta cada resultado y cualquier importe no asignado; no confirma todo el grupo ante un fallo parcial. Si human_review_created=true, informa la canalización real al equipo y espera su resolución; no ofrezcas seguir reservando ni ejecutar devoluciones durante la atención humana. Una prueba con reserva pendiente requiere cambiar/cancelar la existente.",
+    parameters: {
+      type: "object",
+      properties: {
+        group_id: { type: "string" },
+        participants: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              phone: { type: "string", description: "Diez dígitos mexicanos, sin lada." },
+            },
+            required: ["name", "phone"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["group_id", "participants"],
+      additionalProperties: false,
+    },
+  },
   {
     type: "function",
     name: "prepare_booking",
@@ -407,6 +557,15 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
           enum: [
             "transfer_receipt_review",
             "payment_validation",
+            "human_requested",
+            "refund_request",
+            "payment_dispute",
+            "safety_incident",
+            "serious_complaint",
+            "technical_block",
+            "policy_exception",
+            "package_cancellation",
+            "receipt_validation_failed",
             "user_requested_human",
             "assistant_cannot_resolve",
           ],

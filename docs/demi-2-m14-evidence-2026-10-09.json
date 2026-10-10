@@ -1,0 +1,19 @@
+{
+  "case": "M14",
+  "status": "passed",
+  "worker_version": 5,
+  "run_id": "bf283433-ee2a-482f-bcbc-fab8e2ef5907",
+  "regular_expired_package_source": "ccb790a3-0a90-4bff-bda4-05ab3609b495",
+  "expiring_package_source": "c553ceb2-bab9-4bf7-a216-ad834403385d",
+  "package_recovery_steps_captured": [7, 15, 30],
+  "expired_notice_captured": true,
+  "three_days_prior_notice_captured": true,
+  "inactive_fourteen_day_source_captured": true,
+  "repeat_no_duplicates_per_source_step": true,
+  "renewal": "Actual authenticated create_manual_sale generated new packages and cancelled the remaining prior-source campaign. Subsequent worker did not resend prior-source messages; legitimate new-source events remain separate.",
+  "opt_out": "Actual model persisted retention/promotions opt-out and worker respected it.",
+  "failure_controls": "Nine native followup timing/retry/stop controls and eleven followup worker runtime controls; failures bounded and unknown delivery not blindly retried.",
+  "native_source_controls": 4,
+  "transport": "Captured in isolated Sandbox, not real Meta delivery",
+  "bank_result_recorded": true
+}

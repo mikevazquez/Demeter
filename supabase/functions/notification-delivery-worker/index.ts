@@ -1057,6 +1057,42 @@ async function runAdapter(
   delivery: DeliveryRow,
   message: RenderedMessage,
 ): Promise<AdapterResult> {
+  // Sandbox operational bank: capture after rendering, before any network adapter.
+  if (
+    new URL(Deno.env.get("SUPABASE_URL") ?? "https://invalid.local").hostname ===
+    "hedouonyhynuvwbckdlg.supabase.co"
+  ) {
+    const { data, error } = await adminClient.rpc("service_capture_demi_uat_delivery", {
+      p_studio: delivery.studio_id,
+      p_kind: "notification_delivery",
+      p_payload: {
+        delivery_id: delivery.id,
+        channel: delivery.channel_key,
+        template: delivery.template_key,
+        message,
+        captured: true,
+      },
+    });
+    if (error) throw new Error("demi_uat_capture_lookup_failed");
+    if (data) {
+      if (data.failed)
+        return {
+          status: "retry",
+          providerKey: "demi_uat_capture",
+          errorCode: "demi_uat_injected_delivery_failure",
+          httpStatus: 503,
+          response: data,
+        };
+      return {
+        status: "delivered",
+        providerKey: "demi_uat_capture",
+        providerMessageId: `uat:${data.artifact_id}`,
+        httpStatus: 200,
+        response: data,
+      };
+    }
+  }
+
   if (!delivery.adapter_enabled) {
     return {
       status: "skipped",
@@ -1087,10 +1123,16 @@ async function runAdapter(
   }
 }
 
-async function handoffJobs(adminClient: SupabaseClient, workerId: string, batchSize: number) {
+async function handoffJobs(
+  adminClient: SupabaseClient,
+  workerId: string,
+  batchSize: number,
+  uatStudio?: string,
+) {
   const { data: claims, error: claimError } = await adminClient.rpc(
-    "system_claim_notification_jobs",
+    uatStudio ? "service_claim_demi_uat_jobs" : "system_claim_notification_jobs",
     {
+      ...(uatStudio ? { p_studio: uatStudio } : {}),
       p_worker_id: workerId,
       p_limit: batchSize,
       p_lease_seconds: 120,
@@ -1331,10 +1373,16 @@ async function processDelivery(
   }
 }
 
-async function deliver(adminClient: SupabaseClient, workerId: string, batchSize: number) {
+async function deliver(
+  adminClient: SupabaseClient,
+  workerId: string,
+  batchSize: number,
+  uatStudio?: string,
+) {
   const { data: claims, error: claimError } = await adminClient.rpc(
-    "system_claim_notification_deliveries",
+    uatStudio ? "service_claim_demi_uat_deliveries" : "system_claim_notification_deliveries",
     {
+      ...(uatStudio ? { p_studio: uatStudio } : {}),
       p_worker_id: workerId,
       p_limit: batchSize,
       p_lease_seconds: 120,
@@ -1358,15 +1406,31 @@ const handler = {
     if (request.method !== "POST") return response({ error: "method_not_allowed" }, 405);
 
     const adminClient = context.supabaseAdmin;
-    const dispatchToken = safeText(request.headers.get("x-studio-flow-dispatch-token"));
-    if (!dispatchToken) return response({ error: "unauthenticated" }, 401);
-
-    const { data: authorized, error: authError } = await adminClient.rpc(
-      "verify_automation_dispatch_token",
-      { p_token: dispatchToken },
-    );
-
-    if (authError || authorized !== true) return response({ error: "forbidden" }, 403);
+    let uatStudio: string | undefined;
+    const uatRunId = safeUuid(request.headers.get("x-demi-uat-run"));
+    if (uatRunId) {
+      const sandbox =
+        new URL(Deno.env.get("SUPABASE_URL") ?? "https://invalid.local").hostname ===
+        "hedouonyhynuvwbckdlg.supabase.co";
+      const secret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (!sandbox || !secret || request.headers.get("authorization") !== `Bearer ${secret}`)
+        return response({ error: "forbidden" }, 403);
+      const { data, error } = await adminClient
+        .from("demi_uat_runs")
+        .select("studio_id")
+        .eq("id", uatRunId)
+        .single();
+      if (error || !data) return response({ error: "uat_run_not_found" }, 404);
+      uatStudio = data.studio_id;
+    } else {
+      const dispatchToken = safeText(request.headers.get("x-studio-flow-dispatch-token"));
+      if (!dispatchToken) return response({ error: "unauthenticated" }, 401);
+      const { data: authorized, error: authError } = await adminClient.rpc(
+        "verify_automation_dispatch_token",
+        { p_token: dispatchToken },
+      );
+      if (authError || authorized !== true) return response({ error: "forbidden" }, 403);
+    }
 
     let body: JsonObject = {};
     try {
@@ -1380,8 +1444,8 @@ const handler = {
     const workerId = `${WORKER_ID_PREFIX}:${crypto.randomUUID()}`;
 
     try {
-      const handoff = await handoffJobs(adminClient, workerId, batchSize);
-      const deliveries = await deliver(adminClient, workerId, batchSize);
+      const handoff = await handoffJobs(adminClient, workerId, batchSize, uatStudio);
+      const deliveries = await deliver(adminClient, workerId, batchSize, uatStudio);
 
       return response({
         ok: true,

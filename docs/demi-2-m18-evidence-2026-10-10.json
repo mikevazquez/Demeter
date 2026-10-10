@@ -1,0 +1,98 @@
+{
+  "status": "partial",
+  "runs": [
+    "2d5c24b7-d22e-48f8-9770-6901ff39bd58",
+    "2738cb12-0f2d-4837-bf0f-310a57efbc1b",
+    "e465d3fa-8dc7-4334-805a-7655a4497d0e"
+  ],
+  "internal_passed": [
+    "whatsapp_ogg_transcription_and_response",
+    "facebook_mp3_transcription_and_response",
+    "whatsapp_pdf_ocr_and_reservation",
+    "whatsapp_jpeg_ocr_and_reservation",
+    "facebook_webp_ocr_and_reservation",
+    "illegible_retained_without_amount_or_reservation",
+    "instagram_ogg_real_transcription_and_response",
+    "instagram_video_declared_unsupported_without_booking_or_payment",
+    "facebook_unknown_attachment_declared_unsupported_without_booking_or_payment",
+    "instagram_pdf_synthetic_envelope_ocr_awaiting_participants",
+    "instagram_pdf_synthetic_envelope_one_provisional_reservation"
+  ],
+  "unsupported_formats": "explicit_fallback_and_classification_controls",
+  "pending": [
+    "external_whatsapp_pilot_audio_and_files",
+    "external_facebook_files",
+    "external_instagram_audio_and_images"
+  ],
+  "external_delivery_verified": false,
+  "latest_readiness": {
+    "facebook_configured": true,
+    "facebook_pilot_count": 1,
+    "instagram_configured": false,
+    "instagram_pilot_count": 0,
+    "whatsapp_receiver_host": "demeterfitness.com",
+    "whatsapp_receiver_studio": "f1d69ae2-84c5-4b76-b77c-d792c9318225",
+    "whatsapp_receiver_environment": "production"
+  },
+  "bank_changes": [
+    "instagram_channel",
+    "inbox_video_and_unknown_attachment_scenarios",
+    "display_meta_inbox_captured_replies"
+  ],
+  "instagram_runtime": {
+    "studio_id": "733468d5-44e5-4738-a2f2-6239ff1740a2",
+    "preview_commit": "841a776e7e0eb1f8518d37b685f1714862a9bd3e",
+    "audio_transcript_persisted": true,
+    "video_http_status": 200,
+    "unknown_facebook_http_status": 200,
+    "students_after_audio_video_unknown": 11,
+    "groups_after_audio_video_unknown": 0,
+    "payments_after_audio_video_unknown": 0,
+    "external_delivery": false,
+    "reservations_after_audio_video_unknown": 2,
+    "reservations_created_by_audio_video_unknown": 0,
+    "pdf_platform_transport_verified": false,
+    "pdf_group_id": "66540407-7f14-42c4-b210-c6a26d536799",
+    "pdf_ocr_amount_minor": 15000,
+    "group_status": "provisional",
+    "students_after_pdf": 12,
+    "reservations_after_pdf": 3,
+    "sales_after_pdf": 1,
+    "payments_after_pdf": 0
+  },
+  "external_facebook": {
+    "status": "audio_passed_files_pending",
+    "receiver": "meta-sandbox.demeterfitness.com",
+    "deployment_id": "dpl_NwgpYkeDVCdtZzrjNySatwiLmkzz",
+    "greeting_event": "addef4d2-e0bd-4602-91a0-a03391679f25",
+    "failed_audio_event": "7f9fb9e0-79ff-4d4c-9d3a-9e9c3dcb60bf",
+    "passed_audio_event": "ad87d83d-fe21-4249-b21d-4f3d983179e0",
+    "defect": "Facebook audio/ogg bytes actually MP4/Opus",
+    "fix": "Detect actual container for transcription MIME/filename, preserving bytes",
+    "corrected_real_transcript": "Quiero informaci\u00f3n sobre las clases de ma\u00f1ana, todav\u00eda no quiero reservar.",
+    "response_received_by_user": true,
+    "tools_executed": ["search_class_availability", "get_studio_information"],
+    "write_tools_executed": false,
+    "initial_send_probe": "Meta error10/subcode2018278: closed Messenger response window",
+    "page_subscription": "Confirmed at app level using app secret; page-token query rejected pages_manage_metadata",
+    "file_variant_pending": true
+  },
+  "external_audio_delivery_verified": {
+    "facebook_messenger": true,
+    "whatsapp": false,
+    "instagram": false
+  },
+  "whatsapp_pilot_relay_prepared": {
+    "pull_request": 261,
+    "base": "a36539793290a4b2393c3ae4656395abab60acd7",
+    "published_to_production": false,
+    "flag": "DEMI_M18_WHATSAPP_PILOT_RELAY",
+    "enabled": false,
+    "authorized_phone": "3323291878",
+    "tests_passed": 1008,
+    "test_files_passed": 165,
+    "isolation_tests_passed": 10,
+    "sandbox_challenge_verified": true
+  },
+  "facebook_external_test_receipt": "tests/fixtures/demi-m18-receipt-150.png"
+}
