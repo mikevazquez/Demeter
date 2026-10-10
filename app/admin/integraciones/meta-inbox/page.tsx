@@ -7,6 +7,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 
 import {
   diagnoseMetaInboxApp,
+  manageInstagramWebhookSubscription,
   saveMetaInboxConnection,
   saveMetaInboxPilotContacts,
 } from "./actions";
@@ -375,6 +376,39 @@ export default async function MetaInboxIntegrationPage({
 
           <button className="integration-detail-v2-button" type="submit">
             Guardar conexión segura
+          </button>
+        </form>
+      </section>
+
+      <section className="integration-detail-v2-card">
+        <div className="integration-detail-v2-card-heading">
+          <div>
+            <h2>Instagram · suscripción de mensajes (Sandbox)</h2>
+            <p>Comprueba y activa la suscripción de la cuenta profesional a los eventos de mensajes. Las credenciales permanecen en el servidor; Messenger no se modifica.</p>
+          </div>
+        </div>
+        {queryValue(params.ig_subscription) ? (
+          <div className="integration-detail-v2-notice" role="status">
+            {({
+              active: "Meta confirma que la cuenta ya está suscrita a messages.",
+              not_active: "La cuenta todavía no figura suscrita a messages. Puedes activarla aquí.",
+              subscribed: "Meta aceptó la suscripción. Comprueba el estado y prueba un mensaje nuevo.",
+              missing_credentials: "Falta el token o ID de Instagram en la conexión segura.",
+              token_rejected: "Meta rechazó el token de Instagram.",
+              meta_error: "Meta rechazó la operación; revisa los permisos y el estado de la aplicación.",
+              unconfirmed: "Meta respondió sin confirmar la suscripción. Comprueba el estado.",
+              restricted: "Esta operación solo está habilitada en el Sandbox de Demeter.",
+              invalid: "Operación no permitida.",
+              unavailable: "No se pudo consultar Meta. Inténtalo nuevamente.",
+            } as Record<string, string>)[queryValue(params.ig_subscription) ?? ""] ?? "Resultado desconocido."}
+          </div>
+        ) : null}
+        <form action={manageInstagramWebhookSubscription} className="integration-detail-v2-form">
+          <button className="integration-detail-v2-button" type="submit" name="operation" value="check">
+            Comprobar suscripción de Instagram
+          </button>
+          <button className="integration-detail-v2-button" type="submit" name="operation" value="subscribe">
+            Activar mensajes de Instagram
           </button>
         </form>
       </section>
