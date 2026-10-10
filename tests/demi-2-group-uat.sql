@@ -89,6 +89,21 @@ begin
  if r->>'reason_code'<>'receipt_already_allocated' then raise exception 'foreign_document_reused:%',r; end if;
  out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','partial_proof_cannot_fund_another_group','passed',true));
 
+ -- One joint document can fund both participants; review and replay remain scoped.
+ c:=gen_random_uuid();event:=gen_random_uuid();
+ insert into public.assistant_conversations(id,studio_id,channel) values(c,s,'internal_demo');
+ r:=public.service_prepare_demi_group(s,c,session,2,2);g:=(r->>'group_id')::uuid;
+ if not coalesce((r->>'ok')::boolean,false) then raise exception 'joint_prepare:%',r; end if;
+ insert into public.assistant_whatsapp_events(id,studio_id,provider,provider_event_id,phone_number_id,contact_wa_id,message_type,media_id,payload_fingerprint) values(event,s,'meta_whatsapp','joint-'||event,'uat','99900000000','image','joint-media','joint-uat');
+ r:=public.service_record_demi_group_receipt(s,c,g,event,'joint-'||event,'joint-media','UAT/joint.png',repeat('e',64),30000,'MXN',0.99);
+ if not coalesce((r->>'ok')::boolean,false) or (select count(*) from public.demi_group_receipts where group_id=g)<>1 then raise exception 'joint_receipt:%',r; end if;
+ people:='[{"name":"UAT Conjunto Uno","phone":"9998884011"},{"name":"UAT Conjunto Dos","phone":"9998884012"}]'::jsonb;
+ r:=public.service_complete_demi_group(s,c,g,people);
+ if not coalesce((r->>'ok')::boolean,false) or (r->>'reserved_count')::integer<>2 or (r->>'allocated_minor')::integer<>30000 then raise exception 'joint_complete:%',r; end if;
+ r:=public.admin_review_demi_group(g,'approved','UAT joint proof review');
+ r:=public.admin_review_demi_group(g,'approved','UAT joint proof review replay');
+ if (select count(*) from public.payments p join public.assistant_transfer_purchase_intents i on i.sale_id=p.sale_id and i.studio_id=p.studio_id join public.demi_group_participants gp on gp.transfer_intent_id=i.id where gp.group_id=g)<>2 or (select sum(p.amount_minor) from public.payments p join public.assistant_transfer_purchase_intents i on i.sale_id=p.sale_id and i.studio_id=p.studio_id join public.demi_group_participants gp on gp.transfer_intent_id=i.id where gp.group_id=g)<>30000 then raise exception 'joint_payment_recounted'; end if;
+ out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','joint_receipt_two_reservations_manual_review_once','passed',true));
  -- Capacity can change after receipt; keep one success and a persistent review.
  c:=gen_random_uuid(); event:=gen_random_uuid(); session:=(run#>>'{fixtures,sessions,timely}')::uuid;
  insert into public.assistant_conversations(id,studio_id,channel) values(c,s,'internal_demo');
