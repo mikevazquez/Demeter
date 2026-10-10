@@ -400,6 +400,9 @@ export async function getCommercialOptions(
     );
 
     products = products.filter((item) => {
+      // Enrollment is independent of class/discipline scope. Filtering it out
+      // made renewal disappear when a former student selected a real class.
+      if (item.product_type === "enrollment") return true;
       const scopeMatch =
         activityMatches.has(item.id) ||
         (!activityScopedProducts.has(item.id) && disciplineMatches.has(item.id));

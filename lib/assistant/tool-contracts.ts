@@ -196,6 +196,19 @@ export type PrepareStudentAccessActivationArgs = EmptyArgs;
 export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
   {
     type: "function",
+    name: "prepare_enrollment_payment",
+    strict: true,
+    description:
+      "Prepara inscripción o renovación para la alumna identificada, sin comprar otro paquete ni reservar clase. Requiere prueba asistida o alumna regular. Consulta primero inscripción y paquete. Para bank_transfer devuelve precio oficial y cuenta Bancomer: comprobante y revisión manual antes de activar. Para app devuelve acceso al checkout del portal sólo si está habilitado; el interés o enlace no activa derechos. Conserva créditos y vencimiento del paquete existente.",
+    parameters: {
+      type: "object",
+      properties: { payment_method: { type: "string", enum: ["bank_transfer", "app"] } },
+      required: ["payment_method"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
     name: "identify_meta_contact",
     strict: true,
     description:

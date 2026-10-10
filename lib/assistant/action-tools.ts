@@ -3983,6 +3983,34 @@ export async function executeAssistantActionTool(
   args: Record<string, unknown>,
 ) {
   switch (toolName) {
+    case "prepare_enrollment_payment": {
+      if (!ctx.serviceMode || !ctx.studentId)
+        return { ok: false, reason_code: "verified_student_required" };
+      const result = await ctx.supabase.rpc("service_prepare_demi_enrollment_payment", {
+        p_studio: ctx.studio.id,
+        p_conversation: ctx.conversationId,
+        p_student: ctx.studentId,
+        p_method: args.payment_method,
+      });
+      if (result.error) return { ok: false, reason_code: "enrollment_payment_prepare_failed" };
+      if (result.data?.ok && args.payment_method === "app") {
+        const access = await provisionStudentAccessWithServiceClient(
+          ctx,
+          ctx.studentId,
+          "provision",
+        );
+        if (!access.already_has_access && (!access.generated || !access.activation_url))
+          return { ok: false, reason_code: "enrollment_access_unavailable" };
+        return {
+          ...result.data,
+          activation_url: access.activation_url,
+          app_url: ctx.activationUrl
+            ? new URL("/student/paquete?inscripcion=1", ctx.activationUrl).toString()
+            : null,
+        };
+      }
+      return result.data;
+    }
     case "identify_meta_contact": {
       if (!ctx.serviceMode || !["facebook_messenger", "instagram"].includes(ctx.channel ?? ""))
         return { ok: false, reason_code: "meta_conversation_required" };

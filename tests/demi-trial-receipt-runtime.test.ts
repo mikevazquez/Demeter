@@ -67,6 +67,9 @@ function harness(
   const deps: Record<string, unknown> = {
     "@/lib/assistant/orchestrator": {},
     "@/lib/assistant/audio-transcription": { transcribeDemiAudio: vi.fn() },
+    "@/lib/assistant/enrollment-payment": {
+      handleDemiEnrollmentReceipt: vi.fn().mockResolvedValue({ handled: false }),
+    },
     "@/lib/assistant/group-booking": {
       handleDemiGroupReceipt: vi.fn().mockRejectedValue(new Error("Unexpected group receipt")),
     },

@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { MetaDownloadedMedia } from "./meta-whatsapp-channel";
 import { downloadMetaInboxAttachment, type MetaInboxInboundMessage } from "./meta-inbox-channel";
 import { handleDemiGroupReceipt } from "./group-booking";
+import { handleDemiEnrollmentReceipt } from "./enrollment-payment";
 
 export async function handleDemiMetaInboxReceipt(input: {
   supabase: SupabaseClient;
@@ -21,7 +22,20 @@ export async function handleDemiMetaInboxReceipt(input: {
     .limit(1)
     .maybeSingle();
   if (pending.error) throw new Error("group_receipt_lookup_failed");
-  if (!pending.data) return { handled: false as const };
+  const enrollment = !pending.data
+    ? await input.supabase
+        .from("assistant_enrollment_intents")
+        .select("id")
+        .eq("studio_id", input.studioId)
+        .eq("conversation_id", input.conversationId)
+        .eq("payment_method", "bank_transfer")
+        .in("status", ["receipt_required", "human_review", "rejected"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    : null;
+  if (enrollment?.error) throw new Error("enrollment_receipt_lookup_failed");
+  if (!pending.data && !enrollment?.data) return { handled: false as const };
   if (!input.message.attachmentUrl) throw new Error("meta_attachment_unavailable");
   const source = await input.supabase
     .from("assistant_meta_inbox_events")
@@ -43,6 +57,7 @@ export async function handleDemiMetaInboxReceipt(input: {
     {
       id: input.eventId,
       studio_id: input.studioId,
+      assistant_conversation_id: input.conversationId,
       provider: "meta_whatsapp",
       provider_event_id: providerId,
       phone_number_id: input.message.providerAccountId,
@@ -54,7 +69,8 @@ export async function handleDemiMetaInboxReceipt(input: {
     { onConflict: "id", ignoreDuplicates: true },
   );
   if (bridge.error) throw new Error("meta_receipt_bridge_failed");
-  return handleDemiGroupReceipt({
+  const receiptHandler = pending.data ? handleDemiGroupReceipt : handleDemiEnrollmentReceipt;
+  return receiptHandler({
     supabase: input.supabase,
     studioId: input.studioId,
     conversationId: input.conversationId,

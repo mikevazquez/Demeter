@@ -4,6 +4,7 @@ import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
 import { transcribeDemiAudio } from "@/lib/assistant/audio-transcription";
 import { handleDemiGroupReceipt } from "@/lib/assistant/group-booking";
+import { handleDemiEnrollmentReceipt } from "@/lib/assistant/enrollment-payment";
 import { readTransferReceipt } from "@/lib/assistant/receipt-reader";
 import { trialReceiptConfirmation } from "@/lib/assistant/receipt-confirmation";
 import { provisionStudentAccessWithServiceClient } from "@/lib/assistant/student-access";
@@ -1524,19 +1525,30 @@ export async function POST(request: Request) {
         });
         transferReceipt = groupReceipt.handled
           ? groupReceipt
-          : await activateTransferReceiptIfPending({
+          : await handleDemiEnrollmentReceipt({
               supabase,
               studioId,
               conversationId,
-              studentId,
               eventId: event.id,
               providerMessageId: message.providerMessageId,
               mediaId: message.mediaId,
               messageType: message.messageType,
-              messageText: message.text,
               webhookConfig,
-              activationUrl: new URL("/login/student/activar", request.url).toString(),
             });
+        if (!transferReceipt.handled)
+          transferReceipt = await activateTransferReceiptIfPending({
+            supabase,
+            studioId,
+            conversationId,
+            studentId,
+            eventId: event.id,
+            providerMessageId: message.providerMessageId,
+            mediaId: message.mediaId,
+            messageType: message.messageType,
+            messageText: message.text,
+            webhookConfig,
+            activationUrl: new URL("/login/student/activar", request.url).toString(),
+          });
       } catch {
         retryableFailure = true;
         await markEvent(supabase, studioId, event.id, {
@@ -1914,8 +1926,7 @@ export async function POST(request: Request) {
         target_student_id: null,
         target_reason_code: "technical_block",
         target_note:
-          "Meta aceptó la respuesta pero falló su registro local. No reenviar. Evento: " +
-          event.id,
+          "Meta aceptó la respuesta pero falló su registro local. No reenviar. Evento: " + event.id,
       });
       continue;
     }

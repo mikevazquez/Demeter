@@ -683,7 +683,9 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
 
   const resultBankDetails = asObject(resultObject.bank_details);
   const auditResult =
-    toolName === "execute_student_access_activation" || toolName === "execute_booking"
+    toolName === "execute_student_access_activation" ||
+    toolName === "execute_booking" ||
+    toolName === "prepare_enrollment_payment"
       ? {
           ...resultObject,
           activation_url:
@@ -1102,6 +1104,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         "Mientras no haya asistido a ninguna clase, una prospecto/trial puede reservar una sola clase de prueba activa sin inscripción ni paquete. prepare_booking es la única fuente de verdad para decidir si esa excepción aplica.",
         "La clase de prueba sí debe pagarse, pero la primera clase no requiere inscripción. Habla siempre en términos de precio y forma de pago; no uses estados comerciales internos.",
         "Después de la primera asistencia, la excepción termina y la inscripción normal es obligatoria para futuras reservas.",
+        "Para renovar únicamente la inscripción de una alumna identificada, o inscribirla después de asistir a su prueba sin reservar todavía, usa prepare_enrollment_payment con el método elegido bank_transfer o app. Conserva el paquete y sus créditos y vencimiento: no vendas otro paquete para renovar la inscripción. La transferencia o depósito OXXO a Bancomer exige comprobante y revisión humana; recibir el archivo NO activa la inscripción. Sólo informa activación cuando Studio Flow devuelva inscripción activa tras validar el pago. Si se rechaza el documento, solicita uno nuevo sin otorgar derechos. Para app comparte únicamente el acceso propio devuelto y no afirmes aprobación hasta verificarla.",
         "Internamente Studio Flow contabiliza los no-shows de prueba. De cara a la alumna nunca uses la expresión 'no-show': di que en dos ocasiones anteriores reservó una clase y no pudo asistir. Cuando prepare_booking devuelva prepayment_required o trial_prepayment_required, no prepares ni afirmes una reserva: explica en lenguaje cotidiano que la siguiente clase requiere pago anticipado.",
         "Una prospecto/trial solo puede tener una reserva de prueba activa a la vez. Si la herramienta devuelve trial_active_booking_exists, explica que debe usar, cancelar o resolver esa reserva antes de agendar otra.",
         "No inventes ni calcules por tu cuenta cuántas ausencias a clases reservadas tiene; usa exclusivamente el resultado de Studio Flow. Puedes usar el campo interno no_show_count para razonar, pero no muestres ese término técnico a la alumna.",
