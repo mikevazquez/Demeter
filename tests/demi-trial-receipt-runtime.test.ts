@@ -87,6 +87,8 @@ function harness(
     transformSync(source, { loader: "ts", format: "cjs" }).code,
   )(
     (name: string) => {
+      // Receipt-unit harness never executes the production pilot routing branch.
+      if (name === "@/lib/assistant/whatsapp-pilot-relay") return {};
       if (!(name in deps)) throw new Error(`Unexpected dependency ${name}`);
       return deps[name];
     },
