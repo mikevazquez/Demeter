@@ -1,3 +1,4 @@
+import { VerifyTokenCopy } from "./verify-token-copy";
 import Link from "next/link";
 import { headers } from "next/headers";
 
@@ -391,10 +392,7 @@ export default async function MetaInboxIntegrationPage({
               <input type="text" readOnly value={callbackUrl} />
             </label>
             {verifyToken ? (
-              <label className="integration-detail-v2-field">
-                <span>Verify token</span>
-                <input type="password" readOnly value={verifyToken} />
-              </label>
+              <VerifyTokenCopy token={verifyToken} />
             ) : null}
           </div>
         ) : null}
