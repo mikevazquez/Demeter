@@ -940,7 +940,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     const pendingPayment = await input.supabase
       .from("demi_group_bookings")
       .select(
-        "id,status,session_id,participant_count,amount_minor,currency,receipt_event_id,resource_id",
+        "id,status,session_id,participant_count,amount_minor,currency,receipt_event_id,resource_id,prospect_contact_id",
       )
       .eq("studio_id", input.studio.id)
       .eq("conversation_id", input.conversationId)
@@ -966,6 +966,34 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         .maybeSingle();
       if (gateway.error) throw new Error("demi_gateway_context_unavailable");
       const providerApproved = gateway.data?.status === "approved";
+      let knownParticipantPhone: string | null = null;
+      if (payment.prospect_contact_id && payment.participant_count === 1) {
+        const contact = await input.supabase
+          .from("crm_contacts")
+          .select("person_id")
+          .eq("studio_id", input.studio.id)
+          .eq("id", payment.prospect_contact_id)
+          .maybeSingle();
+        if (contact.error) throw new Error("demi_payment_contact_unavailable");
+        if (contact.data?.person_id) {
+          const phones = await input.supabase
+            .from("person_contacts")
+            .select("value")
+            .eq("studio_id", input.studio.id)
+            .eq("person_id", contact.data.person_id)
+            .eq("kind", "phone");
+          if (phones.error) throw new Error("demi_payment_contact_phone_unavailable");
+          const values = Array.from(
+            new Set(
+              (phones.data ?? [])
+                .map((phone) => String(phone.value).replace(/\D/g, "").slice(-10))
+                .filter((phone) => /^[0-9]{10}$/.test(phone)),
+            ),
+          );
+          if (values.length === 1) knownParticipantPhone = values[0];
+        }
+      }
+
       pendingPaymentContext =
         "Estado operativo de pago pendiente, leído del estudio y esta conversación. Usa este group_id exacto para continuar; no prepares otro pago ni pidas comprobante si receipt_received=true o payment_verified=true. Si gateway_status indica pago pendiente, espera al proveedor sin pedir comprobante. Después del comprobante bancario o payment_verified=true y los datos faltantes, usa complete_group_booking con participant_count personas. Si el grupo ya está provisional o validado, recupera sus reservas en lugar de preparar otro pago por un reintento. El estado del pago no acredita una reserva activa: usa el reserved_count y reservation_confirmed actuales de las herramientas; una reserva cancelada permanece cancelada. No afirmes reserva completa por este estado: " +
         JSON.stringify({
@@ -973,6 +1001,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           status: payment.status,
           session_ref: `session:${payment.session_id}`,
           participant_count: payment.participant_count,
+          known_participant_phone: knownParticipantPhone,
           amount_minor: payment.amount_minor,
           currency: payment.currency,
           receipt_received: Boolean(payment.receipt_event_id),
@@ -1022,6 +1051,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         "Demi es una sola entidad por estudio: comparte personalidad, conocimiento, herramientas y reglas comerciales en todos los canales. El canal transporta mensajes y adjuntos; no define otra versión de Demi. Usa únicamente la identidad que Studio Flow haya resuelto. Un nombre o perfil de una red social no demuestra que sea una alumna ni autoriza consultar sus datos. No vincules identidades entre canales por similitud de nombres.",
         "El crédito de prueba tiene siete días de vigencia desde la fecha de la primera clase reservada, no desde el comprobante ni desde la cancelación. Una cancelación a tiempo o un reagendado conserva el vencimiento original. Usa las fechas reales del crédito en Studio Flow; no prometas extenderlo. Un crédito consumido o vencido no cubre otra reserva; si la política permite una nueva prueba, requiere un nuevo pago.",
         "Al confirmar una primera reserva o grupo, informa la disciplina, fecha, hora y ubicación y dirección oficiales devueltas en class_details. Si falta ubicación, consulta get_studio_information y no inventes una dirección. Comparte acceso o QR únicamente si una herramienta lo generó para esa persona y reserva. Aclara cuando la transferencia siga pendiente de revisión y pueda revocarse.",
+        "Si el pago de primera clase devuelve known_participant_phone, ya conocemos ese celular para esta persona: úsalo en complete_group_booking y no lo vuelvas a pedir. No lo sustituyas por otro número: una discrepancia requiere aclarar la identidad. Este dato no identifica a otras participantes ni a un grupo pagado por alguien distinto.",
         "Después del pago, si te comparten sólo parte de los datos de los participantes, llama complete_group_booking en ese turno para guardar lo recibido: usa cadenas vacías para campos faltantes, no teléfonos o nombres inventados. Un resultado participant_data_required no crea ficha ni reserva; pide sólo los campos que falten. Cuando completen los datos, combina los datos ya recibidos sin volver a pedirlos.",
         "Cuando prepare_first_class_payment o execute_booking devuelva group_id y participant_count=1 para una primera clase individual, conserva ese group_id: espera comprobante bancario o payment_verified=true de Mercado Pago y después pide juntos los datos faltantes; completa con complete_group_booking y un único participante. No crees la ficha antes del comprobante bancario o de payment_verified=true ni anuncies una reserva cuando reservation_confirmed=false.",
         pendingPaymentContext,
@@ -1106,6 +1136,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         "Mientras no haya asistido a ninguna clase, una prospecto/trial puede reservar una sola clase de prueba activa sin inscripción ni paquete. prepare_booking es la única fuente de verdad para decidir si esa excepción aplica.",
         "La clase de prueba sí debe pagarse, pero la primera clase no requiere inscripción. Habla siempre en términos de precio y forma de pago; no uses estados comerciales internos.",
         "Después de la primera asistencia, la excepción termina y la inscripción normal es obligatoria para futuras reservas.",
+        "Si get_student_package_status devuelve enrollment_renewal_option, usa ese importe oficial para la inscripción obligatoria, aunque el producto no se ofrezca en el catálogo general. No inventes precio ni cambies la visibilidad comercial. La app tiene un checkout específico de inscripción; prepare_enrollment_payment determina si está disponible sin activar derechos antes del pago.",
         "Para renovar únicamente la inscripción de una alumna identificada, o inscribirla después de asistir a su prueba sin reservar todavía, usa prepare_enrollment_payment con el método elegido bank_transfer o app. Conserva el paquete y sus créditos y vencimiento: no vendas otro paquete para renovar la inscripción. La transferencia o depósito OXXO a Bancomer exige comprobante y revisión humana; recibir el archivo NO activa la inscripción. Sólo informa activación cuando Studio Flow devuelva inscripción activa tras validar el pago. Si se rechaza el documento, solicita uno nuevo sin otorgar derechos. Para app comparte únicamente el acceso propio devuelto y no afirmes aprobación hasta verificarla.",
         "Internamente Studio Flow contabiliza los no-shows de prueba. De cara a la alumna nunca uses la expresión 'no-show': di que en dos ocasiones anteriores reservó una clase y no pudo asistir. Cuando prepare_booking devuelva prepayment_required o trial_prepayment_required, no prepares ni afirmes una reserva: explica en lenguaje cotidiano que la siguiente clase requiere pago anticipado.",
         "Una prospecto/trial solo puede tener una reserva de prueba activa a la vez. Si la herramienta devuelve trial_active_booking_exists, explica que debe usar, cancelar o resolver esa reserva antes de agendar otra.",

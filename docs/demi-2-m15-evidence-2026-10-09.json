@@ -1,0 +1,45 @@
+{
+  "case": "M15",
+  "status": "passed",
+  "model_version": "61e7605",
+  "native_controls": 20,
+  "native_roles": [
+    "service_role",
+    "authenticated"
+  ],
+  "renewal_run": "2738cb12-0f2d-4837-bf0f-310a57efbc1b",
+  "exhausted_run": "cf7c4ee9-f7a4-4cf6-8b05-16c9def0aa60",
+  "before": {
+    "enrollment": "expired",
+    "credits": 8,
+    "package_starts": "2026-10-08",
+    "package_expires": "2026-11-07",
+    "new_reservations": 0
+  },
+  "receipt_ocr": {
+    "amount_minor": 20000,
+    "no_premature_enrollment": true,
+    "private_document_http": 200,
+    "manual_staff_ui_saved": true
+  },
+  "after": {
+    "enrollment": "active",
+    "credits": 7,
+    "package_starts": "2026-10-08",
+    "package_expires": "2026-11-07",
+    "new_reservations": 1,
+    "payments": 1,
+    "student_type": "regular",
+    "trial_status": null
+  },
+  "active_no_package": "Actual model confirmed active enrollment and zero available credits; no first trial or reclassification.",
+  "exhausted": "Actual model queried expired enrollment and zero credits, offered enrollment plus regular single class or package; no reservation created.",
+  "fixed_defects": [
+    "Catalog class compatibility filter excluded enrollment products.",
+    "UAT fixtures used UTC dates instead of studio local dates.",
+    "Exact positive phrase Sí, confirmo esa reserva was incorrectly blocked; same phrase executed after fix."
+  ],
+  "review_and_replay": "Native reject/correct/replay controls preserve package and ledger until legitimate booking. Repeated approval creates one sale/payment; repeated booking consumes once.",
+  "bank_result_recorded": true,
+  "transport": "captured; external remains M01"
+}

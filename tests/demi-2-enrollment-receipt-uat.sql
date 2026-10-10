@@ -10,6 +10,9 @@ begin
  select (clock_timestamp() at time zone timezone)::date into today from public.studios where id=s;
  if not exists(select 1 from public.student_enrollments where student_id=st and expires_on=today-1) then raise exception 'fixture_not_local_expired'; end if;
  insert into public.assistant_conversations(id,studio_id,channel,student_id) values(c,s,'internal_demo',st);
+ update public.product_templates set assistant_visible=false,online_purchasable=false where id=(run#>>'{fixtures,products,enrollment}')::uuid;
+ r:=public.service_prepare_demi_enrollment_payment(s,c,st,'app');
+ if r->>'ok'<>'true' or r->>'status'<>'online_pending' or r->>'enrollment_activated'<>'false' then raise exception 'required_enrollment_checkout:%',r; end if;
  r:=public.service_prepare_demi_enrollment_payment(s,c,st,'bank_transfer');
  if r->>'ok'<>'true' or r->>'enrollment_activated'<>'false' then raise exception 'prepare:%',r; end if;
  intent:=(r->>'intent_id')::uuid;
@@ -105,5 +108,5 @@ begin
  if (select sum(quantity) from public.credit_ledger where acquisition_id=a)<>7 or (select count(*) from public.reservations where student_id=st and session_id=session and status='reserved')<>1 then raise exception 'renewed_booking_replay'; end if;
  if not exists(select 1 from public.product_acquisitions where id=a and starts_on=starts and expires_on=expiry) then raise exception 'renewed_package_dates_changed'; end if;
 end $$;
-select jsonb_build_object('passed',true,'controls',array['local_expiry_fixture','intent_idempotency','owned_conversation','human_case_with_receipt','receipt_replay','reject_no_rights','rejected_cannot_approve','corrected_receipt','enrollment_only_sale','package_unchanged','approval_replay_single_payment','notice_dedup','human_pause','superseded_rejection_suppressed','owned_notice_lease','notice_finish_replay','credits_preserved_until_booking','renewed_booking_single_credit','renewed_booking_replay','original_package_dates_preserved']) as result;
+select jsonb_build_object('passed',true,'controls',array['local_expiry_fixture','enrollment_only_checkout_independent_of_catalog_flags','intent_idempotency','owned_conversation','human_case_with_receipt','receipt_replay','reject_no_rights','rejected_cannot_approve','corrected_receipt','enrollment_only_sale','package_unchanged','approval_replay_single_payment','notice_dedup','human_pause','superseded_rejection_suppressed','owned_notice_lease','notice_finish_replay','credits_preserved_until_booking','renewed_booking_single_credit','renewed_booking_replay','original_package_dates_preserved']) as result;
 rollback;

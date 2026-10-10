@@ -1,4 +1,5 @@
 begin;
+set local role service_role;
 set local request.jwt.claim.role='service_role';
 set local request.jwt.claims='{"role":"service_role"}';
 do $uat$
@@ -34,13 +35,17 @@ begin
  if not exists(select 1 from public.demi_followups where studio_id=s and conversation_id=c and kind='inactive' and due_at=source_at+interval '14 days') or (select student_type::text from public.students where id=student)<>'regular' then raise exception 'inactive_source'; end if;
  outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M14','variant','attendance_inactivity_14_days_preserves_regular_type','passed',true));
  student:=(r#>>'{fixtures,people,trial_attended,student_id}')::uuid;
+ c:=gen_random_uuid(); insert into public.assistant_conversations(id,studio_id,student_id,channel) values(c,s,student,'whatsapp');
+ insert into public.assistant_turns(studio_id,conversation_id,direction,role,content) values(s,c,'outbound','assistant','UAT después de asistir, antes de pagar');
+ if (select count(*) from public.demi_followups where studio_id=s and conversation_id=c and kind='post_trial' and state='pending')<>2 then raise exception 'post_trial_sequence_missing'; end if;
  select price_minor into price from public.product_templates where id=(r#>>'{fixtures,products,package}')::uuid;
  select price_minor into enrollment_price from public.product_templates where id=(r#>>'{fixtures,products,enrollment}')::uuid;
  perform set_config('request.jwt.claim.sub',owner::text,true);perform set_config('request.jwt.claims',jsonb_build_object('role','service_role','sub',owner)::text,true);
  result:=public.create_student_onboarding_sale_v2(student,(r#>>'{fixtures,products,package}')::uuid,(r#>>'{fixtures,products,enrollment}')::uuid,gen_random_uuid(),'first_usage',null,0,null,null,null,'paid',today,null,price+enrollment_price,'cash',today,'UAT ficticio','Pago interno ficticio con rollback',null,null,false,null,0,null);
  sale:=(result->>'sale_id')::uuid;
  if sale is null or (select student_type::text from public.students where id=student)<>'regular' or not exists(select 1 from public.student_enrollments where studio_id=s and student_id=student and status='active') or (select coalesce(sum(amount_minor),0) from public.payments where sale_id=sale and kind='payment')<>price+enrollment_price then raise exception 'paid_conversion:%',result; end if;
- outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M11','variant','native_paid_enrollment_and_package_promote_trial_to_regular','passed',true,'external_provider_verified',false));
+ if exists(select 1 from public.demi_followups where studio_id=s and conversation_id=c and kind='post_trial' and state in ('pending','processing')) then raise exception 'paid_conversion_did_not_stop_immediately'; end if;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','M11','variant','native_paid_enrollment_and_package_promote_trial_to_regular','passed',true,'external_provider_verified',false,'post_trial_followups_stopped_immediately',true));
  perform set_config('uat.recovery_conversion',outcomes::text,true);
 end; $uat$;
 select current_setting('uat.recovery_conversion')::jsonb as results;

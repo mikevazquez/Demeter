@@ -614,6 +614,33 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
     Boolean(item.expires_on && item.expires_on < today),
   );
   const enrollmentStatus = resolveEnrollmentStatus(enrollments ?? [], today);
+  let enrollmentRenewalOption: Record<string, unknown> | null = null;
+  if (enrollmentStatus !== "active") {
+    const policy = await ctx.supabase
+      .from("enrollment_policies")
+      .select("enabled,enrollment_product_template_id")
+      .eq("studio_id", ctx.studio.id)
+      .maybeSingle();
+    if (policy.error) return { ok: false, error: "enrollment_option_unavailable" };
+    if (policy.data?.enabled && policy.data.enrollment_product_template_id) {
+      const product = await ctx.supabase
+        .from("product_templates")
+        .select("id,name,price_minor,currency,validity_days")
+        .eq("studio_id", ctx.studio.id)
+        .eq("id", policy.data.enrollment_product_template_id)
+        .eq("active", true)
+        .eq("product_type", "enrollment")
+        .maybeSingle();
+      if (product.error) return { ok: false, error: "enrollment_option_unavailable" };
+      if (product.data && product.data.price_minor > 0)
+        enrollmentRenewalOption = {
+          ...product.data,
+          product_ref: `product:${product.data.id}`,
+          required_by_policy: true,
+        };
+    }
+  }
+
   let studentCategory = "student";
   if (student.student_type === "trial") {
     if (student.trial_status === "no_show") studentCategory = "trial_no_show";
@@ -637,6 +664,7 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
     return {
       ok: true,
       student_state: studentState,
+      enrollment_renewal_option: enrollmentRenewalOption,
       current_package: null,
       packages: [],
     };
@@ -697,6 +725,7 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
   return {
     ok: true,
     student_state: studentState,
+    enrollment_renewal_option: enrollmentRenewalOption,
     current_package: currentPackage,
     packages,
   };
