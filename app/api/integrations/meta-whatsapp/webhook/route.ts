@@ -5,7 +5,7 @@ import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
 import { transcribeDemiAudio } from "@/lib/assistant/audio-transcription";
 import { handleDemiGroupReceipt } from "@/lib/assistant/group-booking";
 import { handleDemiEnrollmentReceipt } from "@/lib/assistant/enrollment-payment";
-import { readTransferReceipt } from "@/lib/assistant/receipt-reader";
+import { readTransferReceipt, rejectedTransferReceiptReply } from "@/lib/assistant/receipt-reader";
 import { trialReceiptConfirmation } from "@/lib/assistant/receipt-confirmation";
 import { provisionStudentAccessWithServiceClient } from "@/lib/assistant/student-access";
 import {
@@ -499,6 +499,14 @@ async function activateTransferReceiptIfPending(input: {
   } catch {
     reading = null;
   }
+
+  const rejectedReply = rejectedTransferReceiptReply(reading);
+  if (rejectedReply)
+    return {
+      handled: true as const,
+      reply: rejectedReply,
+      result: { ok: false, reason_code: "receipt_not_payment_evidence" },
+    };
 
   const extension =
     media.mimeType === "application/pdf"
