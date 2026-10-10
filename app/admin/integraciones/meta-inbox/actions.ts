@@ -445,3 +445,70 @@ export async function diagnoseInstagramSavedToken() {
   }
   redirect(`/admin/integraciones/meta-inbox?instagram_token_check=${result}`);
 }
+
+
+/**
+ * Read-only Instagram Conversations API probe for the Demeter sandbox.
+ * Confirms messaging permission without returning conversations, usernames,
+ * message bodies, identifiers or access tokens to the client or logs.
+ */
+export async function diagnoseInstagramConversationsRead() {
+  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  if (studio.id !== "9fe23cfa-fb47-4670-afeb-ed4a56433772" ||
+      process.env.VERCEL_ENV !== "preview") {
+    redirect("/admin/integraciones/meta-inbox?instagram_inbox_check=restricted");
+  }
+
+  let result = "unavailable";
+  try {
+    const service = createServiceClient();
+    const { data, error } = await service.rpc("service_get_meta_inbox_webhook_config", {
+      target_studio_id: studio.id,
+    });
+    const config = data && typeof data === "object" && !Array.isArray(data)
+      ? data as Record<string, unknown> : {};
+    const accessToken = typeof config.instagram_access_token === "string"
+      ? config.instagram_access_token.trim() : "";
+    const accountId = typeof config.instagram_user_id === "string"
+      ? config.instagram_user_id.trim() : "";
+    const version = typeof config.graph_api_version === "string"
+      ? config.graph_api_version.trim() : "";
+    if (error || !accessToken || !/^\d{5,32}$/.test(accountId) ||
+        !/^v\d+\.\d+$/.test(version)) {
+      result = "missing";
+    } else {
+      const url = new URL(`https://graph.instagram.com/${version}/${accountId}/conversations`);
+      url.searchParams.set("limit", "10");
+      url.searchParams.set("fields", "id,updated_time");
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+          accept: "application/json",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(12000),
+      });
+      const responseData: unknown = await response.json().catch(() => null);
+      const body = responseData && typeof responseData === "object" &&
+        !Array.isArray(responseData) ? responseData as Record<string, unknown> : {};
+      if (response.ok && Array.isArray(body.data)) {
+        result = body.data.length > 0 ? "readable" : "empty";
+      } else if (!response.ok) {
+        const metaError = body.error && typeof body.error === "object" &&
+          !Array.isArray(body.error) ? body.error as Record<string, unknown> : {};
+        const metaCode = Number(metaError.code);
+        result = metaCode === 190 || response.status === 401
+          ? "token_rejected"
+          : metaCode === 10 || metaCode === 200
+            ? "permission_denied" : "api_rejected";
+      } else {
+        result = "invalid_response";
+      }
+    }
+  } catch {
+    result = "unavailable";
+  }
+
+  redirect(`/admin/integraciones/meta-inbox?instagram_inbox_check=${result}`);
+}
