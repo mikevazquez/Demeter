@@ -423,8 +423,9 @@ export default async function MetaInboxIntegrationPage({
           {queryValue(params.instagram_inbox_check) ? (
             <div className="integration-detail-v2-notice" role="status">
               {({
-                readable: "Meta permitió consultar las conversaciones. El token sí tiene acceso a la bandeja; investigaremos la entrega de webhooks.",
-                empty: "Meta permitió consultar la bandeja, pero devolvió cero conversaciones en esta consulta.",
+                readable: "La API devuelve conversaciones usando el identificador de la cuenta. El siguiente diagnóstico será la entrega de webhooks.",
+                readable_via_me: "La API devuelve conversaciones con /me pero no con el ID almacenado. Necesitamos ajustar el identificador de consulta, sin cambiar el token.",
+                empty: "Meta permitió la consulta con platform=instagram tanto por ID como por /me, pero la API no expuso conversaciones. Revisaremos permisos efectivos y restricciones de las cuentas de prueba.",
                 token_rejected: "Meta rechazó el acceso del token para consultar conversaciones.",
                 permission_denied: "Meta negó el acceso a conversaciones. Se debe revisar el permiso instagram_business_manage_messages del token.",
                 api_rejected: "Meta rechazó la consulta de conversaciones. Revisaremos el endpoint y la autorización.",
