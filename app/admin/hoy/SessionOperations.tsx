@@ -25,6 +25,8 @@ type RosterItem = {
   checkedInAt?: string | null;
   attendanceProvenance?: string | null;
   paymentDueOnAttendance?: boolean;
+  pendingPackageSaleId?: string;
+  pendingPackageAmountMinor?: number;
   individualPriceMinor?: number | null;
   currency?: string;
   resourceName?: string | null;
@@ -298,6 +300,18 @@ export function SessionOperations({
                           ) : null}
                           {item.paymentDueOnAttendance ? (
                             <span className="today-payment-pending-tag">Pago pendiente</span>
+                          ) : null}
+                          {item.pendingPackageSaleId ? (
+                            <a
+                              className="today-payment-pending-tag"
+                              href={`/admin/ventas/${item.pendingPackageSaleId}`}
+                            >
+                              Efectivo pendiente ·{" "}
+                              {new Intl.NumberFormat("es-MX", {
+                                style: "currency",
+                                currency: item.currency ?? "MXN",
+                              }).format((item.pendingPackageAmountMinor ?? 0) / 100)}
+                            </a>
                           ) : null}
                           {item.evaluationStatus === "scheduled" ? (
                             <span className="today-evaluation-tag">Evaluación programada</span>

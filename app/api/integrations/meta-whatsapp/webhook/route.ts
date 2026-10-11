@@ -1427,7 +1427,7 @@ export async function POST(request: Request) {
         ? isPoleReferral
           ? "¡Hola! 👋 Gracias por escribir a Demeter. Claro, te ayudo a agendar tu primera clase de Pole. Puedes empezar desde cero. ¿Qué día u horario te acomoda?"
           : "¡Hola! 👋 Gracias por escribir a Demeter. Claro, te ayudo a agendar tu primera clase. ¿Qué disciplina te interesa y qué día u horario te acomoda?"
-        : "Recibí tu mensaje, pero WhatsApp no me entregó su contenido en un formato que pueda leer. ¿Me lo reenvías como texto? Así te ayudo enseguida.";
+        : "¡Hola! Soy Demi, de Demeter Fitness. ¿Buscas información sobre las clases o quieres agendar? Dime qué necesitas y te ayudo.";
       const deterministicOutcome = isClickToWhatsApp
         ? "unsupported_ad_lead"
         : "unsupported_message";
