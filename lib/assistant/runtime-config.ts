@@ -11,5 +11,6 @@ export async function loadDemiRuntimeConfig(supabase: SupabaseClient, studioId: 
       "assistant_name,mode,model,reasoning_effort,personality_instructions,monthly_budget_usd_micros,conversation_budget_usd_micros,max_model_calls_per_turn,max_tool_calls_per_turn",
     )
     .eq("studio_id", studioId)
+    .eq("assistant_key", "demi")
     .maybeSingle();
 }
