@@ -29,13 +29,14 @@ describe("student single-class eligibility and checkout catalog sync", () => {
     expect(detail).toContain("bookingReasonCopyForStudent");
   });
 
-  it("offers drop-in checkout for all package coverage failures", () => {
+  it("routes package coverage failures to existing drop-in checkout in detail", () => {
     expect(reserve).toContain('"no_active_product"');
     expect(reserve).toContain('"outside_product"');
     expect(reserve).toContain('"outside_product_schedule"');
     expect(reserve).toContain('"no_credits"');
     expect(detail).toContain('"outside_product_schedule"');
-    expect(reserve).toContain("PurchaseSingleClassButton");
+    expect(reserve).toContain('needsPayment ? "Pagar" : "Ver"');
+    expect(reserve).not.toContain("PurchaseSingleClassButton");
     expect(detail).toContain("PurchaseSingleClassButton");
   });
 

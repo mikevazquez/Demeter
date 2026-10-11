@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -9,6 +10,7 @@ import {
   localDateKey,
   type StudentSession,
 } from "@/lib/student/portal";
+import { disciplineImage, disciplineMotif } from "@/lib/student/discipline-style";
 
 import { calculateSingleClassCheckout } from "@/lib/student/checkout-pricing";
 
@@ -154,22 +156,44 @@ export default async function StudentSessionDetailPage({
 
       <section
         className="overflow-hidden rounded-3xl border bg-white/[0.03]"
-        style={{ borderColor: `${activityColor}55` }}
+        style={{
+          borderColor: `${activityColor}8c`,
+          boxShadow: `0 0 34px ${activityColor}24`,
+        }}
       >
         <div
-          className="p-5 sm:p-6"
+          className="relative min-h-[116px] p-5 sm:p-6"
           style={{
-            background: `linear-gradient(135deg, ${activityColor}29 0%, rgba(255,255,255,0.035) 48%, transparent 100%)`,
+            background: `radial-gradient(circle at 90% 0%, ${activityColor}66, transparent 44%), linear-gradient(150deg, ${activityColor}24, rgba(255,255,255,0.02) 60%)`,
           }}
         >
+          {disciplineImage(session.activity, session.discipline) ? (
+            <Image
+              src={disciplineImage(session.activity, session.discipline) ?? ""}
+              alt=""
+              width={84}
+              height={84}
+              className="absolute right-4 top-4 h-[84px] w-[84px] rounded-[20px] border object-cover shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
+              style={{ borderColor: `${activityColor}8c` }}
+            />
+          ) : (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute right-3.5 top-2.5 select-none whitespace-nowrap text-[34px] tracking-[0.25em] opacity-[0.16]"
+            >
+              {`${disciplineMotif(session.activity, session.discipline)} ✦ ${disciplineMotif(session.activity, session.discipline)}`}
+            </span>
+          )}
           <p
-            className="text-[10px] font-semibold uppercase tracking-[0.22em]"
+            className="relative pr-24 text-[10px] font-semibold uppercase tracking-[0.22em]"
             style={{ color: activityColor }}
           >
             {session.discipline}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{session.activity}</h1>
-          <p className="mt-2 text-sm text-zinc-300">
+          <h1 className="relative mt-1 pr-24 text-2xl font-semibold text-white sm:text-3xl">
+            {session.activity}
+          </h1>
+          <p className="relative mt-2 pr-24 text-sm text-zinc-300">
             {formatDateTime(session.starts_at, studio.timezone)}
             {durationMinutes ? ` · ${durationMinutes} min` : ""}
           </p>

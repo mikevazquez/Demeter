@@ -61,8 +61,10 @@ describe("CANCELACION-MIN-01 automatic minimum reservation cancellation", () => 
     expect(domainMigration).toContain("minimum_review_status := 'overridden'");
   });
 
-  it("shows capacity as occupied over total in student booking views", () => {
-    for (const file of [studentList, studentDetail, studentConfirm]) {
+  it("shows available places in the compact agenda and occupancy in booking detail", () => {
+    expect(studentList).toContain("session.spots_available");
+    expect(studentList).toContain('"lugares"');
+    for (const file of [studentDetail, studentConfirm]) {
       expect(file).toContain("session.capacity - session.spots_available");
       expect(file).toContain("reservados");
     }

@@ -38,6 +38,8 @@ type Props = {
   levelTitle?: string | null;
   requiresResource?: boolean;
   useRewardCredits?: boolean;
+  /** "tile": botón alto para la tarjeta compacta de Reservar. */
+  variant?: "default" | "tile";
 };
 
 export function QuickBookButton({
@@ -52,6 +54,7 @@ export function QuickBookButton({
   levelTitle = null,
   requiresResource = false,
   useRewardCredits = false,
+  variant = "default",
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -98,9 +101,17 @@ export function QuickBookButton({
           type="button"
           onClick={reserve}
           disabled={isPending}
-          className="min-h-11 rounded-2xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
+          className={
+            variant === "tile"
+              ? "min-h-16 w-full min-w-0 self-stretch rounded-[14px] border border-fuchsia-500/45 bg-fuchsia-500/[0.07] px-2 text-xs font-bold sm:text-sm text-fuchsia-100 transition hover:bg-fuchsia-500/[0.13] disabled:cursor-wait disabled:opacity-60"
+              : "min-h-11 rounded-2xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
+          }
         >
-          {isPending ? "Reservando…" : "Reservar"}
+          {isPending ? (
+            <span className={variant === "tile" ? "text-[10px]" : undefined}>Reservando…</span>
+          ) : (
+            "Reservar"
+          )}
         </button>
       ) : full ? (
         <WaitlistControl

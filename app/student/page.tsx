@@ -12,6 +12,7 @@ import {
 } from "@/lib/student/portal";
 
 import { getStudentHomePackageState } from "@/lib/student/home-package-state";
+import { disciplineImage } from "@/lib/student/discipline-style";
 
 import StudentNoticeDialog from "./components/StudentNoticeDialog";
 
@@ -847,12 +848,22 @@ export default async function StudentHomePage({
             href="/student/mis-clases"
             className="mt-3 grid grid-cols-[68px_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:bg-white/[0.04]"
           >
-            <div className="relative h-[76px] overflow-hidden rounded-xl border border-fuchsia-500/25 bg-[radial-gradient(circle_at_45%_25%,rgba(236,72,153,0.45),transparent_24%),linear-gradient(145deg,#2b0b22,#090c12_72%)]">
-              <span className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-fuchsia-300/45" />
-              <span className="absolute inset-0 grid place-items-center text-lg text-fuchsia-200">
-                ✦
-              </span>
-            </div>
+            {disciplineImage(nextClass.activity, nextClass.discipline) ? (
+              <Image
+                src={disciplineImage(nextClass.activity, nextClass.discipline) ?? ""}
+                alt=""
+                width={68}
+                height={76}
+                className="h-[76px] w-[68px] rounded-xl border border-fuchsia-500/25 object-cover"
+              />
+            ) : (
+              <div className="relative h-[76px] overflow-hidden rounded-xl border border-fuchsia-500/25 bg-[radial-gradient(circle_at_45%_25%,rgba(236,72,153,0.45),transparent_24%),linear-gradient(145deg,#2b0b22,#090c12_72%)]">
+                <span className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-fuchsia-300/45" />
+                <span className="absolute inset-0 grid place-items-center text-lg text-fuchsia-200">
+                  ✦
+                </span>
+              </div>
+            )}
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="truncate text-base font-semibold text-white">

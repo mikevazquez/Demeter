@@ -1,7 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import {
-  bookingReasonCopy,
   bookingReasonCopyForStudent,
   getStudentPortalContext,
   localDateKey,
@@ -9,10 +9,12 @@ import {
 } from "@/lib/student/portal";
 
 import BookingEligibilityRefresh from "./BookingEligibilityRefresh";
-import PurchaseSingleClassButton from "./PurchaseSingleClassButton";
 import { QuickBookButton } from "./quick-book-button";
+import WaitlistControl from "./WaitlistControl";
 import { BookingRestrictionCard } from "./BookingRestrictionCard";
 import { HolidayNotice, type StudentHolidaySnapshot } from "./HolidayNotice";
+import { getHolidayTheme } from "@/lib/holidays/theme";
+import { classAuraStyle, disciplineImage, disciplineMotif } from "@/lib/student/discipline-style";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -109,14 +111,6 @@ function statusClass(session: StudentSession, waitlisted = false) {
     return "border-amber-400/30 bg-amber-400/[0.09] text-amber-200";
   }
   return "border-amber-400/25 bg-amber-400/[0.08] text-amber-200";
-}
-
-function statusCopy(session: StudentSession, waitlisted = false, unavailableCopy?: string) {
-  if (session.status === "cancelled") return "Cancelada";
-  if (session.is_reserved) return "Ya reservada";
-  if (waitlisted) return "En lista de espera";
-  if (session.eligibility?.eligible) return "Disponible";
-  return unavailableCopy ?? bookingReasonCopy(session.eligibility?.reason_code);
 }
 
 export default async function StudentReservePage({
@@ -307,29 +301,47 @@ export default async function StudentReservePage({
                 : isPast
                   ? "border border-white/5 bg-black/10 text-zinc-700"
                   : "border border-white/10 bg-black/20 text-zinc-400 hover:border-fuchsia-500/25 hover:text-white"
-            } ${holiday ? "ring-1 ring-inset ring-fuchsia-500/20" : ""}`;
+            }`;
+            const holidayTheme = holiday ? getHolidayTheme(holiday.theme_key) : null;
+            const holidayClosed = holiday?.operation_mode === "closed";
+            const chipStyle =
+              holidayTheme && !isSelected
+                ? {
+                    borderColor: `${holidayTheme.accent}8c`,
+                    boxShadow: `inset 0 -14px 18px -12px ${holidayTheme.accent}b3`,
+                  }
+                : undefined;
 
             const dateContent = (
               <>
                 <span className="block text-[10px] capitalize">{chip.weekday}</span>
-                <strong className="mt-0.5 block text-sm">{chip.day}</strong>
-                {holiday ? (
+                <strong
+                  className="mt-0.5 block text-sm"
+                  style={
+                    holidayClosed && holidayTheme
+                      ? {
+                          textDecoration: "line-through",
+                          textDecorationColor: holidayTheme.accent,
+                        }
+                      : undefined
+                  }
+                >
+                  {chip.day}
+                </strong>
+                {holiday && holidayTheme ? (
                   <span
-                    className={`mx-auto mt-1 block h-1.5 w-1.5 rounded-full ${
-                      holiday.operation_mode === "special"
-                        ? "bg-sky-400"
-                        : holiday.operation_mode === "closed"
-                          ? "bg-fuchsia-500"
-                          : "bg-emerald-400"
-                    }`}
-                    title={holiday.name}
-                  />
+                    aria-hidden="true"
+                    className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[11px] leading-none drop-shadow-[0_0_4px_rgba(0,0,0,0.8)]"
+                    style={{ color: holidayTheme.accent }}
+                  >
+                    {holidayTheme.icon}
+                  </span>
                 ) : null}
               </>
             );
 
             return isPast ? (
-              <span key={day} className={className} aria-disabled="true">
+              <span key={day} className={className} style={chipStyle} aria-disabled="true">
                 {dateContent}
               </span>
             ) : (
@@ -337,7 +349,9 @@ export default async function StudentReservePage({
                 key={day}
                 href={`/student/reservar?date=${day}${rewardSuffix}`}
                 aria-current={isSelected ? "date" : undefined}
+                aria-label={holiday ? `${chip.weekday} ${chip.day}, ${holiday.name}` : undefined}
                 className={className}
+                style={chipStyle}
               >
                 {dateContent}
               </Link>
@@ -389,19 +403,17 @@ export default async function StudentReservePage({
               const full = session.eligibility?.reason_code === "session_full";
               const style = activityStyleMap.get(session.activity);
               const activityColor = style?.color ?? "#FF0A8A";
-              const dropInPriceMinor = style?.dropInPriceMinor ?? null;
               const classDate = localDateKey(new Date(session.starts_at), studio.timezone);
               const eligibilityCopy = bookingReasonCopyForStudent(
                 session.eligibility?.reason_code,
                 snapshot.acquisitions,
                 classDate,
               );
-              const canBuySingleClass =
+              const needsPayment =
                 !cancelled &&
                 !reserved &&
                 !eligible &&
                 session.spots_available > 0 &&
-                dropInPriceMinor != null &&
                 [
                   "no_active_product",
                   "outside_product",
@@ -409,119 +421,161 @@ export default async function StudentReservePage({
                   "no_credits",
                 ].includes(session.eligibility?.reason_code ?? "");
 
+              const detailHref = `/student/reservar/${session.session_id}?date=${selectedDate}${rewardSuffix}`;
+              const image = disciplineImage(session.activity, session.discipline);
+              const motif = disciplineMotif(session.activity, session.discipline);
+              const showSpots = !cancelled && !reserved && !waitlisted && !full;
+              const fewSpots = session.spots_available <= 2;
+              const tileClass =
+                "flex min-h-16 min-w-0 items-center justify-center self-stretch rounded-[14px] px-2 text-center text-xs font-bold transition sm:text-sm";
+
               return (
                 <article
                   key={session.session_id}
                   data-density="compact"
-                  className="rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:bg-white/[0.045]"
-                  style={{ borderLeftColor: activityColor, borderLeftWidth: 3 }}
+                  className={`relative grid items-stretch gap-1.5 overflow-hidden rounded-[18px] border py-[7px] pl-2.5 pr-[7px] transition ${cancelled ? "grid-cols-[minmax(0,1fr)_76px] sm:grid-cols-[minmax(0,1fr)_92px]" : "grid-cols-[minmax(0,1fr)_76px_76px] sm:grid-cols-[minmax(0,1fr)_92px_92px]"}`}
+                  style={classAuraStyle(activityColor, { muted: cancelled })}
                 >
-                  <div className="grid grid-cols-[4.25rem_1fr_auto] items-center gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-white">{timeLabel}</p>
-                      <p className="mt-0.5 text-[10px] text-zinc-600">
-                        {cancelled
-                          ? "Clase cancelada"
-                          : `${Math.max(session.capacity - session.spots_available, 0)}/${session.capacity} reservados`}
-                      </p>
-                    </div>
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-2.5 top-0.5 select-none whitespace-nowrap text-lg tracking-[0.25em] opacity-[0.16]"
+                  >
+                    {`${motif} ✦ ${motif}`}
+                  </span>
 
-                    <Link
-                      href={`/student/reservar/${session.session_id}?date=${selectedDate}${rewardSuffix}`}
-                      className="min-w-0 border-l border-white/10 pl-3"
-                    >
-                      <p className="truncate text-sm font-semibold text-white">
-                        {session.activity}
-                      </p>
-                      <p className="mt-0.5 truncate text-[11px]" style={{ color: activityColor }}>
-                        {session.discipline}
-                      </p>
-                      <p className="mt-0.5 truncate text-[11px] text-zinc-500">
-                        {[session.coach, session.space || session.location]
-                          .filter(Boolean)
-                          .join(" · ") || "Ver detalle"}
-                      </p>
-                    </Link>
-
-                    <Link
-                      href={`/student/reservar/${session.session_id}?date=${selectedDate}${rewardSuffix}`}
-                      aria-label={`Ver detalles de ${session.activity}`}
-                      className="flex items-center gap-2"
-                    >
-                      <span
-                        className={`${cancelled ? "inline-flex" : "hidden sm:inline-flex"} rounded-full border px-2 py-1 text-[10px] font-semibold ${statusClass(
-                          session,
-                          waitlisted,
-                        )}`}
-                      >
-                        {statusCopy(session, waitlisted, eligibilityCopy)}
-                      </span>
-                      <span aria-hidden="true" className="text-xl text-zinc-500">
-                        ›
-                      </span>
-                    </Link>
-                  </div>
-
-                  <div className="mt-3 border-t border-white/10 pt-3">
-                    {cancelled ? (
-                      <div className="rounded-xl border border-rose-500/20 bg-rose-500/[0.06] px-3 py-2.5">
-                        <p className="text-xs font-semibold text-rose-200">
-                          Clase cancelada por el estudio
-                        </p>
-                        <p className="mt-0.5 text-[10px] leading-4 text-zinc-500">
-                          Se conserva visible en tu agenda, pero ya no admite reservas.
-                        </p>
-                      </div>
-                    ) : canBuySingleClass ? (
-                      <div>
-                        <div>
-                          <p className="text-[11px] font-semibold text-amber-100">
-                            {eligibilityCopy}
-                          </p>
-                          <p className="mt-0.5 text-[10px] text-zinc-500">
-                            Clase suelta ·{" "}
-                            {new Intl.NumberFormat("es-MX", {
-                              style: "currency",
-                              currency: "MXN",
-                              maximumFractionDigits: 0,
-                            }).format((dropInPriceMinor ?? 0) / 100)}
-                          </p>
-                        </div>
-                        <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
-                          <Link
-                            href="/student/paquete"
-                            className="inline-flex min-h-10 items-center justify-center rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white"
-                          >
-                            Ver paquetes
-                          </Link>
-                          <PurchaseSingleClassButton
-                            sessionId={session.session_id}
-                            priceLabel={new Intl.NumberFormat("es-MX", {
-                              style: "currency",
-                              currency: "MXN",
-                              maximumFractionDigits: 0,
-                            }).format((dropInPriceMinor ?? 0) / 100)}
-                          />
-                        </div>
-                      </div>
+                  <Link
+                    href={detailHref}
+                    className="relative grid min-w-0 grid-cols-[46px_minmax(0,1fr)] items-center gap-2.5 self-center py-0.5"
+                  >
+                    {image ? (
+                      <Image
+                        src={image}
+                        alt=""
+                        width={46}
+                        height={46}
+                        className="h-[46px] w-[46px] rounded-xl border object-cover"
+                        style={{ borderColor: `${activityColor}8c` }}
+                      />
                     ) : (
-                      <div className="flex justify-end">
-                        <QuickBookButton
-                          sessionId={session.session_id}
-                          activity={session.activity}
-                          discipline={session.discipline}
-                          timeLabel={timeLabel}
-                          eligible={eligible}
-                          reserved={reserved}
-                          full={full}
-                          waitlisted={waitlisted}
-                          levelTitle={levelTitle}
-                          requiresResource={session.requires_resource}
-                          useRewardCredits={rewardMode}
-                        />
-                      </div>
+                      <span
+                        aria-hidden="true"
+                        className="flex h-[46px] w-[46px] items-center justify-center rounded-xl border text-lg text-white"
+                        style={{
+                          borderColor: `${activityColor}66`,
+                          background: `radial-gradient(circle at 45% 25%, ${activityColor}8c, transparent 45%), linear-gradient(145deg, ${activityColor}4d, #090c12 72%)`,
+                        }}
+                      >
+                        ✦
+                      </span>
                     )}
-                  </div>
+                    <span className="min-w-0">
+                      <span
+                        title={session.activity}
+                        className="block truncate text-base font-bold leading-tight text-white"
+                      >
+                        {session.activity}
+                      </span>
+                      <span className="block text-xs font-semibold text-zinc-200">{timeLabel}</span>
+                      {session.coach ? (
+                        <span className="block truncate text-[11px] text-zinc-400">
+                          {session.coach}
+                        </span>
+                      ) : null}
+                      <span
+                        className="block truncate text-[11px]"
+                        style={{ color: cancelled ? "#fda4af" : activityColor }}
+                      >
+                        {cancelled
+                          ? "Cancelada por el estudio"
+                          : [session.discipline, session.space || session.location]
+                              .filter(Boolean)
+                              .join(" · ")}
+                      </span>
+                    </span>
+                  </Link>
+
+                  {showSpots ? (
+                    <span
+                      className={`relative flex min-h-16 min-w-0 flex-col items-center justify-center self-stretch rounded-[14px] border px-2 text-center ${
+                        fewSpots
+                          ? "border-amber-300/50 bg-amber-400/[0.14]"
+                          : "border-emerald-300/45 bg-emerald-500/[0.14]"
+                      }`}
+                    >
+                      <strong
+                        className={`text-[26px] font-extrabold leading-none ${fewSpots ? "text-amber-300" : "text-emerald-300"}`}
+                      >
+                        {session.spots_available}
+                      </strong>
+                      <span
+                        className={`mt-1 text-[11px] ${fewSpots ? "text-amber-100" : "text-emerald-100"}`}
+                      >
+                        {session.spots_available === 1 ? "lugar" : "lugares"}
+                      </span>
+                    </span>
+                  ) : (
+                    <span
+                      className={`relative flex min-h-16 min-w-0 items-center justify-center self-stretch rounded-[14px] border px-2.5 text-center text-xs font-semibold leading-tight ${statusClass(
+                        session,
+                        waitlisted,
+                      )}`}
+                    >
+                      {cancelled
+                        ? "Cancelada"
+                        : reserved
+                          ? "Reservada"
+                          : waitlisted
+                            ? "En espera"
+                            : "Llena"}
+                    </span>
+                  )}
+
+                  {cancelled ? null : reserved ? (
+                    <Link
+                      href={detailHref}
+                      className={`${tileClass} relative border border-white/15 bg-white/[0.04] text-white hover:bg-white/[0.08]`}
+                    >
+                      Ver
+                    </Link>
+                  ) : eligible && !waitlisted ? (
+                    <div className="relative flex min-w-0 self-stretch">
+                      <QuickBookButton
+                        sessionId={session.session_id}
+                        activity={session.activity}
+                        discipline={session.discipline}
+                        timeLabel={timeLabel}
+                        eligible={eligible}
+                        reserved={reserved}
+                        full={full}
+                        waitlisted={waitlisted}
+                        levelTitle={levelTitle}
+                        requiresResource={session.requires_resource}
+                        useRewardCredits={rewardMode}
+                        variant="tile"
+                      />
+                    </div>
+                  ) : full && !waitlisted ? (
+                    <WaitlistControl
+                      sessionId={session.session_id}
+                      levelTitle={levelTitle}
+                      variant="tile"
+                    />
+                  ) : waitlisted ? (
+                    <Link
+                      href={detailHref}
+                      className={`${tileClass} relative border border-white/15 bg-white/[0.04] text-white hover:bg-white/[0.08]`}
+                    >
+                      Ver lista
+                    </Link>
+                  ) : (
+                    <Link
+                      href={detailHref}
+                      aria-label={`${needsPayment ? "Pagar" : "Ver"} ${session.activity}: ${eligibilityCopy}`}
+                      className={`${tileClass} relative border border-fuchsia-500 bg-transparent text-fuchsia-300 hover:bg-fuchsia-500/10`}
+                    >
+                      {needsPayment ? "Pagar" : "Ver"}
+                    </Link>
+                  )}
                 </article>
               );
             })
