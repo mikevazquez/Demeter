@@ -227,6 +227,18 @@ export default function Bank({
                   <option value="unsupported">Formato desconocido</option>
                 </select>
               </label>
+              <label>
+                Mensaje de WhatsApp simulado
+                <select name="waScenario" defaultValue="">
+                  <option value="">Mensaje normal</option>
+                  <option value="unsupported_text_ad">
+                    Formato no soportado con texto y anuncio
+                  </option>
+                  <option value="unsupported_empty">
+                    Formato no soportado sin texto ni anuncio
+                  </option>
+                </select>
+              </label>
               <p>
                 Teléfono ficticio: <code>{data.run.fixtures.people[persona]?.wa_id}</code>
               </p>

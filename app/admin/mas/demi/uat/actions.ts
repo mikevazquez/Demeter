@@ -194,6 +194,12 @@ export async function sendDemiUatMessage(form: FormData) {
       throw new Error("demi_uat_channel_invalid");
     const isInbox = channel !== "whatsapp";
     const attachmentScenario = String(form.get("attachmentScenario") ?? "");
+    const waScenario = String(form.get("waScenario") ?? "");
+    if (
+      waScenario &&
+      (isInbox || !["unsupported_text_ad", "unsupported_empty"].includes(waScenario))
+    )
+      throw new Error("demi_uat_whatsapp_scenario_invalid");
     if (attachmentScenario && (!isInbox || !["video", "unsupported"].includes(attachmentScenario)))
       throw new Error("demi_uat_attachment_scenario_invalid");
     const key = String(form.get("persona") ?? "");
@@ -205,6 +211,7 @@ export async function sendDemiUatMessage(form: FormData) {
     const media = new Map<string, MetaDownloadedMedia>();
     const mediaId = String(Date.now());
     const hasFile = file instanceof File && file.size > 0;
+    if (hasFile && waScenario) throw new Error("demi_uat_whatsapp_scenario_with_file");
     if (hasFile && attachmentScenario) throw new Error("demi_uat_attachment_scenario_with_file");
     if (hasFile) {
       if (
@@ -228,7 +235,8 @@ export async function sendDemiUatMessage(form: FormData) {
         fileSize: file.size,
       });
     }
-    if (!text && !hasFile && !attachmentScenario) throw new Error("demi_uat_message_required");
+    if (!text && !hasFile && !attachmentScenario && waScenario !== "unsupported_empty")
+      throw new Error("demi_uat_message_required");
     const attachmentUrl = `https://cdn.fbcdn.net/uat/${mediaId}`;
     if (hasFile) media.set(attachmentUrl, media.get(mediaId)!);
     const previousId = String(form.get("repeatProviderId") ?? "");
@@ -268,7 +276,17 @@ export async function sendDemiUatMessage(form: FormData) {
       id: providerId,
       from: person.wa_id,
       timestamp: String(Math.floor(Date.now() / 1000)),
-      type,
+      type: waScenario ? "unsupported" : type,
+      ...(waScenario === "unsupported_text_ad"
+        ? {
+            referral: {
+              source_type: "ad",
+              source_id: "UAT-AD-POLE",
+              headline: "Pole desde cero",
+              body: "Quiero agendar mi primera clase de Pole Fitness",
+            },
+          }
+        : {}),
       ...(hasFile
         ? {
             [type]: {
@@ -278,7 +296,9 @@ export async function sendDemiUatMessage(form: FormData) {
               filename: file.name,
             },
           }
-        : { text: { body: text } }),
+        : waScenario === "unsupported_empty"
+          ? {}
+          : { text: { body: text } }),
     };
     const whatsappBody = {
       object: "whatsapp_business_account",

@@ -27,6 +27,21 @@ begin
  select p.id,p.sale_id into payment,source_sale from public.payments p join public.assistant_transfer_purchase_intents i on i.sale_id=p.sale_id where i.id=intent and p.kind='payment';
  if jsonb_array_length(public.get_trial_enrollment_credit_options(st))<>1 then raise exception 'valid_credit_not_offered'; end if;
  outcomes:=outcomes||jsonb_build_array(jsonb_build_object('variant','paid_same_day_eligible','passed',true));
+ begin
+  insert into public.payments(studio_id,sale_id,kind,amount_minor,method,effective_on,reason) values(s,source_sale,'refund',15000,'cash',today,'Fictitious UAT refund');
+  if public.get_trial_enrollment_credit_options(st)<>'[]' then raise exception 'refunded_receipt_eligible'; end if;
+  raise exception 'uat_refund_rollback';
+ exception when others then if SQLERRM<>'uat_refund_rollback' then raise; end if; end;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('variant','refunded_source_blocked','passed',true));
+ perform set_config('request.jwt.claim.sub',gen_random_uuid()::text,true);
+ perform set_config('request.jwt.claims',jsonb_build_object('role','authenticated','sub',current_setting('request.jwt.claim.sub'))::text,true);
+ rejected:=false;
+ begin perform public.get_trial_enrollment_credit_options(st);
+ exception when others then if SQLERRM='forbidden' then rejected:=true; else raise; end if; end;
+ if not rejected then raise exception 'unauthorized_credit_read'; end if;
+ perform set_config('request.jwt.claim.sub',actor::text,true);
+ perform set_config('request.jwt.claims',jsonb_build_object('role','authenticated','sub',actor)::text,true);
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('variant','unauthorized_actor_blocked','passed',true));
  update public.class_sessions set starts_at=starts_at+interval '1 day',ends_at=ends_at+interval '1 day' where id=session;
  if public.get_trial_enrollment_credit_options(st)<>'[]' then raise exception 'other_day_eligible'; end if;
  update public.class_sessions set starts_at=starts_at-interval '1 day',ends_at=ends_at-interval '1 day' where id=session;
@@ -36,6 +51,12 @@ begin
  update public.assistant_admin_rules set enabled=true where studio_id=s and rule_key='trial_payment_towards_enrollment';
  outcomes:=outcomes||jsonb_build_array(jsonb_build_object('variant','tenant_rule_gate','passed',true));
  select price_minor+5000 into amount from public.product_templates where id=pack;
+ rejected:=false;
+ begin
+  perform public.create_package_with_trial_enrollment_credit((run#>>'{fixtures,people,student_cash,student_id}')::uuid,pack,enroll,payment,key,'first_usage',null,amount,'cash',today,null,null);
+ exception when others then if SQLERRM='trial_credit_unavailable' then rejected:=true; else raise; end if; end;
+ if not rejected then raise exception 'cross_student_credit_allowed'; end if;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('variant','cross_student_payment_blocked','passed',true));
  rejected:=false;
  begin
   perform public.create_package_with_trial_enrollment_credit(st,pack,enroll,payment,key,'first_usage',null,amount-1,'cash',today,null,null);
@@ -70,7 +91,7 @@ begin
  outcomes:=outcomes||jsonb_build_array(jsonb_build_object('variant','second_application_blocked','passed',true));
  rejected:=false;
  begin
-  insert into public.payments(studio_id,sale_id,kind,amount_minor,method,effective_on) values(s,source_sale,'refund',15000,'cash',today);
+  insert into public.payments(studio_id,sale_id,kind,amount_minor,method,effective_on,reason) values(s,source_sale,'refund',15000,'cash',today,'Fictitious UAT refund');
  exception when others then if SQLERRM='trial_credit_source_already_applied' then rejected:=true; else raise; end if; end;
  if not rejected then raise exception 'applied_receipt_refunded_independently'; end if;
  outcomes:=outcomes||jsonb_build_array(jsonb_build_object('variant','source_refund_requires_linked_resolution','passed',true));
