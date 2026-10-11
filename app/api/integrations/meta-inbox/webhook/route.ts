@@ -3,6 +3,7 @@ import { demiDeliveryRetryPolicy } from "@/lib/assistant/delivery-retry-policy";
 import { handleDemiMetaInboxReceipt } from "@/lib/assistant/meta-inbox-receipt";
 import { demiUatScope } from "@/lib/assistant/uat-scope";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
+import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
 import {
   downloadMetaInboxAttachment,
@@ -115,13 +116,7 @@ async function loadRuntimeContext(
   const [{ data: studio, error: studioError }, { data: config, error: configError }] =
     await Promise.all([
       supabase.from("studios").select("id,name,timezone,currency").eq("id", studioId).maybeSingle(),
-      supabase
-        .from("assistant_configs")
-        .select(
-          "assistant_name,mode,model,reasoning_effort,personality_instructions,monthly_budget_usd_micros,conversation_budget_usd_micros,max_model_calls_per_turn,max_tool_calls_per_turn",
-        )
-        .eq("studio_id", studioId)
-        .maybeSingle(),
+      loadDemiRuntimeConfig(supabase, studioId),
     ]);
 
   if (studioError || !studio) throw new Error("studio_not_found");
