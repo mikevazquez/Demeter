@@ -20,7 +20,7 @@ Primer contacto observado: recibido como unsupported, sin referencia de anuncio 
 
 Para pagar el paquete el día de la primera clase, pagar antes $150 por la primera clase y seguir el flujo vigente de reserva. Si compra el paquete ese mismo día, aplicar esos $150 a la inscripción y cobrar el resto de inscripción más el precio íntegro del paquete. Con inscripción de $200: $50 más paquete. Si no compra paquete ese día: pago por primera clase. Sin devolución automática, créditos adicionales ni doble abono.
 
-Esta entrega configura la comunicación de la excepción. No introduce una reasignación contable automática ni cambia el cobro administrativo. La operación de abono requiere implementación y UAT propios antes de activar la excepción en producción; conservar y referenciar el pago original, aplicación única, fecha local de clase, pago válido y venta de paquete.
+La operación administrativa se implementó en sandbox con get_trial_enrollment_credit_options y create_package_with_trial_enrollment_credit, tabla trial_enrollment_credits y migración 20261011005124. El pago original permanece en la venta de primera clase. La inscripción de la compra recibe un ajuste comercial de $150 vinculado al comprobante original; no se crea otro ingreso por esos $150 ni se descuenta el paquete. Sólo aplica con pago validado sin devolución, clase del mismo día local, inscripción requerida sin vigencia actual y liquidación completa del restante más paquete. Aplicación única por pago, venta original y reserva. Devolución o anulación del comprobante utilizado requiere resolver la compra vinculada; no se devuelve por separado. UAT de SQL: 13 variantes pasaron con rollback, incluidas autorización, pertenencia de pago, fecha, regla por tenant, falta de liquidación, reintento, segundo uso e integridad del dinero. Falta recorrido visual antes de aprobar D08.
 
 ## Matriz UAT
 
@@ -79,3 +79,4 @@ Estudio ficticio eef23197-19e6-4680-ad94-7268fe09809e. Identidad ficticia studen
 Estas variantes pasaron UAT ejecutado por Codex. No equivalen a aceptación del usuario ni a la aprobación de toda la matriz. Siguen pendientes las conversaciones informativas, primer contacto, reserva/bloqueo visual y el abono administrativo de $150; no solicitar promoción hasta cerrar ese alcance.
 
 Evidencia visual de la variante parcial: [Hoy con $500 pendientes](evidence/demi-cash-partial-2026-10-11.jpg).
+
