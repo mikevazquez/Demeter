@@ -665,6 +665,14 @@ function isSessionBookableNow(session: { status: string; starts_at: string }, no
 }
 
 async function prepareCashPackage(ctx: AssistantActionToolContext, args: Record<string, unknown>) {
+  const paymentDueOn = args.payment_due_on == null ? null : String(args.payment_due_on);
+  if (
+    paymentDueOn !== null &&
+    (!/^\d{4}-\d{2}-\d{2}$/.test(paymentDueOn) ||
+      Number.isNaN(Date.parse(`${paymentDueOn}T12:00:00Z`)) ||
+      new Date(`${paymentDueOn}T12:00:00Z`).toISOString().slice(0, 10) !== paymentDueOn)
+  )
+    return { ok: false, reason_code: "payment_due_date_invalid" };
   const product = parseOpaqueRef(args.product_ref, "product");
   if (!ctx.serviceMode || !ctx.studentId || !product)
     return { ok: false, reason_code: "cash_students_only" };
@@ -707,6 +715,7 @@ async function prepareCashPackage(ctx: AssistantActionToolContext, args: Record<
     first_reservation_allowed: true,
     second_reservation_requires_payment: true,
     starts_with_first_reservation: true,
+    payment_due_on: paymentDueOn,
   };
   const expires = new Date(Date.now() + 600000).toISOString();
   const { error: cancelError } = await ctx.supabase
@@ -727,6 +736,7 @@ async function prepareCashPackage(ctx: AssistantActionToolContext, args: Record<
       product_id: product,
       expected_amount: item.price_minor,
       prepared_turn_id: ctx.turnId,
+      payment_due_on: paymentDueOn,
     },
     confirmation_summary: summary,
     status: "pending",
@@ -769,7 +779,7 @@ async function confirmCashPackage(ctx: AssistantActionToolContext) {
   )
     return { ok: false, reason_code: "explicit_confirmation_required" };
   const { data: result, error: purchaseError } = await ctx.supabase.rpc(
-    "service_create_demi_cash_purchase",
+    "service_create_demi_cash_purchase_with_due_date",
     {
       p_studio: ctx.studio.id,
       p_conversation: ctx.conversationId,
@@ -777,6 +787,7 @@ async function confirmCashPackage(ctx: AssistantActionToolContext) {
       p_product: payload.product_id,
       p_key: pending.id,
       p_expected_amount: payload.expected_amount,
+      p_due_on: payload.payment_due_on ?? null,
     },
   );
   if (purchaseError) return { ok: false, reason_code: "cash_purchase_failed" };

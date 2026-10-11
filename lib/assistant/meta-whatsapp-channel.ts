@@ -373,7 +373,12 @@ export function extractMetaInboundMessages(body: unknown): MetaInboundMessage[] 
         const message = isObject(rawMessage) ? rawMessage : {};
         const providerMessageId = safeText(message.id);
         const fromWaId = safeText(message.from);
-        const messageType = safeText(message.type) ?? "unknown";
+        const providerType = safeText(message.type) ?? "unknown";
+        const recoverableText = isObject(message.text) ? safeText(message.text.body) : null;
+        const messageType =
+          ["unsupported", "unknown"].includes(providerType) && recoverableText
+            ? "text"
+            : providerType;
         const referral = isObject(message.referral) ? message.referral : {};
         if (!providerMessageId || !fromWaId) continue;
 

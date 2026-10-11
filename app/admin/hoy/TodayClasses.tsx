@@ -19,6 +19,8 @@ export type TodayRosterItem = {
   checkedInAt?: string | null;
   attendanceProvenance?: string | null;
   paymentDueOnAttendance?: boolean;
+  pendingPackageSaleId?: string;
+  pendingPackageAmountMinor?: number;
   individualPriceMinor?: number | null;
   currency?: string;
   resourceName?: string | null;

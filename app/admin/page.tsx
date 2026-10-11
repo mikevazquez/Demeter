@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { loadDemiCashDebts } from "@/lib/assistant/cash-debts";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
@@ -137,6 +138,16 @@ export default async function AdminPage({
   const canReadSales = can(CAPABILITIES.SALES_READ) || can(CAPABILITIES.SALES_WRITE);
   const canWriteSales = can(CAPABILITIES.SALES_WRITE);
   const canWriteAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
+  let cashDebts: Awaited<ReturnType<typeof loadDemiCashDebts>> = [];
+  let cashDebtsUnavailable = false;
+  if (canReadSales) {
+    try {
+      cashDebts = await loadDemiCashDebts(supabase, studio.id);
+    } catch {
+      cashDebtsUnavailable = true;
+    }
+  }
+  const cashDebtByAcquisition = new Map(cashDebts.map((debt) => [debt.acquisitionId, debt]));
   const [
     { data: serverNow },
     { data: selectedSessions },
@@ -553,6 +564,12 @@ export default async function AdminPage({
               ? "Agregada manualmente después del cierre"
               : null,
           paymentDueOnAttendance: reservation.commercial_status === "payment_pending",
+          pendingPackageSaleId: acquisition
+            ? cashDebtByAcquisition.get(acquisition.id)?.saleId
+            : undefined,
+          pendingPackageAmountMinor: acquisition
+            ? cashDebtByAcquisition.get(acquisition.id)?.amountMinor
+            : undefined,
           individualPriceMinor: template?.drop_in_price_minor ?? null,
           currency: studio.currency ?? "MXN",
           resourceRequired: session.requires_resource,
@@ -652,6 +669,48 @@ export default async function AdminPage({
         </nav>
       </section>
 
+      {cashDebtsUnavailable ? (
+        <p role="alert">
+          No se pudieron consultar los pagos en efectivo pendientes. Revisa el perfil de la alumna
+          antes de cobrar.
+        </p>
+      ) : null}
+      {cashDebts.length > 0 ? (
+        <section className="hoy-priority" aria-label="Efectivo pendiente de cobro">
+          <div className="hoy-priority-heading">
+            <div>
+              <span>Pendiente de cobro</span>
+              <strong>Efectivo por cobrar</strong>
+            </div>
+            <span className="hoy-priority-count">{cashDebts.length}</span>
+          </div>
+          <div className="hoy-priority-list">
+            {cashDebts.map((debt) => (
+              <Link
+                key={debt.saleId}
+                href={`/admin/ventas/${debt.saleId}`}
+                className="hoy-priority-item"
+              >
+                <span className="hoy-priority-icon" aria-hidden="true">
+                  $
+                </span>
+                <span className="hoy-priority-copy">
+                  <strong>{debt.studentName}</strong>
+                  <small>
+                    {new Intl.NumberFormat(locale, {
+                      style: "currency",
+                      currency: debt.currency,
+                    }).format(debt.amountMinor / 100)}{" "}
+                    pendientes
+                  </small>
+                  <em>{debt.dueOn ? `Fecha de pago: ${debt.dueOn}` : "Sin fecha de pago"}</em>
+                </span>
+                <b aria-hidden="true">›</b>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
       {selectedKey === todayKey && pendingTransferReviews.length > 0 ? (
         <section className="hoy-priority" aria-label="Pendientes importantes">
           <div className="hoy-priority-heading">

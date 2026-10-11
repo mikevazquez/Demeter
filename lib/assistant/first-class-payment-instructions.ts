@@ -47,6 +47,6 @@ export function firstClassPaymentInstructions(quote: PaymentQuote, request: stri
   const next =
     useCheckout && checkout?.automatic_verification && checkout.receipt_required === false
       ? "No necesitas enviar comprobante. Esperaré la confirmación de Mercado Pago; cuando apruebe el pago, continuaremos con los datos faltantes para reservar."
-      : "Envíame el comprobante por este mismo chat. El equipo validará el pago manualmente. Después de revisarlo te pediré los datos faltantes para reservar.";
+      : "Envíame el comprobante por este mismo chat. Al recibirlo te pediré juntos los datos faltantes para crear la reserva, según disponibilidad. El equipo validará el pago manualmente; la reserva quedará sujeta a esa validación y puede cancelarse si el comprobante no es válido.";
   return `El importe de tu primera clase es ${amount}.\n\n${method}\n\n${next} Todavía no hay una reserva confirmada ni un lugar retenido.`;
 }
