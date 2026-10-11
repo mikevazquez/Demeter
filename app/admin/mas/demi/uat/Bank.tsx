@@ -201,6 +201,10 @@ export default function Bank({
             <h2>2. Conversar con Demi</h2>
             <form
               action={(form) => perform(() => sendDemiUatMessage(form))}
+              onSubmit={() => {
+                setBusy(true);
+                setError("");
+              }}
               onReset={(event) => {
                 const select =
                   event.currentTarget.querySelector<HTMLSelectElement>("select[name='persona']");
