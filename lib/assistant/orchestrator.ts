@@ -3,7 +3,10 @@ import "server-only";
 import { conversationGuidance, needsFirstVisitGuidance } from "./conversation-guidance";
 import { testPersonaLabel } from "./prompt-workbench";
 import { firstClassPaymentInstructions } from "./first-class-payment-instructions";
-import { shouldBlockPaymentForInformation } from "./information-intent";
+import {
+  isMixedInformationActionRequest,
+  shouldBlockPaymentForInformation,
+} from "./information-intent";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { estimateModelCostUsdMicros } from "./costs";
@@ -1200,6 +1203,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
 
   let toolCallsThisTurn = 0;
   let provisionalTransferBooking = false;
+  let mixedPaymentInstructions: string | null = null;
   const testDeadline = Date.now() + 90_000;
 
   for (let attempt = 0; attempt < input.config.max_model_calls_per_turn; attempt += 1) {
@@ -1335,7 +1339,11 @@ export async function runAssistantTurn(input: OrchestratorInput) {
 
     const functionCalls = output.filter((item) => item.type === "function_call");
     if (functionCalls.length === 0) {
-      const text = outputText(output);
+      const informationReply = outputText(output);
+      if (!informationReply) throw new Error("assistant_empty_response");
+      const text = mixedPaymentInstructions
+        ? `${informationReply}\n\n${mixedPaymentInstructions}`
+        : informationReply;
       if (!text) throw new Error("assistant_empty_response");
       const revocationAlreadyExplained =
         /(?:puede(?:n)?|podr[aá](?:n)?|podr[ií]a(?:n)?)\s+(?:ser\s+)?(?:cancelad[ao]s?|cancelarse|revocad[ao]s?|revocarse)\b[\s\S]{0,180}\bsi\b[\s\S]{0,100}\bno\b[\s\S]{0,100}(?:valid|confirm)/i.test(
@@ -1506,7 +1514,17 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         resultObject,
         [...input.history].reverse().find((message) => message.role === "user")?.content ?? "",
       );
-      if (instructions) return { reply: instructions, trace };
+      if (instructions) {
+        const message =
+          [...input.history].reverse().find((item) => item.role === "user")?.content ?? "";
+        if (!isMixedInformationActionRequest(message)) return { reply: instructions, trace };
+        mixedPaymentInstructions = instructions;
+        responseInput.push({
+          role: "developer",
+          content:
+            "La solicitud de pago ya está preparada. Responde ahora las preguntas informativas del mensaje con los datos consultados; consulta los datos que falten sin volver a preparar pagos o reservas. No incluyas instrucciones bancarias ni confirmes una reserva: el sistema añadirá las instrucciones exactas de pago a tu respuesta informativa.",
+        });
+      }
     }
 
     responseInput.push({

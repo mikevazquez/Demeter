@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isInformationOnlyRequest,
+  isMixedInformationActionRequest,
   shouldBlockPaymentForInformation,
 } from "../lib/assistant/information-intent";
 
@@ -23,5 +24,14 @@ describe("information while waiting for payment", () => {
     "Quiero pagar el paquete el día de clase",
   ])("keeps explicit actions available: %s", (message) => {
     expect(isInformationOnlyRequest(message)).toBe(false);
+  });
+  it("recognizes questions that must survive an explicit booking request", () => {
+    expect(
+      isMixedInformationActionRequest(
+        "¿Dónde están ubicados y cuánto cuesta la primera clase? También quiero reservar.",
+      ),
+    ).toBe(true);
+    expect(isMixedInformationActionRequest("Quiero reservar")).toBe(false);
+    expect(isInformationOnlyRequest("¿Dónde están ubicados?")).toBe(true);
   });
 });
