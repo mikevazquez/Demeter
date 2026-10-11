@@ -65,10 +65,10 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
     expect(activityActions).toContain("p_color_hex: colorHex");
     expect(atomicActivitySave).toContain("color_hex = upper(p_color_hex)");
     expect(agenda).toContain('"--agenda-session-color": session.color');
-    expect(reserve).toContain("borderLeftColor: activityColor");
+    expect(reserve).toContain("classAuraStyle(activityColor");
     expect(detail).toContain('select("color_hex")');
     expect(detail).toContain("activityColor");
-    expect(detail).toContain("linear-gradient(135deg");
+    expect(detail).toContain("radial-gradient(circle at 90% 0%");
   });
 
   it("seeds the requested reference colors", () => {
@@ -86,9 +86,9 @@ describe("SF-N14 clean avatar, activity colors and single-class purchase", () =>
     expect(singleMigration).toContain("'Clase suelta · Danza Aérea'");
     expect(singleMigration).toContain("'single_class'::public.product_type");
     expect(reserve).toContain("bookingReasonCopyForStudent");
-    expect(reserve).toContain("PurchaseSingleClassButton");
-    expect(reserve).toContain("justify-end");
-    expect(reserve).toContain("Ver paquetes");
+    expect(reserve).toContain('needsPayment ? "Pagar" : "Ver"');
+    expect(reserve).not.toContain("PurchaseSingleClassButton");
+    expect(detail).toContain("Ver paquetes");
     expect(detail).toContain("PurchaseSingleClassButton");
     expect(detail).toContain("justify-end");
   });
