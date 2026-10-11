@@ -27,6 +27,12 @@ const DISCIPLINES: DisciplineStyle[] = [
   { key: "yoga", pattern: /yoga/, motif: "🪷", image: "/disciplinas/yoga.jpg" },
   { key: "flex", pattern: /flex/, motif: "🧘‍♀️", image: "/disciplinas/flexibilidad.jpg" },
   { key: "pole", pattern: /pole|tubo/, motif: "💫", image: "/disciplinas/pole.jpg" },
+  {
+    key: "danza-aerea",
+    pattern: /danza\s+aerea/,
+    motif: "🎀",
+    image: "/disciplinas/telas.jpg",
+  },
 ];
 
 function normalize(value: string) {
