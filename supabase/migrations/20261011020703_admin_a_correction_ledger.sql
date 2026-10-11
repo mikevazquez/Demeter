@@ -133,4 +133,3 @@ $function$
 ;
 revoke all on function public.set_attendance_status(uuid,public.reservation_status,text) from public,anon;
 grant execute on function public.set_attendance_status(uuid,public.reservation_status,text) to authenticated;
-

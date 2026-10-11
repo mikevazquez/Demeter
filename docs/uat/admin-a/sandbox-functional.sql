@@ -35,7 +35,7 @@ begin
  result:=public.undo_bulk_mark_attended((bulk->>'batch_id')::uuid);
  if (result->>'count')::int<>1 then raise exception 'undo_count: %',result; end if;
  insert into admin_a_uat_results values('Bulk attendance undo restores only marked reservation',true,'{}');
- 
+
  update public.class_sessions set status='completed' where id=session;
  begin perform public.set_attendance_status(reservation,'attended'); raise exception 'missing_reason_bypass'; exception when others then if sqlerrm<>'correction_reason_required' then raise; end if; end;
  insert into public.studio_operating_policies(studio_id,cancellation_cutoff_minutes,late_cancellation_consumes_credit,no_show_consumes_credit) values(studio,300,true,false) on conflict(studio_id) do update set no_show_consumes_credit=false;
@@ -65,7 +65,7 @@ begin
  perform public.admin_cancel_session(session,'Cambio de horario de prueba');
  if not exists(select 1 from public.class_sessions where id=session and cancellation_reason='Cambio de horario de prueba' and cancelled_at is not null and cancelled_by=actor and cancellation_source='manual') then raise exception 'cancellation_audit'; end if;
  if not exists(select 1 from public.reservations where id=reservation and status='cancelled_by_studio') then raise exception 'cancellation_reservations'; end if;
- 
+
  insert into admin_a_uat_results values('Session cancellation records reason, actor, date and releases reservation',true,'{}');
  insert into public.instructors(studio_id,person_id) select studio,person_id from public.students where id=student returning id into instructor;
  update public.studio_memberships set role='instructor',person_id=(select person_id from public.students where id=student) where studio_id=studio and user_id=actor;
@@ -80,4 +80,3 @@ end;
 $$;
 select * from admin_a_uat_results;
 rollback;
-
