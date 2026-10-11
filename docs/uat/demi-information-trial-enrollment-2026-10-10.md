@@ -125,3 +125,20 @@ Estado: los pendientes visuales/conversacionales se mantienen abiertos por bloqu
 Para retomar en una conversación con navegador nuevo:
 
 > Continúa los UAT pendientes de Demi en mikevazquez/Demeter, rama fix/demi-information-trial-enrollment, PR #265. Lee docs/uat/demi-information-trial-enrollment-2026-10-10.md. Recupera la ejecución 3b03aaf5-b014-4277-bc69-cef7aa2ba271 en el banco sandbox; no crees escenarios desde cero ni modifiques producción. Cierra D03–D06, D08–D09 y los recorridos C03/C05/C06/C07/C09 pendientes. Conserva históricos y evidencias. Los resultados SQL no sustituyen la UAT visual. Solicita autorización de promoción únicamente cuando todos los casos del alcance estén cerrados.
+
+
+## Reanudación del 10 de octubre, 19:28 México
+
+Se leyó la matriz y se verificó PR #265: borrador, abierto y sin fusionar. Código revisado: `6d2dcc57552a9adc6f86ba87d448a312b3e778e9`. El entorno cloud de esta reanudación inició correctamente, con conectividad y variables configuradas listas, pero no expuso una herramienta de navegador confiable.
+
+La conexión mediante la skill Browser falló antes de crear o seleccionar un navegador con el mensaje literal:
+
+```text
+Browser use requires a trusted Node REPL browser service
+```
+
+Este bloqueo es distinto del error de credenciales nativas de la ejecución anterior: disponer de un entorno cloud listo no proporciona por sí solo el controlador de navegador requerido. No se usó otro mecanismo de automatización ni peticiones directas para sustituir el recorrido visual.
+
+No fue posible recuperar en la UI la ejecución `3b03aaf5-b014-4277-bc69-cef7aa2ba271`. No se crearon escenarios, no se enviaron mensajes ni comprobantes, y no se modificaron estados de sandbox o producción. Los históricos y las evidencias previas permanecen conservados. No se atribuye ningún resultado nuevo a la ejecución.
+
+Siguen abiertos D03–D06, D08–D09 y C03/C05/C06/C07/C09. No se solicita autorización de promoción. Para continuar hace falta una sesión que exponga la herramienta de navegador confiable indicada por la skill Browser, además del entorno cloud.
