@@ -36,7 +36,7 @@ Esta entrega configura la comunicación de la excepción. No introduce una reasi
 | D08 Compra paquete ese día                                          | Aplicar $150 una sola vez a inscripción; cobrar resto más paquete | Pendiente implementación del abono administrativo       | Pendiente                |
 | D09 No compra paquete ese día                                       | Mantener $150 como primera clase                                  | Regla configurada; pendiente recorrido                  | Pendiente                |
 
-Verificación: 55 pruebas en 9 archivos, TypeScript sin errores. ESLint de archivos modificados sin errores. No hay despliegue del nuevo código ni UAT end to end aprobado. No promover hasta cerrar pendientes y recibir Autorizo promoción para la versión revisada.
+Verificación: 81 pruebas en 11 archivos, TypeScript sin errores. ESLint de archivos modificados sin errores. Preview desplegado y primeras variantes UAT ejecutadas; matriz integral todavía pendiente. No promover hasta cerrar pendientes y recibir Autorizo promoción para la versión revisada.
 
 ## Ampliación: efectivo pendiente
 
@@ -52,16 +52,30 @@ Cambios preparados:
 
 | Caso                            | Esperado                                                                                  | Resultado observado                           | UAT integral                       |
 | ------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------- | ---------------------------------- |
-| C01 Fecha prometida de efectivo | Conservar lunes como fecha local, no fecha de creación                                    | Aprobado en SQL sandbox para fecha explícita  | Falta conversacional con lunes     |
-| C02 Paquete sin reserva         | Adeudo visible, sin cobro ni reserva ficticios                                            | Aprobado en SQL sandbox y pruebas de consulta | Falta visual en Hoy                |
+| C01 Fecha prometida de efectivo | Conservar lunes como fecha local, no fecha de creación                                    | Aprobado en SQL sandbox para fecha explícita  | Pasó conversación: lunes 12 de octubre; confirmación y venta con fecha 2026-10-12     |
+| C02 Paquete sin reserva         | Adeudo visible, sin cobro ni reserva ficticios                                            | Aprobado en SQL sandbox y pruebas de consulta | Pasó visual en Hoy: $600 pendientes, 0 reservas, 0 pagos al crear                |
 | C03 Reintento                   | Una sola venta y misma fecha                                                              | Aprobado en SQL sandbox                       | Pendiente recorrido conversacional |
 | C04 Fecha pasada                | Rechazar antes de crear venta                                                             | Aprobado en SQL sandbox                       | Aprobado técnico                   |
 | C05 Primera reserva             | Permitir una y comenzar vigencia                                                          | Aprobado en SQL sandbox                       | Falta visual del aviso             |
 | C06 Segunda reserva con deuda   | Bloquear hasta cobrar                                                                     | Aprobado en SQL sandbox                       | Pendiente conversación             |
-| C07 Cobro completo              | Registrar pago real, quitar pendiente y permitir siguiente reserva sin reiniciar vigencia | Aprobado en SQL sandbox y prueba de consulta  | Pendiente pantalla administrativa  |
-| C08 Cobro parcial               | Mostrar sólo saldo restante                                                               | Aprobado en prueba de consulta                | Pendiente pantalla administrativa  |
+| C07 Cobro completo              | Registrar pago real, quitar pendiente y permitir siguiente reserva sin reiniciar vigencia | Aprobado en SQL sandbox y prueba de consulta  | Cobro visual pasó; falta siguiente reserva conversacional |
+| C08 Cobro parcial               | Mostrar sólo saldo restante                                                               | Aprobado en prueba de consulta                | Pasó visual: pago ficticio $100, saldo $500 en venta y Hoy |
 | C09 Error de consulta           | Mostrar error, no afirmar saldo cero                                                      | Aprobado en prueba de consulta                | Pendiente visual                   |
 
 SQL ejecutado: tests/demi-2-cash-human-uat.sql (7 verificaciones) y tests/demi-cash-promised-date-uat.sql (4 verificaciones), ambos en sandbox con rollback de fixtures. La migración de fecha queda aplicada en sandbox.
 
-El código de pantallas y conversación todavía no se ha desplegado. Acceso directo Vercel: conexión principal devolvió 403 de acceso al equipo; conexión alternativa 404 de proyecto. Sin CLI Vercel autenticado disponible. Esto impide afirmar UAT conversacional/visual ejecutado. La matriz conserva pendientes; no existe autorización de producción para este alcance.
+## UAT de Preview: ejecución 27f9c2cb
+
+Preview de PR #265 listo, commit 2bd2739f395d7d0e91cd01df8faaf574ccc4f96d, deployment dpl_9QF5D4ynsMJS4BkjWLiWmsXUUDhc. Autenticación y selección de estudio sandbox correctas. No se modificó producción.
+
+Estudio ficticio eef23197-19e6-4680-ad94-7268fe09809e. Identidad ficticia student_cash. Conversación c87592a2-26a8-45d1-91c0-0b5568bb632e; compra 3d839748-0fe7-4b0c-a4e1-06c9b68dd425; venta 93458f21-5c93-4806-ae59-1271473b6aeb.
+
+- Mensaje: Quiero comprar el paquete de 8 clases. Lo pagaré el lunes en efectivo. Demi interpreta lunes 12 de octubre, informa $600, primera reserva permitida y segunda condicionada a cobro.
+- Al confirmar Sí con la misma identidad, registra compra, confirma fecha y conserva $600 pendientes. Venta confirmada con payment_due_on=2026-10-12; ninguna reserva ni pago creados automáticamente.
+- Selección del estudio ficticio: Hoy muestra Efectivo por cobrar, $600 y la fecha prometida, aunque no haya reserva.
+- Cobro ficticio parcial desde detalle de venta: $100 efectivo. Venta muestra $500 restantes; Hoy muestra el mismo pendiente.
+- Liquidación ficticia desde detalle: $500 efectivo. Venta muestra Pagada, saldo $0 y los dos pagos históricos. El panel de Hoy deja de mostrar el adeudo liquidado. Fecha de cobro pendiente se limpia. La adquisición conserva starts_on/expires_on=null porque aún no se reservó.
+
+Estas variantes pasaron UAT ejecutado por Codex. No equivalen a aceptación del usuario ni a la aprobación de toda la matriz. Siguen pendientes las conversaciones informativas, primer contacto, reserva/bloqueo visual y el abono administrativo de $150; no solicitar promoción hasta cerrar ese alcance.
+
+Evidencia visual de la variante parcial: [Hoy con $500 pendientes](evidence/demi-cash-partial-2026-10-11.jpg).
