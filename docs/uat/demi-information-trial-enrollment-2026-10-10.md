@@ -26,14 +26,14 @@ La operación administrativa se implementó en sandbox con get_trial_enrollment_
 
 | Caso                                                                | Esperado                                                          | Verificación técnica                                    | UAT usuario              |
 | ------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------- | ------------------------ |
-| D01 Pregunta por más información después de recibir datos bancarios | Responder información; conservar solicitud y evitar otro cobro    | Pruebas automatizadas pasan                             | Pendiente                |
-| D02 Pregunta por ubicación, requisitos o precio                     | Permitir consultas y bloquear preparación del pago                | Pruebas automatizadas pasan                             | Pendiente                |
+| D01 Pregunta por más información después de recibir datos bancarios | Responder información; conservar solicitud y evitar otro cobro    | Pruebas automatizadas pasan                             | Pasó conversación y estado D01/D02 en ejecución 3b03aaf5 |
+| D02 Pregunta por ubicación, requisitos o precio                     | Permitir consultas y bloquear preparación del pago                | Pruebas automatizadas pasan                             | Pasó conversación y estado D01/D02 en ejecución 3b03aaf5 |
 | D03 Pregunta y solicita reservar explícitamente                     | Mantener herramientas normales disponibles                        | Pruebas automatizadas pasan                             | Pendiente                |
 | D04 Unsupported con texto recuperable y referencia de anuncio       | Procesar texto real y conservar referencia                        | Pruebas automatizadas pasan                             | Pendiente                |
 | D05 Unsupported sin texto ni referencia, como captura               | Continuar con pregunta útil; no inventar intención                | Código revisado; falta recorrido por webhook de sandbox | Pendiente                |
 | D06 Comprobante bancario recibido                                   | Pedir datos juntos; reserva condicionada a validación y cupo      | Mensaje y regresiones de comprobantes pasan             | Pendiente                |
-| D07 Quiere pagar paquete el día de la clase                         | Explicar anticipo y abono a inscripción                           | Regla persistida y verificada en sandbox                | Pendiente conversacional |
-| D08 Compra paquete ese día                                          | Aplicar $150 una sola vez a inscripción; cobrar resto más paquete | Pendiente implementación del abono administrativo       | Pendiente                |
+| D07 Quiere pagar paquete el día de la clase                         | Explicar anticipo y abono a inscripción                           | Regla persistida y verificada en sandbox                | Pasó: $50 inscripción + $600 paquete; $800 acumulados |
+| D08 Compra paquete ese día                                          | Aplicar $150 una sola vez a inscripción; cobrar resto más paquete | Implementado; 13 variantes SQL pasan                    | Bloqueado: falta recorrido visual |
 | D09 No compra paquete ese día                                       | Mantener $150 como primera clase                                  | Regla configurada; pendiente recorrido                  | Pendiente                |
 
 Verificación: 81 pruebas en 11 archivos, TypeScript sin errores. ESLint de archivos modificados sin errores. Preview desplegado y primeras variantes UAT ejecutadas; matriz integral todavía pendiente. No promover hasta cerrar pendientes y recibir Autorizo promoción para la versión revisada.
@@ -80,3 +80,24 @@ Estas variantes pasaron UAT ejecutado por Codex. No equivalen a aceptación del 
 
 Evidencia visual de la variante parcial: [Hoy con $500 pendientes](evidence/demi-cash-partial-2026-10-11.jpg).
 
+
+## Continuación: ejecución 3b03aaf5, 11 de octubre UTC
+
+Preview de código d9392b4eba63d57f6e30beaa929d6ae894a69ec9: READY, entorno preview (target null), deployment dpl_EGQsee3jWfH4kLtuntG4EuK4Dhid. Rama sin fusionar; producción sin cambios.
+
+Estudio ficticio 29af8ae6-1c55-497d-b53c-d6d7b6fc828d; conversación a28e6d7a-2c48-497d-89b5-b617c7e6cd3b. Las respuestas conversacionales se observaron en el preview anterior 4b82e581, cuyo código comercial y de información es idéntico; el commit posterior agrega escenarios de Meta al banco UAT.
+
+- D01: después de recibir instrucciones bancarias, la pregunta por más información y ubicación produjo la dirección configurada, sin repetir datos bancarios. Los requisitos no estaban configurados: Demi canalizó a atención humana sin inventarlos. El caso humano fue resuelto mediante el banco de pruebas para continuar.
+- D02: consulta por precio y duración respondió paquete de 8 clases $600, 30 días, inscripción $200 anual. No creó otra solicitud de pago.
+- D07: explicó pagar primero $150; si compra el paquete el día de clase, abonar una vez a inscripción, pagar $50 restantes más paquete $600: $650 nuevos y $800 acumulados.
+- Estado leído después de estas consultas: exactamente un grupo 404d31c9-30b1-4dc3-bda0-8390bb472e6f en awaiting_receipt, cero pagos nuevos y cero reservas nuevas. No se activó un paquete por explicar la excepción.
+- Regresión SQL reejecutada contra sandbox: 4 variantes de fecha/efectivo, 13 variantes de abono a inscripción y 7 variantes de efectivo/control humano; todas pasaron. Cada script conserva rollback, sin dejar fixtures de esas pruebas.
+- Regresión automatizada actual: 73 pruebas en 10 archivos, todas pasaron. TypeScript y ESLint de los cambios habían pasado; preview de código completo READY.
+
+### Bloqueo verificable del recorrido visual
+
+Al abrir el selector de archivo para enviar el comprobante ficticio, el navegador rechazó la operación por retained_data_restricted tras entrega nativa de credenciales. Su recuperación indicó crear un documento nuevo; esa recuperación y el reinicio del runtime devolvieron native credential state cannot be safely resumed. No se intentó acceder a credenciales ni sustituir el navegador con peticiones fuera de su API.
+
+El comprobante no se considera enviado ni el caso D06 aprobado. Se conservan ejecución y conversación para retomar. Pendientes integrales: D03 solicitud mixta, D04/D05 webhook sintético con formatos unsupported, D06 comprobante/datos/reserva, D08 aplicación visual del abono, D09 primera clase sin compra; C03 reintento conversacional, C05 aviso en reserva/roster, C06 segunda reserva bloqueada, C07 reserva después de liquidar y C09 presentación de error. Los resultados técnicos correspondientes no sustituyen estas evidencias.
+
+No se solicita autorización de promoción porque la matriz integral aún no está cerrada. Reanudar desde la ejecución 3b03aaf5 una vez recuperable el navegador; solicitar Autorizo promoción sólo al finalizar las variantes pendientes.
