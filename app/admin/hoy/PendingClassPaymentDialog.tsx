@@ -4,13 +4,6 @@ import { useFormStatus } from "react-dom";
 
 import { recordPendingClassPaymentAndAttendanceFromToday } from "../actions";
 
-function money(value: number, currency: string) {
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency,
-  }).format(value / 100);
-}
-
 function SubmitButton() {
   const { pending } = useFormStatus();
 
@@ -28,7 +21,6 @@ export function PendingClassPaymentDialog({
   returnTo,
   studentName,
   amountMinor,
-  currency,
   onClose,
 }: {
   reservationId: string;
@@ -59,11 +51,8 @@ export function PendingClassPaymentDialog({
         <header>
           <div>
             <span className="today-payment-eyebrow">PAGO PENDIENTE</span>
-            <h3 id="pending-class-payment-title">Registrar pago de la clase</h3>
-            <p>
-              {studentName} llegó desde Asistian sin pago registrado. El cobro y la asistencia se
-              guardarán juntos.
-            </p>
+            <h3 id="pending-class-payment-title">Cobrar y registrar asistencia</h3>
+            <p>{studentName} · Primero se registra el pago y luego la asistencia.</p>
           </div>
           <button
             type="button"
@@ -83,29 +72,17 @@ export function PendingClassPaymentDialog({
 
           <div className="today-payment-amount">
             <span>Importe</span>
-            {configuredAmount ? (
-              <>
-                <strong>{money(amountMinor, currency)}</strong>
-                <input type="hidden" name="payment_amount" value={(amountMinor / 100).toFixed(2)} />
-              </>
-            ) : (
-              <label>
-                <span>Monto cobrado</span>
-                <div>
-                  <b>$</b>
-                  <input
-                    name="payment_amount"
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    inputMode="decimal"
-                    placeholder="0.00"
-                    required
-                    autoFocus
-                  />
-                </div>
-              </label>
-            )}
+            <label>
+              <span>Monto cobrado</span>
+              <input
+                name="payment_amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                defaultValue={configuredAmount ? (amountMinor / 100).toFixed(2) : ""}
+                required
+              />
+            </label>
           </div>
 
           <label className="today-payment-field">

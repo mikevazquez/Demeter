@@ -25,7 +25,7 @@ describe("ACTIVIDADES-01 restored module", () => {
   const styles = readFileSync(join(process.cwd(), "app/admin/actividades/actividades.css"), "utf8");
 
   it("restores Activities as its own admin module", () => {
-    expect(layout).toContain('href: "/admin/actividades"');
+    expect(layout).toContain('"/admin/actividades"');
     expect(more).toContain('title: "Actividades"');
     expect(listPage).toContain("<h1>Actividades</h1>");
     expect(agenda).toContain('href="/admin/actividades"');

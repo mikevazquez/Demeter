@@ -1,0 +1,908 @@
+@font-face {
+  font-family: "Manrope";
+  src: url("/fonts/manrope-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+}
+/* Approved StudioFlow admin shell and block A surfaces. */
+.admin-shell.admin-flow {
+  --bg: #f2f5f8;
+  --card: #fff;
+  --soft: #eef2f6;
+  --fg: #132036;
+  --muted: #55627a;
+  --faint: #7f8ba0;
+  --line: #e1e7ee;
+  --green: #0b7a55;
+  --green-soft: #e2f4ec;
+  --green-ink: #fff;
+  --red: #c2334d;
+  --red-soft: #fce9ec;
+  --amber: #9a5b00;
+  --amber-soft: #fff3df;
+  --violet: #6a3fc8;
+  --violet-soft: #efe9fc;
+  --blue: #1f6fb0;
+  --blue-soft: #e6f0fa;
+  --scrim: rgba(10, 18, 30, 0.45);
+  --shadow: 0 10px 30px rgba(19, 32, 54, 0.12);
+  --surface: var(--card);
+  --surface-2: var(--soft);
+  --text: var(--fg);
+  --accent: var(--green);
+  --accent-strong: var(--green);
+  --accent-soft: var(--green-soft);
+  font-family:
+    "Manrope",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  .admin-shell.admin-flow:not([data-theme="light"]) {
+    --bg: #0e1522;
+    --card: #162133;
+    --soft: #1c293e;
+    --fg: #eef2f8;
+    --muted: #a7b2c5;
+    --faint: #8592a8;
+    --line: rgba(255, 255, 255, 0.1);
+    --green: #3dd39c;
+    --green-soft: rgba(61, 211, 156, 0.14);
+    --green-ink: #08261b;
+    --red: #ff8597;
+    --red-soft: rgba(255, 133, 151, 0.14);
+    --amber: #ffc266;
+    --amber-soft: rgba(255, 194, 102, 0.14);
+    --violet: #b69cff;
+    --violet-soft: rgba(182, 156, 255, 0.15);
+    --blue: #7db8f0;
+    --blue-soft: rgba(125, 184, 240, 0.14);
+    --scrim: rgba(0, 0, 0, 0.6);
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+  }
+}
+.admin-shell.admin-flow[data-theme="dark"] {
+  --bg: #0e1522;
+  --card: #162133;
+  --soft: #1c293e;
+  --fg: #eef2f8;
+  --muted: #a7b2c5;
+  --faint: #8592a8;
+  --line: rgba(255, 255, 255, 0.1);
+  --green: #3dd39c;
+  --green-soft: rgba(61, 211, 156, 0.14);
+  --green-ink: #08261b;
+  --red: #ff8597;
+  --red-soft: rgba(255, 133, 151, 0.14);
+  --amber: #ffc266;
+  --amber-soft: rgba(255, 194, 102, 0.14);
+  --violet: #b69cff;
+  --violet-soft: rgba(182, 156, 255, 0.15);
+  --blue: #7db8f0;
+  --blue-soft: rgba(125, 184, 240, 0.14);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+.admin-shell.admin-flow :focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+.admin-shell.admin-flow .admin-sidebar,
+.admin-shell.admin-flow .admin-mobile-nav,
+.admin-shell.admin-flow .admin-utility-bar,
+.admin-shell.admin-flow .admin-mobile-header {
+  background: var(--card);
+  color: var(--fg);
+}
+.admin-shell.admin-flow .admin-mobile-header {
+  display: none;
+}
+.admin-shell.admin-flow .hoy-dashboard,
+.admin-shell.admin-flow .flow-more {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px 100px;
+  color: var(--fg);
+}
+.admin-shell.admin-flow .hoy-product-header {
+  padding: 0;
+  margin-bottom: 24px;
+  border: 0;
+  background: transparent;
+}
+.admin-shell.admin-flow .hoy-product-wordmark span {
+  color: var(--fg);
+  font-size: 20px;
+}
+.admin-shell.admin-flow .hoy-product-wordmark b {
+  color: var(--green);
+}
+.admin-shell.admin-flow .hoy-product-wordmark small {
+  color: var(--muted);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+.admin-shell.admin-flow .hoy-title-block {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.admin-shell.admin-flow .hoy-title-block h1,
+.admin-shell.admin-flow .flow-more h1 {
+  color: var(--fg);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.admin-shell.admin-flow .hoy-title-block p {
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 4px;
+}
+.admin-shell.admin-flow .hoy-title-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-shell.admin-flow .flow-icon-button {
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--green);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.admin-shell.admin-flow .hoy-week-card,
+.admin-shell.admin-flow .today-class-card,
+.admin-shell.admin-flow .flow-card,
+.admin-shell.admin-flow .more-list {
+  background: var(--card);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: none;
+}
+.admin-shell.admin-flow .hoy-week-card {
+  padding: 14px;
+  margin-bottom: 18px;
+}
+.admin-shell.admin-flow .hoy-week-heading {
+  margin-bottom: 8px;
+}
+.admin-shell.admin-flow .hoy-week-heading a,
+.admin-shell.admin-flow .hoy-week-heading button {
+  color: var(--fg);
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+}
+.admin-shell.admin-flow .hoy-week-heading button:disabled {
+  opacity: 0.45;
+}
+.admin-shell.admin-flow .hoy-week-heading strong {
+  display: grid;
+  text-align: center;
+  color: var(--fg);
+  font-size: 15px;
+}
+.admin-shell.admin-flow .hoy-week-heading small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.admin-shell.admin-flow .flow-date-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  gap: 8px;
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 700;
+}
+.admin-shell.admin-flow .flow-date-tools form {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+  align-items: center;
+}
+.admin-shell.admin-flow .flow-date-tools input {
+  width: 130px;
+  color: var(--fg);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  min-height: 44px;
+  padding: 6px;
+}
+.admin-shell.admin-flow .flow-date-tools button {
+  border: 0;
+  background: transparent;
+  color: var(--green);
+  min-height: 44px;
+}
+.admin-shell.admin-flow .mock-week-day {
+  color: var(--fg);
+  min-width: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 14px;
+}
+.admin-shell.admin-flow .mock-week-day span {
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.admin-shell.admin-flow .mock-week-day.is-selected {
+  background: var(--green-soft);
+  border-color: var(--green);
+  color: var(--green);
+}
+.admin-shell.admin-flow .mock-week-day.is-today strong {
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+.admin-shell.admin-flow .flow-day-dots {
+  display: flex;
+  gap: 2px;
+  min-height: 6px;
+  justify-content: center;
+}
+.admin-shell.admin-flow .flow-day-dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+.admin-shell.admin-flow .flow-day-dots i.is-full {
+  background: var(--green);
+}
+.admin-shell.admin-flow .hoy-glance {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  margin: 18px 0;
+}
+.admin-shell.admin-flow .hoy-glance > div {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+  padding: 14px 10px;
+}
+.admin-shell.admin-flow .hoy-glance strong {
+  color: var(--fg);
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+.admin-shell.admin-flow .hoy-glance span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.admin-shell.admin-flow .flow-next {
+  border-radius: 20px;
+  padding: 18px;
+  background: linear-gradient(120deg, #0b7a55, #0f5e8c);
+  color: #fff;
+  display: grid;
+  gap: 8px;
+}
+.admin-shell.admin-flow .flow-next h2 {
+  font-size: 20px;
+  font-weight: 800;
+}
+.admin-shell.admin-flow .flow-next small {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.admin-shell.admin-flow .flow-next a {
+  display: inline-flex;
+  padding: 10px 16px;
+  min-height: 44px;
+  border-radius: 13px;
+  background: #fff;
+  color: #0b7a55;
+  font-weight: 800;
+  width: fit-content;
+}
+.admin-shell.admin-flow .flow-todo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px 0 0;
+}
+.admin-shell.admin-flow .flow-todo h2 {
+  width: 100%;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 800;
+}
+.admin-shell.admin-flow .flow-todo a {
+  border-radius: 999px;
+  padding: 8px 12px;
+  min-height: 40px;
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-size: 13px;
+  font-weight: 800;
+}
+.admin-shell.admin-flow .flow-todo .is-red {
+  color: var(--red);
+  background: var(--red-soft);
+}
+.admin-shell.admin-flow .flow-todo .is-blue {
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+.admin-shell.admin-flow .flow-todo .is-violet {
+  color: var(--violet);
+  background: var(--violet-soft);
+}
+.admin-shell.admin-flow .today-class-card {
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.admin-shell.admin-flow .today-class-card.is-open {
+  box-shadow: var(--shadow);
+}
+.admin-shell.admin-flow .today-class-summary {
+  background: var(--card);
+  color: var(--fg);
+  min-height: 104px;
+}
+.admin-shell.admin-flow .today-class-copy strong,
+.admin-shell.admin-flow .today-class-time,
+.admin-shell.admin-flow .today-class-capacity b {
+  color: var(--fg);
+}
+.admin-shell.admin-flow .today-class-meta,
+.admin-shell.admin-flow .today-class-capacity small {
+  color: var(--muted);
+}
+.admin-shell.admin-flow .today-class-state {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+.admin-shell.admin-flow .today-class-state.is-finished,
+.admin-shell.admin-flow .today-class-state.is-closing {
+  color: var(--violet);
+  background: var(--violet-soft);
+}
+.admin-shell.admin-flow .today-class-state.is-live {
+  color: var(--green);
+  background: var(--green-soft);
+}
+.admin-shell.admin-flow .today-class-state.is-cancelled {
+  color: var(--red);
+  background: var(--red-soft);
+}
+.admin-shell.admin-flow .flow-full {
+  color: var(--amber);
+  background: var(--amber-soft);
+}
+.admin-shell.admin-flow .flow-minimum {
+  color: var(--red);
+  background: var(--red-soft);
+}
+.admin-shell.admin-flow .flow-full,
+.admin-shell.admin-flow .flow-minimum {
+  border-radius: 999px;
+  padding: 3px 7px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.admin-shell.admin-flow .flow-capacity-meter {
+  display: block;
+  width: 48px;
+  height: 5px;
+  background: var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+.admin-shell.admin-flow .flow-capacity-meter i {
+  display: block;
+  height: 100%;
+  background: var(--class-accent);
+}
+.admin-shell.admin-flow .flow-cancelled {
+  border: 1px dashed var(--line);
+  border-radius: 18px;
+  padding: 12px;
+}
+.admin-shell.admin-flow .flow-cancelled > summary {
+  color: var(--muted);
+  min-height: 44px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+.admin-shell.admin-flow .flow-cancel-reason {
+  padding: 16px;
+  color: var(--muted);
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+.admin-shell.admin-flow .flow-cancel-reason strong {
+  color: var(--red);
+}
+.admin-shell.admin-flow .flow-more {
+  display: grid;
+  gap: 20px;
+}
+.admin-shell.admin-flow .flow-more .hoy-product-header {
+  margin: 0;
+}
+.admin-shell.admin-flow .flow-more-group > h2 {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.admin-shell.admin-flow .more-row {
+  background: transparent;
+  border-color: var(--line);
+  min-height: 72px;
+  padding: 12px 14px;
+}
+.admin-shell.admin-flow .more-row:hover {
+  background: var(--soft);
+}
+.admin-shell.admin-flow .more-row-copy strong {
+  color: var(--fg);
+  font-size: 15.5px;
+}
+.admin-shell.admin-flow .more-row-copy small {
+  color: var(--muted);
+  font-size: 13px;
+}
+.admin-shell.admin-flow .more-row-icon {
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green);
+}
+.admin-shell.admin-flow .is-violet .more-row-icon {
+  background: var(--violet-soft);
+  color: var(--violet);
+}
+.admin-shell.admin-flow .is-red .more-row-icon {
+  background: var(--red-soft);
+  color: var(--red);
+}
+.admin-shell.admin-flow .is-blue .more-row-icon {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+.admin-shell.admin-flow .flow-card {
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+.admin-shell.admin-flow .flow-card p {
+  color: var(--muted);
+}
+.admin-shell.admin-flow .flow-back {
+  color: var(--green);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+}
+.admin-shell.admin-flow .flow-account {
+  position: relative;
+}
+.admin-shell.admin-flow .flow-account summary {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--fg);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.admin-shell.admin-flow .flow-account > div {
+  position: absolute;
+  right: 0;
+  top: 48px;
+  z-index: 30;
+  width: 250px;
+  max-width: 80vw;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  overflow-wrap: anywhere;
+}
+.admin-shell.admin-flow .flow-account p {
+  color: var(--muted);
+  margin: 8px 0;
+}
+.admin-shell.admin-flow .flow-account button {
+  color: var(--red);
+  min-height: 44px;
+}
+.admin-shell.admin-flow .flow-sheet {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--fg);
+  border-radius: 24px;
+  width: min(560px, calc(100% - 24px));
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
+  padding: 18px;
+}
+.admin-shell.admin-flow .flow-sheet::backdrop {
+  background: var(--scrim);
+}
+.admin-shell.admin-flow .flow-sheet header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.admin-shell.admin-flow .flow-sheet h2 {
+  font-size: 20px;
+  font-weight: 800;
+}
+.admin-shell.admin-flow .flow-sheet input,
+.admin-shell.admin-flow .flow-card input,
+.admin-shell.admin-flow .flow-card textarea {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--card);
+  color: var(--fg);
+}
+.admin-shell.admin-flow .flow-search-results {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+.admin-shell.admin-flow .flow-search-results > a {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  min-height: 60px;
+  border-bottom: 1px solid var(--line);
+}
+.admin-shell.admin-flow .flow-search-results p {
+  color: var(--muted);
+  padding: 16px 0;
+}
+.admin-shell.admin-flow .flow-person-copy {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.admin-shell.admin-flow .flow-person-copy small {
+  color: var(--muted);
+}
+.admin-shell.admin-flow .flow-person-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--green);
+  background: var(--green-soft);
+  font-size: 13px;
+  font-weight: 800;
+}
+.admin-shell.admin-flow .flow-person-stage {
+  color: var(--blue);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+@media (max-width: 439px) {
+  .admin-shell.admin-flow .hoy-glance {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .admin-shell.admin-flow .hoy-title-tools {
+    flex-direction: column;
+  }
+  .admin-shell.admin-flow .flow-sheet {
+    margin: auto 0 0;
+    width: 100%;
+    max-width: none;
+    border-radius: 24px 24px 0 0;
+  }
+}
+.admin-shell.admin-flow .flow-operation-note {
+  padding: 12px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.admin-shell.admin-flow .flow-kiosk {
+  background: #07120f;
+  color: #f2fbf7;
+}
+.admin-shell.admin-flow .flow-kiosk header p,
+.admin-shell.admin-flow .flow-kiosk h1 {
+  color: #f2fbf7;
+}
+.admin-shell.admin-flow .flow-kiosk-exit {
+  border: 1px solid #3a554c;
+  border-radius: 999px;
+  padding: 10px 18px;
+  min-height: 44px;
+}
+.admin-shell.admin-flow .flow-kiosk-pin {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: #07120f;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+.admin-shell.admin-flow .flow-kiosk-pin form {
+  width: min(300px, 90vw);
+  display: grid;
+  gap: 12px;
+}
+.admin-shell.admin-flow .flow-kiosk-pin input {
+  text-align: center;
+  font-size: 28px;
+  letter-spacing: 12px;
+  background: #162d24;
+  padding: 12px;
+  border-radius: 12px;
+}
+.admin-shell.admin-flow .flow-kiosk-pin button {
+  min-height: 44px;
+  border-radius: 12px;
+  background: #162d24;
+}
+.admin-shell.admin-flow,
+.admin-shell.admin-flow:has(.hoy-v2),
+.admin-shell.admin-flow .hoy-v2 {
+  --v2-bg: var(--bg);
+  --v2-surface: var(--card);
+  --v2-soft: var(--soft);
+  --v2-text: var(--fg);
+  --v2-muted: var(--muted);
+  --v2-line: var(--line);
+  --v2-accent: var(--green);
+  --v2-accent-strong: var(--green);
+  --v2-accent-soft: var(--green-soft);
+  background: var(--bg);
+  color: var(--fg);
+}
+.admin-shell.admin-flow .admin-content,
+.admin-shell.admin-flow .admin-sidebar,
+.admin-shell.admin-flow .admin-utility-bar {
+  background: var(--bg);
+  color: var(--fg);
+}
+.admin-shell.admin-flow .admin-sidebar,
+.admin-shell.admin-flow .admin-utility-bar {
+  background: var(--card);
+}
+.admin-shell.admin-flow .hoy-title-block p,
+.admin-shell.admin-flow .hoy-product-wordmark small {
+  display: block;
+}
+.admin-shell.admin-flow .hoy-title-block h1 {
+  font-size: 28px;
+  line-height: 1.2;
+}
+.admin-shell.admin-flow .hoy-product-wordmark span {
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  font-size: 21px;
+}
+.admin-shell.admin-flow .hoy-product-wordmark small {
+  font-size: 9px;
+}
+.admin-shell.admin-flow .today-class-state {
+  font-size: 12px;
+  padding: 3px 8px;
+}
+.admin-shell.admin-flow .today-class-time {
+  font-size: 14px;
+  min-width: 72px;
+  font-variant-numeric: tabular-nums;
+}
+.admin-shell.admin-flow .today-class-summary {
+  grid-template-columns: 72px minmax(0, 1fr) 52px 20px;
+  gap: 8px;
+  padding: 16px 12px;
+}
+.admin-shell.admin-flow .today-class-card {
+  scroll-margin-top: 24px;
+}
+.admin-shell.admin-flow .hoy-week-card .mock-week-day {
+  color: var(--fg);
+}
+.admin-shell.admin-flow .hoy-week-card .mock-week-day span {
+  color: var(--muted);
+}
+.admin-shell.admin-flow .hoy-week-card .mock-week-day.is-selected {
+  background: var(--green-soft);
+  color: var(--green);
+  border: 1px solid var(--green);
+}
+.admin-shell.admin-flow .hoy-week-card .mock-week-day.is-selected span {
+  color: var(--green);
+}
+.admin-shell.admin-flow .flow-date-tools input,
+.admin-shell.admin-flow .admin-global-search {
+  background: var(--card);
+  color: var(--fg);
+}
+.admin-shell.admin-flow .today-session-drawer,
+.admin-shell.admin-flow .today-roster,
+.admin-shell.admin-flow .today-add-panel,
+.admin-shell.admin-flow .today-student-card,
+.admin-shell.admin-flow .hoy-quick-card,
+.admin-shell.admin-flow .today-payment-dialog {
+  background: var(--card);
+  color: var(--fg);
+  border-color: var(--line);
+}
+.admin-shell.admin-flow .today-student-name-line strong,
+.admin-shell.admin-flow .today-roster-header h3,
+.admin-shell.admin-flow .today-payment-dialog h3,
+.admin-shell.admin-flow .hoy-quick-card h2 {
+  color: var(--fg);
+}
+.admin-shell.admin-flow .today-student-identity > span,
+.admin-shell.admin-flow .today-add-panel-heading small,
+.admin-shell.admin-flow .today-roster-header span {
+  color: var(--muted);
+}
+.admin-shell.admin-flow .today-add-form input,
+.admin-shell.admin-flow .today-add-form select,
+.admin-shell.admin-flow .today-payment-dialog input,
+.admin-shell.admin-flow .today-payment-dialog select,
+.admin-shell.admin-flow .hoy-quick-form input,
+.admin-shell.admin-flow .hoy-quick-form select {
+  background: var(--card);
+  color: var(--fg);
+  border-color: var(--line);
+}
+.admin-shell.admin-flow .today-attendance-preview,
+.admin-shell.admin-flow .today-student-avatar {
+  background: var(--soft);
+  color: var(--fg);
+}
+.admin-shell.admin-flow .today-attendance-preview button {
+  color: var(--muted);
+  background: transparent;
+}
+.admin-shell.admin-flow .today-attendance-preview button.is-attended {
+  color: var(--green);
+  background: var(--green-soft);
+}
+.admin-shell.admin-flow .today-attendance-preview button.is-no-show {
+  color: var(--red);
+  background: var(--red-soft);
+}
+.admin-shell.admin-flow .today-add-form [class*="bg-black/"],
+.admin-shell.admin-flow .today-add-form button,
+.admin-shell.admin-flow .today-add-form [class*="text-white"] {
+  background-color: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .primary-button,
+.admin-shell.admin-flow .today-payment-confirm {
+  background: var(--green);
+  color: var(--green-ink);
+  border: 1px solid var(--green);
+  border-radius: 13px;
+  min-height: 44px;
+}
+.admin-shell.admin-flow .flow-picker-commercial {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--green);
+}
+.admin-shell.admin-flow .flow-picker-commercial button {
+  font-weight: 800;
+}
+@media (max-width: 439px) {
+  .admin-shell.admin-flow .today-class-summary {
+    grid-template-columns: 62px minmax(0, 1fr) 42px 16px;
+    gap: 6px;
+  }
+  .admin-shell.admin-flow .today-class-time {
+    font-size: 12px;
+    min-width: 0;
+  }
+}
+.admin-shell.admin-flow .today-class-summary {
+  position: relative;
+}
+.admin-shell.admin-flow .today-class-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  height: auto;
+  border-radius: 0;
+}
+.admin-shell.admin-flow .admin-global-search input {
+  background: var(--card);
+  color: var(--fg);
+}
+.admin-shell.admin-flow .sidebar-signout {
+  background: transparent;
+  color: var(--muted);
+}
+.admin-shell.admin-flow .admin-nav-item {
+  color: var(--muted);
+}
+.admin-shell.admin-flow .admin-nav-item.is-active {
+  color: var(--green);
+  background: var(--green-soft);
+}
+.admin-shell.admin-flow .hoy-shortcuts-menu {
+  background: var(--card);
+  color: var(--fg);
+  border-color: var(--line);
+}
+.admin-shell.admin-flow .hoy-shortcuts-menu h2 {
+  padding: 12px 14px 6px;
+  font-size: 18px;
+  font-weight: 800;
+}
+.admin-shell.admin-flow .hoy-shortcuts-menu small {
+  display: block;
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.flow-kiosk-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 16px 0;
+}
+.flow-kiosk-keypad button {
+  min-height: 48px;
+}
+.flow-kiosk-camera {
+  margin-top: 20px;
+  padding: 12px;
+  border: 1px solid #40506a;
+  border-radius: 12px;
+}

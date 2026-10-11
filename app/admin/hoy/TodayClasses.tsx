@@ -38,6 +38,10 @@ export type TodayClassItem = {
   capacity: number;
   color: string;
   sessionStatus: string;
+  cancellationReason?: string | null;
+  cancelledAt?: string | null;
+  cancelledByLabel?: string | null;
+  cancellationSource?: string | null;
   roster: TodayRosterItem[];
   available: number;
   evaluationCount: number;
@@ -53,6 +57,12 @@ type TodayClassesProps = {
   canAttendance: boolean;
   canBook: boolean;
   canCreateStudent: boolean;
+  canCollectPayment?: boolean;
+  operatingPolicy?: {
+    noShowConsumesCredit: boolean;
+    cancellationCutoffMinutes: number;
+    lateCancellationConsumesCredit: boolean;
+  };
   locale: string;
   timeZone: string;
   canCorrectCompleted?: boolean;
@@ -65,6 +75,8 @@ export function TodayClasses({
   canAttendance,
   canBook,
   canCreateStudent,
+  canCollectPayment = true,
+  operatingPolicy,
   locale,
   timeZone,
   canCorrectCompleted = true,
@@ -94,136 +106,201 @@ export function TodayClasses({
     return () => window.clearInterval(interval);
   }, [hasLiveOrClosingSession, router]);
 
-  const [openSessionId, setOpenSessionId] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    const hash = window.location.hash;
-    if (!hash.startsWith("#session-")) return null;
-    const sessionId = hash.replace("#session-", "");
-    return classes.some((item) => item.id === sessionId) ? sessionId : null;
-  });
+  const [openSessionId, setOpenSessionId] = useState<string | null>(null);
+  useEffect(() => {
+    const sync = () => {
+      const id = window.location.hash.replace("#session-", "");
+      if (classes.some((item) => item.id === id)) {
+        setOpenSessionId(id);
+        window.requestAnimationFrame(() =>
+          document
+            .getElementById(`class-${id}`)
+            ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+        );
+      }
+    };
+    sync();
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, [classes]);
 
   if (!classes.length) {
     return <div className="today-empty-state">No hay clases programadas para este día.</div>;
   }
 
+  const renderClass = (item: TodayClassItem) => {
+    const isOpen = openSessionId === item.id;
+    const startsAt = new Date(item.startsAt).getTime();
+    const endsAt = new Date(item.endsAt).getTime();
+    const phase =
+      item.sessionStatus === "cancelled"
+        ? "cancelled"
+        : item.sessionStatus === "completed"
+          ? "finished"
+          : effectiveNow < startsAt
+            ? "upcoming"
+            : effectiveNow < endsAt
+              ? "live"
+              : "closing";
+    const phaseLabel =
+      phase === "cancelled"
+        ? "Cancelada"
+        : phase === "finished"
+          ? "Finalizada · lista cerrada"
+          : phase === "live"
+            ? "En curso"
+            : phase === "closing"
+              ? "Finalizada"
+              : returnDate ===
+                  new Intl.DateTimeFormat("en-CA", {
+                    timeZone,
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                  }).format(new Date(effectiveNow))
+                ? `en ${Math.ceil((startsAt - effectiveNow) / 60000)} min`
+                : "";
+    const remainingMs = Math.max(endsAt - effectiveNow, 0);
+    const remainingSeconds = Math.floor(remainingMs / 1000);
+    const hours = Math.floor(remainingSeconds / 3600);
+    const minutes = Math.floor((remainingSeconds % 3600) / 60);
+    const seconds = remainingSeconds % 60;
+    const remainingLabel = [hours, minutes, seconds]
+      .map((value) => String(value).padStart(2, "0"))
+      .join(":");
+
+    return (
+      <article
+        className={`today-class-card${isOpen ? " is-open" : ""}`}
+        id={`class-${item.id}`}
+        key={item.id}
+        style={{ "--class-accent": item.color } as React.CSSProperties}
+      >
+        <button
+          className="today-class-summary"
+          type="button"
+          onClick={() => {
+            const next = isOpen ? null : item.id;
+            setOpenSessionId(next);
+            const url = new URL(window.location.href);
+            url.hash = next ? `session-${next}` : "";
+            window.history.replaceState(null, "", url.toString());
+          }}
+          aria-expanded={isOpen}
+          aria-controls={`session-${item.id}`}
+        >
+          <span className="today-class-accent" aria-hidden="true" />
+          <span className="today-class-time">{item.time}</span>
+          <span className="today-class-copy">
+            <strong>{item.name}</strong>
+            <small className="today-class-meta">
+              {phase === "cancelled"
+                ? (item.cancellationReason ?? "Clase cancelada por el estudio")
+                : phase === "finished" || phase === "closing"
+                  ? `${item.roster.filter((person) => person.status === "attended").length} asistieron · ${item.roster.filter((person) => person.status === "no_show").length} no show · ${item.roster.filter((person) => person.status === "reserved").length} sin marcar`
+                  : `${item.bookedReservations} reservadas · ${item.roster.filter((person) => person.checkedInAt).length} ya llegaron · ${item.instructor}`}
+            </small>
+            <span className="today-class-state-row">
+              {phaseLabel ? (
+                <span className={`today-class-state is-${phase}`}>{phaseLabel}</span>
+              ) : null}
+              {item.occupied >= item.capacity && ["upcoming", "live"].includes(phase) ? (
+                <span className="flow-full">Llena</span>
+              ) : null}
+              {item.minimumReservationsEnabled &&
+              item.minimumReviewStatus === "pending" &&
+              item.bookedReservations < item.minimumReservations ? (
+                <span className="flow-minimum">
+                  Faltan {item.minimumReservations - item.bookedReservations} para el mínimo
+                </span>
+              ) : null}
+              {phase === "live" ? (
+                <span className="today-class-countdown" aria-label="Tiempo restante">
+                  ◷ {remainingLabel}
+                </span>
+              ) : null}
+            </span>
+            {item.evaluationCount > 0 ? (
+              <small className="today-class-evaluation-summary">
+                {item.evaluationCount}{" "}
+                {item.evaluationCount === 1 ? "evaluación programada" : "evaluaciones programadas"}
+              </small>
+            ) : null}
+          </span>
+          <span className="today-class-capacity">
+            <b>
+              {item.occupied}/{item.capacity}
+            </b>
+            <small>lugares</small>
+            <span className="flow-capacity-meter" aria-hidden="true">
+              <i
+                style={{
+                  width: `${Math.min(100, item.capacity ? (item.occupied / item.capacity) * 100 : 0)}%`,
+                }}
+              />
+            </span>
+            {item.minimumReservationsEnabled ? (
+              <small className="today-class-minimum-badge">Mín. {item.minimumReservations}</small>
+            ) : null}
+          </span>
+          <span className="today-class-chevron" aria-hidden="true">
+            {isOpen ? "−" : "+"}
+          </span>
+        </button>
+
+        {isOpen && phase === "cancelled" ? (
+          <div className="flow-cancel-reason">
+            <strong>Motivo: {item.cancellationReason ?? "No registrado"}</strong>
+            <p>Las reservas se cancelaron y las clases se devolvieron a cada paquete.</p>
+            <p>
+              {item.cancelledAt
+                ? `Canceló ${item.cancelledByLabel ?? "Equipo del estudio"} · ${new Intl.DateTimeFormat(locale, { timeZone, day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(item.cancelledAt))}`
+                : "No hay registro de autor o fecha para esta cancelación anterior."}
+            </p>
+            <a href={`/admin/agenda/${item.id}`}>Ver detalle de la sesión</a>
+          </div>
+        ) : isOpen ? (
+          <SessionOperations
+            sessionId={item.id}
+            returnDate={returnDate}
+            sessionStatus={item.sessionStatus}
+            startsAt={item.startsAt}
+            endsAt={item.endsAt}
+            roster={item.roster}
+            available={item.available}
+            canAttendance={canAttendance}
+            canBook={canBook}
+            canCreateStudent={canCreateStudent}
+            canCollectPayment={canCollectPayment}
+            operatingPolicy={operatingPolicy}
+            locale={locale}
+            timeZone={timeZone}
+            canCorrectCompleted={canCorrectCompleted}
+            returnTo={item.returnTo}
+            initiallyOpen
+            showToggle={false}
+          />
+        ) : null}
+      </article>
+    );
+  };
+  const active = classes.filter((item) => item.sessionStatus !== "cancelled");
+  const cancelled = classes.filter((item) => item.sessionStatus === "cancelled");
   return (
     <div className="today-class-list">
-      {classes.map((item) => {
-        const isOpen = openSessionId === item.id;
-        const startsAt = new Date(item.startsAt).getTime();
-        const endsAt = new Date(item.endsAt).getTime();
-        const phase =
-          item.sessionStatus === "cancelled"
-            ? "cancelled"
-            : item.sessionStatus === "completed"
-              ? "finished"
-              : effectiveNow < startsAt
-                ? "upcoming"
-                : effectiveNow < endsAt
-                  ? "live"
-                  : "closing";
-        const phaseLabel =
-          phase === "cancelled"
-            ? "Cancelada"
-            : phase === "finished"
-              ? "Finalizada"
-              : phase === "live"
-                ? "En curso"
-                : phase === "closing"
-                  ? "Finalizando"
-                  : "Próxima";
-        const remainingMs = Math.max(endsAt - effectiveNow, 0);
-        const remainingSeconds = Math.floor(remainingMs / 1000);
-        const hours = Math.floor(remainingSeconds / 3600);
-        const minutes = Math.floor((remainingSeconds % 3600) / 60);
-        const seconds = remainingSeconds % 60;
-        const remainingLabel = [hours, minutes, seconds]
-          .map((value) => String(value).padStart(2, "0"))
-          .join(":");
-
-        return (
-          <article
-            className={`today-class-card${isOpen ? " is-open" : ""}`}
-            key={item.id}
-            style={{ "--class-accent": item.color } as React.CSSProperties}
-          >
-            <button
-              className="today-class-summary"
-              type="button"
-              onClick={() => {
-                const next = isOpen ? null : item.id;
-                setOpenSessionId(next);
-                const url = new URL(window.location.href);
-                url.hash = next ? `session-${next}` : "";
-                window.history.replaceState(null, "", url.toString());
-              }}
-              aria-expanded={isOpen}
-              aria-controls={`session-${item.id}`}
-            >
-              <span className="today-class-accent" aria-hidden="true" />
-              <span className="today-class-time">{item.time}</span>
-              <span className="today-class-copy">
-                <strong>{item.name}</strong>
-                <small className="today-class-meta">
-                  {item.instructor}
-                  {item.space !== "Sin espacio" ? ` · ${item.space}` : ""}
-                </small>
-                <span className="today-class-state-row">
-                  <span className={`today-class-state is-${phase}`}>{phaseLabel}</span>
-                  {phase === "live" ? (
-                    <span className="today-class-countdown" aria-label="Tiempo restante">
-                      ◷ {remainingLabel}
-                    </span>
-                  ) : null}
-                </span>
-                {item.evaluationCount > 0 ? (
-                  <small className="today-class-evaluation-summary">
-                    {item.evaluationCount}{" "}
-                    {item.evaluationCount === 1
-                      ? "evaluación programada"
-                      : "evaluaciones programadas"}
-                  </small>
-                ) : null}
-              </span>
-              <span className="today-class-capacity">
-                <b>
-                  {item.occupied}/{item.capacity}
-                </b>
-                <small>lugares</small>
-                {item.minimumReservationsEnabled ? (
-                  <small className="today-class-minimum-badge">
-                    Mín. {item.minimumReservations}
-                  </small>
-                ) : null}
-              </span>
-              <span className="today-class-chevron" aria-hidden="true">
-                {isOpen ? "−" : "+"}
-              </span>
-            </button>
-
-            {isOpen ? (
-              <SessionOperations
-                sessionId={item.id}
-                returnDate={returnDate}
-                sessionStatus={item.sessionStatus}
-                startsAt={item.startsAt}
-                endsAt={item.endsAt}
-                roster={item.roster}
-                available={item.available}
-                canAttendance={canAttendance}
-                canBook={canBook}
-                canCreateStudent={canCreateStudent}
-                locale={locale}
-                timeZone={timeZone}
-                canCorrectCompleted={canCorrectCompleted}
-                returnTo={item.returnTo}
-                initiallyOpen
-                showToggle={false}
-              />
-            ) : null}
-          </article>
-        );
-      })}
+      {active.map(renderClass)}
+      {cancelled.length ? (
+        <details
+          className="flow-cancelled"
+          open={!active.length || cancelled.some((item) => item.id === openSessionId)}
+        >
+          <summary>
+            ✕ {cancelled.length} clase(s) cancelada(s) ·{" "}
+            {cancelled.map((item) => item.time).join(", ")}
+          </summary>
+          {cancelled.map(renderClass)}
+        </details>
+      ) : null}
     </div>
   );
 }

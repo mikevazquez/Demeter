@@ -8,3 +8,7 @@ out/
 *.log
 .DS_Store
 coverage/
+
+work/
+supabase/.temp/
+*.tsbuildinfo

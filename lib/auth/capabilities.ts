@@ -6,6 +6,8 @@ export const CAPABILITIES = {
   INSTRUCTORS_READ: "instructors.read",
   INSTRUCTORS_WRITE: "instructors.write",
   SCHEDULE_READ: "schedule.read",
+  RESERVATIONS_MANAGE: "reservations.manage",
+  PLAN_MANAGE: "plan.manage",
   SCHEDULE_WRITE: "schedule.write",
   ATTENDANCE_WRITE: "attendance.write",
   PRODUCTS_READ: "products.read",
@@ -32,3 +34,12 @@ export const CAPABILITIES = {
 export type Capability = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];
 
 export type CanonicalStudioRole = "owner" | "admin" | "reception" | "instructor" | "student";
+
+export const STUDIO_ROLE_LABELS: Record<string, string> = {
+  owner: "Owner",
+  admin: "Administración",
+  reception: "Recepción",
+  instructor: "Coach",
+  coach: "Coach",
+  student: "Alumna",
+};

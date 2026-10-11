@@ -20,7 +20,7 @@ describe("FESTIVOS-01 calendar UX", () => {
     expect(adminHolidays).toContain('.from("studio_holiday_overrides")');
     expect(adminHolidays).toContain("Días festivos");
     expect(adminHolidays).toContain("getAdminContext(CAPABILITIES.SETTINGS_WRITE)");
-    expect(adminHolidays).toContain('ctx.membership.role !== "owner"');
+    expect(adminHolidays).toContain("!ctx.can(CAPABILITIES.SETTINGS_WRITE)");
     expect(adminHolidays).toContain("Estudio cerrado");
     expect(adminHolidays).toContain("Horario normal");
     expect(studentNav).not.toContain("Festivos");
@@ -33,7 +33,7 @@ describe("FESTIVOS-01 calendar UX", () => {
     expect(adminHolidays).toContain("saveOfficialHolidayStatusAction");
     expect(holidayAction).toContain('p_operation_mode: closed ? "closed" : "normal"');
     expect(holidayAction).toContain("admin_configure_holiday");
-    expect(holidayAction).toContain('ctx.membership.role !== "owner"');
+    expect(holidayAction).toContain("!ctx.can(CAPABILITIES.SETTINGS_WRITE)");
     expect(holidayAction).toContain('revalidatePath("/admin/agenda")');
     expect(holidayAction).toContain('revalidatePath("/student/reservar")');
     expect(holidayAction).toContain('revalidatePath("/student/mis-clases")');

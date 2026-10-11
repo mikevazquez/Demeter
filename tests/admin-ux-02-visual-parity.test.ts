@@ -40,7 +40,7 @@ describe("ADMIN-UX-02 approved visual parity", () => {
     expect(today).toContain("selectedDayLabel(selectedDate, selectedKey === todayKey, locale)");
     expect(today).toContain("hoy-week-card");
     expect(today).toContain("hoy-glance");
-    expect(today).toContain("Ventas hoy");
+    expect(today).toContain("Ventas{selectedKey");
     expect(today).toContain("Ocupación");
     expect(today).toContain("<TodayClasses");
     expect(today).not.toContain("admin-quick-menu");
@@ -62,20 +62,16 @@ describe("ADMIN-UX-02 approved visual parity", () => {
     expect(today).toContain("Math.round((totalDailyReservations / totalDailyCapacity) * 100)");
   });
 
-  it("counts active students from currently valid product acquisitions", () => {
-    expect(today).toContain('.from("product_acquisitions")');
-    expect(today).toContain('.eq("status", "active")');
-    expect(today).toContain('.is("refunded_at", null)');
-    expect(today).toContain("starts_on.is.null,starts_on.lte.${todayKey}");
-    expect(today).toContain("expires_on.is.null,expires_on.gte.${todayKey}");
-    expect(today).toContain("activeProductStudentIds.size");
-    expect(today).toContain("<strong>{activeStudents}</strong>");
+  it("excludes cancelled classes from occupancy and attendance KPIs", () => {
+    expect(today).toContain('classes.filter((item) => item.sessionStatus !== "cancelled")');
+    expect(today).toContain("activeClasses.reduce");
+    expect(today).toContain("totalAttended");
   });
 
-  it("always moves week arrows to Monday of the target week", () => {
+  it("preserves the selected weekday when moving between weeks", () => {
     expect(today).toContain("const weekStart = weekStartMonday(selectedDate)");
-    expect(today).toContain("shiftUtcDays(weekStart, -7)");
-    expect(today).toContain("shiftUtcDays(weekStart, 7)");
+    expect(today).toContain("shiftUtcDays(selectedDate, -7)");
+    expect(today).toContain("shiftUtcDays(selectedDate, 7)");
     expect(today).toContain("Array.from({ length: 7 }");
   });
 

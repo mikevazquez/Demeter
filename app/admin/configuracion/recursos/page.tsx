@@ -34,7 +34,7 @@ export default async function ResourcesConfigurationPage({
     getAdminContext(CAPABILITIES.SETTINGS_WRITE),
   ]);
 
-  if (ctx.membership.role !== "owner") {
+  if (!ctx.can(CAPABILITIES.SETTINGS_WRITE)) {
     redirect("/admin?error=access");
   }
 

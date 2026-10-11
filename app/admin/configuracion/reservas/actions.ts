@@ -30,7 +30,7 @@ function reservationsPath(params?: Record<string, string>) {
 export async function saveReservationPolicyAction(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
-  if (ctx.membership.role !== "owner") {
+  if (!ctx.can(CAPABILITIES.SETTINGS_WRITE)) {
     redirect("/admin?error=access");
   }
 

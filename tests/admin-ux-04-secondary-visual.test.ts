@@ -18,7 +18,7 @@ describe("ADMIN-UX-04 secondary admin visual homologation", () => {
   const layout = source("app/admin/layout.tsx");
 
   it("scopes the visible secondary destinations to the approved visual system", () => {
-    expect(more).toContain("admin-ux04-secondary");
+    expect(more).toContain("flow-more");
     expect(products).toContain("packages-v2");
     expect(team).toContain("team-v2");
     expect(automations).toContain("communication-v2");

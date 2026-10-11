@@ -22,7 +22,7 @@ export default async function RegionSettingsPage({
     getAdminContext(CAPABILITIES.SETTINGS_WRITE),
   ]);
 
-  if (ctx.membership.role !== "owner") {
+  if (!ctx.can(CAPABILITIES.SETTINGS_WRITE)) {
     redirect("/admin?error=access");
   }
 

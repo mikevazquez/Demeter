@@ -20,28 +20,10 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   const activitiesWizard = source("app/admin/actividades/ActivityWizard.tsx");
 
   it("uses the approved V2 desktop navigation labels", () => {
-    for (const label of [
-      "Hoy",
-      "Agenda",
-      "Actividades",
-      "Alumnas",
-      "Inteligencia",
-      "Documentos",
-      "Retos",
-      "Rewards",
-      "Evaluaciones",
-      "Paquetes",
-      "Equipo",
-      "Notificaciones",
-    ]) {
+    for (const label of ["Hoy", "Agenda", "Alumnas", "Más", "Mis clases"])
       expect(layout).toContain('label: "' + label + '"');
-    }
-    expect(layout).toContain('label: "Integraciones"');
-    expect(layout).toContain('label: "Más"');
-    expect(layout).not.toContain('label: "Productos"');
-    expect(layout).toContain('label: "Notificaciones"');
     expect(layout).not.toContain('label: "Ventas"');
-    expect(layout).not.toContain('label: "Empresa"');
+    expect(layout).not.toContain('label: "Retos"');
   });
 
   it("keeps mobile navigation focused on Hoy, Agenda, Alumnas and Más", () => {
@@ -63,12 +45,10 @@ describe("ADMIN-UX-02 navigation architecture", () => {
       "Evaluaciones",
       "Paquetes",
       "Equipo",
-      "Notificaciones",
-      "Retos",
-      "Rewards",
+      "Notificaciones y automatizaciones",
+      "Recompensas y retos",
       "Integraciones",
-      "Apariencia",
-      "Región y formatos",
+      "Configuración del estudio",
       "Recursos y espacios",
       "Plan y suscripción",
     ]) {
@@ -105,9 +85,9 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   });
 
   it("preserves capability-driven navigation and instructor-only Studio access", () => {
-    expect(layout).toContain("CAPABILITIES.PRODUCTS_READ");
-    expect(layout).toContain("CAPABILITIES.INSTRUCTORS_READ");
-    expect(layout).toContain("CAPABILITIES.AUTOMATIONS_READ");
+    expect(more).toContain("CAPABILITIES.PRODUCTS_READ");
+    expect(more).toContain("CAPABILITIES.INSTRUCTORS_READ");
+    expect(more).toContain("CAPABILITIES.AUTOMATIONS_READ");
     expect(layout).not.toContain("CAPABILITIES.REQUIRED_ACTIONS_READ");
     expect(layout).toContain('label: "Mis clases"');
   });

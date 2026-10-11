@@ -37,7 +37,7 @@ export default async function HolidaysConfigurationPage({
   ]);
   const year = safeYear(params.year);
 
-  if (ctx.membership.role !== "owner") {
+  if (!ctx.can(CAPABILITIES.SETTINGS_WRITE)) {
     redirect("/admin?error=access");
   }
 

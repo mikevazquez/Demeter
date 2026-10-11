@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { markAllAttended, undoMarkAll } from "./search-actions";
 import {
+  finalizeAttendanceFromToday,
   cancelReservationFromToday,
   createWalkinFromToday,
   setAttendanceFromToday,
@@ -42,6 +46,12 @@ type SessionOperationsProps = {
   canAttendance: boolean;
   canBook: boolean;
   canCreateStudent: boolean;
+  canCollectPayment?: boolean;
+  operatingPolicy?: {
+    noShowConsumesCredit: boolean;
+    cancellationCutoffMinutes: number;
+    lateCancellationConsumesCredit: boolean;
+  };
   locale: string;
   timeZone: string;
   canCorrectCompleted?: boolean;
@@ -76,6 +86,8 @@ export function SessionOperations({
   canAttendance,
   canBook,
   canCreateStudent,
+  canCollectPayment = true,
+  operatingPolicy,
   locale,
   timeZone,
   canCorrectCompleted = true,
@@ -83,6 +95,10 @@ export function SessionOperations({
   initiallyOpen = false,
   showToggle = true,
 }: SessionOperationsProps) {
+  const router = useRouter();
+  const [busy, startTransition] = useTransition();
+  const [batch, setBatch] = useState<string | null>(null);
+  const [confirmClose, setConfirmClose] = useState(false);
   const [open, setOpen] = useState(initiallyOpen);
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [newWalkin, setNewWalkin] = useState(false);
@@ -99,9 +115,9 @@ export function SessionOperations({
   const startsAtMs = new Date(startsAt).getTime();
   const endsAtMs = new Date(endsAt).getTime();
   const inProgress =
-    sessionStatus === "scheduled" && now !== null && now >= startsAtMs && now < endsAtMs;
+    sessionStatus === "scheduled" && now !== null && now >= startsAtMs - 20 * 60000;
   // Closing consolidates the session; it does not lock studio operations.
-  const canPostCloseAdd = isCompleted && canCorrectCompleted && canAttendance;
+  const canPostCloseAdd = isCompleted && canBook && canCorrectCompleted && canAttendance;
   const canAddExisting = !isCancelled && (canBook || canPostCloseAdd);
   const canAddNew = !isCancelled && canCreateStudent && canAttendance;
   const canAddWalkin = canAddExisting || canAddNew;
@@ -123,6 +139,7 @@ export function SessionOperations({
       const params = new URLSearchParams(window.location.search);
       const created = params.get("created");
       const error = params.get("error");
+      if (canBook && params.get("add") === sessionId) setShowAddStudent(true);
 
       if (created) {
         if (created === "attended" || created === "no_show") {
@@ -182,7 +199,7 @@ export function SessionOperations({
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [sessionId, showToggle]);
+  }, [sessionId, showToggle, canBook]);
 
   return (
     <div
@@ -258,7 +275,23 @@ export function SessionOperations({
                     {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
                     <input name="first_name" placeholder="Nombre" required />
                     <input name="last_name" placeholder="Apellido" />
-                    <input name="phone" type="tel" placeholder="Teléfono" required />
+                    <input name="phone" type="tel" placeholder="Teléfono · 10 dígitos" required />
+                    <label>
+                      Tipo de clase
+                      <select name="class_kind">
+                        <option value="trial">Clase de prueba · $150</option>
+                        <option value="drop_in">Clase suelta</option>
+                      </select>
+                    </label>
+                    <label>
+                      Pago
+                      <select name="payment_method">
+                        <option value="pay_later">Paga después</option>
+                        <option value="efectivo">Efectivo</option>
+                        <option value="transferencia">Transferencia</option>
+                        <option value="tarjeta">Tarjeta</option>
+                      </select>
+                    </label>
                     <button className="primary-button" type="submit">
                       Registrar y agregar
                     </button>
@@ -273,6 +306,105 @@ export function SessionOperations({
               </div>
             ) : null}
 
+            {isCompleted ? (
+              <p className="flow-operation-note">
+                Lista cerrada. Para cambiar una asistencia usa “Corregir”; se pedirá el motivo.
+              </p>
+            ) : !inProgress && !isCancelled ? (
+              <p className="flow-operation-note">
+                Podrás pasar asistencia desde 20 minutos antes de la clase.
+              </p>
+            ) : null}
+            {inProgress &&
+            canAttendance &&
+            roster.some((item) => item.status === "reserved" && !item.paymentDueOnAttendance) ? (
+              <button
+                className="secondary-button"
+                type="button"
+                disabled={busy}
+                onClick={() =>
+                  startTransition(async () => {
+                    const result = await markAllAttended(sessionId);
+                    if (result.ok && "batch_id" in result) {
+                      setBatch(result.batch_id);
+                      setFeedback({
+                        kind: "success",
+                        message: `${result.count} marcadas como asistió`,
+                      });
+                      window.setTimeout(() => setBatch(null), 5000);
+                      router.refresh();
+                    } else
+                      setFeedback({ kind: "error", message: "No pudimos marcar la asistencia." });
+                  })
+                }
+              >
+                Marcar a todas como asistió
+              </button>
+            ) : null}
+            {batch ? (
+              <button
+                type="button"
+                className="flow-back"
+                disabled={busy}
+                onClick={() =>
+                  startTransition(async () => {
+                    const result = await undoMarkAll(batch);
+                    setBatch(null);
+                    setFeedback({
+                      kind: result.ok ? "success" : "error",
+                      message: result.ok
+                        ? "Asistencia restaurada"
+                        : "Ya no se puede deshacer. Revisa la lista.",
+                    });
+                    router.refresh();
+                  })
+                }
+              >
+                Deshacer
+              </button>
+            ) : null}
+            {sessionStatus === "scheduled" && now !== null && now >= endsAtMs && canAttendance ? (
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() => setConfirmClose(true)}
+              >
+                Cerrar lista
+              </button>
+            ) : null}
+            {confirmClose ? (
+              <div className="flow-card">
+                <h3>Cerrar lista</h3>
+                <p>
+                  {roster.some((item) => item.status === "reserved")
+                    ? `Quedan ${roster.filter((item) => item.status === "reserved").length} sin marcar: ${roster
+                        .filter((item) => item.status === "reserved")
+                        .map((item) => item.studentName)
+                        .join(", ")}. Al cerrar se registrarán como no asistió.`
+                    : "Todas las asistencias están registradas."}
+                </p>
+                <p>
+                  {operatingPolicy
+                    ? operatingPolicy.noShowConsumesCredit
+                      ? "Según la política del estudio, las inasistencias consumen el crédito reservado."
+                      : "Según la política del estudio, las inasistencias devuelven el crédito reservado."
+                    : "Se aplicará la política de inasistencias del estudio."}
+                </p>
+                <form action={finalizeAttendanceFromToday}>
+                  <input type="hidden" name="session_id" value={sessionId} />
+                  <input type="hidden" name="return_date" value={returnDate} />
+                  <input type="hidden" name="return_to" value={returnTo} />
+                  <button className="primary-button">Cerrar lista</button>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => setConfirmClose(false)}
+                  >
+                    Volver
+                  </button>
+                </form>
+              </div>
+            ) : null}
             {roster.length ? (
               <div className="today-student-list compact">
                 {roster.map((item) => {
@@ -280,8 +412,8 @@ export function SessionOperations({
                     isCompleted &&
                     canCorrectCompleted &&
                     canAttendance &&
-                    ["attended", "no_show"].includes(item.status);
-                  const correctionTarget = item.status === "attended" ? "no_show" : "attended";
+                    ["attended", "no_show", "reserved"].includes(item.status);
+
                   const isInvitation = item.packageLabel === "Invitación";
 
                   return (
@@ -292,7 +424,13 @@ export function SessionOperations({
 
                       <div className="today-student-identity">
                         <div className="today-student-name-line">
-                          <strong>{item.studentName}</strong>
+                          {canBook && item.studentId ? (
+                            <Link href={`/admin/alumnas/${item.studentId}`}>
+                              {item.studentName}
+                            </Link>
+                          ) : (
+                            <strong>{item.studentName}</strong>
+                          )}
                           {isInvitation ? (
                             <span className="today-invite-tag">Invitación</span>
                           ) : null}
@@ -364,6 +502,12 @@ export function SessionOperations({
                         <div className="today-attendance-preview">
                           {item.paymentDueOnAttendance && item.status !== "attended" ? (
                             <button
+                              disabled={!canCollectPayment}
+                              title={
+                                canCollectPayment
+                                  ? undefined
+                                  : "Solicita apoyo a recepción para cobrar"
+                              }
                               type="button"
                               className="today-payment-attendance-trigger"
                               onClick={() => setPaymentItem(item)}
@@ -379,13 +523,16 @@ export function SessionOperations({
                               {returnTo ? (
                                 <input type="hidden" name="return_to" value={returnTo} />
                               ) : null}
-                              <input type="hidden" name="status" value="attended" />
+                              <input
+                                type="hidden"
+                                name="status"
+                                value={item.status === "attended" ? "reserved" : "attended"}
+                              />
                               <button
                                 className={
                                   item.status === "attended" ? "is-selected is-attended" : ""
                                 }
                                 type="submit"
-                                disabled={item.status === "attended"}
                                 aria-pressed={item.status === "attended"}
                               >
                                 {item.status === "attended" ? "✓ " : ""}
@@ -401,11 +548,14 @@ export function SessionOperations({
                             {returnTo ? (
                               <input type="hidden" name="return_to" value={returnTo} />
                             ) : null}
-                            <input type="hidden" name="status" value="no_show" />
+                            <input
+                              type="hidden"
+                              name="status"
+                              value={item.status === "no_show" ? "reserved" : "no_show"}
+                            />
                             <button
                               className={item.status === "no_show" ? "is-selected is-no-show" : ""}
                               type="submit"
-                              disabled={item.status === "no_show"}
                               aria-pressed={item.status === "no_show"}
                             >
                               No asistió
@@ -443,7 +593,17 @@ export function SessionOperations({
                             {returnTo ? (
                               <input type="hidden" name="return_to" value={returnTo} />
                             ) : null}
-                            <input type="hidden" name="status" value={correctionTarget} />
+                            <label>
+                              Asistencia
+                              <select
+                                name="status"
+                                defaultValue={item.status === "attended" ? "no_show" : "attended"}
+                              >
+                                <option value="attended">Asistió</option>
+                                <option value="no_show">No asistió</option>
+                                <option value="reserved">Sin marcar</option>
+                              </select>
+                            </label>
                             <input
                               name="reason"
                               placeholder="Motivo de la corrección"
@@ -451,8 +611,7 @@ export function SessionOperations({
                               aria-label="Motivo de la corrección"
                             />
                             <button className="secondary-button" type="submit">
-                              Corregir a{" "}
-                              {correctionTarget === "attended" ? "Asistió" : "No asistió"}
+                              Guardar corrección
                             </button>
                           </form>
                         </details>
@@ -504,6 +663,11 @@ export function SessionOperations({
               <input type="hidden" name="return_date" value={returnDate} />
               {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
 
+              <p>
+                {operatingPolicy
+                  ? `El límite para cancelar es ${operatingPolicy.cancellationCutoffMinutes} minutos antes. ${now !== null && now > startsAtMs - operatingPolicy.cancellationCutoffMinutes * 60_000 && operatingPolicy.lateCancellationConsumesCredit ? "Esta cancelación conservará el consumo del crédito según la política del estudio." : "Esta cancelación devolverá el crédito reservado."}`
+                  : "Se aplicará la política de cancelación del estudio."}
+              </p>
               <label className="today-payment-field">
                 <span>Motivo de cancelación</span>
                 <select name="reason" required defaultValue="">

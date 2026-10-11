@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
@@ -7,6 +8,8 @@ import {
   countSeatOccupyingReservations,
 } from "@/lib/reservations/capacity";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
+import GlobalSearch from "./hoy/GlobalSearch";
+import StudioClock from "./hoy/StudioClock";
 import QuickActions from "./hoy/QuickActions";
 
 function formatExpiry(value: string | null, locale: string) {
@@ -96,15 +99,9 @@ export default async function AdminPage({
 }: {
   searchParams: Promise<{ error?: string; created?: string; date?: string }>;
 }) {
-  const { supabase, studio, can, user, profile } = await getAdminContext();
+  const { supabase, studio, can } = await getAdminContext();
+  if (!can(CAPABILITIES.ADMIN_PORTAL)) redirect("/admin/mis-clases");
   const params = await searchParams;
-  const headerName = profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
-  const headerInitials =
-    headerName
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((part: string) => part.slice(0, 1).toUpperCase())
-      .join("") || "U";
   const timeZone = studio.timezone;
   const locale = studio.locale;
   const now = new Date();
@@ -113,8 +110,8 @@ export default async function AdminPage({
   const selectedKey = utcDateKey(selectedDate);
   const weekStart = weekStartMonday(selectedDate);
   const weekDays = Array.from({ length: 7 }, (_, index) => shiftUtcDays(weekStart, index));
-  const previousWeekKey = utcDateKey(shiftUtcDays(weekStart, -7));
-  const nextWeekKey = utcDateKey(shiftUtcDays(weekStart, 7));
+  const previousWeekKey = utcDateKey(shiftUtcDays(selectedDate, -7));
+  const nextWeekKey = utcDateKey(shiftUtcDays(selectedDate, 7));
   const weekEnd = shiftUtcDays(weekStart, 6);
 
   const offsetName =
@@ -128,11 +125,11 @@ export default async function AdminPage({
   const offset = offsetName.replace("GMT", "") || "+00:00";
 
   const todayStart = new Date(`${todayKey}T00:00:00${offset}`);
-  const todayEnd = new Date(todayStart.getTime() + 86400000);
   const selectedStart = new Date(`${selectedKey}T00:00:00${offset}`);
   const selectedEnd = new Date(selectedStart.getTime() + 86400000);
 
-  const canWriteSchedule = can(CAPABILITIES.SCHEDULE_WRITE);
+  const canWriteSchedule =
+    can(CAPABILITIES.SCHEDULE_WRITE) || can(CAPABILITIES.RESERVATIONS_MANAGE);
   const canWriteStudents = can(CAPABILITIES.STUDENTS_WRITE);
   const canReadSales = can(CAPABILITIES.SALES_READ) || can(CAPABILITIES.SALES_WRITE);
   const canWriteSales = can(CAPABILITIES.SALES_WRITE);
@@ -140,28 +137,25 @@ export default async function AdminPage({
   const [
     { data: serverNow },
     { data: selectedSessions },
-    { data: activeProductAcquisitions },
+    { data: calendarData },
     { data: selectedPayments },
     { data: pendingTransferIntents },
+    { data: expiringCount },
+    { data: nearbyHolidays },
+    { data: holidayOverrides },
+    { data: operatingPolicy },
   ] = await Promise.all([
     supabase.rpc("current_server_time"),
     supabase
       .from("class_sessions")
       .select(
-        "id,starts_at,ends_at,capacity,status,template_id,instructor_id,space_id,requires_resource,minimum_reservations_enabled,minimum_reservations,minimum_review_status",
+        "id,starts_at,ends_at,capacity,status,template_id,instructor_id,space_id,requires_resource,minimum_reservations_enabled,minimum_reservations,minimum_review_status,cancellation_reason,cancelled_at,cancelled_by,cancellation_source",
       )
       .eq("studio_id", studio.id)
       .gte("starts_at", selectedStart.toISOString())
       .lt("starts_at", selectedEnd.toISOString())
       .order("starts_at", { ascending: true }),
-    supabase
-      .from("product_acquisitions")
-      .select("student_id")
-      .eq("studio_id", studio.id)
-      .eq("status", "active")
-      .is("refunded_at", null)
-      .or(`starts_on.is.null,starts_on.lte.${todayKey}`)
-      .or(`expires_on.is.null,expires_on.gte.${todayKey}`),
+    supabase.rpc("admin_today_calendar", { target_studio_id: studio.id, target_date: selectedKey }),
     supabase
       .from("payments")
       .select("amount_minor,kind")
@@ -187,15 +181,55 @@ export default async function AdminPage({
             updated_at: string;
           }[],
         }),
+    supabase.rpc("admin_expiring_packages", { target_studio_id: studio.id, target_date: todayKey }),
+    supabase
+      .from("official_holidays")
+      .select("id,name,holiday_date")
+      .eq("country_code", "MX")
+      .or(
+        `holiday_date.eq.${selectedKey},and(holiday_date.gte.${todayKey},holiday_date.lte.${utcDateKey(shiftUtcDays(parseDateKey(todayKey)!, 21))})`,
+      )
+      .order("holiday_date"),
+    supabase
+      .from("studio_holiday_overrides")
+      .select("holiday_date,operation_mode")
+      .eq("studio_id", studio.id)
+      .gte("holiday_date", selectedKey < todayKey ? selectedKey : todayKey)
+      .lte(
+        "holiday_date",
+        selectedKey > utcDateKey(shiftUtcDays(parseDateKey(todayKey)!, 21))
+          ? selectedKey
+          : utcDateKey(shiftUtcDays(parseDateKey(todayKey)!, 21)),
+      ),
+    supabase
+      .from("studio_operating_policies")
+      .select(
+        "no_show_consumes_credit,cancellation_cutoff_minutes,late_cancellation_consumes_credit",
+      )
+      .eq("studio_id", studio.id)
+      .maybeSingle(),
   ]);
 
-  const activeProductStudentIds = new Set(
-    (activeProductAcquisitions ?? []).flatMap((acquisition) =>
-      acquisition.student_id ? [acquisition.student_id] : [],
-    ),
+  const calendar = (calendarData ?? {}) as {
+    min_date?: string;
+    max_date?: string;
+    week?: { date: string; id: string; busy: boolean }[];
+  };
+  const weekOffset = Math.round(
+    (weekStart.getTime() - weekStartMonday(parseDateKey(todayKey)!).getTime()) / 604800000,
   );
-  const activeStudents = activeProductStudentIds.size;
-
+  const weekLabel =
+    weekOffset === 0
+      ? "Semana actual"
+      : weekOffset === -1
+        ? "Semana pasada"
+        : weekOffset === 1
+          ? "Próxima semana"
+          : weekOffset > 0
+            ? `En ${weekOffset} semanas`
+            : `Hace ${Math.abs(weekOffset)} semanas`;
+  const canPreviousWeek = Boolean(calendar.min_date && previousWeekKey >= calendar.min_date);
+  const canNextWeek = Boolean(calendar.max_date && nextWeekKey <= calendar.max_date);
   const pendingTransferStudentIds = [
     ...new Set((pendingTransferIntents ?? []).map((item) => item.student_id).filter(Boolean)),
   ] as string[];
@@ -262,7 +296,7 @@ export default async function AdminPage({
         ? supabase
             .from("reservations")
             .select(
-              "id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at,commercial_status",
+              "id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at,commercial_status,class_kind,class_amount_minor",
             )
             .in("session_id", sessionIds)
             .in("status", ["reserved", "attended", "no_show"])
@@ -277,6 +311,8 @@ export default async function AdminPage({
               acquisition_id: string | null;
               booked_at: string;
               commercial_status: string | null;
+              class_kind: string | null;
+              class_amount_minor: number | null;
             }[],
           }),
       templateIds.length
@@ -497,8 +533,12 @@ export default async function AdminPage({
       occupied,
       bookedReservations,
       capacity: session.capacity,
-      color: template?.color_hex ?? "#FF0A8A",
+      color: template?.color_hex ?? "#0B7A55",
       sessionStatus: session.status,
+      cancellationReason: session.cancellation_reason,
+      cancelledAt: session.cancelled_at,
+      cancellationSource: session.cancellation_source,
+      cancelledByLabel: session.cancelled_by ? "Equipo del estudio" : "Automático",
       available: Math.max(session.capacity - occupied, 0),
       evaluationCount: sessionReservations.filter((reservation) =>
         evaluationByReservation.has(reservation.id),
@@ -527,11 +567,16 @@ export default async function AdminPage({
               ? (studentMap.get(reservation.student_id) ?? "Alumna")
               : "Alumna",
           status: reservation.status,
-          packageLabel: isGuest
-            ? "Invitación"
-            : acquisition
-              ? (productMap.get(acquisition.product_template_id) ?? "Producto activo")
-              : "Sin producto vinculado",
+          packageLabel:
+            reservation.class_kind === "trial"
+              ? "Clase de prueba"
+              : reservation.class_kind === "drop_in"
+                ? "Clase suelta"
+                : isGuest
+                  ? "Invitación"
+                  : acquisition
+                    ? (productMap.get(acquisition.product_template_id) ?? "Producto activo")
+                    : "Sin producto vinculado",
           creditsLabel: isGuest
             ? "Beneficio por nivel"
             : acquisition?.unlimited
@@ -553,7 +598,8 @@ export default async function AdminPage({
               ? "Agregada manualmente después del cierre"
               : null,
           paymentDueOnAttendance: reservation.commercial_status === "payment_pending",
-          individualPriceMinor: template?.drop_in_price_minor ?? null,
+          individualPriceMinor:
+            reservation.class_amount_minor ?? template?.drop_in_price_minor ?? null,
           currency: studio.currency ?? "MXN",
           resourceRequired: session.requires_resource,
           resourceName: session.requires_resource
@@ -564,8 +610,16 @@ export default async function AdminPage({
     });
   }
 
-  const totalDailyCapacity = classes.reduce((sum, item) => sum + item.capacity, 0);
-  const totalDailyReservations = classes.reduce((sum, item) => sum + item.bookedReservations, 0);
+  const activeClasses = classes.filter((item) => item.sessionStatus !== "cancelled");
+  const totalAttended = activeClasses.reduce(
+    (sum, item) => sum + item.roster.filter((person) => person.status === "attended").length,
+    0,
+  );
+  const totalDailyCapacity = activeClasses.reduce((sum, item) => sum + item.capacity, 0);
+  const totalDailyReservations = activeClasses.reduce(
+    (sum, item) => sum + item.bookedReservations,
+    0,
+  );
   const dailyReservationPercentage =
     totalDailyCapacity > 0 ? Math.round((totalDailyReservations / totalDailyCapacity) * 100) : 0;
 
@@ -581,6 +635,34 @@ export default async function AdminPage({
     maximumFractionDigits: 0,
   }).format(salesTotalMinor / 100);
 
+  const effectiveNow = new Date(String(serverNow ?? now.toISOString())).getTime();
+  const nextClass =
+    selectedKey === todayKey
+      ? activeClasses.find(
+          (item) =>
+            item.sessionStatus === "scheduled" && new Date(item.endsAt).getTime() > effectiveNow,
+        )
+      : null;
+  const pendingAttendance = activeClasses.filter(
+    (item) =>
+      item.sessionStatus === "scheduled" &&
+      new Date(item.endsAt).getTime() <= effectiveNow &&
+      item.roster.some((person) => person.status === "reserved"),
+  );
+  const pendingPayments = activeClasses.filter((item) =>
+    item.roster.some((person) => person.paymentDueOnAttendance),
+  );
+  const noShows = activeClasses.filter((item) =>
+    item.roster.some((person) => person.status === "no_show"),
+  );
+  const nextMinutes = nextClass
+    ? Math.max(0, Math.ceil((new Date(nextClass.startsAt).getTime() - effectiveNow) / 60000))
+    : 0;
+  const nextRelative =
+    nextMinutes < 60
+      ? `en ${nextMinutes} min`
+      : `en ${Math.floor(nextMinutes / 60)} h${nextMinutes % 60 ? ` ${nextMinutes % 60} min` : ""}`;
+
   return (
     <main className="dashboard-shell hoy-dashboard hoy-approved hoy-v2">
       <header className="hoy-product-header">
@@ -588,7 +670,7 @@ export default async function AdminPage({
           <span>
             STUDIO <b>FLOW</b>
           </span>
-          <small>MOVIMIENTO QUE TRANSFORMA</small>
+          <small>{studio.name}</small>
         </div>
         <div className="flex items-center gap-2">
           {canWriteAttendance ? (
@@ -599,16 +681,30 @@ export default async function AdminPage({
           {canWriteStudents || canWriteSales ? (
             <QuickActions canStudents={canWriteStudents} canSales={canWriteSales} locale={locale} />
           ) : null}
-          <span className="hoy-product-avatar" aria-label={headerName}>
-            {headerInitials}
-          </span>
         </div>
       </header>
 
       <header className="hoy-title-block">
         <div>
-          <span className="hoy-eyebrow">{selectedKey === todayKey ? "Hoy" : "Agenda"}</span>
           <h1>{selectedDayLabel(selectedDate, selectedKey === todayKey, locale)}</h1>
+          {selectedKey === todayKey ? (
+            <p>
+              {new Intl.DateTimeFormat(locale, {
+                timeZone: "UTC",
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              }).format(selectedDate)}
+            </p>
+          ) : null}
+        </div>
+        <div className="hoy-title-tools">
+          <StudioClock
+            serverNow={String(serverNow ?? now.toISOString())}
+            timeZone={timeZone}
+            locale={locale}
+          />
+          <GlobalSearch />
         </div>
       </header>
 
@@ -620,94 +716,224 @@ export default async function AdminPage({
 
       <section className="hoy-week-card" aria-label="Calendario semanal">
         <div className="hoy-week-heading">
-          <Link href={`/admin?date=${previousWeekKey}`} aria-label="Semana anterior">
-            ‹
-          </Link>
+          {canPreviousWeek ? (
+            <Link href={`/admin?date=${previousWeekKey}`} aria-label="Semana anterior">
+              ‹
+            </Link>
+          ) : (
+            <button disabled aria-label="Semana anterior">
+              ‹
+            </button>
+          )}
           <strong>
             {weekStart.getUTCDate()} {shortMonth(weekStart, locale)} — {weekEnd.getUTCDate()}{" "}
             {shortMonth(weekEnd, locale)}
+            <small>{weekLabel}</small>
           </strong>
-          <Link href={`/admin?date=${nextWeekKey}`} aria-label="Semana siguiente">
-            ›
-          </Link>
+          {canNextWeek ? (
+            <Link href={`/admin?date=${nextWeekKey}`} aria-label="Semana siguiente">
+              ›
+            </Link>
+          ) : (
+            <button disabled aria-label="Semana siguiente">
+              ›
+            </button>
+          )}
         </div>
 
+        <div className="flow-date-tools">
+          {selectedKey !== todayKey ? <Link href="/admin">Volver a hoy</Link> : null}
+          <form action="/admin" method="get">
+            <label htmlFor="today-date">Ir a fecha</label>
+            <input
+              id="today-date"
+              name="date"
+              type="date"
+              defaultValue={selectedKey}
+              min={calendar.min_date}
+              max={calendar.max_date}
+            />
+            <button>Ir</button>
+          </form>
+        </div>
         <nav className="mock-week-calendar">
           {weekDays.map((day) => {
             const key = utcDateKey(day);
             const isSelected = key === selectedKey;
             const isToday = key === todayKey;
+            const daySessions = (calendar.week ?? []).filter((item) => item.date === key);
             return (
               <Link
                 key={key}
                 href={`/admin?date=${key}`}
                 className={`mock-week-day${isSelected ? " is-selected" : ""}${isToday ? " is-today" : ""}`}
                 aria-current={isSelected ? "date" : undefined}
+                aria-label={`${new Intl.DateTimeFormat(locale, { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" }).format(day)}, ${daySessions.length} clases`}
               >
                 <span>{shortWeekday(day, locale)}</span>
                 <strong>{day.getUTCDate()}</strong>
+                <span className="flow-day-dots" aria-hidden="true">
+                  {daySessions.slice(0, 5).map((item) => (
+                    <i key={item.id} className={item.busy ? "is-full" : undefined} />
+                  ))}
+                </span>
               </Link>
             );
           })}
         </nav>
       </section>
 
-      {selectedKey === todayKey && pendingTransferReviews.length > 0 ? (
-        <section className="hoy-priority" aria-label="Pendientes importantes">
-          <div className="hoy-priority-heading">
-            <div>
-              <span>Pendiente importante</span>
-              <strong>
-                {pendingTransferReviews.length === 1
-                  ? "1 pago por validar"
-                  : `${pendingTransferReviews.length} pagos por validar`}
-              </strong>
-            </div>
-            <span className="hoy-priority-count">{pendingTransferReviews.length}</span>
-          </div>
-
-          <div className="hoy-priority-list">
-            {pendingTransferReviews.map((item) => (
-              <Link
-                key={item.id}
-                href={`/admin/alumnas/${item.studentId}?view=packages#transferencias`}
-                className="hoy-priority-item"
-              >
-                <span className="hoy-priority-icon" aria-hidden="true">
-                  $
-                </span>
-                <span className="hoy-priority-copy">
-                  <strong>{item.studentName}</strong>
-                  <small>
-                    {item.packageName} · {item.amount}
-                  </small>
-                  <em>
-                    Comprobante recibido{" "}
-                    {new Intl.DateTimeFormat(locale, {
-                      timeZone,
-                      day: "numeric",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }).format(new Date(item.receivedAt))}
-                  </em>
-                </span>
-                <b aria-hidden="true">›</b>
-              </Link>
-            ))}
-          </div>
+      {nextClass ? (
+        <section className="flow-next">
+          <small>{nextMinutes === 0 ? "En curso" : `Próxima clase · ${nextRelative}`}</small>
+          <h2>
+            {nextClass.time} · {nextClass.name}
+          </h2>
+          <p>
+            {nextClass.bookedReservations} de {nextClass.capacity} reservadas ·{" "}
+            {nextClass.instructor}
+            {nextClass.roster.filter((person) => person.paymentDueOnAttendance).length
+              ? ` · ${nextClass.roster.filter((person) => person.paymentDueOnAttendance).length} con pago pendiente`
+              : ""}
+          </p>
+          <a href={`#session-${nextClass.id}`}>Ver lista</a>
+          {canWriteSchedule && nextClass.available > 0 ? (
+            <Link href={`/admin?date=${selectedKey}&add=${nextClass.id}#session-${nextClass.id}`}>
+              Agregar alumna
+            </Link>
+          ) : null}
+        </section>
+      ) : null}
+      {selectedKey === todayKey &&
+      (pendingAttendance.length ||
+        pendingPayments.length ||
+        pendingTransferReviews.length ||
+        noShows.length ||
+        Number(expiringCount) > 0) ? (
+        <section className="flow-todo" aria-label="Para hoy">
+          <h2>Para hoy</h2>
+          {pendingAttendance.length ? (
+            <a href={`#session-${pendingAttendance[0].id}`}>
+              {pendingAttendance.reduce(
+                (sum, item) =>
+                  sum + item.roster.filter((person) => person.status === "reserved").length,
+                0,
+              )}{" "}
+              Sin pasar lista
+            </a>
+          ) : null}
+          {pendingPayments.length ? (
+            <a className="is-red" href={`#session-${pendingPayments[0].id}`}>
+              {pendingPayments.reduce(
+                (sum, item) =>
+                  sum + item.roster.filter((person) => person.paymentDueOnAttendance).length,
+                0,
+              )}{" "}
+              Cobros pendientes
+            </a>
+          ) : null}
+          {pendingTransferReviews.length ? (
+            <Link
+              className="is-blue"
+              href={`/admin/alumnas/${pendingTransferReviews[0].studentId}?view=packages#transferencias`}
+            >
+              {pendingTransferReviews.length} Transferencia por validar
+            </Link>
+          ) : null}
+          {noShows.length ? (
+            <a className="is-violet" href={`#session-${noShows[0].id}`}>
+              {noShows.reduce(
+                (sum, item) =>
+                  sum + item.roster.filter((person) => person.status === "no_show").length,
+                0,
+              )}{" "}
+              No show por contactar
+            </a>
+          ) : null}
+          {Number(expiringCount) > 0 ? (
+            <Link href="/admin/alumnas?status=expiring">{Number(expiringCount)} Por vencer</Link>
+          ) : null}
         </section>
       ) : null}
 
+      {(nearbyHolidays ?? [])
+        .filter((holiday) => holiday.holiday_date === selectedKey)
+        .map((holiday) => {
+          const override = (holidayOverrides ?? []).find(
+            (item) => item.holiday_date === holiday.holiday_date,
+          );
+          return (
+            <section key={holiday.id} className="flow-card flow-holiday">
+              <h2>{holiday.name}</h2>
+              <p>
+                {override?.operation_mode === "closed"
+                  ? "Estudio cerrado"
+                  : override?.operation_mode === "special"
+                    ? "Horario especial"
+                    : override
+                      ? "El estudio abre"
+                      : "Por decidir"}
+              </p>
+              {can(CAPABILITIES.SETTINGS_WRITE) ? (
+                <Link
+                  className="flow-back"
+                  href={`/admin/configuracion/festivos?year=${holiday.holiday_date.slice(0, 4)}`}
+                >
+                  {override ? "Cambiar" : "Decidir"}
+                </Link>
+              ) : null}
+            </section>
+          );
+        })}
+      {selectedKey === todayKey &&
+      (nearbyHolidays ?? []).some((holiday) => holiday.holiday_date > todayKey) ? (
+        <section className="flow-card flow-holiday">
+          <h2>Próximas fechas especiales</h2>
+          {(nearbyHolidays ?? [])
+            .filter((holiday) => holiday.holiday_date > todayKey)
+            .slice(0, 3)
+            .map((holiday) => (
+              <Link key={holiday.id} href={`/admin?date=${holiday.holiday_date}`}>
+                {holiday.name} ·{" "}
+                {new Intl.DateTimeFormat(locale, {
+                  timeZone: "UTC",
+                  day: "numeric",
+                  month: "long",
+                }).format(new Date(`${holiday.holiday_date}T12:00Z`))}
+              </Link>
+            ))}
+        </section>
+      ) : null}
+      {calendar.max_date &&
+      (selectedKey > calendar.max_date ||
+        (calendar.min_date && selectedKey < calendar.min_date)) ? (
+        <p className="flow-operation-note" role="status">
+          Solo hay clases generadas hasta el{" "}
+          {new Intl.DateTimeFormat(locale, {
+            timeZone: "UTC",
+            day: "numeric",
+            month: "long",
+          }).format(new Date(`${calendar.max_date}T12:00Z`))}
+        </p>
+      ) : null}
       <section className="hoy-glance" aria-label="Resumen rápido">
-        <Link href="/admin/alumnas">
-          <strong>{activeStudents}</strong>
-          <span>Alumnas activas</span>
-        </Link>
-        <Link href="/admin/ventas">
-          <strong>{salesTotal}</strong>
-          <span>Ventas hoy</span>
-        </Link>
+        <div>
+          <strong>{totalAttended}</strong>
+          <span>Asistieron</span>
+        </div>
+        <div>
+          <strong>{activeClasses.length}</strong>
+          <span>
+            Clases
+            {classes.length > activeClasses.length
+              ? ` · ${classes.length - activeClasses.length} cancelada(s)`
+              : ""}
+          </span>
+        </div>
+        <div>
+          <strong>{canReadSales ? salesTotal : "—"}</strong>
+          <span>Ventas{selectedKey === todayKey ? " hoy" : ""}</span>
+        </div>
         <div>
           <strong>{dailyReservationPercentage}%</strong>
           <span>
@@ -721,6 +947,13 @@ export default async function AdminPage({
         returnDate={selectedKey}
         serverNow={String(serverNow ?? now.toISOString())}
         canAttendance={canWriteAttendance}
+        operatingPolicy={{
+          noShowConsumesCredit: operatingPolicy?.no_show_consumes_credit ?? true,
+          cancellationCutoffMinutes: operatingPolicy?.cancellation_cutoff_minutes ?? 300,
+          lateCancellationConsumesCredit:
+            operatingPolicy?.late_cancellation_consumes_credit ?? true,
+        }}
+        canCollectPayment={canWriteSales}
         canBook={canWriteSchedule}
         canCreateStudent={canWriteStudents}
         locale={locale}

@@ -8,13 +8,11 @@ import { studentNavigationItems } from "../lib/student/navigation";
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("RETOS-01", () => {
-  it("exposes Retos as a separate admin and student module", () => {
+  it("groups admin challenges under rewards and retains student access", () => {
     const adminLayout = read("app/admin/layout.tsx");
 
-    expect(adminLayout).toContain('{ href: "/admin/retos", label: "Retos", enabled: true }');
-    expect(adminLayout).toContain(
-      '{ href: "/admin/recompensas", label: "Rewards", enabled: true }',
-    );
+    expect(adminLayout).toContain('"/admin/retos"');
+    expect(adminLayout).toContain('"/admin/recompensas"');
     expect(studentNavigationItems.some((item) => item.href === "/student/retos")).toBe(true);
   });
 

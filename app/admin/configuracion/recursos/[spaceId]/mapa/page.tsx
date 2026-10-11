@@ -20,7 +20,7 @@ export default async function ResourceMapPage({
     getAdminContext(CAPABILITIES.SETTINGS_WRITE),
   ]);
 
-  if (ctx.membership.role !== "owner") {
+  if (!ctx.can(CAPABILITIES.SETTINGS_WRITE)) {
     redirect("/admin?error=access");
   }
 

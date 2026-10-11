@@ -26,8 +26,8 @@ describe("NOTIFICACIONES-02 control center", () => {
     expect(page).not.toContain("P1");
     expect(page).not.toContain("P2");
     expect(detail).not.toContain("communication_class");
-    expect(layout).toContain('href: "/admin/notificaciones"');
-    expect(layout).toContain('label: "Notificaciones"');
+    expect(layout).toContain('"/admin/notificaciones"');
+    expect(layout).toContain('label: "Más"');
   });
 
   it("maps live business processes to the current central engine rules", () => {

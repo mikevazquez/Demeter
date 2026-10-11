@@ -3,8 +3,6 @@ type SelectableStudentCandidate = {
   detail: string;
 };
 
-const walkinFallbackDetails = new Set(["sin paquete activo", "fuera de paquete", "sin créditos"]);
-
 export function normalizeStudentSearch(value: string) {
   return value
     .normalize("NFD")
@@ -18,7 +16,7 @@ export function canSearchStudents(value: string) {
 }
 
 export function canSelectStudentCandidate(candidate: SelectableStudentCandidate) {
-  return candidate.eligible || walkinFallbackDetails.has(candidate.detail);
+  return candidate.eligible;
 }
 
 export function hasSelectedStudent(studentId: string) {

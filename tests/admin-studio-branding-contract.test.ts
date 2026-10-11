@@ -15,7 +15,6 @@ describe("Studio public branding configuration", () => {
   const landing = source("app/components/studio-portal-landing.tsx");
   const root = source("app/page.tsx");
   const tenant = source("app/s/[studioSlug]/page.tsx");
-  const configPage = source("app/admin/configuracion/page.tsx");
   const appearancePage = source("app/admin/configuracion/apariencia/page.tsx");
   const more = source("app/admin/mas/page.tsx");
   const configForm = source("app/admin/configuracion/PortalIdentityForm.tsx");
@@ -30,12 +29,12 @@ describe("Studio public branding configuration", () => {
     expect(portalHelper).toContain('from("studio-branding").getPublicUrl');
   });
 
-  it("restricts portal identity changes to the Owner", () => {
+  it("authorizes portal identity changes by settings capability", () => {
     expect(migration).toContain("owner_update_studio_portal_branding");
     expect(migration).toContain("'owner'::public.studio_role");
-    expect(configActions).toContain('ctx.membership.role !== "owner"');
+    expect(configActions).toContain("!ctx.can(CAPABILITIES.SETTINGS_WRITE)");
     expect(configActions).toContain("CAPABILITIES.SETTINGS_WRITE");
-    expect(appearancePage).toContain('ctx.membership.role !== "owner"');
+    expect(appearancePage).toContain("!ctx.can(CAPABILITIES.SETTINGS_WRITE)");
   });
 
   it("validates and stores logos in the studio-owned folder", () => {
@@ -62,9 +61,9 @@ describe("Studio public branding configuration", () => {
     expect(configForm).toContain("VISTA PREVIA");
     expect(configForm).toContain("Seleccionar logo");
     expect(configForm).toContain("Guardar identidad");
-    expect(more).toContain('href: "/admin/configuracion/apariencia"');
+    expect(source("app/admin/configuracion/page.tsx")).toContain('"Apariencia"');
     expect(adminLayout).toContain('"/admin/configuracion"');
-    expect(adminLayout).toContain('membership.role === "owner"');
+    expect(more).toContain('ctx.membership.role === "owner"');
   });
 
   it("removes Studio Flow from visible shell branding", () => {

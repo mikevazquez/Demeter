@@ -46,20 +46,22 @@ describe("F8 attendance contracts", () => {
     expect(styles).toContain("button.is-no-show");
   });
 
-  it("allows an existing student without valid commercial eligibility to join as a walk-in", () => {
+  it("requires an explicit drop-in action when package eligibility fails", () => {
     const actions = source("app/admin/actions.ts");
     const existingStudentForm = source("app/admin/hoy/ExistingStudentAddForm.tsx");
     const migration = source(
       "supabase/migrations/20260915215839_f8_existing_walkin_without_package.sql",
     );
 
-    expect(actions).toContain("commercialPendingReasons");
+    expect(actions).toContain("bookDropInFromToday");
     expect(actions).toContain('"no_active_product", "outside_product", "no_credits"');
-    expect(actions).toContain('supabase.rpc("add_existing_walkin_student"');
+    expect(actions).toContain('supabase.rpc("admin_book_drop_in"');
     expect(existingStudentForm).toContain("canSelectStudentCandidate(candidate)");
-    expect(canSelectStudentCandidate({ eligible: false, detail: "sin paquete activo" })).toBe(true);
-    expect(canSelectStudentCandidate({ eligible: false, detail: "fuera de paquete" })).toBe(true);
-    expect(canSelectStudentCandidate({ eligible: false, detail: "sin créditos" })).toBe(true);
+    expect(canSelectStudentCandidate({ eligible: false, detail: "sin paquete activo" })).toBe(
+      false,
+    );
+    expect(canSelectStudentCandidate({ eligible: false, detail: "fuera de paquete" })).toBe(false);
+    expect(canSelectStudentCandidate({ eligible: false, detail: "sin créditos" })).toBe(false);
     expect(migration).toContain("commercial_pending");
     expect(migration).toContain("'attendance.write'");
     expect(migration).toContain("status in ('reserved', 'attended')");

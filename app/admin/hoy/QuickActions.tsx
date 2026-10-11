@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   createQuickSale,
@@ -172,15 +173,17 @@ export default function QuickActions({ canStudents, canSales, locale }: Props) {
   return (
     <div className="hoy-quick-root">
       <button
-        className="hoy-header-action"
+        className="flow-icon-button"
+        aria-label="Acciones rápidas"
         type="button"
         onClick={() => setOpen(open ? null : "menu")}
       >
-        Atajos
+        +
       </button>
 
       {open === "menu" ? (
         <div className="hoy-shortcuts-menu hoy-shortcuts-menu-inline">
+          <h2>Acciones rápidas</h2>
           {canStudents ? (
             <button
               type="button"
@@ -189,7 +192,7 @@ export default function QuickActions({ canStudents, canSales, locale }: Props) {
                 setOpen("student");
               }}
             >
-              Nueva alumna
+              Nueva alumna<small>Nombre y teléfono bastan para crearla.</small>
             </button>
           ) : null}
           {canSales ? (
@@ -201,9 +204,12 @@ export default function QuickActions({ canStudents, canSales, locale }: Props) {
                 void ensureProductsLoaded();
               }}
             >
-              Nueva venta
+              Nueva venta<small>Paquete, inscripción o clase suelta.</small>
             </button>
           ) : null}
+          <Link href="/admin/alumnas">
+            Reservar para una alumna<small>Elige a la alumna y la clase.</small>
+          </Link>
         </div>
       ) : null}
 
