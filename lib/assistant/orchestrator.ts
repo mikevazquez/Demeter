@@ -1522,7 +1522,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         responseInput.push({
           role: "developer",
           content:
-            "La solicitud de pago ya está preparada. Responde ahora las preguntas informativas del mensaje con los datos consultados; consulta los datos que falten sin volver a preparar pagos o reservas. No incluyas instrucciones bancarias ni confirmes una reserva: el sistema añadirá las instrucciones exactas de pago a tu respuesta informativa.",
+            "La solicitud de pago ya está preparada. Responde únicamente las preguntas informativas del mensaje con los datos consultados; consulta los datos que falten sin volver a preparar pagos o reservas. No describas el estado de la solicitud, el proceso de pago, la validación ni los siguientes pasos. No incluyas instrucciones bancarias ni confirmes una reserva: el sistema añadirá las instrucciones exactas y los siguientes pasos a tu respuesta informativa.",
         });
       }
     }

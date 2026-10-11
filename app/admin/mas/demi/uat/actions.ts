@@ -14,9 +14,10 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { assertDemiUatEnvironment } from "@/lib/assistant/uat-environment";
 import { withDemiUatScope } from "@/lib/assistant/uat-scope";
 import { validateUatCaseResult } from "@/lib/assistant/uat-cases";
-import type {
-  MetaDownloadedMedia,
-  MetaWhatsAppWebhookConfig,
+import {
+  extractMetaInboundMessages,
+  type MetaDownloadedMedia,
+  type MetaWhatsAppWebhookConfig,
 } from "@/lib/assistant/meta-whatsapp-channel";
 import { POST as receiveMetaInbox } from "@/app/api/integrations/meta-inbox/webhook/route";
 import type { MetaInboxWebhookConfig } from "@/lib/assistant/meta-inbox-channel";
@@ -376,6 +377,8 @@ export async function sendDemiUatMessage(form: FormData) {
       persona: key,
       channel,
       attachment_scenario: attachmentScenario || null,
+      whatsapp_scenario: waScenario || null,
+      normalized_whatsapp_message: isInbox ? null : extractMetaInboundMessages(whatsappBody)[0],
       provider_id: providerId,
       text,
       file: hasFile ? { name: file.name, size: file.size, type: file.type } : null,
