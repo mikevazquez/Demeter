@@ -180,6 +180,8 @@ Identificadores de revisión:
 - Compra con abono: venta `715f047b-bc02-4133-8054-fc1a3fee8a21`. Lectura posterior: pago original 15000 centavos intacto, abono 15000 y pago nuevo 65000; $800 acumulados, sin descontar el paquete ni registrar otro ingreso por el abono.
 - Efectivo: compra `d7b091ed-afa2-485c-a8b5-148eeae1c7b4`; venta `a0e581e4-40fc-45e8-b5e8-4a63faa20dc8`; adquisición `fefb2a2f-87c3-46d6-8027-c66439dd8917`. Reservas `fd59db1d-dd43-488e-b2ed-c495a8eeb10e` y `49cd625e-6ef8-4293-b7c4-ecc706d98020`; dos pagos de 10000 y 50000 centavos; vigencia sin cambios.
 
+Las descargas iniciales, intermedias y finales completas, capturas, imágenes simuladas y manifiesto SHA-256 se conservan en el [archivo de históricos](evidence/demi-3b03aaf5-historicos-2026-10-10.zip). No incluye credenciales, cookies ni enlaces temporales de acceso.
+
 Capturas conservadas:
 
 - [D03: información y solicitud de pago](evidence/demi-D03-new-request-final-2026-10-10.png), [D04: texto con anuncio](evidence/demi-D04-final-2026-10-10.png), [D05: mensaje vacío](evidence/demi-D05-final-2026-10-10.png).
