@@ -1,3 +1,4 @@
+import TodayDateJump from "./hoy/TodayDateJump";
 import { QrCode, CaretLeft, CaretRight, GlobeHemisphereWest } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -88,12 +89,7 @@ function shortMonth(value: Date, locale: string) {
 
 function selectedDayLabel(value: Date, isToday: boolean, locale: string) {
   if (isToday) return "Clases de hoy";
-  return `Clases del ${new Intl.DateTimeFormat(locale, {
-    timeZone: "UTC",
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(value)}`;
+  return `Clases del ${new Intl.DateTimeFormat(locale, { timeZone: "UTC", weekday: "long" }).format(value)} ${value.getUTCDate()} de ${shortMonth(value, locale)}`;
 }
 
 export default async function AdminPage({
@@ -705,20 +701,21 @@ export default async function AdminPage({
 
       <header className="hoy-title-block">
         <div>
-          <h1 aria-label={selectedDayLabel(selectedDate, selectedKey === todayKey, locale)}>
-            {selectedKey === todayKey ? "Clases de hoy" : "Clases del día"}
-          </h1>
-          <p>
-            {new Intl.DateTimeFormat(locale, {
-              timeZone: "UTC",
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-            }).format(selectedDate)}
-          </p>
+          <h1>{selectedDayLabel(selectedDate, selectedKey === todayKey, locale)}</h1>
+          {selectedKey === todayKey ? (
+            <p>
+              {new Intl.DateTimeFormat(locale, {
+                timeZone: "UTC",
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              }).format(selectedDate)}
+            </p>
+          ) : null}
         </div>
         <div className="hoy-title-tools">
           <StudioClock
+            label="Ahora"
             serverNow={String(serverNow ?? now.toISOString())}
             timeZone={timeZone}
             locale={locale}
@@ -762,18 +759,7 @@ export default async function AdminPage({
 
         <div className="flow-date-tools">
           {selectedKey !== todayKey ? <Link href="/admin">Volver a hoy</Link> : null}
-          <form action="/admin" method="get">
-            <label htmlFor="today-date">Ir a fecha</label>
-            <input
-              id="today-date"
-              name="date"
-              type="date"
-              defaultValue={selectedKey}
-              min={calendar.min_date}
-              max={calendar.max_date}
-            />
-            <button>Ir</button>
-          </form>
+          <TodayDateJump selected={selectedKey} min={calendar.min_date} max={calendar.max_date} />
         </div>
         <nav className="mock-week-calendar">
           {weekDays.map((day) => {
@@ -805,16 +791,18 @@ export default async function AdminPage({
       {nextClass ? (
         <section className="flow-next">
           <small>{nextMinutes === 0 ? "En curso" : `Próxima clase · ${nextRelative}`}</small>
-          <h2>
-            {nextClass.time} · {nextClass.name}
-          </h2>
-          <p>
-            {nextClass.bookedReservations} de {nextClass.capacity} reservadas ·{" "}
-            {nextClass.instructor}
-            {nextClass.roster.filter((person) => person.paymentDueOnAttendance).length
-              ? ` · ${nextClass.roster.filter((person) => person.paymentDueOnAttendance).length} con pago pendiente`
-              : ""}
-          </p>
+          <div>
+            <h2>
+              {nextClass.time} · {nextClass.name}
+            </h2>
+            <p>
+              {nextClass.bookedReservations} de {nextClass.capacity} reservadas ·{" "}
+              {nextClass.instructor}
+              {nextClass.roster.filter((person) => person.paymentDueOnAttendance).length
+                ? ` · ${nextClass.roster.filter((person) => person.paymentDueOnAttendance).length} con pago pendiente`
+                : ""}
+            </p>
+          </div>
           <div className="flow-next-actions">
             <a href={`#session-${nextClass.id}`}>Ver lista</a>
             {canWriteSchedule && nextClass.available > 0 ? (
@@ -833,56 +821,58 @@ export default async function AdminPage({
         Number(expiringCount) > 0) ? (
         <section className="flow-todo" aria-label="Para hoy">
           <h2>Para hoy</h2>
-          {pendingAttendance.length ? (
-            <a href={`#session-${pendingAttendance[0].id}`}>
-              <b className="flow-todo-number">
-                {pendingAttendance.reduce(
-                  (sum, item) =>
-                    sum + item.roster.filter((person) => person.status === "reserved").length,
-                  0,
-                )}{" "}
-              </b>
-              Sin pasar lista
-            </a>
-          ) : null}
-          {pendingPayments.length ? (
-            <a className="is-red" href={`#session-${pendingPayments[0].id}`}>
-              <b className="flow-todo-number">
-                {pendingPayments.reduce(
-                  (sum, item) =>
-                    sum + item.roster.filter((person) => person.paymentDueOnAttendance).length,
-                  0,
-                )}{" "}
-              </b>
-              Cobros pendientes
-            </a>
-          ) : null}
-          {pendingTransferReviews.length ? (
-            <Link
-              className="is-blue"
-              href={`/admin/alumnas/${pendingTransferReviews[0].studentId}?view=packages#transferencias`}
-            >
-              <b className="flow-todo-number">{pendingTransferReviews.length}</b>
-              <span>Transferencia por validar</span>
-            </Link>
-          ) : null}
-          {noShows.length ? (
-            <a className="is-violet" href={`#session-${noShows[0].id}`}>
-              <b className="flow-todo-number">
-                {noShows.reduce(
-                  (sum, item) =>
-                    sum + item.roster.filter((person) => person.status === "no_show").length,
-                  0,
-                )}{" "}
-              </b>
-              No show por contactar
-            </a>
-          ) : null}
-          {Number(expiringCount) > 0 ? (
-            <Link href="/admin/alumnas?status=expiring">
-              <b className="flow-todo-number">{Number(expiringCount)}</b> Por vencer
-            </Link>
-          ) : null}
+          <div className="flow-todo-items">
+            {pendingAttendance.length ? (
+              <a href={`#session-${pendingAttendance[0].id}`}>
+                <b className="flow-todo-number">
+                  {pendingAttendance.reduce(
+                    (sum, item) =>
+                      sum + item.roster.filter((person) => person.status === "reserved").length,
+                    0,
+                  )}{" "}
+                </b>
+                Sin pasar lista
+              </a>
+            ) : null}
+            {pendingPayments.length ? (
+              <a className="is-red" href={`#session-${pendingPayments[0].id}`}>
+                <b className="flow-todo-number">
+                  {pendingPayments.reduce(
+                    (sum, item) =>
+                      sum + item.roster.filter((person) => person.paymentDueOnAttendance).length,
+                    0,
+                  )}{" "}
+                </b>
+                Cobros pendientes
+              </a>
+            ) : null}
+            {pendingTransferReviews.length ? (
+              <Link
+                className="is-blue"
+                href={`/admin/alumnas/${pendingTransferReviews[0].studentId}?view=packages#transferencias`}
+              >
+                <b className="flow-todo-number">{pendingTransferReviews.length}</b>
+                <span>Transferencia por validar</span>
+              </Link>
+            ) : null}
+            {noShows.length ? (
+              <a className="is-violet" href={`#session-${noShows[0].id}`}>
+                <b className="flow-todo-number">
+                  {noShows.reduce(
+                    (sum, item) =>
+                      sum + item.roster.filter((person) => person.status === "no_show").length,
+                    0,
+                  )}{" "}
+                </b>
+                No show por contactar
+              </a>
+            ) : null}
+            {Number(expiringCount) > 0 ? (
+              <Link href="/admin/alumnas?status=expiring">
+                <b className="flow-todo-number">{Number(expiringCount)}</b> Por vencer
+              </Link>
+            ) : null}
+          </div>
         </section>
       ) : null}
       {cashDebtsUnavailable ? (

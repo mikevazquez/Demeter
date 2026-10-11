@@ -4,10 +4,12 @@ export default function StudioClock({
   serverNow,
   timeZone,
   locale,
+  label,
 }: {
   serverNow: string;
   timeZone: string;
   locale: string;
+  label?: string;
 }) {
   const [now, setNow] = useState(serverNow);
   useEffect(() => {
@@ -20,6 +22,7 @@ export default function StudioClock({
   }, [serverNow]);
   return (
     <time dateTime={now} aria-label="Hora del estudio">
+      {label ? `${label} · ` : null}
       {new Intl.DateTimeFormat(locale, { timeZone, hour: "numeric", minute: "2-digit" }).format(
         new Date(now),
       )}

@@ -223,7 +223,19 @@ export function TodayClasses({
               {phase === "cancelled"
                 ? (item.cancellationReason ?? "Clase cancelada por el estudio")
                 : phase === "finished" || phase === "closing"
-                  ? `${item.roster.filter((person) => person.status === "attended").length} asistieron · ${item.roster.filter((person) => person.status === "no_show").length} no show · ${item.roster.filter((person) => person.status === "reserved").length} sin marcar`
+                  ? [
+                      `${item.roster.filter((person) => person.status === "attended").length} asistieron`,
+                      ...(item.roster.some((person) => person.status === "no_show")
+                        ? [
+                            `${item.roster.filter((person) => person.status === "no_show").length} no show`,
+                          ]
+                        : []),
+                      ...(item.roster.some((person) => person.status === "reserved")
+                        ? [
+                            `${item.roster.filter((person) => person.status === "reserved").length} sin marcar`,
+                          ]
+                        : []),
+                    ].join(" · ")
                   : `${item.bookedReservations} reservadas · ${item.instructor}`}
             </small>
             <span className="today-class-state-row">
