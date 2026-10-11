@@ -10,6 +10,7 @@ import {
 
 import BookingEligibilityRefresh from "./BookingEligibilityRefresh";
 import { QuickBookButton } from "./quick-book-button";
+import WaitlistControl from "./WaitlistControl";
 import { BookingRestrictionCard } from "./BookingRestrictionCard";
 import { HolidayNotice, type StudentHolidaySnapshot } from "./HolidayNotice";
 import { getHolidayTheme } from "@/lib/holidays/theme";
@@ -553,12 +554,18 @@ export default async function StudentReservePage({
                         variant="tile"
                       />
                     </div>
-                  ) : full || waitlisted ? (
+                  ) : full && !waitlisted ? (
+                    <WaitlistControl
+                      sessionId={session.session_id}
+                      levelTitle={levelTitle}
+                      variant="tile"
+                    />
+                  ) : waitlisted ? (
                     <Link
                       href={detailHref}
                       className={`${tileClass} relative border border-white/15 bg-white/[0.04] text-white hover:bg-white/[0.08]`}
                     >
-                      {waitlisted ? "Ver lista" : "Espera"}
+                      Ver lista
                     </Link>
                   ) : (
                     <Link

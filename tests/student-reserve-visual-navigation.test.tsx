@@ -156,14 +156,14 @@ describe("approved student agenda navigation", () => {
     },
   );
 
-  it("routes full and already waitlisted classes to detail without joining from the agenda", async () => {
+  it("joins full classes directly and opens detail for already waitlisted classes", async () => {
     fixture.sessions = [
       session({
         spots_available: 0,
         eligibility: { eligible: false, reason_code: "session_full" },
       }),
     ];
-    expect(await render()).toMatch(/<a[^>]*>Espera<\/a>/);
+    expect(await render()).toMatch(/<button[^>]*>.*?Unirme a lista de espera.*?<\/button>/);
     fixture.waitlistedIds = ["class-1"];
     const html = await render();
     expect(html).toMatch(/<a[^>]*>Ver lista<\/a>/);

@@ -103,7 +103,7 @@ export function QuickBookButton({
           disabled={isPending}
           className={
             variant === "tile"
-              ? "min-h-16 w-full min-w-0 self-stretch rounded-[14px] bg-fuchsia-600 px-2 text-xs font-bold sm:text-sm text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
+              ? "min-h-16 w-full min-w-0 self-stretch rounded-[14px] border border-fuchsia-500/45 bg-fuchsia-500/[0.07] px-2 text-xs font-bold sm:text-sm text-fuchsia-100 transition hover:bg-fuchsia-500/[0.13] disabled:cursor-wait disabled:opacity-60"
               : "min-h-11 rounded-2xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
           }
         >
