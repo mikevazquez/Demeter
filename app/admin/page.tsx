@@ -1,3 +1,4 @@
+import { QrCode, CaretLeft, CaretRight, GlobeHemisphereWest } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { loadDemiCashDebts } from "@/lib/assistant/cash-debts";
@@ -682,7 +683,7 @@ export default async function AdminPage({
       : `en ${Math.floor(nextMinutes / 60)} h${nextMinutes % 60 ? ` ${nextMinutes % 60} min` : ""}`;
 
   return (
-    <main className="dashboard-shell hoy-dashboard hoy-approved hoy-v2">
+    <main className="dashboard-shell hoy-dashboard hoy-approved hoy-v2 hoy-reference">
       <header className="hoy-product-header">
         <div className="hoy-product-wordmark" aria-label="Studio Flow">
           <span>
@@ -693,7 +694,7 @@ export default async function AdminPage({
         <div className="flex items-center gap-2">
           {canWriteAttendance ? (
             <Link href="/admin/kiosco" className="hoy-header-action">
-              Check-in
+              <QrCode size={19} aria-hidden="true" /> Check-in
             </Link>
           ) : null}
           {canWriteStudents || canWriteSales ? (
@@ -704,17 +705,17 @@ export default async function AdminPage({
 
       <header className="hoy-title-block">
         <div>
-          <h1>{selectedDayLabel(selectedDate, selectedKey === todayKey, locale)}</h1>
-          {selectedKey === todayKey ? (
-            <p>
-              {new Intl.DateTimeFormat(locale, {
-                timeZone: "UTC",
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-              }).format(selectedDate)}
-            </p>
-          ) : null}
+          <h1 aria-label={selectedDayLabel(selectedDate, selectedKey === todayKey, locale)}>
+            {selectedKey === todayKey ? "Clases de hoy" : "Clases del día"}
+          </h1>
+          <p>
+            {new Intl.DateTimeFormat(locale, {
+              timeZone: "UTC",
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            }).format(selectedDate)}
+          </p>
         </div>
         <div className="hoy-title-tools">
           <StudioClock
@@ -736,11 +737,11 @@ export default async function AdminPage({
         <div className="hoy-week-heading">
           {canPreviousWeek ? (
             <Link href={`/admin?date=${previousWeekKey}`} aria-label="Semana anterior">
-              ‹
+              <CaretLeft size={20} aria-hidden="true" />
             </Link>
           ) : (
             <button disabled aria-label="Semana anterior">
-              ‹
+              <CaretLeft size={20} aria-hidden="true" />
             </button>
           )}
           <strong>
@@ -750,11 +751,11 @@ export default async function AdminPage({
           </strong>
           {canNextWeek ? (
             <Link href={`/admin?date=${nextWeekKey}`} aria-label="Semana siguiente">
-              ›
+              <CaretRight size={20} aria-hidden="true" />
             </Link>
           ) : (
             <button disabled aria-label="Semana siguiente">
-              ›
+              <CaretRight size={20} aria-hidden="true" />
             </button>
           )}
         </div>
@@ -814,12 +815,14 @@ export default async function AdminPage({
               ? ` · ${nextClass.roster.filter((person) => person.paymentDueOnAttendance).length} con pago pendiente`
               : ""}
           </p>
-          <a href={`#session-${nextClass.id}`}>Ver lista</a>
-          {canWriteSchedule && nextClass.available > 0 ? (
-            <Link href={`/admin?date=${selectedKey}&add=${nextClass.id}#session-${nextClass.id}`}>
-              Agregar alumna
-            </Link>
-          ) : null}
+          <div className="flow-next-actions">
+            <a href={`#session-${nextClass.id}`}>Ver lista</a>
+            {canWriteSchedule && nextClass.available > 0 ? (
+              <Link href={`/admin?date=${selectedKey}&add=${nextClass.id}#session-${nextClass.id}`}>
+                Agregar alumna
+              </Link>
+            ) : null}
+          </div>
         </section>
       ) : null}
       {selectedKey === todayKey &&
@@ -832,21 +835,25 @@ export default async function AdminPage({
           <h2>Para hoy</h2>
           {pendingAttendance.length ? (
             <a href={`#session-${pendingAttendance[0].id}`}>
-              {pendingAttendance.reduce(
-                (sum, item) =>
-                  sum + item.roster.filter((person) => person.status === "reserved").length,
-                0,
-              )}{" "}
+              <b className="flow-todo-number">
+                {pendingAttendance.reduce(
+                  (sum, item) =>
+                    sum + item.roster.filter((person) => person.status === "reserved").length,
+                  0,
+                )}{" "}
+              </b>
               Sin pasar lista
             </a>
           ) : null}
           {pendingPayments.length ? (
             <a className="is-red" href={`#session-${pendingPayments[0].id}`}>
-              {pendingPayments.reduce(
-                (sum, item) =>
-                  sum + item.roster.filter((person) => person.paymentDueOnAttendance).length,
-                0,
-              )}{" "}
+              <b className="flow-todo-number">
+                {pendingPayments.reduce(
+                  (sum, item) =>
+                    sum + item.roster.filter((person) => person.paymentDueOnAttendance).length,
+                  0,
+                )}{" "}
+              </b>
               Cobros pendientes
             </a>
           ) : null}
@@ -855,21 +862,26 @@ export default async function AdminPage({
               className="is-blue"
               href={`/admin/alumnas/${pendingTransferReviews[0].studentId}?view=packages#transferencias`}
             >
-              {pendingTransferReviews.length} Transferencia por validar
+              <b className="flow-todo-number">{pendingTransferReviews.length}</b>
+              <span>Transferencia por validar</span>
             </Link>
           ) : null}
           {noShows.length ? (
             <a className="is-violet" href={`#session-${noShows[0].id}`}>
-              {noShows.reduce(
-                (sum, item) =>
-                  sum + item.roster.filter((person) => person.status === "no_show").length,
-                0,
-              )}{" "}
+              <b className="flow-todo-number">
+                {noShows.reduce(
+                  (sum, item) =>
+                    sum + item.roster.filter((person) => person.status === "no_show").length,
+                  0,
+                )}{" "}
+              </b>
               No show por contactar
             </a>
           ) : null}
           {Number(expiringCount) > 0 ? (
-            <Link href="/admin/alumnas?status=expiring">{Number(expiringCount)} Por vencer</Link>
+            <Link href="/admin/alumnas?status=expiring">
+              <b className="flow-todo-number">{Number(expiringCount)}</b> Por vencer
+            </Link>
           ) : null}
         </section>
       ) : null}
@@ -947,21 +959,53 @@ export default async function AdminPage({
         })}
       {selectedKey === todayKey &&
       (nearbyHolidays ?? []).some((holiday) => holiday.holiday_date > todayKey) ? (
-        <section className="flow-card flow-holiday">
+        <section className="flow-special-dates">
           <h2>Próximas fechas especiales</h2>
           {(nearbyHolidays ?? [])
             .filter((holiday) => holiday.holiday_date > todayKey)
             .slice(0, 3)
-            .map((holiday) => (
-              <Link key={holiday.id} href={`/admin?date=${holiday.holiday_date}`}>
-                {holiday.name} ·{" "}
-                {new Intl.DateTimeFormat(locale, {
-                  timeZone: "UTC",
-                  day: "numeric",
-                  month: "long",
-                }).format(new Date(`${holiday.holiday_date}T12:00Z`))}
-              </Link>
-            ))}
+            .map((holiday) => {
+              const override = (holidayOverrides ?? []).find(
+                (item) => item.holiday_date === holiday.holiday_date,
+              );
+              const daysAway = Math.round(
+                (new Date(`${holiday.holiday_date}T12:00Z`).getTime() -
+                  new Date(`${todayKey}T12:00Z`).getTime()) /
+                  86400000,
+              );
+              return (
+                <Link
+                  className="flow-special-date"
+                  key={holiday.id}
+                  href={`/admin?date=${holiday.holiday_date}`}
+                >
+                  <span className="flow-special-icon">
+                    <GlobeHemisphereWest size={26} aria-hidden="true" />
+                  </span>
+                  <span className="flow-special-copy">
+                    <strong>{holiday.name}</strong>
+                    <small>
+                      En {daysAway} {daysAway === 1 ? "día" : "días"} ·{" "}
+                      {new Intl.DateTimeFormat(locale, {
+                        timeZone: "UTC",
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                      }).format(new Date(`${holiday.holiday_date}T12:00Z`))}
+                    </small>
+                  </span>
+                  <span className="flow-special-status">
+                    {override
+                      ? override.operation_mode === "closed"
+                        ? "Cerrado"
+                        : override.operation_mode === "special"
+                          ? "Especial"
+                          : "Abierto"
+                      : "Por decidir"}
+                  </span>
+                </Link>
+              );
+            })}
         </section>
       ) : null}
       {calendar.max_date &&
@@ -978,6 +1022,12 @@ export default async function AdminPage({
       ) : null}
       <section className="hoy-glance" aria-label="Resumen rápido">
         <div>
+          <strong>{dailyReservationPercentage}%</strong>
+          <span>
+            Ocupación · {totalDailyReservations}/{totalDailyCapacity}
+          </span>
+        </div>
+        <div>
           <strong>{totalAttended}</strong>
           <span>Asistieron</span>
         </div>
@@ -993,12 +1043,6 @@ export default async function AdminPage({
         <div>
           <strong>{canReadSales ? salesTotal : "—"}</strong>
           <span>Ventas{selectedKey === todayKey ? " hoy" : ""}</span>
-        </div>
-        <div>
-          <strong>{dailyReservationPercentage}%</strong>
-          <span>
-            Ocupación · {totalDailyReservations}/{totalDailyCapacity}
-          </span>
         </div>
       </section>
 

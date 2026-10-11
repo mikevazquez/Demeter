@@ -1,4 +1,5 @@
 "use client";
+import { Plus } from "@phosphor-icons/react";
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -178,7 +179,7 @@ export default function QuickActions({ canStudents, canSales, locale }: Props) {
         type="button"
         onClick={() => setOpen(open ? null : "menu")}
       >
-        +
+        <Plus size={25} aria-hidden="true" />
       </button>
 
       {open === "menu" ? (

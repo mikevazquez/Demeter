@@ -1,4 +1,5 @@
 "use client";
+import { MagnifyingGlass } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { searchPeople, type PersonSearchResult } from "./search-actions";
@@ -40,18 +41,7 @@ export default function GlobalSearch() {
           input.current?.focus();
         }}
       >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          aria-hidden="true"
-        >
-          <circle cx="10" cy="10" r="7" />
-          <path d="m15 15 6 6" />
-        </svg>
+        <MagnifyingGlass size={23} aria-hidden="true" />
       </button>
       <dialog
         ref={dialog}

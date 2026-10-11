@@ -1,5 +1,6 @@
 "use client";
 
+import { CaretDown } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -148,7 +149,7 @@ export function TodayClasses({
       phase === "cancelled"
         ? "Cancelada"
         : phase === "finished"
-          ? "Finalizada · lista cerrada"
+          ? "Finalizada"
           : phase === "live"
             ? "En curso"
             : phase === "closing"
@@ -160,7 +161,9 @@ export function TodayClasses({
                     month: "2-digit",
                     day: "2-digit",
                   }).format(new Date(effectiveNow))
-                ? `en ${Math.ceil((startsAt - effectiveNow) / 60000)} min`
+                ? startsAt - effectiveNow >= 3600000
+                  ? `en ${Math.ceil((startsAt - effectiveNow) / 3600000)} h`
+                  : `en ${Math.ceil((startsAt - effectiveNow) / 60000)} min`
                 : "";
     const remainingMs = Math.max(endsAt - effectiveNow, 0);
     const remainingSeconds = Math.floor(remainingMs / 1000);
@@ -192,7 +195,28 @@ export function TodayClasses({
           aria-controls={`session-${item.id}`}
         >
           <span className="today-class-accent" aria-hidden="true" />
-          <span className="today-class-time">{item.time}</span>
+          <span className="today-class-time">
+            <b>
+              {new Intl.DateTimeFormat(locale, {
+                timeZone,
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+              })
+                .formatToParts(new Date(item.startsAt))
+                .filter((part) => ["hour", "literal", "minute"].includes(part.type))
+                .map((part) => part.value)
+                .join("")
+                .trim()}
+            </b>
+            <small>
+              {
+                new Intl.DateTimeFormat(locale, { timeZone, hour: "numeric", hour12: true })
+                  .formatToParts(new Date(item.startsAt))
+                  .find((part) => part.type === "dayPeriod")?.value
+              }
+            </small>
+          </span>
           <span className="today-class-copy">
             <strong>{item.name}</strong>
             <small className="today-class-meta">
@@ -200,7 +224,7 @@ export function TodayClasses({
                 ? (item.cancellationReason ?? "Clase cancelada por el estudio")
                 : phase === "finished" || phase === "closing"
                   ? `${item.roster.filter((person) => person.status === "attended").length} asistieron · ${item.roster.filter((person) => person.status === "no_show").length} no show · ${item.roster.filter((person) => person.status === "reserved").length} sin marcar`
-                  : `${item.bookedReservations} reservadas · ${item.roster.filter((person) => person.checkedInAt).length} ya llegaron · ${item.instructor}`}
+                  : `${item.bookedReservations} reservadas · ${item.instructor}`}
             </small>
             <span className="today-class-state-row">
               {phaseLabel ? (
@@ -246,7 +270,7 @@ export function TodayClasses({
             ) : null}
           </span>
           <span className="today-class-chevron" aria-hidden="true">
-            {isOpen ? "−" : "+"}
+            <CaretDown size={18} style={{ transform: isOpen ? "rotate(180deg)" : undefined }} />
           </span>
         </button>
 
