@@ -1,5 +1,5 @@
 {
-  "reason": "User approved replacing pre-V2 Intelligence source-text contracts with executable tests of the approved V2 product (b62b2d0). Database/RLS/action contracts are retained. Other listed renames reflect reviewed route/template/history changes. The user-approved Intelligence update replaces five-view navigation contracts with six views and validates real conversation sources while keeping unmeasured qualification explicit.",
+  "reason": "User approved replacing pre-V2 Intelligence source-text contracts with executable tests of the approved V2 product (b62b2d0). Database/RLS/action contracts are retained. Other listed renames reflect reviewed route/template/history changes. The user-approved Intelligence update replaces five-view navigation contracts with six views and validates real conversation sources while keeping unmeasured qualification explicit. The user-approved student portal visual update keeps available-place counts in the agenda, occupancy in detail/confirmation, and routes payment to existing class-detail checkout; the two corresponding contract names are updated without removing their assertions.",
   "replacementFile": "tests/inteligencia-v2-runtime.test.tsx",
   "retiredTests": [
     "tests/inteligencia-02-conversion-events.test.ts :: INTEL-02 conversion event intelligence builds conversion intelligence from immutable domain events",
@@ -113,6 +113,14 @@
     {
       "from": "tests/inteligencia-v2-runtime.test.tsx :: Inteligencia V2 runtime explains missing lead coverage instead of inventing a lead-to-booking rate",
       "to": "tests/inteligencia-v2-runtime.test.tsx :: Inteligencia V2 runtime reads real conversations and explains unmeasured qualification"
+    },
+    {
+      "from": "tests/minimum-reservation-cancellation.test.ts :: CANCELACION-MIN-01 automatic minimum reservation cancellation shows capacity as occupied over total in student booking views",
+      "to": "tests/minimum-reservation-cancellation.test.ts :: CANCELACION-MIN-01 automatic minimum reservation cancellation shows available places in the compact agenda and occupancy in booking detail"
+    },
+    {
+      "from": "tests/student-single-class-eligibility-fix.test.ts :: student single-class eligibility and checkout catalog sync offers drop-in checkout for all package coverage failures",
+      "to": "tests/student-single-class-eligibility-fix.test.ts :: student single-class eligibility and checkout catalog sync routes package coverage failures to existing drop-in checkout in detail"
     }
   ]
 }
