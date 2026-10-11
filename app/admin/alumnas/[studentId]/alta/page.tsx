@@ -145,6 +145,18 @@ export default async function StudentOnboardingPage({
       : Promise.resolve({ data: [] }),
   ]);
 
+  const { data: currentPackages } = await supabase
+    .from("product_acquisitions")
+    .select("expires_on,starts_on")
+    .eq("studio_id", studio.id)
+    .eq("student_id", student.id)
+    .eq("status", "active")
+    .is("refunded_at", null)
+    .eq("access_blocked", false)
+    .lte("starts_on", today)
+    .gte("expires_on", today)
+    .order("expires_on", { ascending: false })
+    .limit(1);
   const enrollmentRequired = Boolean(policy?.enabled && policy.required_for_booking);
   const currentEnrollment = (activeEnrollments ?? []).some(
     (item) => item.starts_on <= today && (item.expires_on === null || item.expires_on >= today),
@@ -238,6 +250,7 @@ export default async function StudentOnboardingPage({
             validityDays: item.validity_days,
             unlimited: item.unlimited,
           }))}
+          currentPackageEndsOn={currentPackages?.[0]?.expires_on ?? null}
           today={today}
           idempotencyKey={randomUUID()}
           enrollmentRequired={enrollmentRequired}

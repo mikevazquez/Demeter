@@ -1,6 +1,6 @@
 import { emailProviderConfigured } from "@/lib/notifications/email-readiness";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
@@ -82,6 +82,7 @@ export default async function MarketingDetailPage({
   searchParams: Promise<{ error?: string; saved?: string }>;
 }) {
   const [{ marketingKey }, query] = await Promise.all([params, searchParams]);
+  if (marketingKey === "birthday") redirect("/admin/notificaciones/birthday");
   const item = getMarketingCommunication(marketingKey);
   if (!item) notFound();
 

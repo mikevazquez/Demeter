@@ -86,6 +86,31 @@ export default async function DocumentIncidentsPage({
     .eq("active", true)
     .order("full_name");
 
+  const { data: auditHistory } = await supabase.rpc("admin_document_history", {
+    p_studio_id: studio.id,
+    p_limit: 100,
+  });
+  const history = (auditHistory ?? []) as {
+    id: string;
+    event_type: string;
+    occurred_at: string;
+    student_name: string | null;
+    document_name: string | null;
+    actor_name: string;
+    reason: string;
+  }[];
+  const eventLabels: Record<string, string> = {
+    acceptance_recorded: "Aceptación registrada",
+    acceptance_invalidated: "Aceptación invalidada",
+    external_acceptance_recorded: "Aceptación externa registrada",
+    restriction_created: "Restricción creada",
+    restriction_resolved: "Restricción resuelta",
+    exception_granted: "Excepción concedida",
+    exception_revoked: "Excepción revocada",
+    version_published: "Versión publicada",
+    version_retired: "Versión retirada",
+    publication_unscheduled: "Programación cancelada",
+  };
   return (
     <main className="portal-page dashboard-shell space-y-5">
       <Link
@@ -447,6 +472,38 @@ export default async function DocumentIncidentsPage({
             <p className="px-5 py-8 text-sm text-zinc-500">Sin incidencias registradas.</p>
           )}
         </div>
+      </section>
+      <section className="card">
+        <h2>Historial de acciones</h2>
+        <p className="portal-muted">
+          Publicaciones, aceptaciones, invalidaciones, restricciones y excepciones.
+        </p>
+        {history.length ? (
+          <div className="portal-list">
+            {history.map((event) => (
+              <div className="portal-more-row" key={event.id}>
+                <span className="portal-more-icon">📄</span>
+                <span className="portal-more-copy">
+                  <strong>{eventLabels[event.event_type] ?? "Documento actualizado"}</strong>
+                  <small>
+                    {[event.student_name, event.document_name].filter(Boolean).join(" · ")}
+                  </small>
+                  {event.reason ? <p>{event.reason}</p> : null}
+                  <small>
+                    {event.actor_name} ·{" "}
+                    {new Intl.DateTimeFormat(studio.locale, {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                      timeZone: studio.timezone,
+                    }).format(new Date(event.occurred_at))}
+                  </small>
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="portal-empty">Aún no hay acciones registradas.</p>
+        )}
       </section>
     </main>
   );

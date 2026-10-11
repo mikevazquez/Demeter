@@ -61,6 +61,7 @@ export default function StudentOnboardingForm({
   flowContext = "onboarding",
   trialCredits = [],
   trialCreditsUnavailable = false,
+  currentPackageEndsOn = null,
 }: {
   studentId: string;
   studentName: string;
@@ -75,9 +76,10 @@ export default function StudentOnboardingForm({
   flowContext?: "onboarding" | "sale";
   trialCredits?: TrialEnrollmentCredit[];
   trialCreditsUnavailable?: boolean;
+  currentPackageEndsOn?: string | null;
 }) {
   const [selectedId, setSelectedId] = useState(packages[0]?.id ?? "");
-  const [startMode, setStartMode] = useState("today");
+  const [startMode, setStartMode] = useState(currentPackageEndsOn ? "after_current" : "today");
   const [discountMode, setDiscountMode] = useState("none");
   const [discountValue, setDiscountValue] = useState("");
   const [enrollmentResolution, setEnrollmentResolution] = useState(
@@ -186,7 +188,11 @@ export default function StudentOnboardingForm({
       <input type="hidden" name="flow_context" value={flowContext} />
       <input type="hidden" name="idempotency_key" value={idempotencyKey} />
       <input type="hidden" name="package_product_id" value={selectedPackage.id} />
-      <input type="hidden" name="package_start_mode" value={startMode} />
+      <input
+        type="hidden"
+        name="package_start_mode"
+        value={startMode === "after_current" ? "specific" : startMode}
+      />
       <input type="hidden" name="enrollment_resolution" value={enrollmentResolution} />
       <input type="hidden" name="enrollment_product_id" value={selectedEnrollment?.id ?? ""} />
       <input type="hidden" name="trial_payment_id" value={trialCredit?.payment_id ?? ""} />
@@ -244,11 +250,9 @@ export default function StudentOnboardingForm({
             <select value={startMode} onChange={(event) => setStartMode(event.target.value)}>
               <option value="today">Hoy</option>
               <option value="specific">Fecha específica</option>
-              <option value="first_usage">
-                {selectedPackage.unlimited
-                  ? "Primera clase contabilizada"
-                  : "Primer crédito consumido"}
-              </option>
+              {currentPackageEndsOn ? (
+                <option value="after_current">Al terminar el actual</option>
+              ) : null}
             </select>
           </label>
 
@@ -258,15 +262,24 @@ export default function StudentOnboardingForm({
               <input name="package_starts_on" type="date" required defaultValue={today} />
             </label>
           ) : (
-            <input type="hidden" name="package_starts_on" value="" />
+            <input
+              type="hidden"
+              name="package_starts_on"
+              value={
+                startMode === "after_current" && currentPackageEndsOn
+                  ? new Date(new Date(`${currentPackageEndsOn}T12:00:00Z`).getTime() + 86400000)
+                      .toISOString()
+                      .slice(0, 10)
+                  : ""
+              }
+            />
           )}
 
-          {startMode === "first_usage" ? (
-            <div className="notice">
-              La reserva sola no inicia la vigencia. El paquete comienza cuando la primera clase
-              genera consumo real: asistencia, no-show o cancelación tardía. Una cancelación a
-              tiempo no lo activa.
-            </div>
+          {startMode === "after_current" ? (
+            <p className="helper">
+              El nuevo paquete empieza el día siguiente al vencimiento del actual (
+              {currentPackageEndsOn}).
+            </p>
           ) : null}
         </div>
       </section>

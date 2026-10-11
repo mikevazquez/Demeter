@@ -19,7 +19,7 @@ describe("NOTIFICACIONES-02 operational catalog 27", () => {
   );
 
   it("exposes the operational catalog including the new coach roster reminder without placeholders", () => {
-    expect(processSection.match(/\n    key: "/g)?.length).toBe(30);
+    expect(processSection.match(/\n    key: "/g)?.length).toBe(31);
     expect(processSection).not.toContain("planned: true");
 
     for (const name of [

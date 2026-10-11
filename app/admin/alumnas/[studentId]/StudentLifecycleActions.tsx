@@ -9,9 +9,11 @@ import { deleteStudent, setStudentLifecycle } from "./actions";
 export default function StudentLifecycleActions({
   studentId,
   status,
+  canDelete = false,
 }: {
   studentId: string;
   status: "active" | "inactive";
+  canDelete?: boolean;
 }) {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -22,6 +24,16 @@ export default function StudentLifecycleActions({
           <form action={setStudentLifecycle}>
             <input type="hidden" name="student_id" value={studentId} />
             <input type="hidden" name="status" value="inactive" />
+            <label className="portal-form">
+              Motivo de inactivación
+              <input
+                name="lifecycle_reason"
+                required
+                minLength={3}
+                maxLength={500}
+                placeholder="Motivo obligatorio"
+              />
+            </label>
             <PendingActionButton className="ghost-button" pendingLabel="Inactivando…">
               Inactivar
             </PendingActionButton>
@@ -36,12 +48,14 @@ export default function StudentLifecycleActions({
           </form>
         )}
 
-        <button type="button" className="ghost-button" onClick={() => setDeleteOpen(true)}>
-          Eliminar alumna
-        </button>
+        {canDelete ? (
+          <button type="button" className="ghost-button" onClick={() => setDeleteOpen(true)}>
+            Eliminar alumna
+          </button>
+        ) : null}
       </div>
 
-      {deleteOpen ? (
+      {deleteOpen && canDelete ? (
         <AdminDialogFrame
           eyebrow="Acción irreversible"
           title="¿Eliminar esta alumna?"
@@ -59,6 +73,15 @@ export default function StudentLifecycleActions({
               </button>
               <form action={deleteStudent}>
                 <input type="hidden" name="student_id" value={studentId} />
+                <label className="portal-form">
+                  Escribe ELIMINAR para confirmar
+                  <input
+                    name="delete_confirmation"
+                    required
+                    pattern="ELIMINAR"
+                    autoComplete="off"
+                  />
+                </label>
                 <PendingActionButton className="sf-dialog-danger" pendingLabel="Eliminando…">
                   Eliminar alumna
                 </PendingActionButton>

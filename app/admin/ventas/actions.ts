@@ -138,7 +138,8 @@ export async function registerSalePaymentAction(formData: FormData) {
   }
 
   const { supabase } = await getAdminContext(CAPABILITIES.SALES_WRITE);
-  const { error } = await supabase.rpc("register_sale_payment", {
+  const { error } = await supabase.rpc("admin_register_sale_payment", {
+    p_effective_on: String(formData.get("payment_effective_on") ?? "").trim() || null,
     target_sale_id: saleId,
     payment_amount_minor: paymentMinor,
     payment_method: paymentMethod,
@@ -178,8 +179,9 @@ export async function refundSaleLineAction(formData: FormData) {
   }
 
   const { supabase } = await getAdminContext(CAPABILITIES.SALES_WRITE);
-  const { error } = await supabase.rpc("refund_sale_line", {
+  const { error } = await supabase.rpc("admin_refund_sale_line", {
     target_sale_line_id: saleLineId,
+    p_block_package: formData.get("block_package") === "on",
     refund_amount_minor: refundMinor,
     refund_method: refundMethod,
     refund_reason: refundReason,

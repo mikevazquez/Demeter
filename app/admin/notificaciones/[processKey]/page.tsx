@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getMetaWhatsAppAdminDiagnostics } from "@/lib/assistant/meta-whatsapp-admin";
-import { createServiceClient } from "@/lib/supabase/service";
 import {
   isMetaWhatsAppTemplateKey,
   metaWhatsAppStatusLabel,
@@ -106,6 +105,10 @@ function policyText(policy: Record<string, unknown>, key: string) {
 }
 
 const fallbackMessages: Record<string, { title: string; body: string }> = {
+  birthday: {
+    title: "🎂 ¡Feliz cumpleaños!",
+    body: "¡Feliz cumpleaños, {{recipient_name}}! Hoy celebramos contigo. Te deseamos un día especial 💚",
+  },
   "reservation-confirmed": {
     title: "✅ Reserva confirmada",
     body: "Tu lugar quedó reservado. Consulta los detalles en Studio Flow.",
@@ -221,7 +224,7 @@ export default async function NotificationProcessPage({
 
   const [metaDiagnostics, pushConfig] = await Promise.all([
     getMetaWhatsAppAdminDiagnostics(ctx.studio.id),
-    createServiceClient().rpc("service_get_push_vapid_config"),
+    ctx.supabase.rpc("admin_notification_provider_readiness", { p_studio_id: ctx.studio.id }),
   ]);
 
   const enabled = rules.every((rule) => rule.enabled);
@@ -263,7 +266,7 @@ export default async function NotificationProcessPage({
         ),
       );
     });
-  const pushReady = !pushConfig.error;
+  const pushReady = !pushConfig.error && pushConfig.data?.push_configured === true;
   const readiness: Record<"push" | "whatsapp" | "email", { ready: boolean; label: string }> = {
     push: {
       ready: pushReady,

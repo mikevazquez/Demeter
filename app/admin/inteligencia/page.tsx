@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createStudioExpense, deleteStudioExpense } from "./actions";
+import { createStudioExpense, deleteStudioExpense, restoreStudioExpense } from "./actions";
 import DisciplineFilter from "./DisciplineFilter";
 import { readIntelligenceRows, readIntelligenceSessions } from "@/lib/intelligence-query";
 import { TrendChart, SortableTable } from "@/components/intelligence/charts";
@@ -19,6 +19,7 @@ type StudentRow = {
   student_type: string | null;
   trial_status: string | null;
   created_at: string;
+  acquisition_source: string | null;
 };
 
 type AcquisitionRow = {
@@ -47,6 +48,7 @@ type PaymentRow = {
   kind: string;
   method: string;
   amount_minor: number;
+  effective_on: string | null;
   created_at: string;
 };
 
@@ -73,6 +75,7 @@ type ReservationRow = {
   student_id: string | null;
   status: string;
   booked_at: string;
+  class_kind: string | null;
 };
 
 type ClassTemplateRow = {
@@ -100,12 +103,12 @@ type OnboardingRow = {
 
 const views: { key: ViewKey; label: string }[] = [
   { key: "resumen", label: "Resumen" },
+  { key: "dinero", label: "Pagos" },
+  { key: "gastos", label: "Gastos y utilidad" },
+  { key: "alumnas", label: "Retención" },
+  { key: "conversion", label: "Conversión" },
   { key: "asistencia", label: "Asistencia" },
   { key: "clases", label: "Clases" },
-  { key: "dinero", label: "Pagos" },
-  { key: "gastos", label: "Gastos" },
-  { key: "conversion", label: "Conversión" },
-  { key: "alumnas", label: "Retención" },
 ];
 
 const DAY = 86_400_000;
@@ -119,7 +122,7 @@ const decisionReservationStatuses = new Set([
   "cancelled_late",
   "cancelled_by_studio",
 ]);
-const commercialProductTypes = new Set(["package", "membership", "single_class"]);
+const commercialProductTypes = new Set(["package", "membership"]);
 
 function clampDays(value: string | undefined) {
   const parsed = Number(value ?? "30");
@@ -323,6 +326,7 @@ export default async function IntelligencePage({
     discipline?: string;
     error?: string;
     created?: string;
+    deleted?: string;
   }>;
 }) {
   const [params, { supabase, studio }] = await Promise.all([
@@ -344,12 +348,20 @@ export default async function IntelligencePage({
 
   const needsStudents = view !== "clases";
   const needsAcquisitions =
-    view === "resumen" || view === "alumnas" || view === "dinero" || view === "gastos";
+    view === "resumen" ||
+    view === "alumnas" ||
+    view === "dinero" ||
+    view === "gastos" ||
+    view === "conversion";
   const needsSales = view === "resumen" || view === "dinero" || view === "gastos";
   const needsPayments = view === "resumen" || view === "dinero" || view === "gastos";
   const needsSaleLines = view === "resumen" || view === "dinero" || view === "gastos";
   const needsSessions =
-    view === "resumen" || view === "alumnas" || view === "clases" || view === "asistencia";
+    view === "resumen" ||
+    view === "alumnas" ||
+    view === "clases" ||
+    view === "asistencia" ||
+    view === "conversion";
   const needsTemplates = true;
   const needsProductTemplates = needsAcquisitions;
   const needsOnboarding = view === "alumnas";
@@ -372,7 +384,9 @@ export default async function IntelligencePage({
       ? readIntelligenceRows(
           supabase
             .from("students")
-            .select("id,full_name,active,lifecycle_status,student_type,trial_status,created_at")
+            .select(
+              "id,full_name,active,lifecycle_status,student_type,trial_status,created_at,acquisition_source",
+            )
             .eq("studio_id", studio.id),
         )
       : Promise.resolve({ data: [] as StudentRow[] }),
@@ -402,7 +416,7 @@ export default async function IntelligencePage({
       ? readIntelligenceRows(
           supabase
             .from("payments")
-            .select("sale_id,kind,method,amount_minor,created_at")
+            .select("sale_id,kind,method,amount_minor,effective_on,created_at")
             .eq("studio_id", studio.id),
         )
       : Promise.resolve({ data: [] as PaymentRow[] }),
@@ -423,7 +437,6 @@ export default async function IntelligencePage({
             .from("class_sessions")
             .select("id,template_id,starts_at,capacity,status")
             .eq("studio_id", studio.id)
-            .neq("status", "cancelled")
             .gte("starts_at", rangeStartIso)
             .lt("starts_at", currentEnd.toISOString())
             .order("starts_at"),
@@ -504,7 +517,7 @@ export default async function IntelligencePage({
       ? readIntelligenceSessions(sessionIds, (ids) =>
           supabase
             .from("reservations")
-            .select("id,session_id,student_id,status,booked_at")
+            .select("id,session_id,student_id,status,booked_at,class_kind")
             .eq("studio_id", studio.id)
             .in("session_id", ids),
         )
@@ -553,13 +566,6 @@ export default async function IntelligencePage({
     return Boolean(productType && commercialProductTypes.has(productType));
   });
 
-  const currentStudents = students.filter((item) =>
-    isBetween(item.created_at, currentStart, currentEnd),
-  );
-  const previousStudents = students.filter((item) =>
-    isBetween(item.created_at, previousStart, currentStart),
-  );
-
   const currentSales = sales.filter(
     (item) => item.status === "confirmed" && isBetween(item.created_at, currentStart, currentEnd),
   );
@@ -568,14 +574,24 @@ export default async function IntelligencePage({
       item.status === "confirmed" && isBetween(item.created_at, previousStart, currentStart),
   );
 
-  const currentPayments = payments.filter((item) =>
-    isBetween(item.created_at, currentStart, currentEnd),
+  const validSaleIds = new Set(
+    sales.filter((sale) => sale.status === "confirmed").map((sale) => sale.id),
   );
-  const previousPayments = payments.filter((item) =>
-    isBetween(item.created_at, previousStart, currentStart),
+  const paymentDate = (item: PaymentRow) =>
+    item.effective_on ?? isoDateKey(new Date(item.created_at), timeZone);
+  const currentPayments = payments.filter(
+    (item) =>
+      validSaleIds.has(item.sale_id) &&
+      paymentDate(item) >= currentStartDate &&
+      paymentDate(item) <= todayDate,
+  );
+  const previousPayments = payments.filter(
+    (item) =>
+      validSaleIds.has(item.sale_id) &&
+      paymentDate(item) >= previousStartDate &&
+      paymentDate(item) < currentStartDate,
   );
 
-  const validSaleIds = new Set(sales.filter((s) => s.status !== "voided").map((s) => s.id));
   function netPayments(rows: PaymentRow[]) {
     return rows
       .filter((p) => validSaleIds.has(p.sale_id))
@@ -602,32 +618,20 @@ export default async function IntelligencePage({
       ? previousSales.reduce((sum, item) => sum + item.total_minor, 0) / previousSales.length
       : 0;
 
-  const paymentBySale = new Map<string, number>();
-  for (const payment of payments) {
-    paymentBySale.set(
-      payment.sale_id,
-      (paymentBySale.get(payment.sale_id) ?? 0) +
-        (payment.kind === "refund" ? -payment.amount_minor : payment.amount_minor),
-    );
-  }
-
-  const collectibleBySale = new Map<string, number>();
-  for (const line of saleLines) {
-    if (line.refunded_at) continue;
-    collectibleBySale.set(
-      line.sale_id,
-      (collectibleBySale.get(line.sale_id) ?? 0) + line.line_total_minor,
-    );
-  }
-
   const pendingSales = sales.filter(
     (sale) => sale.status === "confirmed" && new Date(sale.created_at) < currentEnd,
   );
-  const pendingCurrent = pendingSales.reduce((sum, sale) => {
-    const collectible = collectibleBySale.get(sale.id) ?? sale.total_minor;
-    const paid = paymentBySale.get(sale.id) ?? 0;
-    return sum + Math.max(collectible - paid, 0);
-  }, 0);
+  const { data: saleBalances, error: balanceError } = needsSales
+    ? await supabase
+        .from("v_sale_balances")
+        .select("sale_id,balance_minor")
+        .eq("studio_id", studio.id)
+    : { data: [], error: null };
+  if (balanceError) throw new Error("report_balances_unavailable");
+  const pendingSaleIds = new Set(pendingSales.map((sale) => sale.id));
+  const pendingCurrent = (saleBalances ?? [])
+    .filter((row) => pendingSaleIds.has(row.sale_id))
+    .reduce((sum, row) => sum + row.balance_minor, 0);
 
   function activeCommercialStudentCount(atDate: string) {
     const studentIds = new Set<string>();
@@ -665,36 +669,80 @@ export default async function IntelligencePage({
     if (sorted[0]) latestAcquisitionByStudent.set(studentId, sorted[0]);
   }
 
-  const riskStudents: { id: string; name: string; days: number; state: string }[] = [];
-  const inactiveStudents: { id: string; name: string; days: number; state: string }[] = [];
-  const abandonedStudents: { id: string; name: string; days: number; state: string }[] = [];
-
+  const { data: retentionData, error: retentionError } = [
+    "resumen",
+    "alumnas",
+    "conversion",
+    "gastos",
+  ].includes(view)
+    ? await supabase.rpc("admin_retention_students", { p_studio_id: studio.id })
+    : { data: [], error: null };
+  if (retentionError) throw new Error("retention_unavailable");
+  const retention = (retentionData ?? []) as {
+    student_id: string;
+    last_attendance: string | null;
+    first_start: string | null;
+    current_start: string | null;
+    current_expiry: string | null;
+    current_unlimited: boolean | null;
+    remaining_credits: number | null;
+  }[];
+  const newStudents = retention.filter(
+    (row) => row.first_start && row.first_start >= currentStartDate && row.first_start <= todayDate,
+  );
+  const previousNewStudents = retention.filter(
+    (row) =>
+      row.first_start && row.first_start >= previousStartDate && row.first_start < currentStartDate,
+  );
+  const riskStudents: { id: string; name: string; days: number; state: string; reason: string }[] =
+    [];
+  const inactiveStudents: typeof riskStudents = [];
+  const abandonedStudents: typeof riskStudents = [];
   for (const student of students) {
+    if (!student.active || student.lifecycle_status !== "active") continue;
+    const snapshot = retention.find((row) => row.student_id === student.id);
+    if (snapshot?.current_start) {
+      const elapsed =
+        daysSince(
+          snapshot.last_attendance
+            ? isoDateKey(new Date(snapshot.last_attendance), timeZone)
+            : snapshot.current_start,
+          now,
+        ) ?? 0;
+      const expiresSoon = Boolean(
+        snapshot.current_expiry &&
+        snapshot.current_expiry <= isoDateKey(new Date(now.getTime() + 7 * DAY), timeZone),
+      );
+      const lowCredits =
+        !snapshot.current_unlimited &&
+        snapshot.remaining_credits !== null &&
+        snapshot.remaining_credits <= 1;
+      if (elapsed >= 10 || expiresSoon || lowCredits)
+        riskStudents.push({
+          id: student.id,
+          name: student.full_name,
+          days: elapsed,
+          state: "En riesgo",
+          reason: lowCredits
+            ? `${snapshot.remaining_credits} clases restantes`
+            : expiresSoon
+              ? "Paquete por vencer"
+              : `${elapsed} días sin asistir`,
+        });
+      continue;
+    }
     const latest = latestAcquisitionByStudent.get(student.id);
     const elapsed = daysSince(latest?.expires_on ?? null, now);
-    if (elapsed === null || elapsed < 7) continue;
-    if (elapsed >= 30) {
-      abandonedStudents.push({
-        id: student.id,
-        name: student.full_name,
-        days: elapsed,
-        state: "Abandono",
-      });
-    } else if (elapsed >= 15) {
-      inactiveStudents.push({
-        id: student.id,
-        name: student.full_name,
-        days: elapsed,
-        state: "Inactiva",
-      });
-    } else {
-      riskStudents.push({
-        id: student.id,
-        name: student.full_name,
-        days: elapsed,
-        state: "En riesgo",
-      });
-    }
+    if (elapsed === null || elapsed < 1) continue;
+    const row = {
+      id: student.id,
+      name: student.full_name,
+      days: elapsed,
+      state: elapsed >= 30 ? "Abandono" : "No renovó",
+      reason: `${elapsed} días desde vencimiento`,
+    };
+    if (elapsed >= 30) abandonedStudents.push(row);
+    else inactiveStudents.push(row);
   }
 
   const currentSessions = sessions.filter((item) =>
@@ -720,13 +768,18 @@ export default async function IntelligencePage({
     let onTime = 0;
     let late = 0;
     let reservationEvents = 0;
+    let studioCancelled = 0;
 
     for (const session of rows) {
-      if (session.status === "cancelled") continue;
-      capacity += session.capacity ?? 0;
+      if (session.status !== "cancelled") capacity += session.capacity ?? 0;
       const sessionReservations = reservationsBySession.get(session.id) ?? [];
       for (const reservation of sessionReservations) {
         if (!decisionReservationStatuses.has(reservation.status)) continue;
+        if (reservation.status === "cancelled_by_studio") {
+          studioCancelled += 1;
+          continue;
+        }
+        if (session.status === "cancelled") continue;
         reservationEvents += 1;
         if (occupiedStatuses.has(reservation.status)) occupied += 1;
         if (reservation.status === "attended") attended += 1;
@@ -739,7 +792,7 @@ export default async function IntelligencePage({
 
     return {
       occupancy: safeRate(attended, capacity),
-      attendance: safeRate(attended, attended + noShow + late + (occupied - attended - noShow)),
+      attendance: safeRate(attended, attended + noShow),
       cancellation: safeRate(cancelled, reservationEvents),
       noShow: safeRate(noShow, occupied),
       onTime,
@@ -750,6 +803,7 @@ export default async function IntelligencePage({
       attended,
       occupied,
       capacity,
+      studioCancelled,
     };
   }
 
@@ -803,7 +857,7 @@ export default async function IntelligencePage({
     .map((item) => ({
       ...item,
       occupancy: safeRate(item.attended, item.capacity),
-      attendance: safeRate(item.attended, item.occupied + item.late),
+      attendance: safeRate(item.attended, item.attended + item.noShow),
       cancellation: safeRate(item.cancelled, item.total),
     }))
     .sort((a, b) => b.occupancy - a.occupancy);
@@ -841,21 +895,22 @@ export default async function IntelligencePage({
     weekday.set(day, current);
   }
 
-  const trialCurrent = currentStudents.filter((item) => item.trial_status);
-  const trialPrevious = previousStudents.filter((item) => item.trial_status);
-  const trialAttended = trialCurrent.filter(
-    (item) => item.trial_status === "attended" || item.trial_status === "converted",
-  ).length;
-  const trialPreviousAttended = trialPrevious.filter(
-    (item) => item.trial_status === "attended" || item.trial_status === "converted",
-  ).length;
-  const trialConverted = trialCurrent.filter((item) => item.trial_status === "converted").length;
-  const trialPreviousConverted = trialPrevious.filter(
-    (item) => item.trial_status === "converted",
-  ).length;
-  const trialNoShow = trialCurrent.filter((item) => item.trial_status === "no_show").length;
-  const trialConversion = safeRate(trialConverted, trialAttended);
-  const previousTrialConversion = safeRate(trialPreviousConverted, trialPreviousAttended);
+  const trialRows = (start: Date, end: Date) =>
+    reservations.filter(
+      (row) =>
+        row.class_kind === "trial" &&
+        isBetween(row.booked_at, start, end) &&
+        !row.status.startsWith("cancelled"),
+    );
+  const trialCurrent = trialRows(currentStart, currentEnd);
+  const trialPrevious = trialRows(previousStart, currentStart);
+  const trialAttended = trialCurrent.filter((row) => row.status === "attended").length;
+  const trialPreviousAttended = trialPrevious.filter((row) => row.status === "attended").length;
+  const trialConverted = newStudents.length;
+  const trialPreviousConverted = previousNewStudents.length;
+  const trialNoShow = trialCurrent.filter((row) => row.status === "no_show").length;
+  const trialConversion = safeRate(trialConverted, trialCurrent.length);
+  const previousTrialConversion = safeRate(trialPreviousConverted, trialPrevious.length);
 
   const expiredCurrent = commercialAcquisitions.filter(
     (item) =>
@@ -900,8 +955,16 @@ export default async function IntelligencePage({
         ) {
           return false;
         }
-        if (!candidate.expires_on || !expired.expires_on) return false;
-        return candidate.expires_on > expired.expires_on;
+        if (
+          !candidate.starts_on ||
+          !expired.expires_on ||
+          !["package", "membership"].includes(
+            productTemplateMap.get(candidate.product_template_id)?.product_type ?? "",
+          )
+        )
+          return false;
+        const gap = (Date.parse(candidate.starts_on) - Date.parse(expired.expires_on)) / DAY;
+        return gap >= 0 && gap <= 8;
       });
       if (later) renewed += 1;
     }
@@ -945,7 +1008,13 @@ export default async function IntelligencePage({
   const periodBuckets = Array.from({ length: Math.ceil(days / bucketStep) }, (_, index) => {
     const start = new Date(currentStart.getTime() + index * bucketStep * DAY);
     const end = new Date(Math.min(currentEnd.getTime(), start.getTime() + bucketStep * DAY));
-    const rows = currentPayments.filter((item) => isBetween(item.created_at, start, end));
+    const rows = currentPayments.filter(
+      (item) =>
+        paymentDate(item) >= isoDateKey(start, timeZone) &&
+        (index === Math.ceil(days / bucketStep) - 1
+          ? paymentDate(item) <= todayDate
+          : paymentDate(item) < isoDateKey(end, timeZone)),
+    );
     const cm = classMetrics(
       currentSessions.filter((item) => isBetween(item.starts_at, start, end)),
     );
@@ -960,10 +1029,6 @@ export default async function IntelligencePage({
       rows,
     };
   });
-
-  const highestDemand = classRows[0];
-  const lowestDemand = [...classRows].sort((a, b) => a.occupancy - b.occupancy)[0];
-  const highestCancellation = [...classRows].sort((a, b) => b.cancellation - a.cancellation)[0];
 
   const onboardingRows = onboarding.filter((row) =>
     students.some((student) => student.id === row.student_id),
@@ -1047,7 +1112,7 @@ export default async function IntelligencePage({
     const key = day + "-" + hour;
     const name = templateMap.get(session.template_id)?.name ?? "Clase";
     const cell = heat.get(key) ?? { day, hour, attended: 0, capacity: 0, names: new Set<string>() };
-    cell.capacity += session.capacity ?? 0;
+    if (session.status !== "cancelled") cell.capacity += session.capacity ?? 0;
     cell.attended += classMetrics([session]).attended;
     cell.names.add(name);
     heat.set(key, cell);
@@ -1056,6 +1121,31 @@ export default async function IntelligencePage({
     slot.rows.push(session);
     slots.set(slotKey, slot);
   }
+  const performanceRows = [...slots.values()]
+    .map((slot) => {
+      const cm = classMetrics(slot.rows);
+      return {
+        ...cm,
+        name: slot.name + " · " + slot.label,
+        sessions: slot.rows.length,
+        signal:
+          cm.occupancy > 90
+            ? "Agregar capacidad"
+            : cm.occupancy < 40 && slot.rows.length >= 2
+              ? "Mover o promover"
+              : cm.cancellation > 15
+                ? "Revisar horario"
+                : "Estable",
+      };
+    })
+    .sort((a, b) => b.occupancy - a.occupancy);
+  const highestDemand = performanceRows[0];
+  const lowestDemand = performanceRows
+    .filter((row) => row.sessions >= 2)
+    .sort((a, b) => a.occupancy - b.occupancy)[0];
+  const highestCancellation = [...performanceRows].sort(
+    (a, b) => b.cancellation - a.cancellation,
+  )[0];
   const heatHours = [...new Set([...heat.values()].map((cell) => cell.hour))].sort();
   const soonDate = isoDateKey(new Date(now.getTime() + 7 * DAY), timeZone);
   const expiringSoon = commercialAcquisitions.filter(
@@ -1079,7 +1169,20 @@ export default async function IntelligencePage({
     const key = row.student_id ?? row.provider_contact_id ?? row.contact_phone ?? row.id;
     if (!leadMap.has(key)) leadMap.set(key, row);
   }
-  const leads = [...leadMap.values()].filter((row) =>
+  const contactsForReport: Conversation[] = [
+    ...students.map((student) => ({
+      id: student.id,
+      student_id: student.id,
+      provider_contact_id: null,
+      contact_phone: null,
+      source: student.acquisition_source,
+      started_at: student.created_at,
+    })),
+    ...[...leadMap.values()].filter(
+      (row) => !row.student_id || !students.some((student) => student.id === row.student_id),
+    ),
+  ];
+  const leads = contactsForReport.filter((row) =>
     isBetween(row.started_at, currentStart, currentEnd),
   );
   const sources = [...new Set(leads.map((row) => row.source ?? "Sin origen registrado"))];
@@ -1087,7 +1190,11 @@ export default async function IntelligencePage({
     Boolean(
       row.student_id &&
       students.some(
-        (student) => student.id === row.student_id && student.trial_status === "converted",
+        (student) =>
+          student.id === row.student_id &&
+          retention.some(
+            (r) => r.student_id === student.id && r.first_start && r.first_start <= todayDate,
+          ),
       ),
     );
   const firstPackageByStudent = new Map<string, AcquisitionRow>();
@@ -1120,6 +1227,7 @@ export default async function IntelligencePage({
     .from("studio_expenses")
     .select("id,category,description,amount_minor,effective_on,marketing_source")
     .eq("studio_id", studio.id)
+    .is("deleted_at", null)
     .gte("effective_on", previousStartDate)
     .lte("effective_on", todayDate)
     .order("effective_on", { ascending: false });
@@ -1205,11 +1313,34 @@ export default async function IntelligencePage({
         </span>
       </form>
       {params.error ? (
-        <div className="notice error">
-          No pudimos guardar el gasto. Revisa el importe, la fecha y la descripción.
-        </div>
+        <p className="portal-callout" role="alert">
+          {params.error === "expense_future_date"
+            ? "La fecha no puede ser futura."
+            : params.error === "expense_restore"
+              ? "Ya no se puede deshacer esta eliminación. El plazo es de 5 minutos."
+              : "No se pudo guardar el gasto. Revisa los campos e intenta nuevamente."}
+        </p>
       ) : null}
-      {params.created ? <div className="notice success">Gastos actualizados.</div> : null}
+      {params.created === "expense_deleted" && params.deleted ? (
+        <form action={restoreStudioExpense} className="portal-callout portal-inline-form">
+          <span>Gasto eliminado.</span>
+          <input type="hidden" name="expense_id" value={params.deleted} />
+          <input type="hidden" name="days" value={days} />
+          <button className="portal-button" type="submit">
+            Deshacer
+          </button>
+        </form>
+      ) : null}
+      {params.created === "expense" ? (
+        <p role="status" className="portal-callout">
+          Gasto registrado.
+        </p>
+      ) : null}
+      {params.created === "expense_restored" ? (
+        <p role="status" className="portal-callout">
+          Gasto restaurado.
+        </p>
+      ) : null}
       {view === "gastos" ? (
         <>
           <section className="intel-kpi-grid">
@@ -1225,7 +1356,7 @@ export default async function IntelligencePage({
             />
             <MetricCard
               label="Margen"
-              value={pct(currentRevenue > 0 ? (profit / currentRevenue) * 100 : 0, locale)}
+              value={currentRevenue ? pct((profit / currentRevenue) * 100, locale) : "—"}
             />
           </section>
           <details className="card">
@@ -1393,14 +1524,14 @@ export default async function IntelligencePage({
                     <Insight
                       tone="danger"
                       title={"🚨 " + riskStudents.length + " alumnas en riesgo"}
-                      body="Su paquete venció hace 7–14 días y todavía no registran una nueva compra."
+                      body="Tienen un paquete vigente y llevan 10 días sin asistir, su paquete está por vencer o les queda una clase."
                       href="/admin/alumnas"
                     />
                   ) : (
                     <Insight
                       tone="positive"
                       title="✓ Sin alumnas en riesgo inmediato"
-                      body="No hay paquetes vencidos dentro de la ventana de 7–14 días."
+                      body="No hay alumnas con señales de riesgo."
                     />
                   )}
                   {highestCancellation && highestCancellation.cancellation >= 15 ? (
@@ -1502,7 +1633,7 @@ export default async function IntelligencePage({
                     tone="info"
                   />
                   <BarRow
-                    label="Se convirtieron"
+                    label="Primer paquete"
                     value={trialConverted}
                     max={Math.max(trialCurrent.length, 1)}
                     display={String(trialConverted)}
@@ -1614,11 +1745,8 @@ export default async function IntelligencePage({
           >
             <div className="intel-data-table">
               {pendingSales.map((sale) => {
-                const balance = Math.max(
-                  (collectibleBySale.get(sale.id) ?? sale.total_minor) -
-                    (paymentBySale.get(sale.id) ?? 0),
-                  0,
-                );
+                const balance =
+                  saleBalances?.find((row) => row.sale_id === sale.id)?.balance_minor ?? 0;
                 return balance > 0 ? (
                   <Link
                     key={sale.id}
@@ -1741,14 +1869,14 @@ export default async function IntelligencePage({
             />
             <MetricCard
               label="Nuevas"
-              value={String(currentStudents.length)}
-              delta={deltaText(currentStudents.length, previousStudents.length)}
+              value={String(newStudents.length)}
+              delta={deltaText(newStudents.length, previousNewStudents.length)}
               tone="info"
             />
             <MetricCard
               label="En riesgo"
               value={String(riskStudents.length)}
-              delta="7–14 días desde vencimiento"
+              delta="10+ días sin asistir o paquete por vencer"
               tone={riskStudents.length ? "warning" : "positive"}
             />
             <MetricCard
@@ -1867,7 +1995,7 @@ export default async function IntelligencePage({
                     tone="warning"
                   />
                   <BarRow
-                    label="Inactivas"
+                    label="No renovaron"
                     value={inactiveStudents.length}
                     max={Math.max(students.length, 1)}
                     display={String(inactiveStudents.length)}
@@ -1943,7 +2071,7 @@ export default async function IntelligencePage({
                       >
                         <span>
                           <strong>{item.name}</strong>
-                          <small>{item.days} días desde vencimiento</small>
+                          <small>{item.reason}</small>
                         </span>
                         <b>{item.state}</b>
                       </Link>
@@ -2000,7 +2128,7 @@ export default async function IntelligencePage({
               tone="positive"
             />
             <MetricCard
-              label="Se convirtieron"
+              label="Primer paquete"
               value={String(trialConverted)}
               delta={deltaText(trialConverted, trialPreviousConverted)}
               tone="positive"
@@ -2050,15 +2178,7 @@ export default async function IntelligencePage({
           </p>
           <MetricCard
             label="No show en prueba"
-            value={pct(
-              safeRate(
-                trialNoShow,
-                trialCurrent.filter((s) =>
-                  ["attended", "converted", "no_show", "pending"].includes(s.trial_status ?? ""),
-                ).length,
-              ),
-              locale,
-            )}
+            value={pct(safeRate(trialNoShow, trialCurrent.length), locale)}
             delta="Pruebas con no show / pruebas no canceladas"
             tone="danger"
           />
@@ -2066,7 +2186,7 @@ export default async function IntelligencePage({
             <div className="intel-stack">
               <Section
                 title="🎯 Embudo medible hoy"
-                description="La cohorte se toma por la fecha en que se creó la clase de prueba."
+                description="Pruebas reservadas y primeros paquetes por fecha de inicio dentro del periodo."
               >
                 <div className="intel-bars">
                   <BarRow
@@ -2084,7 +2204,7 @@ export default async function IntelligencePage({
                     tone="accent"
                   />
                   <BarRow
-                    label="Se convirtieron"
+                    label="Primer paquete"
                     value={trialConverted}
                     max={Math.max(trialCurrent.length, 1)}
                     display={String(trialConverted)}
@@ -2282,9 +2402,8 @@ export default async function IntelligencePage({
             rows={[...topStudents].map(([id, count]) => [studentNames.get(id) ?? "Alumna", count])}
           />
           <p className="intel-source-note">
-            Asistencia = asistió / reservas no canceladas a tiempo. Ocupación = asistió / capacidad.
-            No show = no asistió / reservas sin cancelación. Se usan los estados registrados por el
-            estudio.
+            Asistencia = asistió / (asistió + no show). Ocupación = asistió / capacidad. No show =
+            no asistió / reservas sin cancelación. Se usan los estados registrados por el estudio.
           </p>
         </>
       ) : null}
@@ -2323,8 +2442,11 @@ export default async function IntelligencePage({
           <section className="intel-kpi-grid">
             <MetricCard
               label="Clases impartidas"
-              value={String(currentSessions.length)}
-              delta={deltaText(currentSessions.length, previousSessions.length)}
+              value={String(currentSessions.filter((s) => s.status !== "cancelled").length)}
+              delta={deltaText(
+                currentSessions.filter((s) => s.status !== "cancelled").length,
+                previousSessions.filter((s) => s.status !== "cancelled").length,
+              )}
             />
             <MetricCard
               label="Reservas"
@@ -2377,9 +2499,7 @@ export default async function IntelligencePage({
               },
               {
                 name: "Canceló el estudio",
-                values: periodBuckets.map(
-                  (b) => b.cm.reservations - b.cm.occupied - b.cm.onTime - b.cm.late,
-                ),
+                values: periodBuckets.map((b) => b.cm.studioCancelled),
                 tone: "info",
               },
             ]}
@@ -2406,7 +2526,13 @@ export default async function IntelligencePage({
                 cm.occupancy,
                 cm.cancellation,
                 waiting.filter((row) => ids.has(row.session_id)).length / slot.rows.length,
-                cm.occupancy >= 75 ? "Alta" : cm.occupancy < 55 ? "Baja" : "Estable",
+                cm.occupancy > 90
+                  ? "Agregar capacidad"
+                  : cm.occupancy < 40 && slot.rows.length >= 2
+                    ? "Mover o promover"
+                    : cm.cancellation > 15
+                      ? "Revisar horario"
+                      : "Estable",
               ];
             })}
           />
@@ -2431,15 +2557,18 @@ export default async function IntelligencePage({
                   <div className="intel-data-head intel-class-grid">
                     <span>Clase</span>
                     <span>Ocup.</span>
-                    <span>Asist.</span>
                     <span>Canc.</span>
+                    <span>Qué hacer</span>
                   </div>
-                  {classRows.map((row) => (
+                  {performanceRows.map((row) => (
                     <div className="intel-data-row intel-class-grid" key={row.name}>
-                      <span>{row.name}</span>
+                      <span>
+                        {row.name}
+                        <small>{row.sessions} sesiones</small>
+                      </span>
                       <strong>{pct(row.occupancy, locale)}</strong>
-                      <span>{pct(row.attendance, locale)}</span>
                       <span>{pct(row.cancellation, locale)}</span>
+                      <span>{row.signal}</span>
                     </div>
                   ))}
                 </div>
@@ -2526,7 +2655,7 @@ export default async function IntelligencePage({
               <Section title="Qué revisar">
                 <div className="intel-rule-list">
                   <div>
-                    <span>&lt;40% por 4+ semanas</span>
+                    <span>&lt;40% en 2+ sesiones</span>
                     <strong>Mover o promover</strong>
                   </div>
                   <div>

@@ -7,7 +7,7 @@ Solicitud: todo el portal de administración, bloques A–F. Fuente visual: Stud
 - A: base entregada; Hoy se conecta al catálogo completo de fechas.
 - Base visual: 71 pantallas conectadas a tokens de StudioFlow; revisión de detalle en curso.
 - B: edición transaccional, créditos y precio por sesión, reabrir, liberar lugares y catálogo de periodos implementados; validación y mejoras visuales en curso.
-- C: tablero CRM, origen, documentos en perfil y ajustes de paquetes implementados; venta y ciclo de vida continúan en revisión.
+- C: tablero CRM, origen, documentos en perfil y ajustes de paquetes implementados; inicio de vigencia, pagos fechados, reembolsos parciales y ciclo de vida comprobados; el wizard completo continúa en revisión.
 - D–F: Comunicación unificada, versiones de evaluaciones, documentos, retos automáticos, permisos de gastos, equipo, asistentes independientes, correo y uso del plan implementados; continúan la revisión visual y las reglas pendientes.
 
 ## Decisiones abiertas
@@ -16,7 +16,7 @@ Se mantiene el comportamiento actual de las 21 decisiones del Anexo A hasta que 
 
 ## Reglas por comprobar
 
-- [ ] Permisos de Administración — Administración = Owner salvo "Plan y suscripción"
+- [x] Permisos de Administración — Administración = Owner salvo "Plan y suscripción"
 - [ ] Permisos de Recepción — Opera Hoy completo: pasar lista, kiosco, agregar/cancelar reservas, walk-in, ventas; en Más ve Actividades y Paquetes (lectura); no ve Documentos
 - [ ] Coach en el panel — Nav "Mis clases", "Agenda" (solo sus clases), "Más"; lista y asistencia inline en Mis clases; sin agregar alumnas ni cancelar reservas
 - [ ] Ventana para pasar lista — Desde 20 min antes del inicio hasta que se cierre la lista; tras cerrar, corrección con motivo
@@ -52,20 +52,20 @@ Se mantiene el comportamiento actual de las 21 decisiones del Anexo A hasta que 
 - [x] Cambio de inicio de paquete — Ventana de ±7 días; la vigencia completa se recorre; rechaza si alguna reserva queda fuera; motivo obligatorio; aplica también a paquetes no actuales (botón en cada paquete).
 - [ ] Penalizaciones — Botones "Cobrar" (crea venta "Penalización por no show/cancelación tardía" pagada) y "Condonar" (motivo obligatorio).
 - [x] Documentos desde el perfil — "Registrar" aceptación presencial/externa desde el perfil con firmante y tutor; invalidar con motivo y bloqueo inmediato si el documento bloquea reservas.
-- [ ] Inactivar — Motivo obligatorio; las reservas futuras **se conservan** hasta que se cancelen; no recibe mensajes automáticos; no puede reservar.
+- [x] Inactivar — Motivo obligatorio; las reservas futuras **se conservan** hasta que se cancelen; no recibe mensajes automáticos; no puede reservar.
 - [ ] Permisos de inactivar/acceso — Inactivar/reactivar visible para Recepción; eliminar solo Owner/Administración; acceso a la app visible en el perfil sin restricción de rol.
-- [ ] Eliminar — Además exige escribir "ELIMINAR".
+- [x] Eliminar — Además exige escribir "ELIMINAR".
 - [ ] Preferencias de comunicación — Motivo obligatorio cuando hay cambios; últimos cambios con rol visibles.
 - [ ] Evaluación: programar desde admin — Admin puede "Programar": elige sesión y se le reserva con crédito de su paquete.
 - [ ] Medallas: canjear desde perfil — Botón "Canjear" en el perfil.
 - [ ] Transferencia rechazada — Motivo de lista obligatorio; paquete queda bloqueado; pago posterior lo desbloquea.
-- [ ] Inicio de vigencia — "Hoy" / "Al terminar el actual" (por defecto si tiene un paquete vigente) / "Otra fecha". `first_usage` no aparece
+- [x] Inicio de vigencia — "Hoy" / "Al terminar el actual" (por defecto si tiene un paquete vigente) / "Otra fecha". `first_usage` no aparece
 - [ ] Pago de la inscripción dentro de la venta — La inscripción se suma al total y puede quedar como saldo (parcial o $0 bloqueado)
 - [ ] Venta de suelta e inscripción desde el mismo wizard — El paso 2 lista también "Clase suelta" e "Inscripción"
 - [ ] Alumnas que se pueden elegir — Todas las que no están archivadas, incluidos prospectos (el CRM pasa a Alumna al pagar la inscripción)
-- [ ] Reembolso de una línea — Reembolso parcial sin cancelar. Interruptor opcional "Bloquear el paquete" (apagado por defecto)
+- [x] Reembolso de una línea — Reembolso parcial sin cancelar. Interruptor opcional "Bloquear el paquete" (apagado por defecto)
 - [ ] Anulación — Igual: exige reembolsar primero y bloquea el paquete
-- [ ] Pago de saldo — Hoja con "Fecha real del pago" (hoy a −7 días) y desbloqueo automático del paquete
+- [x] Pago de saldo — Hoja con "Fecha real del pago" (hoy a −7 días) y desbloqueo automático del paquete
 - [ ] Créditos por reserva — Selector "Créditos por reserva" 1–4 en el paso Precio
 - [ ] Activar o desactivar una actividad — Botón en Revisar. Al desactivar se borran las sesiones futuras sin reservas
 - [ ] Corte de cancelación — Selector de 1 a 24 h
@@ -106,7 +106,7 @@ Se mantiene el comportamiento actual de las 21 decisiones del Anexo A hasta que 
 - [ ] Canales globales — Preferencias solo muestra estado (Listo/Pendiente); la conexión se hace en Integraciones
 - [ ] Límite comercial — Selector 1–5 en 7 días, aplica a automatizaciones comerciales y campañas
 - [ ] Campañas manuales — Envío inmediato (solo dentro de la ventana) o programado; excluye quien no acepta promociones o bloqueó
-- [ ] Cumpleaños — Automatización programada diaria, comercial, pausada por defecto
+- [x] Cumpleaños — Automatización programada diaria, comercial, pausada por defecto
 - [ ] Plantilla en revisión — Editar el texto de WhatsApp lo manda a revisión; WhatsApp no se puede activar si la plantilla no está "Aprobada"
 - [ ] Cancelación manual de clase — La hoja "Cancelar clase" permite desmarcar a quién avisar y editar el mensaje, pero `logSend` registra a todas con el texto estándar
 - [ ] Alcance de una excepción temporal — La excepción solo exime bloqueos de documentos ("Puede reservar aunque le falten documentos"). Una restricción activa siempre bloquea

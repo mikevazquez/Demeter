@@ -49,6 +49,6 @@ describe("phone uniqueness by studio and role", () => {
 
   it("explains duplicate coach phones without leaking a phone number", () => {
     expect(actions).toContain('error.code === "23505" ? "phone_in_use"');
-    expect(profile).toContain("otro coach");
+    expect(profile).toContain("otro integrante");
   });
 });

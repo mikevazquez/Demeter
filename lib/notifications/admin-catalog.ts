@@ -68,6 +68,16 @@ export const NOTIFICATION_PROCESS_CATEGORIES = [
 
 export const NOTIFICATION_PROCESSES: readonly NotificationProcessDefinition[] = [
   {
+    key: "birthday",
+    name: "Cumpleaños",
+    description:
+      "Usa la fecha de nacimiento de Campos adicionales. Respeta las preferencias de promociones y el límite comercial.",
+    category: "cuenta",
+    ruleKeys: ["marketing.birthday"],
+    timingLabel: "El día de su cumpleaños",
+    recipientLabel: "Alumna con fecha de nacimiento registrada",
+  },
+  {
     key: "reservation-confirmed",
     name: "Reserva confirmada",
     description: "Confirma que el lugar quedó reservado.",

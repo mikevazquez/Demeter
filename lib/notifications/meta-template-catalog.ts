@@ -1,4 +1,6 @@
 export const META_WHATSAPP_TEMPLATE_PARAMETERS = {
+  birthday: ["nombre"],
+  manual_campaign: ["nombre", "mensaje"],
   student_welcome: ["nombre"],
   reservation_confirmed: ["nombre", "disciplina", "fecha", "hora", "coach", "ubicacion"],
   reservation_cancelled: [

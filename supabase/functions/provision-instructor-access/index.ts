@@ -59,8 +59,7 @@ const handler = {
       .eq("user_id", user.id)
       .eq("active", true)
       .maybeSingle();
-    if (!caller || (instructor.staff_role === "admin" && caller.role !== "owner"))
-      return jsonResponse({ error: "forbidden" }, 403);
+    if (!caller) return jsonResponse({ error: "forbidden" }, 403);
 
     const { data: permission } = await userClient
       .from("role_capabilities")

@@ -61,7 +61,14 @@ export async function createStudioExpense(formData: FormData) {
   });
 
   if (error) {
-    redirect(intelligenceFinanceUrl(formData, "&error=expense_save"));
+    redirect(
+      intelligenceFinanceUrl(
+        formData,
+        error.message.includes("expense_future_date")
+          ? "&error=expense_future_date"
+          : "&error=expense_save",
+      ),
+    );
   }
 
   revalidatePath("/admin/inteligencia");
@@ -74,17 +81,33 @@ export async function deleteStudioExpense(formData: FormData) {
     redirect(intelligenceFinanceUrl(formData, "&error=expense_delete"));
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.REPORTS_READ);
-  const { error } = await supabase
-    .from("studio_expenses")
-    .delete()
-    .eq("id", expenseId)
-    .eq("studio_id", studio.id);
+  const { supabase } = await getAdminContext(CAPABILITIES.REPORTS_READ);
+  const { error } = await supabase.rpc("admin_set_expense_deleted", {
+    p_expense_id: expenseId,
+    p_deleted: true,
+  });
 
   if (error) {
     redirect(intelligenceFinanceUrl(formData, "&error=expense_delete"));
   }
 
   revalidatePath("/admin/inteligencia");
-  redirect(intelligenceFinanceUrl(formData, "&created=expense_deleted"));
+  redirect(
+    intelligenceFinanceUrl(
+      formData,
+      "&created=expense_deleted&deleted=" + encodeURIComponent(expenseId),
+    ),
+  );
+}
+
+export async function restoreStudioExpense(formData: FormData) {
+  const id = String(formData.get("expense_id") ?? "").trim();
+  const { supabase } = await getAdminContext(CAPABILITIES.REPORTS_READ);
+  const { error } = await supabase.rpc("admin_set_expense_deleted", {
+    p_expense_id: id,
+    p_deleted: false,
+  });
+  if (error) redirect(intelligenceFinanceUrl(formData, "&error=expense_restore"));
+  revalidatePath("/admin/inteligencia");
+  redirect(intelligenceFinanceUrl(formData, "&created=expense_restored"));
 }

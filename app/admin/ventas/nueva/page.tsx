@@ -129,6 +129,20 @@ export default async function NewSalePage({
       ])
     : [{ data: [] }, { data: null }, { data: [] }, { data: [] }];
 
+  const { data: currentPackages } = selectedStudent
+    ? await supabase
+        .from("product_acquisitions")
+        .select("expires_on,starts_on")
+        .eq("studio_id", studio.id)
+        .eq("student_id", selectedStudent.id)
+        .eq("status", "active")
+        .is("refunded_at", null)
+        .eq("access_blocked", false)
+        .lte("starts_on", today)
+        .gte("expires_on", today)
+        .order("expires_on", { ascending: false })
+        .limit(1)
+    : { data: [] };
   const enrollmentRequired = Boolean(policy?.enabled && policy.required_for_package_purchase);
   const currentEnrollment = (activeEnrollments ?? []).some(
     (item) => item.starts_on <= today && (item.expires_on === null || item.expires_on >= today),
@@ -279,6 +293,7 @@ export default async function NewSalePage({
               validityDays: item.validity_days,
               unlimited: item.unlimited,
             }))}
+            currentPackageEndsOn={currentPackages?.[0]?.expires_on ?? null}
             today={today}
             idempotencyKey={randomUUID()}
             enrollmentRequired={enrollmentRequired}

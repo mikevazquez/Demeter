@@ -357,10 +357,11 @@ export async function setStudentLifecycle(formData: FormData) {
     redirect(`/admin/alumnas/${studentId}?lifecycle_error=invalid`);
   }
 
-  const { supabase } = await getAdminContext(CAPABILITIES.STUDENTS_ARCHIVE);
-  const { error } = await supabase.rpc("admin_set_student_lifecycle", {
+  const { supabase } = await getAdminContext(CAPABILITIES.STUDENTS_WRITE);
+  const { error } = await supabase.rpc("admin_change_student_lifecycle", {
     p_student_id: studentId,
     p_status: status,
+    p_reason: String(formData.get("lifecycle_reason") ?? "").trim() || null,
   });
 
   if (error) {
@@ -376,7 +377,7 @@ export async function setStudentLifecycle(formData: FormData) {
 
 export async function deleteStudent(formData: FormData) {
   const studentId = String(formData.get("student_id") ?? "");
-  if (!studentId) {
+  if (!studentId || String(formData.get("delete_confirmation") ?? "").trim() !== "ELIMINAR") {
     redirect("/admin/alumnas?error=lifecycle_invalid");
   }
 

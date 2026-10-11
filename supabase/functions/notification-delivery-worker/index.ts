@@ -412,6 +412,15 @@ function renderMessageContent(delivery: DeliveryRow): RenderedMessage {
       };
     }
 
+    case "birthday":
+      return {
+        title: "🎂 ¡Feliz cumpleaños!",
+        body: `¡Feliz cumpleaños, ${safeText(variables.recipient_name) ?? "alumna"}! Hoy celebramos contigo. Te deseamos un día especial 💚`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "birthday",
+      };
+
     case "challenge_invitation":
       return {
         title: "Nuevo reto disponible",
@@ -1262,6 +1271,36 @@ async function processDelivery(
     }
 
     attemptId = String(startedAttempt);
+
+    if (delivery.recipient_type === "student" && delivery.recipient_entity_id) {
+      const { data: active, error: activeError } = await adminClient.rpc(
+        "service_student_notification_active",
+        {
+          p_studio_id: delivery.studio_id,
+          p_student_id: delivery.recipient_entity_id,
+          p_template_key: delivery.template_key,
+        },
+      );
+      if (activeError) throw new Error("notification_recipient_status_lookup_failed");
+      if (!active) {
+        const { data: skipped, error: skipError } = await adminClient.rpc(
+          "system_mark_notification_delivery_attempt_skipped",
+          {
+            p_attempt_id: attemptId,
+            p_reason_code: "recipient_inactive",
+            p_reason_safe: "La destinataria ya no está activa.",
+            p_response_snapshot: { eligibility: "inactive" },
+          },
+        );
+        if (skipError || skipped !== true) throw new Error("notification_inactive_skip_failed");
+        return {
+          ok: true,
+          deliveryId: delivery.id,
+          channel: delivery.channel_key,
+          outcome: "skipped",
+        };
+      }
+    }
 
     if (!(await packageRecoveryStillEligible(adminClient, delivery))) {
       const { data, error } = await adminClient.rpc(

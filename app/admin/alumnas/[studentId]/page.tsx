@@ -210,14 +210,15 @@ export default async function StudentProfilePage({
   const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
   const canReadDocuments = can(CAPABILITIES.DOCUMENTS_READ) || can(CAPABILITIES.STUDENTS_WRITE);
   const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
+  const canChangeLifecycle = can(CAPABILITIES.STUDENTS_WRITE);
   const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
   const canEditAcquisitions = can(CAPABILITIES.PRODUCTS_WRITE) || can(CAPABILITIES.SALES_WRITE);
 
   const secondaryReads = Promise.all([
-    canArchive
+    canChangeLifecycle
       ? supabase
           .from("student_lifecycle_events")
-          .select("id, from_status, to_status, created_at")
+          .select("id, from_status, to_status, reason, created_at")
           .eq("student_id", student.id)
           .eq("studio_id", studio.id)
           .order("created_at", { ascending: false })
@@ -662,6 +663,15 @@ export default async function StudentProfilePage({
           .in("sale_id", saleIds)
       : { data: [] };
 
+    const { data: balances, error: balancesError } = saleIds.length
+      ? await supabase
+          .from("v_sale_balances")
+          .select("sale_id,balance_minor,collectible_minor")
+          .eq("studio_id", studio.id)
+          .in("sale_id", saleIds)
+      : { data: [], error: null };
+    if (balancesError) throw new Error("student_balances_unavailable");
+    const balancesBySale = new Map((balances ?? []).map((row) => [row.sale_id, row]));
     const grossPaidBySale = new Map<string, number>();
     const refundsBySale = new Map<string, number>();
 
@@ -674,7 +684,8 @@ export default async function StudentProfilePage({
       const grossPaid = grossPaidBySale.get(sale.id) ?? 0;
       const refunded = refundsBySale.get(sale.id) ?? 0;
       const netPaidMinor = grossPaid - refunded;
-      const balanceMinor = Math.max(0, sale.total_minor - netPaidMinor);
+      const balanceMinor =
+        sale.status === "voided" ? 0 : (balancesBySale.get(sale.id)?.balance_minor ?? 0);
       const stateLabel =
         sale.status === "voided"
           ? "Anulada"
@@ -684,7 +695,7 @@ export default async function StudentProfilePage({
               : "Con reembolso"
             : netPaidMinor <= 0
               ? "Pendiente"
-              : netPaidMinor < sale.total_minor
+              : balanceMinor > 0
                 ? "Parcial"
                 : "Pagada";
 
@@ -2380,7 +2391,7 @@ export default async function StudentProfilePage({
 
       {view === "profile" ? <StudentPortalAccessSection studentId={student.id} /> : null}
 
-      {view === "profile" && canArchive ? (
+      {view === "profile" && canChangeLifecycle ? (
         <details id="estado-alumna" className="profile360-detail scroll-mt-6">
           <summary>
             <span>
@@ -2400,6 +2411,7 @@ export default async function StudentProfilePage({
 
             <StudentLifecycleActions
               studentId={student.id}
+              canDelete={canArchive}
               status={student.lifecycle_status === "inactive" ? "inactive" : "active"}
             />
 
@@ -2428,6 +2440,7 @@ export default async function StudentProfilePage({
                         {lifecycleCopy[event.from_status] ?? event.from_status} →{" "}
                         {lifecycleCopy[event.to_status] ?? event.to_status}
                       </strong>
+                      {event.reason ? <p className="portal-muted">{event.reason}</p> : null}
                       <span className="text-xs text-zinc-500">
                         {formatDateTime(event.created_at, timeZone, locale)}
                       </span>

@@ -1,3 +1,4 @@
+import CampaignList from "../comunicacion/campanas/CampaignList";
 import { emailProviderConfigured } from "@/lib/notifications/email-readiness";
 import Link from "next/link";
 import { AUTOMATION_SEQUENCES } from "@/lib/automations/catalog";
@@ -485,17 +486,21 @@ export default async function NotificationsPage({
         </>
       ) : null}
 
-      {activeTab === "marketing" ? (
+      {activeTab === "marketing" ? <CampaignList /> : null}
+
+      {activeTab === "procesos" ? (
         <>
           <section className="notification-section-heading marketing-heading">
             <div>
-              <h2>Marketing</h2>
+              <h2>Comunicaciones comerciales</h2>
               <p>Comunicación comercial y de engagement con tus alumnas.</p>
             </div>
           </section>
 
           <section className="notification-process-list">
-            {MARKETING_COMMUNICATIONS.map((item) => {
+            {MARKETING_COMMUNICATIONS.filter(
+              (item) => !["birthday", "manual-campaigns"].includes(item.key),
+            ).map((item) => {
               const codes = item.automationCodes ?? [];
               const rows = automationRows.filter((row) => codes.includes(row.catalog_code));
               const configured = rows.length > 0;
@@ -545,8 +550,8 @@ export default async function NotificationsPage({
 
           <div className="notification-info-box">
             Las comunicaciones de recuperación ya existentes siguen ejecutándose con el motor
-            actual. Campañas, cumpleaños, retos, referidos y eventos aparecen como borrador hasta
-            conectar sus disparadores al motor central; no se enviará nada por accidente.
+            actual. Cumpleaños y campañas están conectados al motor central. Los mensajes que
+            todavía no tienen disparador conservan su borrador.
           </div>
         </>
       ) : null}

@@ -19,6 +19,7 @@ function statusLabel(status: string) {
 const errorCopy: Record<string, string> = {
   trial_credit_source_already_applied:
     "Este pago ya se abonó a una inscripción. Revisa la compra vinculada antes de resolver una devolución; no se puede devolver por separado.",
+  payment_date_invalid: "La fecha debe estar entre hoy y los últimos 7 días.",
   payment_invalid: "Revisa el monto y selecciona un método de pago.",
   payment_method_required: "Selecciona un método de pago.",
   payment_exceeds_balance: "El pago no puede ser mayor al saldo pendiente.",
@@ -56,6 +57,15 @@ export default async function SaleDetailPage({
     .eq("studio_id", ctx.studio.id)
     .maybeSingle();
   if (!sale) notFound();
+  const today = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: ctx.studio.timezone ?? "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const earliestPaymentDate = new Date(`${today}T12:00:00Z`);
+  earliestPaymentDate.setUTCDate(earliestPaymentDate.getUTCDate() - 7);
+  const earliestPaymentOn = earliestPaymentDate.toISOString().slice(0, 10);
 
   const [{ data: student }, { data: lines }, { data: payments }] = await Promise.all([
     ctx.supabase
@@ -72,7 +82,9 @@ export default async function SaleDetailPage({
       .order("created_at"),
     ctx.supabase
       .from("payments")
-      .select("id,sale_line_id,kind,amount_minor,method,reference,notes,reason,created_at")
+      .select(
+        "id,sale_line_id,kind,amount_minor,method,reference,notes,reason,effective_on,created_at",
+      )
       .eq("sale_id", sale.id)
       .order("created_at"),
   ]);
@@ -139,7 +151,11 @@ export default async function SaleDetailPage({
 
   const netCollected = grossPaid - refunded;
   const collectibleTotal = (lines ?? []).reduce(
-    (sum, line) => sum + (line.refunded_at ? 0 : line.line_total_minor),
+    (sum, line) =>
+      sum +
+      (line.refunded_at
+        ? 0
+        : Math.max(line.line_total_minor - (lineRefundMap.get(line.id) ?? 0), 0)),
     0,
   );
   const balance = Math.max(collectibleTotal - netCollected, 0);
@@ -285,8 +301,8 @@ export default async function SaleDetailPage({
                       Reembolsar este producto
                     </summary>
                     <p className="mt-2 text-xs leading-5 text-zinc-400">
-                      El reembolso es manual en este MVP. Al confirmarlo, el paquete o inscripción
-                      asociado queda inactivo. Los consumos previos se conservan como historial.
+                      Registra el dinero que devuelves a la alumna. Su paquete o inscripción se
+                      conserva; puedes bloquear el paquete si lo necesitas.
                     </p>
                     <form action={refundSaleLineAction} className="mt-4 grid gap-3 md:grid-cols-2">
                       <input type="hidden" name="sale_id" value={sale.id} />
@@ -343,6 +359,12 @@ export default async function SaleDetailPage({
                           className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white"
                         />
                       </label>
+                      {acquisition ? (
+                        <label className="flex items-start gap-2 text-xs text-zinc-300 md:col-span-2">
+                          <input type="checkbox" name="block_package" />
+                          Bloquear el paquete
+                        </label>
+                      ) : null}
                       <label className="flex items-start gap-2 text-xs text-zinc-300 md:col-span-2">
                         <input
                           type="checkbox"
@@ -351,8 +373,7 @@ export default async function SaleDetailPage({
                           required
                           className="mt-0.5"
                         />
-                        Confirmo que el dinero se devolverá manualmente y que el derecho de esta
-                        línea dejará de poder utilizarse.
+                        Confirmo que devolveré este monto a la alumna.
                       </label>
                       <div className="md:col-span-2 md:text-right">
                         <button
@@ -413,6 +434,9 @@ export default async function SaleDetailPage({
                     <p className="mt-0.5 text-xs text-zinc-400">Motivo: {payment.reason}</p>
                   ) : null}
                   <p className="text-xs text-zinc-500">
+                    {payment.effective_on
+                      ? `Fecha del pago: ${payment.effective_on} · Registrado: `
+                      : ""}
                     {new Intl.DateTimeFormat(ctx.studio.locale, {
                       dateStyle: "medium",
                       timeStyle: "short",
@@ -441,6 +465,17 @@ export default async function SaleDetailPage({
           </p>
           <form action={registerSalePaymentAction} className="mt-4 grid gap-3 md:grid-cols-2">
             <input type="hidden" name="sale_id" value={sale.id} />
+            <label className="grid gap-1.5 text-sm text-zinc-300">
+              Fecha real del pago
+              <input
+                type="date"
+                name="payment_effective_on"
+                required
+                min={earliestPaymentOn}
+                max={today}
+                defaultValue={today}
+              />
+            </label>
             <label className="grid gap-1.5 text-sm text-zinc-300">
               Monto en {sale.currency}
               <input

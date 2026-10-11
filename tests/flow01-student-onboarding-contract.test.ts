@@ -68,9 +68,8 @@ describe("Flow 01 student onboarding", () => {
     expect(migration).toContain("consumidos por no-show");
     expect(migration).toContain("v_new_status='cancelled_late'");
     expect(migration).toContain("r.status in ('attended','no_show')");
-    expect(form).toContain("Primer crédito consumido");
-    expect(form).toContain("cancelación tardía");
-    expect(form).toContain("Una cancelación a");
+    expect(form).toContain("Al terminar el actual");
+    expect(form).not.toContain('<option value="first_usage">');
   });
 
   it("blocks booking when a no-payment acquisition has not been authorized", () => {

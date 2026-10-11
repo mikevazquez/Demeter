@@ -223,8 +223,17 @@ export function buildAsistianVariables(
         fecha: formatDateOnly(variables.event_date, variables.studio_timezone) ?? "próximamente",
       };
 
+    case "birthday":
     case "referral_invitation":
       return { nombre: safeText(variables.recipient_name) ?? "Alumna" };
+
+    case "manual_campaign":
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        mensaje:
+          safeText(variables.campaign_message) ??
+          "Consulta las novedades del estudio en StudioFlow.",
+      };
 
     case "package_recovery_1":
       return {

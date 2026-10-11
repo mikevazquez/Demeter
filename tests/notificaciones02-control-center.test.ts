@@ -102,7 +102,7 @@ describe("NOTIFICACIONES-02 control center", () => {
   });
 
   it("keeps marketing drafts inert until their central-engine triggers exist", () => {
-    expect(page).toContain("no se enviará nada por accidente");
+    expect(page).toContain("conservan su borrador");
     expect(catalog).toContain("planned: true");
   });
 });

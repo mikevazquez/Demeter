@@ -287,9 +287,11 @@ export default async function StudentsPage({
     prospectRows.map((contact) => contact.id),
     can(CAPABILITIES.SETTINGS_WRITE),
   );
-  const [salesResult, paymentsResult, transferResult, reservationsResult] = await Promise.all([
-    supabase.from("sales").select("id,student_id,status,total_minor").eq("studio_id", studio.id),
-    supabase.from("payments").select("sale_id,amount_minor,kind").eq("studio_id", studio.id),
+  const [salesResult, transferResult, reservationsResult] = await Promise.all([
+    supabase
+      .from("v_sale_balances")
+      .select("id:sale_id,student_id,status,total_minor,balance_minor")
+      .eq("studio_id", studio.id),
     supabase
       .from("assistant_transfer_purchase_intents")
       .select("student_id,sale_id,amount_minor")
@@ -304,11 +306,10 @@ export default async function StudentsPage({
       .in("status", ["reserved", "attended", "no_show"])
       .order("booked_at", { ascending: false }),
   ]);
-  if (salesResult.error || paymentsResult.error || transferResult.error || reservationsResult.error)
+  if (salesResult.error || transferResult.error || reservationsResult.error)
     throw new Error(
       `crm_financial_data_unavailable: ${[
         salesResult.error,
-        paymentsResult.error,
         transferResult.error,
         reservationsResult.error,
       ]
@@ -322,12 +323,9 @@ export default async function StudentsPage({
   const debtByStudent = new Map<string, number>();
   for (const sale of salesResult.data ?? []) {
     if (["cancelled", "voided"].includes(sale.status) || unvalidatedSales.has(sale.id)) continue;
-    const paid = (paymentsResult.data ?? [])
-      .filter((p) => p.sale_id === sale.id)
-      .reduce((n, p) => n + (p.kind === "payment" ? p.amount_minor : 0), 0);
     debtByStudent.set(
       sale.student_id,
-      (debtByStudent.get(sale.student_id) ?? 0) + Math.max(0, sale.total_minor - paid),
+      (debtByStudent.get(sale.student_id) ?? 0) + sale.balance_minor,
     );
   }
   const money = (value: number) =>

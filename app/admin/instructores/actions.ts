@@ -93,3 +93,38 @@ export async function updateInstructorPhone(formData: FormData) {
   revalidatePath(`/admin/instructores/${instructorId}`);
   redirect(`/admin/instructores/${instructorId}?saved=phone`);
 }
+
+export async function updateTeamMember(formData: FormData) {
+  const id = String(formData.get("instructor_id") ?? "").trim();
+  if (!id) redirect("/admin/instructores?error=instructor_required");
+  const rawPhone = String(formData.get("phone") ?? "").trim();
+  const phone = rawPhone ? normalizeMexicanPhone(rawPhone) : null;
+  if (rawPhone && !phone) redirect(`/admin/instructores/${id}?error=phone_invalid`);
+  const { supabase } = await getAdminContext(CAPABILITIES.INSTRUCTORS_WRITE);
+  const { error } = await supabase.rpc("admin_update_team_member", {
+    p_instructor_id: id,
+    p_first_name: String(formData.get("first_name") ?? "").trim(),
+    p_last_name: String(formData.get("last_name") ?? "").trim() || null,
+    p_phone: phone,
+    p_email: String(formData.get("email") ?? "").trim() || null,
+    p_role: String(formData.get("staff_role") ?? "instructor"),
+    p_teaches: formData.get("teaches") === "on",
+    p_note: String(formData.get("bio") ?? "").trim() || null,
+  });
+  if (error) {
+    const reason =
+      [
+        "linked_email_locked",
+        "email_invalid",
+        "email_in_use",
+        "teaching_assignments_exist",
+        "owner_protected",
+        "first_name_required",
+      ].find((key) => error.message.includes(key)) ??
+      (error.code === "23505" ? "phone_in_use" : "update_failed");
+    redirect(`/admin/instructores/${id}?error=${reason}`);
+  }
+  revalidatePath("/admin/instructores");
+  revalidatePath(`/admin/instructores/${id}`);
+  redirect(`/admin/instructores/${id}?saved=data`);
+}

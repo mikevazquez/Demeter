@@ -35,10 +35,12 @@ export function InstructorAccessProvisioner({
   instructorId,
   email,
   mode,
+  roleLabel = "Integrante",
 }: {
   instructorId: string;
   email: string;
   mode: CredentialMode;
+  roleLabel?: string;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -90,7 +92,7 @@ export function InstructorAccessProvisioner({
       <div className="team-v2-detail-list">
         <div className="team-v2-notice is-success">
           {mode === "provision"
-            ? "Cuenta Coach creada y vinculada. Guarda la contraseña temporal antes de cerrar este panel."
+            ? `Cuenta ${roleLabel} creada y vinculada. Guarda la contraseña temporal antes de cerrar este panel.`
             : "Nueva contraseña temporal generada. La anterior ya no funciona."}
         </div>
         <div className="team-v2-detail-row">

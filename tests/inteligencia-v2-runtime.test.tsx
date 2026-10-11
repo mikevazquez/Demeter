@@ -50,7 +50,7 @@ function from(table: string) {
       return query;
     },
     is(key: string, value: unknown) {
-      rows = rows.filter((row) => row[key] === value);
+      rows = rows.filter((row) => (row[key] ?? null) === value);
       return query;
     },
     in(key: string, values: unknown[]) {
@@ -105,7 +105,15 @@ function metric(html: string, label: string) {
 }
 
 function student(id: string, extra: Row = {}): Row {
-  return { id, full_name: id, active: true, created_at: current, trial_status: null, ...extra };
+  return {
+    id,
+    full_name: id,
+    active: true,
+    lifecycle_status: "active",
+    created_at: current,
+    trial_status: null,
+    ...extra,
+  };
 }
 
 function acquisition(id: string, extra: Row = {}): Row {
@@ -139,7 +147,13 @@ beforeEach(() => {
   tables = {};
   calls = [];
   context.get.mockResolvedValue({
-    supabase: { from },
+    supabase: {
+      from,
+      rpc: async (name: string, args: Row) => {
+        calls.push({ table: name, method: "rpc", args: [args] });
+        return { data: tables.retention ?? [], error: null };
+      },
+    },
     studio: {
       id: "studio-test",
       locale: "en-US",
@@ -200,10 +214,18 @@ describe("Inteligencia V2 runtime", () => {
   );
 
   it.each(["resumen", "dinero", "alumnas", "conversion", "clases", "asistencia"])(
-    "shows the same six navigation destinations in %s",
+    "shows all seven navigation destinations in %s",
     async (view) => {
       const html = await render(view);
-      for (const target of ["resumen", "dinero", "alumnas", "conversion", "clases", "asistencia"]) {
+      for (const target of [
+        "resumen",
+        "dinero",
+        "gastos",
+        "alumnas",
+        "conversion",
+        "clases",
+        "asistencia",
+      ]) {
         expect(html).toContain(`view=${target}&amp;days=30`);
       }
       expect(html).not.toContain("view=marketing");
@@ -226,25 +248,61 @@ describe("Inteligencia V2 runtime", () => {
     ["converted", 1, 1, 1, "100%"],
     ["no_show", 1, 0, 0, "0%"],
     ["pending", 1, 0, 0, "0%"],
-    ["cancelled", 1, 0, 0, "0%"],
+    ["cancelled", 0, 0, 0, "0%"],
     [null, 0, 0, 0, "0%"],
   ])(
-    "counts trial status %s consistently",
+    "counts trial reservations and first packages for %s",
     async (status, registered, attended, converted, rate) => {
       seed("students", [student("Ana", { trial_status: status })]);
+      seed("class_sessions", [session()]);
+      seed(
+        "reservations",
+        status
+          ? [
+              {
+                id: "trial",
+                session_id: "session",
+                class_kind: "trial",
+                booked_at: current,
+                status:
+                  status === "converted"
+                    ? "attended"
+                    : status === "pending"
+                      ? "reserved"
+                      : status === "cancelled"
+                        ? "cancelled_on_time"
+                        : status,
+              },
+            ]
+          : [],
+      );
+      seed(
+        "retention",
+        status === "converted" ? [{ student_id: "Ana", first_start: "2026-10-08" }] : [],
+      );
       const html = await render("conversion");
       expect(metric(html, "Pruebas registradas")).toBe(String(registered));
       expect(metric(html, "Asistieron")).toBe(String(attended));
-      expect(metric(html, "Se convirtieron")).toBe(String(converted));
+      expect(metric(html, "Primer paquete")).toBe(String(converted));
       expect(metric(html, "Conversión")).toBe(rate);
     },
   );
 
   it.each([previous, "2026-10-10T18:00:00Z", "2026-10-09T18:00:00Z"])(
-    "excludes trial created outside the current half-open period: %s",
+    "excludes trials booked outside the current half-open period: %s",
     async (created_at) => {
       seed("students", [student("Ana", { created_at, trial_status: "converted" })]);
-      expect(metric(await render("conversion"), "Se convirtieron")).toBe("0");
+      seed("class_sessions", [session()]);
+      seed("reservations", [
+        {
+          id: "trial",
+          session_id: "session",
+          class_kind: "trial",
+          booked_at: created_at,
+          status: "attended",
+        },
+      ]);
+      expect(metric(await render("conversion"), "Pruebas registradas")).toBe("0");
     },
   );
 
@@ -252,17 +310,30 @@ describe("Inteligencia V2 runtime", () => {
     seed("students", [
       student("Ana", { created_at: "2026-09-09T18:00:00Z", trial_status: "converted" }),
     ]);
-    expect(metric(await render("conversion"), "Se convirtieron")).toBe("1");
+    seed("retention", [{ student_id: "Ana", first_start: "2026-09-09" }]);
+    expect(metric(await render("conversion"), "Primer paquete")).toBe("1");
   });
 
-  it("calculates conversion from attendees rather than all registered trials", async () => {
+  it("calculates conversion from first packages over all reserved trials", async () => {
     seed("students", [
       student("A", { trial_status: "converted" }),
       student("B", { trial_status: "attended" }),
       student("C", { trial_status: "no_show" }),
     ]);
+    seed("class_sessions", [session()]);
+    seed(
+      "reservations",
+      ["attended", "attended", "no_show"].map((status, index) => ({
+        id: String(index),
+        session_id: "session",
+        class_kind: "trial",
+        booked_at: current,
+        status,
+      })),
+    );
+    seed("retention", [{ student_id: "A", first_start: "2026-10-08" }]);
     const html = await render("conversion");
-    expect(metric(html, "Conversión")).toBe("50%");
+    expect(metric(html, "Conversión")).toBe("33.3%");
     expect(html).toContain("1 personas asistieron pero todavía no aparecen como convertidas.");
     expect(html).toContain("1 clases de prueba terminaron en no show");
   });
@@ -333,7 +404,7 @@ describe("Inteligencia V2 runtime", () => {
       seed("students", [student("Ana")]);
       seed("product_acquisitions", [acquisition("a", { product_template_id })]);
       expect(metric(await render("alumnas"), "Activas")).toBe(
-        product_template_id === "enrollment" ? "0" : "1",
+        ["enrollment", "single"].includes(product_template_id) ? "0" : "1",
       );
     },
   );
@@ -356,11 +427,11 @@ describe("Inteligencia V2 runtime", () => {
   });
 
   it.each([
-    [6, "0", "0", null],
-    [7, "1", "0", "En riesgo"],
-    [14, "1", "0", "En riesgo"],
-    [15, "0", "0", "Inactiva"],
-    [29, "0", "0", "Inactiva"],
+    [6, "0", "0", "No renovó"],
+    [7, "0", "0", "No renovó"],
+    [14, "0", "0", "No renovó"],
+    [15, "0", "0", "No renovó"],
+    [29, "0", "0", "No renovó"],
     [30, "0", "1", "Abandono"],
     [31, "0", "1", "Abandono"],
   ])("classifies expiration age %s days", async (days, risk, abandoned, state) => {
@@ -402,7 +473,8 @@ describe("Inteligencia V2 runtime", () => {
     const html = await render("dinero");
     expect(metric(html, "Ingresos cobrados")).toBe("MX$150");
     expect(metric(html, "Reembolsos")).toBe("MX$50");
-    expect(html).not.toMatch(/utilidad|margen operativo/i);
+    expect(html).not.toContain("<span>Utilidad</span>");
+    expect(html).not.toContain("<span>Margen operativo</span>");
   });
 
   it.each(["confirmed", "cancelled", "draft"])(
@@ -420,6 +492,9 @@ describe("Inteligencia V2 runtime", () => {
     async (amount_minor) => {
       seed("sales", [{ id: "sale", status: "confirmed", total_minor: 10000, created_at: current }]);
       seed("payments", [{ sale_id: "sale", kind: "payment", amount_minor, created_at: current }]);
+      seed("v_sale_balances", [
+        { sale_id: "sale", balance_minor: Math.max(10000 - amount_minor, 0) },
+      ]);
       const expected = amount_minor === 0 ? "MX$100" : amount_minor === 5000 ? "MX$50" : "MX$0";
       expect(metric(await render("dinero"), "Pendiente de cobro")).toBe(expected);
     },
@@ -431,6 +506,7 @@ describe("Inteligencia V2 runtime", () => {
       { sale_id: "sale", line_total_minor: 10000, refunded_at: null, created_at: current },
       { sale_id: "sale", line_total_minor: 10000, refunded_at: current, created_at: current },
     ]);
+    seed("v_sale_balances", [{ sale_id: "sale", balance_minor: 10000 }]);
     expect(metric(await render("dinero"), "Pendiente de cobro")).toBe("MX$100");
   });
 
@@ -484,7 +560,7 @@ describe("Inteligencia metrics reference", () => {
       ),
     );
     const html = await render("asistencia");
-    expect(metric(html, "Asistencia")).toBe("25%");
+    expect(metric(html, "Asistencia")).toBe("50%");
     expect(metric(html, "No show")).toBe("33.3%");
     expect(metric(await render("clases"), "Ocupación")).toBe("10%");
   });
@@ -502,10 +578,14 @@ describe("Inteligencia metrics reference", () => {
     seed("payments", [
       { sale_id: "old", kind: "payment", amount_minor: 2500, created_at: "2026-01-02T00:00:00Z" },
     ]);
+    seed("v_sale_balances", [{ sale_id: "old", balance_minor: 7500 }]);
     expect(metric(await render("dinero"), "Pendiente de cobro")).toBe("MX$75");
   });
   it("deduplicates conversations and shows conversion by registered origin", async () => {
-    seed("students", [student("Ana", { trial_status: "converted" })]);
+    seed("students", [
+      student("Ana", { trial_status: "converted", acquisition_source: "Instagram" }),
+    ]);
+    seed("retention", [{ student_id: "Ana", first_start: "2026-10-08" }]);
     seed(
       "crm_conversations",
       [1, 2].map((id) => ({
@@ -569,4 +649,57 @@ it("counts evening purchases on the studio's local date", async () => {
     }),
   ]);
   expect(metric(await render("alumnas"), "Activas")).toBe("1");
+});
+
+describe("Portal retention and refunds", () => {
+  it.each([
+    [9, 0],
+    [10, 1],
+    [11, 1],
+  ])("flags active students after %s days without attendance", async (days, expected) => {
+    seed("students", [student("Ana")]);
+    seed("product_acquisitions", [acquisition("a")]);
+    seed("retention", [
+      {
+        student_id: "Ana",
+        current_start: "2026-09-01",
+        current_expiry: "2026-11-01",
+        current_unlimited: true,
+        last_attendance: new Date(NOW.getTime() - days * 86400000).toISOString(),
+      },
+    ]);
+    expect(metric(await render("alumnas"), "En riesgo")).toBe(String(expected));
+    expect(calls).toContainEqual({
+      table: "admin_retention_students",
+      method: "rpc",
+      args: [{ p_studio_id: "studio-test" }],
+    });
+  });
+  it("uses first package start instead of profile creation for new students", async () => {
+    seed("students", [student("Ana", { created_at: previous })]);
+    seed("retention", [{ student_id: "Ana", first_start: "2026-10-08" }]);
+    expect(metric(await render("alumnas"), "Nuevas")).toBe("1");
+  });
+  it("shows the authoritative balance after a partial refund", async () => {
+    seed("sales", [{ id: "sale", status: "confirmed", total_minor: 60000, created_at: current }]);
+    seed("payments", [
+      { sale_id: "sale", kind: "payment", amount_minor: 30000, created_at: current },
+      { sale_id: "sale", kind: "refund", amount_minor: 10000, created_at: current },
+    ]);
+    seed("v_sale_balances", [{ sale_id: "sale", balance_minor: 30000 }]);
+    expect(metric(await render("dinero"), "Pendiente de cobro")).toBe("MX$300");
+  });
+  it("counts a payment by its real effective date", async () => {
+    seed("sales", [{ id: "sale", status: "confirmed", total_minor: 10000, created_at: current }]);
+    seed("payments", [
+      {
+        sale_id: "sale",
+        kind: "payment",
+        amount_minor: 10000,
+        created_at: current,
+        effective_on: "2026-09-08",
+      },
+    ]);
+    expect(metric(await render("dinero"), "Ingresos cobrados")).toBe("MX$0");
+  });
 });

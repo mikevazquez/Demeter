@@ -31,7 +31,7 @@ export default async function InstructorsPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string; error?: string }>;
 }) {
-  const [params, { supabase, studio, can, membership }] = await Promise.all([
+  const [params, { supabase, studio, can }] = await Promise.all([
     searchParams,
     getAdminContext(CAPABILITIES.INSTRUCTORS_READ),
   ]);
@@ -86,7 +86,10 @@ export default async function InstructorsPage({
     .filter(
       (item) =>
         !query ||
-        `${item.name} ${item.phone} ${item.email}`.toLowerCase().includes(query.toLowerCase()),
+        `${item.name} ${item.phone} ${item.email}`
+          .toLowerCase()
+          .replace(/\s/g, "")
+          .includes(query.toLowerCase().replace(/\s/g, "")),
     );
 
   const errorMessage =
@@ -115,7 +118,7 @@ export default async function InstructorsPage({
             <summary className="team-v2-primary">
               <span aria-hidden="true">＋</span> Nuevo
             </summary>
-            <form action={createInstructor} className="team-v2-create-panel">
+            <form action={createInstructor} className="team-v2-create-panel portal-form">
               <div className="team-v2-create-heading">
                 <strong>Nuevo integrante</strong>
                 <small>Agrega primero sus datos básicos. El acceso se configura después.</small>
@@ -145,9 +148,7 @@ export default async function InstructorsPage({
                 <select name="staff_role" defaultValue="instructor">
                   <option value="instructor">Coach</option>
                   <option value="reception">Recepción</option>
-                  {membership.role === "owner" ? (
-                    <option value="admin">Administración</option>
-                  ) : null}
+                  <option value="admin">Administración</option>
                 </select>
               </label>
               <label className="portal-inline-form">
