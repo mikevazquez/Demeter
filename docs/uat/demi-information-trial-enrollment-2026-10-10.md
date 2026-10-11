@@ -101,3 +101,27 @@ Al abrir el selector de archivo para enviar el comprobante ficticio, el navegado
 El comprobante no se considera enviado ni el caso D06 aprobado. Se conservan ejecución y conversación para retomar. Pendientes integrales: D03 solicitud mixta, D04/D05 webhook sintético con formatos unsupported, D06 comprobante/datos/reserva, D08 aplicación visual del abono, D09 primera clase sin compra; C03 reintento conversacional, C05 aviso en reserva/roster, C06 segunda reserva bloqueada, C07 reserva después de liquidar y C09 presentación de error. Los resultados técnicos correspondientes no sustituyen estas evidencias.
 
 No se solicita autorización de promoción porque la matriz integral aún no está cerrada. Reanudar desde la ejecución 3b03aaf5 una vez recuperable el navegador; solicitar Autorizo promoción sólo al finalizar las variantes pendientes.
+
+
+## Reanudación del 10 de octubre, 19:20 México
+
+El navegador sigue bloqueado antes de cargar el banco. Se intentó abrir un documento nuevo, reiniciar el kernel y seleccionar el navegador existente por su ID; todos devolvieron que el estado nativo de credenciales no puede reanudarse. No hay otro controlador de navegador disponible en esta sesión. No se enviaron comprobantes ni se modificaron registros mediante UI en esta reanudación.
+
+Se completó verificación técnica adicional relacionada con los pendientes:
+
+| Pendiente | Verificación adicional | Resultado | Qué falta para UAT integral |
+| --- | --- | --- | --- |
+| D03 Solicitud mixta | demi-information-intent: solicitudes explícitas conservan acciones | Pasó | Conversación real mixta |
+| D04 Texto unsupported | Extractor real: conserva texto y referencia de anuncio | Pasó | Webhook sintético en banco |
+| D05 Unsupported vacío | Extractor real: no fabrica texto ni referencia; contrato webhook previamente pasó | Pasó | Respuesta capturada por banco |
+| D06 Comprobante y datos | Runtime de comprobante y SQL de grupo: pago antes de perfiles, datos, reserva provisional, revisión y repetición sin duplicados | Pasó | Archivo y conversación desde UI |
+| D09 Sin compra de paquete | SQL de crédito de prueba: adquisición de primera clase conserva vigencia, pago y consumo; reagendar no convierte el pago en inscripción | Pasó como regresión técnica | Recorrido de esta variante sin compra |
+| C09 Error al consultar | Prueba de consulta de efectivo incluye propagación del error | Pasó | Presentación del error en UI |
+
+Ejecutados tests/demi-2-group-uat.sql: 19 verificaciones pasaron; tests/demi-2-trial-credit-uat.sql: 13 verificaciones pasaron. Ambos en sandbox, con rollback. Son 32 comprobaciones adicionales, algunas compartidas entre scripts; no se presentan como 32 casos nuevos distintos. Reejecutadas 27 pruebas focalizadas en 5 archivos: pasaron, incluido extractor Meta real. TypeScript sin errores en el estado actual.
+
+Estado: los pendientes visuales/conversacionales se mantienen abiertos por bloqueo del entorno; no hay autorización ni promoción de producción. La única acción externa necesaria para continuar ese recorrido es disponer de un runtime nuevo de navegador. Reiniciar sólo el kernel de esta conversación no lo recupera.
+
+Para retomar en una conversación con navegador nuevo:
+
+> Continúa los UAT pendientes de Demi en mikevazquez/Demeter, rama fix/demi-information-trial-enrollment, PR #265. Lee docs/uat/demi-information-trial-enrollment-2026-10-10.md. Recupera la ejecución 3b03aaf5-b014-4277-bc69-cef7aa2ba271 en el banco sandbox; no crees escenarios desde cero ni modifiques producción. Cierra D03–D06, D08–D09 y los recorridos C03/C05/C06/C07/C09 pendientes. Conserva históricos y evidencias. Los resultados SQL no sustituyen la UAT visual. Solicita autorización de promoción únicamente cuando todos los casos del alcance estén cerrados.
