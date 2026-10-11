@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { loadDemiCashDebts } from "@/lib/assistant/cash-debts";
 import { redirect } from "next/navigation";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
@@ -268,6 +269,11 @@ export default async function SessionDetailPage({
   const productMap = new Map((products ?? []).map((item) => [item.id, item.name]));
   const balanceMap = new Map(balances);
 
+  let cashDebts: Awaited<ReturnType<typeof loadDemiCashDebts>> = [];
+  if (can(CAPABILITIES.SALES_READ) || can(CAPABILITIES.SALES_WRITE)) {
+    cashDebts = await loadDemiCashDebts(supabase, studio.id);
+  }
+  const cashDebtByAcquisition = new Map(cashDebts.map((debt) => [debt.acquisitionId, debt]));
   const roster = (reservations ?? []).map((reservation) => {
     const isGuest = Boolean(reservation.guest_person_id);
     const evaluationInvitation = evaluationByReservation.get(reservation.id);
@@ -301,6 +307,12 @@ export default async function SessionDetailPage({
       evaluationInvitationId: evaluationInvitation?.id ?? null,
       evaluationStatus: evaluationInvitation?.status ?? null,
       paymentDueOnAttendance: reservation.commercial_status === "payment_pending",
+      pendingPackageSaleId: acquisition
+        ? cashDebtByAcquisition.get(acquisition.id)?.saleId
+        : undefined,
+      pendingPackageAmountMinor: acquisition
+        ? cashDebtByAcquisition.get(acquisition.id)?.amountMinor
+        : undefined,
       individualPriceMinor: template?.drop_in_price_minor ?? null,
       currency: studio.currency ?? "MXN",
       resourceRequired: session.requires_resource,

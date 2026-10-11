@@ -244,8 +244,15 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
       "Prepara compra de paquete en efectivo para una alumna regular identificada. Usa product_ref real consultada. Explica el precio, deuda pendiente y que se permite una primera reserva; una segunda requiere cobrar el adeudo. La vigencia inicia en la primera clase reservada. Pide confirmación explícita antes de crear venta o créditos.",
     parameters: {
       type: "object",
-      properties: { product_ref: { type: "string" } },
-      required: ["product_ref"],
+      properties: {
+        product_ref: { type: "string" },
+        payment_due_on: {
+          type: ["string", "null"],
+          description:
+            "Fecha prometida de pago YYYY-MM-DD en la zona horaria del estudio. Usa null si no la indicó; no inventes una fecha. Convierte lunes, mañana u otra fecha relativa usando la fecha local actual.",
+        },
+      },
+      required: ["product_ref", "payment_due_on"],
       additionalProperties: false,
     },
   },

@@ -20,6 +20,7 @@ export function needsFirstVisitGuidance(input: AudienceInput): boolean {
 export function conversationGuidance(input: AudienceInput): string {
   const shared = [
     "Tu trabajo es resolver la necesidad actual y ayudar a completar el siguiente paso útil. Responde primero la pregunta; no sustituyas una respuesta por una venta.",
+    "Si pide más información mientras espera pagar o enviar comprobante, responde su duda consultando información, preparación, precios u horarios vigentes. Conserva el avance y el pago pendiente, pero no llames prepare_first_class_payment ni prepares otra reserva o cobro para contestar la pregunta. No repitas los datos bancarios salvo que los solicite.",
     "Conserva el contexto: distingue una consulta informativa, interés por asistir, elección de horario, acción pendiente, reserva confirmada y despedida. No vuelvas a iniciar un flujo que ya terminó.",
     "Un agradecimiento no es consentimiento para reservar, cobrar, cancelar ni enviar seguimientos. Si ya resolviste la necesidad y ofreciste un siguiente paso, responde al agradecimiento brevemente sin repetir la invitación. Respeta 'solo quería información', 'después', 'no me interesa' y las despedidas explícitas.",
   ];

@@ -13,7 +13,8 @@ describe("First-class payment instructions preserve receipt before identity", ()
     const text = firstClassPaymentInstructions(quote, "Quiero Mercado Pago")!;
     expect(text).toContain(quote.external_checkout.url);
     expect(text).toContain("no realices un pago real");
-    expect(text).toContain("Después de revisarlo te pediré los datos");
+    expect(text).toContain("Al recibirlo te pediré juntos los datos faltantes");
+    expect(text).toContain("reserva quedará sujeta a esa validación");
     expect(text).not.toMatch(/nombre|celular|teléfono/i);
     expect(text).toContain("no hay una reserva confirmada");
   });

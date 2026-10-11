@@ -1,0 +1,32 @@
+begin;
+set local request.jwt.claim.role='service_role';
+set local request.jwt.claims='{"role":"service_role"}';
+do $uat$
+declare source uuid:='9fe23cfa-fb47-4670-afeb-ed4a56433772'; owner uuid; r jsonb; s uuid; student uuid; c uuid:=gen_random_uuid(); key uuid:=gen_random_uuid(); product uuid; price integer; result jsonb; sale uuid; today date; due date; outcomes jsonb:='[]';
+begin
+ select user_id into owner from public.studio_memberships where studio_id=source and active and role='owner' limit 1;
+ r:=public.service_create_demi_uat_run(source,owner,'cash-promised-date-uat'); s:=(r->>'studio_id')::uuid;
+ student:=(r#>>'{fixtures,people,student_cash,student_id}')::uuid;
+ product:=(r#>>'{fixtures,products,package}')::uuid;
+ select price_minor into price from public.product_templates where id=product and studio_id=s;
+ select (clock_timestamp() at time zone timezone)::date into today from public.studios where id=s;
+ due:=today+2;
+ insert into public.assistant_conversations(id,studio_id,student_id,channel) values(c,s,student,'internal_demo');
+ result:=public.service_create_demi_cash_purchase_with_due_date(s,c,student,product,key,price,due);
+ if not coalesce((result->>'ok')::boolean,false) then raise exception 'cash_date_create:%',result; end if;
+ sale:=(result->>'sale_id')::uuid;
+ if not exists(select 1 from public.sales where id=sale and studio_id=s and payment_due_on=due and collection_note like '%'||due::text||'%') then raise exception 'cash_promised_date_lost'; end if;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','C01','variant','promised_date_persisted','passed',true));
+ if exists(select 1 from public.reservations where studio_id=s and student_id=student) or exists(select 1 from public.payments where sale_id=sale) then raise exception 'cash_date_created_reservation_or_payment'; end if;
+ if not exists(select 1 from public.demi_cash_purchases cp join public.sales sa on sa.id=cp.sale_id where cp.studio_id=s and sa.status='confirmed' and sa.total_minor>(select coalesce(sum(case when p.kind='payment' then p.amount_minor else -p.amount_minor end),0) from public.payments p where p.sale_id=sa.id)) then raise exception 'debt_not_visible_without_reservation'; end if;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','C02','variant','debt_visible_without_reservation_or_fake_collection','passed',true));
+ result:=public.service_create_demi_cash_purchase_with_due_date(s,c,student,product,key,price,due+1);
+ if result->>'idempotent'<>'true' or (select payment_due_on from public.sales where id=sale)<>due then raise exception 'cash_replay_changed_promised_date'; end if;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','C03','variant','replay_preserves_original_promise','passed',true));
+ result:=public.service_create_demi_cash_purchase_with_due_date(s,c,student,product,gen_random_uuid(),price,today-1);
+ if result->>'reason_code'<>'payment_due_date_invalid' then raise exception 'cash_past_due_date_accepted'; end if;
+ outcomes:=outcomes||jsonb_build_array(jsonb_build_object('case','C04','variant','past_date_rejected_before_sale','passed',true));
+ perform set_config('uat.cash_due_date',outcomes::text,true);
+end; $uat$;
+select current_setting('uat.cash_due_date')::jsonb as results;
+rollback;
