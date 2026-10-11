@@ -43,7 +43,7 @@ export default async function EnrollmentPolicyPage({
   );
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6">
+    <main className="portal-page mx-auto max-w-3xl space-y-6">
       <header>
         <Link href="/admin/ventas" className="text-sm text-fuchsia-300 hover:text-fuchsia-200">
           ← Ventas

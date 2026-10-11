@@ -11,22 +11,17 @@ describe("FESTIVOS simple configuration", () => {
   const page = source("app/admin/configuracion/festivos/page.tsx");
   const actions = source("app/admin/configuracion/festivos/actions.ts");
 
-  it("loads only official holidays into the configuration screen", () => {
+  it("loads the full catalog alongside verified official sources", () => {
+    expect(page).toContain('from("calendar_events")');
     expect(page).toContain('from("official_holidays")');
-    expect(page).toContain("Festivo oficial");
-    expect(page).toContain("Los días oficiales se cargan automáticamente");
-    expect(page).not.toContain("Agregar día especial");
-    expect(page).not.toContain("Imagen principal");
-    expect(page).not.toContain("Horario especial");
+    expect(page).toContain("source_checked_at");
+    expect(page).toContain("CalendarCreationSheet");
   });
-
-  it("supports only normal operation or studio closed", () => {
-    expect(page).toContain("Horario normal");
-    expect(page).toContain("Estudio cerrado");
-    expect(page).toContain("Marcar como cerrado");
-    expect(page).toContain("Marcar como abierto");
-    expect(actions).toContain('closed ? "closed" : "normal"');
-    expect(actions).not.toContain('"special"');
+  it("supports normal, closed and special schedules by day", () => {
+    const editor = source("app/admin/configuracion/festivos/CalendarEventEditor.tsx");
+    for (const mode of ["normal", "closed", "special"]) expect(editor).toContain(`value="${mode}"`);
+    expect(actions).toContain("admin_configure_calendar_event");
+    expect(editor).toContain("keep");
   });
 
   it("uses the existing official holiday RPC and keeps Agenda in sync", () => {

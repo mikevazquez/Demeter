@@ -84,7 +84,7 @@ export default async function ResourceMapPage({
   }));
 
   return (
-    <main className={`dashboard-shell ${styles.editorPage}`}>
+    <main className={`portal-page dashboard-shell ${styles.editorPage}`}>
       <header className={styles.header}>
         <div className={styles.headerCopy}>
           <Link className={styles.backLink} href="/admin/configuracion/recursos">

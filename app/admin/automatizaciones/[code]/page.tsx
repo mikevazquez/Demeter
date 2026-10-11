@@ -246,7 +246,7 @@ export default async function AutomationDetailPage({
     canManage && (template.configurationMode === "multiple" || nonArchived.length === 0);
 
   return (
-    <main className="communication-v2-detail automation-detail-page">
+    <main className="portal-page communication-v2-detail automation-detail-page">
       <header>
         <Link href="/admin/automatizaciones" className="communication-v2-detail-back">
           ← Comunicación

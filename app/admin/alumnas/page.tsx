@@ -1,11 +1,10 @@
 import { resolveEnrollmentStatus } from "@/lib/assistant/enrollment-state";
-import Link from "next/link";
 
 import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-import ContactRow from "./ContactRow";
+import CrmBoard, { type CrmPerson } from "./CrmBoard";
 import { contactStage, renewalRecommended } from "@/lib/student-crm";
 import { contactConversations } from "@/lib/student-crm-conversations";
 
@@ -43,14 +42,6 @@ function shortDate(value: string | null, locale: string) {
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${value}T12:00:00Z`));
-}
-
-function filterHref(status: string, query: string) {
-  const params = new URLSearchParams();
-  if (status !== "all") params.set("status", status);
-  if (query) params.set("q", query);
-  const suffix = params.toString();
-  return suffix ? `/admin/alumnas?${suffix}` : "/admin/alumnas";
 }
 
 export default async function StudentsPage({
@@ -91,7 +82,7 @@ export default async function StudentsPage({
   const today = localDateKey(timeZone);
   const sevenDaysFromToday = addDaysToDateKey(today, 7);
 
-  let studentsQuery = supabase
+  const studentsQuery = supabase
     .from("students")
     .select(
       "id, user_id, full_name, email, phone, lifecycle_status, student_type, trial_status, created_at",
@@ -100,47 +91,16 @@ export default async function StudentsPage({
     .neq("lifecycle_status", "archived")
     .order("full_name");
 
-  if (status === "trial") {
-    studentsQuery = studentsQuery
-      .eq("student_type", "trial")
-      .in("trial_status", ["pending", "attended", "cancelled"]);
-  }
-  if (status === "no_show") {
-    studentsQuery = studentsQuery.eq("student_type", "trial").eq("trial_status", "no_show");
-  }
-  if (status === "prospect") {
-    studentsQuery = studentsQuery.limit(0);
-  }
-
-  if (query) {
-    const safeQuery = query.replace(/[,%()]/g, " ").trim();
-    if (safeQuery) {
-      studentsQuery = studentsQuery.or(
-        `full_name.ilike.%${safeQuery}%,phone.ilike.%${safeQuery}%,email.ilike.%${safeQuery}%`,
-      );
-    }
-  }
-
   const duplicateId = String(params.duplicate ?? "").trim();
-  const needsAllStudentsQuery =
-    Boolean(query) || ["active", "inactive", "trial", "no_show"].includes(status);
   const needsProspectsQuery = true;
   const [
     { data: students },
-    allStudentsResult,
     { data: prospectContacts },
     acquisitionResult,
     { data: duplicateStudent },
     enrollmentResult,
   ] = await Promise.all([
     studentsQuery,
-    needsAllStudentsQuery
-      ? supabase
-          .from("students")
-          .select("id,lifecycle_status,student_type,trial_status")
-          .eq("studio_id", studio.id)
-          .neq("lifecycle_status", "archived")
-      : Promise.resolve({ data: null }),
     needsProspectsQuery
       ? supabase
           .from("crm_contacts")
@@ -185,14 +145,6 @@ export default async function StudentsPage({
         today,
       ),
     });
-  const allStudents =
-    allStudentsResult.data ??
-    (students ?? []).map((student) => ({
-      id: student.id,
-      lifecycle_status: student.lifecycle_status,
-      student_type: student.student_type,
-      trial_status: student.trial_status,
-    }));
   const prospectPersonIds = [
     ...new Set((prospectContacts ?? []).map((contact) => contact.person_id)),
   ];
@@ -233,14 +185,7 @@ export default async function StudentsPage({
       phone: phoneByPersonId.get(contact.person_id) ?? "Sin teléfono",
     };
   });
-  const prospectRows = allProspectRows.filter((prospect) => {
-    if (!query) return true;
-    const needle = query.toLocaleLowerCase("es-MX");
-    return (
-      prospect.full_name.toLocaleLowerCase("es-MX").includes(needle) ||
-      prospect.phone.includes(query)
-    );
-  });
+  const prospectRows = allProspectRows;
   const allAcquisitions = acquisitionResult.data ?? [];
   const acquisitionsByStudent = new Map<
     string,
@@ -273,56 +218,9 @@ export default async function StudentsPage({
     );
   }
 
-  const activeStudentsCount = (allStudents ?? []).filter(
-    (item) => stageFor(item) === "student",
-  ).length;
-  const trialStudentsCount = (allStudents ?? []).filter(
-    (item) =>
-      item.student_type === "trial" &&
-      ["pending", "attended", "cancelled"].includes(item.trial_status ?? ""),
-  ).length;
-  const noShowStudentsCount = (allStudents ?? []).filter(
-    (item) => item.student_type === "trial" && item.trial_status === "no_show",
-  ).length;
-  const expiringStudentsCount = (allStudents ?? []).filter((student) => {
-    const acquisition = currentAcquisitionFor(student.id);
-    return Boolean(
-      acquisition?.expires_on &&
-      acquisition.expires_on >= today &&
-      acquisition.expires_on <= sevenDaysFromToday,
-    );
-  }).length;
-  const expiredStudentsCount = (allStudents ?? []).filter((student) => {
-    if (student.student_type === "trial" || currentAcquisitionFor(student.id)) return false;
-    return (acquisitionsByStudent.get(student.id) ?? []).some((item) =>
-      Boolean(item.expires_on && item.expires_on < today),
-    );
-  }).length;
-
-  const filteredStudents = (students ?? []).filter((student) => {
-    if (status === "active") return stageFor(student) === "student";
-    if (status === "inactive") return stageFor(student) === "former";
-    if (status === "expiring" || status === "followup") {
-      const acquisition = currentAcquisitionFor(student.id);
-      return (
-        (status !== "followup" || stageFor(student) === "student") &&
-        Boolean(
-          acquisition?.expires_on &&
-          acquisition.expires_on >= today &&
-          acquisition.expires_on <= sevenDaysFromToday,
-        )
-      );
-    }
-
-    if (status === "expired") {
-      if (student.student_type === "trial" || currentAcquisitionFor(student.id)) return false;
-      return (acquisitionsByStudent.get(student.id) ?? []).some((item) =>
-        Boolean(item.expires_on && item.expires_on < today),
-      );
-    }
-
-    return true;
-  });
+  const filteredStudents = (students ?? []).filter(
+    (student) => student.lifecycle_status === "active",
+  );
 
   const visibleCurrentAcquisitions = filteredStudents
     .map((student) => currentAcquisitionFor(student.id))
@@ -382,35 +280,135 @@ export default async function StudentsPage({
                 }
               : null;
 
-  const recommendationsCount = (allStudents ?? []).filter((student) =>
-    renewalRecommended(
-      stageFor(student),
-      currentAcquisitionFor(student.id)?.expires_on,
-      today,
-      sevenDaysFromToday,
-    ),
-  ).length;
   const communications = await contactConversations(
     supabase,
     studio.id,
     filteredStudents.map((student) => student.id),
-    status === "all" || status === "prospect" ? prospectRows.map((contact) => contact.id) : [],
+    prospectRows.map((contact) => contact.id),
     can(CAPABILITIES.SETTINGS_WRITE),
   );
-  const filters = [
-    { key: "all", label: "Todas", enabled: true },
-    { key: "prospect", label: "Prospecto", enabled: true },
-    { key: "trial", label: "Prueba", enabled: true },
-    { key: "active", label: "Alumna", enabled: true },
-    { key: "inactive", label: "Exalumna", enabled: true },
-    { key: "followup", label: "Con recomendación", enabled: canReadProducts },
-    { key: "expiring", label: "Por vencer", enabled: canReadProducts },
-    { key: "expired", label: "Vencidas", enabled: canReadProducts },
-    { key: "no_show", label: "No show", enabled: true },
-  ];
+  const [salesResult, paymentsResult, transferResult, reservationsResult] = await Promise.all([
+    supabase.from("sales").select("id,student_id,status,total_minor").eq("studio_id", studio.id),
+    supabase.from("payments").select("sale_id,amount_minor,kind").eq("studio_id", studio.id),
+    supabase
+      .from("assistant_transfer_purchase_intents")
+      .select("student_id,sale_id,amount_minor")
+      .eq("studio_id", studio.id)
+      .eq("status", "provisional_active"),
+    supabase
+      .from("reservations")
+      .select(
+        "student_id,status,commercial_status,class_kind,class_amount_minor,booked_at,session_id",
+      )
+      .eq("studio_id", studio.id)
+      .in("status", ["reserved", "attended", "no_show"])
+      .order("booked_at", { ascending: false }),
+  ]);
+  if (salesResult.error || paymentsResult.error || transferResult.error || reservationsResult.error)
+    throw new Error(
+      `crm_financial_data_unavailable: ${[
+        salesResult.error,
+        paymentsResult.error,
+        transferResult.error,
+        reservationsResult.error,
+      ]
+        .filter(Boolean)
+        .map((e) => e?.message)
+        .join("; ")}`,
+    );
+  const unvalidatedSales = new Set(
+    (transferResult.data ?? []).map((t) => t.sale_id).filter(Boolean),
+  );
+  const debtByStudent = new Map<string, number>();
+  for (const sale of salesResult.data ?? []) {
+    if (["cancelled", "voided"].includes(sale.status) || unvalidatedSales.has(sale.id)) continue;
+    const paid = (paymentsResult.data ?? [])
+      .filter((p) => p.sale_id === sale.id)
+      .reduce((n, p) => n + (p.kind === "payment" ? p.amount_minor : 0), 0);
+    debtByStudent.set(
+      sale.student_id,
+      (debtByStudent.get(sale.student_id) ?? 0) + Math.max(0, sale.total_minor - paid),
+    );
+  }
+  const money = (value: number) =>
+    new Intl.NumberFormat(studio.locale, {
+      style: "currency",
+      currency: studio.currency,
+      maximumFractionDigits: 0,
+    }).format(value / 100);
+  const boardPeople: CrmPerson[] = filteredStudents.map((student) => {
+    const stage = stageFor(student);
+    const acquisition = currentAcquisitionFor(student.id);
+    const remaining = acquisition ? (visibleBalanceMap.get(acquisition.id) ?? 0) : null;
+    const reservations = (reservationsResult.data ?? []).filter((r) => r.student_id === student.id);
+    const trial = reservations.find((r) => r.class_kind === "trial");
+    const transfer = (transferResult.data ?? []).find((t) => t.student_id === student.id);
+    const pendingClass = reservations.find((r) => r.commercial_status === "payment_pending");
+    const debt = debtByStudent.get(student.id) ?? 0;
+    let column = "contacto";
+    let context =
+      communications.messages.get(student.id)?.[0]?.content ?? student.phone ?? "Primer contacto";
+    if (stage === "former") {
+      column = "ex";
+      context = "Su inscripción anual venció";
+    } else if (stage === "student") {
+      if (transfer || debt > 0 || pendingClass) {
+        column = "pagoa";
+        context = transfer
+          ? `Comprobante de ${money(transfer.amount_minor)} por validar`
+          : debt > 0
+            ? `Debe ${money(debt)}`
+            : `Cobro de ${money(pendingClass?.class_amount_minor ?? 0)} pendiente`;
+      } else if (
+        acquisition &&
+        (renewalRecommended(stage, acquisition.expires_on, today, sevenDaysFromToday) ||
+          (!acquisition.unlimited && remaining !== null && remaining <= 1))
+      ) {
+        column = "porvencer";
+        context = `${acquisition.unlimited ? "Ilimitado" : `${remaining} clases`} · vence ${shortDate(acquisition.expires_on, studio.locale)}`;
+      } else if (acquisition) {
+        column = "activa";
+        context = `${productNameMap.get(acquisition.product_template_id) ?? "Paquete"} · ${acquisition.unlimited ? "Ilimitado" : `quedan ${remaining}`}`;
+      } else {
+        column = "vencida";
+        context = "Inscrita, sin paquete activo";
+      }
+    } else if (trial || stage === "trial") {
+      if (trial?.status === "no_show" || student.trial_status === "no_show") {
+        column = "noshow";
+        context = "Faltó a su clase de prueba";
+      } else if (trial?.status === "attended" || student.trial_status === "attended") {
+        column = "pagoins";
+        context = "Tomó su prueba · falta inscripción";
+      } else if (trial?.commercial_status === "payment_pending") {
+        column = "pagop";
+        context = "Prueba reservada · sin pago";
+      } else {
+        column = "agendada";
+        context = "Prueba pagada · por asistir";
+      }
+    }
+    return {
+      id: student.id,
+      name: student.full_name,
+      phone: student.phone ?? "",
+      href: `/admin/alumnas/${student.id}`,
+      column,
+      context,
+    };
+  });
+  for (const prospect of prospectRows)
+    boardPeople.push({
+      id: prospect.id,
+      name: prospect.full_name,
+      phone: prospect.phone,
+      href: `/admin/alumnas/contactos/${prospect.id}`,
+      column: "contacto",
+      context: communications.messages.get(prospect.id)?.[0]?.content ?? "Pidió información",
+    });
 
   return (
-    <main className="dashboard-shell student-directory-page crm-page">
+    <main className="portal-page dashboard-shell student-directory-page crm-page">
       {duplicateStudent ? (
         <DuplicateStudentDialog studentName={duplicateStudent.full_name} />
       ) : null}
@@ -424,8 +422,8 @@ export default async function StudentsPage({
       <header className="student-directory-header">
         <div>
           <p className="eyebrow">CRM DE ALUMNAS · {studio.name}</p>
-          <h1>Contactos</h1>
-          <p>Conversaciones, etapas y seguimiento en un solo lugar.</p>
+          <h1>Alumnas</h1>
+          <p>Prospectos, pruebas y alumnas en un solo lugar.</p>
         </div>
         {canEdit ? (
           <details id="alta-rapida" className="student-quick-create">
@@ -469,6 +467,23 @@ export default async function StudentsPage({
                   placeholder="Correo opcional"
                   autoComplete="email"
                 />
+                <label>
+                  Origen
+                  <select name="acquisition_source" defaultValue="">
+                    <option value="">Sin origen registrado</option>
+                    {[
+                      "Instagram",
+                      "TikTok",
+                      "Facebook",
+                      "Google",
+                      "Recomendación",
+                      "Visita al estudio",
+                      "Otro",
+                    ].map((source) => (
+                      <option key={source}>{source}</option>
+                    ))}
+                  </select>
+                </label>
                 <PendingActionButton className="primary-button" pendingLabel="Creando alumna…">
                   Crear alumna
                 </PendingActionButton>
@@ -479,202 +494,10 @@ export default async function StudentsPage({
           <span className="role-pill">{membership.role}</span>
         )}
       </header>
-      <section className="crm-summary" aria-label="Resumen de contactos">
-        <Link className="crm-stat" href={filterHref("prospect", "")}>
-          <span>Prospectos</span>
-          <b>{allProspectRows.length}</b>
-        </Link>
-        <Link className="crm-stat" href={filterHref("trial", "")}>
-          <span>Pruebas</span>
-          <b>{trialStudentsCount}</b>
-        </Link>
-        <Link className="crm-stat" href={filterHref("active", "")}>
-          <span>Alumnas</span>
-          <b>{activeStudentsCount}</b>
-        </Link>
-        {canReadProducts ? (
-          <Link className="crm-stat is-focus" href={filterHref("followup", "")}>
-            <span>Seguimientos sugeridos</span>
-            <b>{recommendationsCount}</b>
-          </Link>
-        ) : (
-          <div className="crm-stat">
-            <span>Personas registradas</span>
-            <b>{allStudents.length + allProspectRows.length}</b>
-          </div>
-        )}
-      </section>
-      <form className="student-directory-search" method="get">
-        {status !== "all" ? <input type="hidden" name="status" value={status} /> : null}
-        <input
-          name="q"
-          type="search"
-          defaultValue={query}
-          placeholder="Buscar por nombre, teléfono o correo"
-          aria-label="Buscar alumnas"
-        />
-        <button className="crm-btn" type="submit">
-          Buscar
-        </button>
-      </form>
-
-      <nav
-        className="student-directory-filters student-directory-crm-toolbar"
-        aria-label="Filtrar alumnas"
-      >
-        {filters
-          .filter((filter) => filter.enabled)
-          .map((filter) => (
-            <Link
-              key={filter.key}
-              href={filterHref(filter.key, query)}
-              className={`student-filter-chip${status === filter.key ? " is-active" : ""}`}
-              aria-current={status === filter.key ? "page" : undefined}
-            >
-              {filter.label}
-              {filter.key === "all" ? <small>{allStudents?.length ?? 0}</small> : null}
-              {filter.key === "active" ? <small>{activeStudentsCount}</small> : null}
-              {filter.key === "expiring" ? <small>{expiringStudentsCount}</small> : null}
-              {filter.key === "expired" ? <small>{expiredStudentsCount}</small> : null}
-              {filter.key === "trial" ? <small>{trialStudentsCount}</small> : null}
-              {filter.key === "no_show" ? <small>{noShowStudentsCount}</small> : null}
-              {filter.key === "prospect" ? <small>{allProspectRows.length}</small> : null}
-            </Link>
-          ))}
-      </nav>
-
       {params.created === "student" ? (
         <div className="notice success">Alumna creada correctamente.</div>
       ) : null}
-
-      <section className="panel">
-        <div className="panel-heading crm-directory-heading">
-          <div>
-            <p className="eyebrow">DIRECTORIO</p>
-            <h2>
-              {status === "all"
-                ? "Todas"
-                : status === "active"
-                  ? "Activas"
-                  : status === "inactive"
-                    ? "Inactivas"
-                    : status === "expiring"
-                      ? "Por vencer"
-                      : status === "expired"
-                        ? "Exalumnas"
-                        : status === "trial"
-                          ? "Alumnas de prueba"
-                          : status === "no_show"
-                            ? "No show"
-                            : status === "prospect"
-                              ? "Prospectos"
-                              : "Vencidas"}
-            </h2>
-          </div>
-          <span className="count-badge">
-            {filteredStudents.length +
-              (status === "all" || status === "prospect" ? prospectRows.length : 0)}
-          </span>
-        </div>
-
-        {filteredStudents.length === 0 &&
-        (!(status === "all" || status === "prospect") || prospectRows.length === 0) ? (
-          <div className="empty-state">
-            {query
-              ? "No encontramos personas que coincidan con la búsqueda."
-              : "No hay personas en este filtro todavía."}
-          </div>
-        ) : (
-          <div className="student-directory-list">
-            <div className="crm-list-labels" aria-hidden="true">
-              <span>Persona</span>
-              <span>Último mensaje</span>
-              <span>Etapa y estado</span>
-              <span>Próximo paso</span>
-            </div>
-            {filteredStudents.map((student) => {
-              const acquisition = currentAcquisitionFor(student.id);
-              const stage = stageFor(student);
-              const recommended = renewalRecommended(
-                stage,
-                acquisition?.expires_on,
-                today,
-                sevenDaysFromToday,
-              );
-              const remaining = acquisition ? (visibleBalanceMap.get(acquisition.id) ?? 0) : null;
-              const hasExpired = (acquisitionsByStudent.get(student.id) ?? []).some((item) =>
-                Boolean(item.expires_on && item.expires_on < today),
-              );
-              const state = !canReadProducts
-                ? "Consulta el perfil"
-                : acquisition?.expires_on
-                  ? "Paquete vence " + shortDate(acquisition.expires_on, studio.locale)
-                  : acquisition
-                    ? "Paquete sin vencimiento"
-                    : hasExpired
-                      ? "Paquete vencido"
-                      : "Sin paquete activo";
-              return (
-                <ContactRow
-                  key={student.id}
-                  id={student.id}
-                  name={student.full_name}
-                  phone={student.phone}
-                  userId={student.user_id}
-                  stage={stage}
-                  href={`/admin/alumnas/${student.id}`}
-                  channel={communications.channels.get(student.id)}
-                  message={communications.messages.get(student.id)?.[0]}
-                  state={
-                    acquisition
-                      ? `${productNameMap.get(acquisition.product_template_id) ?? "Paquete"} · ${state}`
-                      : state
-                  }
-                  next={
-                    recommended
-                      ? "✦ Renovación sugerida"
-                      : stage === "trial"
-                        ? "Revisar prueba"
-                        : stage === "former"
-                          ? "Revisar expediente"
-                          : "Ver perfil"
-                  }
-                  nextDetail={
-                    acquisition
-                      ? acquisition.unlimited
-                        ? "Clases ilimitadas"
-                        : `${remaining} clases restantes`
-                      : undefined
-                  }
-                  timeZone={timeZone}
-                  locale={studio.locale}
-                />
-              );
-            })}
-            {status === "all" || status === "prospect"
-              ? prospectRows.map((prospect) => (
-                  <ContactRow
-                    key={prospect.id}
-                    id={prospect.id}
-                    name={prospect.full_name}
-                    phone={prospect.phone}
-                    stage="prospect"
-                    href={`/admin/alumnas/contactos/${prospect.id}`}
-                    channel={communications.channels.get(prospect.id)}
-                    message={communications.messages.get(prospect.id)?.[0]}
-                    state="Sin convertir a alumna"
-                    next="Ver contacto"
-                    nextDetail={
-                      "Recibido " + shortDate(prospect.created_at.slice(0, 10), studio.locale)
-                    }
-                    timeZone={timeZone}
-                    locale={studio.locale}
-                  />
-                ))
-              : null}
-          </div>
-        )}
-      </section>
+      <CrmBoard people={boardPeople} initialQuery={query} />
     </main>
   );
 }

@@ -233,7 +233,8 @@ export async function activateMetaWhatsAppPilot(formData: FormData) {
       mode: "pilot",
       updated_at: new Date().toISOString(),
     })
-    .eq("studio_id", studio.id);
+    .eq("studio_id", studio.id)
+    .eq("assistant_key", "demi");
 
   if (modeError) {
     redirect("/admin/integraciones/meta-whatsapp?pilot=error&code=pilot_mode_update_failed");
@@ -252,7 +253,8 @@ export async function disableMetaWhatsAppPilot() {
       mode: "demo",
       updated_at: new Date().toISOString(),
     })
-    .eq("studio_id", studio.id);
+    .eq("studio_id", studio.id)
+    .eq("assistant_key", "demi");
 
   if (error) {
     redirect("/admin/integraciones/meta-whatsapp?pilot=error&code=pilot_mode_update_failed");

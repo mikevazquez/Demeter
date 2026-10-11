@@ -33,7 +33,7 @@ describe("NOTIFICACIONES-02 operational catalog 27", () => {
       "Clase cancelada por el estudio",
       "Cancelación por mínimo de reservas",
       "Clase cancelada por cupo insuficiente · Coach",
-      "Cambio de horario / sesión",
+      "Clase modificada",
       "Lugar disponible en lista de espera",
       "Lugar de lista de espera vencido",
       "Paquete comprado o activado",

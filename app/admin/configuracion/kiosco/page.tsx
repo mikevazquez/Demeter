@@ -17,7 +17,7 @@ export default async function KioskSettings({
   if (error) throw new Error("kiosk_settings_unavailable");
   const settings = data as { configured: boolean; message: string };
   return (
-    <main className="dashboard-shell flow-more">
+    <main className="portal-page dashboard-shell flow-more">
       <Link className="flow-back" href="/admin/configuracion">
         ‹ Configuración del estudio
       </Link>

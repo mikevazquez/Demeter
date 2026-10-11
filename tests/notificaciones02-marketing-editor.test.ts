@@ -8,7 +8,7 @@ function source(path: string) {
 }
 
 describe("NOTIFICACIONES-02 marketing editor", () => {
-  const list = source("app/admin/notificaciones/page.tsx");
+  const list = source("app/admin/notificaciones/NotificationsView.tsx");
   const detail = source("app/admin/notificaciones/marketing/[marketingKey]/page.tsx");
   const actions = source("app/admin/notificaciones/actions.ts");
   const catalog = source("lib/notifications/admin-catalog.ts");

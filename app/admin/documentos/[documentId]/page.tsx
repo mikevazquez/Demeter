@@ -13,7 +13,11 @@ import {
   responseModeLabels,
 } from "@/lib/documents";
 
-import { createDocumentVersionAction, retireDocumentVersionAction } from "../actions";
+import {
+  createDocumentVersionAction,
+  retireDocumentVersionAction,
+  unscheduleDocumentAction,
+} from "../actions";
 
 export default async function DocumentDetailPage({
   params,
@@ -45,11 +49,14 @@ export default async function DocumentDetailPage({
   if (!document) notFound();
 
   const current =
-    (versions ?? []).find((item) => ["active", "scheduled"].includes(item.status)) ??
+    (versions ?? []).find((item) => item.status === "active") ??
+    (versions ?? []).find((item) => item.status === "scheduled") ??
     versions?.[0] ??
     null;
 
   if (!current) notFound();
+  const upcoming = (versions ?? []).find((item) => item.status === "scheduled");
+  const draft = (versions ?? []).find((item) => item.status === "draft");
 
   const [{ data: trackingData }, { data: incidents }] = await Promise.all([
     supabase.rpc("admin_document_tracking", { p_version_id: current.id }),
@@ -81,7 +88,7 @@ export default async function DocumentDetailPage({
   }
 
   return (
-    <main className="dashboard-shell space-y-5">
+    <main className="portal-page dashboard-shell space-y-5">
       <Link
         href="/admin/documentos"
         className="text-sm font-semibold text-zinc-400 hover:text-white"
@@ -127,7 +134,18 @@ export default async function DocumentDetailPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {current.status === "draft" ? (
+          {upcoming && can(CAPABILITIES.DOCUMENTS_MANAGE) ? (
+            <form action={unscheduleDocumentAction}>
+              <input type="hidden" name="version_id" value={upcoming.id} />
+              <input type="hidden" name="document_id" value={document.id} />
+              <p className="portal-muted">
+                La versión v{upcoming.version_number} está programada. Al cancelarla regresará a
+                borrador.
+              </p>
+              <button className="portal-button">Cancelar programación</button>
+            </form>
+          ) : null}
+          {draft && can(CAPABILITIES.DOCUMENTS_MANAGE) ? (
             <Link
               href={`/admin/documentos/${document.id}/editar`}
               className="rounded-2xl bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white"

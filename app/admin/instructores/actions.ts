@@ -21,13 +21,15 @@ export async function createInstructor(formData: FormData) {
   if (rawPhone && !phone) redirect("/admin/instructores?error=phone_invalid");
 
   const { supabase, studio } = await getAdminContext(CAPABILITIES.INSTRUCTORS_WRITE);
-  const { data, error } = await supabase.rpc("admin_create_instructor_scoped", {
+  const { data, error } = await supabase.rpc("admin_create_team_member", {
+    p_role: String(formData.get("staff_role") ?? "instructor"),
+    p_teaches: formData.get("teaches") === "on",
     p_studio_id: studio.id,
     p_first_name: firstName,
     p_last_name: lastName || null,
     p_phone: phone,
     p_email: email,
-    p_bio: bio,
+    p_note: bio,
   });
 
   if (error || !data) {
@@ -53,10 +55,17 @@ export async function setInstructorStatus(formData: FormData) {
   }
 
   const { supabase } = await getAdminContext(CAPABILITIES.INSTRUCTORS_WRITE);
-  const { error } = await supabase.rpc("admin_set_instructor_status", {
-    p_instructor_id: instructorId,
-    p_status: status,
-  });
+  const { error } =
+    status === "inactive"
+      ? await supabase.rpc("admin_deactivate_team_member", {
+          p_instructor_id: instructorId,
+          p_replacement_instructor_id:
+            String(formData.get("replacement_instructor_id") ?? "").trim() || null,
+        })
+      : await supabase.rpc("admin_set_instructor_status", {
+          p_instructor_id: instructorId,
+          p_status: status,
+        });
   if (error) redirect(`/admin/instructores/${instructorId}?error=status`);
 
   revalidatePath("/admin/instructores");

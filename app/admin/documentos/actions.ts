@@ -269,15 +269,14 @@ export async function addBookingRestrictionAction(formData: FormData) {
   const studentId = text(formData, "student_id");
   if (!studentId) redirect("/admin/documentos/incidencias?error=invalid");
 
-  const expiresValue = text(formData, "expires_at");
   const { error } = await supabase.rpc("admin_add_booking_restriction", {
     p_student_id: studentId,
-    p_code: text(formData, "code") || "admin_restriction",
+    p_code: "admin_restriction",
     p_title: text(formData, "title") || "Tu cuenta necesita revisión",
     p_detail: text(formData, "detail") || null,
     p_action_kind: text(formData, "action_kind") || "contact_studio",
     p_action_href: text(formData, "action_href") || null,
-    p_expires_at: expiresValue ? new Date(expiresValue).toISOString() : null,
+    p_expires_at: null,
   });
   if (error) redirect("/admin/documentos/incidencias?error=restriction");
 
@@ -290,15 +289,16 @@ export async function addBookingRestrictionAction(formData: FormData) {
 export async function grantBookingExceptionAction(formData: FormData) {
   const { supabase } = await getAdminContext(CAPABILITIES.STUDENTS_WRITE);
   const studentId = text(formData, "student_id");
-  const expiresValue = text(formData, "expires_at");
-  if (!studentId || !expiresValue) redirect("/admin/documentos/incidencias?error=invalid");
+  const days = Number(text(formData, "days"));
+  if (!studentId || ![1, 3, 7, 14].includes(days))
+    redirect("/admin/documentos/incidencias?error=invalid");
 
   const { error } = await supabase.rpc("admin_grant_booking_exception", {
     p_student_id: studentId,
-    p_restriction_code: text(formData, "restriction_code") || null,
-    p_source_id: text(formData, "source_id") || null,
+    p_restriction_code: null,
+    p_source_id: null,
     p_reason: text(formData, "reason"),
-    p_expires_at: new Date(expiresValue).toISOString(),
+    p_expires_at: new Date(Date.now() + days * 86400000).toISOString(),
   });
   if (error) redirect("/admin/documentos/incidencias?error=exception");
 
@@ -334,4 +334,17 @@ export async function revokeBookingExceptionAction(formData: FormData) {
   revalidatePath("/admin/documentos/incidencias");
   revalidatePath("/student/reservar");
   redirect("/admin/documentos/incidencias?saved=exception_revoked");
+}
+
+export async function unscheduleDocumentAction(formData: FormData) {
+  const { supabase } = await getAdminContext(CAPABILITIES.DOCUMENTS_MANAGE);
+  const versionId = text(formData, "version_id");
+  const documentId = text(formData, "document_id");
+  const { error } = await supabase.rpc("admin_unschedule_document_version", {
+    p_version_id: versionId,
+  });
+  if (error) redirect(documentRoute(documentId, "?error=unschedule"));
+  revalidatePath("/admin/documentos");
+  revalidatePath(documentRoute(documentId));
+  redirect(documentRoute(documentId, "?retired=unscheduled"));
 }

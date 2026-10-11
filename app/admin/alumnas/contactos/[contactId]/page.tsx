@@ -50,7 +50,7 @@ export default async function ContactPage({
   const messages = communications.messages.get(contact.id) ?? [];
   const href = (next: string) => `/admin/alumnas/contactos/${contact.id}?view=${next}`;
   return (
-    <main className="dashboard-shell crm-page">
+    <main className="portal-page dashboard-shell crm-page">
       <Link className="crm-back" href="/admin/alumnas">
         ← Contactos
       </Link>

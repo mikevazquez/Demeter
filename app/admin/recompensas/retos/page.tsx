@@ -3,7 +3,6 @@ import Link from "next/link";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-import { RewardsShell } from "../RewardsNav";
 import { EmptyState, StatusBadge, asObject, conditionsLabel, rewardDefinitionLabel } from "../ui";
 
 const filterLabels: Record<string, string> = {
@@ -30,39 +29,47 @@ export default async function ChallengesPage({
     ? String(query.status)
     : "all";
 
-  const { data: versions } = await ctx.supabase
-    .from("reward_rule_versions")
-    .select(
-      "rule_id,version_number,name,description,family,condition_definition,reward_definition,presentation_definition,created_at",
-    )
-    .eq("studio_id", ctx.studio.id)
-    .eq("family", "challenge")
-    .order("created_at", { ascending: false });
-
-  const ruleIds = [...new Set((versions ?? []).map((version) => version.rule_id))];
-  const [rulesResult, overridesResult] = ruleIds.length
-    ? await Promise.all([
-        ctx.supabase
-          .from("reward_rules")
-          .select("id,status,current_version_number,scheduled_start_at,scheduled_end_at,updated_at")
-          .in("id", ruleIds)
-          .neq("status", "cancelled")
-          .order("updated_at", { ascending: false }),
-        ctx.supabase
-          .from("reward_rule_copy_overrides")
-          .select("rule_id,title,description,cover_url")
-          .in("rule_id", ruleIds),
-      ])
-    : [{ data: [] }, { data: [] }];
+  const [versionsResult, rulesResult, overridesResult, enrollmentsResult] = await Promise.all([
+    ctx.supabase
+      .from("reward_rule_versions")
+      .select(
+        "rule_id,version_number,name,description,family,condition_definition,reward_definition,presentation_definition,created_at",
+      )
+      .eq("studio_id", ctx.studio.id)
+      .eq("family", "challenge")
+      .order("created_at", { ascending: false }),
+    ctx.supabase
+      .from("reward_rules")
+      .select("id,status,current_version_number,scheduled_start_at,scheduled_end_at,updated_at")
+      .eq("studio_id", ctx.studio.id)
+      .neq("status", "cancelled")
+      .order("updated_at", { ascending: false }),
+    ctx.supabase
+      .from("reward_rule_copy_overrides")
+      .select("rule_id,title,description,cover_url")
+      .eq("studio_id", ctx.studio.id),
+    ctx.supabase
+      .from("reward_challenge_enrollments")
+      .select("rule_id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "active"),
+  ]);
+  const versions = versionsResult.data ?? [];
+  const ruleIds = new Set(versions.map((version) => version.rule_id));
 
   const current = new Map(
-    (versions ?? []).map((version) => [`${version.rule_id}:${version.version_number}`, version]),
+    versions.map((version) => [`${version.rule_id}:${version.version_number}`, version]),
   );
   const overrideMap = new Map(
     (overridesResult.data ?? []).map((override) => [override.rule_id, override]),
   );
+  const enrollmentCounts = new Map<string, number>();
+  for (const enrollment of enrollmentsResult.data ?? []) {
+    enrollmentCounts.set(enrollment.rule_id, (enrollmentCounts.get(enrollment.rule_id) ?? 0) + 1);
+  }
 
   const rows = (rulesResult.data ?? [])
+    .filter((rule) => ruleIds.has(rule.id))
     .map((rule) => ({
       rule,
       version: current.get(`${rule.id}:${rule.current_version_number}`),
@@ -80,13 +87,14 @@ export default async function ChallengesPage({
     });
 
   return (
-    <RewardsShell>
+    <main className="portal-page dashboard-shell space-y-6 admin-ux04-secondary">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="eyebrow">RETOS ESPECIALES · {ctx.studio.name}</p>
-          <h1 className="dashboard-title">Retos especiales</h1>
-          <p className="mt-2 text-sm text-zinc-400">
-            Campañas temporales con participación automática y resultados permanentes.
+          <p className="eyebrow">RETOS · {ctx.studio.name}</p>
+          <h1 className="dashboard-title">Retos</h1>
+          <p className="mt-2 max-w-2xl text-sm text-zinc-400">
+            Crea campañas individuales o competitivas. El progreso se calcula con resultados reales
+            y las competencias muestran solo Top 3, posición personal y distancia al podio.
           </p>
         </div>
         {ctx.can(CAPABILITIES.REWARDS_MANAGE) ? (
@@ -94,7 +102,7 @@ export default async function ChallengesPage({
             href="/admin/recompensas/retos/nuevo"
             className="rounded-xl bg-[#FF0A8A] px-4 py-2.5 text-sm font-semibold text-white"
           >
-            + Nuevo reto
+            + Crear reto
           </Link>
         ) : null}
       </header>
@@ -132,8 +140,10 @@ export default async function ChallengesPage({
         <section className="grid gap-4 lg:grid-cols-2">
           {rows.map(({ rule, version, override }) => {
             const presentation = asObject(version?.presentation_definition);
-            const cycleMode =
-              presentation.challenge_mode === "periods" ? "POR PERIODOS" : "ACUMULADO";
+            const competition =
+              presentation.competition_mode === "leaderboard" ? "Competencia" : "Individual";
+            const participants =
+              competition === "Competencia" ? (enrollmentCounts.get(rule.id) ?? 0) : null;
             return (
               <Link
                 key={rule.id}
@@ -142,10 +152,10 @@ export default async function ChallengesPage({
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#FF0A8A]">
-                      {cycleMode}
-                    </p>
-                    <h2 className="mt-2 text-lg font-semibold text-white">
+                    <span className="rounded-full border border-[#FF0A8A]/25 bg-[#FF0A8A]/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#ff64b6]">
+                      {competition}
+                    </span>
+                    <h2 className="mt-3 text-lg font-semibold text-white">
                       {override?.title ?? version?.name ?? "Reto"}
                     </h2>
                   </div>
@@ -154,16 +164,45 @@ export default async function ChallengesPage({
                 <p className="mt-3 text-sm leading-6 text-zinc-400">
                   {conditionsLabel(version?.condition_definition)}
                 </p>
-                <p className="mt-3 text-xs font-semibold text-zinc-500">
-                  {presentation.reward_visibility === "surprise"
-                    ? "Recompensa sorpresa"
-                    : rewardDefinitionLabel(version?.reward_definition)}
-                </p>
+                <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+                    <p className="text-zinc-500">Periodo</p>
+                    <p className="mt-1 font-semibold text-zinc-200">
+                      {rule.scheduled_start_at
+                        ? new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" }).format(
+                            new Date(rule.scheduled_start_at),
+                          )
+                        : "Sin inicio"}
+                      {" → "}
+                      {rule.scheduled_end_at
+                        ? new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" }).format(
+                            new Date(rule.scheduled_end_at),
+                          )
+                        : "Sin cierre"}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+                    <p className="text-zinc-500">
+                      {participants === null ? "Recompensa" : "Inscritas"}
+                    </p>
+                    <p className="mt-1 font-semibold text-zinc-200">
+                      {participants === null
+                        ? presentation.reward_visibility === "surprise"
+                          ? "Sorpresa"
+                          : rewardDefinitionLabel(
+                              competition === "Competencia"
+                                ? presentation.competition_reward_definition
+                                : version?.reward_definition,
+                            )
+                        : participants}
+                    </p>
+                  </div>
+                </div>
               </Link>
             );
           })}
         </section>
       )}
-    </RewardsShell>
+    </main>
   );
 }

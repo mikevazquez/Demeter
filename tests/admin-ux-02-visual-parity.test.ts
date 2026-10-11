@@ -19,7 +19,7 @@ describe("ADMIN-UX-02 approved visual parity", () => {
   const more = source("app/admin/mas/page.tsx");
   const products = source("app/admin/productos/page.tsx");
   const team = source("app/admin/instructores/page.tsx");
-  const automations = source("app/admin/automatizaciones/page.tsx");
+  const automations = source("app/admin/notificaciones/NotificationsView.tsx");
   const sale = source("app/admin/ventas/nueva/page.tsx");
   const saleForm = source("app/admin/alumnas/[studentId]/alta/StudentOnboardingForm.tsx");
   const styles = source("app/globals.css");
@@ -111,7 +111,7 @@ describe("ADMIN-UX-02 approved visual parity", () => {
     expect(products).toContain("package-category-grid");
     expect(team).toContain(">Equipo<");
     expect(team).toContain("team-v2");
-    expect(automations).toContain("communication-v2");
+    expect(automations).toContain("notification-admin-page");
     expect(sale).toContain("StudentOnboardingForm");
     expect(sale).toContain('flowContext="sale"');
     expect(saleForm).toContain("Descuento o cortesía");
@@ -122,6 +122,6 @@ describe("ADMIN-UX-02 approved visual parity", () => {
   it("keeps the configured studio identity rather than hardcoded Studio Flow branding", () => {
     expect(layout).toContain("{studio.name}");
     expect(layout).not.toContain("<strong>Studio Flow</strong>");
-    expect(automations).toContain("<h1>Notificaciones</h1>");
+    expect(automations).toContain("<h1>Comunicación</h1>");
   });
 });

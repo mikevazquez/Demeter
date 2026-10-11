@@ -62,7 +62,7 @@ describe("RECURSOS-01 admin configuration", () => {
   it("provides interactive placement and orientation controls", () => {
     expect(editor).toContain("onPointerDown");
     expect(editor).toContain("onPointerMove");
-    expect(editor).toContain("Girar +15°");
+    expect(editor).toContain("Girar 90°");
     expect(editor).toContain("Centrar");
     expect(editor).toContain("Vista previa");
     expect(editor).toContain("Deshacer");

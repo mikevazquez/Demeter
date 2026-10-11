@@ -80,7 +80,7 @@ export default async function EvaluationTemplateEditorPage({
     ctx.supabase
       .from("evaluation_template_versions")
       .select(
-        "id,version_number,status,pass_threshold,default_category_min,default_attempts_per_element,default_attempts_per_combo,evaluator_instructions,updated_at",
+        "id,version_number,status,schema_version,pass_threshold,default_category_min,default_attempts_per_element,default_attempts_per_combo,evaluator_instructions,updated_at",
       )
       .eq("template_id", template.id)
       .eq("studio_id", ctx.studio.id)
@@ -109,7 +109,7 @@ export default async function EvaluationTemplateEditorPage({
     ctx.supabase
       .from("evaluation_template_elements")
       .select(
-        "id,element_id,criterion_id,mandatory,scored,max_score,min_score,attempts_allowed,sort_order,element_snapshot",
+        "id,element_id,criterion_id,mandatory,scored,max_score,min_score,attempts_allowed,sort_order,item_label,element_snapshot",
       )
       .eq("template_version_id", version.id)
       .order("sort_order"),
@@ -126,6 +126,39 @@ export default async function EvaluationTemplateEditorPage({
       .eq("template_version_id", version.id),
   ]);
 
+  if (version.schema_version === 2)
+    return (
+      <main className="portal-page evaluations-page">
+        <header className="portal-module-heading">
+          <div>
+            <Link
+              className="flow-back"
+              href={`/admin/evaluaciones/disciplina/${template.discipline_id}`}
+            >
+              ‹ {discipline?.name}
+            </Link>
+            <h1>{template.name}</h1>
+            <p>Rúbrica anterior · versión {version.version_number}</p>
+          </div>
+        </header>
+        <section className="card">
+          <h2>Editor de cinco pasos</h2>
+          <p className="portal-muted">
+            Los resultados anteriores conservan su rúbrica. Crea una versión para revisar los
+            criterios, figuras, combos y reglas antes de publicarla.
+          </p>
+          <p>
+            {(criteriaResult.data ?? []).length} criterios · {(elementsResult.data ?? []).length}{" "}
+            elementos
+          </p>
+          <form action={createNextEvaluationTemplateVersion}>
+            <input type="hidden" name="template_id" value={template.id} />
+            <input type="hidden" name="version_id" value={version.id} />
+            <button className="primary-button">Crear versión {version.version_number + 1}</button>
+          </form>
+        </section>
+      </main>
+    );
   const criteria = criteriaResult.data ?? [];
   const elements = elementsResult.data ?? [];
   const combos = combosResult.data ?? [];
@@ -135,7 +168,7 @@ export default async function EvaluationTemplateEditorPage({
   const levelTitle = level?.title ?? "Nivel técnico";
 
   return (
-    <main className="evaluations-page">
+    <main className="portal-page evaluations-page">
       <header className="eval-header">
         <div className="eval-header-copy">
           <Link
@@ -267,7 +300,9 @@ export default async function EvaluationTemplateEditorPage({
                     ★
                   </span>
                   <span className="eval-discipline-copy">
-                    <strong>{snapshot(item.element_snapshot, "Elemento técnico")}</strong>
+                    <strong>
+                      {item.item_label || snapshot(item.element_snapshot, "Elemento técnico")}
+                    </strong>
                     <small>
                       {item.scored ? `Puntuable · / ${item.max_score}` : "No puntuable"} ·{" "}
                       {item.attempts_allowed ?? version.default_attempts_per_element} intentos

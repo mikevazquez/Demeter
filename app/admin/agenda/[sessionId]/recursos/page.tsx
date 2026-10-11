@@ -1,10 +1,15 @@
 import Link from "next/link";
+import ResourceAssignmentSheet from "./ResourceAssignmentSheet";
 import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-import { reassignReservationResourceAction, saveSessionResourcesAction } from "./actions";
+import {
+  releaseReservationResourceAction,
+  reassignReservationResourceAction,
+  saveSessionResourcesAction,
+} from "./actions";
 import styles from "./session-resources.module.css";
 
 type MapElement = {
@@ -28,12 +33,18 @@ export default async function SessionResourcesPage({
   searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
-  searchParams: Promise<{ saved?: string; reassigned?: string; error?: string }>;
+  searchParams: Promise<{
+    saved?: string;
+    reassigned?: string;
+    error?: string;
+    reservation?: string;
+    released?: string;
+  }>;
 }) {
   const [{ sessionId }, query, { supabase, studio, can }] = await Promise.all([
     params,
     searchParams,
-    getAdminContext(CAPABILITIES.SCHEDULE_READ),
+    getAdminContext(CAPABILITIES.SETTINGS_WRITE),
   ]);
 
   const { data: session } = await supabase
@@ -177,6 +188,24 @@ export default async function SessionResourcesPage({
     reassign: "No pudimos reasignar el recurso.",
   };
 
+  const selectedReservation = query.reservation
+    ? await supabase
+        .from("reservations")
+        .select("id,student_id,guest_person_id,status")
+        .eq("id", query.reservation)
+        .eq("session_id", sessionId)
+        .eq("studio_id", studio.id)
+        .in("status", ["reserved", "attended"])
+        .maybeSingle()
+    : { data: null };
+  const selectedPerson = selectedReservation.data?.student_id
+    ? await supabase
+        .from("students")
+        .select("full_name")
+        .eq("id", selectedReservation.data.student_id)
+        .eq("studio_id", studio.id)
+        .maybeSingle()
+    : { data: null };
   const dateLabel = new Intl.DateTimeFormat("es-MX", {
     timeZone: studio.timezone ?? "America/Mexico_City",
     weekday: "long",
@@ -187,7 +216,7 @@ export default async function SessionResourcesPage({
   }).format(new Date(session.starts_at));
 
   return (
-    <main className={`dashboard-shell ${styles.page}`}>
+    <main className={`portal-page dashboard-shell ${styles.page}`}>
       <header className={styles.header}>
         <div>
           <Link className={styles.back} href={`/admin/agenda/${sessionId}`}>
@@ -201,6 +230,11 @@ export default async function SessionResourcesPage({
         </div>
       </header>
 
+      {Number(query.released) > 0 ? (
+        <div className="notice">
+          {Number(query.released)} alumna(s) quedaron sin lugar; reasígnalas.
+        </div>
+      ) : null}
       {query.saved === "1" ? (
         <div className={`${styles.notice} ${styles.success}`}>
           Configuración de recursos guardada.
@@ -410,7 +444,18 @@ export default async function SessionResourcesPage({
                           );
                         })}
                     </select>
-                    {canEdit ? <button type="submit">Reasignar</button> : null}
+                    {canEdit ? (
+                      <>
+                        <button type="submit">Reasignar</button>
+                        <button
+                          type="submit"
+                          formAction={releaseReservationResourceAction}
+                          formNoValidate
+                        >
+                          Quitar lugar
+                        </button>
+                      </>
+                    ) : null}
                   </div>
                 </form>
               );
@@ -468,6 +513,36 @@ export default async function SessionResourcesPage({
           )}
         </div>
       </section>
+      {selectedReservation.data ? (
+        <ResourceAssignmentSheet
+          sessionId={sessionId}
+          reservationId={selectedReservation.data.id}
+          name={selectedPerson.data?.full_name ?? "la invitada"}
+          currentResourceId={
+            (assignments ?? []).find((a) => a.reservation_id === selectedReservation.data?.id)
+              ?.resource_id ?? null
+          }
+          elements={elements.map((e) => {
+            const setting = e.resource_id ? settingMap.get(e.resource_id) : null;
+            const used = e.resource_id ? (assignmentCount.get(e.resource_id) ?? 0) : 0;
+            const capacity = setting?.capacity_override ?? session.resource_uses_per_item;
+            return {
+              id: e.id,
+              resourceId: e.resource_id,
+              kind: e.element_kind,
+              label: e.resource_id ? (resourceMap.get(e.resource_id) ?? "Lugar") : (e.label ?? ""),
+              x: Number(e.x),
+              y: Number(e.y),
+              width: Number(e.width),
+              height: Number(e.height),
+              rotation: Number(e.rotation_degrees),
+              used,
+              capacity,
+              available: setting?.enabled === true && used < capacity,
+            };
+          })}
+        />
+      ) : null}
     </main>
   );
 }

@@ -91,7 +91,7 @@ export default async function RewardsControlCenterPage() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="eyebrow">PROGRESS & REWARDS · {ctx.studio.name}</p>
-          <h1 className="dashboard-title">Centro de Control</h1>
+          <h1 className="dashboard-title">Recompensas</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">
             Configura cómo se reconoce el progreso y revisa lo que las alumnas están construyendo.
             El progreso siempre se deriva de comportamiento real.

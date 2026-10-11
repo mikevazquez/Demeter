@@ -1,3 +1,4 @@
+import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 import { transcribeDemiAudioBytes } from "@/lib/assistant/audio-transcription";
 import { demiDeliveryRetryPolicy } from "@/lib/assistant/delivery-retry-policy";
 import { handleDemiMetaInboxReceipt } from "@/lib/assistant/meta-inbox-receipt";
@@ -121,6 +122,7 @@ async function loadRuntimeContext(
           "assistant_name,mode,model,reasoning_effort,personality_instructions,monthly_budget_usd_micros,conversation_budget_usd_micros,max_model_calls_per_turn,max_tool_calls_per_turn",
         )
         .eq("studio_id", studioId)
+        .eq("assistant_key", "demi")
         .maybeSingle(),
     ]);
 
@@ -885,6 +887,27 @@ export async function POST(request: Request) {
       }
     }
 
+    const assistantKey = ["student", "former_student"].includes(studentCategory ?? "")
+      ? "polina"
+      : "demi";
+    const { data: selectedConfig, error: selectedConfigError } = await loadDemiRuntimeConfig(
+      supabase,
+      studioId,
+      assistantKey,
+    );
+    if (selectedConfigError || !selectedConfig) {
+      retryableFailure = true;
+      continue;
+    }
+    const { error: assistantTagError } = await supabase
+      .from("assistant_conversations")
+      .update({ assistant_key: assistantKey })
+      .eq("id", conversationId)
+      .eq("studio_id", studioId);
+    if (assistantTagError) {
+      retryableFailure = true;
+      continue;
+    }
     let assistantResult;
     try {
       assistantResult = deterministicReply
@@ -898,15 +921,16 @@ export async function POST(request: Request) {
               currency: runtimeContext.studio.currency,
             },
             config: {
-              assistant_name: runtimeContext.config.assistant_name,
-              model: runtimeContext.config.model,
-              reasoning_effort: runtimeContext.config.reasoning_effort as
+              assistant_key: assistantKey,
+              assistant_name: selectedConfig.assistant_name,
+              model: selectedConfig.model,
+              reasoning_effort: selectedConfig.reasoning_effort as
                 "none" | "low" | "medium" | "high",
-              personality_instructions: runtimeContext.config.personality_instructions,
-              monthly_budget_usd_micros: runtimeContext.config.monthly_budget_usd_micros,
-              conversation_budget_usd_micros: runtimeContext.config.conversation_budget_usd_micros,
-              max_model_calls_per_turn: runtimeContext.config.max_model_calls_per_turn,
-              max_tool_calls_per_turn: runtimeContext.config.max_tool_calls_per_turn,
+              personality_instructions: selectedConfig.personality_instructions,
+              monthly_budget_usd_micros: selectedConfig.monthly_budget_usd_micros,
+              conversation_budget_usd_micros: selectedConfig.conversation_budget_usd_micros,
+              max_model_calls_per_turn: selectedConfig.max_model_calls_per_turn,
+              max_tool_calls_per_turn: selectedConfig.max_tool_calls_per_turn,
             },
             conversationId,
             turnId: inboundTurnId,

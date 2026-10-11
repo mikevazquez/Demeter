@@ -31,7 +31,7 @@ export default async function InstructorsPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string; error?: string }>;
 }) {
-  const [params, { supabase, studio, can }] = await Promise.all([
+  const [params, { supabase, studio, can, membership }] = await Promise.all([
     searchParams,
     getAdminContext(CAPABILITIES.INSTRUCTORS_READ),
   ]);
@@ -41,11 +41,19 @@ export default async function InstructorsPage({
 
   const { data: instructors, error: instructorsError } = await supabase
     .from("instructors")
-    .select("id, person_id, status, bio, created_at")
+    .select("id, person_id, status, bio, staff_role, teaches, created_at")
     .eq("studio_id", studio.id)
-    .eq("status", status)
     .order("created_at", { ascending: false });
 
+  const { data: summary } = await supabase.rpc("admin_team_summary", { p_studio_id: studio.id });
+  const teamSummary = (summary ?? []) as {
+    instructor_id: string;
+    access_status: string;
+    classes_this_week: number;
+    last_sign_in_at: string | null;
+  }[];
+  const activeCount = (instructors ?? []).filter((item) => item.status === "active").length;
+  const inactiveCount = (instructors ?? []).filter((item) => item.status === "inactive").length;
   const personIds = (instructors ?? []).map((item) => item.person_id);
   const [{ data: people }, { data: contacts }] = await Promise.all([
     personIds.length
@@ -61,6 +69,7 @@ export default async function InstructorsPage({
 
   const peopleMap = new Map((people ?? []).map((person) => [person.id, person]));
   const rows = (instructors ?? [])
+    .filter((item) => item.status === status)
     .map((instructor) => {
       const person = peopleMap.get(instructor.person_id);
       const name =
@@ -94,24 +103,22 @@ export default async function InstructorsPage({
               : null;
 
   return (
-    <main className="team-v2">
+    <main className="portal-page team-v2">
       <header className="team-v2-header">
         <div>
           <h1>Equipo</h1>
-          <p>Administra a las personas que imparten clases y su acceso operativo.</p>
+          <p>Personas que imparten clases o atienden el estudio, y su acceso.</p>
         </div>
 
         {canWrite ? (
           <details className="team-v2-create">
             <summary className="team-v2-primary">
-              <span aria-hidden="true">＋</span> Integrante
+              <span aria-hidden="true">＋</span> Nuevo
             </summary>
             <form action={createInstructor} className="team-v2-create-panel">
               <div className="team-v2-create-heading">
                 <strong>Nuevo integrante</strong>
-                <small>
-                  Agrega primero sus datos básicos. El acceso Coach se configura después.
-                </small>
+                <small>Agrega primero sus datos básicos. El acceso se configura después.</small>
               </div>
 
               <div className="team-v2-create-grid">
@@ -133,6 +140,20 @@ export default async function InstructorsPage({
                 </label>
               </div>
 
+              <label>
+                Rol
+                <select name="staff_role" defaultValue="instructor">
+                  <option value="instructor">Coach</option>
+                  <option value="reception">Recepción</option>
+                  {membership.role === "owner" ? (
+                    <option value="admin">Administración</option>
+                  ) : null}
+                </select>
+              </label>
+              <label className="portal-inline-form">
+                <input type="checkbox" name="teaches" />
+                También imparte clases (Recepción o Administración)
+              </label>
               <label className="team-v2-create-bio">
                 <span>Especialidad o nota</span>
                 <textarea name="bio" placeholder="Ej. Pole Fitness, Flexibilidad…" />
@@ -156,13 +177,13 @@ export default async function InstructorsPage({
       <div className="team-v2-toolbar">
         <nav className="team-v2-tabs" aria-label="Estado del equipo">
           <Link className={status === "active" ? "is-active" : ""} href="/admin/instructores">
-            Activos
+            Activos {activeCount}
           </Link>
           <Link
             className={status === "inactive" ? "is-active" : ""}
             href="/admin/instructores?status=inactive"
           >
-            Inactivos
+            Inactivos {inactiveCount}
           </Link>
         </nav>
 
@@ -193,22 +214,35 @@ export default async function InstructorsPage({
               .map((part) => part.slice(0, 1).toUpperCase())
               .join("");
 
+            const memberSummary = teamSummary.find((summary) => summary.instructor_id === item.id);
+            const accessLabel =
+              memberSummary?.access_status === "active"
+                ? "Acceso activo"
+                : memberSummary?.access_status === "pending"
+                  ? "Pendiente de activar"
+                  : "Sin acceso";
             return (
               <Link className="team-v2-row" key={item.id} href={`/admin/instructores/${item.id}`}>
                 <span className="team-v2-avatar">{initials || <TeamIcon />}</span>
 
                 <span className="team-v2-row-copy">
                   <strong>{item.name}</strong>
-                  <small>{item.bio?.trim() || "Integrante del equipo"}</small>
-                  {item.email || item.phone ? (
-                    <span>{item.email || item.phone}</span>
-                  ) : (
-                    <span>Sin datos de contacto</span>
-                  )}
-                </span>
-
-                <span className={`team-v2-status ${item.status === "active" ? "is-active" : ""}`}>
-                  {item.status === "active" ? "Activo" : "Inactivo"}
+                  <small>
+                    {item.staff_role === "admin"
+                      ? "Administración"
+                      : item.staff_role === "reception"
+                        ? "Recepción"
+                        : "Coach"}
+                    {item.staff_role !== "instructor" && item.teaches ? " · Coach" : ""}
+                    {item.teaches
+                      ? ` · ${memberSummary?.classes_this_week ?? 0} clases esta semana`
+                      : ""}
+                  </small>
+                  <span
+                    className={`team-v2-status ${memberSummary?.access_status === "active" ? "is-active" : ""}`}
+                  >
+                    {accessLabel}
+                  </span>
                 </span>
 
                 <span className="team-v2-chevron" aria-hidden="true">

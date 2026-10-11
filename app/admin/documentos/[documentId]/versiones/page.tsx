@@ -56,7 +56,7 @@ export default async function DocumentVersionsPage({
   );
 
   return (
-    <main className="dashboard-shell space-y-5">
+    <main className="portal-page dashboard-shell space-y-5">
       <Link
         href={`/admin/documentos/${document.id}`}
         className="text-sm font-semibold text-zinc-400 hover:text-white"

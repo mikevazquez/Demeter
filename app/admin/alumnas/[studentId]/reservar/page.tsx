@@ -93,7 +93,7 @@ export default async function StudentFirstReservationPage({
   const timeZone = studio.timezone ?? "America/Mexico_City";
 
   return (
-    <main className="dashboard-shell">
+    <main className="portal-page dashboard-shell">
       <header className="topbar">
         <div>
           <Link className="back-link compact" href={`/admin/alumnas/${student.id}`}>

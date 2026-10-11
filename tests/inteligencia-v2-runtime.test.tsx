@@ -6,6 +6,10 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 const context = vi.hoisted(() => ({ get: vi.fn() }));
 vi.mock("@/lib/auth/admin-context", () => ({ getAdminContext: context.get }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 vi.mock("next/link", () => ({
   default: (props: Record<string, unknown>) => createElement("a", props),
 }));
@@ -56,6 +60,10 @@ function from(table: string) {
     },
     gte(key: string, value: string) {
       rows = rows.filter((row) => String(row[key]) >= value);
+      return query;
+    },
+    lte(key: string, value: string) {
+      rows = rows.filter((row) => String(row[key]) <= value);
       return query;
     },
     lt(key: string, value: string) {
@@ -378,6 +386,7 @@ describe("Inteligencia V2 runtime", () => {
   });
 
   it.each(["payment", "refund"])("applies the sign of %s to cash received", async (kind) => {
+    seed("sales", [{ id: "sale", status: "confirmed", total_minor: 15000, created_at: current }]);
     seed("payments", [{ sale_id: "sale", kind, amount_minor: 15000, created_at: current }]);
     expect(metric(await render("dinero"), "Ingresos cobrados")).toBe(
       kind === "refund" ? "-MX$150" : "MX$150",
@@ -385,9 +394,10 @@ describe("Inteligencia V2 runtime", () => {
   });
 
   it("subtracts refunds without calling net cash profit", async () => {
+    seed("sales", [{ id: "sale", status: "confirmed", total_minor: 20000, created_at: current }]);
     seed("payments", [
-      { kind: "payment", amount_minor: 20000, created_at: current },
-      { kind: "refund", amount_minor: 5000, created_at: current },
+      { sale_id: "sale", kind: "payment", amount_minor: 20000, created_at: current },
+      { sale_id: "sale", kind: "refund", amount_minor: 5000, created_at: current },
     ]);
     const html = await render("dinero");
     expect(metric(html, "Ingresos cobrados")).toBe("MX$150");
@@ -511,8 +521,15 @@ describe("Inteligencia metrics reference", () => {
     expect(html).toContain("Instagram");
   });
   it("retains the last week of the 90-day period", async () => {
+    seed("sales", [{ id: "sale", status: "confirmed", total_minor: 54300, created_at: current }]);
     seed("payments", [
-      { kind: "payment", method: "cash", amount_minor: 54300, created_at: current },
+      {
+        sale_id: "sale",
+        kind: "payment",
+        method: "cash",
+        amount_minor: 54300,
+        created_at: current,
+      },
     ]);
     const html = await render("dinero", "90");
     expect(html).toContain("Oct 3");

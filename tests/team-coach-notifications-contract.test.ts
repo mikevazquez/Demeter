@@ -51,7 +51,9 @@ describe("Equipo notifications sandbox contract", () => {
     const action = src("app/admin/instructores/actions.ts");
     expect(scoped).toContain("private.has_capability(p_studio_id,'instructors.write')");
     expect(scoped).toContain("security definer");
-    expect(action).toContain('rpc("admin_create_instructor_scoped"');
+    expect(action).toContain('rpc("admin_create_team_member"');
+    const team = src("supabase/migrations/20261011123000_admin_portal_team_roles.sql");
+    expect(team).toContain("public.admin_create_instructor_scoped(p_studio_id");
     expect(action).toContain("p_studio_id: studio.id");
   });
   it("requires instructors.write and isolates coach phone to studio", () => {

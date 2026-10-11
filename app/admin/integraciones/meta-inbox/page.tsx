@@ -38,7 +38,12 @@ export default async function MetaInboxIntegrationPage({
     supabase.rpc("admin_get_meta_inbox_connection_summary", {
       target_studio_id: studio.id,
     }),
-    supabase.from("assistant_configs").select("mode").eq("studio_id", studio.id).maybeSingle(),
+    supabase
+      .from("assistant_configs")
+      .select("mode")
+      .eq("studio_id", studio.id)
+      .eq("assistant_key", "demi")
+      .maybeSingle(),
   ]);
 
   const summary = asObject(summaryData);
@@ -79,7 +84,7 @@ export default async function MetaInboxIntegrationPage({
   const resultCode = queryValue(params.code);
 
   return (
-    <main className="integration-detail-v2">
+    <main className="portal-page integration-detail-v2">
       <header className="integration-detail-v2-header">
         <div>
           <Link className="integration-detail-v2-back" href="/admin/integraciones">

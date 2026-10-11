@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items = [
-  { href: "/admin/recompensas", label: "Inicio", exact: true },
+  { href: "/admin/recompensas", label: "Centro de control", exact: true },
   { href: "/admin/recompensas/medallas", label: "Medallas" },
   { href: "/admin/recompensas/programas", label: "Programas" },
+  { href: "/admin/recompensas/retos", label: "Retos" },
   { href: "/admin/recompensas/logros", label: "Logros" },
   { href: "/admin/recompensas/seguimiento", label: "Seguimiento" },
   { href: "/admin/recompensas/generadas", label: "Recompensas" },
@@ -44,7 +45,7 @@ export function RewardsNav() {
 
 export function RewardsShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="dashboard-shell space-y-6 admin-ux04-secondary rewards-admin-page">
+    <main className="portal-page dashboard-shell space-y-6 admin-ux04-secondary rewards-admin-page">
       <RewardsNav />
       {children}
     </main>

@@ -14,25 +14,13 @@ function formatMoney(minor: number | null, locale: string, currency: string) {
   }).format(minor / 100);
 }
 
-function ActivityIcon() {
-  return (
-    <svg
-      width="32"
-      height="32"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M3 12h4l2.5-5 4 10 2.5-5H21" />
-    </svg>
-  );
-}
-
-export default async function ActivitiesPage() {
+export default async function ActivitiesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  const query = await searchParams;
+  const inactive = query.status === "inactive";
   const { supabase, studio, can } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
   const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
 
@@ -40,14 +28,14 @@ export default async function ActivitiesPage() {
     supabase
       .from("class_templates")
       .select(
-        "id,name,description,duration_minutes,capacity,active,drop_in_price_minor,requires_resource,color_hex",
+        "id,name,description,duration_minutes,capacity,active,drop_in_price_minor,requires_resource,color_hex,minimum_reservations_enabled,minimum_reservations",
       )
       .eq("studio_id", studio.id)
       .order("active", { ascending: false })
       .order("name"),
     supabase
       .from("recurring_schedules")
-      .select("id,template_id,weekday,local_time,active")
+      .select("id,template_id,weekday,local_time,active,instructor_id")
       .eq("studio_id", studio.id)
       .eq("active", true)
       .order("weekday")
@@ -61,12 +49,28 @@ export default async function ActivitiesPage() {
     schedulesByActivity.set(schedule.template_id, current);
   }
 
+  const { data: coaches } = await supabase
+    .from("instructors")
+    .select("id,person_id")
+    .eq("studio_id", studio.id);
+  const personIds = (coaches ?? []).map((c) => c.person_id);
+  const { data: people } = personIds.length
+    ? await supabase
+        .from("persons")
+        .select("id,first_name,last_name")
+        .eq("studio_id", studio.id)
+        .in("id", personIds)
+    : { data: [] };
+  const names = new Map(
+    (people ?? []).map((p) => [p.id, [p.first_name, p.last_name].filter(Boolean).join(" ")]),
+  );
+  const coachNames = new Map((coaches ?? []).map((c) => [c.id, names.get(c.person_id)]));
   const activeActivities = (activities ?? []).filter((item) => item.active);
   const inactiveActivities = (activities ?? []).filter((item) => !item.active);
 
   const renderActivity = (activity: (typeof activeActivities)[number]) => {
     const activitySchedules = schedulesByActivity.get(activity.id) ?? [];
-    const firstSchedules = activitySchedules.slice(0, 3);
+    const firstSchedules = activitySchedules;
 
     return (
       <Link
@@ -75,23 +79,14 @@ export default async function ActivitiesPage() {
         key={activity.id}
       >
         <span
-          className="activities-v2-card-icon"
-          style={{
-            background: `${activity.color_hex ?? "#17A878"}18`,
-            color: activity.color_hex ?? "#17A878",
-          }}
-        >
-          <ActivityIcon />
-        </span>
+          className="portal-activity-dot"
+          style={{ background: activity.color_hex ?? "var(--green)" }}
+          aria-hidden="true"
+        />
 
         <span className="activities-v2-card-main">
           <span className="activities-v2-card-title">
             <strong>{activity.name}</strong>
-            <small>{activity.active ? "Activa" : "Inactiva"}</small>
-          </span>
-
-          <span className="activities-v2-card-description">
-            {activity.description || "Sin descripción."}
           </span>
 
           <span className="activities-v2-schedule-row">
@@ -104,17 +99,23 @@ export default async function ActivitiesPage() {
             ) : (
               <span>Sin horarios activos</span>
             )}
-            {activitySchedules.length > 3 ? <span>+{activitySchedules.length - 3}</span> : null}
           </span>
 
           <span className="activities-v2-card-meta">
-            <span>{activity.duration_minutes} min</span>
-            <span>{activity.capacity} lugares</span>
+            <span>
+              {activity.duration_minutes} min · {activity.capacity} lugares
+            </span>
+            {activitySchedules[0]?.instructor_id ? (
+              <span>{coachNames.get(activitySchedules[0].instructor_id) ?? "Coach"}</span>
+            ) : null}
+            {activity.minimum_reservations_enabled ? (
+              <span>Mínimo {activity.minimum_reservations}</span>
+            ) : null}
             {activity.requires_resource ? <span>Usa recurso</span> : null}
             <span>
               {activity.drop_in_price_minor != null
-                ? `${formatMoney(activity.drop_in_price_minor, studio.locale, studio.currency)} individual`
-                : "Solo paquete/créditos"}
+                ? `${formatMoney(activity.drop_in_price_minor, studio.locale, studio.currency)}`
+                : "Solo paquete"}
             </span>
           </span>
         </span>
@@ -127,11 +128,11 @@ export default async function ActivitiesPage() {
   };
 
   return (
-    <main className="activities-v2 activities-page">
+    <main className="portal-page activities-v2 activities-page">
       <header className="activities-v2-header">
         <div>
           <h1>Actividades</h1>
-          <p>Define qué clases, cursos o sesiones ofrece el estudio y cuándo suceden.</p>
+          <p>Qué clases ofrece el estudio y cuándo suceden.</p>
         </div>
         {canEdit ? (
           <Link className="activities-v2-primary" href="/admin/actividades/nueva">
@@ -140,34 +141,23 @@ export default async function ActivitiesPage() {
         ) : null}
       </header>
 
-      <section className="activities-v2-section">
-        <div className="activities-v2-section-heading">
-          <div>
-            <h2>Activas</h2>
-            <p>Las que actualmente pueden generar sesiones y reservas.</p>
-          </div>
-          <span>{activeActivities.length}</span>
-        </div>
-
-        {activeActivities.length ? (
-          <div className="activities-v2-list">{activeActivities.map(renderActivity)}</div>
-        ) : (
-          <div className="activities-v2-empty">
-            <strong>Aún no hay actividades activas</strong>
-            <p>Crea una para comenzar a generar sesiones en la Agenda.</p>
-          </div>
-        )}
+      <nav className="portal-segmented" aria-label="Estado de actividades">
+        <Link href="/admin/actividades" aria-current={!inactive ? "page" : undefined}>
+          Activas · {activeActivities.length}
+        </Link>
+        <Link
+          href="/admin/actividades?status=inactive"
+          aria-current={inactive ? "page" : undefined}
+        >
+          Inactivas · {inactiveActivities.length}
+        </Link>
+      </nav>
+      <section className="portal-activity-list">
+        {(inactive ? inactiveActivities : activeActivities).map(renderActivity)}
+        {!(inactive ? inactiveActivities : activeActivities).length ? (
+          <p className="portal-empty">No hay actividades {inactive ? "inactivas" : "activas"}.</p>
+        ) : null}
       </section>
-
-      {inactiveActivities.length ? (
-        <details className="activities-v2-inactive">
-          <summary>
-            <span>Inactivas</span>
-            <span>{inactiveActivities.length}</span>
-          </summary>
-          <div className="activities-v2-list">{inactiveActivities.map(renderActivity)}</div>
-        </details>
-      ) : null}
     </main>
   );
 }

@@ -94,7 +94,7 @@ export default async function IntegrationsPage() {
   const whatsappActive = Boolean(whatsappProvider?.enabled);
 
   return (
-    <main className="integrations-v2">
+    <main className="portal-page integrations-v2">
       <header className="integrations-v2-header">
         <div>
           <Link className="integrations-v2-back" href="/admin/mas">
@@ -105,6 +105,15 @@ export default async function IntegrationsPage() {
         </div>
       </header>
 
+      <IntegrationCard
+        mark="✉"
+        name="Correo"
+        description="Resend, SendGrid o Amazon SES"
+        detail="Remitente verificado y correo de prueba"
+        status="Configurar"
+        tone="available"
+        href="/admin/integraciones/correo"
+      />
       <section className="integrations-v2-section">
         <div className="integrations-v2-section-heading">
           <div>

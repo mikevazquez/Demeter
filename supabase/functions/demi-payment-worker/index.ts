@@ -229,6 +229,7 @@ Deno.serve(async (request: Request) => {
             .from("assistant_configs")
             .select("mode")
             .eq("studio_id", studio)
+            .eq("assistant_key", "demi")
             .single();
           if (mode.error) throw new Error("assistant_mode_unavailable");
           let endpoint: string;

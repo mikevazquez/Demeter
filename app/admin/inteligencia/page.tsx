@@ -1,11 +1,13 @@
 import Link from "next/link";
+import { createStudioExpense, deleteStudioExpense } from "./actions";
+import DisciplineFilter from "./DisciplineFilter";
 import { readIntelligenceRows, readIntelligenceSessions } from "@/lib/intelligence-query";
 import { TrendChart, SortableTable } from "@/components/intelligence/charts";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-type ViewKey = "resumen" | "dinero" | "alumnas" | "conversion" | "clases" | "asistencia";
+type ViewKey = "resumen" | "dinero" | "alumnas" | "conversion" | "clases" | "asistencia" | "gastos";
 
 type Tone = "neutral" | "positive" | "warning" | "danger" | "info";
 
@@ -101,6 +103,7 @@ const views: { key: ViewKey; label: string }[] = [
   { key: "asistencia", label: "Asistencia" },
   { key: "clases", label: "Clases" },
   { key: "dinero", label: "Pagos" },
+  { key: "gastos", label: "Gastos" },
   { key: "conversion", label: "Conversión" },
   { key: "alumnas", label: "Retención" },
 ];
@@ -125,6 +128,7 @@ function clampDays(value: string | undefined) {
 }
 
 function validView(value: string | undefined): ViewKey {
+  if (value === "finanzas") return "gastos";
   if (value === "pagos") return "dinero";
   if (value === "retencion") return "alumnas";
   return views.some((item) => item.key === value) ? (value as ViewKey) : "resumen";
@@ -187,13 +191,13 @@ function isBetween(value: string, start: Date, end: Date) {
 function MetricCard({
   label,
   value,
-  delta,
+  delta = "",
   href,
   tone = "neutral",
 }: {
   label: string;
   value: string;
-  delta: string;
+  delta?: string;
   tone?: Tone;
   href?: string;
 }) {
@@ -300,6 +304,7 @@ function periodHref(view: ViewKey, days: number) {
 function titleFor(view: ViewKey) {
   const map: Record<ViewKey, [string, string]> = {
     resumen: ["Resumen del estudio", "Lo importante del estudio y lo que necesita tu atención."],
+    gastos: ["Gastos", "Cobros netos menos gastos del periodo."],
     dinero: ["Pagos", "Cobros, ventas y saldos pendientes del periodo."],
     alumnas: ["Retención", "Actividad, renovación y alumnas que requieren seguimiento."],
     conversion: ["Conversión", "Del primer contacto y la clase de prueba hasta la compra."],
@@ -312,7 +317,13 @@ function titleFor(view: ViewKey) {
 export default async function IntelligencePage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; days?: string; discipline?: string }>;
+  searchParams: Promise<{
+    view?: string;
+    days?: string;
+    discipline?: string;
+    error?: string;
+    created?: string;
+  }>;
 }) {
   const [params, { supabase, studio }] = await Promise.all([
     searchParams,
@@ -332,10 +343,11 @@ export default async function IntelligencePage({
   const todayDate = isoDateKey(now, timeZone);
 
   const needsStudents = view !== "clases";
-  const needsAcquisitions = view === "resumen" || view === "alumnas" || view === "dinero";
-  const needsSales = view === "resumen" || view === "dinero";
-  const needsPayments = view === "resumen" || view === "dinero";
-  const needsSaleLines = view === "resumen" || view === "dinero";
+  const needsAcquisitions =
+    view === "resumen" || view === "alumnas" || view === "dinero" || view === "gastos";
+  const needsSales = view === "resumen" || view === "dinero" || view === "gastos";
+  const needsPayments = view === "resumen" || view === "dinero" || view === "gastos";
+  const needsSaleLines = view === "resumen" || view === "dinero" || view === "gastos";
   const needsSessions =
     view === "resumen" || view === "alumnas" || view === "clases" || view === "asistencia";
   const needsTemplates = true;
@@ -479,7 +491,8 @@ export default async function IntelligencePage({
     ? params.discipline!
     : "";
   const sessions = allSessions.filter(
-    (item) => view === "alumnas" || !discipline || item.template_id === discipline,
+    (item) =>
+      !["asistencia", "clases"].includes(view) || !discipline || item.template_id === discipline,
   );
   const templates = (templatesResult.data ?? []) as ClassTemplateRow[];
   const productTemplates = (productTemplatesResult.data ?? []) as ProductTemplateRow[];
@@ -523,7 +536,7 @@ export default async function IntelligencePage({
   ].some((result) => "error" in result && result.error);
   if (failedSources)
     return (
-      <main className="intel-page">
+      <main className="portal-page intel-page">
         <h1>Inteligencia</h1>
         <p role="alert">
           No pudimos consultar todos los datos del estudio. Intenta de nuevo para ver métricas
@@ -562,11 +575,14 @@ export default async function IntelligencePage({
     isBetween(item.created_at, previousStart, currentStart),
   );
 
+  const validSaleIds = new Set(sales.filter((s) => s.status !== "voided").map((s) => s.id));
   function netPayments(rows: PaymentRow[]) {
-    return rows.reduce(
-      (sum, item) => sum + (item.kind === "refund" ? -item.amount_minor : item.amount_minor),
-      0,
-    );
+    return rows
+      .filter((p) => validSaleIds.has(p.sale_id))
+      .reduce(
+        (sum, item) => sum + (item.kind === "refund" ? -item.amount_minor : item.amount_minor),
+        0,
+      );
   }
 
   const currentRevenue = netPayments(currentPayments);
@@ -1083,18 +1099,50 @@ export default async function IntelligencePage({
     )
       continue;
     const existing = firstPackageByStudent.get(row.student_id);
-    if (!existing || row.created_at < existing.created_at)
+    if (
+      !existing ||
+      (row.starts_on ?? row.created_at.slice(0, 10)) <
+        (existing.starts_on ?? existing.created_at.slice(0, 10))
+    )
       firstPackageByStudent.set(row.student_id, row);
   }
-  const newPackages = [...firstPackageByStudent.values()].filter((row) =>
-    isBetween(row.created_at, currentStart, currentEnd),
+  const newPackages = [...firstPackageByStudent.values()].filter(
+    (row) =>
+      (row.starts_on ?? row.created_at.slice(0, 10)) >= currentStartDate &&
+      (row.starts_on ?? row.created_at.slice(0, 10)) <= todayDate,
   ).length;
   const hrefFor = (target: ViewKey) =>
     viewHref(target, days) + (discipline ? "&discipline=" + encodeURIComponent(discipline) : "");
-  const [pageTitle, pageDescription] = titleFor(view);
+  const [pageTitle, pageDescription] =
+    view === "gastos" ? ["Gastos", "Cobros netos menos gastos del periodo."] : titleFor(view);
+
+  const expensesResult = await supabase
+    .from("studio_expenses")
+    .select("id,category,description,amount_minor,effective_on,marketing_source")
+    .eq("studio_id", studio.id)
+    .gte("effective_on", previousStartDate)
+    .lte("effective_on", todayDate)
+    .order("effective_on", { ascending: false });
+  if (expensesResult.error) throw new Error("expenses_unavailable");
+  const expenseRows = expensesResult.data ?? [];
+  const currentExpenses = expenseRows.filter((e) => e.effective_on >= currentStartDate);
+  const expenseTotal = currentExpenses.reduce((n, e) => n + e.amount_minor, 0);
+  const profit = currentRevenue - expenseTotal;
+  const expenseCategories = {
+    rent: "Renta",
+    payroll: "Nómina",
+    utilities: "Servicios",
+    advertising: "Publicidad",
+    maintenance: "Mantenimiento",
+    software: "Software",
+    supplies: "Insumos",
+    fees: "Comisiones",
+    taxes: "Impuestos",
+    other: "Otro",
+  };
 
   return (
-    <main className="intel-page">
+    <main className="portal-page intel-page">
       <header className="intel-header">
         <div>
           <p className="intel-kicker">INTELIGENCIA</p>
@@ -1137,18 +1185,12 @@ export default async function IntelligencePage({
       <form className="intel-filters" action="/admin/inteligencia">
         <input type="hidden" name="view" value={view} />
         <input type="hidden" name="days" value={days} />
-        <label htmlFor="intel-discipline">Disciplina</label>
-        <select id="intel-discipline" name="discipline" defaultValue={discipline}>
-          <option value="">Todas</option>
-          {templates.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-        <button type="submit" className="intel-toggle">
-          Aplicar
-        </button>
+        {view === "asistencia" || view === "clases" ? (
+          <DisciplineFilter
+            value={discipline}
+            options={templates.map((t) => ({ id: t.id, name: t.name }))}
+          />
+        ) : null}
         <span>
           {new Intl.DateTimeFormat(locale, { timeZone, day: "numeric", month: "short" }).format(
             currentStart,
@@ -1162,16 +1204,124 @@ export default async function IntelligencePage({
           }).format(currentEnd)}
         </span>
       </form>
-      {view === "dinero" || view === "alumnas" || view === "conversion" ? (
-        <p className="intel-source-note">
-          El filtro de disciplina se aplica a asistencia y clases. Los pagos, la retención y la
-          conversión muestran el total del estudio.
-        </p>
+      {params.error ? (
+        <div className="notice error">
+          No pudimos guardar el gasto. Revisa el importe, la fecha y la descripción.
+        </div>
       ) : null}
-
+      {params.created ? <div className="notice success">Gastos actualizados.</div> : null}
+      {view === "gastos" ? (
+        <>
+          <section className="intel-kpi-grid">
+            <MetricCard
+              label="Cobros netos"
+              value={money(currentRevenue, studio.currency, locale)}
+            />
+            <MetricCard label="Gastos" value={money(expenseTotal, studio.currency, locale)} />
+            <MetricCard
+              label="Utilidad"
+              value={money(profit, studio.currency, locale)}
+              tone={profit >= 0 ? "positive" : "danger"}
+            />
+            <MetricCard
+              label="Margen"
+              value={pct(currentRevenue > 0 ? (profit / currentRevenue) * 100 : 0, locale)}
+            />
+          </section>
+          <details className="card">
+            <summary>+ Registrar gasto</summary>
+            <form action={createStudioExpense} className="portal-calendar-form">
+              <input type="hidden" name="days" value={days} />
+              <label>
+                Descripción
+                <input
+                  name="description"
+                  required
+                  maxLength={240}
+                  placeholder="Ej. Renta de octubre"
+                />
+              </label>
+              <div className="portal-session-fields">
+                <label>
+                  Importe
+                  <input type="number" name="amount" required min="0.01" step="0.01" />
+                </label>
+                <label>
+                  Fecha
+                  <input
+                    type="date"
+                    name="effective_on"
+                    defaultValue={todayDate}
+                    max={todayDate}
+                    required
+                  />
+                </label>
+              </div>
+              <label>
+                Categoría
+                <select name="category">
+                  {Object.entries(expenseCategories).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Origen de publicidad
+                <input name="marketing_source" placeholder="Instagram, Google, Recomendación…" />
+              </label>
+              <label>
+                Campaña
+                <input name="marketing_campaign" />
+              </label>
+              <label>
+                Nota
+                <textarea name="notes" rows={2} />
+              </label>
+              <button className="primary-button">Guardar gasto</button>
+            </form>
+          </details>
+          <section className="card">
+            <h2>Gastos del periodo</h2>
+            {currentExpenses.map((e) => (
+              <div className="portal-expense-row" key={e.id}>
+                <span>
+                  <strong>{e.description}</strong>
+                  <small>
+                    {e.effective_on} ·{" "}
+                    {expenseCategories[e.category as keyof typeof expenseCategories]}
+                    {e.marketing_source ? ` · ${e.marketing_source}` : ""}
+                  </small>
+                </span>
+                <b>{money(e.amount_minor, studio.currency, locale)}</b>
+                <details>
+                  <summary aria-label={`Eliminar gasto ${e.description}`}>⋯</summary>
+                  <form action={deleteStudioExpense}>
+                    <input type="hidden" name="expense_id" value={e.id} />
+                    <input type="hidden" name="days" value={days} />
+                    <p>¿Eliminar este gasto?</p>
+                    <button className="ghost-button">Confirmar eliminación</button>
+                  </form>
+                </details>
+              </div>
+            ))}
+            {!currentExpenses.length ? (
+              <p className="portal-empty">Todavía no hay gastos en este periodo.</p>
+            ) : null}
+          </section>
+        </>
+      ) : null}
       {view === "resumen" ? (
         <>
           <section className="intel-kpi-grid">
+            <MetricCard
+              label="Utilidad"
+              href={hrefFor("gastos")}
+              value={money(profit, studio.currency, locale)}
+              delta={`Margen ${pct(currentRevenue > 0 ? (profit / currentRevenue) * 100 : 0, locale)}`}
+              tone={profit >= 0 ? "positive" : "danger"}
+            />
             <MetricCard
               label="Ingresos cobrados"
               href={hrefFor("dinero")}

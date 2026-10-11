@@ -1,0 +1,136 @@
+# Portal completo · control de alcance
+
+Solicitud: todo el portal de administración, bloques A–F. Fuente visual: StudioFlow Panel.html. Sandbox únicamente; sin integrar en main.
+
+## Estado de esta implementación
+
+- A: base entregada; Hoy se conecta al catálogo completo de fechas.
+- Base visual: 71 pantallas conectadas a tokens de StudioFlow; revisión de detalle en curso.
+- B: edición transaccional, créditos y precio por sesión, reabrir, liberar lugares y catálogo de periodos implementados; validación y mejoras visuales en curso.
+- C: tablero CRM, origen, documentos en perfil y ajustes de paquetes implementados; venta y ciclo de vida continúan en revisión.
+- D–F: Comunicación unificada, versiones de evaluaciones, documentos, retos automáticos, permisos de gastos, equipo, asistentes independientes, correo y uso del plan implementados; continúan la revisión visual y las reglas pendientes.
+
+## Decisiones abiertas
+
+Se mantiene el comportamiento actual de las 21 decisiones del Anexo A hasta que el usuario indique otra regla. Elecciones 2027: fecha contrastada con el [calendario del INE](https://www.ine.mx/voto-y-elecciones/elecciones-2027/), revisión 11 de octubre de 2026.
+
+## Reglas por comprobar
+
+- [ ] Permisos de Administración — Administración = Owner salvo "Plan y suscripción"
+- [ ] Permisos de Recepción — Opera Hoy completo: pasar lista, kiosco, agregar/cancelar reservas, walk-in, ventas; en Más ve Actividades y Paquetes (lectura); no ve Documentos
+- [ ] Coach en el panel — Nav "Mis clases", "Agenda" (solo sus clases), "Más"; lista y asistencia inline en Mis clases; sin agregar alumnas ni cancelar reservas
+- [ ] Ventana para pasar lista — Desde 20 min antes del inicio hasta que se cierre la lista; tras cerrar, corrección con motivo
+- [ ] Cierre de lista — Cierre manual "Cerrar lista" con confirmación; chip "Sin pasar lista" mientras no se cierre
+- [ ] Cobro al marcar asistencia — Cualquier clase suelta/prueba con pago pendiente: monto editable, método, referencia; genera venta
+- [ ] Walk-in persona nueva — Elige "Clase de prueba · $150" o "Clase suelta · $precio" y pago (o "Paga después" = cobro pendiente); crea prospecto con origen "Visita al estudio"; bloquea teléfono duplicado
+- [ ] Alumna sin paquete al agregar — Muestra el motivo y la persona elige "Cobrar clase suelta · $X" (reserva con cobro pendiente) o "Vender paquete"
+- [ ] Agregar alumnas a clase finalizada — No hay botones de agregar cuando la clase terminó
+- [ ] Corte de cancelación — Usa `studio_operating_policies.cancellation_cutoff_minutes` y `late_cancellation_consumes_credit`; el texto de la hoja usa ese valor
+- [ ] Motivo/autor/fecha de cancelación de sesión — Se guarda y muestra motivo, quién ("Owner", "Automático") y cuándo
+- [ ] Ventana de check-in — Desde 20 min antes hasta 30 min después del inicio
+- [ ] Check-in con pago pendiente — Responde "tienes un pago pendiente" y no marca
+- [ ] Salir del kiosco — PIN de 4 dígitos configurable
+- [x] Créditos por reserva por sesión — Se puede cambiar en una sesión suelta (1–4). Reservas existentes conservan `credits_held`; aplica a nuevas
+- [x] Precio de clase suelta por sesión — Editable por sesión; vacío = solo con paquete. Si la sesión tiene precio, se habilita la venta suelta aunque la actividad no la tenga
+- [x] Duración por sesión — Duración editable por sesión (15–360)
+- [ ] Motivo, quién y cuándo de la cancelación manual — Motivo obligatorio del catálogo, `cancelled_at`, `cancelled_by`, origen (`manual
+- [ ] Aviso a alumnas al cancelar — Elegir destinatarias, mensaje editable, omite bloqueadas; Polina (alumnas) / Demi (prospectos); queda en historial
+- [x] Reabrir clase cancelada — "Reabrir clase" vuelve a `scheduled`, marca excepción; las reservas canceladas no se restauran
+- [ ] Cupo no menor que reservas — Bloquea con "Ya hay {n} reservas; el cupo no puede ser menor"
+- [ ] Desactivar recurso o bajar usos con alumnas asignadas — Libera las sobrantes (`released_at`) y avisa "quedaron sin lugar; reasígnalas"
+- [ ] Usos por recurso — UI por recurso (1–3 alumnas)
+- [ ] Quitar lugar a una alumna — "Quitar lugar" deja la reserva sin recurso
+- [ ] Asignar lugar desde la lista — Chip en cada fila → hoja con mapa clicable
+- [ ] Permiso Recepción en recursos/mapa — Recepción no ve "Recursos"; Coach no edita sesiones ("Los cambios de horario los hace administración.")
+- [x] Filtro por coach en Agenda — Select de coach; Coach ve solo sus clases
+- [ ] Estado de la persona — Alumna = tiene inscripción anual vigente; Exalumna = inscripción vencida; Prueba = tiene clase de prueba sin inscripción; Prospecto = sin prueba. Inactivar NO convierte en Exalumna: oculta del tablero.
+- [ ] Sub-etapas con prioridad — 11 etapas exclusivas; dentro de Alumna, "Pago pendiente" gana sobre Por vencer/Activa (saldo, comprobante pendiente o reserva con cobro pendiente).
+- [ ] Por vencer — Vence en ≤ 7 días **o** le queda ≤ 1 clase.
+- [ ] Prospecto antes de expediente — Alta crea expediente que nace como Prospecto · Primer contacto, captura "¿Cómo nos conoció?" y ofrece vender paquete / reservar prueba / terminar. Mismo perfil 360 para todos los estados.
+- [ ] Saldo (`balanceOf`) — Excluye ventas anuladas y ventas con transferencia pendiente de validar (esas se muestran como "Por validar").
+- [x] Ajuste de créditos — Se captura un **delta** (+/−) con motivo; queda como fila "Ajuste" en el historial del paquete con quién; no puede quedar negativo.
+- [x] Cambio de inicio de paquete — Ventana de ±7 días; la vigencia completa se recorre; rechaza si alguna reserva queda fuera; motivo obligatorio; aplica también a paquetes no actuales (botón en cada paquete).
+- [ ] Penalizaciones — Botones "Cobrar" (crea venta "Penalización por no show/cancelación tardía" pagada) y "Condonar" (motivo obligatorio).
+- [x] Documentos desde el perfil — "Registrar" aceptación presencial/externa desde el perfil con firmante y tutor; invalidar con motivo y bloqueo inmediato si el documento bloquea reservas.
+- [ ] Inactivar — Motivo obligatorio; las reservas futuras **se conservan** hasta que se cancelen; no recibe mensajes automáticos; no puede reservar.
+- [ ] Permisos de inactivar/acceso — Inactivar/reactivar visible para Recepción; eliminar solo Owner/Administración; acceso a la app visible en el perfil sin restricción de rol.
+- [ ] Eliminar — Además exige escribir "ELIMINAR".
+- [ ] Preferencias de comunicación — Motivo obligatorio cuando hay cambios; últimos cambios con rol visibles.
+- [ ] Evaluación: programar desde admin — Admin puede "Programar": elige sesión y se le reserva con crédito de su paquete.
+- [ ] Medallas: canjear desde perfil — Botón "Canjear" en el perfil.
+- [ ] Transferencia rechazada — Motivo de lista obligatorio; paquete queda bloqueado; pago posterior lo desbloquea.
+- [ ] Inicio de vigencia — "Hoy" / "Al terminar el actual" (por defecto si tiene un paquete vigente) / "Otra fecha". `first_usage` no aparece
+- [ ] Pago de la inscripción dentro de la venta — La inscripción se suma al total y puede quedar como saldo (parcial o $0 bloqueado)
+- [ ] Venta de suelta e inscripción desde el mismo wizard — El paso 2 lista también "Clase suelta" e "Inscripción"
+- [ ] Alumnas que se pueden elegir — Todas las que no están archivadas, incluidos prospectos (el CRM pasa a Alumna al pagar la inscripción)
+- [ ] Reembolso de una línea — Reembolso parcial sin cancelar. Interruptor opcional "Bloquear el paquete" (apagado por defecto)
+- [ ] Anulación — Igual: exige reembolsar primero y bloquea el paquete
+- [ ] Pago de saldo — Hoja con "Fecha real del pago" (hoy a −7 días) y desbloqueo automático del paquete
+- [ ] Créditos por reserva — Selector "Créditos por reserva" 1–4 en el paso Precio
+- [ ] Activar o desactivar una actividad — Botón en Revisar. Al desactivar se borran las sesiones futuras sin reservas
+- [ ] Corte de cancelación — Selector de 1 a 24 h
+- [ ] Interruptor de penalizaciones en ilimitados — "Penalizaciones en ilimitados" on/off
+- [ ] Inscripción: cobrar vs. obligatoria — Dos interruptores: "Cobrar inscripción" y "Obligatoria para reservar"
+- [ ] Inscripción vitalicia — Interruptor de política "Inscripción vitalicia"
+- [ ] Permiso para editar políticas — Owner y Administración (`can("config")`)
+- [ ] Permiso de catálogo para Recepción — El prototipo no oculta Actividades ni Paquetes a Recepción, aunque define `can("catalog")`=Owner/Admin
+- [ ] Cobro de penalización — "Cobrar" genera una venta pagada en Efectivo. "Condonar" pide motivo
+- [ ] Membresía vitalicia — Interruptor "Vitalicia" (36500 días en la demo)
+- [ ] Catálogo de fechas — Todas las fechas conmemorativas: oficiales, cívicas, religiosas, tradiciones, con tipo, ícono y colores propios
+- [ ] Periodos de varios días — Semana Santa, Pascua, Posadas, Temporada navideña, Muertos y fechas propias de N días; decisión día por día con presets
+- [x] Estado "Por decidir" — Sin decisión = "Por decidir"; StudioFlow solo sugiere; la alumna no ve nada hasta que se decide
+- [ ] Sugerencia por defecto — Oficiales y Jueves/Viernes Santo sugieren "Cerrado"; el resto "Abierto"; no se aplica sin guardar
+- [ ] Motivo de cancelación — "Día festivo · {día}", "{Periodo} · {día}" o "Cierre del estudio · {nombre}"
+- [ ] Permiso — Owner y Administración (`can("config")`); Recepción/Coach: toast "Solo administración configura días festivos"
+- [ ] Cambiar decisión — Igual: reabre (marcadas como excepción); reservas y créditos no se restauran
+- [ ] Créditos — Igual (`refund` por reserva)
+- [x] Elecciones — Jornada electoral federal 6 jun 2027 como oficial (fracción IX)
+- [ ] Notificación — Mensaje temático por WhatsApp a quien tenía reserva cancelada, respeta bloqueo de mensajes; automatización esencial
+- [ ] Utilidad, margen y costo por alumna nueva — Utilidad = cobros netos − gastos del periodo; Margen = utilidad / cobros netos; Costo por alumna = inversión publicitaria del origen / alumnas nuevas del origen
+- [ ] Visibilidad de Utilidad — Tile y pestaña de gastos solo Owner y Administración
+- [ ] Permiso para registrar/borrar gastos — Solo quien ve Inteligencia (Owner/Administración)
+- [ ] Cobros netos — Igual, excluyendo pagos de ventas anuladas
+- [ ] Alumnas "Nuevas" — Primer paquete por **fecha de inicio** en el periodo
+- [ ] Filtro de disciplina — Solo visible y aplicado en Asistencia y Clases; cambio inmediato
+- [x] Roles del equipo — Integrante con rol Coach, Recepción o Administración, y opción "También imparte clases"
+- [x] Inactivar integrante — Obliga a elegir quién cubre las clases futuras; reasigna sesiones y coach por defecto; desactiva acceso
+- [x] Reactivar — Reactiva perfil, acceso queda "Sin acceso"
+- [ ] Gestionar acceso — `can("config")` = Owner/Administración
+- [ ] Una sola sección — Una lista de 29 automatizaciones; cada una tiene un solo estado Activa/Pausada y sus canales
+- [ ] Fusión de procesos — Un solo "Cambio de horario o coach"
+- [ ] Procesos que el prototipo no muestra — No aparecen
+- [ ] Esenciales — Esenciales: mínimo alumnas, mínimo coach, festivo, restablecer contraseña; sin botón de pausa
+- [ ] Clasificación de vencido — "Paquete vencido reciente" es comercial, N días después (default 3), dentro de "Ciclo del paquete"
+- [ ] Bloqueo de la alumna — "Bloquear todos los mensajes" suprime el envío completo (estado "No se envió", motivo "La alumna bloqueó todos los mensajes")
+- [ ] Inbox obligatorio — Inbox siempre activo y no se puede apagar
+- [ ] Canales globales — Preferencias solo muestra estado (Listo/Pendiente); la conexión se hace en Integraciones
+- [ ] Límite comercial — Selector 1–5 en 7 días, aplica a automatizaciones comerciales y campañas
+- [ ] Campañas manuales — Envío inmediato (solo dentro de la ventana) o programado; excluye quien no acepta promociones o bloqueó
+- [ ] Cumpleaños — Automatización programada diaria, comercial, pausada por defecto
+- [ ] Plantilla en revisión — Editar el texto de WhatsApp lo manda a revisión; WhatsApp no se puede activar si la plantilla no está "Aprobada"
+- [ ] Cancelación manual de clase — La hoja "Cancelar clase" permite desmarcar a quién avisar y editar el mensaje, pero `logSend` registra a todas con el texto estándar
+- [ ] Alcance de una excepción temporal — La excepción solo exime bloqueos de documentos ("Puede reservar aunque le falten documentos"). Una restricción activa siempre bloquea
+- [ ] Vigencia de excepción — Presets +1/+3/+7/+14 días, motivo obligatorio
+- [ ] Restricción — Sin código ni vencimiento visibles: alumna, acción, título y detalle; se resuelve a mano
+- [ ] Cancelar publicación programada — "Cancelar programación" regresa la versión a borrador
+- [ ] Permisos de Recepción en Documentos — Recepción no ve la sección (solo registra aceptaciones desde el perfil)
+- [ ] Un solo editor de evaluaciones — Solo el editor de 5 pasos. Se elimina `v2/[id]` y `v2-actions.ts` como editor
+- [ ] Versionado por nivel — Vigente sin uso → editar en sitio; vigente usada → "Crear versión N+1"; al publicar la anterior pasa a retirada (`archived`); resumen de cambios por versión
+- [ ] Activar nivel sin versión — No se puede activar un nivel sin versión publicada; publicar lo activa
+- [ ] Diagnóstico inicial — Nivel "Diagnóstico inicial" con plantilla propia: figuras etiquetadas por nivel; el nivel asignado es el más alto con todas sus figuras "Cumple" de forma consecutiva (mínimo Principiante). Siempre "Nivel asignado"
+- [ ] Catálogo de niveles — 4 técnicos + Diagnóstico ("X de 5 niveles configurados")
+- [ ] Captura de resultado — Cumple / No cumple / No evaluado; puntaje por criterio = % de "Cumple" sobre lo calificado ("No evaluado" cuenta como no logrado); global ponderado; aprueba si global ≥ aprobación, cada criterio ≥ "Mínimo por criterio" y ninguna obligatoria "No cumple". No hay override
+- [ ] Finalizar con faltantes — "Finalizar parte técnica" deshabilitado hasta capturar todo
+- [ ] Programar evaluación desde admin — Admin elige sesión (10 días) y la reserva por ella; si no tenía reserva, consume crédito
+- [ ] Evaluar sin invitación — "Evaluar" desde la lista inicia directo con el siguiente nivel
+- [ ] Ubicación de Retos — Solo existe la pestaña "Retos" dentro de Recompensas
+- [ ] Ajuste excepcional de recompensa — Cambia la **vigencia** (+7/+14/+30) con motivo obligatorio y auditado. Una "Vencida" con vigencia nueva vuelve a estar disponible. No aplica a "Utilizada"
+- [ ] Participación en retos de competencia — "Participación automática" para todos los retos
+- [ ] Recompensas al finalizar un reto — El prototipo genera recompensas al pulsar "Finalizar reto ahora" (para Top N o para las que cumplieron)
+- [ ] Guardar un reto — Un botón guarda y deja el reto "activo" (inicio ≤ hoy) o "programado"
+- [ ] Permisos de Configuración e Integraciones — `can("config")` = Owner y Administración. `plan` = solo Owner
+- [ ] Campos personalizados del expediente — Agregar y quitar desde Configuración. Al quitar, "los datos capturados se conservan"
+- [ ] Venta en línea por producto — Casilla por producto en Mercado Pago
+- [ ] Proveedor de correo — Conectar Resend/SendGrid/SES. Sin proveedor, Email queda bloqueado en Comunicación
+- [ ] Polina — Dos asistentes: Demi (prospectos) y Polina (alumnas), cada uno con instrucciones, versiones, handoff, aprendizajes y consumo propios
+- [ ] Límite de alumnas del plan — "Alumnas activas N / límite"

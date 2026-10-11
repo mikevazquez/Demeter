@@ -4,7 +4,11 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
 import "../integrations-v2.css";
-import { saveDemiAutomaticPayment, saveFirstClassPaymentLink } from "./actions";
+import {
+  saveDemiAutomaticPayment,
+  saveFirstClassPaymentLink,
+  setProductOnlineSaleAction,
+} from "./actions";
 
 function checkoutStatusLabel(status: string) {
   const labels: Record<string, string> = {
@@ -82,6 +86,12 @@ export default async function MercadoPagoIntegrationPage({
       .select("class_template_id,checkout_url,amount_minor,enabled")
       .eq("studio_id", studio.id),
   ]);
+  const { data: saleProducts } = await supabase
+    .from("product_templates")
+    .select("id,name,online_purchasable,price_minor")
+    .eq("studio_id", studio.id)
+    .eq("active", true)
+    .order("name");
   const money = (minor: number, currency: string) =>
     new Intl.NumberFormat(studio.locale, {
       style: "currency",
@@ -90,7 +100,7 @@ export default async function MercadoPagoIntegrationPage({
     }).format(minor / 100);
 
   return (
-    <main className="integration-detail-v2">
+    <main className="portal-page integration-detail-v2">
       <header className="integration-detail-v2-header">
         <div>
           <Link className="integration-detail-v2-back" href="/admin/integraciones">
@@ -271,6 +281,30 @@ export default async function MercadoPagoIntegrationPage({
         )}
       </section>
 
+      <section className="integration-detail-v2-card">
+        <h2>Productos disponibles en línea</h2>
+        <p>Solo los productos habilitados aparecen en el checkout de las alumnas.</p>
+        <div className="portal-form">
+          {(saleProducts ?? []).map((product) => (
+            <form
+              key={product.id}
+              action={setProductOnlineSaleAction}
+              className="portal-inline-form"
+            >
+              <input type="hidden" name="product_id" value={product.id} />
+              <label>
+                <input
+                  type="checkbox"
+                  name="online_purchasable"
+                  defaultChecked={product.online_purchasable}
+                />
+                {product.name} · {money(product.price_minor, studio.currency)}
+              </label>
+              <button className="portal-button">Guardar</button>
+            </form>
+          ))}
+        </div>
+      </section>
       <section className="integration-detail-v2-note">
         La conexión técnica con Mercado Pago se administra por Studio Flow. Esta pantalla muestra el
         uso de la integración dentro del estudio; no expone llaves ni credenciales.

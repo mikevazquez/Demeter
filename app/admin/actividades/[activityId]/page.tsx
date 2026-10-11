@@ -48,7 +48,8 @@ export default async function ActivityDetailPage({
       .from("instructors")
       .select("id,person_id,status")
       .eq("studio_id", studio.id)
-      .eq("status", "active"),
+      .eq("status", "active")
+      .eq("teaches", true),
     supabase.from("persons").select("id,first_name,last_name").eq("studio_id", studio.id),
     supabase
       .from("spaces")
@@ -104,7 +105,7 @@ export default async function ActivityDetailPage({
   };
 
   return (
-    <main className="activities-v2 activities-editor-page">
+    <main className="portal-page activities-v2 activities-editor-page">
       <header className="activities-v2-editor-header">
         <div>
           <Link className="activities-v2-back" href="/admin/actividades">

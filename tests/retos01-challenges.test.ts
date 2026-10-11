@@ -31,7 +31,7 @@ describe("RETOS-01", () => {
 
   it("keeps competitive configuration visible after the challenge is locked", () => {
     const form = read("app/admin/recompensas/RuleEditorForm.tsx");
-    const detail = read("app/admin/retos/[ruleId]/page.tsx");
+    const detail = read("app/admin/recompensas/retos/[ruleId]/page.tsx");
 
     expect(form).toContain("Objetivo / métrica");
     expect(form).toContain("Participantes");
@@ -39,7 +39,7 @@ describe("RETOS-01", () => {
     expect(form).toContain("Desempate");
     expect(form).toContain("Voluntaria · ranking solo para inscritas");
     expect(form).toContain("challengeMetricLabel(rankingMetric)");
-    expect(detail).toContain("reward_challenge_enrollments");
+    expect(detail).toContain("admin_reward_challenge_participant_count");
     expect(detail).toContain("enrollmentCount={enrollmentCount}");
   });
 
@@ -77,7 +77,7 @@ describe("RETOS-01", () => {
   });
 
   it("shows final competitive winners in admin detail", () => {
-    const detail = read("app/admin/retos/[ruleId]/page.tsx");
+    const detail = read("app/admin/recompensas/retos/[ruleId]/page.tsx");
 
     expect(detail).toContain("RESULTADO FINAL");
     expect(detail).toContain("🥇 Ganadora");

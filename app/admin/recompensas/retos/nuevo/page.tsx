@@ -3,13 +3,12 @@ import Link from "next/link";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-import { RewardsShell } from "../../RewardsNav";
 import { RuleEditorForm } from "../../RuleEditorForm";
 
 export default async function NewChallengePage() {
   await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
   return (
-    <RewardsShell>
+    <main className="portal-page dashboard-shell space-y-6 admin-ux04-secondary">
       <header>
         <Link
           href="/admin/recompensas/retos"
@@ -17,10 +16,13 @@ export default async function NewChallengePage() {
         >
           ← Retos
         </Link>
-        <p className="mt-4 eyebrow">CONSTRUCTOR DE RETO</p>
-        <h1 className="dashboard-title">Nuevo reto especial</h1>
+        <p className="mt-4 eyebrow">RETOS · CONFIGURACIÓN</p>
+        <h1 className="dashboard-title">Crear reto</h1>
+        <p className="mt-2 text-sm text-zinc-400">
+          Define objetivo, modalidad, participantes, recompensa y notificaciones antes de publicar.
+        </p>
       </header>
       <RuleEditorForm mode="challenge" canManage />
-    </RewardsShell>
+    </main>
   );
 }

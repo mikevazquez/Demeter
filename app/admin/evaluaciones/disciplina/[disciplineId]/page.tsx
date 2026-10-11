@@ -4,8 +4,7 @@ import { notFound } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-import { setEvaluationDisciplineLevelActive } from "../../actions";
-import { createEvaluationV2TemplateAction, openEvaluationV2EditorAction } from "../../v2-actions";
+import { createEvaluationTemplate, setEvaluationDisciplineLevelActive } from "../../actions";
 
 export default async function EvaluationDisciplinePage({
   params,
@@ -96,11 +95,12 @@ export default async function EvaluationDisciplinePage({
 
   const errorCopy: Record<string, string> = {
     level: "No pudimos actualizar el nivel.",
+    level_unpublished: "Publica una versión de la evaluación antes de activar el nivel.",
     template: "No pudimos abrir la configuración del nivel.",
   };
 
   return (
-    <main className="evaluations-page">
+    <main className="portal-page evaluations-page">
       <header className="eval-header">
         <div className="eval-header-copy">
           <Link className="back-link compact" href="/admin/evaluaciones">
@@ -159,7 +159,7 @@ export default async function EvaluationDisciplinePage({
 
                   <div className="eval-level-actions">
                     {!template ? (
-                      <form action={createEvaluationV2TemplateAction}>
+                      <form action={createEvaluationTemplate}>
                         <input type="hidden" name="discipline_id" value={discipline.id} />
                         <input type="hidden" name="discipline_level_id" value={link.id} />
                         <input
@@ -171,21 +171,13 @@ export default async function EvaluationDisciplinePage({
                           Configurar
                         </button>
                       </form>
-                    ) : version?.schema_version === 2 && version.status === "draft" && !used ? (
+                    ) : version ? (
                       <Link
                         className="eval-secondary-button"
-                        href={`/admin/evaluaciones/v2/${template.id}?step=apartados`}
+                        href={`/admin/evaluaciones/plantillas/${template.id}`}
                       >
-                        Editar
+                        {used ? "Ver rúbrica" : "Editar"}
                       </Link>
-                    ) : version ? (
-                      <form action={openEvaluationV2EditorAction}>
-                        <input type="hidden" name="template_id" value={template.id} />
-                        <input type="hidden" name="version_id" value={version.id} />
-                        <button className="eval-secondary-button" type="submit">
-                          Editar
-                        </button>
-                      </form>
                     ) : null}
 
                     <form action={setEvaluationDisciplineLevelActive}>
@@ -195,6 +187,12 @@ export default async function EvaluationDisciplinePage({
                       <button
                         className={link.active ? "eval-danger-button" : "eval-primary-button"}
                         type="submit"
+                        disabled={
+                          !link.active &&
+                          !(versionsResult.data ?? []).some(
+                            (v) => v.template_id === template?.id && v.status === "active",
+                          )
+                        }
                       >
                         {link.active ? "Desactivar" : "Activar"}
                       </button>

@@ -190,7 +190,7 @@ function revalidateRewards() {
     "/admin/recompensas/programas",
     "/admin/recompensas/logros",
     "/admin/recompensas/retos",
-    "/admin/retos",
+    "/admin/recompensas/retos",
     "/student/retos",
     "/admin/recompensas/seguimiento",
     "/admin/recompensas/generadas",
@@ -601,7 +601,7 @@ async function saveStandaloneRule(formData: FormData, familyOverride: "achieveme
     condition_family: family,
     challenge_mode: challengeMode,
     competition_mode: competitionMode,
-    enrollment_required: familyOverride === "challenge" && competitionMode === "leaderboard",
+    enrollment_required: false,
     ranking_metric: familyOverride === "challenge" ? rankingMetric : null,
     ranking_places: familyOverride === "challenge" && competitionMode === "leaderboard" ? 3 : null,
     tie_breaker:
@@ -698,12 +698,12 @@ export async function saveAchievementAction(formData: FormData) {
 
 export async function saveChallengeAction(formData: FormData) {
   const ruleId = textValue(formData, "rule_id");
-  const base = ruleId ? `/admin/retos/${ruleId}` : "/admin/retos/nuevo";
+  const base = ruleId ? `/admin/recompensas/retos/${ruleId}` : "/admin/recompensas/retos/nuevo";
   let successPath = base;
   try {
     const id = await saveStandaloneRule(formData, "challenge");
     revalidateRewards();
-    successPath = `/admin/retos/${id}?saved=rule`;
+    successPath = `/admin/recompensas/retos/${id}?saved=rule`;
   } catch (error) {
     redirect(rewardErrorUrl(base, error));
   }
@@ -715,7 +715,9 @@ export async function transitionStandaloneRuleAction(formData: FormData) {
   const isAchievement = textValue(formData, "kind") === "achievement";
   const kind = isAchievement ? "logros" : "retos";
   const action = textValue(formData, "action");
-  const path = isAchievement ? `/admin/recompensas/${kind}/${ruleId}` : `/admin/retos/${ruleId}`;
+  const path = isAchievement
+    ? `/admin/recompensas/${kind}/${ruleId}`
+    : `/admin/recompensas/retos/${ruleId}`;
   try {
     if (!ruleId || !["schedule", "activate", "finish", "cancel"].includes(action)) {
       throw new Error("reward_rule_transition_invalid");
@@ -755,7 +757,9 @@ export async function updateStandaloneCopyAction(formData: FormData) {
   const ruleId = textValue(formData, "rule_id");
   const isAchievement = textValue(formData, "kind") === "achievement";
   const kind = isAchievement ? "logros" : "retos";
-  const path = isAchievement ? `/admin/recompensas/${kind}/${ruleId}` : `/admin/retos/${ruleId}`;
+  const path = isAchievement
+    ? `/admin/recompensas/${kind}/${ruleId}`
+    : `/admin/recompensas/retos/${ruleId}`;
   try {
     const title = textValue(formData, "name");
     if (!ruleId || !title) throw new Error("reward_rule_title_required");
@@ -782,7 +786,8 @@ export async function adjustRewardAction(formData: FormData) {
   try {
     if (!rewardId || !reason) throw new Error("reward_adjustment_reason_required");
     const { supabase } = await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
-    const { error } = await supabase.rpc("admin_adjust_reward_instance", {
+    const { error } = await supabase.rpc("admin_extend_reward_instance", {
+      p_days: Number(formData.get("days")),
       p_reward_instance_id: rewardId,
       p_reason: reason,
     });

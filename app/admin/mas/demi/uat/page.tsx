@@ -20,7 +20,7 @@ export default async function DemiUatPage() {
     );
   }
   return (
-    <main className="uat-bank">
+    <main className="portal-page uat-bank">
       <Link href="/admin/mas/demi">← Demi 2.0</Link>
       <h1>Banco operativo de Demi</h1>
       <p>

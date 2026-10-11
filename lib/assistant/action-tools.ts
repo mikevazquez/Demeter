@@ -333,7 +333,9 @@ function safeBookingReason(reason: unknown) {
 async function getSessionSummary(ctx: AssistantActionToolContext, sessionId: string) {
   const { data: session, error: sessionError } = await ctx.supabase
     .from("class_sessions")
-    .select("id,template_id,starts_at,ends_at,status,requires_resource,location_id,space_id")
+    .select(
+      "id,template_id,starts_at,ends_at,status,requires_resource,location_id,space_id,credit_cost,drop_in_price_minor,drop_in_price_overridden",
+    )
     .eq("id", sessionId)
     .eq("studio_id", ctx.studio.id)
     .maybeSingle();
@@ -375,9 +377,10 @@ async function getSessionSummary(ctx: AssistantActionToolContext, sessionId: str
       date: start.date,
       starts_at_local: start.time,
       ends_at_local: end.time,
-      credit_cost: Math.max(Number(template?.credit_cost ?? 1), 1),
-      drop_in_price_minor:
-        template?.drop_in_price_minor == null ? null : Number(template.drop_in_price_minor),
+      credit_cost: Math.max(Number(session.credit_cost ?? template?.credit_cost ?? 1), 1),
+      drop_in_price_minor: session.drop_in_price_overridden
+        ? session.drop_in_price_minor
+        : (session.drop_in_price_minor ?? template?.drop_in_price_minor ?? null),
       currency: ctx.studio.currency,
       location: location?.name ?? null,
       space: space?.name ?? null,
@@ -4002,10 +4005,17 @@ async function escalateToHuman(ctx: AssistantActionToolContext, args: Record<str
   const note = String(args.note ?? "").trim() || null;
   if (!reasonCode) return { ok: false, error: "handoff_reason_required" };
 
+  const { data: assistantConversation } = await ctx.supabase
+    .from("assistant_conversations")
+    .select("assistant_key")
+    .eq("id", ctx.conversationId)
+    .eq("studio_id", ctx.studio.id)
+    .maybeSingle();
   const { data: policy, error: policyError } = await ctx.supabase
     .from("assistant_handoff_policies")
     .select("reason_code,label,enabled,blocking")
     .eq("studio_id", ctx.studio.id)
+    .eq("assistant_key", assistantConversation?.assistant_key ?? "demi")
     .eq("reason_code", reasonCode)
     .maybeSingle();
 

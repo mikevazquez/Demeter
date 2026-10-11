@@ -12,11 +12,13 @@ describe("RECURSOS-01 session space change guard", () => {
   const page = source("app/admin/agenda/[sessionId]/page.tsx");
 
   it("blocks changing space while active resource assignments exist", () => {
-    expect(actions).toContain("session.requires_resource");
-    expect(actions).toContain("spaceId !== session.space_id");
-    expect(actions).toContain('"reservation_resource_assignments"');
-    expect(actions).toContain('.is("released_at", null)');
-    expect(actions).toContain('"resource_space_assigned"');
+    expect(actions).toContain('rpc("admin_update_session"');
+    const migration = source(
+      "supabase/migrations/20261011072140_admin_portal_session_operations.sql",
+    );
+    expect(migration).toContain("reservation_resource_assignments");
+    expect(migration).toContain("released_at is null");
+    expect(migration).toContain("resource_space_assigned");
   });
 
   it("shows a clear admin error instead of a generic edit failure", () => {

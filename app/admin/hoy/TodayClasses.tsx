@@ -60,6 +60,7 @@ type TodayClassesProps = {
   canAttendance: boolean;
   canBook: boolean;
   canCreateStudent: boolean;
+  canAssignResource?: boolean;
   canCollectPayment?: boolean;
   operatingPolicy?: {
     noShowConsumesCredit: boolean;
@@ -78,6 +79,7 @@ export function TodayClasses({
   canAttendance,
   canBook,
   canCreateStudent,
+  canAssignResource = false,
   canCollectPayment = true,
   operatingPolicy,
   locale,
@@ -309,6 +311,7 @@ export function TodayClasses({
             canAttendance={canAttendance}
             canBook={canBook}
             canCreateStudent={canCreateStudent}
+            canAssignResource={canAssignResource}
             canCollectPayment={canCollectPayment}
             operatingPolicy={operatingPolicy}
             locale={locale}

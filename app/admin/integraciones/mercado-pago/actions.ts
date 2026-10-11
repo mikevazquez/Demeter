@@ -29,3 +29,16 @@ export async function saveFirstClassPaymentLink(form: FormData) {
   revalidatePath("/admin/integraciones/mercado-pago");
   redirect("/admin/integraciones/mercado-pago?link_saved=1");
 }
+
+export async function setProductOnlineSaleAction(form: FormData) {
+  const { supabase } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { error } = await supabase.rpc("admin_set_product_online_purchasable", {
+    p_product_template_id: String(form.get("product_id") ?? ""),
+    p_enabled: form.get("online_purchasable") === "on",
+  });
+  if (error) redirect("/admin/integraciones/mercado-pago?automatic_error=1");
+  revalidatePath("/admin/integraciones/mercado-pago");
+  revalidatePath("/student/paquete");
+  revalidatePath("/admin/productos");
+  redirect("/admin/integraciones/mercado-pago?automatic_saved=1");
+}

@@ -36,7 +36,7 @@ export default async function ReservationSettingsPage({
     .maybeSingle();
 
   return (
-    <main className="reservations-v2">
+    <main className="portal-page reservations-v2">
       <header className="reservations-v2-header">
         <Link href="/admin/configuracion" className="reservations-v2-back">
           <span aria-hidden="true">←</span> Configuración

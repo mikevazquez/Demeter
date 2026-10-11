@@ -79,7 +79,7 @@ export default async function EditDocumentPage({
   const selectedTargets = new Set((targets ?? []).map((item) => item.target_id));
 
   return (
-    <main className="dashboard-shell space-y-5">
+    <main className="portal-page dashboard-shell space-y-5">
       <Link
         href={`/admin/documentos/${document.id}`}
         className="text-sm font-semibold text-zinc-400 hover:text-white"

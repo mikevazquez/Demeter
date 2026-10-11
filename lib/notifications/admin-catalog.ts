@@ -171,10 +171,10 @@ export const NOTIFICATION_PROCESSES: readonly NotificationProcessDefinition[] = 
   },
   {
     key: "session-change",
-    name: "Cambio de horario / sesión",
+    name: "Clase modificada",
     description: "Informa cuando cambia el horario de una sesión con reservas.",
     category: "reservas",
-    ruleKeys: ["p0.session.rescheduled_notice"],
+    ruleKeys: ["p0.session.rescheduled_notice", "p0.session.coach_changed"],
     timingLabel: "Al cambiar el horario · inmediata",
     recipientLabel: "Alumnas con reserva confirmada",
   },

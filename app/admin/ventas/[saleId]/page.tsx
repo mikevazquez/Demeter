@@ -174,7 +174,7 @@ export default async function SaleDetailPage({
   };
 
   return (
-    <main className="sales-v2 sales-v2-detail">
+    <main className="portal-page sales-v2 sales-v2-detail">
       <header className="sales-v2-detail-header">
         <div>
           <Link

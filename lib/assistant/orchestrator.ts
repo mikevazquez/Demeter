@@ -26,6 +26,7 @@ import {
 import { executeAssistantReadTool, type AssistantStudioContext } from "./read-tools";
 
 type AssistantConfig = {
+  assistant_key?: "demi" | "polina";
   assistant_name: string;
   model: string;
   reasoning_effort: "none" | "low" | "medium" | "high";
@@ -153,7 +154,12 @@ async function ensureHumanHandoffForReply(
   return reply.replace(/atenci[oó]n humana/gi, "una solución con la información disponible");
 }
 
-async function spentUsdMicros(supabase: SupabaseClient, studioId: string, conversationId: string) {
+async function spentUsdMicros(
+  supabase: SupabaseClient,
+  studioId: string,
+  conversationId: string,
+  assistantKey: "demi" | "polina" = "demi",
+) {
   const monthStart = new Date();
   monthStart.setUTCDate(1);
   monthStart.setUTCHours(0, 0, 0, 0);
@@ -163,6 +169,7 @@ async function spentUsdMicros(supabase: SupabaseClient, studioId: string, conver
       .from("assistant_model_calls")
       .select("estimated_cost_usd_micros")
       .eq("studio_id", studioId)
+      .eq("assistant_key", assistantKey)
       .gte("created_at", monthStart.toISOString()),
     supabase
       .from("assistant_model_calls")
@@ -1207,7 +1214,12 @@ export async function runAssistantTurn(input: OrchestratorInput) {
   const testDeadline = Date.now() + 90_000;
 
   for (let attempt = 0; attempt < input.config.max_model_calls_per_turn; attempt += 1) {
-    const spend = await spentUsdMicros(input.supabase, input.studio.id, input.conversationId);
+    const spend = await spentUsdMicros(
+      input.supabase,
+      input.studio.id,
+      input.conversationId,
+      input.config.assistant_key ?? "demi",
+    );
     if (budgetExceeded(spend, input.config)) {
       await logModelCall({
         supabase: input.supabase,

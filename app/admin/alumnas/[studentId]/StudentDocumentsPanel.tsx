@@ -5,7 +5,10 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { documentTypeLabels } from "@/lib/documents";
 
-import { invalidateStudentDocumentAcceptanceAction } from "./actions";
+import {
+  invalidateStudentDocumentAcceptanceAction,
+  registerStudentDocumentAcceptanceAction,
+} from "./actions";
 
 type CurrentDocument = {
   document_id: string;
@@ -112,7 +115,7 @@ export default async function StudentDocumentsPanel({
   result?: string;
   error?: string;
 }) {
-  const { supabase, can } = await getAdminContext(CAPABILITIES.DOCUMENTS_READ);
+  const { supabase, can } = await getAdminContext(CAPABILITIES.STUDENTS_READ);
   const { data, error: loadError } = await supabase.rpc("admin_student_document_profile", {
     p_student_id: studentId,
   });
@@ -149,6 +152,14 @@ export default async function StudentDocumentsPanel({
 
   return (
     <section className="profile360-view-panel">
+      {result === "registered" ? (
+        <QueryNotice
+          eyebrow="Documentos"
+          title="Aceptación registrada"
+          message="La evidencia y el motivo quedaron guardados en el expediente."
+          tone="success"
+        />
+      ) : null}
       {result === "invalidated" ? (
         <QueryNotice
           eyebrow="Documentos"
@@ -218,6 +229,42 @@ export default async function StudentDocumentsPanel({
                   </span>
                 </div>
                 <span className="status-pill">Pendiente</span>
+                {can(CAPABILITIES.STUDENTS_WRITE) ? (
+                  <details>
+                    <summary>Registrar aceptación</summary>
+                    <form action={registerStudentDocumentAcceptanceAction} className="portal-form">
+                      <input type="hidden" name="student_id" value={studentId} />
+                      <input type="hidden" name="version_id" value={item.version_id} />
+                      <label>
+                        Quién aceptó
+                        <select name="signer" required defaultValue="student">
+                          <option value="student">Alumna</option>
+                          {guardians
+                            .filter((g) => g.active)
+                            .map((g) => (
+                              <option key={g.id} value={g.id}>
+                                {g.full_name} · Responsable
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                      <label>
+                        Cómo se recibió
+                        <select name="method" required>
+                          <option value="in_person">Presencial</option>
+                          <option value="external">Evidencia externa</option>
+                        </select>
+                      </label>
+                      <label>
+                        Motivo o referencia de la evidencia
+                        <textarea name="reason" required minLength={3} rows={3} />
+                      </label>
+                      <button className="portal-button portal-button-primary">
+                        Registrar aceptación
+                      </button>
+                    </form>
+                  </details>
+                ) : null}
               </article>
             ))}
           </div>

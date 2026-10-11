@@ -44,7 +44,7 @@ const handler = {
 
     const { data: instructor } = await userClient
       .from("instructors")
-      .select("id, studio_id, person_id, status")
+      .select("id, studio_id, person_id, status, staff_role")
       .eq("id", instructorId)
       .maybeSingle();
     if (!instructor) return jsonResponse({ error: "instructor_not_found" }, 404);
@@ -59,7 +59,8 @@ const handler = {
       .eq("user_id", user.id)
       .eq("active", true)
       .maybeSingle();
-    if (!caller) return jsonResponse({ error: "forbidden" }, 403);
+    if (!caller || (instructor.staff_role === "admin" && caller.role !== "owner"))
+      return jsonResponse({ error: "forbidden" }, 403);
 
     const { data: permission } = await userClient
       .from("role_capabilities")
@@ -100,7 +101,7 @@ const handler = {
       .select("user_id, active")
       .eq("studio_id", instructor.studio_id)
       .eq("person_id", instructor.person_id)
-      .eq("role", "instructor")
+      .eq("role", instructor.staff_role ?? "instructor")
       .maybeSingle();
 
     const temporaryPassword = generateTemporaryPassword();

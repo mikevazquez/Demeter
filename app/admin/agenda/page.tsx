@@ -3,7 +3,8 @@ import Link from "next/link";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { isSeatOccupyingReservation } from "@/lib/reservations/capacity";
-import { cancelSession, updateSession } from "./[sessionId]/actions";
+import CoachFilter from "./CoachFilter";
+import { cancelSession, updateSession, reopenSession } from "./[sessionId]/actions";
 
 function formatMoney(minor: number, locale: string, currency: string) {
   return new Intl.NumberFormat(locale, { style: "currency", currency }).format(minor / 100);
@@ -148,7 +149,13 @@ function statusLabel(status: string) {
 export default async function AgendaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; created?: string; date?: string; session?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    created?: string;
+    date?: string;
+    session?: string;
+    coach?: string;
+  }>;
 }) {
   const [params, { supabase, studio, membership, can, user, profile }] = await Promise.all([
     searchParams,
@@ -207,7 +214,8 @@ export default async function AgendaPage({
       .from("instructors")
       .select("id,person_id,status")
       .eq("studio_id", studio.id)
-      .eq("status", "active"),
+      .eq("status", "active")
+      .eq("teaches", true),
     supabase.from("persons").select("id,first_name,last_name").eq("studio_id", studio.id),
     supabase
       .from("recurring_schedules")
@@ -235,7 +243,7 @@ export default async function AgendaPage({
   let sessionsQuery = supabase
     .from("class_sessions")
     .select(
-      "id,starts_at,ends_at,capacity,status,notes,template_id,space_id,instructor_id,recurring_schedule_id,is_schedule_exception",
+      "id,starts_at,ends_at,capacity,status,notes,template_id,space_id,instructor_id,recurring_schedule_id,is_schedule_exception,cancellation_reason,cancelled_at,cancelled_by_label,credit_cost,drop_in_price_minor,drop_in_price_overridden",
     )
     .eq("studio_id", studio.id)
     .gte("starts_at", weekStartUtc.toISOString())
@@ -246,6 +254,11 @@ export default async function AgendaPage({
       "instructor_id",
       currentInstructor?.id ?? "00000000-0000-0000-0000-000000000000",
     );
+  const selectedCoach =
+    !instructorOnly && (instructors ?? []).some((item) => item.id === params.coach)
+      ? params.coach!
+      : "";
+  if (selectedCoach) sessionsQuery = sessionsQuery.eq("instructor_id", selectedCoach);
   const { data: sessions } = await sessionsQuery;
 
   const sessionIds = (sessions ?? []).map((session) => session.id);
@@ -324,6 +337,9 @@ export default async function AgendaPage({
   const selectedTemplate = selectedSession
     ? (templateMap.get(selectedSession.template_id) ?? null)
     : null;
+  const selectedSessionPrice = selectedSession?.drop_in_price_overridden
+    ? selectedSession.drop_in_price_minor
+    : (selectedSession?.drop_in_price_minor ?? selectedTemplate?.drop_in_price_minor ?? null);
   const selectedLocalInput = selectedSession
     ? new Intl.DateTimeFormat("sv-SE", {
         timeZone,
@@ -352,7 +368,7 @@ export default async function AgendaPage({
   };
 
   return (
-    <main className="dashboard-shell agenda-calendar-page">
+    <main className="portal-page dashboard-shell agenda-calendar-page">
       <header className="agenda-product-header">
         <div className="agenda-product-wordmark" aria-label="Studio Flow">
           <span>
@@ -369,12 +385,12 @@ export default async function AgendaPage({
         <div>
           <p className="eyebrow">AGENDA · {studio.name}</p>
           <h1>Agenda</h1>
-          <p>Organiza, visualiza y haz que todo fluya.</p>
+          <p>Sesiones generadas desde Actividades. Toca una para editarla.</p>
         </div>
         <div className="agenda-header-actions">
           <Link
             className="agenda-icon-button"
-            href={`/admin/agenda?date=${previousWeekKey}`}
+            href={`/admin/agenda?date=${previousWeekKey}${selectedCoach ? `&coach=${selectedCoach}` : ""}`}
             aria-label="Semana anterior"
           >
             ‹
@@ -385,7 +401,7 @@ export default async function AgendaPage({
           </strong>
           <Link
             className="agenda-icon-button"
-            href={`/admin/agenda?date=${nextWeekKey}`}
+            href={`/admin/agenda?date=${nextWeekKey}${selectedCoach ? `&coach=${selectedCoach}` : ""}`}
             aria-label="Semana siguiente"
           >
             ›
@@ -394,6 +410,11 @@ export default async function AgendaPage({
             Hoy
           </Link>
           {canEdit ? (
+            <Link className="agenda-config-button" href="/admin/configuracion/festivos">
+              Festivos
+            </Link>
+          ) : null}
+          {canEdit ? (
             <Link className="agenda-config-button" href="/admin/actividades">
               Actividades
             </Link>
@@ -401,6 +422,26 @@ export default async function AgendaPage({
         </div>
       </header>
 
+      <div className="portal-agenda-controls">
+        <p>
+          {calendarSessions.filter((item) => item.status !== "cancelled").length} clases ·{" "}
+          {calendarSessions.filter((item) => item.is_schedule_exception).length} editadas a mano ·{" "}
+          {calendarSessions.filter((item) => item.status === "cancelled").length} canceladas
+        </p>
+        {instructorOnly ? (
+          <span>
+            Tus clases · {currentInstructor ? instructorMap.get(currentInstructor.id) : "Coach"}
+          </span>
+        ) : (
+          <CoachFilter
+            value={selectedCoach}
+            coaches={(instructors ?? []).map((coach) => ({
+              id: coach.id,
+              name: instructorMap.get(coach.id) ?? "Coach",
+            }))}
+          />
+        )}
+      </div>
       {params.created ? (
         <div className="notice success">
           {params.created === "schedule"
@@ -416,30 +457,31 @@ export default async function AgendaPage({
         </div>
       ) : null}
 
-      <nav className="agenda-week-strip" aria-label="Semana seleccionada">
-        {weekDays.map((day) => {
-          const key = utcDateKey(day);
-          const isSelected = key === selectedKey;
-          return (
-            <Link
-              href={`/admin/agenda?date=${key}`}
-              key={key}
-              className={`agenda-week-day${isSelected ? " is-selected" : ""}${key === todayKey ? " is-today" : ""}`}
-              aria-current={isSelected ? "date" : undefined}
-            >
-              <span>{shortWeekday(day, locale)}</span>
-              <strong>{day.getUTCDate()}</strong>
-            </Link>
-          );
-        })}
-      </nav>
-
       <div className={`agenda-workspace${selectedSession ? " has-editor" : ""}`}>
         <section
           id="clases-programadas"
           className="agenda-calendar-shell"
           aria-label="Calendario semanal"
         >
+          <nav className="agenda-week-strip" aria-label="Semana seleccionada">
+            <span aria-hidden="true" />
+            {weekDays.map((day) => {
+              const key = utcDateKey(day);
+              const isSelected = key === selectedKey;
+              return (
+                <Link
+                  href={`/admin/agenda?date=${key}`}
+                  key={key}
+                  className={`agenda-week-day${isSelected ? " is-selected" : ""}${key === todayKey ? " is-today" : ""}`}
+                  aria-current={isSelected ? "date" : undefined}
+                >
+                  <span>{shortWeekday(day, locale)}</span>
+                  <strong>{day.getUTCDate()}</strong>
+                </Link>
+              );
+            })}
+          </nav>
+
           <div className="agenda-mobile-day-summary">
             <strong>{fullDateLabel(selectedDate, locale)}</strong>
             <span>
@@ -482,11 +524,13 @@ export default async function AgendaPage({
                       const top = session.startMinute - calendarStartHour * 60;
                       const height = Math.max(session.durationMinutes, 44);
                       const isSelected = selectedSession?.id === session.id;
+                      const isPast = new Date(session.ends_at) <= now;
                       return (
                         <Link
                           key={session.id}
                           href={`/admin/agenda?date=${key}&session=${session.id}`}
-                          className={`agenda-session-block${isSelected ? " is-selected" : ""}${session.status === "cancelled" ? " is-cancelled" : ""}`}
+                          aria-label={`${session.name}, ${formatTime(session.starts_at, timeZone, locale)}, ${session.occupied} de ${session.capacity}${session.status === "cancelled" ? `, cancelada: ${session.cancellation_reason ?? "Cancelada por el estudio"}` : ""}${session.is_schedule_exception ? ", editada a mano" : ""}`}
+                          className={`agenda-session-block${isPast ? " is-past" : ""}${isSelected ? " is-selected" : ""}${session.status === "cancelled" ? " is-cancelled" : ""}`}
                           style={
                             {
                               top,
@@ -495,17 +539,16 @@ export default async function AgendaPage({
                             } as React.CSSProperties
                           }
                         >
-                          <span className="agenda-session-time">
-                            {formatTime(session.starts_at, timeZone, locale)} –{" "}
-                            {formatTime(session.ends_at, timeZone, locale)}
-                          </span>
                           <strong>{session.name}</strong>
-                          <small>
-                            {session.instructor} · {session.space}
-                          </small>
-                          <b>
-                            {session.occupied}/{session.capacity}
-                          </b>
+                          <span className="agenda-session-time">
+                            {formatTime(session.starts_at, timeZone, locale)} ·{" "}
+                            {session.status === "cancelled"
+                              ? (session.cancellation_reason ?? "Cancelada")
+                              : `${session.occupied}/${session.capacity}`}
+                          </span>
+                          {session.is_schedule_exception ? (
+                            <span className="portal-edited-dot" title="Editada a mano" />
+                          ) : null}
                         </Link>
                       );
                     })}
@@ -553,12 +596,86 @@ export default async function AgendaPage({
               {selectedSession.is_schedule_exception ? <em>Excepción</em> : null}
             </div>
 
-            {canEdit && selectedSession.status === "scheduled" ? (
+            {selectedSession.status === "cancelled" ? (
+              <div className="notice error">
+                <b>
+                  Motivo: {selectedSession.cancellation_reason ?? "Clase cancelada por el estudio"}
+                </b>
+                <p>
+                  Canceló {selectedSession.cancelled_by_label ?? "Automático"}
+                  {selectedSession.cancelled_at
+                    ? ` · ${new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "short", timeZone }).format(new Date(selectedSession.cancelled_at))}`
+                    : ""}
+                </p>
+                {canEdit && new Date(selectedSession.starts_at) > now ? (
+                  <form action={reopenSession}>
+                    <input type="hidden" name="session_id" value={selectedSession.id} />
+                    <input type="hidden" name="return_to" value={returnTo} />
+                    <button className="primary-button">Reabrir clase</button>
+                    <p>Las reservas canceladas no se restauran.</p>
+                  </form>
+                ) : null}
+              </div>
+            ) : null}
+            {selectedSession.status !== "cancelled" && new Date(selectedSession.ends_at) <= now ? (
+              <p>Ya no se puede reprogramar. Puedes revisar o corregir la asistencia.</p>
+            ) : null}
+            {canEdit &&
+            selectedSession.status === "scheduled" &&
+            new Date(selectedSession.starts_at) > now ? (
               <>
                 <form action={updateSession} className="agenda-editor-form">
                   <input type="hidden" name="session_id" value={selectedSession.id} />
                   <input type="hidden" name="return_to" value={returnTo} />
 
+                  <div className="portal-session-fields">
+                    <label>
+                      Duración (min)
+                      <input
+                        type="number"
+                        name="duration_minutes"
+                        min="15"
+                        max="360"
+                        step="15"
+                        defaultValue={selectedSession.durationMinutes}
+                        required
+                      />
+                    </label>
+                    <label>
+                      Créditos por reserva
+                      <select
+                        name="credit_cost"
+                        defaultValue={
+                          selectedSession.credit_cost ?? selectedTemplate?.credit_cost ?? 1
+                        }
+                      >
+                        {[1, 2, 3, 4].map((n) => (
+                          <option value={n} key={n}>
+                            {n} crédito{n > 1 ? "s" : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <label className="agenda-editor-field">
+                    Precio de clase suelta
+                    <input
+                      name="drop_in_price"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      defaultValue={
+                        selectedSessionPrice == null ? "" : (selectedSessionPrice ?? 0) / 100
+                      }
+                      placeholder="Sin venta suelta"
+                    />
+                  </label>
+                  {selectedSession.occupied ? (
+                    <p className="helper">
+                      Las {selectedSession.occupied} reservas que ya existen conservan lo que
+                      descontaron; un cambio de créditos aplica a reservas nuevas.
+                    </p>
+                  ) : null}
                   <label className="agenda-editor-field">
                     <span>Horario</span>
                     <input

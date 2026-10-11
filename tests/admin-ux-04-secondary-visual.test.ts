@@ -11,7 +11,7 @@ describe("ADMIN-UX-04 secondary admin visual homologation", () => {
   const more = source("app/admin/mas/page.tsx");
   const products = source("app/admin/productos/page.tsx");
   const team = source("app/admin/instructores/page.tsx");
-  const automations = source("app/admin/automatizaciones/page.tsx");
+  const automations = source("app/admin/notificaciones/NotificationsView.tsx");
   const configuration = source("app/admin/configuracion/apariencia/page.tsx");
   const rewardsNav = source("app/admin/recompensas/RewardsNav.tsx");
   const styles = source("app/admin/admin-ux-04-secondary.css");
@@ -21,7 +21,7 @@ describe("ADMIN-UX-04 secondary admin visual homologation", () => {
     expect(more).toContain("flow-more");
     expect(products).toContain("packages-v2");
     expect(team).toContain("team-v2");
-    expect(automations).toContain("communication-v2");
+    expect(automations).toContain("notification-admin-page");
     expect(configuration).toContain("appearance-v2");
     expect(rewardsNav).toContain("usePathname");
   });
@@ -33,7 +33,7 @@ describe("ADMIN-UX-04 secondary admin visual homologation", () => {
     expect(more).toContain("CAPABILITIES.REWARDS_READ");
     expect(products).toContain('getAdminContext("products.read")');
     expect(team).toContain("createInstructor");
-    expect(automations).toContain("saveGlobalCommunicationWindowAction");
+    expect(automations).toContain("saveNotificationPreferencesAction");
     expect(configuration).toContain("<AppearanceForm");
   });
 

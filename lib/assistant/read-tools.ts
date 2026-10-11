@@ -303,7 +303,7 @@ export async function getCommercialOptions(
 
     const { data: session, error: sessionError } = await ctx.supabase
       .from("class_sessions")
-      .select("id,template_id,recurring_schedule_id")
+      .select("id,template_id,recurring_schedule_id,drop_in_price_minor,drop_in_price_overridden")
       .eq("studio_id", ctx.studio.id)
       .eq("id", sessionId)
       .maybeSingle();
@@ -329,7 +329,9 @@ export async function getCommercialOptions(
       discipline_id: template.discipline_id,
       recurring_schedule_id: session.recurring_schedule_id,
       activity: template.name,
-      drop_in_price_minor: template.drop_in_price_minor ?? null,
+      drop_in_price_minor: session.drop_in_price_overridden
+        ? session.drop_in_price_minor
+        : (session.drop_in_price_minor ?? template.drop_in_price_minor ?? null),
     };
   }
 

@@ -20,17 +20,21 @@ describe("FESTIVOS-01 calendar UX", () => {
     expect(adminHolidays).toContain('.from("studio_holiday_overrides")');
     expect(adminHolidays).toContain("Días festivos");
     expect(adminHolidays).toContain("getAdminContext(CAPABILITIES.SETTINGS_WRITE)");
-    expect(adminHolidays).toContain("!ctx.can(CAPABILITIES.SETTINGS_WRITE)");
-    expect(adminHolidays).toContain("Estudio cerrado");
-    expect(adminHolidays).toContain("Horario normal");
+    expect(adminHolidays).toContain("CalendarEventEditor");
+    expect(source("app/admin/configuracion/festivos/CalendarEventEditor.tsx")).toContain(
+      "Estudio cerrado",
+    );
+    expect(source("app/admin/configuracion/festivos/CalendarEventEditor.tsx")).toContain(
+      "horario normal",
+    );
     expect(studentNav).not.toContain("Festivos");
     expect(studentNav).not.toContain("Días especiales");
   });
 
   it("lets the studio choose normal, closed or special operation", () => {
-    expect(adminHolidays).toContain("Marcar como cerrado");
-    expect(adminHolidays).toContain("Marcar como abierto");
-    expect(adminHolidays).toContain("saveOfficialHolidayStatusAction");
+    expect(source("app/admin/configuracion/festivos/CalendarEventEditor.tsx")).toContain("closed");
+    expect(source("app/admin/configuracion/festivos/CalendarEventEditor.tsx")).toContain("normal");
+    expect(holidayAction).toContain("admin_configure_calendar_event");
     expect(holidayAction).toContain('p_operation_mode: closed ? "closed" : "normal"');
     expect(holidayAction).toContain("admin_configure_holiday");
     expect(holidayAction).toContain("!ctx.can(CAPABILITIES.SETTINGS_WRITE)");

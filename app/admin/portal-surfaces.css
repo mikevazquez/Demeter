@@ -1,0 +1,4784 @@
+/* Neutral surfaces and module tokens from the retained forms. */
+.admin-shell.admin-flow {
+  --activities-accent: var(--green) !important;
+  --activities-accent-strong: var(--green) !important;
+  --activities-accent-soft: var(--green-soft) !important;
+  --activities-blue: var(--blue) !important;
+  --activities-blue-soft: var(--blue-soft) !important;
+  --activities-purple: var(--violet) !important;
+  --activities-purple-soft: var(--violet-soft) !important;
+  --activities-amber: var(--amber) !important;
+  --activities-amber-soft: var(--amber-soft) !important;
+  --activities-danger: var(--red) !important;
+  --activities-text: var(--fg) !important;
+  --activities-muted: var(--muted) !important;
+  --activities-line: var(--line) !important;
+  --activities-bg: var(--bg) !important;
+  --activities-card: var(--card) !important;
+  --team-accent: var(--green) !important;
+  --team-accent-strong: var(--green) !important;
+  --team-accent-soft: var(--green-soft) !important;
+  --team-blue: var(--blue) !important;
+  --team-blue-soft: var(--blue-soft) !important;
+  --team-amber: var(--amber) !important;
+  --team-amber-soft: var(--amber-soft) !important;
+  --team-danger: var(--red) !important;
+  --team-danger-soft: var(--red-soft) !important;
+  --team-text: var(--fg) !important;
+  --team-muted: var(--muted) !important;
+  --team-line: var(--line) !important;
+  --team-bg: var(--bg) !important;
+  --integration-accent: var(--green) !important;
+  --integration-accent-strong: var(--green) !important;
+  --integration-accent-soft: var(--green-soft) !important;
+  --integration-purple: var(--violet) !important;
+  --integration-purple-soft: var(--violet-soft) !important;
+  --integration-text: var(--fg) !important;
+  --integration-muted: var(--muted) !important;
+  --integration-line: var(--line) !important;
+  --integration-bg: var(--bg) !important;
+  --notification-card: var(--card) !important;
+  --notification-line: var(--line) !important;
+  --notification-muted: var(--muted) !important;
+  --notification-accent: var(--green) !important;
+  --notification-accent-strong: var(--green) !important;
+  --notification-accent-soft: var(--green-soft) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-header h1,
+.admin-shell.admin-flow .portal-page .activities-editor-header h1 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-header p:last-child,
+.admin-shell.admin-flow .portal-page .activities-editor-header p:last-child {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-primary-action,
+.admin-shell.admin-flow .portal-page .activities-next-button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-summary-grid span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-summary-grid strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-summary-grid small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-list-section {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-section-heading h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-row-title strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-row-main p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-row-schedules span,
+.admin-shell.admin-flow .portal-page .activities-row-meta span,
+.admin-shell.admin-flow .portal-page .activities-row-meta b {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-row-chevron {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-empty {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-empty strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-back-link {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-status-pill.is-inactive {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-stepper {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-stepper button {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-stepper button > span {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-stepper button.is-active {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-stepper button.is-complete {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-stage-heading h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-stage-heading p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-field > span,
+.admin-shell.admin-flow .portal-page .activities-choice legend {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-field input,
+.admin-shell.admin-flow .portal-page .activities-field textarea,
+.admin-shell.admin-flow .portal-page .activities-field select {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-field small,
+.admin-shell.admin-flow .portal-page .activities-choice small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-unit-field,
+.admin-shell.admin-flow .portal-page .activities-price-field {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-unit-field b,
+.admin-shell.admin-flow .portal-page .activities-price-field b,
+.admin-shell.admin-flow .portal-page .activities-price-field em {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-color-control {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-color-control b {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-choice button {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-operation-copy strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-operation-copy p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-day-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-day-card > header strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-day-card > header button,
+.admin-shell.admin-flow .portal-page .activities-add-day,
+.admin-shell.admin-flow .portal-page .activities-remove-slot,
+.admin-shell.admin-flow .portal-page .activities-review-card header button {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-duration-chip {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-credit-card,
+.admin-shell.admin-flow .portal-page .activities-sales-card,
+.admin-shell.admin-flow .portal-page .activities-review-card,
+.admin-shell.admin-flow .portal-page .activities-ready-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-credit-card strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-credit-card p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-toggle-row strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-toggle-row small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-review-card header strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-review-card dt {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-review-card dd {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-review-schedules span {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-review-schedules b {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-ready-card p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-wizard-footer {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-back-button {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-minimum-how {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-minimum-how strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-minimum-how ol {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-minimum-example p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2-primary,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-next-button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2-info {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2-info > span {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2-summary article {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2-card:hover {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .activities-v2-card.is-inactive
+  .activities-v2-card-title
+  small {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2-chevron {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-status-pill.is-inactive {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-stepper {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-stepper button > span {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-stepper button.is-active {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-stepper button.is-active > span,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-stepper button.is-complete > span {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-stepper button.is-complete {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-inline-error {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-stage {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-field > span,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-choice legend {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-field input,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-field textarea,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-field select {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-field small,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-choice small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-unit-field,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-price-field,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-color-control {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-choice button {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-operation-defaults,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-credit-card {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-operation-copy p,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-credit-card p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-day-card,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-sales-card,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-review-card,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-ready-card,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-minimum-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-day-card > header {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-day-card > header button,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-add-day,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-remove-slot,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-review-card header button,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-back-button {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-slot .activities-field input,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-duration-chip {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-helper,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-minimum-how {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-add-day {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-minimum-card {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-minimum-how {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-minimum-example {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-minimum-example > span {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-minimum-example p,
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-minimum-example strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-review-card dt {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-review-schedules span {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-ready-card {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-ready-card > span {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .activities-v2 .activities-ready-card p {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary-detail > header h1,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary-detail > .topbar .dashboard-title {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary-detail > header p,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary-detail > .topbar p:last-child {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary-detail > header a,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary-detail .back-link {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .product-detail-page > section[class*="grid"] > div,
+.admin-shell.admin-flow .portal-page .product-detail-page > section[class*="rounded-2xl"] {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .product-detail-page
+  > section[class*="grid"]
+  > div
+  p:first-child {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .product-detail-page
+  > section[class*="grid"]
+  > div
+  p:last-child {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .product-detail-page > section[class*="rounded-2xl"] h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .product-detail-page > section[class*="rounded-2xl"] p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .product-detail-page > section:last-child button {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .product-editor-page > form {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .product-editor-page label {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .product-editor-page input,
+.admin-shell.admin-flow .portal-page .product-editor-page select,
+.admin-shell.admin-flow .portal-page .product-editor-page textarea {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .product-editor-page fieldset,
+.admin-shell.admin-flow .portal-page .product-editor-page [class*="border"][class*="rounded-xl"] {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .team-detail-page > .panel,
+.admin-shell.admin-flow .portal-page .team-detail-page .panel-grid > .panel {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .team-detail-page .panel h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .team-detail-page .student-row {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .team-detail-page .student-row strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .team-detail-page .student-row span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .team-detail-page .secondary-button,
+.admin-shell.admin-flow .portal-page .team-detail-page .ghost-button {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .automation-detail-page > header h1 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .automation-detail-page > header p:last-child {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .automation-detail-page article[class*="rounded-2xl"],
+.admin-shell.admin-flow .portal-page .automation-detail-page section[class*="rounded-2xl"],
+.admin-shell.admin-flow .portal-page .automation-detail-page form[class*="rounded-2xl"],
+.admin-shell.admin-flow .portal-page .automation-detail-page details[class*="rounded-2xl"] {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .automation-detail-page input,
+.admin-shell.admin-flow .portal-page .automation-detail-page select,
+.admin-shell.admin-flow .portal-page .automation-detail-page textarea {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .rewards-admin-page > header > div > a,
+.admin-shell.admin-flow .portal-page .rewards-admin-page > header > a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .rewards-admin-page form[class*="rounded-2xl"],
+.admin-shell.admin-flow .portal-page .rewards-admin-page section[class*="rounded-2xl"],
+.admin-shell.admin-flow .portal-page .rewards-admin-page article[class*="rounded-2xl"],
+.admin-shell.admin-flow
+  .portal-page
+  .rewards-admin-page
+  div[class*="rounded-2xl"][class*="border"] {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .rewards-admin-page div[class*="rounded-xl"][class*="border"],
+.admin-shell.admin-flow
+  .portal-page
+  .rewards-admin-page
+  article[class*="rounded-xl"][class*="border"],
+.admin-shell.admin-flow .portal-page .rewards-admin-page a[class*="rounded-xl"][class*="border"] {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .rewards-admin-page input,
+.admin-shell.admin-flow .portal-page .rewards-admin-page select,
+.admin-shell.admin-flow .portal-page .rewards-admin-page textarea {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .rewards-admin-page label {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .rewards-admin-page h2,
+.admin-shell.admin-flow .portal-page .rewards-admin-page h3 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary-detail > header a,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary-detail .back-link,
+.admin-shell.admin-flow .portal-page .rewards-admin-page > header > div > a,
+.admin-shell.admin-flow .portal-page .rewards-admin-page > header > a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .product-detail-page > section[class*="grid"] > div,
+.admin-shell.admin-flow .portal-page .product-detail-page > section[class*="rounded-2xl"],
+.admin-shell.admin-flow .portal-page .product-editor-page > form,
+.admin-shell.admin-flow .portal-page .team-detail-page > .topbar,
+.admin-shell.admin-flow .portal-page .team-detail-page > .panel,
+.admin-shell.admin-flow .portal-page .team-detail-page .panel-grid > .panel,
+.admin-shell.admin-flow .portal-page .automation-detail-page article[class*="rounded-2xl"],
+.admin-shell.admin-flow .portal-page .automation-detail-page section[class*="rounded-2xl"],
+.admin-shell.admin-flow .portal-page .automation-detail-page form[class*="rounded-2xl"],
+.admin-shell.admin-flow .portal-page .automation-detail-page details[class*="rounded-2xl"],
+.admin-shell.admin-flow .portal-page .rewards-admin-page form[class*="rounded-2xl"],
+.admin-shell.admin-flow .portal-page .rewards-admin-page section[class*="rounded-2xl"],
+.admin-shell.admin-flow .portal-page .rewards-admin-page article[class*="rounded-2xl"],
+.admin-shell.admin-flow
+  .portal-page
+  .rewards-admin-page
+  div[class*="rounded-2xl"][class*="border"] {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .product-editor-page label {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .product-editor-page input,
+.admin-shell.admin-flow .portal-page .product-editor-page select,
+.admin-shell.admin-flow .portal-page .product-editor-page textarea,
+.admin-shell.admin-flow .portal-page .automation-detail-page input,
+.admin-shell.admin-flow .portal-page .automation-detail-page select,
+.admin-shell.admin-flow .portal-page .automation-detail-page textarea,
+.admin-shell.admin-flow .portal-page .rewards-admin-page input,
+.admin-shell.admin-flow .portal-page .rewards-admin-page select,
+.admin-shell.admin-flow .portal-page .rewards-admin-page textarea {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .product-detail-page
+  > section:last-child
+  a[class*="bg-fuchsia"],
+.admin-shell.admin-flow .portal-page .product-editor-page button[class*="bg-fuchsia"],
+.admin-shell.admin-flow .portal-page .automation-detail-page button[class*="bg-fuchsia"],
+.admin-shell.admin-flow .portal-page .team-detail-page .primary-button,
+.admin-shell.admin-flow .portal-page .rewards-admin-page button[class*="bg-fuchsia"],
+.admin-shell.admin-flow .portal-page .rewards-admin-page a[class*="bg-fuchsia"] {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .product-detail-page > section:last-child button,
+.admin-shell.admin-flow .portal-page .team-detail-page .secondary-button,
+.admin-shell.admin-flow .portal-page .team-detail-page .ghost-button {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .team-detail-page > .topbar {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .team-detail-page > .topbar .role-pill {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .team-detail-page .student-row {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-header h1,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary > .topbar .dashboard-title {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-header p,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary > .topbar p:last-child {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-tabs {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-search input {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-list-row,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .more-row,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .automation-list-row {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-row-copy strong,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .more-row-copy strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-row-copy small,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .more-row-copy small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-row-meta strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-row-meta small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-chevron {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-empty {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-create-panel input,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-create-panel textarea {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .automation-settings-panel input {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .automation-list-row h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .automation-list-row p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .automation-list-row > div:last-child {
+  border-top-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .rewards-admin-page > nav {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .rewards-admin-page > nav a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .rewards-admin-page > header .dashboard-title {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .rewards-admin-page > section > article,
+.admin-shell.admin-flow .portal-page .rewards-admin-page > section > a,
+.admin-shell.admin-flow .portal-page .rewards-admin-page > section > div,
+.admin-shell.admin-flow .portal-page .rewards-admin-page [class*="rounded-2xl"][class*="border"] {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .rewards-admin-page [class*="bg-white/[0.03]"],
+.admin-shell.admin-flow .portal-page .rewards-admin-page [class*="bg-black/20"] {
+  background-color: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .configuration-page .branding-config-grid > .panel {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .configuration-page .branding-field input,
+.admin-shell.admin-flow .portal-page .configuration-page .branding-upload {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-primary-action,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .automation-settings-panel button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-tabs,
+.admin-shell.admin-flow .portal-page .rewards-admin-page > nav {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-tabs a,
+.admin-shell.admin-flow .portal-page .rewards-admin-page > nav a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-search input,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-create-panel input,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-create-panel textarea,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .automation-settings-panel input {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-list-row,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .more-row,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .automation-list-row,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .automation-settings-panel,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .automation-summary-card,
+.admin-shell.admin-flow .portal-page .configuration-page .branding-config-grid > .panel {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-list-row:hover,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .more-row:hover,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .automation-list-row:hover {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-row-icon,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .more-row-icon,
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .team-avatar {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-chevron {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-empty {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-secondary .module-create-panel {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .rewards-admin-page > section > article,
+.admin-shell.admin-flow .portal-page .rewards-admin-page > section > a,
+.admin-shell.admin-flow .portal-page .rewards-admin-page > section > div,
+.admin-shell.admin-flow .portal-page .rewards-admin-page [class*="rounded-2xl"][class*="border"],
+.admin-shell.admin-flow .portal-page .rewards-admin-page [class*="bg-white/[0.03]"],
+.admin-shell.admin-flow .portal-page .rewards-admin-page [class*="bg-black/20"] {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .configuration-page .branding-field input,
+.admin-shell.admin-flow .portal-page .configuration-page .branding-upload {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .configuration-page .branding-preview-card {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sf-admin-dialog {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sf-admin-dialog-icon.is-warning {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sf-admin-dialog-icon.is-error {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sf-admin-dialog-icon.is-info {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sf-admin-dialog-action {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .sf-skeleton {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sf-skeleton-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sf-skeleton-row {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sf-admin-dialog-footer .sf-dialog-danger {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .sf-admin-dialog-footer .sf-dialog-warning {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .sf-admin-dialog-footer .sf-dialog-confirm {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .header p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .back {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notice {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .summary article {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .summary span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .summary strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .summary small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .panel {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .panelHeader p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .defaultUses {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .defaultUses small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .defaultUses input {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .resourceRow {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .resourceCopy strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .resourceCopy small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .capacity input {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .mapElement {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .mapElement[data-enabled="false"] {
+  border-color: var(--line) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .mapEmpty {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .save {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .assignmentRow {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .assignmentCopy strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .assignmentCopy small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .reassignControls select {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .page {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .header h1,
+.admin-shell.admin-flow .portal-page .panelHeader h2,
+.admin-shell.admin-flow .portal-page .summary strong,
+.admin-shell.admin-flow .portal-page .defaultUses strong,
+.admin-shell.admin-flow .portal-page .resourceCopy strong,
+.admin-shell.admin-flow .portal-page .assignmentCopy strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .header p,
+.admin-shell.admin-flow .portal-page .back,
+.admin-shell.admin-flow .portal-page .panelHeader p,
+.admin-shell.admin-flow .portal-page .summary span,
+.admin-shell.admin-flow .portal-page .summary small,
+.admin-shell.admin-flow .portal-page .defaultUses small,
+.admin-shell.admin-flow .portal-page .resourceCopy small,
+.admin-shell.admin-flow .portal-page .assignmentCopy small,
+.admin-shell.admin-flow .portal-page .mapEmpty {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notice,
+.admin-shell.admin-flow .portal-page .summary article,
+.admin-shell.admin-flow .portal-page .panel,
+.admin-shell.admin-flow .portal-page .defaultUses,
+.admin-shell.admin-flow .portal-page .resourceRow,
+.admin-shell.admin-flow .portal-page .assignmentRow {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .success {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .error {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .defaultUses input,
+.admin-shell.admin-flow .portal-page .capacity input,
+.admin-shell.admin-flow .portal-page .reassignControls select {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .usage {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .map {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .mapElement {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .mapElement[data-kind="resource"] {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .mapElement[data-enabled="false"] {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .mapElement[data-full="true"] {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .save,
+.admin-shell.admin-flow .portal-page .reassignControls button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-calendar-header h1 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-calendar-header p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-icon-button,
+.admin-shell.admin-flow .portal-page .agenda-today-button,
+.admin-shell.admin-flow .portal-page .agenda-config-button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-week-range {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-week-day {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-week-day strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-time-axis {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-time-label {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-session-time {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-session-block small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-session-block b {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-calendar-empty {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-heading h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-heading p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-capacity strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-capacity small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-close {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-status strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-field,
+.admin-shell.admin-flow .portal-page .agenda-editor-notes {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-field > span,
+.admin-shell.admin-flow .portal-page .agenda-editor-notes > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-field input,
+.admin-shell.admin-flow .portal-page .agenda-editor-field select,
+.admin-shell.admin-flow .portal-page .agenda-editor-notes textarea {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-scope legend {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-scope label {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-shortcuts span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-open-detail {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-readonly {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-config-section {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-config-section > summary strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-config-section > summary b {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-recurring-row strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-recurring-row span,
+.admin-shell.admin-flow .portal-page .agenda-recurring-row b {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-config-card h2 {
+  color: var(--fg) !important;
+}
+@media (max-width: 760px) {
+  .admin-shell.admin-flow .portal-page .agenda-product-wordmark > span {
+    color: var(--fg) !important;
+  }
+}
+@media (max-width: 760px) {
+  .admin-shell.admin-flow .portal-page .agenda-product-wordmark small {
+    color: var(--muted) !important;
+  }
+}
+@media (max-width: 760px) {
+  .admin-shell.admin-flow .portal-page .agenda-product-avatar {
+    color: var(--fg) !important;
+  }
+}
+@media (max-width: 760px) {
+  .admin-shell.admin-flow .portal-page .agenda-mobile-day-summary strong {
+    color: var(--fg) !important;
+  }
+}
+@media (max-width: 760px) {
+  .admin-shell.admin-flow .portal-page .agenda-mobile-day-summary span {
+    color: var(--muted) !important;
+  }
+}
+@media (max-width: 760px) {
+  .admin-shell.admin-flow .portal-page .agenda-session-time {
+    color: var(--fg) !important;
+  }
+}
+@media (max-width: 760px) {
+  .admin-shell.admin-flow .portal-page .agenda-session-block strong {
+    color: var(--fg) !important;
+  }
+}
+@media (max-width: 760px) {
+  .admin-shell.admin-flow .portal-page .agenda-session-block small {
+    color: var(--muted) !important;
+  }
+}
+@media (max-width: 760px) {
+  .admin-shell.admin-flow .portal-page .agenda-session-block b {
+    color: var(--fg) !important;
+  }
+}
+.admin-shell.admin-flow .portal-page .agenda-icon-button,
+.admin-shell.admin-flow .portal-page .agenda-today-button,
+.admin-shell.admin-flow .portal-page .agenda-config-button,
+.admin-shell.admin-flow .portal-page .agenda-week-range {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-config-button {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-week-day {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-week-day strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-time-axis {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-time-label {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-session-block {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-session-time,
+.admin-shell.admin-flow .portal-page .agenda-session-block small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-session-block strong,
+.admin-shell.admin-flow .portal-page .agenda-session-block b {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-status strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-status em {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-field,
+.admin-shell.admin-flow .portal-page .agenda-editor-notes,
+.admin-shell.admin-flow .portal-page .agenda-editor-scope,
+.admin-shell.admin-flow .portal-page .agenda-editor-shortcuts span {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-field > span,
+.admin-shell.admin-flow .portal-page .agenda-editor-notes > span,
+.admin-shell.admin-flow .portal-page .agenda-editor-scope legend {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-field input,
+.admin-shell.admin-flow .portal-page .agenda-editor-field select,
+.admin-shell.admin-flow .portal-page .agenda-editor-notes textarea {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-scope label,
+.admin-shell.admin-flow .portal-page .agenda-editor-shortcuts span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-open-detail {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-editor-readonly {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+@media (max-width: 760px) {
+  .admin-shell.admin-flow .portal-page .agenda-product-wordmark > span {
+    color: var(--fg) !important;
+  }
+}
+@media (max-width: 760px) {
+  .admin-shell.admin-flow .portal-page .agenda-product-wordmark small {
+    color: var(--muted) !important;
+  }
+}
+@media (max-width: 760px) {
+  .admin-shell.admin-flow .portal-page .agenda-session-block strong,
+  .admin-shell.admin-flow .portal-page .agenda-session-block b {
+    color: var(--fg) !important;
+  }
+}
+@media (max-width: 760px) {
+  .admin-shell.admin-flow .portal-page .agenda-session-block small,
+  .admin-shell.admin-flow .portal-page .agenda-session-time {
+    color: var(--muted) !important;
+  }
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-session-detail
+  .admin-class-detail-header
+  .back-link {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .dashboard-title {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-session-detail
+  .admin-class-detail-header
+  p:last-child {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-class-stats .stat-card span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-session-detail
+  .admin-class-stats
+  .stat-card
+  strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-session-detail
+  .admin-class-stats
+  .stat-card
+  small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-roster {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-roster-header h3 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-roster-header span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-student-identity strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-student-identity > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-attendance-preview button {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-add-panel {
+  border-top-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-add-form input,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-add-form select,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-correction-form input {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-attendance-footer {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-attendance-summary {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-finalize-button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-session-detail
+  .admin-session-settings
+  > summary
+  strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-session-field-grid > label,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-session-notes {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-session-detail
+  .admin-session-field-grid
+  label
+  > span,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-session-notes > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-session-field-grid input,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-session-field-grid select,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-session-notes textarea {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-session-scope legend {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-session-scope label {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-session-detail
+  .admin-session-form-actions
+  .primary-button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-session-cancel-note {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-minimum-status-head h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-session-detail
+  .admin-minimum-status-head
+  p:last-child {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-minimum-grid > div {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-minimum-grid span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-minimum-grid strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-minimum-success {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-minimum-cancelled-detail {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-minimum-override-note {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-session-detail
+  .admin-minimum-override-form
+  strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-minimum-override-form small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-class-detail-header,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-class-stats .stat-card,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-class-operations-panel,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-roster,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-roster-header.compact,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-add-panel,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-attendance-footer,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-session-settings,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-minimum-status {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-session-detail
+  .admin-class-detail-header
+  > .secondary-button,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-add-student-button {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-student-card.compact {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-student-card.compact:hover {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-student-avatar {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-attendance-preview button {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-session-detail
+  .today-attendance-preview
+  button.is-attended {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-session-detail
+  .today-attendance-preview
+  button.is-no-show {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-add-form input,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-add-form select,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-correction-form input,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-session-field-grid > label,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-session-notes,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-session-scope {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-session-scope label {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .today-finalize-button,
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-session-detail
+  .admin-session-form-actions
+  .primary-button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-session-cancel-button {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-minimum-status-pill,
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-minimum-success {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-session-detail .admin-minimum-cancelled-detail {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-session-detail
+  .admin-minimum-override-form
+  button {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-session-detail
+  .admin-minimum-override-form
+  button.is-active {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-header h1 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-header > div > p:last-child {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-quick-create[open] > summary {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .student-quick-create-heading h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .student-quick-create-heading p:last-child {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-search input {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-kpi strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-kpi small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-kpi.is-total .student-kpi-icon {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .student-filter-chip {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-page > .panel .panel-heading h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-card:hover {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-main > strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-meta {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-meta small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-package-summary b {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .student-package-summary small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-arrow {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-quick-create[open] > summary {
+  background: var(--soft) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-kpi.is-active .student-kpi-icon {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-kpi.is-expiring .student-kpi-icon {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-kpi.is-expired .student-kpi-icon {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-kpi.is-total .student-kpi-icon {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-filter-chip {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-page > .panel .count-badge {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-card {
+  border-bottom-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-card:hover {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .student-avatar {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-main > strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-meta {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-meta small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-package-summary b {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .student-package-summary small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-arrow {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-quick-create-panel .compact-form input {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-crm-toolbar {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-crm-toolbar .student-filter-chip small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-identity > strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-meta {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-directory-meta small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-credit-summary b {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .student-credit-summary small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-package-quick-facts small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-package-quick-facts small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .student-package-remaining {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .student-package-expiry {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-page {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-page h2,
+.admin-shell.admin-flow .portal-page .crm-dialog h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-page h3,
+.admin-shell.admin-flow .portal-page .crm-dialog h3 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-page .student-filter-chip {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-page .student-filter-chip.is-active {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-stat.is-focus {
+  background: var(--card) !important;
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-list-labels {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-page .crm-avatar {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-channel {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-message {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-page .crm-pill {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-page .crm-pill.is-student {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-page .crm-pill.is-trial {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-page .crm-pill.is-former {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-btn,
+.admin-shell.admin-flow .portal-page .crm-page .profile360-edit-link {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-back,
+.admin-shell.admin-flow .portal-page .crm-page .profile360-back {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-steps li {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-steps li:not(:last-child)::after {
+  background: var(--soft) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-operation-tabs a[aria-current="page"] {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-page .crm-recommend {
+  background: var(--card) !important;
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-meta {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-info span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-statusline {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-progress {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-bubble {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-bubble.is-mine {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-bubble small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-dialog {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-close {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-field textarea {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .crm-preview {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-back {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-title h1 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-contact {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-tabs {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-tabs a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-package,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-alerts,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-view-panel,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-detail {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-card-heading h2,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-view-heading h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-package-balance,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-package-expiry {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-approved-package-balance
+  strong,
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-approved-package-expiry
+  strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-approved-package-balance
+  span,
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-approved-package-expiry
+  span,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-next > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-progress {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-next {
+  border-top-color: var(--line) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-approved-indicators
+  article {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-indicators span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-indicators strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-technical-level-row {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-technical-level-row > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-technical-level-empty {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-alert-list > div {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-card {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-card-body {
+  border-top-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-facts > div {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-reward-list article,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-history-list article,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-class-row {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-detail > summary strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-detail > summary small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-detail > .panel {
+  border-top-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .panel-heading {
+  border-bottom-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .compact-form input,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .compact-form select,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .compact-form textarea {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-evaluation-title-row h3 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-evaluation-title-row p,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-evaluation-copy span,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-evaluation-copy small,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-evaluation-action-row span,
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-evaluation-action-row
+  small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-evaluation-copy strong,
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-evaluation-action-row
+  strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-evaluation-chip {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-evaluation-primary {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-evaluation-invite form {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-evaluation-invite label {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-evaluation-invite input,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-evaluation-invite select {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-evaluation-history {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-evaluation-history-row {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-evaluation-history-row
+  strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-evaluation-decline-note
+  span,
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-evaluation-decline-note
+  small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-invitation-history-row {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-invitation-history-row
+  strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-sales-periods a {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-sales-history-meta {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-sale-row {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-sale-row:hover {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-sale-row
+  > span:first-child
+  strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-sale-row
+  > span:first-child
+  small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-sale-values small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-sale-values strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-back {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-avatar {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-level-pill {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-edit-link {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-tabs a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-package-balance,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-package-expiry,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-indicators article,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-technical-level-row,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-card,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-reward-list article,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-history-list article,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-class-row {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-approved-package-balance
+  strong,
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-approved-package-expiry
+  strong,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-indicators strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-progress {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-alerts {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-technical-level-row > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-technical-level-row
+  > strong {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-technical-level-empty {
+  border-color: var(--line) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-alert-list > div {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-facts > div {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-edit {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-detail > summary strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-detail > .panel {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .compact-form input,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .compact-form select,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .compact-form textarea {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-usage {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-usage-stats > div {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-usage-stats span,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-disciplines > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-usage-stats strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-disciplines b {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-secondary {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-card-summary h3 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-card-summary span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-card-side strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-class-row strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-package-class-row span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-level-pill {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-state-pill {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-edit-link {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-next strong,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-empty {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-approved-next span,
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-approved-package-balance
+  span,
+.admin-shell.admin-flow
+  .portal-page
+  .admin-ux04-profile360
+  .profile360-approved-package-expiry
+  span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .status-pill,
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .count-badge {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-portal-pill {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-portal-pill.is-entered {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-ux04-profile360 .profile360-portal-pill.is-pending {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .profile360-contact-primary {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .profile360-contact-primary a {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-tabs {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-tabs a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-row {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-row:hover,
+.admin-shell.admin-flow .portal-page .communication-v2-template:hover {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-trigger {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-status.is-muted {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-chevron {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-template {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-preferences {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-field > span {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-field small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-window-input {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-save {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-detail .bg-white\/\[0\.03\],
+.admin-shell.admin-flow .portal-page .communication-v2-detail [class*="bg-white/[0.03]"],
+.admin-shell.admin-flow .portal-page .communication-v2-detail [class*="bg-black/20"] {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-detail input,
+.admin-shell.admin-flow .portal-page .communication-v2-detail select,
+.admin-shell.admin-flow .portal-page .communication-v2-detail textarea {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-detail button[class*="bg-fuchsia"],
+.admin-shell.admin-flow .portal-page .communication-v2-detail a[class*="bg-fuchsia"] {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-detail [class*="bg-amber"] {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .communication-v2-detail [class*="bg-rose"] {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-plan {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-plan-heading span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-secondary-action {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-usage-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-usage-card.is-over {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-usage-card > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-usage-card small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-progress {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-card:hover {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-card-copy > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-chevron {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-note {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-note strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-form-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-field > span {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-field small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-field input {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-field textarea {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-section-copy p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-save {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .advanced-v2-notice.is-success {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-field > span {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-field > small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-field > input,
+.admin-shell.admin-flow .portal-page .appearance-v2-color-code {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-color-row input[type="color"] {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-color-code {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-logo {
+  background-color: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-upload {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-public-link {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-public-link > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-save {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-portal-preview > button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-app-preview {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-note {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-notice.is-success {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-notice.is-error {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .page,
+.admin-shell.admin-flow .portal-page .editorPage {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .header h1 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .header p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .backLink {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notice {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .primaryButton {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .secondaryButton,
+.admin-shell.admin-flow .portal-page .ghostButton {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .popoverHeading span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .field span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .field input,
+.admin-shell.admin-flow .portal-page .field select {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .summaryCard small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .summaryCard strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .summaryCard p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .sectionHeader h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .sectionHeader p:last-child {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .spaceCard {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .spaceTop strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .spaceTop small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .previewEmpty {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .previewEmpty b {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .previewEmpty small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .previewElement {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .previewElement[data-kind="wall"] {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .spaceFooter {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .spaceFooter b {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .resourceRow {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .resourceCopy strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .resourceCopy small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .statusInactive {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .editPanel {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .empty {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .saveStatus small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .saveStatus strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .panelTabs {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .panelTabs button {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .panelTabs .tabActive {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .libraryHelp {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .palette button,
+.admin-shell.admin-flow .portal-page .unplacedButton {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .resourceGroup > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .libraryEmpty {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .canvasHeader strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .canvasHeader small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .canvasControls {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .canvasControls > span {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .mapElement {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .mapElement[data-kind="wall"] {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .legend {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .referenceLegend {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .propertiesHeading strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .propertiesHeading small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .rotationField b {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .inspectorActions button {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .propertiesEmpty {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .page,
+.admin-shell.admin-flow .portal-page .editorPage {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .header h1 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .header p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .backLink {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notice {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .success {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .error {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .primaryButton {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .secondaryButton,
+.admin-shell.admin-flow .portal-page .ghostButton {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .secondaryButton:hover,
+.admin-shell.admin-flow .portal-page .ghostButton:hover {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .dangerButton {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .createPopover,
+.admin-shell.admin-flow .portal-page .editPanel {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .popoverHeading strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .popoverHeading span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .field span {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .field input,
+.admin-shell.admin-flow .portal-page .field select {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .summaryCard,
+.admin-shell.admin-flow .portal-page .section,
+.admin-shell.admin-flow .portal-page .spaceCard,
+.admin-shell.admin-flow .portal-page .resourceRow,
+.admin-shell.admin-flow .portal-page .editorToolbar,
+.admin-shell.admin-flow .portal-page .libraryPanel,
+.admin-shell.admin-flow .portal-page .propertiesPanel,
+.admin-shell.admin-flow .portal-page .canvasWrap {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .summaryIcon,
+.admin-shell.admin-flow .portal-page .resourceIcon {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .summaryCard small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .summaryCard strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .summaryCard p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .sectionHeader h2,
+.admin-shell.admin-flow .portal-page .spaceTop strong,
+.admin-shell.admin-flow .portal-page .resourceCopy strong,
+.admin-shell.admin-flow .portal-page .canvasHeader strong,
+.admin-shell.admin-flow .portal-page .propertiesHeading strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .sectionHeader p:last-child,
+.admin-shell.admin-flow .portal-page .spaceTop small,
+.admin-shell.admin-flow .portal-page .resourceCopy small,
+.admin-shell.admin-flow .portal-page .canvasHeader small,
+.admin-shell.admin-flow .portal-page .propertiesHeading small,
+.admin-shell.admin-flow .portal-page .libraryHelp,
+.admin-shell.admin-flow .portal-page .legend,
+.admin-shell.admin-flow .portal-page .saveStatus small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .spaceTop,
+.admin-shell.admin-flow .portal-page .librarySection,
+.admin-shell.admin-flow .portal-page .propertiesHeading,
+.admin-shell.admin-flow .portal-page .panelTabs {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .activePill,
+.admin-shell.admin-flow .portal-page .status {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .statusInactive {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .mapPreview {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .previewEmpty {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .previewEmpty b {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .previewElement {
+  border-color: var(--line) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .previewElement[data-kind="wall"] {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .spaceFooter {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .spaceFooter b {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .empty {
+  border-color: var(--line) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .panelTabs {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .panelTabs button {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .panelTabs .tabActive {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .palette button,
+.admin-shell.admin-flow .portal-page .unplacedButton {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .palette button:hover,
+.admin-shell.admin-flow .portal-page .unplacedButton:hover {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .resourceGroup > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .libraryEmpty,
+.admin-shell.admin-flow .portal-page .addMoreLink {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .saveStatus strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .canvasControls {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .canvasControls > span {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .canvas {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .mapElement {
+  border-color: var(--line) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .mapElement[data-kind="wall"] {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .referenceLegend {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .rotationField b {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .inspectorActions button {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .inspectorActions button:hover {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .inspectorActions .removeButton {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .propertiesEmpty {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .reservations-v2-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .reservations-v2-field > span {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .reservations-v2-field small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .reservations-v2-unit-input,
+.admin-shell.admin-flow .portal-page .reservations-v2-money-input {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .reservations-v2-toggle {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .reservations-v2-save {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .reservations-v2-secondary {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .reservations-v2-notice.is-success {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .reservations-v2-notice.is-error {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .documents-primary-action {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .documents-row:hover {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .documents-row > span:last-child {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .documents-field {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .documents-field::placeholder {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .documents-field:focus {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .documents-new-note {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .documents-new-v2 .documents-primary-action {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-header h1 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-header p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-primary-button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-secondary-button {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-kpi-copy strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-kpi-copy span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-kpi-copy small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-kpi-arrow {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-tabs {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-tabs a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-panel-header h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-date-box small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-row-copy strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-row-copy small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-score {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-status {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-empty {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-shortcut {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-shortcut strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-shortcut small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-config-section > header h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-config-section > header p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-discipline-row {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-discipline-copy strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-discipline-copy small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-level-pill {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-level-pill strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-level-pill small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-template-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-template-card h3 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-template-card p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-template-meta {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-field label {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-field input,
+.admin-shell.admin-flow .portal-page .eval-field select,
+.admin-shell.admin-flow .portal-page .eval-field textarea {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-notice {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-progress-header {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-progress-track {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-criterion-tab {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-criterion-tab.is-active {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-element-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-element-copy strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-element-copy small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-choice {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-choice.is-selected {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-score-row input {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-score-row textarea {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-total-score strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-breakdown-row {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-breakdown-track {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-feedback-card h3 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-feedback-card li {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-discipline-card-copy strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-discipline-card-copy small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-criterion-editor-row {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-criterion-editor-row .eval-field span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-summary-checks .eval-template-card strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-level-row {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-summary-hint {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-steps {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-steps a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-percent-input,
+.admin-shell.admin-flow .portal-page .eval-v2-mini-percent,
+.admin-shell.admin-flow .portal-page .eval-v2-score-input {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-weight-track {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-block-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-block-card > strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-check {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-items-heading h3 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-items-heading p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-item-row {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-item-name {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-mini-field > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-review-list article {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-review-list span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-review-list strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-outcome-card small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-outcome-card strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-outcome-card span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-level-result > div > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-level-result > div > strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-live-nav {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-live-nav-progress strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-live-nav-progress span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-live-nav button {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-live-nav button.is-active {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-live-item {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-live-item-copy strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-live-item-copy small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-item-meta > span {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-attempts {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-attempts input {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-v2-autosave {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .profile360-evaluation-placement-note span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-header h1,
+.admin-shell.admin-flow .portal-page .eval-simple-section-header h1 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-header p,
+.admin-shell.admin-flow .portal-page .eval-simple-section-header p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-back {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-more {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-tabs {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-tabs a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-panel h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-panel > p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-ring::after,
+.admin-shell.admin-flow .portal-page .eval-simple-mini-ring::after {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-ring strong,
+.admin-shell.admin-flow .portal-page .eval-simple-mini-ring strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-total-card span,
+.admin-shell.admin-flow .portal-page .eval-simple-distribution-card span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-total-card > div:last-child > strong,
+.admin-shell.admin-flow .portal-page .eval-simple-distribution-card > div:last-child > strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-section-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-index {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-section-copy strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-section-copy small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-chevron {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-info-card {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-error {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-lock strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-lock span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-numbered-title {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-field > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-field input,
+.admin-shell.admin-flow .portal-page .eval-simple-field textarea,
+.admin-shell.admin-flow .portal-page .eval-simple-percent-field,
+.admin-shell.admin-flow .portal-page .eval-simple-item-name,
+.admin-shell.admin-flow .portal-page .eval-simple-item-percent {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-percent-field > span,
+.admin-shell.admin-flow .portal-page .eval-simple-item-percent > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-mode-option {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-mode-icon {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-mode-option strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-mode-option small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-primary {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-primary:disabled {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-secondary {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-trash,
+.admin-shell.admin-flow .portal-page .eval-simple-row-delete {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-distribution-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-content-section h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-item-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-item-rule .eval-simple-check {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-item-rule > small:not(.eval-simple-inline-save) {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-inline-minimum {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-inline-minimum > div {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-inline-minimum input {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-inline-save {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-item-percent input {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-add-details[open] > summary {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-add-form {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-accordion {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-accordion > summary {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-accordion > summary > span:first-child {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-accordion > summary > span:last-child {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-check {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-requirements-list > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-requirement-min {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-requirement-min input {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-mini-save {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-preview-list article,
+.admin-shell.admin-flow .portal-page .eval-simple-rule-summary {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-preview-list strong,
+.admin-shell.admin-flow .portal-page .eval-simple-rule-summary strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-preview-list span,
+.admin-shell.admin-flow .portal-page .eval-simple-rule-summary span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-simple-section-step {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-primary-button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-secondary-button {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-danger-button {
+  background: var(--card) !important;
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-status {
+  border-color: var(--line) !important;
+  color: var(--muted) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-status.approved {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-field label {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-field input,
+.admin-shell.admin-flow .portal-page .eval-field select,
+.admin-shell.admin-flow .portal-page .eval-field textarea,
+.admin-shell.admin-flow .portal-page .eval-v2-item-name,
+.admin-shell.admin-flow .portal-page .eval-score-row input,
+.admin-shell.admin-flow .portal-page .eval-score-row textarea {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-notice {
+  border-color: var(--line) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .back-link {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .eval-discipline-card:hover,
+.admin-shell.admin-flow .portal-page .eval-level-row:hover {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-v2-steps {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-v2-steps a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-v2-percent-input,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-v2-mini-percent,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-v2-score-input {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-v2-weight-track,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-progress-track,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-breakdown-track {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-v2-add-button {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-v2-block-editor {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-v2-check {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-v2-new-item {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-choice {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-summary-card {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-breakdown-row,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-progress-header {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-mandatory,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-step-label {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-tabs {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-tabs a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-kpi-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-back,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-more {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-tabs {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-tabs a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-panel,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-total-card,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-lock,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-distribution-card,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-section-card,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-item-card,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-add-form,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-accordion,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-preview-list article,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-rule-summary {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-ring::after,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-mini-ring::after {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-total-card small,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-distribution-card small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-chevron {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-add-section,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-add-details > summary {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-info-card {
+  border-color: var(--line) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-field > span,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-check,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-item-rule .eval-simple-check,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-inline-minimum {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-field input,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-field textarea,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-percent-field,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-item-name,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-item-percent,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-inline-minimum > div,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-requirement-min input {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-mode-option {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-mode-icon {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .evaluations-page
+  .eval-simple-mode-option:has(input:checked)
+  .eval-simple-mode-icon {
+  background: var(--soft) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-primary {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-secondary,
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-mini-save {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .evaluations-page .eval-simple-accordion > summary > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-class-time {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-class-copy strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .today-class-copy small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-class-capacity {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .today-class-chevron {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-empty-state {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-session-settings > summary b {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .admin-mobile-brand-copy small {
+  color: var(--muted) !important;
+}
+@media (max-width: 760px) {
+  .admin-shell.admin-flow .portal-page .admin-mobile-brand-copy strong {
+    color: var(--fg) !important;
+  }
+}
+@media (max-width: 760px) {
+  .admin-shell.admin-flow .portal-page .admin-mobile-user-button {
+    color: var(--fg) !important;
+  }
+}
+.admin-shell.admin-flow .portal-page .today-class-state {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .today-class-state.is-upcoming {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .today-class-countdown {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .today-attendance-origin {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .coach-profile-avatar {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .coach-profile-copy {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-add-panel-heading > span small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-class-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .today-class-time {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-class-meta {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-class-capacity b {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .today-class-capacity > small:not(.today-class-minimum-badge) {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-correction-details > summary,
+.admin-shell.admin-flow .portal-page .today-session-more > summary {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-attendance-footer p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-resource-tag {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .today-resource-tag.is-missing {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-primary {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-create-panel {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-create-grid label > span,
+.admin-shell.admin-flow .portal-page .team-v2-create-bio > span {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-create input,
+.admin-shell.admin-flow .portal-page .team-v2-create textarea {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-tabs {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-tabs a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-search {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-search > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-row {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-row:hover {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-row-copy > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-status {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-chevron {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-detail-status {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-count {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-detail-row {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-notice.is-success {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-detail .primary-button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .team-v2-detail .secondary-button,
+.admin-shell.admin-flow .portal-page .team-v2-detail .ghost-button {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-page {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-back {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-header p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-kpis span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-kpis strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-kpis small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-avatar {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-phone-header span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-empty p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-prompts button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-message.is-assistant {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-message.is-error {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-message-trace {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-message.is-loading span {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-composer {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-composer textarea {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-composer button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-debug-card p,
+.admin-shell.admin-flow .portal-page .demi-debug-card li {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-debug-card dt {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-debug-card dd {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-identity label {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-identity select {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-identity small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-page.demi-settings-page {
+  color: var(--fg) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-settings-page .demi-header p,
+.admin-shell.admin-flow .portal-page .demi-settings-page .demi-back,
+.admin-shell.admin-flow .portal-page .demi-settings-page .demi-kpis small {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-settings-page .demi-mode {
+  background: var(--card) !important;
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-settings-page .demi-kpis article,
+.admin-shell.admin-flow .portal-page .demi-settings-page .demi-unavailable {
+  color: var(--fg) !important;
+  background: var(--card) !important;
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-settings-page .demi-kpis strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-settings-page .demi-cost-note {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-workbench {
+  color: var(--fg) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-badge {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-workbench button {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-workbench button:hover {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-tabs button[aria-pressed="true"] {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-content p {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-content label span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-workbench textarea,
+.admin-shell.admin-flow .portal-page .demi-workbench input,
+.admin-shell.admin-flow .portal-page .demi-workbench select {
+  color: var(--fg) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-meta {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-content .dw-hint {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-workbench .dw-primary {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-success {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-error {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-workbench pre {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-history small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-content .dw-test-notice {
+  color: var(--fg) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-chat {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-message {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-message.is-user {
+  background: var(--card) !important;
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-setting-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-setting-card small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-admin-plan-head small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-plan-badge {
+  background: var(--soft) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-plan-warning {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-admin-actions-list article {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-admin-actions-list article > span {
+  background: var(--soft) !important;
+}
+.admin-shell.admin-flow .portal-page .dw-admin-actions-list article small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .integrations-v2-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .integrations-v2-copy > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .integrations-v2-chevron {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .integrations-v2-note,
+.admin-shell.admin-flow .portal-page .integration-detail-v2-note {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .integration-detail-v2-summary article,
+.admin-shell.admin-flow .portal-page .integration-detail-v2-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .integration-detail-v2-summary span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .integration-detail-v2-field > span {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .integration-detail-v2-field input,
+.admin-shell.admin-flow .portal-page .integration-detail-v2-field select {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .integration-detail-v2-field small,
+.admin-shell.admin-flow .portal-page .integration-detail-v2-help {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .integration-detail-v2-button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .integration-detail-v2-row {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .integration-detail-v2-event {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .integration-detail-v2-event pre {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .integration-detail-v2-notice.is-success {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .integration-detail-v2-notice.is-error {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .integrations-v2-card:not(.is-disabled):hover {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .integrations-v2-mark[data-provider="mp"] {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .integrations-v2-mark[data-provider="wa"] {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .integrations-v2-mark[data-provider="s"] {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .integrations-v2-mark[data-provider="fb"] {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .integrations-v2-status.is-available {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .integrations-v2-status.is-soon {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .intel-bar-label {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .intel-chevron {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .intel-table-row {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .intel-data-row {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .intel-unlock-list {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .intel-periods a:hover {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .intel-tabs a:hover,
+.admin-shell.admin-flow .portal-page .intel-tabs a.is-active {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .intel-bar-label {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .intel-bar-track {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .intel-insight {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .intel-chevron {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .intel-source-note {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .intel-table-row,
+.admin-shell.admin-flow .portal-page .intel-data-row {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .intel-unlock-list {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .intel-page {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .demi-layers {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-eyebrow {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-header h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-header p,
+.admin-shell.admin-flow .portal-page .dl-title p {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-env {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-nav,
+.admin-shell.admin-flow .portal-page .dl-panel {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-nav button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-nav button:hover {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-nav button[aria-current="step"] {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-nav button > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-nav button small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-title > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-title h3 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-editor textarea {
+  color: var(--fg) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-editor textarea:focus {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-editor small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-source span {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-source small {
+  color: var(--muted) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-callout {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-uat p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-save small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-save button {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .dl-save button.dl-primary {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .uat-bank {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .uat-bank section {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .uat-cards article {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .uat-bank button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .uat-bank pre {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .uat-error {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .uat-inbound {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .uat-outbound {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .uat-note {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-page-header h1,
+.admin-shell.admin-flow .portal-page .notification-detail-header h1 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-operation-badge.is-paused {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-operation-badge.is-paused > span {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-readonly-badge {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-tabs {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-tabs a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-overview-heading h2,
+.admin-shell.admin-flow .portal-page .notification-section-heading h2,
+.admin-shell.admin-flow .portal-page .notification-detail-card h2,
+.admin-shell.admin-flow .portal-page .notification-settings-card h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-kpis strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-kpis span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-recommendation,
+.admin-shell.admin-flow .portal-page .notification-info-box {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-recommendation strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-filter-row a {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-filter-row a span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-process-row {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-process-icon,
+.admin-shell.admin-flow .portal-page .notification-detail-icon {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-process-copy strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-process-copy small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-channel-chips > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-row-status {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-row-status.is-planned {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-row-chevron {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-channel-settings-grid label {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-channel-settings-grid strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-channel-settings-grid small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-field > span {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-field input,
+.admin-shell.admin-flow .portal-page .notification-field select,
+.admin-shell.admin-flow .portal-page .notification-message-form input,
+.admin-shell.admin-flow .portal-page .notification-message-form textarea {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-field small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-form-actions button,
+.admin-shell.admin-flow .portal-page .notification-message-form button,
+.admin-shell.admin-flow .portal-page .notification-advanced-form > button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-detail-header > a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-title-with-status > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-switch {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-switch span {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-general-grid article {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-general-grid span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-general-grid strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-detail-channel-grid > article {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-detail-channel-head strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-detail-channel-head small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .channel-dot {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-card-head > strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-card-head > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-preview {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-preview strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-preview p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-form label > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-form button.is-secondary {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .marketing-runtime-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .marketing-runtime-card .notification-message-card-head p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .marketing-runtime-card
+  .notification-message-card-head
+  > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .marketing-runtime-note {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-admin-page,
+.admin-shell.admin-flow .portal-page .notification-detail-page {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-page-header h1,
+.admin-shell.admin-flow .portal-page .notification-detail-header h1,
+.admin-shell.admin-flow .portal-page .notification-overview-heading h2,
+.admin-shell.admin-flow .portal-page .notification-section-heading h2,
+.admin-shell.admin-flow .portal-page .notification-detail-card h2,
+.admin-shell.admin-flow .portal-page .notification-settings-card h2,
+.admin-shell.admin-flow .portal-page .notification-kpis strong,
+.admin-shell.admin-flow .portal-page .notification-process-copy strong,
+.admin-shell.admin-flow .portal-page .notification-title-with-status strong,
+.admin-shell.admin-flow .portal-page .notification-message-card h3,
+.admin-shell.admin-flow .portal-page .notification-message-preview strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-tabs,
+.admin-shell.admin-flow .portal-page .notification-overview-card,
+.admin-shell.admin-flow .portal-page .notification-detail-card,
+.admin-shell.admin-flow .portal-page .notification-settings-card,
+.admin-shell.admin-flow .portal-page .notification-process-row,
+.admin-shell.admin-flow .portal-page .notification-channel-settings-grid label,
+.admin-shell.admin-flow .portal-page .notification-message-card,
+.admin-shell.admin-flow .portal-page .notification-message-preview,
+.admin-shell.admin-flow .portal-page .notification-general-grid > *,
+.admin-shell.admin-flow .portal-page .notification-detail-channel-grid > * {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-tabs a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-tabs a:hover {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-process-row:hover {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-filter-row a {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-filter-row a span {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-filter-row a.is-active {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-operation-badge,
+.admin-shell.admin-flow .portal-page .notification-channel-chips > span.is-on,
+.admin-shell.admin-flow .portal-page .notification-row-status.is-on {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-operation-badge.is-paused,
+.admin-shell.admin-flow .portal-page .notification-readonly-badge,
+.admin-shell.admin-flow .portal-page .notification-row-status {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-essential-badge,
+.admin-shell.admin-flow .portal-page .notification-channel-chips > span.is-partial {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-feedback {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-feedback.is-error {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-recommendation,
+.admin-shell.admin-flow .portal-page .notification-info-box {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-recommendation strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-channel-chips > span {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-field input,
+.admin-shell.admin-flow .portal-page .notification-field select,
+.admin-shell.admin-flow .portal-page .notification-field textarea,
+.admin-shell.admin-flow .portal-page .notification-message-form input,
+.admin-shell.admin-flow .portal-page .notification-message-form select,
+.admin-shell.admin-flow .portal-page .notification-message-form textarea,
+.admin-shell.admin-flow .portal-page .notification-advanced-form input,
+.admin-shell.admin-flow .portal-page .notification-advanced-form select,
+.admin-shell.admin-flow .portal-page .notification-advanced-form textarea {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-form-actions button[class*="bg-fuchsia"],
+.admin-shell.admin-flow .portal-page .notification-form-actions .primary-button,
+.admin-shell.admin-flow .portal-page .notification-message-form button[class*="bg-fuchsia"],
+.admin-shell.admin-flow .portal-page .notification-advanced-form button[class*="bg-fuchsia"] {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-detail-header > a,
+.admin-shell.admin-flow .portal-page .notification-general-grid span,
+.admin-shell.admin-flow .portal-page .notification-detail-channel-head small,
+.admin-shell.admin-flow .portal-page .notification-message-card-head > span,
+.admin-shell.admin-flow .portal-page .notification-message-preview p,
+.admin-shell.admin-flow .portal-page .notification-message-form label > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-general-grid strong,
+.admin-shell.admin-flow .portal-page .notification-detail-channel-head strong,
+.admin-shell.admin-flow .portal-page .notification-message-card-head > strong,
+.admin-shell.admin-flow .portal-page .notification-message-preview strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .notification-detail-channel-grid
+  > article.is-globally-disabled {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .notification-detail-channel-grid
+  > article.is-globally-disabled
+  .notification-detail-channel-head
+  strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-title-with-status > span {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-required-channel {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-readonly-badge {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-admin-page,
+.admin-shell.admin-flow .portal-page .notification-detail-page {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-page-header h1,
+.admin-shell.admin-flow .portal-page .notification-detail-header h1 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-page-header p:not(.notification-eyebrow),
+.admin-shell.admin-flow .portal-page .notification-detail-header p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-tabs {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-tabs a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-tabs a.is-active {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-overview-card,
+.admin-shell.admin-flow .portal-page .notification-detail-card,
+.admin-shell.admin-flow .portal-page .notification-settings-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-overview-heading h2,
+.admin-shell.admin-flow .portal-page .notification-section-heading h2,
+.admin-shell.admin-flow .portal-page .notification-detail-card h2,
+.admin-shell.admin-flow .portal-page .notification-settings-card h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-overview-heading p,
+.admin-shell.admin-flow .portal-page .notification-section-heading p,
+.admin-shell.admin-flow .portal-page .notification-detail-card-heading p,
+.admin-shell.admin-flow .portal-page .notification-settings-heading p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-kpis article {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-kpis strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-kpis span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-recommendation,
+.admin-shell.admin-flow .portal-page .notification-info-box {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-recommendation strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-filter-row a {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-filter-row a span {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-filter-row a.is-active {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-process-row {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-process-icon,
+.admin-shell.admin-flow .portal-page .notification-detail-icon {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-process-icon.marketing {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-process-copy strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-process-copy small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-channel-chips > span {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-channel-chips > span.is-on {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-channel-chips > span.is-partial {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-row-status {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-row-status.is-on {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-row-status.is-planned {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-row-status.is-edit {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-row-chevron {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-detail-header > a {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-title-with-status > span {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-title-with-status > span.is-on {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-general-grid article {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-general-grid span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-general-grid strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-detail-channel-grid > article,
+.admin-shell.admin-flow .portal-page .notification-message-card {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .notification-detail-channel-grid
+  > article.is-globally-disabled {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-channel-symbol {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-detail-channel-head strong,
+.admin-shell.admin-flow .portal-page .notification-channel-settings-grid strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-detail-channel-head small,
+.admin-shell.admin-flow .portal-page .notification-channel-settings-grid small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-required-channel {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-readonly-badge {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-switch {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-switch span {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-card-head > strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-card-head > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-preview {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-preview strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-preview p,
+.admin-shell.admin-flow .portal-page .notification-message-card > p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-form label > span,
+.admin-shell.admin-flow .portal-page .notification-field > span {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-form input,
+.admin-shell.admin-flow .portal-page .notification-message-form select,
+.admin-shell.admin-flow .portal-page .notification-message-form textarea,
+.admin-shell.admin-flow .portal-page .notification-field input,
+.admin-shell.admin-flow .portal-page .notification-field select {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-form button,
+.admin-shell.admin-flow .portal-page .notification-advanced-form > button {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-form button:hover,
+.admin-shell.admin-flow .portal-page .notification-advanced-form > button:hover {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-message-form button.is-secondary {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-field small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-channel-settings-grid label {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  .notification-channel-settings-grid
+  .notification-channel-readiness {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-category-tag {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-process-copy .notification-process-description {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-process-copy > small:last-child {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-detail-title-row .notification-category-tag {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .notification-step-index {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .packages-v2-info {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .packages-v2-info.is-green {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .packages-v2-info-icon {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .packages-v2-info.is-green .packages-v2-info-icon {
+  background: var(--soft) !important;
+}
+.admin-shell.admin-flow .portal-page .package-category-card[href]:hover {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .package-category-soon {
+  color: var(--muted) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .packages-v2-secondary {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .package-form label {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .package-form input,
+.admin-shell.admin-flow .portal-page .package-form textarea {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .package-counter {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .package-counter button {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .package-category-copy .package-period-count {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .package-category-card.is-neutral .package-category-icon {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .package-category-card.is-neutral .package-category-action {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .package-fixed-period {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .package-list-chip.is-muted {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .package-term-option {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .package-choice-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .package-schedule-day {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .package-schedule-day > strong {
+  color: var(--muted) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .package-unlimited-badge span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .package-activity-badge span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-roster-header.compact h3 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .today-roster-header.compact span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-student-avatar {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .today-student-identity > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-attendance-preview button {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-attendance-preview button:hover {
+  border-color: var(--line) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .today-attendance-state {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-student-more > summary {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-student-more > div {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .today-correction-form input,
+.admin-shell.admin-flow .portal-page .today-add-form input,
+.admin-shell.admin-flow .portal-page .today-add-form select {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .today-attendance-summary {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-attendance-footer > p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-evaluation-start-form button:hover {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .today-payment-dialog h3 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .today-payment-dialog header p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-payment-close {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .today-payment-amount > span,
+.admin-shell.admin-flow .portal-page .today-payment-field > span,
+.admin-shell.admin-flow .portal-page .today-payment-amount label > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .today-payment-amount > strong {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .today-payment-amount label > div {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .today-payment-amount input,
+.admin-shell.admin-flow .portal-page .today-payment-field input,
+.admin-shell.admin-flow .portal-page .today-payment-field select {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .today-payment-cancel {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .today-payment-confirm {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .subscription-v2-status.is-blocked {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .subscription-v2-status > span {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .subscription-v2-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .subscription-v2-list dt {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .subscription-v2-plan-option {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .subscription-v2-plan-option small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .subscription-v2-primary {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .subscription-v2-secondary {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .subscription-v2-connected,
+.admin-shell.admin-flow .portal-page .subscription-v2-empty,
+.admin-shell.admin-flow .portal-page .subscription-v2-notice {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .subscription-v2-notice.is-success {
+  border-color: var(--line) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .subscription-v2-notice.is-error {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-primary,
+.admin-shell.admin-flow .portal-page .sales-v2 .primary-button {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-filters {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-filters input,
+.admin-shell.admin-flow .portal-page .sales-v2-filters select,
+.admin-shell.admin-flow .portal-page .sales-v2 .compact-form input,
+.admin-shell.admin-flow .portal-page .sales-v2 .compact-form select,
+.admin-shell.admin-flow .portal-page .sales-v2 .compact-form textarea {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-filters button {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-card {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-card:hover {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-card-title small {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-card-money small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-select-card,
+.admin-shell.admin-flow .portal-page .sales-v2-student-context,
+.admin-shell.admin-flow .portal-page .sales-v2 .sales-v2-flow .panel {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2 .sales-v2-flow .compact-form label > span {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2 .sales-v2-flow .ghost-button {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2 .sales-v2-flow .notice {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2 .sales-v2-flow .notice.success {
+  border-color: var(--line) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2 .sales-v2-flow .notice.error {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2 .sales-v2-flow button.rounded-2xl {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2 .sales-v2-flow aside.rounded-2xl {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2 .sales-v2-flow [class*="border-amber"] {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-detail-summary article {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-detail-summary article p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-detail > section {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-detail input,
+.admin-shell.admin-flow .portal-page .sales-v2-detail select,
+.admin-shell.admin-flow .portal-page .sales-v2-detail textarea {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-detail details {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-detail > div[class*="emerald"] {
+  border-color: var(--line) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-detail > div[class*="rose"] {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2 .sales-v2-package-group {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2 .sales-v2-package-group.has-selection {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2 .sales-v2-package-group-toggle b {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2 .sales-v2-package-option {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-student-picker {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-student-picker > div:first-child h2 {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-student-picker > div:first-child p {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-student-picker-list a {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-student-picker-list a small {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow .portal-page .sales-v2-student-picker-list a:hover {
+  border-color: var(--line) !important;
+  background: var(--card) !important;
+}

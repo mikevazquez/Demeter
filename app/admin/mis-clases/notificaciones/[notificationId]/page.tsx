@@ -30,6 +30,7 @@ export default async function CoachNotificationDetailPage({
     .eq("studio_id", studio.id)
     .eq("person_id", membership.person_id)
     .eq("status", "active")
+    .eq("teaches", true)
     .maybeSingle();
 
   if (!currentInstructor) notFound();
@@ -61,7 +62,7 @@ export default async function CoachNotificationDetailPage({
   const timeLabel = payload.starts_at ? formatTime(payload.starts_at, studio.timezone) : null;
 
   return (
-    <main className="dashboard-shell space-y-5">
+    <main className="portal-page dashboard-shell space-y-5">
       <Link className="back-link compact" href="/admin/mis-clases">
         ← Mis clases
       </Link>

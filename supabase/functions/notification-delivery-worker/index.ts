@@ -1,3 +1,4 @@
+import { sendProviderEmail, type EmailConnection } from "../_shared/email-provider.ts";
 import { withSupabase } from "npm:@supabase/server@1.7.0";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.116.0";
 import { sendPushNotification, WebPushError } from "npm:@mmmike/web-push@1.3.0/send";
@@ -814,7 +815,6 @@ async function sendPush(
         const ok = await sendPushNotification(
           {
             endpoint: row.endpoint,
-            expirationTime: row.expiration_time,
             keys: {
               p256dh: row.p256dh,
               auth: row.auth_secret,
@@ -1042,14 +1042,67 @@ async function sendWhatsAppMeta(
   };
 }
 
-async function sendEmail(): Promise<AdapterResult> {
-  return {
-    status: "skipped",
-    providerKey: "email",
-    errorCode: "email_provider_not_configured",
-    errorMessage: "No email provider is configured for Studio Flow yet.",
-    response: {},
-  };
+async function sendEmail(
+  adminClient: SupabaseClient,
+  delivery: DeliveryRow,
+  message: RenderedMessage,
+): Promise<AdapterResult> {
+  const { data, error } = await adminClient.rpc("service_get_email_connection", {
+    p_studio_id: delivery.studio_id,
+  });
+  if (error)
+    return {
+      status: "retry",
+      providerKey: "email",
+      errorCode: "email_connection_lookup_failed",
+      response: {},
+    };
+  if (!data)
+    return {
+      status: "skipped",
+      providerKey: "email",
+      errorCode: "email_provider_not_configured",
+      response: {},
+    };
+  const to = String(delivery.recipient_snapshot.email ?? "").trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))
+    return {
+      status: "skipped",
+      providerKey: data.provider,
+      errorCode: "recipient_email_missing",
+      response: {},
+    };
+  try {
+    const result = await sendProviderEmail(
+      data as EmailConnection,
+      to,
+      message.title,
+      message.body,
+      delivery.id,
+    );
+    if (result.ok)
+      return {
+        status: "accepted",
+        providerKey: data.provider,
+        providerMessageId: result.messageId,
+        httpStatus: result.status,
+        response: {},
+      };
+    return {
+      status: result.status === 429 || result.status >= 500 ? "retry" : "failed",
+      providerKey: data.provider,
+      errorCode: "email_provider_rejected",
+      httpStatus: result.status,
+      response: {},
+    };
+  } catch {
+    return {
+      status: "retry",
+      providerKey: data.provider,
+      errorCode: "email_provider_unavailable",
+      response: {},
+    };
+  }
 }
 
 async function runAdapter(
@@ -1112,7 +1165,7 @@ async function runAdapter(
     case "meta_whatsapp":
       return sendWhatsAppMeta(adminClient, delivery, message);
     case "email_provider":
-      return sendEmail();
+      return sendEmail(adminClient, delivery, message);
     default:
       return {
         status: "failed",
@@ -1320,7 +1373,7 @@ async function processDelivery(
       );
 
       if (error || data !== true) throw new Error("notification_delivery_mark_skipped_failed");
-    } else {
+    } else if (result.status === "failed" || result.status === "retry") {
       const { data, error } = await adminClient.rpc(
         "system_mark_notification_delivery_attempt_failed",
         {

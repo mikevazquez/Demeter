@@ -54,7 +54,7 @@ export default async function NewRestrictedPackagePage({
   });
 
   return (
-    <main className="packages-v2">
+    <main className="portal-page packages-v2">
       <header className="packages-v2-header">
         <Link
           href={`/admin/productos/por-disciplina-horario/${scope}`}

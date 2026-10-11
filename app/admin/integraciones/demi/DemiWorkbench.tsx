@@ -57,6 +57,7 @@ type AdminChange = {
 
 export default function DemiWorkbench({
   assistantName,
+  assistantKey = "demi",
   activeInstructions,
   versions,
   openAIConfigured,
@@ -67,6 +68,7 @@ export default function DemiWorkbench({
   adminChanges,
 }: {
   assistantName: string;
+  assistantKey?: "demi" | "polina";
   activeInstructions: string;
   versions: PromptVersion[];
   openAIConfigured: boolean;
@@ -80,7 +82,7 @@ export default function DemiWorkbench({
   const initial = versions[0]?.kind === "draft" ? versions[0] : null;
   const [tab, setTab] = useState<
     "configure" | "instructions" | "improve" | "test" | "learning" | "handoff"
-  >("configure");
+  >(assistantKey === "polina" ? "instructions" : "configure");
   const [draft, setDraft] = useState(initial?.instructions ?? activeInstructions);
   const [saved, setSaved] = useState(initial);
   const [history, setHistory] = useState(versions);
@@ -88,7 +90,9 @@ export default function DemiWorkbench({
   const [goal, setGoal] = useState("");
   const [proposal, setProposal] = useState<string | null>(null);
   const [proposalSource, setProposalSource] = useState("");
-  const [persona, setPersona] = useState<TestPersona>("prospect");
+  const [persona, setPersona] = useState<TestPersona>(
+    assistantKey === "polina" ? "student" : "prospect",
+  );
   const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -156,15 +160,17 @@ export default function DemiWorkbench({
             ["configure", "⚙️ Configurar con Demi"],
             ["instructions", "✍️ Instrucciones"],
             ["improve", "✨ Mejorar con IA"],
-            ["test", "💬 Probar a Demi"],
+            ["test", `💬 Probar a ${assistantName}`],
             ["learning", "🧠 Aprendizaje"],
             ["handoff", "👤 Atención humana"],
           ] as const
-        ).map(([key, label]) => (
-          <button type="button" key={key} aria-pressed={tab === key} onClick={() => setTab(key)}>
-            {label}
-          </button>
-        ))}
+        )
+          .filter(([key]) => assistantKey === "demi" || key !== "configure")
+          .map(([key, label]) => (
+            <button type="button" key={key} aria-pressed={tab === key} onClick={() => setTab(key)}>
+              {label}
+            </button>
+          ))}
       </nav>
       <div aria-live="polite">
         {notice && <p className="dw-success">{notice}</p>}
@@ -370,7 +376,7 @@ export default function DemiWorkbench({
               disabled={busy || !storageReady || !draft.trim()}
               onClick={() =>
                 perform(async () => {
-                  const result = await saveDemiPrompt(draft, note);
+                  const result = await saveDemiPrompt(draft, note, assistantKey);
                   if (!result.ok) return setError(promptWorkbenchError(result.error));
                   const version = result.version as PromptVersion;
                   setSaved(version);
@@ -413,7 +419,11 @@ export default function DemiWorkbench({
                   onClick={() =>
                     perform(async () => {
                       if (!saved) return;
-                      const result = await activateDemiPrompt(saved.id, activeInstructions);
+                      const result = await activateDemiPrompt(
+                        saved.id,
+                        activeInstructions,
+                        assistantKey,
+                      );
                       if (!result.ok) return setError(promptWorkbenchError(result.error));
                       setReviewActivation(false);
                       setNotice("Versión activada.");
@@ -491,6 +501,7 @@ export default function DemiWorkbench({
                 setProposal(null);
                 const source = draft;
                 const result = await testDemiPrompt({
+                  assistantKey,
                   instructions: source,
                   message: goal,
                   persona,
@@ -583,7 +594,7 @@ export default function DemiWorkbench({
                       disabled={busy}
                       onClick={() =>
                         perform(async () => {
-                          const x = await reviewDemiLearning(item.id, "approved");
+                          const x = await reviewDemiLearning(item.id, "approved", assistantKey);
                           if (!x.ok) return setError(promptWorkbenchError(x.error));
                           if (x.proposedInstruction) {
                             setDraft((v) => v + "\n" + x.proposedInstruction);
@@ -603,7 +614,7 @@ export default function DemiWorkbench({
                       disabled={busy}
                       onClick={() =>
                         perform(async () => {
-                          const x = await reviewDemiLearning(item.id, "rejected");
+                          const x = await reviewDemiLearning(item.id, "rejected", assistantKey);
                           if (!x.ok) return setError(promptWorkbenchError(x.error));
                           setNotice("Aprendizaje descartado.");
                           router.refresh();
@@ -647,7 +658,11 @@ export default function DemiWorkbench({
                     disabled={busy}
                     onChange={(e) =>
                       perform(async () => {
-                        const x = await setDemiHandoffPolicy(item.id, e.target.checked);
+                        const x = await setDemiHandoffPolicy(
+                          item.id,
+                          e.target.checked,
+                          assistantKey,
+                        );
                         if (!x.ok) return setError(promptWorkbenchError(x.error));
                         setNotice(e.target.checked ? "Motivo activado." : "Motivo desactivado.");
                         router.refresh();
@@ -680,15 +695,19 @@ export default function DemiWorkbench({
                   clearTest();
                 }}
               >
-                <option value="prospect">🌱 Prospecto nuevo</option>
-                <option value="trial_pending_reserved">🗓️ Prueba pendiente con reserva</option>
-                <option value="trial_cancelled">↩️ Prueba cancelada</option>
-                <option value="trial_no_show">⏳ Prueba con ausencia</option>
-                <option value="trial_attended">✅ Prueba ya asistida</option>
-                <option value="student">🎓 Alumna con paquete ficticio</option>
-                <option value="student_reserved">📅 Alumna activa con reserva</option>
-                <option value="former_student">🌿 Exalumna</option>
-                <option value="unresolved_identity">🔒 Identidad no resuelta</option>
+                {assistantKey === "demi" ? (
+                  <>
+                    <option value="prospect">🌱 Prospecto nuevo</option>
+                    <option value="trial_pending_reserved">🗓️ Prueba pendiente con reserva</option>
+                    <option value="trial_no_show">⏳ Prueba con ausencia</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="student">🎓 Alumna con paquete</option>
+                    <option value="student_reserved">📅 Alumna activa con reserva</option>
+                    <option value="former_student">🌿 Exalumna</option>
+                  </>
+                )}
               </select>
             </label>
             <button type="button" onClick={clearTest} disabled={busy}>
@@ -740,6 +759,7 @@ export default function DemiWorkbench({
                 const content = message.trim();
                 if (!content) return;
                 const result = await testDemiPrompt({
+                  assistantKey,
                   conversationId,
                   instructions: draft,
                   message: content,

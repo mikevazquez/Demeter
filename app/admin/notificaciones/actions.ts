@@ -1,4 +1,5 @@
 "use server";
+import { emailProviderConfigured } from "@/lib/notifications/email-readiness";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -103,7 +104,7 @@ export async function toggleNotificationChannelAction(formData: FormData) {
   const enabled = String(formData.get("next_enabled") ?? "") === "true";
   const { supabase, studio } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
 
-  if (enabled && channel === "email") {
+  if (enabled && channel === "email" && !(await emailProviderConfigured(supabase, studio.id))) {
     redirect(processUrl(process.key, { error: "notification_email_provider_not_configured" }));
   }
 
@@ -356,7 +357,7 @@ export async function saveNotificationPreferencesAction(formData: FormData) {
     redirect(listUrl("preferencias", { error: "notification_send_window_invalid" }));
   }
 
-  if (!Number.isInteger(weeklyLimit) || weeklyLimit < 1 || weeklyLimit > 14) {
+  if (!Number.isInteger(weeklyLimit) || weeklyLimit < 1 || weeklyLimit > 5) {
     redirect(listUrl("preferencias", { error: "notification_marketing_limit_invalid" }));
   }
 
@@ -365,7 +366,8 @@ export async function saveNotificationPreferencesAction(formData: FormData) {
     p_studio_id: studio.id,
     p_push_enabled: formData.has("push_enabled"),
     p_whatsapp_enabled: formData.has("whatsapp_enabled"),
-    p_email_enabled: formData.has("email_enabled"),
+    p_email_enabled:
+      formData.has("email_enabled") && (await emailProviderConfigured(supabase, studio.id)),
     p_non_urgent_send_window: window || null,
     p_marketing_weekly_limit: weeklyLimit,
   });
@@ -468,7 +470,7 @@ export async function updatePackageRecoveryRuleAction(formData: FormData) {
       templateKey && isMetaWhatsAppTemplateKey(templateKey)
         ? META_WHATSAPP_TEMPLATE_PARAMETERS[templateKey].length
         : null,
-    emailProviderConfigured: false,
+    emailProviderConfigured: await emailProviderConfigured(supabase, studio.id),
   });
 
   if (operation === "channel") {
@@ -638,7 +640,7 @@ export async function saveMarketingCommunicationAction(formData: FormData) {
         templateKey && isMetaWhatsAppTemplateKey(templateKey)
           ? META_WHATSAPP_TEMPLATE_PARAMETERS[templateKey].length
           : null,
-      emailProviderConfigured: false,
+      emailProviderConfigured: await emailProviderConfigured(supabase, studio.id),
     });
     const unavailable = selectedChannels.find((channel) => !readiness[channel].ready);
     if (unavailable) {
@@ -654,7 +656,8 @@ export async function saveMarketingCommunicationAction(formData: FormData) {
     p_send_window: sendWindow || null,
     p_push_enabled: formData.has("push_enabled"),
     p_whatsapp_enabled: formData.has("whatsapp_enabled"),
-    p_email_enabled: formData.has("email_enabled"),
+    p_email_enabled:
+      formData.has("email_enabled") && (await emailProviderConfigured(supabase, studio.id)),
     p_title_template: title,
     p_body_template: body,
     p_cta_label: ctaLabel || null,

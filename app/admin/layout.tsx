@@ -19,6 +19,8 @@ import "./admin-ux-04-secondary.css";
 import "./admin-ux-04-secondary-detail.css";
 import "./admin-v2-system.css";
 import "./studio-flow.css";
+import "./portal-surfaces.css";
+import "./portal.css";
 
 type PwaBrand = {
   name: string;
@@ -122,6 +124,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
             "/admin/productos",
             "/admin/instructores",
             "/admin/notificaciones",
+            "/admin/comunicacion",
             "/admin/automatizaciones",
             "/admin/comunicacion",
             "/admin/inteligencia",
@@ -129,6 +132,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
             "/admin/integraciones",
             "/admin/suscripcion",
             "/admin/empresa",
+            "/admin/asistentes",
           ],
         },
       ];

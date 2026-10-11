@@ -58,16 +58,40 @@ export default async function SubscriptionPage() {
   const { data: plan } = assignment?.plan_id
     ? await ctx.supabase
         .from("saas_plans")
-        .select("id,plan_key,name,description")
+        .select("id,plan_key,name,description,max_active_students,ai_included_mxn_minor")
         .eq("id", assignment.plan_id)
         .maybeSingle()
     : { data: null };
 
+  const { data: usage, error: usageError } = await ctx.supabase.rpc(
+    "owner_get_subscription_usage",
+    { p_studio_id: ctx.studio.id },
+  );
+  const totals = usage as {
+    active_students?: number;
+    estimated_cost_usd_micros?: number;
+    tokens?: number;
+  } | null;
+  let rate: number | null = null;
+  let rateDate = "";
+  try {
+    const response = await fetch("https://open.er-api.com/v6/latest/USD", {
+      next: { revalidate: 86400 },
+    });
+    const payload = await response.json();
+    if (response.ok && payload.result === "success" && Number(payload.rates?.MXN) > 0) {
+      rate = Number(payload.rates.MXN);
+      rateDate = String(payload.time_last_update_utc ?? "");
+    }
+  } catch {}
+  const aiUsd = Number(totals?.estimated_cost_usd_micros ?? 0) / 1000000;
+  const formatMoney = (value: number, currency: string) =>
+    new Intl.NumberFormat(ctx.studio.locale, { style: "currency", currency }).format(value);
   const status = assignment?.status ?? "active";
   const state = statusCopy[status] ?? statusCopy.active;
 
   return (
-    <main className="subscription-v2">
+    <main className="portal-page subscription-v2">
       <header className="subscription-v2-header">
         <Link className="subscription-v2-back" href="/admin/mas">
           ← Más
@@ -84,6 +108,40 @@ export default async function SubscriptionPage() {
         <p>{state.detail}</p>
       </section>
 
+      <section className="subscription-v2-grid">
+        <article className="subscription-v2-card">
+          <h2>Alumnas activas</h2>
+          <strong className="subscription-v2-plan-name">
+            {usageError
+              ? "No disponible"
+              : `${totals?.active_students ?? 0} / ${plan?.max_active_students ?? "sin límite configurado"}`}
+          </strong>
+          <p className="subscription-v2-muted">
+            Inscripciones vigentes. Esta información no bloquea el acceso al panel.
+          </p>
+        </article>
+        <article className="subscription-v2-card">
+          <h2>Consumo de IA este mes</h2>
+          <strong className="subscription-v2-plan-name">
+            {usageError
+              ? "No disponible"
+              : formatMoney(rate ? aiUsd * rate : aiUsd, rate ? "MXN" : "USD")}
+          </strong>
+          <p>
+            {Number(totals?.tokens ?? 0).toLocaleString(ctx.studio.locale)} tokens · Demi y Polina
+          </p>
+          <p className="subscription-v2-muted">
+            {plan?.ai_included_mxn_minor != null
+              ? `Incluido: ${formatMoney(Number(plan.ai_included_mxn_minor) / 100, "MXN")}`
+              : "Monto incluido pendiente de configurar"}
+          </p>
+          {rate ? (
+            <small>
+              Estimación · USD/MXN {rate.toFixed(4)} · {rateDate}
+            </small>
+          ) : null}
+        </article>
+      </section>
       <section className="subscription-v2-grid">
         <article className="subscription-v2-card">
           <div className="subscription-v2-card-heading">

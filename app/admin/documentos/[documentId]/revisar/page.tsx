@@ -60,7 +60,7 @@ export default async function ReviewDocumentPage({
   };
 
   return (
-    <main className="dashboard-shell space-y-5">
+    <main className="portal-page dashboard-shell space-y-5">
       <Link
         href={`/admin/documentos/${document.id}/editar`}
         className="text-sm font-semibold text-zinc-400 hover:text-white"

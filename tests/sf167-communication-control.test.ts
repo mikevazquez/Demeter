@@ -291,7 +291,7 @@ describe("SF-167 communication control", () => {
 
   it("exposes global communication settings and AUT-05 audit in the approved admin surfaces", () => {
     const listPage = readFileSync(
-      join(process.cwd(), "app/admin/automatizaciones/page.tsx"),
+      join(process.cwd(), "app/admin/notificaciones/NotificationsView.tsx"),
       "utf8",
     );
     const detailPage = readFileSync(
@@ -310,9 +310,9 @@ describe("SF-167 communication control", () => {
       "utf8",
     );
 
-    expect(listPage).toContain("Horario de envío");
-    expect(listPage).toContain("automation_communication_settings");
-    expect(listPage).toContain("saveGlobalCommunicationWindowAction");
+    expect(listPage).toContain("Horario de comunicaciones no urgentes");
+    expect(listPage).toContain("admin_notification_rules_snapshot");
+    expect(listPage).toContain("saveNotificationPreferencesAction");
     expect(detailPage).toContain("Control de comunicaciones");
     expect(detailPage).toContain("Decisiones de comunicación");
     expect(detailPage).toContain("automation_communication_controls");

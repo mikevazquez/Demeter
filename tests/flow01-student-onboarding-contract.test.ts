@@ -15,7 +15,7 @@ describe("Flow 01 student onboarding", () => {
 
     expect(actions).toContain("existingStudentRedirect");
     expect(actions).toContain("#alta-rapida");
-    expect(actions).toContain("redirect(\`/admin/alumnas/\${studentId}/alta\`)");
+    expect(actions).toContain("redirect(\`/admin/alumnas/\${studentId}?saved=created\`)");
     expect(studentsPage).toContain('id="alta-rapida"');
     expect(studentsPage).toContain("DuplicateStudentDialog");
     expect(duplicateDialog).toContain("Ya encontramos este expediente");

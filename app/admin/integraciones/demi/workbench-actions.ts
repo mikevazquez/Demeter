@@ -21,13 +21,18 @@ import { proposeDemiAdminPlan, type DemiAdminPlan } from "@/lib/assistant/admin-
 
 const hash = (text: string) => createHash("sha256").update(text).digest("hex");
 
-export async function saveDemiPrompt(instructions: string, note: string) {
+export async function saveDemiPrompt(
+  instructions: string,
+  note: string,
+  assistantKey: "demi" | "polina" = "demi",
+) {
   const { supabase, studio, user } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
   if (!validPrompt(instructions)) return { ok: false as const, error: "invalid_prompt" };
   const { data, error } = await supabase
     .from("assistant_prompt_versions")
     .insert({
       studio_id: studio.id,
+      assistant_key: assistantKey,
       kind: "draft",
       instructions,
       note: String(note ?? "")
@@ -42,9 +47,14 @@ export async function saveDemiPrompt(instructions: string, note: string) {
   return { ok: true as const, version: data };
 }
 
-export async function activateDemiPrompt(versionId: string, expectedActive: string) {
+export async function activateDemiPrompt(
+  versionId: string,
+  expectedActive: string,
+  assistantKey: "demi" | "polina" = "demi",
+) {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
-  const { data, error } = await supabase.rpc("admin_activate_demi_prompt", {
+  const { data, error } = await supabase.rpc("admin_activate_assistant_prompt", {
+    p_assistant_key: assistantKey,
     p_studio_id: studio.id,
     p_version_id: versionId,
     p_expected_active: expectedActive,
@@ -62,13 +72,18 @@ export async function testDemiPrompt(input: {
   message: string;
   persona: TestPersona;
   improve?: boolean;
+  assistantKey?: "demi" | "polina";
 }) {
   const { supabase, studio, user } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
   if (!validPrompt(input.instructions)) return { ok: false as const, error: "invalid_prompt" };
   const message = String(input.message ?? "").trim();
   if (!message || message.length > 2000) return { ok: false as const, error: "invalid_message" };
   if (!isTestPersona(input.persona)) return { ok: false as const, error: "request_failed" };
-  const { data: config, error: configError } = await loadDemiRuntimeConfig(supabase, studio.id);
+  const { data: config, error: configError } = await loadDemiRuntimeConfig(
+    supabase,
+    studio.id,
+    input.assistantKey ?? "demi",
+  );
   if (configError || !config) return { ok: false as const, error: "assistant_not_configured" };
 
   const promptHash = hash(input.instructions);
@@ -80,6 +95,7 @@ export async function testDemiPrompt(input: {
       .select("id,context")
       .eq("studio_id", studio.id)
       .eq("id", conversationId)
+      .eq("assistant_key", input.assistantKey ?? "demi")
       .eq("channel", "internal_demo")
       .eq("status", "open")
       .maybeSingle();
@@ -94,6 +110,7 @@ export async function testDemiPrompt(input: {
       .from("assistant_conversations")
       .insert({
         studio_id: studio.id,
+        assistant_key: input.assistantKey ?? "demi",
         channel: "internal_demo",
         status: "open",
         context: {
@@ -241,7 +258,11 @@ export async function testDemiPrompt(input: {
   }
 }
 
-export async function setDemiHandoffPolicy(policyId: string, enabled: boolean) {
+export async function setDemiHandoffPolicy(
+  policyId: string,
+  enabled: boolean,
+  assistantKey: "demi" | "polina" = "demi",
+) {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
   const { error } = await supabase
     .from("assistant_handoff_policies")
@@ -250,19 +271,25 @@ export async function setDemiHandoffPolicy(policyId: string, enabled: boolean) {
       updated_at: new Date().toISOString(),
     })
     .eq("studio_id", studio.id)
-    .eq("id", policyId);
+    .eq("id", policyId)
+    .eq("assistant_key", assistantKey);
   if (error) return { ok: false as const, error: "request_failed" };
   revalidatePath("/admin/mas/demi");
   return { ok: true as const };
 }
 
-export async function reviewDemiLearning(proposalId: string, decision: "approved" | "rejected") {
+export async function reviewDemiLearning(
+  proposalId: string,
+  decision: "approved" | "rejected",
+  assistantKey: "demi" | "polina" = "demi",
+) {
   const { supabase, studio, user } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
   const { data: proposal, error: readError } = await supabase
     .from("assistant_learning_proposals")
     .select("id,proposed_instruction,status")
     .eq("studio_id", studio.id)
     .eq("id", proposalId)
+    .eq("assistant_key", assistantKey)
     .maybeSingle();
   if (readError || !proposal || proposal.status !== "pending")
     return { ok: false as const, error: "request_failed" };
@@ -277,6 +304,7 @@ export async function reviewDemiLearning(proposalId: string, decision: "approved
     })
     .eq("studio_id", studio.id)
     .eq("id", proposalId)
+    .eq("assistant_key", assistantKey)
     .eq("status", "pending");
   if (error) return { ok: false as const, error: "request_failed" };
   revalidatePath("/admin/mas/demi");
@@ -305,6 +333,7 @@ export async function proposeDemiAdminChange(instructionInput: string) {
       .from("assistant_configs")
       .select("assistant_name,model,reasoning_effort")
       .eq("studio_id", studio.id)
+      .eq("assistant_key", "demi")
       .maybeSingle(),
     supabase
       .from("trial_booking_policies")
@@ -321,6 +350,7 @@ export async function proposeDemiAdminChange(instructionInput: string) {
     supabase
       .from("assistant_handoff_policies")
       .select("reason_code,label,enabled,blocking")
+      .eq("assistant_key", "demi")
       .eq("studio_id", studio.id)
       .order("sort_order", { ascending: true }),
     supabase

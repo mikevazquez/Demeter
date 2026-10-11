@@ -12,7 +12,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   const navigation = source("app/admin/admin-navigation.tsx");
   const more = source("app/admin/mas/page.tsx");
   const company = source("app/admin/empresa/page.tsx");
-  const automations = source("app/admin/automatizaciones/page.tsx");
+  const automations = source("app/admin/notificaciones/NotificationsView.tsx");
   const styles = source("app/globals.css");
   const today = source("app/admin/page.tsx");
   const agenda = source("app/admin/agenda/page.tsx");
@@ -69,7 +69,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
     expect(automations).not.toContain("Control AUT-05");
     expect(automations).not.toContain("SF-166");
     expect(automations).not.toContain("{template.code} ·");
-    expect(automations).toContain("<h1>Notificaciones</h1>");
+    expect(automations).toContain("<h1>Comunicación</h1>");
   });
 
   it("keeps operational actions contextual instead of turning them into modules", () => {

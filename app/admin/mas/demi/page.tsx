@@ -88,7 +88,11 @@ function monthStartIso() {
   return new Date(guess.getTime() - offsetMs).toISOString();
 }
 
-export default async function DemiDemoPage() {
+export default async function DemiDemoPage({
+  searchParams,
+}: { searchParams?: Promise<{ bot?: string }> } = {}) {
+  const query = await searchParams;
+  const assistantKey = query?.bot === "polina" ? "polina" : "demi";
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
   const [
@@ -106,27 +110,32 @@ export default async function DemiDemoPage() {
         "assistant_name,mode,model,reasoning_effort,personality_instructions,monthly_budget_usd_micros,conversation_budget_usd_micros",
       )
       .eq("studio_id", studio.id)
+      .eq("assistant_key", assistantKey)
       .maybeSingle(),
     supabase
       .from("assistant_model_calls")
       .select("estimated_cost_usd_micros,input_tokens,output_tokens")
       .eq("studio_id", studio.id)
+      .eq("assistant_key", assistantKey)
       .gte("created_at", monthStartIso()),
     supabase
       .from("assistant_prompt_versions")
       .select("id,kind,instructions,note,created_at")
       .eq("studio_id", studio.id)
+      .eq("assistant_key", assistantKey)
       .order("created_at", { ascending: false })
       .limit(50),
     supabase
       .from("assistant_handoff_policies")
       .select("id,reason_code,label,description,enabled,blocking,sort_order")
       .eq("studio_id", studio.id)
+      .eq("assistant_key", assistantKey)
       .order("sort_order", { ascending: true }),
     supabase
       .from("assistant_learning_proposals")
       .select("id,title,evidence,proposed_instruction,status,created_at")
       .eq("studio_id", studio.id)
+      .eq("assistant_key", assistantKey)
       .order("created_at", { ascending: false })
       .limit(50),
     supabase
@@ -140,7 +149,7 @@ export default async function DemiDemoPage() {
 
   if (!config) {
     return (
-      <main className="demi-page demi-settings-page">
+      <main className="portal-page demi-page demi-settings-page">
         <Link href="/admin/mas/demi/atencion">Atención humana</Link>
         <Link className="demi-back" href="/admin/mas">
           ← Más
@@ -164,21 +173,41 @@ export default async function DemiDemoPage() {
   const openAIConfigured = Boolean(process.env.OPENAI_API_KEY?.trim());
 
   return (
-    <main className="demi-page demi-settings-page">
+    <main className="portal-page demi-page demi-settings-page">
       <header className="demi-header">
         <div>
           <Link className="demi-back" href="/admin/notificaciones">
             ← Comunicación
           </Link>
           <div className="demi-eyebrow">Asistente del estudio · configuración por capas</div>
-          <h1>Demi 2.0</h1>
+          <h1>Demi y Polina</h1>
           <p>
-            Personalidad, contexto, objetivos, reglas y acciones para acompañar cada conversación.
+            Tus asistentes de WhatsApp. StudioFlow es su fuente de verdad: no inventan precios,
+            horarios ni promociones.
           </p>
         </div>
         <span className="demi-mode">Modo {config.mode}</span>
       </header>
 
+      <nav className="portal-segmented" aria-label="Asistente">
+        <Link
+          href="/admin/asistentes?bot=demi"
+          aria-current={assistantKey === "demi" ? "page" : undefined}
+        >
+          Demi · Prospectos
+        </Link>
+        <Link
+          href="/admin/asistentes?bot=polina"
+          aria-current={assistantKey === "polina" ? "page" : undefined}
+        >
+          Polina · Alumnas
+        </Link>
+      </nav>
+      <p>
+        {assistantKey === "demi"
+          ? "Atiende dudas, primera clase, pagos de prueba e inscripción."
+          : "Acompaña a las alumnas con reservas, cancelaciones, renovaciones, medallas y avisos."}
+      </p>
       <section className="demi-kpis">
         <article>
           <span>Modelo</span>
@@ -214,17 +243,19 @@ export default async function DemiDemoPage() {
       <p>
         <Link href="/admin/mas/demi/seguimientos">Configurar seguimientos →</Link>
       </p>
-      <DemiLayers
-        activeInstructions={config.personality_instructions ?? ""}
-        initialInstructions={
-          (versions?.[0]?.kind === "draft"
-            ? versions[0].instructions
-            : config.personality_instructions) ?? ""
-        }
-      />
+      {assistantKey === "demi" ? (
+        <DemiLayers
+          activeInstructions={config.personality_instructions ?? ""}
+          initialInstructions={
+            (versions?.[0]?.kind === "draft"
+              ? versions[0].instructions
+              : config.personality_instructions) ?? ""
+          }
+        />
+      ) : null}
 
       <section className="demi-advanced-workbench">
-        <h2>Pruebas y operación de Demi</h2>
+        <h2>Pruebas y operación de {config.assistant_name}</h2>
         <p>
           Prueba conversaciones en Sandbox, revisa escalamiento y conserva el historial de
           versiones.
@@ -236,6 +267,8 @@ export default async function DemiDemoPage() {
             </p>
           )}
         <DemiWorkbench
+          key={assistantKey}
+          assistantKey={assistantKey}
           assistantName={config.assistant_name}
           activeInstructions={config.personality_instructions}
           versions={(versions ?? []) as PromptVersion[]}

@@ -45,13 +45,11 @@ describe("Demi identity, CRM lifecycle, and first trial flow", () => {
   });
 
   it("restores the CRM filters for prospects, trial students, and no-shows", () => {
-    expect(directory).toContain('.eq("lifecycle_status", "prospect")');
-    expect(directory).toContain('.eq("student_type", "trial")');
-    expect(directory).toContain('.eq("trial_status", "no_show")');
-    expect(directory).toContain('{ key: "trial", label: "Prueba", enabled: true }');
-    expect(directory).toContain('{ key: "no_show", label: "No show", enabled: true }');
-    expect(directory).toContain('{ key: "prospect", label: "Prospecto", enabled: true }');
-    expect(directory).toContain('{ key: "expired", label: "Vencidas", enabled: canReadProducts }');
+    expect(directory).toContain("resolveEnrollmentStatus");
+    expect(directory).toContain("<CrmBoard");
+    const board = readFileSync(join(process.cwd(), "app/admin/alumnas/CrmBoard.tsx"), "utf8");
+    for (const label of ["Prospecto", "Prueba", "No show", "Exalumna"])
+      expect(board).toContain(label);
   });
 
   it("keeps the first-trial price in Studio Flow and stores the prospect's name", () => {

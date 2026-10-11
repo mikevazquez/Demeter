@@ -10,7 +10,7 @@ export default async function NewDocumentPage() {
   await getAdminContext(CAPABILITIES.DOCUMENTS_MANAGE);
 
   return (
-    <main className="dashboard-shell documents-v2 documents-new-v2 mx-auto max-w-3xl space-y-5">
+    <main className="portal-page dashboard-shell documents-v2 documents-new-v2 mx-auto max-w-3xl space-y-5">
       <Link href="/admin/documentos" className="documents-back text-sm font-semibold">
         ← Documentos
       </Link>

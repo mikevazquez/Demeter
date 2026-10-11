@@ -8,7 +8,7 @@ function source(path: string) {
 }
 
 describe("NOTIFICACIONES-02 control center", () => {
-  const page = source("app/admin/notificaciones/page.tsx");
+  const page = source("app/admin/notificaciones/NotificationsView.tsx");
   const detail = source("app/admin/notificaciones/[processKey]/page.tsx");
   const actions = source("app/admin/notificaciones/actions.ts");
   const catalog = source("lib/notifications/admin-catalog.ts");
@@ -18,7 +18,13 @@ describe("NOTIFICACIONES-02 control center", () => {
   const layout = source("app/admin/layout.tsx");
 
   it("exposes the approved four-tab business UI and hides technical priority classes", () => {
-    for (const label of ["Procesos", "Marketing", "Plantillas", "Preferencias"]) {
+    for (const label of [
+      "Automatizaciones",
+      "Secuencias",
+      "Campañas",
+      "Actividad",
+      "Preferencias",
+    ]) {
       expect(page).toContain(`label: "${label}"`);
     }
 

@@ -21,7 +21,7 @@ describe("INTEL-05 financial intelligence", () => {
   it("validates expense writes server-side", () => {
     expect(actions).toContain("EXPENSE_CATEGORIES");
     expect(actions).toContain("Math.round(amount * 100)");
-    expect(actions).toContain("CAPABILITIES.SALES_WRITE");
+    expect(actions).toContain("CAPABILITIES.REPORTS_READ");
     expect(actions).toContain('.from("studio_expenses").insert');
   });
 });

@@ -94,12 +94,12 @@ export async function enableEvaluationDiscipline(formData: FormData) {
     discipline_id: disciplineId,
     technical_level_id: level.id,
     discipline_order: level.level_order,
-    active: true,
+    active: false,
   }));
 
   const { error } = await ctx.supabase.from("discipline_technical_levels").upsert(rows, {
     onConflict: "studio_id,discipline_id,technical_level_id",
-    ignoreDuplicates: false,
+    ignoreDuplicates: true,
   });
 
   if (error) redirect(`/admin/evaluaciones/disciplina/${disciplineId}?error=discipline`);
@@ -114,11 +114,35 @@ export async function setEvaluationDisciplineActive(formData: FormData) {
   const disciplineId = text(formData, "discipline_id");
   const active = text(formData, "active") === "true";
 
-  const { error } = await ctx.supabase
+  const { data: templates } = await ctx.supabase
+    .from("evaluation_templates")
+    .select("id,discipline_technical_level_id")
+    .eq("studio_id", ctx.studio.id)
+    .eq("discipline_id", disciplineId)
+    .is("archived_at", null);
+  const templateIds = (templates ?? []).map((template) => template.id);
+  const { data: published } =
+    active && templateIds.length
+      ? await ctx.supabase
+          .from("evaluation_template_versions")
+          .select("template_id")
+          .eq("studio_id", ctx.studio.id)
+          .in("template_id", templateIds)
+          .eq("status", "active")
+      : { data: [] };
+  const publishedIds = new Set((published ?? []).map((version) => version.template_id));
+  const levelIds = (templates ?? [])
+    .filter((template) => publishedIds.has(template.id))
+    .map((template) => template.discipline_technical_level_id);
+  if (active && !levelIds.length)
+    redirect(`/admin/evaluaciones/disciplina/${disciplineId}?error=level_unpublished`);
+  let update = ctx.supabase
     .from("discipline_technical_levels")
     .update({ active })
     .eq("studio_id", ctx.studio.id)
     .eq("discipline_id", disciplineId);
+  if (active) update = update.in("id", levelIds);
+  const { error } = await update;
 
   if (error) redirect(`/admin/evaluaciones/disciplina/${disciplineId}?error=discipline`);
 
@@ -133,6 +157,25 @@ export async function setEvaluationDisciplineLevelActive(formData: FormData) {
   const disciplineLevelId = text(formData, "discipline_level_id");
   const active = text(formData, "active") === "true";
 
+  if (active) {
+    const { data: templates } = await ctx.supabase
+      .from("evaluation_templates")
+      .select("id")
+      .eq("studio_id", ctx.studio.id)
+      .eq("discipline_technical_level_id", disciplineLevelId);
+    const ids = (templates ?? []).map((t) => t.id);
+    const { data: published } = ids.length
+      ? await ctx.supabase
+          .from("evaluation_template_versions")
+          .select("id")
+          .eq("studio_id", ctx.studio.id)
+          .in("template_id", ids)
+          .eq("status", "active")
+          .limit(1)
+      : { data: [] };
+    if (!published?.length)
+      redirect(`/admin/evaluaciones/disciplina/${disciplineId}?error=level_unpublished`);
+  }
   const { error } = await ctx.supabase
     .from("discipline_technical_levels")
     .update({ active })
@@ -167,7 +210,6 @@ export async function createEvaluationTemplate(formData: FormData) {
     .select("id,discipline_id")
     .eq("id", disciplineLevelId)
     .eq("studio_id", ctx.studio.id)
-    .eq("active", true)
     .maybeSingle();
 
   if (!level) redirect(errorTarget);
@@ -195,6 +237,7 @@ export async function createEvaluationTemplate(formData: FormData) {
       template_id: template.id,
       version_number: 1,
       status: "draft",
+      schema_version: 1,
       pass_threshold: 80,
       default_category_min: 70,
       default_attempts_per_element: 3,
@@ -465,174 +508,24 @@ export async function activateEvaluationTemplateVersion(formData: FormData) {
   const templateId = text(formData, "template_id");
   const versionId = text(formData, "version_id");
   const disciplineId = text(formData, "discipline_id");
-
-  const [{ data: criteria }, { count: elementCount }] = await Promise.all([
-    ctx.supabase
-      .from("evaluation_template_criteria")
-      .select("weight_percent")
-      .eq("studio_id", ctx.studio.id)
-      .eq("template_version_id", versionId),
-    ctx.supabase
-      .from("evaluation_template_elements")
-      .select("id", { count: "exact", head: true })
-      .eq("studio_id", ctx.studio.id)
-      .eq("template_version_id", versionId),
-  ]);
-
-  const total = (criteria ?? []).reduce((sum, item) => sum + Number(item.weight_percent ?? 0), 0);
-  if (Math.abs(total - 100) > 0.001 || !elementCount) {
-    redirect(`/admin/evaluaciones/plantillas/${templateId}?step=resumen&error=activate`);
-  }
-
-  const { data: version } = await ctx.supabase
-    .from("evaluation_template_versions")
-    .select("status")
-    .eq("id", versionId)
-    .eq("studio_id", ctx.studio.id)
-    .maybeSingle();
-
-  if (!version) {
-    redirect(`/admin/evaluaciones/plantillas/${templateId}?step=resumen&error=activate`);
-  }
-
-  if (version.status === "draft") {
-    const { error } = await ctx.supabase
-      .from("evaluation_template_versions")
-      .update({ status: "active", activated_at: new Date().toISOString() })
-      .eq("id", versionId)
-      .eq("studio_id", ctx.studio.id)
-      .eq("status", "draft");
-
-    if (error) {
-      redirect(`/admin/evaluaciones/plantillas/${templateId}?step=resumen&error=activate`);
-    }
-  }
-
+  const { error } = await ctx.supabase.rpc("admin_publish_evaluation_version", {
+    p_version_id: versionId,
+  });
+  if (error) redirect(`/admin/evaluaciones/plantillas/${templateId}?step=resumen&error=activate`);
   revalidatePath("/admin/evaluaciones");
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
-  if (disciplineId) {
-    revalidatePath(`/admin/evaluaciones/disciplina/${disciplineId}`);
-    redirect(`/admin/evaluaciones/disciplina/${disciplineId}`);
-  }
-
-  redirect("/admin/evaluaciones");
+  revalidatePath(`/admin/evaluaciones/disciplina/${disciplineId}`);
+  redirect(`/admin/evaluaciones/disciplina/${disciplineId}`);
 }
 
 export async function createNextEvaluationTemplateVersion(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE);
   const templateId = text(formData, "template_id");
   const sourceVersionId = text(formData, "version_id");
-
-  const { data: source } = await ctx.supabase
-    .from("evaluation_template_versions")
-    .select(
-      "version_number,pass_threshold,default_category_min,default_attempts_per_element,default_attempts_per_combo,evaluator_instructions",
-    )
-    .eq("id", sourceVersionId)
-    .eq("studio_id", ctx.studio.id)
-    .single();
-
-  if (!source) redirect(`/admin/evaluaciones/plantillas/${templateId}?error=version`);
-
-  const { data: created, error } = await ctx.supabase
-    .from("evaluation_template_versions")
-    .insert({
-      studio_id: ctx.studio.id,
-      template_id: templateId,
-      version_number: source.version_number + 1,
-      status: "draft",
-      pass_threshold: source.pass_threshold,
-      default_category_min: source.default_category_min,
-      default_attempts_per_element: source.default_attempts_per_element,
-      default_attempts_per_combo: source.default_attempts_per_combo,
-      evaluator_instructions: source.evaluator_instructions,
-      created_by: ctx.user.id,
-    })
-    .select("id")
-    .single();
-
-  if (error || !created) {
-    redirect(`/admin/evaluaciones/plantillas/${templateId}?error=version`);
-  }
-
-  const { data: sourceCriteria } = await ctx.supabase
-    .from("evaluation_template_criteria")
-    .select("id,criterion_key,label,description,weight_percent,min_percent,sort_order")
-    .eq("template_version_id", sourceVersionId)
-    .order("sort_order");
-
-  const criterionIdMap = new Map<string, string>();
-  for (const criterion of sourceCriteria ?? []) {
-    const { data: copied } = await ctx.supabase
-      .from("evaluation_template_criteria")
-      .insert({
-        studio_id: ctx.studio.id,
-        template_version_id: created.id,
-        criterion_key: criterion.criterion_key,
-        label: criterion.label,
-        description: criterion.description,
-        weight_percent: criterion.weight_percent,
-        min_percent: criterion.min_percent,
-        sort_order: criterion.sort_order,
-      })
-      .select("id")
-      .single();
-    if (copied) criterionIdMap.set(criterion.id, copied.id);
-  }
-
-  const [{ data: sourceElements }, { data: sourceCombos }] = await Promise.all([
-    ctx.supabase
-      .from("evaluation_template_elements")
-      .select(
-        "element_id,criterion_id,mandatory,scored,max_score,min_score,attempts_allowed,sort_order,evaluator_instructions",
-      )
-      .eq("template_version_id", sourceVersionId)
-      .order("sort_order"),
-    ctx.supabase
-      .from("evaluation_template_combos")
-      .select(
-        "combo_id,criterion_id,mandatory,scored,max_score,min_score,attempts_allowed,sort_order,evaluator_instructions",
-      )
-      .eq("template_version_id", sourceVersionId)
-      .order("sort_order"),
-  ]);
-
-  if (sourceElements?.length) {
-    await ctx.supabase.from("evaluation_template_elements").insert(
-      sourceElements.map((item) => ({
-        studio_id: ctx.studio.id,
-        template_version_id: created.id,
-        element_id: item.element_id,
-        criterion_id: item.criterion_id ? criterionIdMap.get(item.criterion_id) : null,
-        mandatory: item.mandatory,
-        scored: item.scored,
-        max_score: item.max_score,
-        min_score: item.min_score,
-        attempts_allowed: item.attempts_allowed,
-        sort_order: item.sort_order,
-        evaluator_instructions: item.evaluator_instructions,
-      })),
-    );
-  }
-
-  if (sourceCombos?.length) {
-    await ctx.supabase.from("evaluation_template_combos").insert(
-      sourceCombos.map((item) => ({
-        studio_id: ctx.studio.id,
-        template_version_id: created.id,
-        combo_id: item.combo_id,
-        criterion_id: item.criterion_id ? criterionIdMap.get(item.criterion_id) : null,
-        mandatory: item.mandatory,
-        scored: item.scored,
-        max_score: item.max_score,
-        min_score: item.min_score,
-        attempts_allowed: item.attempts_allowed,
-        sort_order: item.sort_order,
-        evaluator_instructions: item.evaluator_instructions,
-      })),
-    );
-  }
-
+  const { error } = await ctx.supabase.rpc("admin_clone_evaluation_five_step_version", {
+    p_source_version_id: sourceVersionId,
+  });
+  if (error) redirect(`/admin/evaluaciones/plantillas/${templateId}?error=version`);
   revalidatePath(`/admin/evaluaciones/plantillas/${templateId}`);
   redirect(`/admin/evaluaciones/plantillas/${templateId}?step=criterios`);
 }

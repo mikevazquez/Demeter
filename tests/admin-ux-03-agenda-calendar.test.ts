@@ -51,8 +51,12 @@ describe("ADMIN-UX-03 Agenda calendario operativo", () => {
     expect(actions).toContain("sessionManagementReturn");
     expect(actions).toContain('String(formData.get("return_to")');
     expect(actions).toContain('scope === "future"');
-    expect(actions).toContain("is_schedule_exception");
-    expect(actions).toContain("admin_session_has_conflict");
+    expect(
+      source("supabase/migrations/20261011072140_admin_portal_session_operations.sql"),
+    ).toContain("is_schedule_exception");
+    expect(
+      source("supabase/migrations/20261011072140_admin_portal_session_operations.sql"),
+    ).toContain("admin_session_has_conflict");
   });
 
   it("uses a desktop week calendar and mobile selected-day timeline", () => {

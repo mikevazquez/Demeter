@@ -138,7 +138,7 @@ export default async function NewSalePage({
     : { options: [], unavailable: false };
 
   return (
-    <main className="sales-v2 sales-v2-new">
+    <main className="portal-page sales-v2 sales-v2-new">
       <header className="sales-v2-header sales-v2-new-header">
         <div>
           <Link

@@ -22,7 +22,7 @@ const EXPENSE_CATEGORIES = new Set([
 function intelligenceFinanceUrl(formData: FormData, suffix = "") {
   const days = String(formData.get("days") ?? "30");
   const safeDays = ["7", "30", "90"].includes(days) ? days : "30";
-  return "/admin/inteligencia?view=finanzas&days=" + safeDays + suffix;
+  return "/admin/inteligencia?view=gastos&days=" + safeDays + suffix;
 }
 
 export async function createStudioExpense(formData: FormData) {
@@ -45,7 +45,7 @@ export async function createStudioExpense(formData: FormData) {
     redirect(intelligenceFinanceUrl(formData, "&error=expense_invalid"));
   }
 
-  const { supabase, studio, user } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+  const { supabase, studio, user } = await getAdminContext(CAPABILITIES.REPORTS_READ);
   const { error } = await supabase.from("studio_expenses").insert({
     studio_id: studio.id,
     category,
@@ -74,7 +74,7 @@ export async function deleteStudioExpense(formData: FormData) {
     redirect(intelligenceFinanceUrl(formData, "&error=expense_delete"));
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.REPORTS_READ);
   const { error } = await supabase
     .from("studio_expenses")
     .delete()

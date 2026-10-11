@@ -50,7 +50,7 @@ export async function saveSessionResourcesAction(formData: FormData) {
     };
   });
 
-  const { error } = await supabase.rpc("admin_save_session_resources", {
+  const { data, error } = await supabase.rpc("admin_save_session_resources", {
     p_session_id: sessionId,
     p_default_uses: defaultUses,
     p_resource_settings: settings,
@@ -68,7 +68,9 @@ export async function saveSessionResourcesAction(formData: FormData) {
   revalidatePath(`/admin/agenda/${sessionId}/recursos`);
   revalidatePath(`/admin/agenda/${sessionId}`);
   revalidatePath("/student/reservar");
-  redirect(`/admin/agenda/${sessionId}/recursos?saved=1`);
+  redirect(
+    `/admin/agenda/${sessionId}/recursos?saved=1&released=${Number(data?.released_assignments ?? 0)}`,
+  );
 }
 
 export async function reassignReservationResourceAction(formData: FormData) {
@@ -98,6 +100,48 @@ export async function reassignReservationResourceAction(formData: FormData) {
   revalidatePath(`/admin/agenda/${sessionId}/recursos`);
   revalidatePath(`/admin/agenda/${sessionId}`);
   revalidatePath("/student/reservar");
+  revalidatePath("/coach");
+  redirect(`/admin/agenda/${sessionId}/recursos?reassigned=1`);
+}
+
+export async function releaseReservationResourceAction(formData: FormData) {
+  const sessionId = String(formData.get("session_id") ?? "");
+  const assignmentId = String(formData.get("assignment_id") ?? "");
+  const { supabase } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const { error } = await supabase.rpc("admin_release_reservation_resource", {
+    p_assignment_id: assignmentId,
+  });
+  if (error) redirect(`/admin/agenda/${sessionId}/recursos?error=reassign`);
+  revalidatePath(`/admin/agenda/${sessionId}/recursos`);
+  revalidatePath(`/admin/agenda/${sessionId}`);
+  revalidatePath("/admin");
+  redirect(`/admin/agenda/${sessionId}/recursos?reassigned=1`);
+}
+
+export async function assignReservationResourceAction(formData: FormData) {
+  const sessionId = String(formData.get("session_id") ?? "");
+  const reservationId = String(formData.get("reservation_id") ?? "");
+  const resourceId = String(formData.get("resource_id") ?? "");
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { data: reservation } = await supabase
+    .from("reservations")
+    .select("id")
+    .eq("id", reservationId)
+    .eq("studio_id", studio.id)
+    .eq("session_id", sessionId)
+    .maybeSingle();
+  if (!reservation) redirect(`/admin/agenda/${sessionId}/recursos?error=reassign`);
+  const { error } = await supabase.rpc("admin_assign_reservation_resource", {
+    p_reservation_id: reservationId,
+    p_resource_id: resourceId,
+  });
+  if (error)
+    redirect(
+      `/admin/agenda/${sessionId}/recursos?error=${error.message.includes("resource_full") ? "reassign_full" : "reassign"}`,
+    );
+  revalidatePath("/admin");
+  revalidatePath(`/admin/agenda/${sessionId}`);
+  revalidatePath(`/admin/agenda/${sessionId}/recursos`);
   revalidatePath("/coach");
   redirect(`/admin/agenda/${sessionId}/recursos?reassigned=1`);
 }

@@ -72,3 +72,53 @@ export async function saveOfficialHolidayStatusAction(formData: FormData) {
 
   redirect(configPath(year, { saved: date }));
 }
+
+export async function createCalendarEventAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const starts = String(formData.get("starts_on") ?? "");
+  const year = Number(starts.slice(0, 4));
+  const { data, error } = await ctx.supabase.rpc("admin_create_calendar_event", {
+    p_studio_id: ctx.studio.id,
+    p_name: String(formData.get("name") ?? "").trim(),
+    p_starts_on: starts,
+    p_duration: Number(formData.get("duration")),
+    p_icon: String(formData.get("icon") ?? "🎉"),
+  });
+  if (error) redirect(configPath(year, { error: error.message }));
+  revalidatePath("/admin/configuracion/festivos");
+  redirect(configPath(year, { event: String(data) }));
+}
+
+export async function saveCalendarEventAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const year = safeYear(formData.get("year"));
+  const eventId = String(formData.get("event_id") ?? "");
+  const { data: event, error: readError } = await ctx.supabase
+    .from("calendar_events")
+    .select("id,days,studio_id")
+    .eq("id", eventId)
+    .maybeSingle();
+  if (readError || !event || (event.studio_id && event.studio_id !== ctx.studio.id))
+    redirect(configPath(year, { error: "event_not_found" }));
+  const days = (event.days as { date: string }[]).map((day) => ({
+    date: day.date,
+    mode: String(formData.get(`mode_${day.date}`) ?? "normal"),
+    keep: formData.getAll(`keep_${day.date}`).map(String),
+  }));
+  const { error } = await ctx.supabase.rpc("admin_configure_calendar_event", {
+    p_studio_id: ctx.studio.id,
+    p_event_id: eventId,
+    p_days: days,
+    p_message: String(formData.get("message") ?? "").trim(),
+  });
+  if (error) redirect(configPath(year, { event: eventId, error: error.message }));
+  for (const path of [
+    "/admin/configuracion/festivos",
+    "/admin/agenda",
+    "/admin",
+    "/student/reservar",
+    "/student/mis-clases",
+  ])
+    revalidatePath(path);
+  redirect(configPath(year, { saved: "decision" }));
+}

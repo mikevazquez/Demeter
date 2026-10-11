@@ -13,8 +13,10 @@ export function contactStage(student: {
   trial_status?: string | null;
   enrollment_status?: "active" | "expired" | "missing";
 }): ContactStage {
+  if (student.enrollment_status === "active") return "student";
   if (student.enrollment_status === "expired") return "former";
   if (student.student_type === "trial" && student.trial_status !== "converted") return "trial";
+  if (student.enrollment_status === "missing") return "prospect";
   return "student";
 }
 

@@ -15,7 +15,7 @@ describe("ADMIN-UX-04 Profile 360 visual homologation", () => {
 
   it("scopes the approved visual layer without changing Profile 360 flows", () => {
     expect(page).toContain(
-      'className="dashboard-shell profile360-page admin-ux04-profile360 crm-page"',
+      'className="portal-page dashboard-shell profile360-page admin-ux04-profile360 crm-page"',
     );
     expect(page).toContain("<Profile360Overview");
     expect(page).toContain('view === "profile"');

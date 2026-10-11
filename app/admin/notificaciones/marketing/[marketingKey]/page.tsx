@@ -1,3 +1,4 @@
+import { emailProviderConfigured } from "@/lib/notifications/email-readiness";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -159,7 +160,7 @@ export default async function MarketingDetailPage({
       whatsappTemplateKey && isMetaWhatsAppTemplateKey(whatsappTemplateKey)
         ? META_WHATSAPP_TEMPLATE_PARAMETERS[whatsappTemplateKey].length
         : null,
-    emailProviderConfigured: false,
+    emailProviderConfigured: await emailProviderConfigured(ctx.supabase, ctx.studio.id),
   });
   const instanceRows = instances ?? [];
   const instanceIds = instanceRows.map((instance) => instance.id);
@@ -220,7 +221,7 @@ export default async function MarketingDetailPage({
       : null;
 
   return (
-    <main className="dashboard-shell notification-detail-page marketing-editor-page admin-ux04-secondary-detail">
+    <main className="portal-page dashboard-shell notification-detail-page marketing-editor-page admin-ux04-secondary-detail">
       <header className="notification-detail-header">
         <Link href="/admin/notificaciones?tab=marketing">← Marketing</Link>
         <div className="notification-detail-title-row">

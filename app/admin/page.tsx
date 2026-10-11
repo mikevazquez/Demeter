@@ -15,35 +15,6 @@ import GlobalSearch from "./hoy/GlobalSearch";
 import StudioClock from "./hoy/StudioClock";
 import QuickActions from "./hoy/QuickActions";
 
-function holidayVisual(name: string) {
-  const key = name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-  const themes = [
-    ["diversidad", "🌎", "#0e7490"],
-    ["halloween", "🎃", "#f97316"],
-    ["muertos", "🌼", "#f59e0b"],
-    ["revolucion", "★", "#c81e3a"],
-    ["guadalupe", "🌹", "#0e7490"],
-    ["posadas", "🪅", "#db2777"],
-    ["navid", "🎄", "#dc2626"],
-    ["nochebuena", "🎄", "#dc2626"],
-    ["constitucion", "📜", "#15803d"],
-    ["candelaria", "🕯️", "#b45309"],
-    ["amistad", "💘", "#e11d48"],
-    ["bandera", "🇲🇽", "#15803d"],
-    ["mujer", "♀", "#7c3aed"],
-    ["juarez", "⚖", "#15803d"],
-    ["primavera", "🌸", "#ec4899"],
-    ["santa", "✝", "#7c3aed"],
-    ["pascua", "🐣", "#f472b6"],
-    ["nino", "🎈", "#0ea5e9"],
-  ];
-  const theme = themes.find(([keyword]) => key.includes(keyword));
-  return { icon: theme?.[1] ?? "📅", accent: theme?.[2] ?? "#0e7490" };
-}
-
 function formatExpiry(value: string | null, locale: string) {
   if (!value) return "Sin vencimiento";
   return `Vence ${new Intl.DateTimeFormat(locale, {
@@ -178,7 +149,7 @@ export default async function AdminPage({
     { data: selectedPayments },
     { data: pendingTransferIntents },
     { data: expiringCount },
-    { data: nearbyHolidays },
+    { data: nearbyEvents },
     { data: holidayOverrides },
     { data: operatingPolicy },
   ] = await Promise.all([
@@ -220,13 +191,13 @@ export default async function AdminPage({
         }),
     supabase.rpc("admin_expiring_packages", { target_studio_id: studio.id, target_date: todayKey }),
     supabase
-      .from("official_holidays")
-      .select("id,name,holiday_date")
-      .eq("country_code", "MX")
+      .from("calendar_events")
+      .select("id,name,starts_on,ends_on,icon,accent")
+      .or(`studio_id.is.null,studio_id.eq.${studio.id}`)
       .or(
-        `holiday_date.eq.${selectedKey},and(holiday_date.gte.${todayKey},holiday_date.lte.${utcDateKey(shiftUtcDays(parseDateKey(todayKey)!, 21))})`,
+        `and(starts_on.lte.${selectedKey},ends_on.gte.${selectedKey}),and(starts_on.gte.${todayKey},starts_on.lte.${utcDateKey(shiftUtcDays(parseDateKey(todayKey)!, 21))})`,
       )
-      .order("holiday_date"),
+      .order("starts_on"),
     supabase
       .from("studio_holiday_overrides")
       .select("holiday_date,operation_mode")
@@ -247,6 +218,13 @@ export default async function AdminPage({
       .maybeSingle(),
   ]);
 
+  const nearbyHolidays = (nearbyEvents ?? []).map((event) => ({
+    ...event,
+    holiday_date:
+      event.starts_on <= selectedKey && event.ends_on >= selectedKey
+        ? selectedKey
+        : event.starts_on,
+  }));
   const calendar = (calendarData ?? {}) as {
     min_date?: string;
     max_date?: string;
@@ -968,7 +946,7 @@ export default async function AdminPage({
               {can(CAPABILITIES.SETTINGS_WRITE) ? (
                 <Link
                   className="flow-back"
-                  href={`/admin/configuracion/festivos?year=${holiday.holiday_date.slice(0, 4)}`}
+                  href={`/admin/configuracion/festivos?year=${holiday.holiday_date.slice(0, 4)}&event=${holiday.id}`}
                 >
                   {override ? "Cambiar" : "Decidir"}
                 </Link>
@@ -987,7 +965,7 @@ export default async function AdminPage({
               const override = (holidayOverrides ?? []).find(
                 (item) => item.holiday_date === holiday.holiday_date,
               );
-              const theme = holidayVisual(holiday.name);
+              const theme = { icon: holiday.icon, accent: holiday.accent };
               const daysAway = Math.round(
                 (new Date(`${holiday.holiday_date}T12:00Z`).getTime() -
                   new Date(`${todayKey}T12:00Z`).getTime()) /
@@ -1084,6 +1062,7 @@ export default async function AdminPage({
         }}
         canCollectPayment={canWriteSales}
         canBook={canWriteSchedule}
+        canAssignResource={can(CAPABILITIES.SETTINGS_WRITE)}
         canCreateStudent={canWriteStudents}
         locale={locale}
         timeZone={timeZone}

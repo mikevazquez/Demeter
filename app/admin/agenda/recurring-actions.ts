@@ -157,6 +157,7 @@ export async function createRecurringSchedules(formData: FormData) {
         .eq("id", row.instructor_id)
         .eq("studio_id", studio.id)
         .eq("status", "active")
+        .eq("teaches", true)
         .maybeSingle();
 
       if (!data) redirect("/admin/agenda?error=instructor");

@@ -68,7 +68,7 @@ export default async function ActivityPackagesPage({
       };
 
   return (
-    <main className="packages-v2">
+    <main className="portal-page packages-v2">
       <header className="packages-v2-header">
         <Link href="/admin/productos/cursos-talleres" className="packages-v2-back">
           <span aria-hidden="true">←</span> Cursos y talleres

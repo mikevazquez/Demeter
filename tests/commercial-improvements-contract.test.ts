@@ -65,7 +65,7 @@ describe("commercial improvements contracts", () => {
       "supabase/migrations/20260916170000_commercial_catalog_and_acquisition_controls.sql",
     );
 
-    expect(actions).toContain('rpc("admin_set_acquisition_available_credits"');
+    expect(actions).toContain('rpc("admin_adjust_acquisition_credits"');
     expect(actions).toContain("target_reason: reason");
     expect(packageCard).toContain("Motivo del ajuste");
     expect(migration).toContain("movement_type");

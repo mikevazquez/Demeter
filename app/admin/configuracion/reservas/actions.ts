@@ -38,7 +38,7 @@ export async function saveReservationPolicyAction(formData: FormData) {
   const latePenalty = moneyToMinor(formData.get("unlimited_late_cancellation_penalty"));
   const noShowPenalty = moneyToMinor(formData.get("unlimited_no_show_penalty"));
 
-  if (!Number.isFinite(cutoffHours) || cutoffHours < 0 || cutoffHours > 168) {
+  if (!Number.isFinite(cutoffHours) || cutoffHours < 1 || cutoffHours > 24) {
     redirect(reservationsPath({ error: "cutoff" }));
   }
 

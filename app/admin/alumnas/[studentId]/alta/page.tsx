@@ -157,7 +157,7 @@ export default async function StudentOnboardingPage({
   const completedHere = query.completed === "1" && Boolean(query.sale);
 
   return (
-    <main className="dashboard-shell">
+    <main className="portal-page dashboard-shell">
       <header className="topbar">
         <div>
           <Link className="back-link compact" href={`/admin/alumnas/${student.id}`}>

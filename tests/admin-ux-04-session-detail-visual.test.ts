@@ -42,7 +42,9 @@ describe("ADMIN-UX-04 full session operation visual homologation", () => {
   it("preserves the existing single/future backend behavior", () => {
     expect(actions).toContain('scope === "future"');
     expect(actions).toContain("recurring_schedule_id");
-    expect(actions).toContain("is_schedule_exception");
+    expect(
+      source("supabase/migrations/20261011072140_admin_portal_session_operations.sql"),
+    ).toContain("is_schedule_exception");
     expect(actions).toContain("sessionManagementReturn");
   });
 

@@ -50,6 +50,7 @@ type SessionOperationsProps = {
   canBook: boolean;
   canCreateStudent: boolean;
   canCollectPayment?: boolean;
+  canAssignResource?: boolean;
   operatingPolicy?: {
     noShowConsumesCredit: boolean;
     cancellationCutoffMinutes: number;
@@ -90,6 +91,7 @@ export function SessionOperations({
   canBook,
   canCreateStudent,
   canCollectPayment = true,
+  canAssignResource = false,
   operatingPolicy,
   locale,
   timeZone,
@@ -474,13 +476,24 @@ export function SessionOperations({
                             </span>
                           ) : null}
                           {item.resourceRequired ? (
-                            <span
-                              className={`today-resource-tag${item.resourceName ? "" : " is-missing"}`}
-                            >
-                              {item.resourceName
-                                ? `Recurso · ${item.resourceName}`
-                                : "Sin recurso asignado"}
-                            </span>
+                            canAssignResource ? (
+                              <a
+                                href={`/admin/agenda/${sessionId}/recursos?reservation=${item.id}`}
+                                className={`today-resource-tag${item.resourceName ? "" : " is-missing"}`}
+                              >
+                                {item.resourceName
+                                  ? `Lugar · ${item.resourceName}`
+                                  : "Asignar lugar"}
+                              </a>
+                            ) : (
+                              <span
+                                className={`today-resource-tag${item.resourceName ? "" : " is-missing"}`}
+                              >
+                                {item.resourceName
+                                  ? `Lugar · ${item.resourceName}`
+                                  : "Sin lugar asignado"}
+                              </span>
+                            )
                           ) : null}
                         </div>
                         <span>

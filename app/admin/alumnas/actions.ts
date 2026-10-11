@@ -39,7 +39,9 @@ export async function createStudent(formData: FormData) {
     existingStudentRedirect(existingStudent.id);
   }
 
-  const { data: studentId, error } = await supabase.rpc("admin_create_student", {
+  const { data: studentId, error } = await supabase.rpc("admin_create_student_profile", {
+    p_studio_id: studio.id,
+    p_source: String(formData.get("acquisition_source") ?? "").trim() || null,
     p_first_name: firstName,
     p_last_name: lastName || null,
     p_phone: phone,
@@ -71,7 +73,7 @@ export async function createStudent(formData: FormData) {
 
   revalidatePath("/admin/alumnas");
   revalidatePath("/admin");
-  redirect(`/admin/alumnas/${studentId}/alta`);
+  redirect(`/admin/alumnas/${studentId}?saved=created`);
 }
 
 export async function setStudentLifecycle(formData: FormData) {

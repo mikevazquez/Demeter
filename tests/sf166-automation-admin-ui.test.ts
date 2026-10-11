@@ -13,7 +13,7 @@ describe("SF-166 automation admin UI", () => {
     const layout = source("app/admin/layout.tsx");
 
     expect(more).toContain('title: "Notificaciones y automatizaciones"');
-    expect(more).toContain('"/admin/notificaciones"');
+    expect(more).toContain('"/admin/comunicacion"');
     expect(more).toContain("CAPABILITIES.AUTOMATIONS_READ");
     expect(layout).toContain('"/admin/notificaciones"');
     expect(layout).toContain('label: "Más"');
@@ -23,8 +23,13 @@ describe("SF-166 automation admin UI", () => {
     const list = source("app/admin/automatizaciones/page.tsx");
     const detail = source("app/admin/automatizaciones/[code]/page.tsx");
 
-    expect(list).toContain("AUTOMATION_CATALOG");
-    expect(list).toContain("automation_instances");
+    expect(source("app/admin/notificaciones/NotificationsView.tsx")).toContain(
+      "AUTOMATION_SEQUENCES",
+    );
+    expect(source("app/admin/notificaciones/NotificationsView.tsx")).toContain(
+      "automation_instances",
+    );
+    expect(list).toContain("redirect");
     expect(detail).toContain('from("automation_executions")');
 
     expect(detail).toContain("Historial de ejecuciones");
@@ -41,7 +46,7 @@ describe("SF-166 automation admin UI", () => {
     const notice = source("app/admin/automatizaciones/AutomationNotice.tsx");
 
     expect(detail).toContain("AutomationNotice");
-    expect(list).toContain("AutomationNotice");
+    expect(list).toContain("/admin/comunicacion");
     expect(notice).toContain("NoticeDialog");
     expect(notice).toContain('title="Cambio guardado correctamente"');
     expect(notice).toContain("window.history.replaceState");

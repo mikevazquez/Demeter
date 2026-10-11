@@ -61,7 +61,7 @@ describe("Studio public branding configuration", () => {
     expect(configForm).toContain("VISTA PREVIA");
     expect(configForm).toContain("Seleccionar logo");
     expect(configForm).toContain("Guardar identidad");
-    expect(source("app/admin/configuracion/page.tsx")).toContain('"Apariencia"');
+    expect(source("app/admin/configuracion/page.tsx")).toContain('"Identidad y apariencia"');
     expect(adminLayout).toContain('"/admin/configuracion"');
     expect(more).toContain('ctx.membership.role === "owner"');
   });

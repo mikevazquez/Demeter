@@ -87,7 +87,7 @@ export default async function DocumentIncidentsPage({
     .order("full_name");
 
   return (
-    <main className="dashboard-shell space-y-5">
+    <main className="portal-page dashboard-shell space-y-5">
       <Link
         href="/admin/documentos"
         className="text-sm font-semibold text-zinc-400 hover:text-white"
@@ -229,12 +229,6 @@ export default async function DocumentIncidentsPage({
                 ))}
               </select>
               <input
-                name="code"
-                required
-                placeholder="Código · ej. overdue_installment"
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white"
-              />
-              <input
                 name="title"
                 required
                 placeholder="Título visible para la alumna"
@@ -262,11 +256,6 @@ export default async function DocumentIncidentsPage({
                 placeholder="/student/..."
                 className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white"
               />
-              <input
-                name="expires_at"
-                type="datetime-local"
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white"
-              />
               <button className="w-full rounded-xl border border-amber-400/30 bg-amber-400/[0.08] px-4 py-2.5 text-sm font-semibold text-amber-200">
                 Crear restricción
               </button>
@@ -281,7 +270,8 @@ export default async function DocumentIncidentsPage({
               Excepción temporal
             </p>
             <p className="mt-2 text-xs leading-5 text-zinc-500">
-              Permite reservar temporalmente sin borrar la condición que originó el bloqueo.
+              Permite reservar aunque falten documentos. Las restricciones activas y los bloqueos
+              por adeudos siguen vigentes.
             </p>
             <div className="mt-4 space-y-3">
               <select
@@ -296,16 +286,6 @@ export default async function DocumentIncidentsPage({
                   </option>
                 ))}
               </select>
-              <input
-                name="restriction_code"
-                placeholder="Código específico o vacío para excepción general"
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white"
-              />
-              <input
-                name="source_id"
-                placeholder="ID de restricción opcional"
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white"
-              />
               <textarea
                 name="reason"
                 required
@@ -314,12 +294,21 @@ export default async function DocumentIncidentsPage({
                 placeholder="Motivo obligatorio"
                 className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white"
               />
-              <input
-                name="expires_at"
-                type="datetime-local"
-                required
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white"
-              />
+              <label>
+                Duración
+                <select
+                  name="days"
+                  defaultValue="7"
+                  required
+                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white"
+                >
+                  {[1, 3, 7, 14].map((days) => (
+                    <option key={days} value={days}>
+                      {days} {days === 1 ? "día" : "días"}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button className="w-full rounded-xl border border-cyan-400/30 bg-cyan-400/[0.08] px-4 py-2.5 text-sm font-semibold text-cyan-200">
                 Autorizar excepción
               </button>

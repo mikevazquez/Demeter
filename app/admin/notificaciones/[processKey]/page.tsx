@@ -290,7 +290,7 @@ export default async function NotificationProcessPage({
         : null;
 
   return (
-    <main className="dashboard-shell notification-detail-page admin-ux04-secondary-detail">
+    <main className="portal-page dashboard-shell notification-detail-page admin-ux04-secondary-detail">
       <header className="notification-detail-header">
         <Link href="/admin/notificaciones?tab=procesos">← Procesos</Link>
         <div className="notification-detail-title-row">

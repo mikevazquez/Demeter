@@ -42,7 +42,7 @@ export default async function AppearancePage({
     : null;
 
   return (
-    <main className="appearance-v2">
+    <main className="portal-page appearance-v2">
       <header className="appearance-v2-header">
         <div>
           <Link className="appearance-v2-back" href="/admin/mas">

@@ -1,0 +1,1283 @@
+/* StudioFlow reference tokens shared by every admin module. Hoy keeps its
+   measured layout. Module grids retain their own structure and behavior. */
+.admin-shell.admin-flow .portal-page {
+  --bg-soft: var(--soft);
+  --surface-3: var(--soft);
+  --line-strong: var(--line);
+  --success: var(--green);
+  --warning: var(--amber);
+  --danger: var(--red);
+  --crm-navy: var(--fg);
+  --crm-muted: var(--muted);
+  --crm-line: var(--line);
+  --crm-purple: var(--violet);
+  --crm-lav: var(--violet-soft);
+  --p360-bg: var(--bg);
+  --p360-surface: var(--card);
+  --p360-soft: var(--soft);
+  --p360-text: var(--fg);
+  --p360-muted: var(--muted);
+  --p360-line: var(--line);
+  --p360-accent: var(--green);
+  --eval-card: var(--card);
+  --eval-soft: var(--soft);
+  --eval-text: var(--fg);
+  --eval-muted: var(--muted);
+  --eval-line: var(--line);
+  --eval-accent: var(--green);
+  --eval-green: var(--green);
+  --eval-purple: var(--violet);
+  --eval-yellow: var(--amber);
+  --eval-blue: var(--blue);
+  width: 100%;
+  max-width: 1160px;
+  min-width: 0;
+  min-height: calc(100dvh - 100px);
+  margin: 0 auto;
+  padding: 24px 24px 100px;
+  background: var(--bg) !important;
+  color: var(--fg) !important;
+  font-family: inherit !important;
+  font-size: 14px;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.admin-shell.admin-flow .portal-page :is(h1, h2, h3, h4, strong) {
+  color: var(--fg);
+}
+.admin-shell.admin-flow .portal-page h1 {
+  font-family: inherit !important;
+  font-size: 28px !important;
+  font-weight: 800 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.035em !important;
+  margin: 0;
+}
+.admin-shell.admin-flow
+  .portal-page
+  :is(
+    .topbar,
+    .module-header,
+    .eval-header,
+    .notification-page-header,
+    .student-directory-header,
+    .agenda-calendar-header
+  ) {
+  background: transparent !important;
+  border: 0;
+  box-shadow: none;
+  margin: 0;
+  padding: 0;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.admin-shell.admin-flow .portal-page :is(.eyebrow, .notification-eyebrow) {
+  display: none;
+}
+.admin-shell.admin-flow
+  .portal-page
+  :is(
+    .topbar,
+    .module-header,
+    .eval-header,
+    .notification-page-header,
+    .student-directory-header,
+    .agenda-calendar-header
+  )
+  p {
+  font-size: 14px !important;
+  line-height: 1.4;
+  color: var(--muted) !important;
+  margin-top: 6px;
+}
+.admin-shell.admin-flow
+  .portal-page
+  :is(
+    .panel,
+    .card,
+    .form-card,
+    .table-card,
+    .detail-card,
+    .module-card,
+    .eval-panel,
+    .documents-directory,
+    .documents-kpi,
+    .notification-overview-card,
+    .notification-category-card,
+    .crm-stat,
+    .student-directory-card
+  ) {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 20px;
+  box-shadow: none !important;
+}
+.admin-shell.admin-flow .portal-page :is(.panel, .card, .form-card, .eval-panel) {
+  padding: 18px;
+}
+.admin-shell.admin-flow .portal-page :is(.panel h2, .card h2, .eval-panel h2) {
+  font-size: 18px;
+  font-weight: 800;
+}
+.admin-shell.admin-flow
+  .portal-page
+  :is(.text-white, .documents-text, .dashboard-title, .crm-person strong) {
+  color: var(--fg) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  :is(
+    .text-zinc-400,
+    .text-zinc-500,
+    .text-slate-400,
+    .documents-muted,
+    .crm-small,
+    .crm-message,
+    .crm-channel,
+    .helper,
+    .helper-text
+  ) {
+  color: var(--muted) !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 42px;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px;
+  font: inherit;
+  padding: 10px 12px;
+  box-shadow: none !important;
+}
+.admin-shell.admin-flow .portal-page input::placeholder,
+.admin-shell.admin-flow .portal-page textarea::placeholder {
+  color: var(--faint);
+}
+.admin-shell.admin-flow .portal-page :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+.admin-shell.admin-flow
+  .portal-page
+  :is(.primary-button, .documents-primary-action, .eval-primary, .crm-btn-primary) {
+  min-height: 42px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: var(--green) !important;
+  color: var(--green-ink) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  font-weight: 800;
+}
+.admin-shell.admin-flow
+  .portal-page
+  :is(
+    .ghost-button,
+    .secondary-button,
+    .crm-btn,
+    .agenda-icon-button,
+    .agenda-today-button,
+    .agenda-config-button
+  ) {
+  min-height: 40px;
+  border-radius: 12px;
+  background: var(--card) !important;
+  color: var(--fg) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+}
+.admin-shell.admin-flow .portal-page :is(.notice, .eval-notice) {
+  border-radius: 14px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+}
+.admin-shell.admin-flow .portal-page .notice.error {
+  background: var(--red-soft);
+  color: var(--red);
+}
+.admin-shell.admin-flow .portal-page .notice.success {
+  background: var(--green-soft);
+  color: var(--green);
+}
+.admin-shell.admin-flow
+  .portal-page
+  :is(.notification-tabs, .student-directory-filters, .intel-view-tabs, .eval-tabs) {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--soft);
+  scrollbar-width: thin;
+}
+.admin-shell.admin-flow
+  .portal-page
+  :is(.notification-tabs, .student-directory-filters, .intel-view-tabs, .eval-tabs)
+  a {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.admin-shell.admin-flow
+  .portal-page
+  :is(.notification-tabs, .student-directory-filters, .intel-view-tabs, .eval-tabs)
+  a:is(.is-active, [aria-current="page"]) {
+  background: var(--card);
+  color: var(--green);
+}
+.admin-shell.admin-flow .portal-page .agenda-product-header {
+  display: none;
+}
+.admin-shell.admin-flow .portal-page .portal-agenda-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 12px;
+}
+.admin-shell.admin-flow .portal-page .agenda-header-actions {
+  flex-wrap: wrap;
+}
+.admin-shell.admin-flow .portal-page .agenda-week-range {
+  background: transparent;
+  border: 0;
+  color: var(--fg);
+  padding: 0;
+  min-width: 110px;
+}
+.admin-shell.admin-flow
+  .portal-page
+  :is(
+    .agenda-week-strip,
+    .agenda-calendar-shell,
+    .agenda-time-axis,
+    .agenda-session-editor,
+    .agenda-mobile-day-summary
+  ) {
+  background: var(--card) !important;
+  color: var(--fg) !important;
+  border-color: var(--line) !important;
+  box-shadow: none !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-week-day {
+  color: var(--faint) !important;
+  border-color: var(--line);
+}
+.admin-shell.admin-flow .portal-page .agenda-week-day strong {
+  color: var(--fg);
+}
+.admin-shell.admin-flow .portal-page .agenda-week-day.is-selected {
+  background: var(--green-soft) !important;
+  border-color: var(--green) !important;
+  color: var(--green) !important;
+  box-shadow: none;
+}
+.admin-shell.admin-flow .portal-page .agenda-week-day.is-selected :is(span, strong) {
+  color: var(--green) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-day-columns {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  min-width: 0;
+}
+.admin-shell.admin-flow .portal-page .agenda-day-column {
+  display: block !important;
+  border-right: 1px solid var(--line) !important;
+  background: transparent !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-calendar-shell .agenda-week-strip {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  grid-template-columns: 72px repeat(7, minmax(0, 1fr));
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+.admin-shell.admin-flow .portal-page .agenda-hour-lines i {
+  border-color: var(--line);
+}
+.admin-shell.admin-flow .portal-page .agenda-session-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--agenda-session-color);
+  background: var(--soft) !important;
+  border-radius: 8px;
+  color: var(--fg) !important;
+  padding: 6px;
+  box-shadow: none !important;
+  overflow: hidden;
+}
+.admin-shell.admin-flow .portal-page .agenda-session-block strong {
+  font-size: 11px !important;
+  color: var(--fg) !important;
+  line-height: 1.2;
+}
+.admin-shell.admin-flow .portal-page .agenda-session-time {
+  font-size: 10px !important;
+  color: var(--muted) !important;
+  line-height: 1.2;
+}
+.admin-shell.admin-flow .portal-page .agenda-session-block.is-past {
+  opacity: 0.6;
+}
+.admin-shell.admin-flow .portal-page .agenda-session-block.is-cancelled {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--red-soft) 0 6px,
+    var(--card) 6px 12px
+  ) !important;
+}
+.admin-shell.admin-flow .portal-page .agenda-session-block.is-cancelled strong {
+  text-decoration: line-through;
+}
+.admin-shell.admin-flow .portal-page .agenda-session-block.is-cancelled .agenda-session-time {
+  color: var(--red) !important;
+}
+.admin-shell.admin-flow .portal-page .portal-edited-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--amber);
+}
+.admin-shell.admin-flow .portal-page .portal-session-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.admin-shell.admin-flow .portal-page .portal-session-fields label {
+  display: grid;
+  gap: 6px;
+}
+@media (max-width: 760px) {
+  .admin-shell.admin-flow .portal-page .agenda-calendar-shell {
+    overflow-x: auto;
+    max-height: 720px;
+  }
+  .admin-shell.admin-flow .portal-page .agenda-week-calendar {
+    min-width: 720px;
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+  .admin-shell.admin-flow .portal-page .agenda-calendar-shell .agenda-week-strip {
+    min-width: 720px;
+    grid-template-columns: 40px repeat(7, minmax(0, 1fr));
+  }
+  .admin-shell.admin-flow .portal-page .agenda-mobile-day-summary {
+    display: none;
+  }
+  .admin-shell.admin-flow .portal-page .agenda-workspace.has-editor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 639px) {
+  .admin-shell.admin-flow .portal-page {
+    padding: 16px 16px calc(100px + env(safe-area-inset-bottom, 0px));
+    gap: 16px;
+  }
+  .admin-shell.admin-flow .portal-page :is(.form-split, .form-grid) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.admin-shell.admin-flow {
+  --packages-bg: var(--bg) !important;
+  --packages-card: var(--card) !important;
+  --packages-surface: var(--card) !important;
+  --packages-text: var(--fg) !important;
+  --packages-muted: var(--muted) !important;
+  --packages-line: var(--line) !important;
+  --packages-accent: var(--green) !important;
+  --packages-accent-strong: var(--green) !important;
+  --packages-accent-soft: var(--green-soft) !important;
+  --packages-purple: var(--violet) !important;
+  --packages-purple-soft: var(--violet-soft) !important;
+  --packages-blue: var(--blue) !important;
+  --packages-blue-soft: var(--blue-soft) !important;
+  --packages-amber: var(--amber) !important;
+  --packages-amber-soft: var(--amber-soft) !important;
+  --packages-danger: var(--red) !important;
+  --packages-danger-soft: var(--red-soft) !important;
+  --packages-warn: var(--amber) !important;
+  --packages-warn-soft: var(--amber-soft) !important;
+  --sales-bg: var(--bg) !important;
+  --sales-card: var(--card) !important;
+  --sales-surface: var(--card) !important;
+  --sales-text: var(--fg) !important;
+  --sales-muted: var(--muted) !important;
+  --sales-line: var(--line) !important;
+  --sales-accent: var(--green) !important;
+  --sales-accent-strong: var(--green) !important;
+  --sales-accent-soft: var(--green-soft) !important;
+  --sales-purple: var(--violet) !important;
+  --sales-purple-soft: var(--violet-soft) !important;
+  --sales-blue: var(--blue) !important;
+  --sales-blue-soft: var(--blue-soft) !important;
+  --sales-amber: var(--amber) !important;
+  --sales-amber-soft: var(--amber-soft) !important;
+  --sales-danger: var(--red) !important;
+  --sales-danger-soft: var(--red-soft) !important;
+  --sales-warn: var(--amber) !important;
+  --sales-warn-soft: var(--amber-soft) !important;
+  --subscription-bg: var(--bg) !important;
+  --subscription-card: var(--card) !important;
+  --subscription-surface: var(--card) !important;
+  --subscription-text: var(--fg) !important;
+  --subscription-muted: var(--muted) !important;
+  --subscription-line: var(--line) !important;
+  --subscription-accent: var(--green) !important;
+  --subscription-accent-strong: var(--green) !important;
+  --subscription-accent-soft: var(--green-soft) !important;
+  --subscription-purple: var(--violet) !important;
+  --subscription-purple-soft: var(--violet-soft) !important;
+  --subscription-blue: var(--blue) !important;
+  --subscription-blue-soft: var(--blue-soft) !important;
+  --subscription-amber: var(--amber) !important;
+  --subscription-amber-soft: var(--amber-soft) !important;
+  --subscription-danger: var(--red) !important;
+  --subscription-danger-soft: var(--red-soft) !important;
+  --subscription-warn: var(--amber) !important;
+  --subscription-warn-soft: var(--amber-soft) !important;
+  --students-v2-bg: var(--bg) !important;
+  --students-v2-card: var(--card) !important;
+  --students-v2-surface: var(--card) !important;
+  --students-v2-text: var(--fg) !important;
+  --students-v2-muted: var(--muted) !important;
+  --students-v2-line: var(--line) !important;
+  --students-v2-accent: var(--green) !important;
+  --students-v2-accent-strong: var(--green) !important;
+  --students-v2-accent-soft: var(--green-soft) !important;
+  --students-v2-purple: var(--violet) !important;
+  --students-v2-purple-soft: var(--violet-soft) !important;
+  --students-v2-blue: var(--blue) !important;
+  --students-v2-blue-soft: var(--blue-soft) !important;
+  --students-v2-amber: var(--amber) !important;
+  --students-v2-amber-soft: var(--amber-soft) !important;
+  --students-v2-danger: var(--red) !important;
+  --students-v2-danger-soft: var(--red-soft) !important;
+  --students-v2-warn: var(--amber) !important;
+  --students-v2-warn-soft: var(--amber-soft) !important;
+}
+.admin-shell.admin-flow .admin-content {
+  background: var(--bg) !important;
+}
+
+.admin-shell.admin-flow
+  .portal-page
+  :is(
+    .intel-card,
+    .intel-panel,
+    .intel-kpi,
+    .intel-stat,
+    .intel-filter-bar,
+    .eval-discipline-card,
+    .documents-row,
+    .notification-process-card,
+    .notification-process-row,
+    .team-card,
+    .more-list,
+    .crm-row
+  ) {
+  background: var(--card) !important;
+  border-color: var(--line) !important;
+  color: var(--fg) !important;
+  box-shadow: none !important;
+}
+.admin-shell.admin-flow
+  .portal-page
+  :is(.intel-page-header, .intel-header, .intel-card, .intel-panel, .intel-kpi)
+  p {
+  color: var(--muted);
+}
+.admin-shell.admin-flow .portal-page :is(.bg-white, .bg-black\/20) {
+  background: var(--card) !important;
+}
+.admin-shell.admin-flow .portal-page [class*="border-white/"] {
+  border-color: var(--line) !important;
+}
+.admin-shell.admin-flow .portal-page :is(.bg-fuchsia-600, .bg-\[\#FF0A8A\]) {
+  background: var(--green) !important;
+  color: var(--green-ink) !important;
+}
+.admin-shell.admin-flow .portal-page :is(.text-fuchsia-300, .text-fuchsia-200, .text-\[\#FF0A8A\]) {
+  color: var(--green) !important;
+}
+
+.admin-shell.admin-flow .portal-module-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.admin-shell.admin-flow .portal-module-heading p,
+.admin-shell.admin-flow .portal-muted {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+.admin-shell.admin-flow .portal-year-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+.admin-shell.admin-flow .portal-year-navigation a {
+  width: 40px;
+  display: grid;
+  place-items: center;
+}
+.admin-shell.admin-flow .portal-calendar-source {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+}
+.admin-shell.admin-flow .portal-calendar-source > span:first-child {
+  font-size: 24px;
+  color: var(--green);
+}
+.admin-shell.admin-flow .portal-calendar-source > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.admin-shell.admin-flow .portal-calendar-source small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.admin-shell.admin-flow .portal-segmented {
+  display: flex;
+  gap: 4px;
+  overflow: auto;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 4px;
+}
+.admin-shell.admin-flow .portal-segmented a,
+.admin-shell.admin-flow .portal-segmented button {
+  flex: 0 0 auto;
+  padding: 9px 12px;
+  min-height: 38px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  border-radius: 10px;
+}
+.admin-shell.admin-flow .portal-segmented [aria-current="page"],
+.admin-shell.admin-flow .portal-segmented [aria-pressed="true"] {
+  background: var(--card);
+  color: var(--green);
+}
+.admin-shell.admin-flow .portal-calendar-month {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.admin-shell.admin-flow .portal-calendar-month h2 {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: capitalize;
+  margin: 0 0 2px;
+}
+.admin-shell.admin-flow .portal-calendar-event {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+}
+.admin-shell.admin-flow .portal-calendar-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  font-size: 20px;
+  background: color-mix(in srgb, var(--ha) 14%, var(--card));
+}
+.admin-shell.admin-flow .portal-calendar-copy {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.admin-shell.admin-flow .portal-calendar-copy b {
+  font-size: 15px;
+  font-weight: 800;
+}
+.admin-shell.admin-flow .portal-calendar-copy small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.admin-shell.admin-flow .portal-calendar-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.admin-shell.admin-flow .portal-calendar-tags i {
+  font-size: 10px;
+  font-style: normal;
+  background: var(--soft);
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 2px 5px;
+}
+.admin-shell.admin-flow .portal-badge {
+  flex: none;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.admin-shell.admin-flow .portal-badge.is-amber {
+  color: var(--amber);
+  background: var(--amber-soft);
+}
+.admin-shell.admin-flow .portal-badge.is-red {
+  color: var(--red);
+  background: var(--red-soft);
+}
+.admin-shell.admin-flow .portal-badge.is-green {
+  color: var(--green);
+  background: var(--green-soft);
+}
+.admin-shell.admin-flow .portal-badge.is-blue {
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+.admin-shell.admin-flow .portal-calendar-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.admin-shell.admin-flow .portal-calendar-form label {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+.admin-shell.admin-flow .portal-calendar-presets {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.admin-shell.admin-flow .portal-calendar-presets button {
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.admin-shell.admin-flow .portal-calendar-day {
+  display: grid;
+  gap: 10px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+}
+.admin-shell.admin-flow .portal-calendar-day legend {
+  font-size: 13px;
+  font-weight: 800;
+  max-width: 100%;
+}
+.admin-shell.admin-flow .portal-calendar-sessions {
+  display: grid;
+  gap: 8px;
+}
+.admin-shell.admin-flow .portal-calendar-sessions label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.admin-shell.admin-flow .portal-calendar-sessions label span {
+  display: grid;
+  gap: 2px;
+}
+.admin-shell.admin-flow .portal-calendar-sessions small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.admin-shell.admin-flow .portal-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--scrim);
+}
+.admin-shell.admin-flow .portal-sheet {
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  background: var(--card);
+  color: var(--fg);
+  border-radius: 24px 24px 0 0;
+  padding: 10px 18px calc(20px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.admin-shell.admin-flow .portal-sheet-grab {
+  width: 42px;
+  height: 5px;
+  background: var(--line);
+  border-radius: 3px;
+  margin: 0 auto;
+}
+.admin-shell.admin-flow .portal-sheet > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.admin-shell.admin-flow .portal-sheet > header h2 {
+  font-size: 20px;
+  font-weight: 800;
+}
+.admin-shell.admin-flow .portal-sheet > header button {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  flex: none;
+}
+.admin-shell.admin-flow .portal-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 30px 16px;
+}
+@media (min-width: 640px) {
+  .admin-shell.admin-flow .portal-sheet-backdrop {
+    align-items: center;
+  }
+  .admin-shell.admin-flow .portal-sheet {
+    border-radius: 24px;
+  }
+}
+@media (max-width: 360px) {
+  .admin-shell.admin-flow .portal-calendar-event {
+    gap: 8px;
+    padding: 10px;
+  }
+  .admin-shell.admin-flow .portal-calendar-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .admin-shell.admin-flow .portal-badge {
+    font-size: 10px;
+    padding: 4px 6px;
+  }
+}
+.admin-flow .portal-crm {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.admin-flow .portal-crm-states button {
+  flex: 1;
+  padding: 9px 6px;
+}
+.admin-flow .portal-crm-states i {
+  font-size: 10px;
+  font-style: normal;
+  background: var(--soft);
+  padding: 2px 5px;
+  border-radius: 6px;
+}
+.admin-flow .portal-crm-board {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  align-items: flex-start;
+  padding-bottom: 12px;
+  scroll-snap-type: x proximity;
+}
+.admin-flow .portal-crm-column {
+  flex: 1 0 244px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--soft);
+  padding: 14px;
+  scroll-snap-align: start;
+}
+.admin-flow .portal-crm-column > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.admin-flow .portal-crm-column h2 {
+  font-size: 13px;
+  color: var(--stage);
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  font-weight: 800;
+}
+.admin-flow .portal-crm-column h2 span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--stage);
+}
+.admin-flow .portal-crm-column > header b {
+  font-size: 11px;
+  color: var(--stage);
+}
+.admin-flow .portal-crm-column > p {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 6px 0 14px;
+}
+.admin-flow .portal-crm-cards {
+  display: grid;
+  gap: 8px;
+}
+.admin-flow .portal-person-card {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  min-height: 72px;
+}
+.admin-flow .portal-person-avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: hsl(var(--avatar-hue) 55% 45% / 0.18);
+  color: hsl(var(--avatar-hue) 70% 65%);
+  font-size: 12px;
+  font-weight: 800;
+}
+.admin-flow .portal-person-card > span:nth-child(2) {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+.admin-flow .portal-person-card strong {
+  font-size: 13px;
+  font-weight: 800;
+}
+.admin-flow .portal-person-card small {
+  color: var(--muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.admin-flow .portal-person-flag {
+  width: 6px;
+  height: 6px;
+  background: var(--red);
+  border-radius: 50%;
+  flex: none;
+}
+@media (max-width: 639px) {
+  .admin-flow .portal-crm-column {
+    flex-basis: calc(100vw - 64px);
+  }
+  .admin-flow .portal-crm-states button {
+    font-size: 11px;
+  }
+}
+.admin-flow .portal-expense-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.admin-flow .portal-expense-row > span {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.admin-flow .portal-expense-row small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.admin-flow .portal-expense-row b {
+  white-space: nowrap;
+}
+.admin-flow .portal-expense-row details {
+  position: relative;
+}
+.admin-flow .portal-expense-row details form {
+  position: absolute;
+  right: 0;
+  z-index: 2;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  width: 220px;
+}
+.admin-flow .portal-sequence ol {
+  margin: 16px 0 16px 9px;
+  padding: 0 0 0 20px;
+  border-left: 2px solid var(--line);
+  list-style: none;
+}
+.admin-flow .portal-sequence li {
+  position: relative;
+  color: var(--muted);
+  padding: 9px 0;
+  font-size: 13px;
+}
+.admin-flow .portal-sequence li::before {
+  content: "";
+  position: absolute;
+  left: -25px;
+  top: 15px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+}
+.admin-flow .portal-communication-log {
+  border-bottom: 1px solid var(--line);
+  padding: 12px 0;
+}
+.admin-flow .portal-communication-log summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+.admin-flow .portal-communication-log summary > span:first-child {
+  display: grid;
+  gap: 4px;
+}
+.admin-flow .portal-communication-log small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.admin-shell.admin-flow .portal-crm-states {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: visible;
+}
+.admin-shell.admin-flow .portal-crm-states button {
+  min-width: 0;
+  white-space: normal;
+  font-size: 11px;
+  padding: 9px 2px;
+}
+.admin-shell.admin-flow .student-quick-create > summary {
+  background: var(--green);
+  color: var(--green-ink);
+  border-radius: 50%;
+}
+.admin-flow .portal-settings-section > summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+  font-size: 15px;
+}
+.admin-flow .portal-settings-section > summary::-webkit-details-marker {
+  display: none;
+}
+.admin-flow .portal-settings-content {
+  display: grid;
+  gap: 16px;
+  padding-top: 18px;
+}
+.admin-flow .portal-settings-content > .panel {
+  border: 0 !important;
+  padding: 0 !important;
+}
+.admin-flow .portal-settings-content .topbar {
+  display: none;
+}
+.admin-flow .portal-settings-content .portal-page {
+  padding: 0 !important;
+  min-height: 0;
+}
+.admin-shell.admin-flow .portal-activity-list {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--card);
+  padding: 0 14px;
+}
+.admin-shell.admin-flow .portal-activity-list .activities-v2-card {
+  grid-template-columns: 14px minmax(0, 1fr) 12px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  min-height: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent !important;
+}
+.admin-shell.admin-flow .portal-activity-list .activities-v2-card:last-child {
+  border-bottom: 0;
+}
+.admin-shell.admin-flow .portal-activity-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+}
+.admin-shell.admin-flow .portal-activity-list .activities-v2-card-title {
+  margin: 0;
+}
+.admin-shell.admin-flow .portal-activity-list .activities-v2-card-title strong {
+  font-size: 15px;
+}
+.admin-shell.admin-flow .portal-activity-list .activities-v2-schedule-row {
+  gap: 3px;
+  margin: 4px 0;
+}
+.admin-shell.admin-flow .portal-activity-list .activities-v2-schedule-row span {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+.admin-shell.admin-flow .portal-activity-list .activities-v2-card-meta {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  gap: 4px;
+}
+.admin-shell.admin-flow .portal-activity-list .activities-v2-card-meta span {
+  border-radius: 8px;
+  padding: 2px 6px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+.admin-shell.admin-flow .portal-page .activities-v2-primary {
+  width: auto !important;
+  min-height: 38px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green);
+  box-shadow: none;
+  padding: 8px 14px;
+  font-size: 13px;
+}
+.admin-shell.admin-flow .portal-page .activities-v2-primary span {
+  font-size: 20px;
+}
+.admin-flow .portal-assignment-map {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.admin-flow .portal-assignment-map :is(button, span) {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: 6px;
+}
+.admin-flow .portal-assignment-map button {
+  background: var(--green-soft);
+  color: var(--green);
+  font-weight: 800;
+}
+.admin-flow .portal-assignment-map button:disabled {
+  background: var(--card);
+  color: var(--faint);
+  cursor: not-allowed;
+}
+.admin-flow .portal-assignment-map button[aria-pressed="true"] {
+  border: 2px solid var(--green);
+  background: var(--green-soft);
+}
+.admin-flow .portal-assignment-map [data-kind="resource"] {
+  border-radius: 50%;
+}
+
+.admin-shell.admin-flow .portal-page .appearance-v2-portal-preview {
+  background: radial-gradient(
+    at top,
+    color-mix(in srgb, var(--appearance-preview-accent) 20%, #0b1321),
+    #0b1321 70%
+  ) !important;
+  color: #edf2fa !important;
+}
+.admin-shell.admin-flow .portal-page .appearance-v2-portal-preview :is(h3, p, strong) {
+  color: #edf2fa !important;
+}
+.admin-shell.admin-flow .portal-settings .more-row-copy {
+  min-width: 0;
+}
+.admin-shell.admin-flow .portal-settings .more-row-copy :is(strong, small) {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+.admin-shell.admin-flow .portal-inline-form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.admin-shell.admin-flow .portal-inline-form label {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 12px;
+}
+.admin-shell.admin-flow .portal-inline-form input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+/* Equipo: estructura de la referencia HTML. */
+.admin-shell.admin-flow .team-v2-header {
+  display: grid;
+  gap: 10px;
+  justify-content: start;
+}
+.admin-shell.admin-flow .team-v2-primary {
+  border-radius: 24px;
+  background: var(--green-soft);
+  color: var(--green);
+  box-shadow: none;
+}
+.admin-shell.admin-flow .team-v2-create > summary {
+  width: max-content;
+  min-height: 42px;
+}
+.admin-shell.admin-flow .team-v2-tabs {
+  background: transparent;
+  padding: 0;
+  gap: 6px;
+  border: 0;
+}
+.admin-shell.admin-flow .team-v2-tabs a {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--card);
+  font-weight: 600;
+}
+.admin-shell.admin-flow .team-v2-tabs a.is-active {
+  background: var(--text);
+  color: var(--bg);
+}
+.admin-shell.admin-flow .team-v2-list {
+  gap: 0;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.admin-shell.admin-flow .team-v2-row {
+  grid-template-columns: 40px minmax(0, 1fr) 16px;
+  gap: 10px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.admin-shell.admin-flow .team-v2-row:last-child {
+  border-bottom: 0;
+}
+.admin-shell.admin-flow .team-v2-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+}
+.admin-shell.admin-flow .team-v2-row-copy .team-v2-status {
+  width: max-content;
+  padding: 3px 9px;
+  border-radius: 12px;
+  grid-column: auto;
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--surface);
+}
+.admin-shell.admin-flow .team-v2-row-copy .team-v2-status.is-active {
+  color: var(--muted);
+  background: var(--green-soft);
+}
+.admin-shell.admin-flow .team-v2-chevron {
+  grid-column: 3;
+  grid-row: 1;
+}
+.admin-shell.admin-flow .team-v2-empty {
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+.admin-shell.admin-flow .team-v2-search input {
+  background: transparent !important;
+  border: 0 !important;
+}
+.admin-shell.admin-flow .team-v2-tabs {
+  background: transparent !important;
+}
+.admin-shell.admin-flow .team-v2-tabs a.is-active {
+  color: var(--bg) !important;
+}
+.admin-shell.admin-flow .team-v2-search input {
+  background: transparent !important;
+  border: 0 !important;
+  padding-left: 0;
+}

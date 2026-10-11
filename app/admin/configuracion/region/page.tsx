@@ -33,7 +33,7 @@ export default async function RegionSettingsPage({
     .maybeSingle();
 
   return (
-    <main className="advanced-v2 advanced-v2-detail">
+    <main className="portal-page advanced-v2 advanced-v2-detail">
       <header className="advanced-v2-header">
         <div>
           <Link className="advanced-v2-back" href="/admin/mas">

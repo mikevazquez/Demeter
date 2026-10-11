@@ -94,7 +94,7 @@ export default async function NewTechnicalEvaluationPage({
   }).format(new Date());
 
   return (
-    <main className="evaluations-page">
+    <main className="portal-page evaluations-page">
       <header className="eval-header">
         <div className="eval-header-copy">
           <Link className="back-link compact" href="/admin/evaluaciones">

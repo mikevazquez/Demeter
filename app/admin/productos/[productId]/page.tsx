@@ -110,7 +110,7 @@ export default async function ProductDetailPage({
         : null;
 
   return (
-    <main className="dashboard-shell admin-ux04-secondary-detail product-detail-page">
+    <main className="portal-page dashboard-shell admin-ux04-secondary-detail product-detail-page">
       {statusMessage ? (
         <section
           role="status"

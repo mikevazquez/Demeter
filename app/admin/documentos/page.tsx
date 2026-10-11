@@ -26,40 +26,49 @@ export default async function AdminDocumentsPage() {
         .order("version_number", { ascending: false })
     : { data: [] };
 
-  const versionIds = (versions ?? []).map((item) => item.id);
-  const { data: acceptances } = versionIds.length
-    ? await supabase
-        .from("document_acceptances")
-        .select("id,version_id")
-        .eq("studio_id", studio.id)
-        .in("version_id", versionIds)
-    : { data: [] };
-
   type VersionRow = NonNullable<typeof versions>[number];
   const latestByDocument = new Map<string, VersionRow>();
+  const activeByDocument = new Map<string, VersionRow>();
   for (const version of versions ?? []) {
     if (!latestByDocument.has(version.document_id))
       latestByDocument.set(version.document_id, version);
+    if (version.status === "active" && !activeByDocument.has(version.document_id))
+      activeByDocument.set(version.document_id, version);
   }
-  const acceptanceCount = new Map<string, number>();
-  for (const acceptance of acceptances ?? []) {
-    acceptanceCount.set(
-      acceptance.version_id,
-      (acceptanceCount.get(acceptance.version_id) ?? 0) + 1,
-    );
-  }
-
-  const rows = (documents ?? []).map((document) => {
-    const version = latestByDocument.get(document.id);
-    return { document, version, accepted: version ? (acceptanceCount.get(version.id) ?? 0) : 0 };
-  });
+  const rows = await Promise.all(
+    (documents ?? []).map(async (document) => {
+      const current = activeByDocument.get(document.id);
+      const latest = latestByDocument.get(document.id);
+      const version = current ?? latest;
+      const next =
+        latest && latest.id !== current?.id && ["draft", "scheduled"].includes(latest.status)
+          ? latest
+          : null;
+      const { data, error } = current
+        ? await supabase.rpc("admin_document_publish_impact", { p_version_id: current.id })
+        : { data: null, error: null };
+      if (error) throw new Error("document_tracking_unavailable");
+      const impact = data as { completed?: number; pending?: number } | null;
+      return {
+        document,
+        version,
+        next,
+        accepted: impact?.completed ?? 0,
+        pending: impact?.pending ?? 0,
+      };
+    }),
+  );
 
   const active = rows.filter((row) => row.version?.status === "active").length;
-  const drafts = rows.filter((row) => row.version?.status === "draft").length;
-  const scheduled = rows.filter((row) => row.version?.status === "scheduled").length;
+  const drafts = rows.filter(
+    (row) => row.next?.status === "draft" || row.version?.status === "draft",
+  ).length;
+  const scheduled = rows.filter(
+    (row) => row.next?.status === "scheduled" || row.version?.status === "scheduled",
+  ).length;
 
   return (
-    <main className="dashboard-shell space-y-5 documents-v2">
+    <main className="portal-page dashboard-shell space-y-5 documents-v2">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="eyebrow">ADMINISTRACIÓN · DOCUMENTOS</p>
@@ -100,7 +109,7 @@ export default async function AdminDocumentsPage() {
 
         {rows.length ? (
           <div className="documents-rows">
-            {rows.map(({ document, version, accepted }) => (
+            {rows.map(({ document, version, next, accepted, pending }) => (
               <Link
                 key={document.id}
                 href={`/admin/documentos/${document.id}`}
@@ -121,6 +130,12 @@ export default async function AdminDocumentsPage() {
                   <p className="text-[10px] uppercase tracking-[0.12em] documents-muted">Versión</p>
                   <p className="mt-1 text-sm font-semibold documents-text">
                     {version ? `v${version.version_number}` : "—"}
+                    {next ? (
+                      <small className="portal-muted">
+                        {" "}
+                        · v{next.version_number} {documentStatusLabels[next.status] ?? next.status}
+                      </small>
+                    ) : null}
                   </p>
                 </div>
                 <div>
@@ -135,7 +150,9 @@ export default async function AdminDocumentsPage() {
                   <p className="text-[10px] uppercase tracking-[0.12em] documents-muted">
                     Aceptaciones
                   </p>
-                  <p className="mt-1 text-sm font-semibold documents-text">{accepted}</p>
+                  <p className="mt-1 text-sm font-semibold documents-text">
+                    {accepted} completados · {pending} pendientes
+                  </p>
                 </div>
                 <span className="text-xl text-fuchsia-300" aria-hidden="true">
                   ›

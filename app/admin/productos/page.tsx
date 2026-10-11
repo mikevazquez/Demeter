@@ -90,7 +90,7 @@ export default async function ProductsPage() {
   await getAdminContext("products.read");
 
   return (
-    <main className="packages-v2">
+    <main className="portal-page packages-v2">
       <header className="packages-v2-header">
         <h1>Paquetes</h1>
         <p>Elige cómo quieres organizar tus paquetes.</p>

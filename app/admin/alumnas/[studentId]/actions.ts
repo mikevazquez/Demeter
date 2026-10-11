@@ -186,27 +186,8 @@ async function getAcquisitionEditContext(studentId: string, acquisitionId: strin
 
   if (!acquisition) redirect(`/admin/alumnas/${studentId}?error=acquisition_not_found`);
 
-  const timeZone = ctx.studio.timezone ?? "America/Mexico_City";
-  const dateParts = Object.fromEntries(
-    new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    })
-      .formatToParts(new Date())
-      .map((part) => [part.type, part.value]),
-  );
-  const today = `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
-  const isCurrent =
-    acquisition.status === "active" &&
-    !acquisition.refunded_at &&
-    (!acquisition.starts_on || acquisition.starts_on <= today) &&
-    (!acquisition.expires_on || acquisition.expires_on >= today);
-
-  if (!isCurrent) {
+  if (!["active", "expired"].includes(acquisition.status) || acquisition.refunded_at)
     redirect(`/admin/alumnas/${studentId}?error=acquisition_not_editable`);
-  }
   return ctx;
 }
 
@@ -434,9 +415,10 @@ export async function setAcquisitionStartDate(formData: FormData) {
   }
 
   const { supabase } = await getAcquisitionEditContext(studentId, acquisitionId);
-  const { error } = await supabase.rpc("admin_set_acquisition_start_date", {
+  const { error } = await supabase.rpc("admin_change_acquisition_start", {
     target_acquisition_id: acquisitionId,
     target_starts_on: startsOn,
+    target_reason: String(formData.get("reason") ?? "").trim(),
   });
 
   if (error) {
@@ -450,14 +432,14 @@ export async function setAcquisitionStartDate(formData: FormData) {
 export async function setAcquisitionAvailableCredits(formData: FormData) {
   const studentId = String(formData.get("student_id") ?? "");
   const acquisitionId = String(formData.get("acquisition_id") ?? "");
-  const availableCredits = Number(formData.get("available_credits"));
+  const availableCredits = Number(formData.get("credit_delta"));
   const reason = String(formData.get("reason") ?? "").trim();
 
   if (
     !studentId ||
     !acquisitionId ||
     !Number.isInteger(availableCredits) ||
-    availableCredits < 0 ||
+    availableCredits < -100000 ||
     availableCredits > 100000 ||
     !reason
   ) {
@@ -465,9 +447,9 @@ export async function setAcquisitionAvailableCredits(formData: FormData) {
   }
 
   const { supabase } = await getAcquisitionEditContext(studentId, acquisitionId);
-  const { error } = await supabase.rpc("admin_set_acquisition_available_credits", {
+  const { error } = await supabase.rpc("admin_adjust_acquisition_credits", {
     target_acquisition_id: acquisitionId,
-    target_available: availableCredits,
+    target_delta: availableCredits,
     target_reason: reason,
   });
 
@@ -477,6 +459,43 @@ export async function setAcquisitionAvailableCredits(formData: FormData) {
 
   revalidateAcquisitionViews(studentId);
   redirect(`/admin/alumnas/${studentId}?saved=credits_adjusted`);
+}
+
+export async function registerStudentDocumentAcceptanceAction(formData: FormData) {
+  const { supabase } = await getAdminContext(CAPABILITIES.STUDENTS_WRITE);
+  const studentId = String(formData.get("student_id") ?? "").trim();
+  const versionId = String(formData.get("version_id") ?? "").trim();
+  const signer = String(formData.get("signer") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+  const method = String(formData.get("method") ?? "");
+  const destination = `/admin/alumnas/${encodeURIComponent(studentId)}?view=documents`;
+  const { data: snapshot, error: snapshotError } = await supabase.rpc(
+    "admin_student_document_profile",
+    { p_student_id: studentId },
+  );
+  const current = (snapshot as { current?: { version_id: string }[] } | null)?.current ?? [];
+  if (
+    snapshotError ||
+    reason.length < 3 ||
+    !current.some((doc) => doc.version_id === versionId) ||
+    !["in_person", "external"].includes(method)
+  )
+    redirect(`${destination}&document_error=invalid`);
+  const { error } = await supabase.rpc("admin_record_external_document_acceptance", {
+    p_student_id: studentId,
+    p_version_id: versionId,
+    p_acceptor_kind: signer === "student" ? "student" : "guardian",
+    p_guardian_id: signer === "student" ? null : signer,
+    p_decision: "accepted",
+    p_method: method,
+    p_reason: reason,
+    p_evidence: {},
+  });
+  if (error) redirect(`${destination}&document_error=register`);
+  revalidatePath(`/admin/alumnas/${studentId}`);
+  revalidatePath("/student/documentos");
+  revalidatePath("/student/reservar");
+  redirect(`${destination}&document_result=registered`);
 }
 
 export async function invalidateStudentDocumentAcceptanceAction(formData: FormData) {

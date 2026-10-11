@@ -72,7 +72,7 @@ export default async function CoursesWorkshopsPage() {
   }
 
   return (
-    <main className="packages-v2">
+    <main className="portal-page packages-v2">
       <header className="packages-v2-header">
         <Link href="/admin/productos" className="packages-v2-back">
           <span aria-hidden="true">←</span> Paquetes

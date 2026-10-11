@@ -59,6 +59,7 @@ async function validateResources(
       .eq("id", instructorId)
       .eq("studio_id", studioId)
       .eq("status", "active")
+      .eq("teaches", true)
       .maybeSingle();
     if (!data) return "instructor";
   }

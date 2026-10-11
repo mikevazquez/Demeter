@@ -534,7 +534,8 @@ export function ResourceMapEditor({
                   <input
                     type="range"
                     min="0"
-                    max="359"
+                    max="355"
+                    step="5"
                     value={selected.rotation_degrees}
                     onChange={(event) => updateNumeric("rotation_degrees", event.target.value)}
                   />
@@ -547,11 +548,11 @@ export function ResourceMapEditor({
                   type="button"
                   onClick={() =>
                     updateElement(selected.id, {
-                      rotation_degrees: (selected.rotation_degrees + 15) % 360,
+                      rotation_degrees: (selected.rotation_degrees + 90) % 360,
                     })
                   }
                 >
-                  Girar +15°
+                  Girar 90°
                 </button>
                 <button
                   type="button"

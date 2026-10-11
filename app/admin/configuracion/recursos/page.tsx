@@ -89,7 +89,7 @@ export default async function ResourcesConfigurationPage({
   };
 
   return (
-    <main className={`dashboard-shell ${styles.page}`}>
+    <main className={`portal-page dashboard-shell ${styles.page}`}>
       <header className={styles.header}>
         <div className={styles.headerCopy}>
           <Link className={styles.backLink} href="/admin/configuracion">

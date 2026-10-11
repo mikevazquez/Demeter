@@ -110,7 +110,7 @@ export default async function AsistianIntegrationPage({
   ).length;
 
   return (
-    <main className="integration-detail-v2">
+    <main className="portal-page integration-detail-v2">
       <header className="integration-detail-v2-header">
         <div>
           <Link className="integration-detail-v2-back" href="/admin/integraciones">

@@ -49,15 +49,17 @@ export function ReservationPolicyForm({
         <label className="reservations-v2-field">
           <span>Cancelar sin penalización hasta</span>
           <div className="reservations-v2-unit-input">
-            <input
+            <select
               name="cancellation_cutoff_hours"
-              type="number"
-              min="0"
-              max="168"
-              step="0.5"
-              defaultValue={cancellationCutoffMinutes / 60}
+              defaultValue={Math.min(24, Math.max(1, Math.ceil(cancellationCutoffMinutes / 60)))}
               required
-            />
+            >
+              {Array.from({ length: 24 }, (_, i) => (
+                <option value={i + 1} key={i + 1}>
+                  {i + 1}
+                </option>
+              ))}
+            </select>
             <b>horas antes</b>
           </div>
           <small>Si cancela después de este límite, se considera cancelación tardía.</small>

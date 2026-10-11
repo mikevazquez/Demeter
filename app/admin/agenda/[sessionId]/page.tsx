@@ -9,7 +9,7 @@ import {
   countSeatOccupyingReservations,
 } from "@/lib/reservations/capacity";
 import { SessionOperations } from "../../hoy/SessionOperations";
-import { cancelSession, setMinimumOverride, updateSession } from "./actions";
+import { cancelSession, reopenSession, setMinimumOverride, updateSession } from "./actions";
 
 function formatExpiry(value: string | null) {
   if (!value) return "Sin vencimiento";
@@ -59,7 +59,7 @@ export default async function SessionDetailPage({
   const { data: session } = await supabase
     .from("class_sessions")
     .select(
-      "id,template_id,starts_at,ends_at,capacity,status,notes,space_id,instructor_id,recurring_schedule_id,is_schedule_exception,requires_resource,resource_uses_per_item,minimum_reservations_enabled,minimum_reservations,minimum_review_minutes_before,minimum_override_allowed,minimum_override,minimum_review_status,minimum_review_at,minimum_reviewed_at,minimum_reservations_at_review,minimum_cancelled_at,minimum_cancelled_reservations,minimum_credits_returned",
+      "id,template_id,starts_at,ends_at,capacity,status,notes,space_id,instructor_id,recurring_schedule_id,is_schedule_exception,requires_resource,resource_uses_per_item,minimum_reservations_enabled,minimum_reservations,minimum_review_minutes_before,minimum_override_allowed,minimum_override,minimum_review_status,minimum_review_at,minimum_reviewed_at,minimum_reservations_at_review,minimum_cancelled_at,minimum_cancelled_reservations,minimum_credits_returned,credit_cost,drop_in_price_minor,drop_in_price_overridden,cancellation_reason,cancelled_at,cancelled_by_label",
     )
     .eq("id", sessionId)
     .eq("studio_id", studio.id)
@@ -88,7 +88,8 @@ export default async function SessionDetailPage({
         .from("instructors")
         .select("id,person_id")
         .eq("studio_id", studio.id)
-        .eq("status", "active"),
+        .eq("status", "active")
+        .eq("teaches", true),
       supabase
         .from("reservations")
         .select("id,student_id,guest_person_id,status,acquisition_id,commercial_status")
@@ -274,6 +275,9 @@ export default async function SessionDetailPage({
     cashDebts = await loadDemiCashDebts(supabase, studio.id);
   }
   const cashDebtByAcquisition = new Map(cashDebts.map((debt) => [debt.acquisitionId, debt]));
+  const effectiveSessionPrice = session.drop_in_price_overridden
+    ? session.drop_in_price_minor
+    : (session.drop_in_price_minor ?? template?.drop_in_price_minor ?? null);
   const roster = (reservations ?? []).map((reservation) => {
     const isGuest = Boolean(reservation.guest_person_id);
     const evaluationInvitation = evaluationByReservation.get(reservation.id);
@@ -313,7 +317,7 @@ export default async function SessionDetailPage({
       pendingPackageAmountMinor: acquisition
         ? cashDebtByAcquisition.get(acquisition.id)?.amountMinor
         : undefined,
-      individualPriceMinor: template?.drop_in_price_minor ?? null,
+      individualPriceMinor: effectiveSessionPrice,
       currency: studio.currency ?? "MXN",
       resourceRequired: session.requires_resource,
       resourceName: session.requires_resource
@@ -397,7 +401,7 @@ export default async function SessionDetailPage({
   ).length;
 
   return (
-    <main className="dashboard-shell admin-class-detail admin-ux04-session-detail">
+    <main className="portal-page dashboard-shell admin-class-detail admin-ux04-session-detail">
       <header className="topbar admin-class-detail-header">
         <div>
           <Link className="back-link compact" href={backHref}>
@@ -571,6 +575,7 @@ export default async function SessionDetailPage({
           available={available}
           canAttendance={canAttendance && session.status !== "cancelled"}
           canBook={canEdit && session.status === "scheduled"}
+          canAssignResource={can(CAPABILITIES.SETTINGS_WRITE)}
           canCreateStudent={canCreateStudent && session.status === "scheduled"}
           locale={studio.locale}
           timeZone={studio.timezone}
@@ -594,7 +599,27 @@ export default async function SessionDetailPage({
         </section>
       ) : null}
 
-      {canEdit && session.status !== "cancelled" ? (
+      {session.status === "cancelled" ? (
+        <section className="card">
+          <h2>Clase cancelada</h2>
+          <p>{session.cancellation_reason ?? "Sin motivo registrado"}</p>
+          <p className="portal-muted">
+            {session.cancelled_by_label ?? "Automático"} ·{" "}
+            {formatSessionDateTime(session.cancelled_at, timeZone)}
+          </p>
+          {canEdit && new Date(session.starts_at).getTime() > new Date().getTime() ? (
+            <form action={reopenSession}>
+              <input type="hidden" name="session_id" value={sessionId} />
+              <input type="hidden" name="return_to" value={returnTo} />
+              <p className="portal-muted">Las reservas canceladas no se restaurarán.</p>
+              <button className="primary-button">Reabrir clase</button>
+            </form>
+          ) : null}
+        </section>
+      ) : null}
+      {canEdit &&
+      session.status !== "cancelled" &&
+      new Date(session.starts_at).getTime() > new Date().getTime() ? (
         <details className="panel admin-session-settings">
           <summary>
             <span>
@@ -650,6 +675,47 @@ export default async function SessionDetailPage({
                     min="1"
                     defaultValue={session.capacity}
                     required
+                  />
+                </label>
+                <label>
+                  <span>Duración (minutos)</span>
+                  <input
+                    name="duration_minutes"
+                    type="number"
+                    min="15"
+                    max="360"
+                    step="15"
+                    required
+                    defaultValue={Math.round(
+                      (new Date(session.ends_at).getTime() -
+                        new Date(session.starts_at).getTime()) /
+                        60000,
+                    )}
+                  />
+                </label>
+                <label>
+                  <span>Créditos por reserva</span>
+                  <select
+                    name="credit_cost"
+                    defaultValue={session.credit_cost ?? template?.credit_cost ?? 1}
+                  >
+                    {[1, 2, 3, 4].map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Precio de clase suelta</span>
+                  <input
+                    name="drop_in_price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    defaultValue={
+                      effectiveSessionPrice == null ? "" : (effectiveSessionPrice ?? 0) / 100
+                    }
                   />
                 </label>
               </div>

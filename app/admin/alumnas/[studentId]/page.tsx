@@ -208,7 +208,7 @@ export default async function StudentProfilePage({
   const canReadRewards = can(CAPABILITIES.REWARDS_READ);
   const canManageRewards = can(CAPABILITIES.REWARDS_MANAGE);
   const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
-  const canReadDocuments = can(CAPABILITIES.DOCUMENTS_READ);
+  const canReadDocuments = can(CAPABILITIES.DOCUMENTS_READ) || can(CAPABILITIES.STUDENTS_WRITE);
   const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
   const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
   const canEditAcquisitions = can(CAPABILITIES.PRODUCTS_WRITE) || can(CAPABILITIES.SALES_WRITE);
@@ -414,6 +414,15 @@ export default async function StudentProfilePage({
       ])
     : [{ data: [] }, { data: [] }];
 
+  const { data: packageAdjustments } =
+    acquisitionIds.length && canReadProducts
+      ? await supabase
+          .from("product_acquisition_admin_events")
+          .select("id,acquisition_id,kind,reason,changes,created_at")
+          .eq("studio_id", studio.id)
+          .in("acquisition_id", acquisitionIds)
+          .order("created_at", { ascending: false })
+      : { data: [] };
   const productMap = new Map((acquisitionProducts ?? []).map((item) => [item.id, item]));
   const balanceMap = new Map<string, number>();
   for (const row of ledgerRows ?? []) {
@@ -1055,8 +1064,11 @@ export default async function StudentProfilePage({
     acquisition_not_found: "La adquisición ya no está disponible.",
     acquisition_date_invalid: "Selecciona una fecha de inicio válida.",
     credits_invalid: "Indica créditos disponibles válidos y un motivo obligatorio.",
-    adjustment_reason_required: "El motivo del ajuste de créditos es obligatorio.",
     unlimited_acquisition: "Una adquisición ilimitada no admite ajuste manual de créditos.",
+    adjustment_reason_required: "Escribe el motivo del cambio.",
+    start_date_outside_window: "El inicio puede moverse hasta 7 días antes o después.",
+    reservation_outside_validity: "Hay una reserva fuera de la nueva vigencia.",
+    negative_credits: "No puede quedar con clases negativas.",
     acquisition_not_editable: "Esta adquisición ya no puede modificarse.",
     communication_preferences:
       "No se pudieron guardar las preferencias de comunicación. Inténtalo de nuevo.",
@@ -1073,7 +1085,7 @@ export default async function StudentProfilePage({
   const contactMessages = communications.messages.get(student.id) ?? [];
 
   return (
-    <main className="dashboard-shell profile360-page admin-ux04-profile360 crm-page">
+    <main className="portal-page dashboard-shell profile360-page admin-ux04-profile360 crm-page">
       <Profile360Overview
         activeView={view}
         stage={contactStage({
@@ -1156,6 +1168,23 @@ export default async function StudentProfilePage({
         </div>
       ) : null}
 
+      {query.saved === "created" ? (
+        <section className="card">
+          <h2>Perfil creado</h2>
+          <p>Ya puedes trabajar con este expediente.</p>
+          <div className="portal-actions">
+            <Link
+              className="portal-button portal-button-primary"
+              href={`/admin/alumnas/${studentId}/alta`}
+            >
+              Registrar venta o clase de prueba
+            </Link>
+            <Link className="portal-button" href={`/admin/alumnas/${studentId}`}>
+              Terminar por ahora
+            </Link>
+          </div>
+        </section>
+      ) : null}
       {query.alta === "finalizada" || query.alta === "sin_paquete" ? (
         <div className="notice success">
           {query.alta === "finalizada"
@@ -1703,6 +1732,7 @@ export default async function StudentProfilePage({
 
           {currentAcquisition ? (
             <StudentPackageCard
+              adjustments={packageAdjustments ?? []}
               studentId={student.id}
               kind="current"
               acquisition={{
@@ -1735,6 +1765,7 @@ export default async function StudentProfilePage({
               </div>
               {scheduledAcquisitions.map((acquisition) => (
                 <StudentPackageCard
+                  adjustments={packageAdjustments ?? []}
                   key={acquisition.id}
                   studentId={student.id}
                   kind="scheduled"
@@ -1752,7 +1783,11 @@ export default async function StudentProfilePage({
                     activationMode: acquisition.activation_mode,
                   }}
                   classes={packageClassEvents.get(acquisition.id) ?? []}
-                  editable={false}
+                  editable={
+                    canEditAcquisitions &&
+                    !acquisition.refunded_at &&
+                    ["active", "expired"].includes(acquisition.status)
+                  }
                   timeZone={timeZone}
                   locale={locale}
                 />
@@ -1776,6 +1811,7 @@ export default async function StudentProfilePage({
                     : (acquisitionStatusCopy[acquisition.status] ?? "Histórico");
                 return (
                   <StudentPackageCard
+                    adjustments={packageAdjustments ?? []}
                     key={acquisition.id}
                     studentId={student.id}
                     kind="historical"
@@ -1793,7 +1829,11 @@ export default async function StudentProfilePage({
                       activationMode: acquisition.activation_mode,
                     }}
                     classes={packageClassEvents.get(acquisition.id) ?? []}
-                    editable={false}
+                    editable={
+                      canEditAcquisitions &&
+                      !acquisition.refunded_at &&
+                      ["active", "expired"].includes(acquisition.status)
+                    }
                     timeZone={timeZone}
                     locale={locale}
                   />

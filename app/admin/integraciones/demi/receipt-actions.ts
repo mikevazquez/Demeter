@@ -35,6 +35,7 @@ export async function sendDemiReceipt(formData: FormData) {
     .from("assistant_configs")
     .select("mode")
     .eq("studio_id", studio.id)
+    .eq("assistant_key", "demi")
     .maybeSingle();
 
   if (!config) {

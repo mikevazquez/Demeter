@@ -11,6 +11,14 @@ type ClassEvent = {
 };
 
 type Props = {
+  adjustments?: {
+    id: string;
+    acquisition_id: string;
+    kind: string;
+    reason: string;
+    changes: unknown;
+    created_at: string;
+  }[];
   studentId: string;
   kind: "current" | "scheduled" | "historical";
   acquisition: {
@@ -29,6 +37,12 @@ type Props = {
   timeZone: string;
   locale: string;
 };
+
+function shiftDate(value: string, days: number) {
+  const date = new Date(value + "T12:00:00Z");
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
 
 function formatDate(value: string | null, locale: string) {
   if (!value) return "Sin fecha";
@@ -70,6 +84,7 @@ function classStatusDetail(status: string) {
 }
 
 export default function StudentPackageCard({
+  adjustments = [],
   studentId,
   kind,
   acquisition,
@@ -213,9 +228,27 @@ export default function StudentPackageCard({
           ) : null}
         </section>
 
+        {adjustments.some((event) => event.acquisition_id === acquisition.id) ? (
+          <details className="profile360-package-history">
+            <summary>Ajustes del paquete</summary>
+            {adjustments
+              .filter((event) => event.acquisition_id === acquisition.id)
+              .map((event) => (
+                <div key={event.id} className="portal-inline-form">
+                  <div>
+                    <strong>
+                      {event.kind === "credits" ? "Ajuste de clases" : "Cambio de fecha de inicio"}
+                    </strong>
+                    <p>{event.reason}</p>
+                    <small>{formatClassDate(event.created_at, timeZone, locale)}</small>
+                  </div>
+                </div>
+              ))}
+          </details>
+        ) : null}
         {editable ? (
           <details className="profile360-package-edit">
-            <summary>Editar paquete actual</summary>
+            <summary>Editar paquete</summary>
             <div className="profile360-package-edit-body">
               <form action={setAcquisitionStartDate} className="grid gap-2">
                 <input type="hidden" name="student_id" value={studentId} />
@@ -226,10 +259,19 @@ export default function StudentPackageCard({
                     type="date"
                     name="starts_on"
                     required
+                    min={acquisition.startsOn ? shiftDate(acquisition.startsOn, -7) : undefined}
+                    max={acquisition.startsOn ? shiftDate(acquisition.startsOn, 7) : undefined}
                     defaultValue={acquisition.startsOn ?? ""}
                     className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
                   />
                 </label>
+                <label>
+                  Motivo del cambio
+                  <input name="reason" required maxLength={500} />
+                </label>
+                <p className="portal-muted">
+                  La vigencia completa se recorre. Las reservas deben quedar dentro del nuevo rango.
+                </p>
                 <PendingActionButton className="ghost-button" pendingLabel="Actualizando…">
                   Actualizar fecha
                 </PendingActionButton>
@@ -240,18 +282,22 @@ export default function StudentPackageCard({
                   <input type="hidden" name="student_id" value={studentId} />
                   <input type="hidden" name="acquisition_id" value={acquisition.id} />
                   <label className="grid gap-1 text-sm text-zinc-300">
-                    Créditos disponibles
+                    Ajustar clases disponibles
                     <input
                       type="number"
-                      name="available_credits"
-                      min="0"
+                      name="credit_delta"
+                      min="-100000"
                       max="100000"
                       step="1"
                       required
-                      defaultValue={acquisition.availableCredits ?? 0}
+                      defaultValue={0}
                       className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
                     />
                   </label>
+                  <p className="portal-muted">
+                    Positivo suma clases, negativo resta. Hoy tiene{" "}
+                    {acquisition.availableCredits ?? 0} disponibles.
+                  </p>
                   <label className="grid gap-1 text-sm text-zinc-300">
                     Motivo del ajuste
                     <input

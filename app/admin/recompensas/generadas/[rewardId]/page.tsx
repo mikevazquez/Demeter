@@ -118,7 +118,9 @@ export default async function GeneratedRewardDetailPage({
   }
 
   const canAdjust =
-    ctx.can(CAPABILITIES.REWARDS_MANAGE) && ["blocked", "available"].includes(reward.status);
+    ctx.can(CAPABILITIES.REWARDS_MANAGE) &&
+    ["available", "expired"].includes(reward.status) &&
+    Boolean(reward.expires_at);
 
   return (
     <RewardsShell>
@@ -200,10 +202,26 @@ export default async function GeneratedRewardDetailPage({
           </p>
           <h2 className="mt-1 text-lg font-semibold text-white">Ajustar esta recompensa</h2>
           <p className="mt-2 text-sm leading-6 text-zinc-400">
-            No es una operación normal. El motivo es obligatorio y queda registrado en auditoría.
+            Amplía la vigencia. Una recompensa vencida vuelve a estar disponible; el motivo queda
+            registrado en el historial.
           </p>
           <form action={adjustRewardAction} className="mt-4 grid gap-3">
             <input type="hidden" name="reward_id" value={reward.id} />
+            <label className="grid gap-1 text-sm">
+              Ampliar vigencia
+              <select
+                name="days"
+                defaultValue="7"
+                required
+                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5"
+              >
+                {[7, 14, 30].map((days) => (
+                  <option key={days} value={days}>
+                    +{days} días
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="grid gap-1 text-sm text-zinc-300">
               Motivo
               <textarea
@@ -252,8 +270,21 @@ export default async function GeneratedRewardDetailPage({
                 className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-4 py-3"
               >
                 <div>
-                  <strong className="text-sm text-white">{event.event_type}</strong>
+                  <strong className="text-sm text-white">
+                    {event.event_type === "adjusted"
+                      ? "Vigencia ampliada"
+                      : event.event_type.replaceAll("_", " ")}
+                  </strong>
                   <p className="mt-1 text-xs text-zinc-500">{formatDateTime(event.occurred_at)}</p>
+                  {asObject(event.details).reason ? (
+                    <p className="mt-1 text-sm">{String(asObject(event.details).reason)}</p>
+                  ) : null}
+                  {asObject(event.details).new_expires_at ? (
+                    <p className="mt-1 text-xs">
+                      Vigencia: {formatDateTime(String(asObject(event.details).old_expires_at))} →{" "}
+                      {formatDateTime(String(asObject(event.details).new_expires_at))}
+                    </p>
+                  ) : null}
                 </div>
                 <StatusBadge status={event.to_status} />
               </div>

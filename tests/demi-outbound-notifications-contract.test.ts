@@ -13,7 +13,7 @@ describe("Demi outbound WhatsApp notifications", () => {
     "supabase/migrations/20261003173100_meta_whatsapp_demi_operational_templates.sql",
   );
   const processPage = source("app/admin/notificaciones/[processKey]/page.tsx");
-  const notificationsPage = source("app/admin/notificaciones/page.tsx");
+  const notificationsPage = source("app/admin/notificaciones/NotificationsView.tsx");
   const marketingCatalog = source("lib/notifications/admin-catalog.ts");
   const marketingPage = source("app/admin/notificaciones/marketing/[marketingKey]/page.tsx");
   const marketingTemplateMigration = source(

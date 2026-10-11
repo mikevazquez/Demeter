@@ -6,8 +6,6 @@ import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-type AdminSupabaseClient = Awaited<ReturnType<typeof getAdminContext>>["supabase"];
-
 function safeAdminReturn(value: string, fallback: string) {
   if (!value.startsWith("/admin") || value.startsWith("//")) return fallback;
   return value;
@@ -53,36 +51,6 @@ function zonedDateTimeToUtc(localDateTime: string, timeZone: string) {
   return new Date(guess - (asIfUtc - guess));
 }
 
-async function validateResources(
-  supabase: AdminSupabaseClient,
-  studioId: string,
-  instructorId: string | null,
-  spaceId: string | null,
-  capacity: number,
-) {
-  if (instructorId) {
-    const { data } = await supabase
-      .from("instructors")
-      .select("id")
-      .eq("id", instructorId)
-      .eq("studio_id", studioId)
-      .eq("status", "active")
-      .maybeSingle();
-    if (!data) return "instructor";
-  }
-  if (spaceId) {
-    const { data } = await supabase
-      .from("spaces")
-      .select("id,capacity")
-      .eq("id", spaceId)
-      .eq("studio_id", studioId)
-      .eq("active", true)
-      .maybeSingle();
-    if (!data || (data.capacity && capacity > data.capacity)) return "space";
-  }
-  return null;
-}
-
 export async function setMinimumOverride(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "");
   const returnUrl = sessionManagementReturn(formData, sessionId);
@@ -118,140 +86,67 @@ export async function setMinimumOverride(formData: FormData) {
 export async function updateSession(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "");
   const returnUrl = sessionManagementReturn(formData, sessionId);
-  const startsLocal = String(formData.get("starts_at") ?? "");
-  const instructorId = String(formData.get("instructor_id") ?? "") || null;
-  const spaceId = String(formData.get("space_id") ?? "") || null;
-  const capacity = Number(formData.get("capacity"));
-  const notes = String(formData.get("notes") ?? "").trim() || null;
-  const scope = String(formData.get("scope") ?? "single");
-  if (!sessionId || !startsLocal || !Number.isFinite(capacity) || capacity < 1)
-    redirect(withQuery(returnUrl, "error", "edit"));
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
   const { data: session } = await supabase
     .from("class_sessions")
-    .select("id,template_id,starts_at,recurring_schedule_id,status,space_id,requires_resource")
+    .select("starts_at,ends_at,credit_cost,drop_in_price_minor")
     .eq("id", sessionId)
     .eq("studio_id", studio.id)
-    .single();
-  if (!session || session.status !== "scheduled") redirect(returnUrl);
-
-  if (session.requires_resource && session.space_id && spaceId !== session.space_id) {
-    const { data: activeResourceAssignment } = await supabase
-      .from("reservation_resource_assignments")
-      .select("id")
-      .eq("studio_id", studio.id)
-      .eq("session_id", session.id)
-      .is("released_at", null)
-      .limit(1)
-      .maybeSingle();
-
-    if (activeResourceAssignment) {
-      redirect(withQuery(returnUrl, "error", "resource_space_assigned"));
-    }
-  }
-
-  const { data: template } = await supabase
-    .from("class_templates")
-    .select("duration_minutes")
-    .eq("id", session.template_id)
-    .eq("studio_id", studio.id)
-    .single();
-  if (!template) redirect(withQuery(returnUrl, "error", "edit"));
-  const resourceError = await validateResources(
-    supabase,
-    studio.id,
-    instructorId,
-    spaceId,
-    capacity,
-  );
-  if (resourceError) redirect(withQuery(returnUrl, "error", resourceError));
-  const startsAt = zonedDateTimeToUtc(startsLocal, studio.timezone);
-  const durationMs = template.duration_minutes * 60_000;
-  const endsAt = new Date(startsAt.getTime() + durationMs);
-  if (scope === "future" && session.recurring_schedule_id) {
-    const { data: future } = await supabase
-      .from("class_sessions")
-      .select("id,starts_at,status")
-      .eq("studio_id", studio.id)
-      .eq("recurring_schedule_id", session.recurring_schedule_id)
-      .gte("starts_at", session.starts_at)
-      .eq("status", "scheduled")
-      .order("starts_at");
-    const delta = startsAt.getTime() - new Date(session.starts_at).getTime();
-    for (const item of future ?? []) {
-      const nextStart = new Date(new Date(item.starts_at).getTime() + delta);
-      const nextEnd = new Date(nextStart.getTime() + durationMs);
-      const { data: conflict } = await supabase.rpc("admin_session_has_conflict", {
-        p_studio_id: studio.id,
-        p_starts_at: nextStart.toISOString(),
-        p_ends_at: nextEnd.toISOString(),
-        p_instructor_id: instructorId,
-        p_space_id: spaceId,
-        p_exclude_session_id: item.id,
-      });
-      if (conflict) redirect(withQuery(returnUrl, "error", "conflict"));
-    }
-    for (const item of future ?? []) {
-      const nextStart = new Date(new Date(item.starts_at).getTime() + delta);
-      await supabase
-        .from("class_sessions")
-        .update({
-          starts_at: nextStart.toISOString(),
-          ends_at: new Date(nextStart.getTime() + durationMs).toISOString(),
-          instructor_id: instructorId,
-          space_id: spaceId,
-          capacity,
-          notes,
-          is_schedule_exception: false,
-        })
-        .eq("id", item.id)
-        .eq("studio_id", studio.id);
-    }
-    const [datePart, timePart] = startsLocal.split("T");
-    const weekday = new Date(`${datePart}T12:00:00Z`).getUTCDay();
-    await supabase
-      .from("recurring_schedules")
-      .update({
-        instructor_id: instructorId,
-        space_id: spaceId,
-        capacity,
-        notes,
-        weekday,
-        local_time: timePart,
-        starts_on: datePart,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", session.recurring_schedule_id)
-      .eq("studio_id", studio.id);
-  } else {
-    const { data: conflict } = await supabase.rpc("admin_session_has_conflict", {
-      p_studio_id: studio.id,
-      p_starts_at: startsAt.toISOString(),
-      p_ends_at: endsAt.toISOString(),
-      p_instructor_id: instructorId,
-      p_space_id: spaceId,
-      p_exclude_session_id: sessionId,
-    });
-    if (conflict) redirect(withQuery(returnUrl, "error", "conflict"));
-    const { error } = await supabase
-      .from("class_sessions")
-      .update({
-        starts_at: startsAt.toISOString(),
-        ends_at: endsAt.toISOString(),
-        instructor_id: instructorId,
-        space_id: spaceId,
-        capacity,
-        notes,
-        is_schedule_exception: Boolean(session.recurring_schedule_id),
-      })
-      .eq("id", sessionId)
-      .eq("studio_id", studio.id);
-    if (error) redirect(withQuery(returnUrl, "error", "edit"));
-  }
+    .maybeSingle();
+  if (!session) redirect(withQuery(returnUrl, "error", "session_not_found"));
+  const startsLocal = String(formData.get("starts_at") ?? "");
+  const duration = formData.has("duration_minutes")
+    ? Number(formData.get("duration_minutes"))
+    : Math.round(
+        (new Date(session.ends_at).getTime() - new Date(session.starts_at).getTime()) / 60000,
+      );
+  const credit = formData.has("credit_cost")
+    ? Number(formData.get("credit_cost")) || null
+    : session.credit_cost;
+  const price = formData.has("drop_in_price")
+    ? String(formData.get("drop_in_price") ?? "").trim()
+    : null;
+  const priceMinor =
+    price === null
+      ? session.drop_in_price_minor
+      : price === ""
+        ? null
+        : Math.round(Number(price) * 100);
+  if (
+    !startsLocal ||
+    !Number.isFinite(duration) ||
+    (priceMinor !== null && !Number.isFinite(priceMinor))
+  )
+    redirect(withQuery(returnUrl, "error", "edit"));
+  const { error } = await supabase.rpc("admin_update_session", {
+    p_session_id: sessionId,
+    p_starts_at: zonedDateTimeToUtc(startsLocal, studio.timezone).toISOString(),
+    p_duration_minutes: duration,
+    p_capacity: Number(formData.get("capacity")),
+    p_instructor_id: String(formData.get("instructor_id") ?? "") || null,
+    p_space_id: String(formData.get("space_id") ?? "") || null,
+    p_notes: String(formData.get("notes") ?? ""),
+    p_credit_cost: credit,
+    p_drop_in_price_minor: priceMinor,
+    p_scope: String(formData.get("scope") ?? "single"),
+  });
+  if (error) redirect(withQuery(returnUrl, "error", error.message));
   revalidatePath(`/admin/agenda/${sessionId}`);
   revalidatePath("/admin/agenda");
   revalidatePath("/admin");
   redirect(withQuery(returnUrl, "created", "edit"));
+}
+
+export async function reopenSession(formData: FormData) {
+  const sessionId = String(formData.get("session_id") ?? "");
+  const returnUrl = sessionManagementReturn(formData, sessionId);
+  const { supabase } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const { error } = await supabase.rpc("admin_reopen_session", { p_session_id: sessionId });
+  if (error) redirect(withQuery(returnUrl, "error", error.message));
+  revalidatePath("/admin/agenda");
+  revalidatePath(`/admin/agenda/${sessionId}`);
+  revalidatePath("/admin");
+  redirect(withQuery(returnUrl, "created", "reopened"));
 }
 
 export async function cancelSession(formData: FormData) {

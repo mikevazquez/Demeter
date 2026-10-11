@@ -66,7 +66,7 @@ const groups: { title: string; tone: string; items: Item[] }[] = [
       {
         title: "Notificaciones y automatizaciones",
         description: "Qué detona cada mensaje, por qué canal y cuándo.",
-        href: "/admin/notificaciones",
+        href: "/admin/comunicacion",
         capability: CAPABILITIES.AUTOMATIONS_READ,
       },
       {
@@ -84,7 +84,7 @@ const groups: { title: string; tone: string; items: Item[] }[] = [
       {
         title: "Demi y Polina",
         description: "Instrucciones, pruebas y consumo.",
-        href: "/admin/mas/demi",
+        href: "/admin/asistentes",
         capability: CAPABILITIES.SETTINGS_WRITE,
       },
     ],
@@ -120,7 +120,7 @@ export default async function MorePage() {
   const ctx = await getAdminContext();
   const coach = ctx.can(CAPABILITIES.INSTRUCTOR_PORTAL) && !ctx.can(CAPABILITIES.ADMIN_PORTAL);
   return (
-    <main className="dashboard-shell admin-module-page more-page flow-more">
+    <main className="portal-page dashboard-shell admin-module-page more-page flow-more">
       <header className="hoy-product-header">
         <div className="hoy-product-wordmark">
           <span>

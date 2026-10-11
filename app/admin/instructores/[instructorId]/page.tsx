@@ -15,22 +15,45 @@ export default async function InstructorProfilePage({
   params: Promise<{ instructorId: string }>;
   searchParams: Promise<{ created?: string; saved?: string; error?: string }>;
 }) {
-  const [{ instructorId }, query, { supabase, studio, can }] = await Promise.all([
+  const [{ instructorId }, query, { supabase, studio, can, membership }] = await Promise.all([
     params,
     searchParams,
     getAdminContext(CAPABILITIES.INSTRUCTORS_READ),
   ]);
-  const canWrite = can(CAPABILITIES.INSTRUCTORS_WRITE);
-  const canManageAccess = can(CAPABILITIES.SETTINGS_WRITE);
+  const canWriteBase = can(CAPABILITIES.INSTRUCTORS_WRITE);
+  const canManageAccessBase = can(CAPABILITIES.SETTINGS_WRITE);
 
   const { data: instructor } = await supabase
     .from("instructors")
-    .select("id, person_id, status, bio, created_at")
+    .select("id, person_id, status, bio, staff_role, teaches, created_at")
     .eq("id", instructorId)
     .eq("studio_id", studio.id)
     .maybeSingle();
 
   if (!instructor) notFound();
+  const canWrite =
+    canWriteBase && (instructor.staff_role !== "admin" || membership.role === "owner");
+  const canManageAccess =
+    canManageAccessBase && (instructor.staff_role !== "admin" || membership.role === "owner");
+  const { data: replacements } = canWrite
+    ? await supabase
+        .from("instructors")
+        .select("id,person_id")
+        .eq("studio_id", studio.id)
+        .eq("status", "active")
+        .eq("teaches", true)
+        .neq("id", instructor.id)
+    : { data: [] };
+  const { data: replacementPeople } = replacements?.length
+    ? await supabase
+        .from("persons")
+        .select("id,first_name,last_name")
+        .eq("studio_id", studio.id)
+        .in(
+          "id",
+          replacements.map((r) => r.person_id),
+        )
+    : { data: [] };
 
   const [
     { data: person },
@@ -60,6 +83,7 @@ export default async function InstructorProfilePage({
       .select("id, template_id, starts_at, status")
       .eq("studio_id", studio.id)
       .eq("instructor_id", instructor.id)
+      .eq("status", "scheduled")
       .gte("starts_at", new Date().toISOString())
       .order("starts_at")
       .limit(10),
@@ -70,7 +94,7 @@ export default async function InstructorProfilePage({
           .select("user_id, active")
           .eq("studio_id", studio.id)
           .eq("person_id", instructor.person_id)
-          .eq("role", "instructor")
+          .eq("role", instructor.staff_role)
           .limit(1)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
@@ -106,7 +130,7 @@ export default async function InstructorProfilePage({
         : "active";
 
   return (
-    <main className="team-v2-detail">
+    <main className="portal-page team-v2-detail">
       <header className="team-v2-detail-header">
         <div>
           <Link className="team-v2-detail-back" href="/admin/instructores">
@@ -335,6 +359,30 @@ export default async function InstructorProfilePage({
                 name="status"
                 value={instructor.status === "active" ? "inactive" : "active"}
               />
+              {instructor.status === "active" ? (
+                <label className="portal-form">
+                  Reasignar clases futuras a
+                  <select
+                    name="replacement_instructor_id"
+                    required={Boolean(sessions?.length)}
+                    defaultValue=""
+                  >
+                    <option value="">
+                      {sessions?.length ? "Elige quién cubre sus clases" : "Sin reasignación"}
+                    </option>
+                    {(replacements ?? []).map((replacement) => {
+                      const person = replacementPeople?.find((p) => p.id === replacement.person_id);
+                      return (
+                        <option value={replacement.id} key={replacement.id}>
+                          {[person?.first_name, person?.last_name].filter(Boolean).join(" ") ||
+                            "Integrante"}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <small>Se reasignan las sesiones futuras y los horarios recurrentes.</small>
+                </label>
+              ) : null}
               <button
                 className={instructor.status === "active" ? "ghost-button" : "primary-button"}
                 type="submit"
