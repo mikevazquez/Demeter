@@ -3,6 +3,10 @@ import "server-only";
 import { conversationGuidance, needsFirstVisitGuidance } from "./conversation-guidance";
 import { testPersonaLabel } from "./prompt-workbench";
 import { firstClassPaymentInstructions } from "./first-class-payment-instructions";
+import {
+  isMixedInformationActionRequest,
+  shouldBlockPaymentForInformation,
+} from "./information-intent";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { estimateModelCostUsdMicros } from "./costs";
@@ -301,7 +305,13 @@ function confirmationReply(toolName: string, result: Record<string, unknown>) {
   if (toolName === "execute_booking" && result.status === "participant_data_required")
     return "Ya recibí tu comprobante y el pago sigue en revisión. Para continuar, envíame juntos tu nombre completo y celular mexicano de diez dígitos, sin lada. Todavía no he confirmado tu reserva.";
   if (toolName === "confirm_cash_package_purchase")
-    return "Registré tu paquete con el efectivo pendiente de cobro. Puedes reservar una primera clase; para una segunda reserva tendrás que cubrir el adeudo. La vigencia inicia en la primera clase reservada.";
+    return (
+      "Registré tu paquete con el efectivo pendiente de cobro." +
+      (typeof result.payment_due_on === "string"
+        ? ` La fecha de pago es ${formatDateForReply(result.payment_due_on)}.`
+        : "") +
+      " Puedes reservar una primera clase; para una segunda reserva tendrás que cubrir el adeudo. La vigencia inicia en la primera clase reservada."
+    );
   const summary = asObject(result.summary);
   if (toolName === "execute_booking" && summary) {
     if (summary.trial_booking === true && result.status === "payment_required") {
@@ -1193,6 +1203,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
 
   let toolCallsThisTurn = 0;
   let provisionalTransferBooking = false;
+  let mixedPaymentInstructions: string | null = null;
   const testDeadline = Date.now() + 90_000;
 
   for (let attempt = 0; attempt < input.config.max_model_calls_per_turn; attempt += 1) {
@@ -1328,7 +1339,11 @@ export async function runAssistantTurn(input: OrchestratorInput) {
 
     const functionCalls = output.filter((item) => item.type === "function_call");
     if (functionCalls.length === 0) {
-      const text = outputText(output);
+      const informationReply = outputText(output);
+      if (!informationReply) throw new Error("assistant_empty_response");
+      const text = mixedPaymentInstructions
+        ? `${informationReply}\n\n${mixedPaymentInstructions}`
+        : informationReply;
       if (!text) throw new Error("assistant_empty_response");
       const revocationAlreadyExplained =
         /(?:puede(?:n)?|podr[aá](?:n)?|podr[ií]a(?:n)?)\s+(?:ser\s+)?(?:cancelad[ao]s?|cancelarse|revocad[ao]s?|revocarse)\b[\s\S]{0,180}\bsi\b[\s\S]{0,100}\bno\b[\s\S]{0,100}(?:valid|confirm)/i.test(
@@ -1393,35 +1408,42 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       } else {
         const currentUserMessage =
           [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
-        result = input.testSimulation
-          ? await simulateAssistantAction(
-              {
-                state: input.testSimulation,
-                supabase: input.supabase,
-                studio: input.studio,
-                turnId: input.turnId,
-                currentUserMessage,
-              },
-              toolName,
-              args,
-            )
-          : await executeAssistantActionTool(
-              {
-                supabase: input.supabase,
-                studio: input.studio,
-                conversationId: input.conversationId,
-                turnId: input.turnId,
-                studentId: input.studentId,
-                crmContactId: input.crmContactId,
-                identityNeedsName: input.identityNeedsName === true,
-                channel: input.channel,
-                activationUrl: input.activationUrl,
-                serviceMode: input.serviceMode === true,
-                currentUserMessage,
-              },
-              toolName,
-              args,
-            );
+        result = shouldBlockPaymentForInformation(toolName, currentUserMessage)
+          ? {
+              ok: false,
+              reason_code: "information_request_not_payment_authorization",
+              instruction:
+                "Responde la consulta informativa con los datos consultados. Conserva el pago pendiente sin repetir datos bancarios ni preparar otro cobro. Si pide información general, explica la actividad y los requisitos disponibles; pregunta qué detalle desea conocer sólo si falta contexto.",
+            }
+          : input.testSimulation
+            ? await simulateAssistantAction(
+                {
+                  state: input.testSimulation,
+                  supabase: input.supabase,
+                  studio: input.studio,
+                  turnId: input.turnId,
+                  currentUserMessage,
+                },
+                toolName,
+                args,
+              )
+            : await executeAssistantActionTool(
+                {
+                  supabase: input.supabase,
+                  studio: input.studio,
+                  conversationId: input.conversationId,
+                  turnId: input.turnId,
+                  studentId: input.studentId,
+                  crmContactId: input.crmContactId,
+                  identityNeedsName: input.identityNeedsName === true,
+                  channel: input.channel,
+                  activationUrl: input.activationUrl,
+                  serviceMode: input.serviceMode === true,
+                  currentUserMessage,
+                },
+                toolName,
+                args,
+              );
       }
 
       const resultObject = asObject(result);
@@ -1492,7 +1514,17 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         resultObject,
         [...input.history].reverse().find((message) => message.role === "user")?.content ?? "",
       );
-      if (instructions) return { reply: instructions, trace };
+      if (instructions) {
+        const message =
+          [...input.history].reverse().find((item) => item.role === "user")?.content ?? "";
+        if (!isMixedInformationActionRequest(message)) return { reply: instructions, trace };
+        mixedPaymentInstructions = instructions;
+        responseInput.push({
+          role: "developer",
+          content:
+            "La solicitud de pago ya está preparada. Responde únicamente las preguntas informativas del mensaje con los datos consultados; consulta los datos que falten sin volver a preparar pagos o reservas. No describas el estado de la solicitud, el proceso de pago, la validación ni los siguientes pasos. No incluyas instrucciones bancarias ni confirmes una reserva: el sistema añadirá las instrucciones exactas y los siguientes pasos a tu respuesta informativa.",
+        });
+      }
     }
 
     responseInput.push({

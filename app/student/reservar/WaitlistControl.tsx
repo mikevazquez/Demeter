@@ -24,6 +24,7 @@ type Props = {
   initialWaitlisted?: boolean;
   levelTitle?: string | null;
   compact?: boolean;
+  variant?: "default" | "tile";
 };
 
 export default function WaitlistControl({
@@ -31,6 +32,7 @@ export default function WaitlistControl({
   initialWaitlisted = false,
   levelTitle = null,
   compact = false,
+  variant = "default",
 }: Props) {
   const router = useRouter();
   const [waitlisted, setWaitlisted] = useState(initialWaitlisted);
@@ -59,6 +61,16 @@ export default function WaitlistControl({
   }
 
   if (waitlisted) {
+    if (variant === "tile") {
+      return (
+        <span
+          aria-live="polite"
+          className="relative flex min-h-16 min-w-0 items-center justify-center self-stretch rounded-[14px] border border-amber-400/30 bg-amber-400/[0.09] px-2 text-center text-xs font-semibold text-amber-200"
+        >
+          En espera
+        </span>
+      );
+    }
     return (
       <div className={compact ? "space-y-1.5 text-right" : "space-y-2"}>
         <span className="inline-flex items-center rounded-full border border-amber-400/30 bg-amber-400/[0.09] px-3 py-1.5 text-xs font-semibold text-amber-200">
@@ -74,16 +86,34 @@ export default function WaitlistControl({
   }
 
   return (
-    <div className={compact ? "text-right" : ""}>
+    <div
+      className={
+        variant === "tile"
+          ? "relative flex min-w-0 flex-col self-stretch"
+          : compact
+            ? "text-right"
+            : ""
+      }
+    >
       <button
         type="button"
         onClick={join}
         disabled={isPending}
-        className="min-h-11 rounded-2xl border border-fuchsia-500/45 bg-fuchsia-500/[0.07] px-4 py-2.5 text-sm font-semibold text-fuchsia-100 transition hover:bg-fuchsia-500/[0.13] disabled:cursor-wait disabled:opacity-60"
+        className={
+          variant === "tile"
+            ? "min-h-16 w-full min-w-0 flex-1 self-stretch rounded-[14px] border border-fuchsia-500/45 bg-fuchsia-500/[0.07] px-2 text-center text-[11px] font-semibold leading-tight text-fuchsia-100 transition hover:bg-fuchsia-500/[0.13] disabled:cursor-wait disabled:opacity-60"
+            : "min-h-11 rounded-2xl border border-fuchsia-500/45 bg-fuchsia-500/[0.07] px-4 py-2.5 text-sm font-semibold text-fuchsia-100 transition hover:bg-fuchsia-500/[0.13] disabled:cursor-wait disabled:opacity-60"
+        }
       >
-        {isPending ? "Uniéndote…" : "Unirme a lista de espera"}
+        <span className={variant === "tile" ? "block text-[11px] leading-tight" : undefined}>
+          {isPending ? "Uniéndote…" : "Unirme a lista de espera"}
+        </span>
       </button>
-      {error ? <p className="mt-2 max-w-sm text-xs leading-5 text-rose-300">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="mt-2 max-w-sm text-xs leading-5 text-rose-300">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

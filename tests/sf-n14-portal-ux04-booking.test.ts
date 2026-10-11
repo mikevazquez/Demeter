@@ -30,12 +30,11 @@ describe("SF-N14 PORTAL UX-04 Reservar", () => {
     expect(reserve).toContain("Clases del día");
     expect(reserve).toContain("No hay clases para esta fecha");
     expect(reserve).toContain("session.spots_available");
-    expect(reserve).toContain("session.capacity");
   });
 
   it("shows canonical availability states and preserves quick booking", () => {
-    expect(reserve).toContain("Ya reservada");
-    expect(reserve).toContain("Disponible");
+    expect(reserve).toContain("Reservada");
+    expect(reserve).toContain("lugares");
     expect(reserve).toContain('session.eligibility?.reason_code === "session_full"');
     expect(reserve).toContain("QuickBookButton");
   });

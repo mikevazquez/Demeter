@@ -6,6 +6,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import StudentOnboardingForm from "./StudentOnboardingForm";
 import OnboardingCompletedDialog from "./OnboardingCompletedDialog";
+import { loadTrialEnrollmentCredits } from "@/lib/assistant/trial-enrollment-credit";
 
 function localDate(timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -20,6 +21,16 @@ function localDate(timeZone: string) {
 }
 
 const errorCopy: Record<string, string> = {
+  trial_credit_unavailable:
+    "El pago de primera clase ya no puede abonarse: debe estar validado, sin devolución, sin uso previo y corresponder a la clase de hoy.",
+  trial_credit_enrollment_invalid:
+    "Este abono sólo aplica a inscripción de al menos $150, con paquete a precio completo.",
+  trial_credit_full_payment_required:
+    "Para aplicar el abono, cobra el resto de inscripción más el paquete completo.",
+  trial_credit_same_day_required:
+    "El abono y la compra deben registrarse el mismo día local de la primera clase.",
+  trial_credit_replay_mismatch:
+    "La operación ya existe con otros datos. Revisa el historial antes de continuar.",
   invalid_request: "Faltan datos para completar el alta.",
   student_not_operable: "La alumna no está activa. Resuelve su estado desde Perfil 360.",
   package_not_available: "El paquete seleccionado ya no está disponible.",
@@ -140,6 +151,9 @@ export default async function StudentOnboardingPage({
   );
 
   const alreadyHasPackage = (existingAcquisitions ?? []).some((item) => !item.refunded_at);
+  const trialCredits = canSell
+    ? await loadTrialEnrollmentCredits(supabase, student.id)
+    : { options: [], unavailable: false };
   const completedHere = query.completed === "1" && Boolean(query.sale);
 
   return (
@@ -211,6 +225,8 @@ export default async function StudentOnboardingPage({
       ) : (
         <StudentOnboardingForm
           studentId={student.id}
+          trialCredits={trialCredits.options}
+          trialCreditsUnavailable={trialCredits.unavailable}
           studentName={student.full_name}
           packages={(packages ?? []).map((item) => ({
             id: item.id,

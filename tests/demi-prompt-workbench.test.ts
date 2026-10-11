@@ -1,4 +1,8 @@
 import { firstClassPaymentInstructions } from "../lib/assistant/first-class-payment-instructions";
+import {
+  isMixedInformationActionRequest,
+  shouldBlockPaymentForInformation,
+} from "../lib/assistant/information-intent";
 import { resolveEnrollmentStatus } from "../lib/assistant/enrollment-state";
 import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
@@ -104,16 +108,19 @@ function orchestratorHarness(
       "./conversation-guidance": { conversationGuidance, needsFirstVisitGuidance },
       "./prompt-workbench": { testPersonaLabel },
       "./first-class-payment-instructions": { firstClassPaymentInstructions },
+      "./information-intent": { isMixedInformationActionRequest, shouldBlockPaymentForInformation },
       "./tool-contracts": {
         assistantReadToolDefinitions: [{ name: "get_activity_catalog", type: "function" }],
         assistantActionToolDefinitions: [
           "execute_booking",
+          "prepare_first_class_payment",
           "prepare_transfer_package_choice",
           "prepare_bank_transfer_purchase",
           "complete_group_booking",
         ].map((name) => ({ name, type: "function" })),
         assistantReadToolNames: new Set(["get_activity_catalog"]),
         assistantActionToolNames: new Set([
+          "prepare_first_class_payment",
           "execute_booking",
           "complete_group_booking",
           "prepare_student_access_activation",
@@ -167,6 +174,44 @@ afterEach(() => {
 });
 
 describe("Demi prompt workbench", () => {
+  it("answers a mixed information request while retaining exact payment instructions", async () => {
+    const h = orchestratorHarness();
+    h.input.history = [{ role: "user", content: "¿Dónde están? También quiero reservar." }];
+    h.simulate.mockResolvedValue({
+      ok: true,
+      status: "payment_required",
+      amount_minor: 15000,
+      currency: "MXN",
+      bank_details: { bank_name: "Banco de prueba", account_number: "0000" },
+    });
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            output: [
+              {
+                type: "function_call",
+                name: "prepare_first_class_payment",
+                call_id: "payment",
+                arguments: "{}",
+              },
+            ],
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(reply("Estamos en la dirección consultada."))),
+      );
+    vi.stubGlobal("fetch", fetcher);
+    const result = await h.run(h.input);
+    expect(result.reply).toContain("Estamos en la dirección consultada.");
+    expect(result.reply).toContain("Cuenta: 0000");
+    expect(result.reply).toContain("Todavía no hay una reserva confirmada");
+    expect(h.simulate).toHaveBeenCalledOnce();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
   it("builds isolated lifecycle fixtures for conversational UAT", () => {
     const mod = serverModule<typeof import("../lib/assistant/test-simulation")>(
       "lib/assistant/test-simulation.ts",

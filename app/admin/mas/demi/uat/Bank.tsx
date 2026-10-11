@@ -199,7 +199,18 @@ export default function Bank({
         <>
           <section>
             <h2>2. Conversar con Demi</h2>
-            <form action={(form) => perform(() => sendDemiUatMessage(form))}>
+            <form
+              action={(form) => perform(() => sendDemiUatMessage(form))}
+              onSubmit={() => {
+                setBusy(true);
+                setError("");
+              }}
+              onReset={(event) => {
+                const select =
+                  event.currentTarget.querySelector<HTMLSelectElement>("select[name='persona']");
+                if (select) queueMicrotask(() => (select.value = persona));
+              }}
+            >
               <input type="hidden" name="runId" value={data.run.id} />
               <label>
                 Estado inicial
@@ -225,6 +236,18 @@ export default function Bank({
                   <option value="">Archivo cargado o mensaje escrito</option>
                   <option value="video">Video no soportado</option>
                   <option value="unsupported">Formato desconocido</option>
+                </select>
+              </label>
+              <label>
+                Mensaje de WhatsApp simulado
+                <select name="waScenario" defaultValue="">
+                  <option value="">Mensaje normal</option>
+                  <option value="unsupported_text_ad">
+                    Formato no soportado con texto y anuncio
+                  </option>
+                  <option value="unsupported_empty">
+                    Formato no soportado sin texto ni anuncio
+                  </option>
                 </select>
               </label>
               <p>

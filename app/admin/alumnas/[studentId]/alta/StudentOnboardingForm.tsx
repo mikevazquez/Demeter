@@ -5,6 +5,7 @@ import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import { useMemo, useState } from "react";
 
 import { createStudentOnboardingSale } from "./actions";
+import type { TrialEnrollmentCredit } from "@/lib/assistant/trial-enrollment-credit";
 
 type PackageOption = {
   id: string;
@@ -58,6 +59,8 @@ export default function StudentOnboardingForm({
   defaultEnrollmentProductId,
   completedSaleId,
   flowContext = "onboarding",
+  trialCredits = [],
+  trialCreditsUnavailable = false,
 }: {
   studentId: string;
   studentName: string;
@@ -70,6 +73,8 @@ export default function StudentOnboardingForm({
   defaultEnrollmentProductId: string | null;
   completedSaleId: string | null;
   flowContext?: "onboarding" | "sale";
+  trialCredits?: TrialEnrollmentCredit[];
+  trialCreditsUnavailable?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState(packages[0]?.id ?? "");
   const [startMode, setStartMode] = useState("today");
@@ -86,6 +91,7 @@ export default function StudentOnboardingForm({
   );
   const [paymentAmount, setPaymentAmount] = useState("");
   const [priorCredits, setPriorCredits] = useState("0");
+  const [useTrialCredit, setUseTrialCredit] = useState(false);
 
   const selectedPackage = useMemo(
     () => packages.find((item) => item.id === selectedId) ?? packages[0] ?? null,
@@ -117,12 +123,21 @@ export default function StudentOnboardingForm({
     return 0;
   }, [discountMode, discountValue, selectedPackage]);
 
+  const trialCredit =
+    useTrialCredit &&
+    enrollmentResolution === "paid" &&
+    enrollmentRequired &&
+    !currentEnrollment &&
+    selectedEnrollment &&
+    selectedEnrollment.priceMinor >= 15000
+      ? (trialCredits[0] ?? null)
+      : null;
   const enrollmentNetMinor =
     enrollmentRequired &&
     !currentEnrollment &&
     enrollmentResolution === "paid" &&
     selectedEnrollment
-      ? selectedEnrollment.priceMinor
+      ? selectedEnrollment.priceMinor - (trialCredit?.amount_minor ?? 0)
       : 0;
 
   const packageNetMinor = selectedPackage
@@ -174,6 +189,7 @@ export default function StudentOnboardingForm({
       <input type="hidden" name="package_start_mode" value={startMode} />
       <input type="hidden" name="enrollment_resolution" value={enrollmentResolution} />
       <input type="hidden" name="enrollment_product_id" value={selectedEnrollment?.id ?? ""} />
+      <input type="hidden" name="trial_payment_id" value={trialCredit?.payment_id ?? ""} />
 
       <section className="panel">
         <div className="panel-heading">
@@ -264,6 +280,7 @@ export default function StudentOnboardingForm({
             <select
               value={discountMode}
               name="discount_mode"
+              disabled={Boolean(trialCredit)}
               onChange={(event) => setDiscountMode(event.target.value)}
             >
               <option value="none">Sin descuento</option>
@@ -373,6 +390,40 @@ export default function StudentOnboardingForm({
                   defaultValue={today}
                 />
               </label>
+              {trialCreditsUnavailable ? (
+                <p role="alert">
+                  No pudimos verificar el abono de primera clase. Recarga antes de aplicar la
+                  excepción.
+                </p>
+              ) : trialCredits.length > 0 &&
+                enrollmentResolution === "paid" &&
+                selectedEnrollment.priceMinor >= 15000 ? (
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={useTrialCredit}
+                    onChange={(event) => {
+                      setUseTrialCredit(event.target.checked);
+                      if (event.target.checked) {
+                        setDiscountMode("none");
+                        setPriorCredits("0");
+                      }
+                    }}
+                  />
+                  <span>Aplicar $150 de la primera clase a inscripción</span>
+                  <small>
+                    Pago validado; clase de hoy. Se cobra el resto de inscripción más el paquete
+                    completo. El pago original se conserva y sólo puede aplicarse una vez.
+                  </small>
+                </label>
+              ) : null}
+              {trialCredit ? (
+                <p>
+                  Inscripción: {money(selectedEnrollment.priceMinor)} − $150 ya cobrados ={" "}
+                  {money(enrollmentNetMinor)}. Liquida {money(totalMinor)} para completar esta
+                  compra.
+                </p>
+              ) : null}
               {enrollmentResolution === "promotion" || enrollmentResolution === "exception" ? (
                 <label>
                   <span>Motivo</span>
@@ -413,6 +464,7 @@ export default function StudentOnboardingForm({
             <span>Créditos ya consumidos</span>
             <input
               name="prior_credits_used"
+              readOnly={Boolean(trialCredit)}
               type="number"
               min="0"
               step="1"

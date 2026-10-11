@@ -26,8 +26,8 @@ describe("F10 student reserve UAT contracts", () => {
     expect(scheduleMigration).toContain("cs.status = 'cancelled'");
     expect(scheduleMigration).toContain("cs.starts_at >= v_from");
     expect(reservePage).toContain('session.status === "cancelled"');
-    expect(reservePage).toContain("Clase cancelada por el estudio");
-    expect(reservePage).toContain("ya no admite reservas");
+    expect(reservePage).toContain("Cancelada por el estudio");
+    expect(reservePage).toContain("{cancelled ? null : reserved ? (");
   });
 
   it("shows every class for the selected day without discipline filters", () => {
