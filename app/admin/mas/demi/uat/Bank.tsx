@@ -199,7 +199,14 @@ export default function Bank({
         <>
           <section>
             <h2>2. Conversar con Demi</h2>
-            <form action={(form) => perform(() => sendDemiUatMessage(form))}>
+            <form
+              action={(form) => perform(() => sendDemiUatMessage(form))}
+              onReset={(event) => {
+                const select =
+                  event.currentTarget.querySelector<HTMLSelectElement>("select[name='persona']");
+                if (select) queueMicrotask(() => (select.value = persona));
+              }}
+            >
               <input type="hidden" name="runId" value={data.run.id} />
               <label>
                 Estado inicial

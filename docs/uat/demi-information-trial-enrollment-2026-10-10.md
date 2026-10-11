@@ -24,17 +24,17 @@ La operación administrativa se implementó en sandbox con get_trial_enrollment_
 
 ## Matriz UAT
 
-| Caso                                                                | Esperado                                                          | Verificación técnica                                    | UAT usuario              |
-| ------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------- | ------------------------ |
+| Caso                                                                | Esperado                                                          | Verificación técnica                                    | UAT usuario                                              |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------- |
 | D01 Pregunta por más información después de recibir datos bancarios | Responder información; conservar solicitud y evitar otro cobro    | Pruebas automatizadas pasan                             | Pasó conversación y estado D01/D02 en ejecución 3b03aaf5 |
 | D02 Pregunta por ubicación, requisitos o precio                     | Permitir consultas y bloquear preparación del pago                | Pruebas automatizadas pasan                             | Pasó conversación y estado D01/D02 en ejecución 3b03aaf5 |
-| D03 Pregunta y solicita reservar explícitamente                     | Mantener herramientas normales disponibles                        | Pruebas automatizadas pasan                             | Pendiente                |
-| D04 Unsupported con texto recuperable y referencia de anuncio       | Procesar texto real y conservar referencia                        | Pruebas automatizadas pasan                             | Pendiente                |
-| D05 Unsupported sin texto ni referencia, como captura               | Continuar con pregunta útil; no inventar intención                | Código revisado; falta recorrido por webhook de sandbox | Pendiente                |
-| D06 Comprobante bancario recibido                                   | Pedir datos juntos; reserva condicionada a validación y cupo      | Mensaje y regresiones de comprobantes pasan             | Pendiente                |
-| D07 Quiere pagar paquete el día de la clase                         | Explicar anticipo y abono a inscripción                           | Regla persistida y verificada en sandbox                | Pasó: $50 inscripción + $600 paquete; $800 acumulados |
-| D08 Compra paquete ese día                                          | Aplicar $150 una sola vez a inscripción; cobrar resto más paquete | Implementado; 13 variantes SQL pasan                    | Bloqueado: falta recorrido visual |
-| D09 No compra paquete ese día                                       | Mantener $150 como primera clase                                  | Regla configurada; pendiente recorrido                  | Pendiente                |
+| D03 Pregunta y solicita reservar explícitamente                     | Mantener herramientas normales disponibles                        | Pruebas automatizadas pasan                             | Pendiente                                                |
+| D04 Unsupported con texto recuperable y referencia de anuncio       | Procesar texto real y conservar referencia                        | Pruebas automatizadas pasan                             | Pendiente                                                |
+| D05 Unsupported sin texto ni referencia, como captura               | Continuar con pregunta útil; no inventar intención                | Código revisado; falta recorrido por webhook de sandbox | Pendiente                                                |
+| D06 Comprobante bancario recibido                                   | Pedir datos juntos; reserva condicionada a validación y cupo      | Mensaje y regresiones de comprobantes pasan             | Pendiente                                                |
+| D07 Quiere pagar paquete el día de la clase                         | Explicar anticipo y abono a inscripción                           | Regla persistida y verificada en sandbox                | Pasó: $50 inscripción + $600 paquete; $800 acumulados    |
+| D08 Compra paquete ese día                                          | Aplicar $150 una sola vez a inscripción; cobrar resto más paquete | Implementado; 13 variantes SQL pasan                    | Bloqueado: falta recorrido visual                        |
+| D09 No compra paquete ese día                                       | Mantener $150 como primera clase                                  | Regla configurada; pendiente recorrido                  | Pendiente                                                |
 
 Verificación: 81 pruebas en 11 archivos, TypeScript sin errores. ESLint de archivos modificados sin errores. Preview desplegado y primeras variantes UAT ejecutadas; matriz integral todavía pendiente. No promover hasta cerrar pendientes y recibir Autorizo promoción para la versión revisada.
 
@@ -50,17 +50,17 @@ Cambios preparados:
 - Función service_create_demi_cash_purchase_with_due_date aplicada exclusivamente en sandbox, mediante migración 20261011002732_demi_cash_promised_payment_date.sql. Conserva fecha prometida y nota, rechaza fechas pasadas o superiores a 90 días y no modifica la promesa en reintentos.
 - Herramienta prepare_cash_package_purchase solicita fecha prometida en formato local; null cuando no se indicó. Confirmación muestra la fecha registrada.
 
-| Caso                            | Esperado                                                                                  | Resultado observado                           | UAT integral                       |
-| ------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------- | ---------------------------------- |
-| C01 Fecha prometida de efectivo | Conservar lunes como fecha local, no fecha de creación                                    | Aprobado en SQL sandbox para fecha explícita  | Pasó conversación: lunes 12 de octubre; confirmación y venta con fecha 2026-10-12     |
-| C02 Paquete sin reserva         | Adeudo visible, sin cobro ni reserva ficticios                                            | Aprobado en SQL sandbox y pruebas de consulta | Pasó visual en Hoy: $600 pendientes, 0 reservas, 0 pagos al crear                |
-| C03 Reintento                   | Una sola venta y misma fecha                                                              | Aprobado en SQL sandbox                       | Pendiente recorrido conversacional |
-| C04 Fecha pasada                | Rechazar antes de crear venta                                                             | Aprobado en SQL sandbox                       | Aprobado técnico                   |
-| C05 Primera reserva             | Permitir una y comenzar vigencia                                                          | Aprobado en SQL sandbox                       | Falta visual del aviso             |
-| C06 Segunda reserva con deuda   | Bloquear hasta cobrar                                                                     | Aprobado en SQL sandbox                       | Pendiente conversación             |
-| C07 Cobro completo              | Registrar pago real, quitar pendiente y permitir siguiente reserva sin reiniciar vigencia | Aprobado en SQL sandbox y prueba de consulta  | Cobro visual pasó; falta siguiente reserva conversacional |
-| C08 Cobro parcial               | Mostrar sólo saldo restante                                                               | Aprobado en prueba de consulta                | Pasó visual: pago ficticio $100, saldo $500 en venta y Hoy |
-| C09 Error de consulta           | Mostrar error, no afirmar saldo cero                                                      | Aprobado en prueba de consulta                | Pendiente visual                   |
+| Caso                            | Esperado                                                                                  | Resultado observado                           | UAT integral                                                                      |
+| ------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------- |
+| C01 Fecha prometida de efectivo | Conservar lunes como fecha local, no fecha de creación                                    | Aprobado en SQL sandbox para fecha explícita  | Pasó conversación: lunes 12 de octubre; confirmación y venta con fecha 2026-10-12 |
+| C02 Paquete sin reserva         | Adeudo visible, sin cobro ni reserva ficticios                                            | Aprobado en SQL sandbox y pruebas de consulta | Pasó visual en Hoy: $600 pendientes, 0 reservas, 0 pagos al crear                 |
+| C03 Reintento                   | Una sola venta y misma fecha                                                              | Aprobado en SQL sandbox                       | Pendiente recorrido conversacional                                                |
+| C04 Fecha pasada                | Rechazar antes de crear venta                                                             | Aprobado en SQL sandbox                       | Aprobado técnico                                                                  |
+| C05 Primera reserva             | Permitir una y comenzar vigencia                                                          | Aprobado en SQL sandbox                       | Falta visual del aviso                                                            |
+| C06 Segunda reserva con deuda   | Bloquear hasta cobrar                                                                     | Aprobado en SQL sandbox                       | Pendiente conversación                                                            |
+| C07 Cobro completo              | Registrar pago real, quitar pendiente y permitir siguiente reserva sin reiniciar vigencia | Aprobado en SQL sandbox y prueba de consulta  | Cobro visual pasó; falta siguiente reserva conversacional                         |
+| C08 Cobro parcial               | Mostrar sólo saldo restante                                                               | Aprobado en prueba de consulta                | Pasó visual: pago ficticio $100, saldo $500 en venta y Hoy                        |
+| C09 Error de consulta           | Mostrar error, no afirmar saldo cero                                                      | Aprobado en prueba de consulta                | Pendiente visual                                                                  |
 
 SQL ejecutado: tests/demi-2-cash-human-uat.sql (7 verificaciones) y tests/demi-cash-promised-date-uat.sql (4 verificaciones), ambos en sandbox con rollback de fixtures. La migración de fecha queda aplicada en sandbox.
 
@@ -79,7 +79,6 @@ Estudio ficticio eef23197-19e6-4680-ad94-7268fe09809e. Identidad ficticia studen
 Estas variantes pasaron UAT ejecutado por Codex. No equivalen a aceptación del usuario ni a la aprobación de toda la matriz. Siguen pendientes las conversaciones informativas, primer contacto, reserva/bloqueo visual y el abono administrativo de $150; no solicitar promoción hasta cerrar ese alcance.
 
 Evidencia visual de la variante parcial: [Hoy con $500 pendientes](evidence/demi-cash-partial-2026-10-11.jpg).
-
 
 ## Continuación: ejecución 3b03aaf5, 11 de octubre UTC
 
@@ -102,21 +101,20 @@ El comprobante no se considera enviado ni el caso D06 aprobado. Se conservan eje
 
 No se solicita autorización de promoción porque la matriz integral aún no está cerrada. Reanudar desde la ejecución 3b03aaf5 una vez recuperable el navegador; solicitar Autorizo promoción sólo al finalizar las variantes pendientes.
 
-
 ## Reanudación del 10 de octubre, 19:20 México
 
 El navegador sigue bloqueado antes de cargar el banco. Se intentó abrir un documento nuevo, reiniciar el kernel y seleccionar el navegador existente por su ID; todos devolvieron que el estado nativo de credenciales no puede reanudarse. No hay otro controlador de navegador disponible en esta sesión. No se enviaron comprobantes ni se modificaron registros mediante UI en esta reanudación.
 
 Se completó verificación técnica adicional relacionada con los pendientes:
 
-| Pendiente | Verificación adicional | Resultado | Qué falta para UAT integral |
-| --- | --- | --- | --- |
-| D03 Solicitud mixta | demi-information-intent: solicitudes explícitas conservan acciones | Pasó | Conversación real mixta |
-| D04 Texto unsupported | Extractor real: conserva texto y referencia de anuncio | Pasó | Webhook sintético en banco |
-| D05 Unsupported vacío | Extractor real: no fabrica texto ni referencia; contrato webhook previamente pasó | Pasó | Respuesta capturada por banco |
-| D06 Comprobante y datos | Runtime de comprobante y SQL de grupo: pago antes de perfiles, datos, reserva provisional, revisión y repetición sin duplicados | Pasó | Archivo y conversación desde UI |
+| Pendiente                 | Verificación adicional                                                                                                                  | Resultado                   | Qué falta para UAT integral           |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | ------------------------------------- |
+| D03 Solicitud mixta       | demi-information-intent: solicitudes explícitas conservan acciones                                                                      | Pasó                        | Conversación real mixta               |
+| D04 Texto unsupported     | Extractor real: conserva texto y referencia de anuncio                                                                                  | Pasó                        | Webhook sintético en banco            |
+| D05 Unsupported vacío     | Extractor real: no fabrica texto ni referencia; contrato webhook previamente pasó                                                       | Pasó                        | Respuesta capturada por banco         |
+| D06 Comprobante y datos   | Runtime de comprobante y SQL de grupo: pago antes de perfiles, datos, reserva provisional, revisión y repetición sin duplicados         | Pasó                        | Archivo y conversación desde UI       |
 | D09 Sin compra de paquete | SQL de crédito de prueba: adquisición de primera clase conserva vigencia, pago y consumo; reagendar no convierte el pago en inscripción | Pasó como regresión técnica | Recorrido de esta variante sin compra |
-| C09 Error al consultar | Prueba de consulta de efectivo incluye propagación del error | Pasó | Presentación del error en UI |
+| C09 Error al consultar    | Prueba de consulta de efectivo incluye propagación del error                                                                            | Pasó                        | Presentación del error en UI          |
 
 Ejecutados tests/demi-2-group-uat.sql: 19 verificaciones pasaron; tests/demi-2-trial-credit-uat.sql: 13 verificaciones pasaron. Ambos en sandbox, con rollback. Son 32 comprobaciones adicionales, algunas compartidas entre scripts; no se presentan como 32 casos nuevos distintos. Reejecutadas 27 pruebas focalizadas en 5 archivos: pasaron, incluido extractor Meta real. TypeScript sin errores en el estado actual.
 
@@ -125,7 +123,6 @@ Estado: los pendientes visuales/conversacionales se mantienen abiertos por bloqu
 Para retomar en una conversación con navegador nuevo:
 
 > Continúa los UAT pendientes de Demi en mikevazquez/Demeter, rama fix/demi-information-trial-enrollment, PR #265. Lee docs/uat/demi-information-trial-enrollment-2026-10-10.md. Recupera la ejecución 3b03aaf5-b014-4277-bc69-cef7aa2ba271 en el banco sandbox; no crees escenarios desde cero ni modifiques producción. Cierra D03–D06, D08–D09 y los recorridos C03/C05/C06/C07/C09 pendientes. Conserva históricos y evidencias. Los resultados SQL no sustituyen la UAT visual. Solicita autorización de promoción únicamente cuando todos los casos del alcance estén cerrados.
-
 
 ## Reanudación del 10 de octubre, 19:28 México
 
