@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 
 import Link from "next/link";
+import { useUndoableOperations } from "./UndoableOperations";
 import { useRouter } from "next/navigation";
 import { markAllAttended, undoMarkAll } from "./search-actions";
 import {
@@ -97,6 +98,7 @@ export function SessionOperations({
   initiallyOpen = false,
   showToggle = true,
 }: SessionOperationsProps) {
+  const queue = useUndoableOperations();
   const router = useRouter();
   const [busy, startTransition] = useTransition();
   const [batch, setBatch] = useState<string | null>(null);
@@ -271,7 +273,20 @@ export function SessionOperations({
                 {available <= 0 ? (
                   <div className="today-drawer-empty">La clase ya está llena.</div>
                 ) : showNewWalkin ? (
-                  <form action={createWalkinFromToday} className="today-add-form">
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      const data = new FormData(event.currentTarget);
+                      queue({
+                        key: `walkin:${sessionId}:${data.get("phone")}`,
+                        label: "Agregar visita al estudio",
+                        action: createWalkinFromToday,
+                        data,
+                      });
+                    }}
+                    action={createWalkinFromToday}
+                    className="today-add-form"
+                  >
                     <input type="hidden" name="session_id" value={sessionId} />
                     <input type="hidden" name="return_date" value={returnDate} />
                     {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
@@ -671,7 +686,19 @@ export function SessionOperations({
               </button>
             </header>
 
-            <form action={cancelReservationFromToday}>
+            <form
+              action={cancelReservationFromToday}
+              onSubmit={(event) => {
+                event.preventDefault();
+                queue({
+                  key: `cancel:${cancelItem.id}`,
+                  label: `Cancelar reserva de ${cancelItem.studentName}`,
+                  action: cancelReservationFromToday,
+                  data: new FormData(event.currentTarget),
+                });
+                setCancelItem(null);
+              }}
+            >
               <input type="hidden" name="session_id" value={sessionId} />
               <input type="hidden" name="reservation_id" value={cancelItem.id} />
               <input type="hidden" name="return_date" value={returnDate} />

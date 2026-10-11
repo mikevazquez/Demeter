@@ -160,7 +160,7 @@ export default async function AdminPage({
     supabase
       .from("class_sessions")
       .select(
-        "id,starts_at,ends_at,capacity,status,template_id,instructor_id,space_id,requires_resource,minimum_reservations_enabled,minimum_reservations,minimum_review_status,cancellation_reason,cancelled_at,cancelled_by,cancellation_source",
+        "id,starts_at,ends_at,capacity,status,template_id,instructor_id,space_id,requires_resource,minimum_reservations_enabled,minimum_reservations,minimum_review_status,cancellation_reason,cancelled_at,cancelled_by,cancelled_by_label,cancellation_source",
       )
       .eq("studio_id", studio.id)
       .gte("starts_at", selectedStart.toISOString())
@@ -549,7 +549,8 @@ export default async function AdminPage({
       cancellationReason: session.cancellation_reason,
       cancelledAt: session.cancelled_at,
       cancellationSource: session.cancellation_source,
-      cancelledByLabel: session.cancelled_by ? "Equipo del estudio" : "Automático",
+      cancelledByLabel:
+        session.cancelled_by_label ?? (session.cancelled_by ? "Equipo del estudio" : "Automático"),
       available: Math.max(session.capacity - occupied, 0),
       evaluationCount: sessionReservations.filter((reservation) =>
         evaluationByReservation.has(reservation.id),

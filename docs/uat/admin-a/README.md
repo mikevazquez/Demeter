@@ -10,26 +10,29 @@ Se implementan roles, navegación y la nueva superficie Hoy a partir del documen
 - Hoy incluye semana, navegación por fecha, reloj del estudio, búsqueda por nombre/teléfono y etapas CRM, próxima clase, cinco tipos de pendientes, fechas especiales y cuatro indicadores.
 - Una lista abierta por clase; asistencia desde 20 minutos antes hasta el cierre, cobro previo de pendientes, selección explícita de clase suelta y visita de prueba a $150.
 - Marcar todas omite pagos pendientes y permite deshacer durante cinco segundos, conservando cambios posteriores hechos por otra operación.
-- Correcciones de listas cerradas exigen motivo y ajustan créditos con auditoría. Las clases canceladas se agrupan al final con motivo y fecha.
+- Correcciones de listas cerradas exigen motivo y ajustan créditos con auditoría. Las clases canceladas se agrupan al final con motivo, fecha y nombre/rol del autor.
 - Coach opera únicamente clases asignadas. Las rutas anteriores de clase llevan a la lista integrada de Mis clases.
 - Kiosco oscuro, sin padrón ni conteo de alumnas, con bloqueo por pago pendiente, PIN de salida cifrado y límite de intentos, reloj y cambio de cámara persistente.
 - Manrope local, diseño móvil y escritorio, modos claro y oscuro.
 
 ## Validación
 
-- `VERCEL_ENV=preview npm run ci`: formato, lint, tipos, 1,189 pruebas existentes y compilación. Se actualizan contratos antiguos que esperaban las etiquetas, navegación y reservas automáticas sustituidas.
+- `VERCEL_ENV=preview npm run ci`: formato, lint, tipos, 1,223 pruebas existentes y compilación. Se actualizan contratos antiguos que esperaban las etiquetas, navegación y reservas automáticas sustituidas.
 - 12 comprobaciones funcionales SQL en Sandbox: permisos de recepción, visita de prueba, bloqueo de cobro, marca masiva/undo y concurrencia, pago+asistencia, ventana de tiempo, correcciones y saldo, Admin/Plan/PIN, cancelación auditada y alcance de Coach.
 - El guion `sandbox-functional.sql` usa exclusivamente fixtures de Studio Flow Sandbox y transacciones con rollback. No utilizar en otro proyecto. Las consultas se ejecutaron con JWT del actor de pruebas; no sustituyen una matriz completa de navegadores autenticados por rol.
 - Smoke de 135 llamadas RPC sobre los 45 estudios sintéticos disponibles.
 - Playwright: nueve comprobaciones de rutas, búsqueda modal, cuatro grupos de Más, ausencia de desbordamiento a 390 px, modo oscuro y ausencia de errores de JavaScript. Capturas con compilación optimizada a 390 px y 1280 px.
-- Cuatro migraciones nuevas aplicadas únicamente a Supabase Sandbox `hedouonyhynuvwbckdlg`.
+- Cinco migraciones nuevas aplicadas únicamente a Supabase Sandbox `hedouonyhynuvwbckdlg`.
 
-## Pendientes para cerrar el bloque A
+## Verificación adicional
 
-- Deshacer durante cinco segundos una reserva o su cancelación. Esta entrega sí cubre deshacer la marca masiva de asistencia.
-- Mostrar el nombre/rol concreto del autor de cancelación; actualmente muestra Equipo del estudio o Automático.
-- Verificación física del QR y cambio de cámara en dispositivos reales; Chromium sin cámara no acredita esa prueba.
-- Revisión visual y de tareas con cuentas reales de Recepción y Coach, además de la comprobación de permisos en RPC.
+- Reservas, cancelaciones y nuevas visitas esperan cinco segundos antes de guardarse; Deshacer anula el envío sin revertir cobros. El aviso persiste al navegar dentro del portal.
+- Quince comprobaciones de navegador adicionales: Deshacer sin mutaciones, navegación, Recepción, Coach y clases ajenas, rutas heredadas, cámara frontal/trasera y preferencia persistente, reloj, PIN y ausencia de errores. Cámara simulada de Chromium; fixtures temporales eliminados y rol restaurado.
+- Mis clases permite seleccionar fecha y navegar por semanas, incluidas las listas históricas.
+
+## Verificación pendiente en dispositivos reales
+
+- Lectura física de QR y cambio entre cámaras reales. Las pruebas con cámara simulada no acreditan el hardware.
 
 ## Decisiones conservadas
 

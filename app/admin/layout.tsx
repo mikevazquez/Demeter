@@ -6,6 +6,7 @@ import PwaBrandingSync from "@/app/components/PwaBrandingSync";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES, STUDIO_ROLE_LABELS } from "@/lib/auth/capabilities";
 import { AdminMobileNavigation, AdminNavigation } from "./admin-navigation";
+import { UndoableOperationsProvider } from "./hoy/UndoableOperations";
 import "./hoy.css";
 import "./roster-uat.css";
 import "./mobile-nav-overrides.css";
@@ -213,7 +214,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
             </header>
           </>
         ) : null}
-        {children}
+        <UndoableOperationsProvider>{children}</UndoableOperationsProvider>
       </div>
 
       <AdminMobileNavigation items={primaryNavItems} />

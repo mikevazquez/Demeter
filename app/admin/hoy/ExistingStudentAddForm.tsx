@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useUndoableOperations } from "./UndoableOperations";
 
 import { useEffect, useRef, useState, useTransition } from "react";
 
@@ -27,6 +28,7 @@ export function ExistingStudentAddForm({
   returnDate: string;
   returnTo?: string;
 }) {
+  const queue = useUndoableOperations();
   const [query, setQuery] = useState("");
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [matches, setMatches] = useState<TodayStudentCandidate[]>([]);
@@ -51,7 +53,22 @@ export function ExistingStudentAddForm({
   }, [normalizedQuery, query, sessionId]);
 
   return (
-    <form action={bookStudentFromToday} className="today-add-form is-existing">
+    <form
+      action={bookStudentFromToday}
+      className="today-add-form is-existing"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+        const data = new FormData(event.currentTarget, submitter);
+        const dropIn = submitter?.dataset.operation === "drop-in";
+        queue({
+          key: `booking:${sessionId}:${data.get("student_id")}`,
+          label: "Agregar alumna",
+          action: dropIn ? bookDropInFromToday : bookStudentFromToday,
+          data,
+        });
+      }}
+    >
       <input type="hidden" name="session_id" value={sessionId} />
       <input type="hidden" name="return_date" value={returnDate} />
       {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
@@ -124,6 +141,7 @@ export function ExistingStudentAddForm({
                             type="submit"
                             name="student_id"
                             value={candidate.id}
+                            data-operation="drop-in"
                             formAction={bookDropInFromToday}
                           >
                             Cobrar clase suelta ·{" "}

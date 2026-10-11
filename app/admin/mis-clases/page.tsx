@@ -26,11 +26,13 @@ export default async function MyClassesPage({
   if (ctx.can(CAPABILITIES.ADMIN_PORTAL)) redirect("/admin");
   const today = localDateKey(new Date(), ctx.studio.timezone);
   const selected = isDateKey(query.date) ? query.date! : today;
-  const days = Array.from({ length: 7 }, (_, index) => addDays(today, index));
+  const weekday = new Date(`${selected}T12:00Z`).getUTCDay();
+  const weekStart = addDays(selected, weekday === 0 ? -6 : 1 - weekday);
+  const days = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
   const { data, error } = await ctx.supabase.rpc("coach_my_sessions", {
     target_studio_id: ctx.studio.id,
     target_start: days[0],
-    target_end: selected > days[6] ? selected : days[6],
+    target_end: days[6],
   });
   const sessions = (data ?? []) as CoachSession[];
   const selectedSessions = sessions.filter(
@@ -123,6 +125,21 @@ export default async function MyClassesPage({
           locale={ctx.studio.locale}
         />
       </header>
+      <div className="flow-date-tools">
+        <Link href={`/admin/mis-clases?date=${addDays(selected, -7)}`} aria-label="Semana anterior">
+          ‹
+        </Link>
+        <Link href="/admin/mis-clases">Volver a hoy</Link>
+        <form action="/admin/mis-clases">
+          <label>
+            Ir a fecha <input type="date" name="date" defaultValue={selected} required />
+          </label>
+          <button type="submit">Ir</button>
+        </form>
+        <Link href={`/admin/mis-clases?date=${addDays(selected, 7)}`} aria-label="Semana siguiente">
+          ›
+        </Link>
+      </div>
       <nav className="mock-week-calendar" aria-label="Tus clases de la semana">
         {days.map((day) => (
           <Link

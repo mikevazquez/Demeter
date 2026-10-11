@@ -63,7 +63,7 @@ begin
  if private.has_capability(studio,'plan.manage') then raise exception 'admin_plan_access'; end if;
  insert into admin_a_uat_results values('Admin settings access, hashed PIN, owner-only plan',true,'{}');
  perform public.admin_cancel_session(session,'Cambio de horario de prueba');
- if not exists(select 1 from public.class_sessions where id=session and cancellation_reason='Cambio de horario de prueba' and cancelled_at is not null and cancelled_by=actor and cancellation_source='manual') then raise exception 'cancellation_audit'; end if;
+ if not exists(select 1 from public.class_sessions where id=session and cancellation_reason='Cambio de horario de prueba' and cancelled_at is not null and cancelled_by=actor and cancellation_source='manual' and cancelled_by_label like '% · Admin') then raise exception 'cancellation_audit'; end if;
  if not exists(select 1 from public.reservations where id=reservation and status='cancelled_by_studio') then raise exception 'cancellation_reservations'; end if;
 
  insert into admin_a_uat_results values('Session cancellation records reason, actor, date and releases reservation',true,'{}');
