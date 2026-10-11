@@ -1,5 +1,5 @@
 import TodayDateJump from "./hoy/TodayDateJump";
-import { QrCode, CaretLeft, CaretRight, GlobeHemisphereWest } from "@phosphor-icons/react/dist/ssr";
+import { QrCode, CaretLeft, CaretRight } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { loadDemiCashDebts } from "@/lib/assistant/cash-debts";
@@ -14,6 +14,35 @@ import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
 import GlobalSearch from "./hoy/GlobalSearch";
 import StudioClock from "./hoy/StudioClock";
 import QuickActions from "./hoy/QuickActions";
+
+function holidayVisual(name: string) {
+  const key = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  const themes = [
+    ["diversidad", "🌎", "#0e7490"],
+    ["halloween", "🎃", "#f97316"],
+    ["muertos", "🌼", "#f59e0b"],
+    ["revolucion", "★", "#c81e3a"],
+    ["guadalupe", "🌹", "#0e7490"],
+    ["posadas", "🪅", "#db2777"],
+    ["navid", "🎄", "#dc2626"],
+    ["nochebuena", "🎄", "#dc2626"],
+    ["constitucion", "📜", "#15803d"],
+    ["candelaria", "🕯️", "#b45309"],
+    ["amistad", "💘", "#e11d48"],
+    ["bandera", "🇲🇽", "#15803d"],
+    ["mujer", "♀", "#7c3aed"],
+    ["juarez", "⚖", "#15803d"],
+    ["primavera", "🌸", "#ec4899"],
+    ["santa", "✝", "#7c3aed"],
+    ["pascua", "🐣", "#f472b6"],
+    ["nino", "🎈", "#0ea5e9"],
+  ];
+  const theme = themes.find(([keyword]) => key.includes(keyword));
+  return { icon: theme?.[1] ?? "📅", accent: theme?.[2] ?? "#0e7490" };
+}
 
 function formatExpiry(value: string | null, locale: string) {
   if (!value) return "Sin vencimiento";
@@ -679,7 +708,7 @@ export default async function AdminPage({
       : `en ${Math.floor(nextMinutes / 60)} h${nextMinutes % 60 ? ` ${nextMinutes % 60} min` : ""}`;
 
   return (
-    <main className="dashboard-shell hoy-dashboard hoy-approved hoy-v2 hoy-reference">
+    <main className="hoy-reference">
       <header className="hoy-product-header">
         <div className="hoy-product-wordmark" aria-label="Studio Flow">
           <span>
@@ -958,6 +987,7 @@ export default async function AdminPage({
               const override = (holidayOverrides ?? []).find(
                 (item) => item.holiday_date === holiday.holiday_date,
               );
+              const theme = holidayVisual(holiday.name);
               const daysAway = Math.round(
                 (new Date(`${holiday.holiday_date}T12:00Z`).getTime() -
                   new Date(`${todayKey}T12:00Z`).getTime()) /
@@ -966,25 +996,30 @@ export default async function AdminPage({
               return (
                 <Link
                   className="flow-special-date"
+                  style={{ "--ha": theme.accent } as React.CSSProperties}
                   key={holiday.id}
                   href={`/admin?date=${holiday.holiday_date}`}
                 >
                   <span className="flow-special-icon">
-                    <GlobeHemisphereWest size={26} aria-hidden="true" />
+                    <span aria-hidden="true">{theme.icon}</span>
                   </span>
                   <span className="flow-special-copy">
                     <strong>{holiday.name}</strong>
                     <small>
-                      En {daysAway} {daysAway === 1 ? "día" : "días"} ·{" "}
+                      {daysAway === 1 ? "Mañana" : `En ${daysAway} días`} ·{" "}
                       {new Intl.DateTimeFormat(locale, {
                         timeZone: "UTC",
                         weekday: "short",
                         day: "numeric",
                         month: "short",
-                      }).format(new Date(`${holiday.holiday_date}T12:00Z`))}
+                      })
+                        .format(new Date(`${holiday.holiday_date}T12:00Z`))
+                        .replace(" de ", " ")}
                     </small>
                   </span>
-                  <span className="flow-special-status">
+                  <span
+                    className={`flow-special-status is-${override?.operation_mode ?? "pending"}`}
+                  >
                     {override
                       ? override.operation_mode === "closed"
                         ? "Cerrado"

@@ -236,7 +236,7 @@ export function TodayClasses({
                           ]
                         : []),
                     ].join(" · ")
-                  : `${item.bookedReservations} reservadas · ${item.instructor}`}
+                  : `${item.bookedReservations} ${item.bookedReservations === 1 ? "reservada" : "reservadas"} · ${item.instructor}`}
             </small>
             <span className="today-class-state-row">
               {phaseLabel ? (

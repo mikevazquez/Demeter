@@ -38,3 +38,23 @@ The original full source additionally shows next class, five pending types and a
 No actionable P0/P1/P2 mismatch remains in the matched historical state.
 
 final result: passed
+
+## Follow-up: populated-screen verification
+
+The earlier review covered only the historical one-class state; it did not verify all populated widgets. User review identified drift in class summaries, holidays, shortcuts and Para hoy. These findings are addressed in this iteration:
+
+- Removed the legacy dashboard/hoy-approved/hoy-v2 layout classes from the Hoy root, which were still influencing fields and spacing. Existing form styling is retained only inside quick-action form cards.
+- Class summaries use the source grid, correct caption weights/colors, singular reservation copy, explicit line wrapping and one minimum-status badge.
+- Para hoy is a bounded wrapping group with stable count circles and source button sizing. Hero CTAs are vertically centered.
+- Holiday cards use the source native icons and accent colors for individual holidays, source row spacing and state colors.
+- Shortcuts are a bottom sheet, rather than an inline dropdown; options have icon/copy/chevron tracks. Escape, focus containment, backdrop closing and body-scroll locking are implemented.
+
+Populated proof uses a temporary local authenticated visual route containing the production page's actual JSX and the real TodayClasses/QuickActions components, with five fixture classes, all five task chips and one holiday. The route was removed before build/commit; no Sandbox data was modified.
+
+Evidence: docs/uat/admin-a/html-hoy/all-sections-390.png, all-sections-440.png, quick-sheet-390.png. A combined source/implementation comparison was opened from work/all-sections-comparison.png; source left, implementation right. Both use 390 CSS px, density 1. Header/calendar/KPIs were omitted identically to focus the four reported surfaces. Native calendar/data state, icons and development tooling are excluded where they do not belong to these surfaces.
+
+The populated component checks passed at 320/390/440/1280 px with zero horizontal overflow and zero browser JavaScript errors. Five cards, five task chips and one holiday were confirmed. Quick action menu and new-student sheet opened; Escape closed the sheet. Work log: work/hoy-all-sections-browser-final.log.
+
+Fonts, spacing, colors, assets and copy were checked for all four populated regions. No P0/P1/P2 finding remains in those states. The live preview retains real data and permissions.
+
+final result: passed
