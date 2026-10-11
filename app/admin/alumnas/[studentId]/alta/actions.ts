@@ -39,6 +39,11 @@ function moneyToMinor(value: FormDataEntryValue | null) {
 
 function rpcErrorCode(message: string) {
   const known = [
+    "trial_credit_unavailable",
+    "trial_credit_enrollment_invalid",
+    "trial_credit_full_payment_required",
+    "trial_credit_same_day_required",
+    "trial_credit_replay_mismatch",
     "package_not_available",
     "product_validity_missing",
     "package_start_mode_invalid",
@@ -87,6 +92,7 @@ export async function createStudentOnboardingSale(formData: FormData) {
     formData.get("enrollment_resolution") ?? "not_required",
   ).trim();
   const enrollmentProductId = String(formData.get("enrollment_product_id") ?? "").trim();
+  const trialPaymentId = String(formData.get("trial_payment_id") ?? "").trim();
   const enrollmentEffectiveOn = dateOrNull(formData.get("enrollment_effective_on"));
   const enrollmentReason = String(formData.get("enrollment_reason") ?? "").trim();
   const paymentMinor = moneyToMinor(formData.get("payment_amount"));
@@ -171,32 +177,53 @@ export async function createStudentOnboardingSale(formData: FormData) {
     redirectError(studentId, flowContext, "discount_reason_required");
   }
 
-  const { data, error } = await supabase.rpc("create_student_onboarding_sale_v2", {
-    target_student_id: studentId,
-    target_package_product_id: productId,
-    target_enrollment_product_id: enrollmentProductId || null,
-    target_idempotency_key: idempotencyKey,
-    package_start_mode: startMode,
-    package_starts_on: startMode === "specific" ? packageStartsOn : null,
-    package_discount_minor: packageDiscountMinor,
-    package_discount_kind: packageDiscountKind,
-    package_discount_input: packageDiscountInput,
-    package_discount_reason: discountReason || null,
-    enrollment_resolution: enrollmentResolution,
-    enrollment_effective_on: enrollmentEffectiveOn,
-    enrollment_reason: enrollmentReason || null,
-    initial_payment_minor: paymentMinor,
-    payment_method: paymentMethod || null,
-    payment_effective_on: paymentMinor > 0 ? paymentEffectiveOn : null,
-    payment_reference: paymentReference || null,
-    payment_notes: paymentNotes || null,
-    payment_due_on: paymentDueOn,
-    collection_note: collectionNote || null,
-    allow_pending_access: allowPendingAccess,
-    pending_access_reason: pendingAccessReason || null,
-    prior_credits_used: priorCreditsUsed,
-    prior_credits_reason: priorCreditsReason || null,
-  });
+  if (
+    trialPaymentId &&
+    (packageDiscountMinor > 0 || priorCreditsUsed > 0 || enrollmentResolution !== "paid")
+  ) {
+    redirectError(studentId, flowContext, "trial_credit_enrollment_invalid");
+  }
+  const { data, error } = trialPaymentId
+    ? await supabase.rpc("create_package_with_trial_enrollment_credit", {
+        target_student_id: studentId,
+        target_package_product_id: productId,
+        target_enrollment_product_id: enrollmentProductId || null,
+        target_source_payment_id: trialPaymentId,
+        target_idempotency_key: idempotencyKey,
+        package_start_mode: startMode,
+        package_starts_on: startMode === "specific" ? packageStartsOn : null,
+        initial_payment_minor: paymentMinor,
+        payment_method: paymentMethod || null,
+        payment_effective_on: paymentEffectiveOn,
+        payment_reference: paymentReference || null,
+        payment_notes: paymentNotes || null,
+      })
+    : await supabase.rpc("create_student_onboarding_sale_v2", {
+        target_student_id: studentId,
+        target_package_product_id: productId,
+        target_enrollment_product_id: enrollmentProductId || null,
+        target_idempotency_key: idempotencyKey,
+        package_start_mode: startMode,
+        package_starts_on: startMode === "specific" ? packageStartsOn : null,
+        package_discount_minor: packageDiscountMinor,
+        package_discount_kind: packageDiscountKind,
+        package_discount_input: packageDiscountInput,
+        package_discount_reason: discountReason || null,
+        enrollment_resolution: enrollmentResolution,
+        enrollment_effective_on: enrollmentEffectiveOn,
+        enrollment_reason: enrollmentReason || null,
+        initial_payment_minor: paymentMinor,
+        payment_method: paymentMethod || null,
+        payment_effective_on: paymentMinor > 0 ? paymentEffectiveOn : null,
+        payment_reference: paymentReference || null,
+        payment_notes: paymentNotes || null,
+        payment_due_on: paymentDueOn,
+        collection_note: collectionNote || null,
+        allow_pending_access: allowPendingAccess,
+        pending_access_reason: pendingAccessReason || null,
+        prior_credits_used: priorCreditsUsed,
+        prior_credits_reason: priorCreditsReason || null,
+      });
 
   if (error) {
     redirectError(studentId, flowContext, rpcErrorCode(error.message));

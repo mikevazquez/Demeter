@@ -17,6 +17,8 @@ function statusLabel(status: string) {
 }
 
 const errorCopy: Record<string, string> = {
+  trial_credit_source_already_applied:
+    "Este pago ya se abonó a una inscripción. Revisa la compra vinculada antes de resolver una devolución; no se puede devolver por separado.",
   payment_invalid: "Revisa el monto y selecciona un método de pago.",
   payment_method_required: "Selecciona un método de pago.",
   payment_exceeds_balance: "El pago no puede ser mayor al saldo pendiente.",
@@ -154,6 +156,12 @@ export default async function SaleDetailPage({
             ? "Parcial"
             : "Pendiente";
   const canWrite = ctx.can(CAPABILITIES.SALES_WRITE);
+  const { data: trialCredit, error: trialCreditError } = await ctx.supabase
+    .from("trial_enrollment_credits")
+    .select("source_sale_id,target_sale_id,amount_minor,effective_on")
+    .eq("studio_id", ctx.studio.id)
+    .or(`source_sale_id.eq.${sale.id},target_sale_id.eq.${sale.id}`)
+    .maybeSingle();
 
   const money = (value: number, currency: string) =>
     new Intl.NumberFormat(ctx.studio.locale, { style: "currency", currency }).format(value / 100);
@@ -365,6 +373,22 @@ export default async function SaleDetailPage({
 
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
         <h2 className="font-semibold text-white">Historial comercial</h2>
+        {trialCreditError ? (
+          <p role="alert">No pudimos verificar el historial del abono de primera clase.</p>
+        ) : trialCredit ? (
+          <p className="mt-3">
+            Abono de primera clase: {money(trialCredit.amount_minor, sale.currency)} a inscripción,
+            aplicado el {trialCredit.effective_on}.{" "}
+            <Link
+              href={`/admin/ventas/${trialCredit.source_sale_id === sale.id ? trialCredit.target_sale_id : trialCredit.source_sale_id}`}
+            >
+              {trialCredit.source_sale_id === sale.id
+                ? "Ver compra de paquete e inscripción"
+                : "Ver pago original"}
+            </Link>
+            . El pago original se conserva; no se cobró de nuevo.
+          </p>
+        ) : null}
         {!payments?.length ? (
           <p className="mt-4 text-sm text-zinc-500">Aún no hay pagos ni reembolsos registrados.</p>
         ) : (
