@@ -33,3 +33,11 @@ if (vercelEnvironment === "preview") {
 } else if (vercelEnvironment === "production" && supabaseUrl === SANDBOX_URL) {
   fail("Vercel Production must never use the Studio Flow Sandbox Supabase project.");
 }
+
+if (
+  process.env.VERCEL_ENV === "preview" &&
+  process.env.VERCEL_GIT_COMMIT_REF === "codex/demi-sticker-vision" &&
+  process.env.VERCEL_GIT_COMMIT_MESSAGE?.includes("[run-sticker-uat]")
+) {
+  await import("./demi-sticker-live-uat.mjs");
+}
