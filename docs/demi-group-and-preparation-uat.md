@@ -1,6 +1,6 @@
 # Demi: grupos con poles e indicaciones de clase
 
-Estado: corrección en sandbox. UAT conversacional pendiente; promoción no autorizada para este alcance.
+Estado: UAT técnico de sandbox aprobado por Mike el 12 de octubre de 2026 a las 16:14 (Ciudad de México). UAT conversacional real sigue pendiente; promoción no autorizada para este alcance.
 
 Preview verificado: https://demeterbueno-7zn7uhv7m-demeter3.vercel.app (READY, commit 0d2a95215a10f9e5906d1c9f46201817ac3c52c3). El build verificó la conexión a `hedouonyhynuvwbckdlg`. La aplicación carga y solicita la sesión del estudio.
 
@@ -22,6 +22,8 @@ Se corrigieron dos requisitos detectados al ejecutar la prueba: el trigger de re
 
 ## Matriz de UAT
 
+Mike aprobó el resultado de las pruebas técnicas de sandbox. Esta aprobación no demuestra por sí sola que se haya ejecutado una conversación real en el preview; esos resultados se conservan como pendientes para no atribuirles pruebas que no ocurrieron.
+
 | Caso                                               | Validación técnica                                      | UAT conversacional                                                         |
 | -------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------- |
 | GRP-A: dos primeras clases con poles, pago primero | Aprobada en DB; no crea fichas ni reservas              | Pendiente: recibir total/datos de pago sin pedir poles ni datos personales |
@@ -39,4 +41,4 @@ Scripts: `scripts/demi-group-resource-fix-uat.sql` y `scripts/demi-group-no-reso
 
 ## Promoción y reversión
 
-No se modificó producción. Antes de promover: UAT de esta matriz, autorización específica y comprobar las definiciones vigentes. Las migraciones abortan si cambió el fragmento esperado; conservan las reglas de precios e identidad de cada entorno. Exportar las cuatro definiciones modificadas como reversión antes de aplicar a producción y restaurar sólo código si se requiere, sin borrar comprobantes, ventas, participantes ni reservas históricas.
+La aprobación recibida registra el UAT técnico de sandbox. Falta ejecutar y aceptar la conversación real con Demi para cerrar la matriz conversacional. No se modificó producción. Antes de promover: matriz UAT cerrada, autorización específica y comprobar las definiciones vigentes. Las migraciones abortan si cambió el fragmento esperado; conservan las reglas de precios e identidad de cada entorno. Exportar las cuatro definiciones modificadas como reversión antes de aplicar a producción y restaurar sólo código si se requiere, sin borrar comprobantes, ventas, participantes ni reservas históricas.
