@@ -6,13 +6,15 @@ describe("Demi identity-aware behavior", () => {
   const source = readFileSync(join(process.cwd(), "lib/assistant/orchestrator.ts"), "utf8");
 
   it("does not expose student package status to an unlinked prospect", () => {
-    expect(source).toContain('tool.name !== "get_student_package_status"');
+    expect(source).toContain(
+      'tool.name !== "get_student_package_status"',
+    );
   });
 
   it("prevents Meta Inbox identity lookup from being called in WhatsApp", () => {
-    expect(source).toContain("function isWhatsAppIdentityLookupBlocked");
+    expect(source).toContain("function isBlockedWhatsAppLookup");
     expect(source).toContain(
-      "!isWhatsAppIdentityLookupBlocked(input.channel, tool.name)",
+      "!isBlockedWhatsAppLookup(input.channel, tool.name)",
     );
   });
 
