@@ -63,5 +63,5 @@ export function conversationGuidance(input: AudienceInput): string {
       "IDENTIDAD WHATSAPP: Studio Flow ya buscó este número de WhatsApp y tiene un contacto CRM de prospecto asociado. El número remitente ya es su dato de contacto: nunca vuelvas a pedirle su celular ni uses identify_meta_contact para esta conversación. Trátala como prospecto, no como alumna con cuenta. Si pide crear su portal o comprar un paquete, contesta el siguiente paso concreto y solicita únicamente el nombre completo u otro dato que realmente falte; no digas que el portal, la compra o el pago quedaron hechos hasta que Studio Flow confirme la acción.",
     );
   }
-  return shared.join("\\n");
+  return shared.join("\n");
 }
