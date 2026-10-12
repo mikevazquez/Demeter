@@ -85,7 +85,6 @@ Reversión: regresar al despliegue previo y conservar la tabla e históricos. No
 - Versión revisada: 635a753c5012801cd0e9f0d417383d90fb597a97; matriz y evidencia en 1a34586795df3d8e400a1134a89bf61eef0d18ac.
 - Estado: UAT aprobado por el usuario. Promoción autorizada y ejecutada.
 
-
 ## Autorización de promoción — 2026-10-12
 
 Mike autorizó explícitamente: «Autorizo promoción de información temporal de Demi».
