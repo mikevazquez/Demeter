@@ -94,3 +94,13 @@ Mike indicó: «Autorizo promoción de sticker de Demi.» Alcance: lectura conve
 Candidato integrado sobre main 6b4b3f0ed00bdf792e23c97a424ce2246699f69a sin conflictos; se conservan los cambios recientes de actividades y mínimos por sesión. No requiere migración ni copia de fixtures a producción. Script de diagnóstico de estados conservado en codex/demi-status-investigation y excluido de esta promoción.
 
 Rollback previsto: restaurar dpl_AfRhaSEM6P8ts669gBkVdsGyu39U, conservando conversaciones e históricos. Promoción por PR #272 y build de main con configuración de producción; no promover el preview sandbox.
+
+## Resultado de promoción — 12 de octubre de 2026
+
+- PR #272 fusionado. Commit funcional de producción: 9fd4cb5d059202f795adbcd142124829034390e4.
+- Deployment dpl_9qW24SDMhVW7LnJSCoei8AbfDvut READY, target production, asignado a demeterfitness.com y dominios de producción.
+- Conexión de producción verificada: qfhojvgvhrbautvczffq. No se promovió el preview conectado al sandbox.
+- Validación del candidato integrado: 1,256 tests/191 archivos, typecheck y formato aprobados; lint sin errores/19 advertencias preexistentes. Build de producción aprobado con TypeScript.
+- Prueba de carga del receptor: GET sin studio al webhook de producción devuelve HTTP400/invalid_studio, validación esperada; el módulo carga correctamente. No se afirma recepción externa de un sticker en producción como parte de esta verificación.
+- No se aplicó migración ni se copiaron fixtures UAT. Conversaciones e históricos conservados.
+- Alcance promovido: stickers. Diagnóstico de estados fuera del release, conservado en codex/demi-status-investigation. No se renovaron credenciales ni se cambiaron suscripciones de Meta.
