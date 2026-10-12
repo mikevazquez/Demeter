@@ -81,3 +81,26 @@ La asignación del estudio refleja Core, `status=active`, `provider_status=activ
 «Administrar cobro» desde la UI abrió `billing.stripe.com` con Sandbox visible, Core $899 MXN/mes, tarjeta de prueba 4242 y factura Paid. Stripe ofreció conversión adaptativa por la ubicación del navegador de pruebas; el portal muestra el equivalente USD $50.78 además de MXN $899. La moneda base del catálogo y Checkout sigue siendo MXN; revisar la política de conversión al preparar Stripe Live.
 
 No se cambiaron suscripciones de Demeter, Stripe Live ni producción. La suscripción de prueba permanece activa exclusivamente en el estudio S08 vacío para continuar S09. Renovación, fallos, recuperación y duplicados de la versión actual siguen pendientes en S09. S08 tiene verificación técnica de contratación Core; Growth/Pro tienen precios y mapeos verificados, sin compra individual. La aceptación funcional y la promoción a producción requieren revisión de Mike.
+
+## Ampliación: Growth y Pro · 2026-10-12 UTC
+
+Se provisionaron dos estudios UAT aislados en Sandbox con el propietario de pruebas existente. Desde la UI autenticada se seleccionó cada estudio, se contrató su plan con tarjeta sintética 4242 y se comprobó el retorno al Preview. No se usaron tarjetas ni fondos reales.
+
+| Evidencia             | Growth                                                               | Pro                                                                  |
+| --------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Estudio               | `74e6ffc4-6884-4b56-8fec-375291ca0822`                               | `be027dd0-516f-4841-a7fc-7ecf259d2591`                               |
+| Checkout              | `cs_test_a1xa1IKPbNQDxYaf4jKgOTOUfAOJJFogbyupyRQz1AOU2rZZa7RvYDMRKX` | `cs_test_a1zMUxhyv2TFAorGGq5NAg5U1MEhrLe3RKoPXQM0WeuIrdNKMYtHWUPzmv` |
+| Subscription          | `sub_1UPbru6zvrymwOJvWamYpzg0`                                       | `sub_1UPbt36zvrymwOJvGH2pXOug`                                       |
+| Invoice               | `in_1UPbrt6zvrymwOJv2NLHz7Ob`                                        | `in_1UPbt16zvrymwOJvKMyEcvqy`                                        |
+| Price                 | `price_1UK8KT6zvrymwOJv33T5rase`                                     | `price_1UK8KV6zvrymwOJv0QkL82B4`                                     |
+| Importe base Checkout | `139900 mxn`                                                         | `199900 mxn`                                                         |
+
+Stripe confirmó ambas sesiones `livemode=false`, `status=complete`, `payment_status=paid`. Las asignaciones del estudio corresponden al Price correcto, proveedor Stripe y estado active; la UI muestra customer/subscription vinculados y periodo mensual. Ambos portales abrieron `billing.stripe.com`, mostraron Sandbox, su plan, tarjeta 4242, próxima fecha y factura Paid. Las suscripciones siguen activas exclusivamente en Sandbox.
+
+Ledger: Pro recibió tres eventos completed sin error. Growth recibió Checkout y subscription.created completed; invoice.paid quedó ignored/stale_event porque su timestamp era anterior al snapshot de suscripción ya aplicado. Se conservó el estado active más reciente. Esto deja `last_invoice_id` local null para Growth; la factura pagada se verificó directamente en Stripe y en el portal. No se cuenta ese evento como completed ni se altera el historial para forzarlo.
+
+Se verificaron capabilities con el propietario autenticado en una transacción revertida: Growth incluye waitlist, resources, automations e integrations y excluye evaluations/rewards; Pro añade evaluations y rewards. Los límites en UI corresponden a 250 alumnas/1 sede/8 administradores para Growth y alumnas bajo uso razonable/2 sedes/administradores ilimitados para Pro. Esta comprobación valida permisos y límites tras contratación, no sustituye la UAT detallada de cada módulo.
+
+Adaptive Pricing sigue ofreciendo USD por la ubicación del navegador. El portal muestra “Charged in USD”: equivalentes $79.04 y $112.94 junto a MX$1,399 y MX$1,999. La moneda base `mxn` de Checkout no demuestra moneda de presentación/cobro siempre MXN. Revisar la política Live antes de habilitar ventas.
+
+Con esta ampliación, Core/Growth/Pro tienen contratación y portal comprobados. El ciclo de vida y duplicados tienen evidencia separada en S09. Aceptación funcional de Mike y gates de producción permanecen pendientes.

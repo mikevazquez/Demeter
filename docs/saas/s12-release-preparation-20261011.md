@@ -40,7 +40,7 @@ Snapshot Sandbox observado: provision-studio v10, Checkout v17, portal v9, webho
 
 ## Gates pendientes antes de publicar
 
-Validación local final: suite candidata 190 archivos / 1262 pruebas aprobadas; comparación completa contra `20fece92…` con cero fallos en base/candidato, cero pruebas perdidas y un rename explícito. Compilación `npm run build -- --webpack` aprobada. El CI previo había fallado únicamente por ese rename no registrado; su corrección conserva el test y las reglas del ratchet. El CI remoto del commit final debe confirmarse antes de promover.
+Validación local final: suite candidata 190 archivos / 1262 pruebas aprobadas; comparación completa contra `20fece92…` con cero fallos en base/candidato, cero pruebas perdidas y un rename explícito. Compilación `npm run build -- --webpack` aprobada. El CI previo había fallado únicamente por ese rename no registrado; su corrección conserva el test y las reglas del ratchet. CI remoto de `68c223aad655a252a8c6929fd4b6f16918dbee3b` confirmado success: run `38207857195` (CI #3173). Cambios posteriores requieren verificar su SHA antes de promover.
 
 1. Mike revisa funcionalmente S01–S11 en el Preview del PR #270 y acepta el recorrido. La evidencia técnica no se marca como aprobación de producto.
 2. Verificar un backup/restorable point real de Supabase producción y su procedimiento de restauración, con hora/ref registradas antes de cambiar esquema o datos. Si no existe, generar un dump lógico verificable por un canal con credenciales adecuadas; el conector SQL no sustituye un backup completo.
@@ -68,3 +68,10 @@ Ante una regresión de aplicación, volver al deployment asociado a `20fece92…
 Si existen eventos o suscripciones Live nuevas, preservar ledger y auditoría. No borrar tablas, Prices ni suscripciones para «deshacer» la migración. Coordinar la suspensión de nuevas contrataciones y el tratamiento de eventos; restaurar DB únicamente con el punto anterior comprobado y una conciliación que evite perder eventos posteriores. Repetir smoke y comprobar las asignaciones y registros de Demeter antes de reabrir.
 
 No se adjunta una reversión destructiva automática: no hay backup verificado ni prueba de restauración completa, y eliminar billing/auditoría produciría pérdida de información. Este documento prepara una operación revisable; no habilita su ejecución.
+
+## Seguimiento de gates · 2026-10-12 UTC
+
+- Compras Sandbox de Growth y Pro y sus portales comprobados; evidencia ampliada en S08.
+- Se confirmó con el usuario usar la misma organización Supabase para cotizar una rama aislada. La conexión devuelve `UNAVAILABLE` para `get_cost` (“MCP tool get_cost was not returned by tools/list”). No existe cotización válida, confirmación de costo ni rama temporal creada. `list_branches` de producción sólo muestra main/default, que no debe usarse como fixture. El ensayo desde el esquema productivo sigue pendiente.
+- Se entregó al usuario el enlace de Stripe para agregar acceso Live conservando Sandbox. Pendiente confirmación del usuario y verificación de `livemode=true`; no se realizaron escrituras Live.
+- Backup/restauración real y aceptación funcional siguen sin evidencia. El CI verde y las compras Sandbox no cierran esos gates.
