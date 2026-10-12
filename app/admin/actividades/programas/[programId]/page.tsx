@@ -105,58 +105,84 @@ export default async function ProgramPage({
       })),
   ];
   return (
-    <main className="activities-v2 activities-editor-page">
-      <Link href="/admin/actividades">← Actividades</Link>
-      <h1>{program.name}</h1>
-      <p>
-        {program.kind === "event" ? "Evento especial" : "Taller / curso"} · {rows.length} fechas
-      </p>
-      <p>{program.description}</p>
-      <p>
-        <strong>Completo: {money(prices.get(program.full_product_id) ?? 0)}</strong>
-      </p>
+    <main className="activities-v2 activities-editor-page program-detail-page">
+      <Link className="activities-v2-back" href="/admin/actividades">
+        ← Actividades
+      </Link>
+      <header className="program-detail-summary">
+        <div className="program-detail-heading">
+          <span className="program-detail-kind">
+            {program.kind === "event" ? "Evento especial" : "Taller o curso"}
+          </span>
+          <h1>{program.name}</h1>
+          <span className="program-detail-count">
+            {rows.length} {rows.length === 1 ? "fecha" : "fechas"}
+          </span>
+        </div>
+        {program.description ? (
+          <p className="program-detail-description">{program.description}</p>
+        ) : null}
+        <div className="program-detail-price">
+          <span>Programa completo</span>
+          <strong>{money(prices.get(program.full_product_id) ?? 0)}</strong>
+        </div>
+      </header>
       {query.enrolled ? (
-        <p role="status">Pago registrado e inscripción confirmada en las fechas elegidas.</p>
+        <p role="status" className="program-enrollment-success">
+          <strong>Inscripción confirmada</strong>
+          <span>El pago quedó registrado y el cupo está reservado en las fechas elegidas.</span>
+        </p>
       ) : null}
-      <div style={{ overflowX: "auto" }}>
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Disciplina</th>
-              <th>Duración</th>
-              <th>Disponibilidad</th>
-              <th>Clase suelta</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => {
-              const used = (reservations ?? []).filter((b) => b.session_id === r.session_id).length;
-              return (
-                <tr key={r.session_id}>
-                  <td>
-                    <Link href={`/admin/agenda/${r.session_id}`}>{date(r.session.starts_at)}</Link>
-                  </td>
-                  <td>{templateNames.get(r.session.template_id)}</td>
-                  <td>
-                    {(Date.parse(r.session.ends_at) - Date.parse(r.session.starts_at)) / 60000} min
-                  </td>
-                  <td>
-                    {r.session.status === "scheduled"
-                      ? `${Math.max(0, r.session.capacity - used)} de ${r.session.capacity}`
-                      : r.session.status}
-                  </td>
-                  <td>
-                    {r.single_product_id
-                      ? money(prices.get(r.single_product_id) ?? 0)
-                      : "Solo completo"}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <section className="program-dates-section" aria-labelledby="program-dates-title">
+        <div className="program-dates-heading">
+          <h2 id="program-dates-title">Fechas del programa</h2>
+          <span>{rows.length} sesiones</span>
+        </div>
+        <div className="program-dates-table-wrap">
+          <table className="program-dates-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Disciplina</th>
+                <th>Duración</th>
+                <th>Disponibilidad</th>
+                <th>Clase suelta</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => {
+                const used = (reservations ?? []).filter(
+                  (b) => b.session_id === r.session_id,
+                ).length;
+                return (
+                  <tr key={r.session_id}>
+                    <td data-label="Fecha">
+                      <Link href={`/admin/agenda/${r.session_id}`}>
+                        {date(r.session.starts_at)}
+                      </Link>
+                    </td>
+                    <td data-label="Disciplina">{templateNames.get(r.session.template_id)}</td>
+                    <td data-label="Duración">
+                      {(Date.parse(r.session.ends_at) - Date.parse(r.session.starts_at)) / 60000}{" "}
+                      min
+                    </td>
+                    <td data-label="Lugares disponibles">
+                      {r.session.status === "scheduled"
+                        ? `${Math.max(0, r.session.capacity - used)} de ${r.session.capacity}`
+                        : r.session.status}
+                    </td>
+                    <td data-label="Precio por fecha">
+                      {r.single_product_id
+                        ? money(prices.get(r.single_product_id) ?? 0)
+                        : "Solo completo"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
       {ctx.can("sales.write") && ctx.can("schedule.write") ? (
         <EnrollmentForm
           programId={programId}
