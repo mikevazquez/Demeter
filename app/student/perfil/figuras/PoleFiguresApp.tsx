@@ -28,10 +28,10 @@ import {
   type StudentPoleActionResult,
 } from "./actions";
 
-type View =
-  | { name: "home" }
-  | { name: "list" }
-  | { name: "detail"; id: string; from: "home" | "list" };
+type HomeView = { name: "home" };
+type ListView = { name: "list" };
+type DetailView = { name: "detail"; id: string; from: "home" | "list" };
+type View = HomeView | ListView | DetailView;
 type Tab = "logradas" | "faltan" | "pro";
 
 const ERROR_COPY: Record<string, string> = {
