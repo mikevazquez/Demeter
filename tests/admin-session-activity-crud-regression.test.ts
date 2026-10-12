@@ -29,7 +29,9 @@ describe("admin session minimum and activity save regressions", () => {
   });
 
   it("shows and saves minimum settings in the agenda session editor", () => {
-    expect(agendaPage).toContain("minimum_reservations_enabled,minimum_reservations,minimum_review_minutes_before");
+    expect(agendaPage).toContain(
+      "minimum_reservations_enabled,minimum_reservations,minimum_review_minutes_before",
+    );
     expect(agendaPage).toContain('name="minimum_settings_present"');
     expect(agendaPage).toContain('name="minimum_reservations_enabled"');
     expect(agendaPage).toContain('name="minimum_reservations"');

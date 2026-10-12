@@ -338,7 +338,8 @@ export default async function AgendaPage({
     schedule: "No se pudo crear el horario recurrente.",
     activity: "No se pudo crear la actividad. Revisa también el precio de clase suelta.",
     color: "No se pudo guardar el color de la actividad.",
-    minimum: "El mínimo debe ser de 1 al cupo y la revisión debe programarse entre 15 minutos y 7 días antes.",
+    minimum:
+      "El mínimo debe ser de 1 al cupo y la revisión debe programarse entre 15 minutos y 7 días antes.",
     edit: "No se pudieron guardar los cambios de la sesión.",
   };
 
