@@ -22,7 +22,10 @@ describe("Demi conversation guidance for UAT rules", () => {
   });
 
   it("reuses the WhatsApp prospect identity and never asks for the sender phone again", () => {
-    const guidance = conversationGuidance({ channel: "whatsapp", crmContactId: "crm-prospect-id" });
+    const guidance = conversationGuidance({
+      channel: "whatsapp",
+      crmContactId: "crm-prospect-id",
+    });
 
     expect(guidance).toContain("Studio Flow ya buscó este número de WhatsApp");
     expect(guidance).toContain("nunca vuelvas a pedirle su celular");
