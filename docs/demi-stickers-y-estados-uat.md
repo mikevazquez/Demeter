@@ -8,14 +8,14 @@ Rama `codex/demi-sticker-vision`, basada en main `7f6c4634d2e64c050ba2d652d42623
 
 Antes: `[sticker recibido]` y revisión de archivo. Ahora: descarga autenticada de WebP, conversión a PNG y análisis visual en el mismo runtime de Demi, con historial, personalidad, presupuestos y registro de tokens/costos. Los animados aportan hasta tres fotogramas (inicio, mitad, fin); no se afirma comprensión de cada instante de la animación. Máximo 1 MB y 300 fotogramas, decodificación limitada y salida de hasta 512 px. No se guarda base64 ni se publica el archivo descargado.
 
-El sticker es conversacional y no confirma reservas, cancelaciones, compras o pagos. No se exponen herramientas y también se bloquean las confirmaciones deterministas del servidor. Un formato corrupto, archivo vencido o lectura fallida conserva el flujo de revisión y pide aclaración sin fingir que se vio.
+El sticker es conversacional y no confirma reservas, cancelaciones, compras o pagos. No se exponen herramientas y también se bloquean las confirmaciones deterministas del servidor. Un formato corrupto, archivo vencido o fallo de decodificación conserva el flujo de revisión y pide aclaración sin fingir que se vio.
 
 Pruebas automatizadas: normalización estática, animación real de tres fotogramas, archivo corrupto, MIME disfrazado, tamaño, contexto conversacional, bloqueo de acciones, registro de uso y presupuestos. Banco UAT: cargar WebP y marcar «Enviar como sticker», canal WhatsApp. Transporte capturado: no envía a alumnos reales.
 
 | Caso                                                  | Validación técnica                                | UAT conversacional                 |
 | ----------------------------------------------------- | ------------------------------------------------- | ---------------------------------- |
 | STK-01 saludo con texto                               | Aprobada                                          | Pendiente                          |
-| STK-02 agradecimiento y despedida sin reiniciar venta | Aprobada en canal visual                          | Pendiente                          |
+| STK-02 agradecimiento y despedida sin reiniciar venta | Automatizada; interpretación real pendiente       | Pendiente                          |
 | STK-03 animado                                        | Aprobada extracción de tres fotogramas            | Pendiente                          |
 | STK-04 gesto ambiguo                                  | Prompt conserva incertidumbre                     | Pendiente                          |
 | STK-05 «sí» con reserva pendiente                     | Aprobado bloqueo de confirmación y herramientas   | Pendiente                          |
@@ -38,3 +38,16 @@ Fuentes primarias consultadas: documentación de Meta en Postman (Messages Objec
 ## Promoción
 
 UAT y aceptación de Mike pendientes. Promoción pendiente de autorización explícita para este alcance. Reversión: restaurar deployment anterior; no requiere migración ni borrar historial.
+
+## Evidencia técnica y preview — 12 de octubre de 2026
+
+- 190 archivos y 1,252 pruebas aprobadas; 6 pruebas nuevas de visión y límites.
+- Typecheck aprobado; lint sin errores y 19 advertencias preexistentes; Prettier y diff --check aprobados.
+- Versión funcional: f1d457ad9c21139cb8aa76f426da29dba66abda0. Deployment dpl_7XRNuKJTnCXsK7CX1Bu4Q2wsPyZN READY; build «Preview isolation verified: Studio Flow Sandbox».
+- [Banco UAT de stickers](https://demeterbueno-git-codex-demi-sticker-vision-demeter3.vercel.app/admin/mas/demi/uat).
+- Se abrió la página autenticada y se recuperó el escenario aislado 3b03aaf5-b014-4277-bc69-cef7aa2ba271, estudio 29af8ae6-1c55-497d-b53c-d6d7b6fc828d. El formulario muestra la opción de sticker y archivo WebP.
+- El navegador restringió las operaciones después de la autenticación nativa («retained_data_restricted» / «native credential state cannot be safely resumed»), incluso al abrir una pestaña nueva. No se afirma envío del sticker, lectura por el modelo en vivo ni aprobación conversacional.
+- Para probar: recuperar la ejecución, elegir una persona ficticia, canal WhatsApp, cargar un WebP y marcar Enviar como sticker. Enviar al flujo real. Los fixtures estáticos y animados están en tests/fixtures/demi-stickers.
+- Producción sin escrituras. Respuestas a estados: pendiente de webhook real controlado; no basta una prueba sintética para afirmar recuperación de una publicación orgánica.
+
+Referencias: [Meta Messages Object](https://www.postman.com/meta/whatsapp-business-platform/folder/1dtuocp/messages-object), [Meta Context Object](https://www.postman.com/meta/whatsapp-business-platform/folder/hysdhqs/context-object), [OpenAI visión](https://developers.openai.com/api/docs/guides/images-vision), [Sharp](https://sharp.pixelplumbing.com/api-constructor/).
