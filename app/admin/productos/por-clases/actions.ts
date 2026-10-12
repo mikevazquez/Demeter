@@ -86,6 +86,10 @@ export async function createClassPackage(
     .single();
 
   if (productError || !product) {
+    if (productError?.code === "23505") {
+      return { error: "Ya existe un producto con ese nombre en el estudio. Usa otro nombre." };
+    }
+
     return { error: "No pudimos guardar el paquete. Intenta nuevamente." };
   }
 

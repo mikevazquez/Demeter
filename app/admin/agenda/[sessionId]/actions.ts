@@ -124,8 +124,34 @@ export async function updateSession(formData: FormData) {
   const capacity = Number(formData.get("capacity"));
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const scope = String(formData.get("scope") ?? "single");
+  const minimumSettingsProvided = formData.has("minimum_reservations_enabled");
+  const minimumReservationsEnabled =
+    String(formData.get("minimum_reservations_enabled") ?? "") === "on";
+  const minimumReservations = Number(formData.get("minimum_reservations"));
+  const minimumReviewMinutesBefore = Number(formData.get("minimum_review_minutes_before"));
   if (!sessionId || !startsLocal || !Number.isFinite(capacity) || capacity < 1)
     redirect(withQuery(returnUrl, "error", "edit"));
+  if (
+    minimumSettingsProvided &&
+    minimumReservationsEnabled &&
+    (!Number.isInteger(minimumReservations) ||
+      minimumReservations < 1 ||
+      minimumReservations > capacity ||
+      !Number.isInteger(minimumReviewMinutesBefore) ||
+      minimumReviewMinutesBefore < 15 ||
+      minimumReviewMinutesBefore > 10080)
+  ) {
+    redirect(withQuery(returnUrl, "error", "minimum"));
+  }
+  const minimumUpdate = minimumSettingsProvided
+    ? {
+        minimum_reservations_enabled: minimumReservationsEnabled,
+        minimum_reservations: Number.isInteger(minimumReservations) ? minimumReservations : 2,
+        minimum_review_minutes_before: Number.isInteger(minimumReviewMinutesBefore)
+          ? minimumReviewMinutesBefore
+          : 120,
+      }
+    : {};
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
   const { data: session } = await supabase
     .from("class_sessions")
@@ -203,6 +229,7 @@ export async function updateSession(formData: FormData) {
           capacity,
           notes,
           is_schedule_exception: false,
+          ...(item.id === sessionId ? minimumUpdate : {}),
         })
         .eq("id", item.id)
         .eq("studio_id", studio.id);
@@ -243,6 +270,7 @@ export async function updateSession(formData: FormData) {
         capacity,
         notes,
         is_schedule_exception: Boolean(session.recurring_schedule_id),
+        ...minimumUpdate,
       })
       .eq("id", sessionId)
       .eq("studio_id", studio.id);
