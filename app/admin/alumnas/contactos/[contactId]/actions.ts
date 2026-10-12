@@ -32,4 +32,4 @@ export async function saveContactProfile(formData: FormData) {
     .from("crm_contacts")
     .select("person_id,converted_student_id")
     .eq("studio_id", studio.id)
-    .eq("id", coÖ»Ç±Ëž
+    .eq("id", co¶»§q«^
