@@ -106,6 +106,7 @@ export default async function DemiDemoPage() {
         "assistant_name,mode,model,reasoning_effort,personality_instructions,monthly_budget_usd_micros,conversation_budget_usd_micros",
       )
       .eq("studio_id", studio.id)
+      .eq("assistant_key", "demi")
       .maybeSingle(),
     supabase
       .from("assistant_model_calls")
