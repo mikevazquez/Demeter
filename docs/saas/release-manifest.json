@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "status": "prepared_not_authorized",
-  "source_code_sha": "a6f2a1371ce1348c008202ada2637456383f281d",
-  "baseline_main_sha": "20fece92e991efeb9b1b15b27b4a0c59d5cbc7ec",
+  "source_code_sha": "44eddd04524d1a2104e92d67564a64a20025e9be",
+  "baseline_main_sha": "7f6c4634d2e64c050ba2d652d42623f1d6ddc71a",
   "production_project_ref": "qfhojvgvhrbautvczffq",
   "sandbox_project_ref": "hedouonyhynuvwbckdlg",
   "stripe_live_account": "acct_1TwcF07pc7DxswTf",
@@ -64,10 +64,7 @@
     "trial_days": 0,
     "grace_days": 3
   },
-  "pending_gates": [
-    "backup_restoration_and_production_schema_rehearsal",
-    "final_release_authorization"
-  ],
+  "pending_gates": ["final_candidate_checks", "final_release_authorization"],
   "sha256": {
     "supabase/migrations/20261011192941_saas_restore_platform_and_billing_dependencies.sql": "b569fff8bc4fa07ce0ee30205e0bf7e1fc55cc3e01301593fce7b6ac2f8545a9",
     "supabase/migrations/20261011193659_saas_owner_usage_visibility.sql": "d690a61351871cbff54bfd0cb04d6529a06901a83107227cfd1a9f1d5efe9d3e",
@@ -86,5 +83,11 @@
     "scope": "Presented Preview plans, Sandbox portals and integral-flow evidence",
     "client_date": "2026-10-11",
     "timezone": "America/Mexico_City"
+  },
+  "restoration_rehearsal": {
+    "project_ref": "uweqtwmgpsftnntyzpbh",
+    "backup_utc": "2026-10-12T05:10:44Z",
+    "result": "database_restoration_and_migration_rehearsal_passed",
+    "evidence": "docs/saas/s12-restoration-rehearsal-20261012.md"
   }
 }

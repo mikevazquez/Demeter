@@ -123,3 +123,9 @@ Validación del SQL únicamente en transacciones revertidas de Sandbox: inserci�
 El bloqueo diferido queda agrupado como **respaldo → restauración verificada → ensayo del esquema productivo**. Las escrituras productivas restantes (migraciones, Edge, secretos, mappings, destino webhook y aplicación) son pasos del paquete de publicación, no tareas ya ejecutadas. Después de cerrar ese bloqueo, verificar el SHA final y pedir autorización final del paquete concreto. No hubo nuevos cambios Stripe Live ni cambios a DB/app productivas en esta preparación.
 
 Se releyeron únicamente las URLs públicas de Supabase configuradas en Vercel: Production → `https://qfhojvgvhrbautvczffq.supabase.co`; Preview general → `https://hedouonyhynuvwbckdlg.supabase.co`. No hay override de URL específico para `feat/saas-reconciliation`; las otras ramas con override no forman parte de esta promoción. No se modificaron variables ni se leyeron claves secretas para esta verificación.
+
+## Actualización vigente · 12 de octubre de 2026
+
+La organización Demeter ya está en Pro. Backup físico COMPLETED `2026-10-12T05:10:44Z` restaurado y ensayado en el proyecto independiente `uweqtwmgpsftnntyzpbh`; evidencias en `s12-restoration-rehearsal-20261012.md`. El gate DB diferido al Mac queda cerrado para este alcance. Storage, Edge y secretos no forman parte de ese clone.
+
+Main avanzó por PR #271 a `7f6c4634d2e64c050ba2d652d42623f1d6ddc71a`, actual baseline de aplicación/reversión. Producción añadió `20261012134855_demi_temporary_information` después del backup. Se reprodujo esa migración sólo en la copia, se incorporó main sin conflictos y el paquete Studio Flow volvió a pasar con rollback conservando Demi y la asignación All Access. Confirmar el SHA integrado y releer el backup más reciente antes de la publicación. Autorización final pendiente; no se cambiaron DB/app productivas desde este trabajo.
