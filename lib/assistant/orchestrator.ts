@@ -41,10 +41,7 @@ type HistoryMessage = {
   content: string;
 };
 
-function isBlockedWhatsAppLookup(
-  channel: OrchestratorInput["channel"],
-  toolName: string,
-) {
+function isBlockedWhatsAppLookup(channel: OrchestratorInput["channel"], toolName: string) {
   return channel === "whatsapp" && toolName === "identify_meta_contact";
 }
 
@@ -954,9 +951,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       : [
           ...assistantReadToolDefinitions.filter(
             (tool) =>
-              input.studentId ||
-              input.testSimulation ||
-              tool.name !== "get_student_package_status",
+              input.studentId || input.testSimulation || tool.name !== "get_student_package_status",
           ),
           ...assistantActionToolDefinitions
             .filter((tool) => !isBlockedWhatsAppLookup(input.channel, tool.name))
