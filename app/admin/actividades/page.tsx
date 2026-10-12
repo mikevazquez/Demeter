@@ -43,6 +43,7 @@ export default async function ActivitiesPage() {
         "id,name,description,duration_minutes,capacity,active,drop_in_price_minor,requires_resource,color_hex",
       )
       .eq("studio_id", studio.id)
+      .is("program_id", null)
       .order("active", { ascending: false })
       .order("name"),
     supabase
@@ -61,6 +62,11 @@ export default async function ActivitiesPage() {
     schedulesByActivity.set(schedule.template_id, current);
   }
 
+  const { data: programs } = await supabase
+    .from("activity_programs")
+    .select("id,name,kind,description,active")
+    .eq("studio_id", studio.id)
+    .order("created_at", { ascending: false });
   const activeActivities = (activities ?? []).filter((item) => item.active);
   const inactiveActivities = (activities ?? []).filter((item) => !item.active);
 
@@ -140,6 +146,25 @@ export default async function ActivitiesPage() {
         ) : null}
       </header>
 
+      <section className="activities-v2-section">
+        <h2>Talleres y eventos</h2>
+        <div className="activities-v2-list">
+          {(programs ?? []).map((program) => (
+            <Link
+              className="activities-v2-card"
+              href={`/admin/actividades/programas/${program.id}`}
+              key={program.id}
+            >
+              <span className="activities-v2-card-main">
+                <strong>{program.name}</strong>
+                <span>{program.kind === "event" ? "Evento especial" : "Taller / curso"}</span>
+                <span>{program.description}</span>
+              </span>
+              <span>Ver programa ›</span>
+            </Link>
+          ))}
+        </div>
+      </section>
       <section className="activities-v2-section">
         <div className="activities-v2-section-heading">
           <div>
