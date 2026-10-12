@@ -41,7 +41,7 @@ type HistoryMessage = {
   content: string;
 };
 
-function isWhatsAppIdentityLookupBlocked(
+function isBlockedWhatsAppLookup(
   channel: OrchestratorInput["channel"],
   toolName: string,
 ) {
@@ -959,7 +959,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
               tool.name !== "get_student_package_status",
           ),
           ...assistantActionToolDefinitions
-            .filter((tool) => !isWhatsAppIdentityLookupBlocked(input.channel, tool.name))
+            .filter((tool) => !isBlockedWhatsAppLookup(input.channel, tool.name))
             .filter((tool) =>
               input.studentId || input.testSimulation
                 ? true
