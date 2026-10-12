@@ -75,3 +75,35 @@ No se adjunta una reversión destructiva automática: no hay backup verificado n
 - Se confirmó con el usuario usar la misma organización Supabase para cotizar una rama aislada. La conexión devuelve `UNAVAILABLE` para `get_cost` (“MCP tool get_cost was not returned by tools/list”). No existe cotización válida, confirmación de costo ni rama temporal creada. `list_branches` de producción sólo muestra main/default, que no debe usarse como fixture. El ensayo desde el esquema productivo sigue pendiente.
 - Se entregó al usuario el enlace de Stripe para agregar acceso Live conservando Sandbox. Pendiente confirmación del usuario y verificación de `livemode=true`; no se realizaron escrituras Live.
 - Backup/restauración real y aceptación funcional siguen sin evidencia. El CI verde y las compras Sandbox no cierran esos gates.
+
+## Cuenta Live y ausencia de backup confirmadas
+
+La autorización actual expone Demeter Fitness `acct_1TwcF07pc7DxswTf`, `livemode=true`, junto al Sandbox existente. Revisión exclusivamente de lectura: Prices, configuraciones de portal, endpoints de webhook y registros fiscales devuelven listas vacías (`has_more=false`). Tax Settings tiene `status=pending`, `head_office=null` y falta `head_office`. La conexión Live está verificada; su configuración comercial/operativa sigue pendiente. Se preguntó al usuario política de moneda y tratamiento de IVA antes de crear el catálogo. No se crearon objetos Live ni cargos.
+
+El usuario confirmó que Supabase muestra «Free Plan does not include project backups». No hay backup gestionado disponible según esa pantalla. La sesión sólo tiene credenciales públicas de Sandbox, no conexión Postgres productiva, por lo que no puede exportarse desde aquí.
+
+Se preparó `scripts/saas-production-backup.sh`, con CLI Supabase 2.120.0, a partir de la [guía oficial de backup/restore](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore). Requiere computadora de confianza con Bash, Python 3, Node/npm y Docker. Ejecutar `bash scripts/saas-production-backup.sh`; introducir la URL Session Pooler productiva por entrada oculta, nunca en chat/Git. La validación rechaza otros proyectos y el pooler transaccional. No resetear la contraseña vigente sólo para ejecutar el script: cualquier cambio de contraseña requiere evaluar conexiones existentes.
+
+Exporta roles, esquema, datos y migration history en carpeta privada, con manifest de tamaños/hashes y `restore_verified=false`. Los logs son privados porque la CLI podría incluir información de conexión. El script no restaura ni cambia producción; sintaxis Bash verificada, ejecución con credencial real pendiente. La carpeta generada está excluida de Git en la raíz del repositorio; no adjuntar dumps al PR. Guardar una copia protegida fuera de la computadora de trabajo.
+
+Este export no es todavía un backup completo verificado. Capturar también personalizaciones de Auth/Storage, archivos binarios de Storage, configuración/Edge y, si hay datos cifrados con Vault, el material requerido por la guía mediante canal seguro. Las exportaciones separadas no comparten un único snapshot: acordar una ventana sin escrituras si se requiere consistencia entre esquema, datos e historial. Restaurar en un destino aislado compatible, verificar integridad/usuarios/ACL/All Access y comparar esquema con producción antes de ensayar las cinco migraciones. No restaurar sobre producción para comprobarlo.
+
+## Preparación Live autorizada y política comercial
+
+El usuario confirmó: cobro siempre en MXN, IVA incluido en los importes publicados y respaldo con CLI en computadora sin subir de plan. Se crearon únicamente productos/Prices y configuración de portal en la cuenta Live confirmada; no suscripciones, sesiones de pago ni cargos Live. La aplicación y base de datos productivas aún no se modificaron.
+
+| Plan   | Producto Live         | Price Live                       | Importe mensual |
+| ------ | --------------------- | -------------------------------- | --------------- |
+| Core   | `prod_VQSwPc6Hvd0njB` | `price_1UPc0p7pc7DxswTfuC75I0d9` | 89900 MXN       |
+| Growth | `prod_VQSwdFuVmvXnAL` | `price_1UPc0x7pc7DxswTfakgBvEFP` | 139900 MXN      |
+| Pro    | `prod_VQSwgphcakcjRN` | `price_1UPc0y7pc7DxswTfEoWHSabh` | 199900 MXN      |
+
+Relectura de Prices: los tres activos, `livemode=true`, `currency=mxn`, `interval=month`, `interval_count=1`, `tax_behavior=inclusive` y producto correcto. No catálogo anual ni All Access comercial. Los IDs se guardan como evidencia; aún no están mapeados en la DB productiva.
+
+Portal Live `bpc_1UPc1A7pc7DxswTf0QgPm9gq`, activo y default, retorno `https://demeterbueno.vercel.app/admin/suscripcion`: invoice history y actualización de tarjeta habilitadas, cancelación `at_period_end`, cambios de plan deshabilitados. Verificación de configuración, no recorrido de un cliente Live.
+
+`tax_behavior=inclusive` declara el precio con impuestos incluidos; por sí solo no configura cálculo/desglose fiscal, registros ni emisión CFDI. Stripe Tax automático permanece sin activar y la configuración fiscal pendiente no se presume resuelta.
+
+Se cambió Checkout para enviar `adaptive_pricing.enabled=false` independientemente del ajuste de Dashboard. Desplegado exclusivamente en Sandbox como Checkout v18, hash `b76bb2c5b55d1e5f494aa390365920befb8a0542a8bb9ae2f5fffabab3414743`, JWT requerido. UI real en fixture MXN `3e8219b8-4634-4a6a-afba-601a1a742142` abrió Checkout Sandbox mostrando MX$899, sin selector USD/MXN. Relectura de `cs_test_a13s9JchduBUaJL0cJcjV4eGDrBOCsMJ7f5zTkhQTAK8sABHxHcZn15rs5` confirma `adaptive_pricing.enabled=false`, `currency=mxn`, `amount_total=89900`, open/unpaid. No se pagó esta sesión de comprobación ni se alteraron las suscripciones UAT anteriores. Dieciséis pruebas Auth/allowlist siguen pasando.
+
+El webhook Live se creará/configurará cuando el destino productivo y su firma estén listos dentro del paquete autorizado; no apuntar eventos a una función inexistente. Backups/restauración, ensayo sobre esquema productivo, aceptación funcional y autorización final siguen pendientes.

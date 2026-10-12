@@ -214,6 +214,8 @@ Deno.serve(async (request) => {
     const session = await stripe.checkout.sessions.create(
       {
         mode: "subscription",
+        // Keep the agreed MXN price even when Stripe detects another country.
+        adaptive_pricing: { enabled: false },
         customer: customerId,
         client_reference_id: owner.studio.id,
         line_items: [{ price: planPrice.provider_price_id, quantity: 1 }],
