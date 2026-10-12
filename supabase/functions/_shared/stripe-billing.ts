@@ -150,7 +150,23 @@ export function validateReturnBaseUrl(value: unknown) {
   }
 
   if (url.protocol !== "https:" || url.username || url.password) return null;
-  if (!configured.includes(url.origin)) return null;
+  const allowed = configured.some((entry) => {
+    try {
+      const origin = new URL(entry);
+      return (
+        origin.protocol === "https:" &&
+        !origin.username &&
+        !origin.password &&
+        origin.pathname === "/" &&
+        !origin.search &&
+        !origin.hash &&
+        origin.origin === url.origin
+      );
+    } catch {
+      return false;
+    }
+  });
+  if (!allowed) return null;
   return url.origin;
 }
 

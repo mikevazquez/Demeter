@@ -1,6 +1,6 @@
 # S08 · Stripe Sandbox · 2026-10-11
 
-Estado: **bloqueado por configuración de origen de retorno**. S08 no está cerrado.
+Estado actual: **bloqueado por clave API Stripe inválida en Edge Functions**. S08 no está cerrado. El bloqueo de origen descrito más abajo ya fue resuelto; ver actualización al final.
 
 ## Conexión y catálogo
 
@@ -50,3 +50,13 @@ No incluye ruta, barra final ni wildcard. Las herramientas conectadas no exponen
 Después del ajuste, repetir desde el owner del estudio S08: «Elegir Core», pago con tarjeta de prueba, retorno al Preview, sesión Checkout completada, invoice pagada, ledger de webhook `completed`, asignación/periodos reflejados en la UI y «Administrar cobro». Duplicados, renovación y recuperación corresponden al cierre de S09.
 
 No se creó Checkout, suscripción ni cargo durante esta ejecución. Producción no recibió cambios; PR #270 conserva estado draft y requiere aceptación funcional antes de promoción.
+
+## Actualización tras guardar el secreto
+
+El usuario guardó el origen solicitado en Sandbox. Diagnóstico autenticado temporal, limitado a booleanos, confirmó que el valor coincide con el Preview pero incluye `/` final. La validación ahora normaliza entradas HTTPS de origen con barra raíz opcional, manteniendo rechazo de credenciales, rutas, query, fragmentos, entradas inválidas y otros hosts. Los diagnósticos temporales se retiraron antes del despliegue final.
+
+Dieciséis pruebas del helper pasan: cinco de Auth y once de allowlist. Checkout v10 y portal v7 contienen el helper actualizado, `verify_jwt=true`, únicamente en Sandbox.
+
+La UI vuelve a rechazar la contratación, ahora después de crear un intento: `status=error`, sin `provider_checkout_session_id`. La llamada autenticada devuelve `502 stripe_checkout_failed`; el registro del intento identifica una clave API inválida rechazada por Stripe. La cuenta MCP correcta funciona, pero esa conexión no reemplaza la credencial guardada en las Edge Functions.
+
+Acción pendiente: actualizar `STRIPE_SECRET_KEY` en Supabase Sandbox con una clave API válida del Sandbox Stripe `acct_1TwhQF6zvrymwOJv` (preferiblemente restringida con permisos de billing necesarios). No usar una clave Live, publishable, un signing secret `whsec_` ni el nombre de una variable. No compartir la clave en el chat o Git. Repetir Checkout y portal después de guardar. No se creó sesión Checkout, suscripción ni cargo.
