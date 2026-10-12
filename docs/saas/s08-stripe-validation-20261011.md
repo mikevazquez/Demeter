@@ -31,6 +31,8 @@ La función v4 devolvía `401 unauthenticated` para un JWT que `auth.getUser(tok
 
 La prueba de regresión ejecuta el helper de Deno con el SDK Supabase instalado y simula únicamente HTTP, env e imports npm. Antes del cambio fallaron 3/5 casos; después pasan 5/5, incluyendo token válido, credenciales ausentes/malformadas y rechazo de Auth. Typecheck y ESLint del test pasan. También pasan las suites existentes de contexto de plan, cliente multiestudio y activación (17 pruebas en total con la nueva suite).
 
+Suite completa después del cambio: 190 archivos y 1251 pruebas aprobadas (`npm test -- --reporter=dot`).
+
 `saas-stripe-checkout` y `saas-stripe-portal` se desplegaron como v5 únicamente en Sandbox, conservando `verify_jwt=true`. El webhook no se redesplegó.
 
 ## Bloqueo actual y acción necesaria
