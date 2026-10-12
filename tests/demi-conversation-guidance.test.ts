@@ -29,7 +29,9 @@ describe("Demi conversation guidance for UAT rules", () => {
 
     expect(guidance).toContain("Studio Flow ya buscó este número de WhatsApp");
     expect(guidance).toContain("nunca vuelvas a pedirle su celular");
-    expect(guidance).toContain("solicita únicamente el nombre completo u otro dato que realmente falte");
+    expect(guidance).toContain(
+      "solicita únicamente el nombre completo u otro dato que realmente falte",
+    );
     expect(guidance).toContain("no digas que el portal, la compra o el pago quedaron hechos");
   });
 
