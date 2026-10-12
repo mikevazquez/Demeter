@@ -218,6 +218,12 @@ export async function sendDemiUatMessage(form: FormData) {
     const text = String(form.get("text") ?? "").trim();
     if (text.length > 4000) throw new Error("demi_uat_message_too_long");
     const file = form.get("file");
+    const asSticker = form.get("asSticker") === "on";
+    if (
+      asSticker &&
+      (isInbox || !(file instanceof File) || file.type !== "image/webp" || !file.size)
+    )
+      throw new Error("demi_uat_sticker_requires_whatsapp_webp");
     const media = new Map<string, MetaDownloadedMedia>();
     const mediaId = String(Date.now());
     const hasFile = file instanceof File && file.size > 0;
@@ -275,13 +281,15 @@ export async function sendDemiUatMessage(form: FormData) {
       countryCallingCode: "52",
       templates: {},
     };
-    const type = hasFile
-      ? file.type.startsWith("audio/")
-        ? "audio"
-        : file.type === "application/pdf"
-          ? "document"
-          : "image"
-      : "text";
+    const type = asSticker
+      ? "sticker"
+      : hasFile
+        ? file.type.startsWith("audio/")
+          ? "audio"
+          : file.type === "application/pdf"
+            ? "document"
+            : "image"
+        : "text";
     const message = {
       id: providerId,
       from: person.wa_id,
@@ -301,7 +309,7 @@ export async function sendDemiUatMessage(form: FormData) {
         ? {
             [type]: {
               id: mediaId,
-              caption: text || "Comprobante ficticio UAT",
+              ...(asSticker ? {} : { caption: text || "Comprobante ficticio UAT" }),
               mime_type: file.type,
               filename: file.name,
             },

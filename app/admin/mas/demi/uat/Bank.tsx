@@ -266,7 +266,11 @@ export default function Bank({
                 />
               </label>
               <label>
-                Comprobante ficticio (imagen o PDF, máximo 900 KB)
+                <input type="checkbox" name="asSticker" /> Enviar como sticker (sólo WhatsApp y
+                WebP)
+              </label>
+              <label>
+                Archivo de prueba (imagen, PDF, audio o sticker WebP, máximo 900 KB)
                 <input
                   name="file"
                   type="file"

@@ -77,6 +77,7 @@ function harness(
   }));
   const access = vi.fn(async () => ({ already_has_access: true }));
   const deps: Record<string, unknown> = {
+    "@/lib/assistant/sticker-media": {},
     "@/lib/assistant/orchestrator": {},
     "@/lib/assistant/audio-transcription": { transcribeDemiAudio: vi.fn() },
     "@/lib/assistant/enrollment-payment": {

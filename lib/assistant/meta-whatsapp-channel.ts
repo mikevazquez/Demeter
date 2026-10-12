@@ -185,9 +185,10 @@ export type MetaDownloadedMedia = {
 
 function receiptMimeType(
   value: unknown,
-  kind: "receipt" | "audio" = "receipt",
+  kind: "receipt" | "audio" | "sticker" = "receipt",
 ): MetaDownloadedMedia["mimeType"] | null {
   const normalized = safeText(value)?.toLowerCase().split(";")[0].trim();
+  if (kind === "sticker") return normalized === "image/webp" ? normalized : null;
   if (kind === "audio")
     return ["audio/ogg", "audio/mpeg", "audio/mp4", "audio/wav", "audio/webm"].includes(
       normalized ?? "",
@@ -205,9 +206,10 @@ function receiptMimeType(
 export async function downloadMetaWhatsAppMedia(input: {
   config: MetaWhatsAppWebhookConfig;
   mediaId: string;
-  kind?: "receipt" | "audio";
+  kind?: "receipt" | "audio" | "sticker";
   fetcher?: typeof fetch;
 }): Promise<MetaDownloadedMedia> {
+  const maxBytes = input.kind === "sticker" ? 1024 * 1024 : 10 * 1024 * 1024;
   const uat = demiUatScope();
   if (uat) {
     if (uat.config !== input.config) throw new Error("demi_uat_channel_mismatch");
@@ -215,7 +217,8 @@ export async function downloadMetaWhatsAppMedia(input: {
     if (!media) throw new Error("demi_uat_media_missing");
     if (
       !receiptMimeType(media.mimeType, input.kind) ||
-      media.fileSize > 10 * 1024 * 1024 ||
+      media.fileSize > maxBytes ||
+      media.bytes.byteLength > maxBytes ||
       media.bytes.byteLength === 0
     )
       throw new Error("meta_media_type_unsupported");
@@ -259,7 +262,7 @@ export async function downloadMetaWhatsAppMedia(input: {
   if (!mimeType) {
     throw new Error("meta_media_type_unsupported");
   }
-  if (advertisedSize !== null && advertisedSize > 10 * 1024 * 1024) {
+  if (advertisedSize !== null && advertisedSize > maxBytes) {
     throw new Error("meta_media_too_large");
   }
 
@@ -274,7 +277,7 @@ export async function downloadMetaWhatsAppMedia(input: {
   }
 
   const bytes = new Uint8Array(await mediaResponse.arrayBuffer());
-  if (bytes.byteLength === 0 || bytes.byteLength > 10 * 1024 * 1024) {
+  if (bytes.byteLength === 0 || bytes.byteLength > maxBytes) {
     throw new Error(bytes.byteLength === 0 ? "meta_media_empty" : "meta_media_too_large");
   }
 
