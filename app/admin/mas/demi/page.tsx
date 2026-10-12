@@ -214,6 +214,9 @@ export default async function DemiDemoPage() {
       <p>
         <Link href="/admin/mas/demi/seguimientos">Configurar seguimientos →</Link>
       </p>
+      <p>
+        <Link href="/admin/mas/demi/temporales">Talleres, eventos y promociones →</Link>
+      </p>
       <DemiLayers
         activeInstructions={config.personality_instructions ?? ""}
         initialInstructions={

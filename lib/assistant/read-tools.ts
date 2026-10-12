@@ -1,4 +1,10 @@
 import { resolveEnrollmentStatus } from "./enrollment-state";
+import {
+  answerUntil,
+  isTemporaryInformationAnswerable,
+  rankTemporaryInformation,
+  type TemporaryInformation,
+} from "./temporary-information";
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -541,6 +547,45 @@ export async function getStudioInformation(ctx: AssistantToolContext) {
   };
 }
 
+export async function getTemporaryInformation(ctx: AssistantToolContext, args: { topic: string }) {
+  const today = localParts(new Date().toISOString(), ctx.studio.timezone).date;
+  const { data, error } = await ctx.supabase
+    .from("demi_temporary_information")
+    .select(
+      "id,title,kind,discipline,details,promotion_starts_on,event_starts_on,event_ends_on,registration_deadline,status",
+    )
+    .eq("studio_id", ctx.studio.id)
+    .eq("status", "published")
+    .lte("promotion_starts_on", today)
+    .gte("event_ends_on", today)
+    .or(`registration_deadline.is.null,registration_deadline.gte.${today}`)
+    .order("event_starts_on", { ascending: true })
+    .limit(100);
+
+  if (error) return { ok: false, error: "temporary_information_unavailable" };
+
+  const active = ((data ?? []) as TemporaryInformation[]).filter((item) =>
+    isTemporaryInformationAnswerable(item, today),
+  );
+  const items = rankTemporaryInformation(active, args.topic);
+
+  return {
+    ok: true,
+    checked_on_local: today,
+    items: items.map((item) => ({
+      title: item.title,
+      type: item.kind,
+      discipline: item.discipline,
+      details: item.details,
+      promotion_starts_on: item.promotion_starts_on,
+      event_starts_on: item.event_starts_on,
+      event_ends_on: item.event_ends_on,
+      registration_deadline: item.registration_deadline,
+      answer_until_on: answerUntil(item),
+    })),
+  };
+}
+
 export async function getPolicyInformation(ctx: AssistantToolContext) {
   const { data, error } = await ctx.supabase
     .from("studio_operating_policies")
@@ -863,6 +908,8 @@ export async function executeAssistantReadTool(
       return getStudioInformation(ctx);
     case "get_policy_information":
       return getPolicyInformation(ctx);
+    case "get_temporary_information":
+      return getTemporaryInformation(ctx, { topic: String(args.topic ?? "") });
     case "get_student_package_status":
       return getStudentPackageStatus(ctx);
     case "get_student_reservations":

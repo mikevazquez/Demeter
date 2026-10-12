@@ -4,6 +4,7 @@ import {
   shouldBlockPaymentForInformation,
 } from "../lib/assistant/information-intent";
 import { resolveEnrollmentStatus } from "../lib/assistant/enrollment-state";
+import * as temporaryInformation from "../lib/assistant/temporary-information";
 import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -936,7 +937,10 @@ describe("Demi shared commercial price", () => {
   it.each([15000, 0, null])("returns class price %s without requiring a package", async (price) => {
     const mod = serverModule<typeof import("../lib/assistant/read-tools")>(
       "lib/assistant/read-tools.ts",
-      { "./enrollment-state": { resolveEnrollmentStatus } },
+      {
+        "./enrollment-state": { resolveEnrollmentStatus },
+        "./temporary-information": temporaryInformation,
+      },
     );
     const sessionId = "11111111-1111-4111-8111-111111111111";
     const scopes: string[] = [];

@@ -99,6 +99,25 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
   },
   {
     type: "function",
+    name: "get_temporary_information",
+    description:
+      "Consulta eventos, talleres y promociones que el estudio cargó para Demi. Úsala al preguntar por talleres, promociones, eventos especiales, fechas de inscripción, precios u horarios de esas actividades. Sólo devuelve información publicada dentro de su periodo local vigente: desde el inicio de promoción hasta la fecha límite de inscripción, o hasta el último día del evento si no hay fecha límite. Para horarios semanales de clases, usa search_class_availability. Si esta herramienta no devuelve el evento o el dato solicitado, reconoce que no tienes esa información y no inventes fechas, precios ni condiciones. No envía mensajes promocionales.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {
+        topic: {
+          type: "string",
+          description:
+            "Tema o nombre que preguntó la persona, como 'taller de aro', 'horario' o 'promoción de flexibilidad'.",
+        },
+      },
+      required: ["topic"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
     name: "get_studio_information",
     description:
       "Consulta las disciplinas activas, preparación oficial para la primera clase, nombre, sede, domicilio, teléfono, correo y página web configurados. Úsala siempre al preguntar disciplinas o preparación, ubicación o contacto. active_disciplines define la oferta, aunque falten horarios. Si falta la preparación o el dato solicitado, reconoce el faltante y ejecuta escalate_to_human con human_requested para que el equipo responda la consulta; no inventes indicaciones.",
