@@ -21,6 +21,9 @@ const record = (overrides: Record<string, unknown> = {}) => ({
 function context(rows: ReturnType<typeof record>[], timezone = "America/Mexico_City") {
   const calls: Array<[string, ...unknown[]]> = [];
   const builder = {
+    maybeSingle() {
+      return Promise.resolve({ data: null, error: null });
+    },
     select(...args: unknown[]) {
       calls.push(["select", ...args]);
       return this;

@@ -21,6 +21,9 @@ describe("Demi isolated UAT clock", () => {
       status: "published",
     };
     const builder = {
+      maybeSingle() {
+        return Promise.resolve({ data: null, error: null });
+      },
       select() {
         return this;
       },

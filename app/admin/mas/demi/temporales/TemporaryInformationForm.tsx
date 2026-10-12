@@ -97,8 +97,12 @@ export default function TemporaryInformationForm({ item }: { item?: FormItem | n
             maxLength={5000}
             rows={7}
             defaultValue={item?.details ?? ""}
-            placeholder="Incluye horarios, precio, ubicación, requisitos, forma de inscripción y cualquier condición importante."
+            placeholder="Incluye precio, días, horarios, requisitos y condiciones específicas del taller."
           />
+          <small>
+            Demi usa la ubicación y las formas de pago del estudio. Escríbelas aquí sólo si este
+            taller tiene una sede, cuenta o condición diferente.
+          </small>
         </label>
         <label>
           Estado
