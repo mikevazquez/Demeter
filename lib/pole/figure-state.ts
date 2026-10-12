@@ -9,13 +9,15 @@ import {
  * Estado de una figura para una alumna. Refleja exactamente la regla que valida el
  * servidor en private.pole_mark_block_reason (la UI sólo la muestra).
  */
-export type PoleFigureState =
-  | "lograda"
-  | "disponible"
-  | "bloqueada"
-  | "siguiente_nivel"
-  | "requiere_autorizacion"
-  | "autorizada";
+export const POLE_FIGURE_STATES = [
+  "lograda",
+  "disponible",
+  "bloqueada",
+  "siguiente_nivel",
+  "requiere_autorizacion",
+  "autorizada",
+] as const;
+export type PoleFigureState = (typeof POLE_FIGURE_STATES)[number];
 
 export type PoleFigureStatus = {
   state: PoleFigureState;
