@@ -99,6 +99,25 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
   },
   {
     type: "function",
+    name: "get_temporary_information",
+    description:
+      "Consulta eventos, talleres y promociones vigentes del estudio, junto con studio_defaults. Úsala para fechas, precio, horario, ubicación y cómo pagar un taller. El taller define sus datos específicos. Para ubicación, contacto y formas de pago usa los datos guardados del estudio en studio_defaults, salvo una excepción explícita en details; cada excepción sustituye sólo ese dato. No exijas repetir en el taller los datos habituales del estudio. Nunca tomes el precio de una clase o paquete regular si falta el precio del taller. Para otras políticas del estudio consulta get_policy_information. Sólo devuelve información publicada desde el inicio de promoción hasta el cierre de inscripción inclusive, o hasta el último día del evento si no hay cierre. Si no hay evento vigente, no lo ofrezcas; si falta un dato en ambas fuentes, reconoce el faltante. Explicar cómo pagar no autoriza preparar cobros, compras ni reservas. Para horarios semanales usa search_class_availability. No envía promociones proactivas.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {
+        topic: {
+          type: "string",
+          description:
+            "Tema o nombre que preguntó la persona, como 'taller de aro', 'horario' o 'promoción de flexibilidad'.",
+        },
+      },
+      required: ["topic"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
     name: "get_studio_information",
     description:
       "Consulta las disciplinas activas, preparación oficial para la primera clase, nombre, sede, domicilio, teléfono, correo y página web configurados. Úsala siempre al preguntar disciplinas o preparación, ubicación o contacto. active_disciplines define la oferta, aunque falten horarios. Si falta la preparación o el dato solicitado, reconoce el faltante y ejecuta escalate_to_human con human_requested para que el equipo responda la consulta; no inventes indicaciones.",

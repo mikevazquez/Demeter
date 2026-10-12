@@ -231,6 +231,10 @@ export default function Bank({
                 </select>
               </label>
               <label>
+                Fecha UTC de prueba para información temporal (opcional, Meta)
+                <input name="temporaryInformationNow" placeholder="2026-11-11T05:59:00.000Z" />
+              </label>
+              <label>
                 Adjunto simulado de Meta (Facebook o Instagram)
                 <select name="attachmentScenario" defaultValue="">
                   <option value="">Archivo cargado o mensaje escrito</option>

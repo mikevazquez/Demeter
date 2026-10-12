@@ -11,6 +11,7 @@ import type { MetaInboxWebhookConfig } from "./meta-inbox-channel";
 
 type Scope = {
   runId: string;
+  temporaryInformationNow?: string;
   studioId: string;
   supabase: SupabaseClient;
   config: MetaWhatsAppWebhookConfig;
