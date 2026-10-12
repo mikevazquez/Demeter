@@ -359,6 +359,8 @@ export default async function SessionDetailPage({
     attendance: "No se pudo registrar la asistencia.",
     walkin_invalid: "Completa los datos mínimos para registrar la walk-in.",
     minimum_override: "No se pudo cambiar la excepción del mínimo de reservas.",
+    minimum:
+      "El mínimo debe ser de 1 al cupo y la revisión debe programarse entre 15 minutos y 7 días antes.",
     minimum_review_already_completed: "La revisión automática de esta sesión ya terminó.",
     minimum_rule_disabled: "Esta sesión no tiene activa la regla de mínimo de reservas.",
     minimum_override_not_allowed: "La actividad no permite excepciones para esta regla.",
@@ -541,6 +543,7 @@ export default async function SessionDetailPage({
             <form action={setMinimumOverride} className="admin-minimum-override-form">
               <input type="hidden" name="session_id" value={sessionId} />
               <input type="hidden" name="return_to" value={returnTo} />
+              <input type="hidden" name="minimum_settings_present" value="1" />
               <input
                 type="hidden"
                 name="enabled"
@@ -653,6 +656,44 @@ export default async function SessionDetailPage({
                   />
                 </label>
               </div>
+
+              <fieldset className="admin-session-minimum-settings">
+                <legend>Mínimo de reservas para esta sesión</legend>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="minimum_reservations_enabled"
+                    defaultChecked={session.minimum_reservations_enabled}
+                  />
+                  Cancelar esta sesión si no alcanza el mínimo
+                </label>
+                <div className="admin-session-field-grid">
+                  <label>
+                    <span>Personas mínimas</span>
+                    <input
+                      name="minimum_reservations"
+                      type="number"
+                      min="1"
+                      max={session.capacity}
+                      defaultValue={session.minimum_reservations}
+                    />
+                  </label>
+                  <label>
+                    <span>Revisar antes de iniciar (minutos)</span>
+                    <input
+                      name="minimum_review_minutes_before"
+                      type="number"
+                      min="15"
+                      max="10080"
+                      defaultValue={session.minimum_review_minutes_before}
+                    />
+                  </label>
+                </div>
+                <small>
+                  Este ajuste solo cambia esta sesión; no modifica la actividad ni las demás
+                  sesiones.
+                </small>
+              </fieldset>
 
               <label className="admin-session-notes">
                 <span>Notas</span>

@@ -124,8 +124,35 @@ export async function updateSession(formData: FormData) {
   const capacity = Number(formData.get("capacity"));
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const scope = String(formData.get("scope") ?? "single");
+  const minimumSettingsProvided =
+    formData.has("minimum_settings_present") || formData.has("minimum_reservations_enabled");
+  const minimumReservationsEnabled =
+    String(formData.get("minimum_reservations_enabled") ?? "") === "on";
+  const minimumReservations = Number(formData.get("minimum_reservations"));
+  const minimumReviewMinutesBefore = Number(formData.get("minimum_review_minutes_before"));
   if (!sessionId || !startsLocal || !Number.isFinite(capacity) || capacity < 1)
     redirect(withQuery(returnUrl, "error", "edit"));
+  if (
+    minimumSettingsProvided &&
+    minimumReservationsEnabled &&
+    (!Number.isInteger(minimumReservations) ||
+      minimumReservations < 1 ||
+      minimumReservations > capacity ||
+      !Number.isInteger(minimumReviewMinutesBefore) ||
+      minimumReviewMinutesBefore < 15 ||
+      minimumReviewMinutesBefore > 10080)
+  ) {
+    redirect(withQuery(returnUrl, "error", "minimum"));
+  }
+  const minimumUpdate = minimumSettingsProvided
+    ? {
+        minimum_reservations_enabled: minimumReservationsEnabled,
+        minimum_reservations: Number.isInteger(minimumReservations) ? minimumReservations : 2,
+        minimum_review_minutes_before: Number.isInteger(minimumReviewMinutesBefore)
+          ? minimumReviewMinutesBefore
+          : 120,
+      }
+    : {};
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
   const { data: session } = await supabase
     .from("class_sessions")
@@ -193,7 +220,7 @@ export async function updateSession(formData: FormData) {
     }
     for (const item of future ?? []) {
       const nextStart = new Date(new Date(item.starts_at).getTime() + delta);
-      await supabase
+      const { error } = await supabase
         .from("class_sessions")
         .update({
           starts_at: nextStart.toISOString(),
@@ -203,9 +230,11 @@ export async function updateSession(formData: FormData) {
           capacity,
           notes,
           is_schedule_exception: false,
+          ...(item.id === sessionId ? minimumUpdate : {}),
         })
         .eq("id", item.id)
         .eq("studio_id", studio.id);
+      if (error) redirect(withQuery(returnUrl, "error", "edit"));
     }
     const [datePart, timePart] = startsLocal.split("T");
     const weekday = new Date(`${datePart}T12:00:00Z`).getUTCDay();
@@ -243,6 +272,7 @@ export async function updateSession(formData: FormData) {
         capacity,
         notes,
         is_schedule_exception: Boolean(session.recurring_schedule_id),
+        ...minimumUpdate,
       })
       .eq("id", sessionId)
       .eq("studio_id", studio.id);

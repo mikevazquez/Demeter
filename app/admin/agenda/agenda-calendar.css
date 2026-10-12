@@ -428,6 +428,57 @@
   font-style: normal;
 }
 
+.agenda-editor-minimum-status {
+  margin: 10px 20px 0;
+  padding: 9px 11px;
+  border: 1px solid #374352;
+  border-radius: 11px;
+  background: #121b26;
+  color: #d7dfeb;
+  font-size: 10px;
+}
+
+.agenda-editor-minimum {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+  margin: 2px 0 0;
+  padding: 12px;
+  border: 1px solid #374352;
+  border-radius: 14px;
+  background: #0e151e;
+}
+
+.agenda-editor-minimum legend {
+  padding: 0 5px;
+  color: #e0e6ee;
+  font-size: 9px;
+  font-weight: 760;
+}
+
+.agenda-editor-minimum-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c4cedb;
+  font-size: 10px;
+}
+
+.agenda-editor-minimum-toggle input {
+  accent-color: #ff0a8a;
+}
+
+.agenda-editor-minimum-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.agenda-editor-minimum > small {
+  color: #8f9bac;
+  font-size: 9px;
+}
+
 .agenda-editor-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
