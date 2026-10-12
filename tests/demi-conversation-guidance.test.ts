@@ -21,6 +21,15 @@ describe("Demi conversation guidance for UAT rules", () => {
     expect(guidance).toContain("ni digas que estás confirmando o apartando una reserva");
   });
 
+  it("reuses the WhatsApp prospect identity and never asks for the sender phone again", () => {
+    const guidance = conversationGuidance({ channel: "whatsapp", crmContactId: "crm-prospect-id" });
+
+    expect(guidance).toContain("Studio Flow ya buscó este número de WhatsApp");
+    expect(guidance).toContain("nunca vuelvas a pedirle su celular");
+    expect(guidance).toContain("solicita únicamente el nombre completo u otro dato que realmente falte");
+    expect(guidance).toContain("no digas que el portal, la compra o el pago quedaron hechos");
+  });
+
   it("requires enrollment renewal while preserving active package credits", () => {
     const guidance = conversationGuidance({
       testSimulation: { persona: "former_student" },
