@@ -30,6 +30,7 @@ export default async function CoursesWorkshopsPage() {
       .select("id,name,description")
       .eq("studio_id", ctx.studio.id)
       .eq("active", true)
+      .is("program_id", null)
       .order("name"),
     ctx.supabase
       .from("recurring_schedules")
@@ -42,6 +43,12 @@ export default async function CoursesWorkshopsPage() {
       .eq("studio_id", ctx.studio.id),
   ]);
 
+  const { data: programs } = await ctx.supabase
+    .from("activity_programs")
+    .select("id,name,kind")
+    .eq("studio_id", ctx.studio.id)
+    .eq("active", true)
+    .order("name");
   const scheduleCountByActivity = new Map<string, number>();
   for (const schedule of schedules ?? []) {
     scheduleCountByActivity.set(
@@ -81,6 +88,24 @@ export default async function CoursesWorkshopsPage() {
         <p>Elige la actividad a la que quieres vincular el paquete.</p>
       </header>
 
+      <section className="package-category-grid" aria-label="Programas con fechas concretas">
+        {(programs ?? []).map((program) => (
+          <Link
+            key={program.id}
+            href={`/admin/actividades/programas/${program.id}`}
+            className="package-category-card is-purple"
+          >
+            <span className="package-category-copy">
+              <strong>{program.name}</strong>
+              <span>Comprar completo o elegir una fecha</span>
+            </span>
+            <span className="package-category-action">Ver programa ›</span>
+          </Link>
+        ))}
+        <Link href="/admin/actividades/programas/nuevo" className="package-category-card is-purple">
+          ＋ Crear taller o evento
+        </Link>
+      </section>
       <section className="packages-v2-info" aria-label="Paquetes por actividad">
         <span className="packages-v2-info-icon" aria-hidden="true">
           i

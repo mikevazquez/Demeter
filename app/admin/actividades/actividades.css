@@ -1122,6 +1122,312 @@
   }
 }
 
+/* Program enrollment summary · clear hierarchy on desktop and mobile. */
+.program-detail-page {
+  gap: 16px;
+}
+
+.program-detail-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px 24px;
+  padding: 24px;
+  border: 1px solid var(--activities-line);
+  border-radius: 22px;
+  background: var(--activities-card);
+  box-shadow: 0 12px 32px rgb(16 32 58 / 5%);
+}
+
+.program-detail-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}
+
+.program-detail-heading h1 {
+  flex: 1 0 100%;
+  margin: 2px 0 0;
+  color: var(--activities-text);
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
+}
+
+.program-detail-kind,
+.program-detail-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.program-detail-kind {
+  background: var(--activities-accent-soft);
+  color: var(--activities-accent-strong);
+}
+
+.program-detail-count {
+  background: #f1f4f8;
+  color: var(--activities-muted);
+}
+
+.program-detail-description {
+  grid-column: 1;
+  margin: -4px 0 0;
+  color: var(--activities-muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.program-detail-price {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+  min-width: 158px;
+  padding: 15px 17px;
+  border-radius: 17px;
+  background: #f3f8f6;
+}
+
+.program-detail-price span {
+  color: var(--activities-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.program-detail-price strong {
+  color: var(--activities-text);
+  font-size: 24px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.program-enrollment-success {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px solid #a9e4cf;
+  border-radius: 16px;
+  background: #effaf5;
+  color: #126b50;
+}
+
+.program-enrollment-success strong {
+  font-size: 16px;
+}
+
+.program-enrollment-success span {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.program-dates-section {
+  display: grid;
+  gap: 12px;
+}
+
+.program-dates-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.program-dates-heading h2 {
+  margin: 0;
+  color: var(--activities-text);
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.program-dates-heading span {
+  color: var(--activities-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.program-dates-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--activities-line);
+  border-radius: 17px;
+  background: var(--activities-card);
+}
+
+.program-dates-table {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.program-dates-table th,
+.program-dates-table td {
+  padding: 14px 15px;
+  border-bottom: 1px solid var(--activities-line);
+  vertical-align: middle;
+}
+
+.program-dates-table th {
+  background: #f7f9fb;
+  color: var(--activities-muted);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.program-dates-table td {
+  color: var(--activities-text);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.program-dates-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.program-dates-table td:first-child a {
+  color: var(--activities-accent-strong);
+  font-weight: 750;
+}
+
+@media (max-width: 760px) {
+  .program-detail-page {
+    gap: 13px;
+  }
+
+  .program-detail-summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 18px;
+    border-radius: 19px;
+  }
+
+  .program-detail-heading {
+    gap: 8px;
+  }
+
+  .program-detail-heading h1 {
+    margin-top: 4px;
+    font-size: 30px;
+    line-height: 1.08;
+  }
+
+  .program-detail-kind,
+  .program-detail-count {
+    min-height: 28px;
+    font-size: 12px;
+  }
+
+  .program-detail-description {
+    grid-column: 1;
+    margin: 0;
+    font-size: 14px;
+  }
+
+  .program-detail-price {
+    grid-column: 1;
+    grid-row: auto;
+    justify-items: start;
+    gap: 3px;
+    min-width: 0;
+    padding: 12px 14px;
+  }
+
+  .program-detail-price span {
+    font-size: 11px;
+  }
+
+  .program-detail-price strong {
+    font-size: 22px;
+  }
+
+  .program-dates-heading h2 {
+    font-size: 18px;
+  }
+
+  .program-dates-table-wrap {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .program-dates-table {
+    display: block;
+    min-width: 0;
+  }
+
+  .program-dates-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  .program-dates-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .program-dates-table tbody tr {
+    display: grid;
+    gap: 0;
+    padding: 8px 14px;
+    border: 1px solid var(--activities-line);
+    border-radius: 16px;
+    background: var(--activities-card);
+    box-shadow: 0 5px 16px rgb(16 32 58 / 4%);
+  }
+
+  .program-dates-table th,
+  .program-dates-table td {
+    padding: 9px 0;
+    border-bottom: 1px solid #edf1f5;
+  }
+
+  .program-dates-table td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    font-size: 14px;
+    text-align: right;
+  }
+
+  .program-dates-table td::before {
+    flex: 0 0 auto;
+    color: var(--activities-muted);
+    content: attr(data-label);
+    font-size: 12px;
+    font-weight: 750;
+    text-align: left;
+  }
+
+  .program-dates-table td:first-child a {
+    max-width: 65%;
+  }
+
+  .program-dates-table tbody tr:last-child td {
+    border-bottom: 1px solid #edf1f5;
+  }
+
+  .program-dates-table tbody tr td:last-child {
+    border-bottom: 0;
+  }
+}
+
 /* CANCELACION-MIN-01 · mínimo de reservas */
 .activities-minimum-card {
   display: grid;
@@ -1549,6 +1855,16 @@
   display: grid;
   place-items: center;
   border-radius: 18px;
+}
+
+.activities-v2-card-icon.program-card-icon.is-workshop {
+  background: var(--activities-blue-soft);
+  color: var(--activities-blue);
+}
+
+.activities-v2-card-icon.program-card-icon.is-event {
+  background: var(--activities-purple-soft);
+  color: var(--activities-purple);
 }
 
 .activities-v2-card-main {

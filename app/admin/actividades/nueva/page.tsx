@@ -60,6 +60,28 @@ export default async function NewActivityPage({
         </div>
       </header>
 
+      <section className="activities-stage" aria-label="Tipo de actividad">
+        <h2>¿Qué quieres crear?</h2>
+        <p>
+          Clase normal: horarios semanales. Taller o evento: fechas concretas, programa y precios
+          propios.
+        </p>
+        <p>
+          <Link
+            className="activities-next-button"
+            href="/admin/actividades/programas/nuevo?kind=workshop"
+          >
+            Taller / curso
+          </Link>{" "}
+          <Link
+            className="activities-next-button"
+            href="/admin/actividades/programas/nuevo?kind=event"
+          >
+            Evento especial
+          </Link>
+        </p>
+        <h3>Clase normal</h3>
+      </section>
       <ActivityWizard
         locale={studio.locale}
         currency={studio.currency}

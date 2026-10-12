@@ -32,6 +32,25 @@ function ActivityIcon() {
   );
 }
 
+function ProgramIcon() {
+  return (
+    <svg
+      width="30"
+      height="30"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="5" width="18" height="16" rx="3" />
+      <path d="M16 3v4M8 3v4M3 10h18M8 14h3M8 17h6" />
+    </svg>
+  );
+}
+
 export default async function ActivitiesPage() {
   const { supabase, studio, can } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
   const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
@@ -43,6 +62,7 @@ export default async function ActivitiesPage() {
         "id,name,description,duration_minutes,capacity,active,drop_in_price_minor,requires_resource,color_hex",
       )
       .eq("studio_id", studio.id)
+      .is("program_id", null)
       .order("active", { ascending: false })
       .order("name"),
     supabase
@@ -61,6 +81,26 @@ export default async function ActivitiesPage() {
     schedulesByActivity.set(schedule.template_id, current);
   }
 
+  const { data: programs } = await supabase
+    .from("activity_programs")
+    .select("id,name,kind,description,active")
+    .eq("studio_id", studio.id)
+    .order("created_at", { ascending: false });
+  const programIds = (programs ?? []).map((program) => program.id);
+  const { data: programSessions } = programIds.length
+    ? await supabase
+        .from("activity_program_sessions")
+        .select("program_id")
+        .eq("studio_id", studio.id)
+        .in("program_id", programIds)
+    : { data: [] };
+  const sessionCountByProgram = new Map<string, number>();
+  for (const session of programSessions ?? []) {
+    sessionCountByProgram.set(
+      session.program_id,
+      (sessionCountByProgram.get(session.program_id) ?? 0) + 1,
+    );
+  }
   const activeActivities = (activities ?? []).filter((item) => item.active);
   const inactiveActivities = (activities ?? []).filter((item) => !item.active);
 
@@ -140,6 +180,43 @@ export default async function ActivitiesPage() {
         ) : null}
       </header>
 
+      <section className="activities-v2-section">
+        <h2>Talleres y eventos</h2>
+        <div className="activities-v2-list">
+          {(programs ?? []).map((program) => (
+            <Link
+              className={`activities-v2-card${program.active ? "" : " is-inactive"}`}
+              href={`/admin/actividades/programas/${program.id}`}
+              key={program.id}
+            >
+              <span
+                className={`activities-v2-card-icon program-card-icon ${program.kind === "event" ? "is-event" : "is-workshop"}`}
+              >
+                <ProgramIcon />
+              </span>
+              <span className="activities-v2-card-main">
+                <span className="activities-v2-card-title">
+                  <strong>{program.name}</strong>
+                  <small>{program.active ? "Activo" : "Inactivo"}</small>
+                </span>
+                <span className="activities-v2-card-description">
+                  {program.description || "Programa con fechas especiales."}
+                </span>
+                <span className="activities-v2-schedule-row">
+                  <span>{sessionCountByProgram.get(program.id) ?? 0} fechas programadas</span>
+                </span>
+                <span className="activities-v2-card-meta">
+                  <span>{program.kind === "event" ? "Evento especial" : "Taller / curso"}</span>
+                  <span>Ver fechas, cupos y precios</span>
+                </span>
+              </span>
+              <span className="activities-v2-chevron" aria-hidden="true">
+                ›
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
       <section className="activities-v2-section">
         <div className="activities-v2-section-heading">
           <div>
