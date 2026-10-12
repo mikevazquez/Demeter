@@ -37,4 +37,4 @@ export default async function ContactPage({
     supabase
       .from("person_contacts")
       .select("kind,value,is_primary")
-      .eq("studio_id", stud¶»§q«^
+      .eq("studio_id", studÖ»Ç±Ëž
