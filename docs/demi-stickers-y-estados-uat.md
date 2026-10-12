@@ -12,16 +12,16 @@ El sticker es conversacional y no confirma reservas, cancelaciones, compras o pa
 
 Pruebas automatizadas: normalización estática, animación real de tres fotogramas, archivo corrupto, MIME disfrazado, tamaño, contexto conversacional, bloqueo de acciones, registro de uso y presupuestos. Banco UAT: cargar WebP y marcar «Enviar como sticker», canal WhatsApp. Transporte capturado: no envía a alumnos reales.
 
-| Caso | Validación técnica | UAT ejecutado por Codex |
-| --- | --- | --- |
-| STK-01 saludo | Aprobada | Satisfactorio: saludo natural |
-| STK-02 agradecimiento | Aprobada | Satisfactorio: respuesta breve, sin venta |
-| STK-03 animado | Aprobada: hasta tres fotogramas | Satisfactorio: reconoce saludo, agradecimiento y despedida |
-| STK-04 gesto ambiguo | Aprobada: sin acciones | Satisfactorio: admite incertidumbre o responde con un emoji sin inventar datos |
-| STK-05 «sí» no confirma acciones | Aprobado bloqueo de confirmación y herramientas | Satisfactorio: pide la intención por escrito; no ejecuta acción |
-| STK-06 solicitud de reserva/pago | Aprobado bloqueo de herramientas | Satisfactorio: pide fecha/horario por escrito; sin reserva ni pago |
-| STK-07 archivo corrupto | Aprobado rechazo de contenido | Satisfactorio: pide aclaración y conserva revisión de archivo |
-| STK-08 webhook duplicado | Aprobada deduplicación | Satisfactorio: duplicate_already_handled; sin nueva entrega |
+| Caso                             | Validación técnica                              | UAT ejecutado por Codex                                                        |
+| -------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------ |
+| STK-01 saludo                    | Aprobada                                        | Satisfactorio: saludo natural                                                  |
+| STK-02 agradecimiento            | Aprobada                                        | Satisfactorio: respuesta breve, sin venta                                      |
+| STK-03 animado                   | Aprobada: hasta tres fotogramas                 | Satisfactorio: reconoce saludo, agradecimiento y despedida                     |
+| STK-04 gesto ambiguo             | Aprobada: sin acciones                          | Satisfactorio: admite incertidumbre o responde con un emoji sin inventar datos |
+| STK-05 «sí» no confirma acciones | Aprobado bloqueo de confirmación y herramientas | Satisfactorio: pide la intención por escrito; no ejecuta acción                |
+| STK-06 solicitud de reserva/pago | Aprobado bloqueo de herramientas                | Satisfactorio: pide fecha/horario por escrito; sin reserva ni pago             |
+| STK-07 archivo corrupto          | Aprobado rechazo de contenido                   | Satisfactorio: pide aclaración y conserva revisión de archivo                  |
+| STK-08 webhook duplicado         | Aprobada deduplicación                          | Satisfactorio: duplicate_already_handled; sin nueva entrega                    |
 
 Los ocho escenarios observados fueron satisfactorios con el modelo real y transporte capturado. La aceptación final de Mike está pendiente. STK-05 comprueba el bloqueo de confirmaciones pendientes en tests de runtime; en el recorrido vivo no se creó una nueva reserva pendiente. Archivos vencidos/no descargables no se reprodujeron separadamente en el recorrido vivo. No se afirma entrega externa de Meta.
 
@@ -63,18 +63,26 @@ Referencias: [Meta Messages Object](https://www.postman.com/meta/whatsapp-busine
 - La creación de un nuevo estudio de prueba falló con 23505; se recuperó la ejecución aislada existente con lease, sin borrar ni sustituir su historial.
 - Se retiró el disparador temporal de UAT del build al terminar. El runner queda como herramienta de prueba manual limitada a la rama de stickers y al sandbox.
 - [Evidencia detallada](./demi-sticker-uat-evidence-20261012.json). Fuente: demi_uat_artifacts del sandbox.
-- La suite anterior de 1,252 tests permanece como evidencia técnica de la implementación; el build final aprobó TypeScript. No se afirma un nuevo resultado de suite completa que no pueda recuperarse.
+- Verificación final repetida sobre la rama: 190 archivos y 1,252 tests aprobados; typecheck aprobado, lint sin errores (19 advertencias preexistentes) y formato corregido/verificado. El build de UAT también aprobó TypeScript.
 
 ## Lo que falta para estados de WhatsApp
 
 La tabla de proveedores del sandbox tiene Meta WhatsApp habilitado, pero esa etiqueta no comprueba que exista un número separado ni que el webhook real esté dirigido al sandbox. Antes de una respuesta real a un estado hay que verificar el enrutamiento de Meta y contar con un estado y número de prueba autorizados. No se cambió el enrutamiento de producción. No pedir una respuesta al número real sin tener primero una captura que conserve su contexto: la integración actual lo descarta.
 
-| Caso de estados | Estado |
-| --- | --- |
-| EST-01 recibir respuesta a estado y conservar contexto original | Pendiente de muestra real |
-| EST-02 recuperar la foto o texto referenciado | Pendiente de EST-01 |
-| EST-03 distinguir dos estados distintos | Pendiente de muestra real |
-| EST-04 interpretar «yo a las ocho» y confirmar clase/día | Pendiente de contenido recuperable |
-| EST-05 estado vencido o referencia inaccesible | Pendiente de muestra real |
+| Caso de estados                                                 | Estado                             |
+| --------------------------------------------------------------- | ---------------------------------- |
+| EST-01 recibir respuesta a estado y conservar contexto original | Pendiente de muestra real          |
+| EST-02 recuperar la foto o texto referenciado                   | Pendiente de EST-01                |
+| EST-03 distinguir dos estados distintos                         | Pendiente de muestra real          |
+| EST-04 interpretar «yo a las ocho» y confirmar clase/día        | Pendiente de contenido recuperable |
+| EST-05 estado vencido o referencia inaccesible                  | Pendiente de muestra real          |
 
 Stickers y estados son alcances separados. Los estados no forman parte de una promoción de stickers.
+
+## Diagnóstico real de conexión para estados
+
+Se consultó Meta desde un build de preview con la configuración sandbox y sin enviar mensajes ni cambiar suscripciones. Meta rechazó la credencial con HTTP 401, código 190, subcódigo 460 (`meta_graph_http_401_code_190_subcode_460`). No se obtuvo un callback verificado. La evidencia se guarda como `whatsapp_status_routing_diagnostic` en la ejecución UAT.
+
+Bloqueo concreto: renovar la conexión/credencial de Meta del sandbox mediante la configuración segura de la integración. Después, verificar que el número de prueba y callback sean aislados, publicar un estado ficticio y responder desde un contacto de prueba autorizado para inspeccionar `context` y la referencia al contenido. No se necesitan tokens en el chat. La integración de estados sigue sin afirmarse viable hasta esa prueba.
+
+La ejecución de diagnóstico usó una orden de build específica del deployment; no cambió el build del proyecto ni la conexión de producción. Código diagnosticado: 630d832b8ec5852230913e9db45c963330c8177b.
