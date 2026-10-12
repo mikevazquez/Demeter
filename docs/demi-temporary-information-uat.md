@@ -6,7 +6,7 @@ Demi consulta eventos, talleres y promociones guardados por estudio. Responde de
 
 ## Cierre UAT — 12 de octubre de 2026, America/Mexico_City
 
-**Validación técnica: 13/13 aprobadas. UAT conversacional/UI ejecutado por Codex: 13/13 satisfactorios. Aceptación final de Mike: **aprobada el 12 de octubre de 2026**. Autorización de promoción: **pendiente**. Producción sin modificaciones.**
+**Validación técnica: 13/13 aprobadas. UAT conversacional/UI ejecutado por Codex: 13/13 satisfactorios. Aceptación final de Mike: **aprobada el 12 de octubre de 2026**. Autorización de promoción: **otorgada el 12 de octubre de 2026**. Producción: **promovida y despliegue READY verificado**.**
 
 “Aprobado en ejecución” describe lo comprobado por Codex; no sustituye la aceptación final de Mike ni autoriza producción.
 
@@ -35,7 +35,7 @@ Mike revisó el preview y pidió que ubicación y pagos se tomen del estudio cua
 
 Las cinco conversaciones recorrieron los receptores reales con transporte capturado: HTTP 200, outcome replied. Consulta de integridad: cero ventas, reservas o intenciones de transferencia nuevas durante estas consultas. El formulario explica que ubicación y pago sólo deben repetirse si son diferentes.
 
-[Evidencia del ajuste](./demi-temporary-information-uat-evidence-20261012.json). No se modificó producción ni se copiaron fixtures a ella. Mike aprobó este ajuste el 12 de octubre de 2026 mediante «Aprobado». La autorización explícita de promoción permanece pendiente.
+[Evidencia del ajuste](./demi-temporary-information-uat-evidence-20261012.json). No se modificó producción ni se copiaron fixtures a ella. Mike aprobó este ajuste el 12 de octubre de 2026 mediante «Aprobado». La autorización explícita fue recibida el 12 de octubre de 2026; ver registro de promoción.
 
 ## Preview y conexión comprobada
 
@@ -68,11 +68,11 @@ Las cinco conversaciones recorrieron los receptores reales con transporte captur
 - La revisión de UI fue de escritorio. No se afirma UAT móvil ni recepción externa de Meta.
 - Al vencer un evento en una conversación ya iniciada, Demi vuelve a consultar y deja de ofrecerlo. Puede redactar una disculpa por la respuesta anterior, aunque hubiera sido vigente; mejora de copy posible, sin bloqueo funcional de este alcance.
 
-## Promoción pendiente
+## Promoción autorizada y ejecutada
 
 Migración: supabase/migrations/20261012020450_demi_temporary_information.sql.
 
-La comparación con main mantiene el alcance en información temporal, configuración y herramientas UAT. UAT final aceptado por Mike el 12 de octubre de 2026. Antes de promover: autorización explícita vinculada a este alcance y versión, y revisión de main y del destino.
+La comparación con main mantiene el alcance en información temporal, configuración y herramientas UAT. UAT final aceptado por Mike el 12 de octubre de 2026. Promoción explícitamente autorizada por Mike y ejecutada tras revisar main y el destino de producción.
 
 Reversión: regresar al despliegue previo y conservar la tabla e históricos. No borrar registros para ocultar incidencias.
 
@@ -83,10 +83,18 @@ Reversión: regresar al despliegue previo y conservar la tabla e históricos. No
 - Instrucción: «Aprobado».
 - Alcance: información temporal de Demi, incluyendo herencia de ubicación y pagos del estudio con excepciones específicas del taller; TEMP-01 a TEMP-13.
 - Versión revisada: 635a753c5012801cd0e9f0d417383d90fb597a97; matriz y evidencia en 1a34586795df3d8e400a1134a89bf61eef0d18ac.
-- Estado: UAT aprobado por el usuario. Promoción pendiente de autorización explícita.
+- Estado: UAT aprobado por el usuario. Promoción autorizada y ejecutada.
 
 
 ## Autorización de promoción — 2026-10-12
 
 Mike autorizó explícitamente: «Autorizo promoción de información temporal de Demi».
 La migración aditiva se aplicó a producción (qfhojvgvhrbautvczffq). Candidato integrado con main: 1,246 tests/189 archivos aprobados, typecheck aprobado y 10 pruebas específicas de compatibilidad/herencia aprobadas. Se conserva la compatibilidad del esquema antiguo sin assistant_key. No se copian fixtures UAT. Promoción mediante PR #271 y despliegue de main con variables de producción. Rollback previsto: dpl_7tFzKhL2Km3KEa7qneQAcZJAwphR; conservar tabla e historial.
+
+## Resultado de promoción — 2026-10-12
+
+- PR #271 fusionado; commit funcional de producción: 2651151bcbbaa51bf0eef75bd801932c846d5e7b.
+- Vercel: dpl_85C8bdCkDnagUWK5WPLj71SRCLPw, target production, READY; dominio demeterfitness.com.
+- Migración aplicada; RLS activo y tres políticas por capacidad settings.write. Tabla nueva con cero registros: no se copiaron fixtures sandbox ni se alteraron históricos existentes.
+- Ruta /admin/mas/demi/temporales comprobada tras publicación: redirige correctamente a /login/studio. Sin sesión autenticada de producción no se afirma revisión visual del formulario ni conversación real de Meta en producción; esas pruebas corresponden al UAT sandbox aprobado.
+- Compatibilidad de configuración sin assistant_key comprobada con tests; typecheck, formato y lint del ajuste aprobados.
