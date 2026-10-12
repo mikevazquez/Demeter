@@ -396,7 +396,7 @@ export async function POST(request: Request) {
         : null;
   if (!unsignedProvider) return json({ error: "unknown_provider" }, 400);
   let signatureSecret = webhookConfig.appSecret;
-  if (unsignedProvider === "instagram") {
+  if (unsignedProvider === "instagram" && !demiUatScope(studioId)?.metaInboxConfig) {
     // Instagram-specific secret is stored in a separate vault record.
     const { data: instagramSecret, error: instagramSecretError } = await supabase.rpc(
       "service_get_meta_instagram_app_secret",
@@ -891,6 +891,7 @@ export async function POST(request: Request) {
               name: runtimeContext.studio.name,
               timezone: runtimeContext.studio.timezone,
               currency: runtimeContext.studio.currency,
+              temporaryInformationNow: demiUatScope(studioId)?.temporaryInformationNow,
             },
             config: {
               assistant_name: runtimeContext.config.assistant_name,
