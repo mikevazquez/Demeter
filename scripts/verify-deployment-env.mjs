@@ -33,4 +33,3 @@ if (vercelEnvironment === "preview") {
 } else if (vercelEnvironment === "production" && supabaseUrl === SANDBOX_URL) {
   fail("Vercel Production must never use the Studio Flow Sandbox Supabase project.");
 }
-
