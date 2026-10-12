@@ -104,7 +104,8 @@ describe("Temporary information inherits studio defaults", () => {
     expect(ctx.calls).toContainEqual(["studio_payment_methods", "studio_id", "studio-1"]);
     expect(ctx.calls).toContainEqual(["studio_payment_methods", "active", true]);
     expect(ctx.calls).toContainEqual(["studio_bank_transfer_settings", "studio_id", "studio-1"]);
-    expect(result.information_priority).toContain("Nunca sustituyas un precio ausente");
+    expect(result.items?.[0]).not.toHaveProperty("price_minor");
+    expect(ctx.calls.some(([table]) => table === "product_templates")).toBe(false);
   });
 
   it("preserves explicit workshop exceptions separately from the studio fallback", async () => {
@@ -115,7 +116,9 @@ describe("Temporary information inherits studio defaults", () => {
     expect(result.studio_defaults?.payment).toMatchObject({
       bank_transfer: { account_number: "0000" },
     });
-    expect(result.information_priority).toContain("una sede distinta no cambia las formas de pago");
+    expect(result.studio_defaults?.information).toMatchObject({
+      primary_location: { address: "Domicilio ficticio UAT" },
+    });
   });
 
   it("does not expose disabled transfer details", async () => {
