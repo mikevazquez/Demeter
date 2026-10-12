@@ -30,7 +30,7 @@ export async function sendDemiReceipt(formData: FormData) {
     return { ok: false as const, error: "receipt_invalid_file" };
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   const { data: config } = await supabase
     .from("assistant_configs")
     .select("mode")

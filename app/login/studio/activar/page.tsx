@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { completeStudioPasswordActivation } from "@/app/auth/actions";
+import { canActivateStudioAccount } from "@/lib/saas/studio-activation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { createClient } from "@/lib/supabase/server";
 import { PendingSubmitButton } from "../../pending-submit-button";
@@ -54,7 +55,7 @@ export default async function StudioActivationPage({
     redirect("/login/studio?error=access");
   }
 
-  if (!roles.includes("instructor")) {
+  if (!canActivateStudioAccount(roles)) {
     await supabase.auth.signOut();
     redirect("/login/studio?error=activation");
   }
@@ -64,8 +65,8 @@ export default async function StudioActivationPage({
   return (
     <main className="auth-shell">
       <section className="auth-card">
-        <p className="eyebrow">DEMETER</p>
-        <h1 className="auth-title">Activa tu acceso a Demeter</h1>
+        <p className="eyebrow">STUDIO FLOW</p>
+        <h1 className="auth-title">Activa tu acceso al estudio</h1>
         <p className="auth-copy">
           Es tu primer ingreso. Crea una contraseña personal para continuar.
         </p>

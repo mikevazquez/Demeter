@@ -5,7 +5,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 export async function saveDemiAutomaticPayment(form: FormData) {
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   const { error } = await supabase.rpc("admin_set_demi_mercadopago", {
     p_studio: studio.id,
     p_enabled: form.get("automatic_enabled") === "on",
@@ -16,7 +16,7 @@ export async function saveDemiAutomaticPayment(form: FormData) {
 }
 
 export async function saveFirstClassPaymentLink(form: FormData) {
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   const amount = Number(String(form.get("amount") ?? ""));
   const { error } = await supabase.rpc("admin_save_demi_first_class_payment_link", {
     p_studio: studio.id,

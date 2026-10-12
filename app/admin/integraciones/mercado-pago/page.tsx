@@ -32,7 +32,7 @@ export default async function MercadoPagoIntegrationPage({
   }>;
 }) {
   const query = await searchParams;
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   const automatic = await supabase
     .from("demi_mercadopago_settings")
     .select("enabled")

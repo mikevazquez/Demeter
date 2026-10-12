@@ -147,17 +147,21 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         ...(can(CAPABILITIES.INSTRUCTORS_READ)
           ? [{ href: "/admin/instructores", label: "Equipo", enabled: true }]
           : []),
-        ...(can(CAPABILITIES.AUTOMATIONS_READ)
+        ...(can(CAPABILITIES.NOTIFICATIONS_READ)
           ? [{ href: "/admin/notificaciones", label: "Notificaciones", enabled: true }]
           : []),
         ...(membership.role === "owner"
           ? [
-              {
-                href: "/admin/integraciones",
-                label: "Integraciones",
-                enabled: true,
-                secondary: true,
-              },
+              ...(can(CAPABILITIES.INTEGRATIONS_READ)
+                ? [
+                    {
+                      href: "/admin/integraciones",
+                      label: "Integraciones",
+                      enabled: true,
+                      secondary: true,
+                    },
+                  ]
+                : []),
               {
                 href: "/admin/mas",
                 label: "Más",
@@ -181,7 +185,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
     can(CAPABILITIES.EVALUATIONS_READ) ||
     can(CAPABILITIES.PRODUCTS_READ) ||
     can(CAPABILITIES.INSTRUCTORS_READ) ||
-    can(CAPABILITIES.AUTOMATIONS_READ) ||
+    can(CAPABILITIES.NOTIFICATIONS_READ) ||
     can(CAPABILITIES.REPORTS_READ) ||
     membership.role === "owner";
 

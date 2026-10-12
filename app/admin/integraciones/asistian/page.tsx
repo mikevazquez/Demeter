@@ -48,7 +48,7 @@ export default async function AsistianIntegrationPage({
     status?: string;
   }>;
 }) {
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   const query = await searchParams;
 
   const receiverUrl = `${env.supabaseUrl.replace(

@@ -29,7 +29,7 @@ describe("ADMIN-UX-04 secondary admin visual homologation", () => {
   it("preserves existing secondary-screen capabilities", () => {
     expect(more).toContain("CAPABILITIES.PRODUCTS_READ");
     expect(more).toContain("CAPABILITIES.INSTRUCTORS_READ");
-    expect(more).toContain("CAPABILITIES.AUTOMATIONS_READ");
+    expect(more).toContain("CAPABILITIES.NOTIFICATIONS_READ");
     expect(more).toContain("CAPABILITIES.REWARDS_READ");
     expect(products).toContain('getAdminContext("products.read")');
     expect(team).toContain("createInstructor");

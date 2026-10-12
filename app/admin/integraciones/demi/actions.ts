@@ -35,7 +35,7 @@ export async function sendDemiMessage(input: SendDemiInput) {
     return { ok: false as const, error: "invalid_message" };
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   const { data: config, error: configError } = await loadDemiRuntimeConfig(supabase, studio.id);
 
   if (configError || !config) {

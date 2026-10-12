@@ -22,7 +22,7 @@ function safeWebhookUrl(value: string) {
 }
 
 export async function saveAsistianToStudioReceiverSecret(formData: FormData) {
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   const signingSecret = String(formData.get("provider_signing_secret") ?? "").trim();
 
   if (signingSecret.length < 12) {
@@ -42,7 +42,7 @@ export async function saveAsistianToStudioReceiverSecret(formData: FormData) {
 }
 
 export async function saveAsistianServiceMapping(formData: FormData) {
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   const serviceId = String(formData.get("service_id") ?? "").trim();
   const serviceName = String(formData.get("service_name") ?? "").trim();
   const classTemplateId = String(formData.get("class_template_id") ?? "").trim();
@@ -66,7 +66,7 @@ export async function saveAsistianServiceMapping(formData: FormData) {
 }
 
 export async function sendAsistianMappingProbe(formData: FormData) {
-  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
 
   const webhookUrl = safeWebhookUrl(String(formData.get("test_webhook_url") ?? ""));
   if (!webhookUrl) {
@@ -121,7 +121,7 @@ export async function sendAsistianMappingProbe(formData: FormData) {
 }
 
 export async function sendAsistianHandshake(formData: FormData) {
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
 
   const webhookUrl = safeWebhookUrl(String(formData.get("webhook_url") ?? ""));
   if (!webhookUrl) {

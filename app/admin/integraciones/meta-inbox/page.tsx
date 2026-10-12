@@ -32,7 +32,7 @@ export default async function MetaInboxIntegrationPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = (await searchParams) ?? {};
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
 
   const [{ data: summaryData }, { data: assistantConfig }] = await Promise.all([
     supabase.rpc("admin_get_meta_inbox_connection_summary", {
