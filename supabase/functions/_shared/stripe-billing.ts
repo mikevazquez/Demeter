@@ -43,20 +43,22 @@ export async function getAuthenticatedUser(request: Request) {
   const supabaseUrl = requiredEnv("SUPABASE_URL");
   const anonKey = requiredEnv("SUPABASE_ANON_KEY");
   const authorization = request.headers.get("authorization");
+  const token = authorization?.match(/^Bearer\s+(\S+)$/i)?.[1];
 
-  if (!supabaseUrl || !anonKey || !authorization) {
+  if (!supabaseUrl || !anonKey || !token) {
     return { user: null, client: null, error: "unauthenticated" } as const;
   }
 
   const client = createClient(supabaseUrl, anonKey, {
-    global: { headers: { authorization } },
+    // Match the SDK's canonical header so its anon default cannot be appended.
+    global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
   const {
     data: { user },
     error,
-  } = await client.auth.getUser();
+  } = await client.auth.getUser(token);
 
   return {
     user: error ? null : user,
