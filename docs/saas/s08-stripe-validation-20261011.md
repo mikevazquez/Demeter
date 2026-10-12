@@ -1,6 +1,6 @@
 # S08 · Stripe Sandbox · 2026-10-11
 
-Estado actual: **bloqueado por clave API Stripe inválida en Edge Functions**. S08 no está cerrado. El bloqueo de origen descrito más abajo ya fue resuelto; ver actualización al final.
+Estado actual: **verificado técnicamente en Sandbox**. Aceptación funcional pendiente. Los bloqueos descritos más abajo fueron resueltos; ver cierre al final.
 
 ## Conexión y catálogo
 
@@ -62,3 +62,22 @@ La UI vuelve a rechazar la contratación, ahora después de crear un intento: `s
 Acción pendiente: actualizar `STRIPE_SECRET_KEY` en Supabase Sandbox con una clave API válida del Sandbox Stripe `acct_1TwhQF6zvrymwOJv` (preferiblemente restringida con permisos de billing necesarios). No usar una clave Live, publishable, un signing secret `whsec_` ni el nombre de una variable. No compartir la clave en el chat o Git. Repetir Checkout y portal después de guardar. No se creó sesión Checkout, suscripción ni cargo.
 
 Reverificación tras el siguiente guardado: Auth pasa y el intento llega a Stripe, pero continúa `502 stripe_checkout_failed`. El error de Stripe identifica que la credencial proporcionada tiene formato de URL HTTPS, no de clave API. Se solicita reemplazar únicamente `STRIPE_SECRET_KEY` con la clave API de pruebas; el origen de retorno permanece en su secreto separado. No se creó sesión Checkout, suscripción ni cargo.
+
+## Cierre técnico tras corregir la clave API
+
+La nueva credencial permite crear Checkout. Se comprobó después la ruta autenticada real del Preview: seleccionar estudio S08 → `/admin/suscripcion` → Elegir Core → `checkout.stripe.com`, con Sandbox visible. Se pagó únicamente con la tarjeta sintética Stripe `4242`, vencimiento 12/2030 y datos ficticios de facturación. El navegador volvió a `/admin/suscripcion?checkout=success` en el Preview.
+
+Stripe MCP confirmó `livemode=false`, `status=complete`, `payment_status=paid`, moneda base `mxn`, `amount_total=89900`:
+
+- Checkout UI: `cs_test_a1BytSgJ74b33rITwssdRRXdB4upOjIuvahj7rRmmhdFSktz6P2irniqDy`.
+- Customer: `cus_VQQWbikUPpBcQK`.
+- Subscription: `sub_1UPZhV6zvrymwOJvPQ1POl4H`.
+- Invoice: `in_1UPZhU6zvrymwOJvYn250Tp3`.
+
+Los eventos reales `checkout.session.completed` (`evt_1UPZhW6zvrymwOJvAQm1JYyQ`), `invoice.paid` (`evt_1UPZhW6zvrymwOJv4x8pQBA5`) y `customer.subscription.created` (`evt_1UPZhW6zvrymwOJvbxOEkqS7`) quedaron `completed` y sin `error_code` en el ledger de Sandbox. El intento Checkout quedó `completed`.
+
+La asignación del estudio refleja Core, `status=active`, `provider_status=active` y la suscripción anterior. El periodo va de `2026-10-12T03:14:56Z` a `2026-11-12T03:14:56Z`. En la UI con America/Mexico_City se muestran 11 de octubre y 11 de noviembre. La confirmación vino del webhook, no de la página de retorno.
+
+«Administrar cobro» desde la UI abrió `billing.stripe.com` con Sandbox visible, Core $899 MXN/mes, tarjeta de prueba 4242 y factura Paid. Stripe ofreció conversión adaptativa por la ubicación del navegador de pruebas; el portal muestra el equivalente USD $50.78 además de MXN $899. La moneda base del catálogo y Checkout sigue siendo MXN; revisar la política de conversión al preparar Stripe Live.
+
+No se cambiaron suscripciones de Demeter, Stripe Live ni producción. La suscripción de prueba permanece activa exclusivamente en el estudio S08 vacío para continuar S09. Renovación, fallos, recuperación y duplicados de la versión actual siguen pendientes en S09. S08 tiene verificación técnica de contratación Core; Growth/Pro tienen precios y mapeos verificados, sin compra individual. La aceptación funcional y la promoción a producción requieren revisión de Mike.
