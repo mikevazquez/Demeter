@@ -2,6 +2,10 @@
 
 Estado: corrección en sandbox. UAT conversacional pendiente; promoción no autorizada para este alcance.
 
+Preview verificado: https://demeterbueno-7zn7uhv7m-demeter3.vercel.app (READY, commit 0d2a95215a10f9e5906d1c9f46201817ac3c52c3). El build verificó la conexión a `hedouonyhynuvwbckdlg`. La aplicación carga y solicita la sesión del estudio.
+
+Validación de código: 1,263/1,263 pruebas aprobadas, typecheck aprobado, lint de archivos modificados sin errores y una advertencia preexistente. Se replicó el prompt activo en la configuración de Demi del estudio fuente de sandbox, conservando la versión anterior y registrando la nueva. El esquema de producción y su guard original se verificaron intactos al cerrar.
+
 ## Información guardada
 
 Se verificó en producción, sin escritura, que el prompt activo conserva 20,020 caracteres y fue actualizado el 11 de octubre de 2026 a las 02:42:48 UTC. Incluye para Exotic: «rodilleras (indispensables, porque se trabaja mucho en el piso), ropa cómoda que deje la piel en contacto con el tubo».
