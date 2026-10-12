@@ -84,3 +84,9 @@ Reversión: regresar al despliegue previo y conservar la tabla e históricos. No
 - Alcance: información temporal de Demi, incluyendo herencia de ubicación y pagos del estudio con excepciones específicas del taller; TEMP-01 a TEMP-13.
 - Versión revisada: 635a753c5012801cd0e9f0d417383d90fb597a97; matriz y evidencia en 1a34586795df3d8e400a1134a89bf61eef0d18ac.
 - Estado: UAT aprobado por el usuario. Promoción pendiente de autorización explícita.
+
+
+## Autorización de promoción — 2026-10-12
+
+Mike autorizó explícitamente: «Autorizo promoción de información temporal de Demi».
+La migración aditiva se aplicó a producción (qfhojvgvhrbautvczffq). Candidato integrado con main: 1,246 tests/189 archivos aprobados, typecheck aprobado y 10 pruebas específicas de compatibilidad/herencia aprobadas. Se conserva la compatibilidad del esquema antiguo sin assistant_key. No se copian fixtures UAT. Promoción mediante PR #271 y despliegue de main con variables de producción. Rollback previsto: dpl_7tFzKhL2Km3KEa7qneQAcZJAwphR; conservar tabla e historial.
