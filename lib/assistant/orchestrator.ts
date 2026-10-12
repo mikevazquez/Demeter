@@ -946,13 +946,15 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       ? []
       : [
           ...assistantReadToolDefinitions,
-          ...assistantActionToolDefinitions.filter((tool) =>
-            input.studentId || input.testSimulation
-              ? true
-              : !["prepare_transfer_package_choice", "prepare_bank_transfer_purchase"].includes(
-                  tool.name,
-                ),
-          ),
+          ...assistantActionToolDefinitions
+            .filter((tool) => input.channel !== "whatsapp" || tool.name !== "identify_meta_contact")
+            .filter((tool) =>
+              input.studentId || input.testSimulation
+                ? true
+                : !["prepare_transfer_package_choice", "prepare_bank_transfer_purchase"].includes(
+                    tool.name,
+                  ),
+            ),
         ];
 
   let pendingPaymentContext = "";
