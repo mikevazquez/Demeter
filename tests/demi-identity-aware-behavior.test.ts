@@ -10,8 +10,9 @@ describe("Demi identity-aware behavior", () => {
   });
 
   it("prevents Meta Inbox identity lookup from being called in WhatsApp", () => {
+    expect(source).toContain("function isWhatsAppIdentityLookupBlocked");
     expect(source).toContain(
-      'input.channel !== "whatsapp" || tool.name !== "identify_meta_contact"',
+      "!isWhatsAppIdentityLookupBlocked(input.channel, tool.name)",
     );
   });
 
