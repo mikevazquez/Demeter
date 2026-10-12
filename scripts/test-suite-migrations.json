@@ -1,5 +1,5 @@
 {
-  "reason": "User approved replacing pre-V2 Intelligence source-text contracts with executable tests of the approved V2 product (b62b2d0). Database/RLS/action contracts are retained. Other listed renames reflect reviewed route/template/history changes. The user-approved Intelligence update replaces five-view navigation contracts with six views and validates real conversation sources while keeping unmeasured qualification explicit. The user-approved student portal visual update keeps available-place counts in the agenda, occupancy in detail/confirmation, and routes payment to existing class-detail checkout; the two corresponding contract names are updated without removing their assertions.",
+  "reason": "User approved replacing pre-V2 Intelligence source-text contracts with executable tests of the approved V2 product (b62b2d0). Database/RLS/action contracts are retained. Other listed renames reflect reviewed route/template/history changes. The user-approved Intelligence update replaces five-view navigation contracts with six views and validates real conversation sources while keeping unmeasured qualification explicit. The user-approved student portal visual update keeps available-place counts in the agenda, occupancy in detail/confirmation, and routes payment to existing class-detail checkout; the two corresponding contract names are updated without removing their assertions. SaaS recovery in PR #270 explicitly renames the frozen auth-boundary test to reflect reviewed source versions. The blob assertions remain, and owner/admin/instructor activation, scoped clients and entitlement failure session behavior have passing executable coverage.",
   "replacementFile": "tests/inteligencia-v2-runtime.test.tsx",
   "retiredTests": [
     "tests/inteligencia-02-conversion-events.test.ts :: INTEL-02 conversion event intelligence builds conversion intelligence from immutable domain events",
@@ -121,6 +121,10 @@
     {
       "from": "tests/student-single-class-eligibility-fix.test.ts :: student single-class eligibility and checkout catalog sync offers drop-in checkout for all package coverage failures",
       "to": "tests/student-single-class-eligibility-fix.test.ts :: student single-class eligibility and checkout catalog sync routes package coverage failures to existing drop-in checkout in detail"
+    },
+    {
+      "from": "tests/v2-release-safety.test.ts :: Studio Flow V2 release safety keeps the stable authentication and session boundary byte-for-byte unchanged",
+      "to": "tests/v2-release-safety.test.ts :: Studio Flow V2 release safety keeps the reviewed authentication and session boundary versions"
     }
   ]
 }
