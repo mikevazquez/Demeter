@@ -2,6 +2,7 @@ import { demiDeliveryRetryPolicy } from "@/lib/assistant/delivery-retry-policy";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
+import { loadDemiSticker } from "@/lib/assistant/sticker-media";
 import { transcribeDemiAudio } from "@/lib/assistant/audio-transcription";
 import { handleDemiGroupReceipt } from "@/lib/assistant/group-booking";
 import { handleDemiEnrollmentReceipt } from "@/lib/assistant/enrollment-payment";
@@ -1492,6 +1493,14 @@ export async function POST(request: Request) {
       continue;
     }
 
+    let stickerImages: string[] | undefined;
+    if (message.messageType === "sticker" && message.mediaId) {
+      try {
+        stickerImages = await loadDemiSticker({ config: webhookConfig, mediaId: message.mediaId });
+      } catch {
+        // Corrupt, expired or unsupported media follows the existing review flow.
+      }
+    }
     let audioTranscribed = false;
     if (message.messageType === "audio" && message.mediaId) {
       try {
@@ -1514,6 +1523,7 @@ export async function POST(request: Request) {
       }
     }
     if (
+      !stickerImages?.length &&
       !audioTranscribed &&
       (message.mediaId || META_MEDIA_MESSAGE_TYPES.has(message.messageType))
     ) {
@@ -1602,9 +1612,11 @@ export async function POST(request: Request) {
         reply =
           message.messageType === "audio"
             ? "Recibí tu audio, pero no pude transcribirlo. ¿Puedes reenviarlo o escribirlo? Lo dejé para revisión del equipo."
-            : paymentLanguage
-              ? "Recibí tu comprobante. No pude asociarlo automáticamente a una compra pendiente, así que lo dejé para validación del pago."
-              : "Recibí tu archivo. Lo dejé para revisión.";
+            : message.messageType === "sticker"
+              ? "Recibí tu sticker, pero no pude verlo bien. ¿Me escribes qué querías decir?"
+              : paymentLanguage
+                ? "Recibí tu comprobante. No pude asociarlo automáticamente a una compra pendiente, así que lo dejé para validación del pago."
+                : "Recibí tu archivo. Lo dejé para revisión.";
 
         deterministicOutcome = "media_handoff";
       }
@@ -1663,14 +1675,16 @@ export async function POST(request: Request) {
       continue;
     }
 
-    const receiptChoice = await tryResolveReceiptPackageChoice({
-      supabase,
-      studioId,
-      conversationId,
-      studentId,
-      messageText: message.text,
-    });
-    if (receiptChoice) {
+    const receiptChoice = stickerImages?.length
+      ? null
+      : await tryResolveReceiptPackageChoice({
+          supabase,
+          studioId,
+          conversationId,
+          studentId,
+          messageText: message.text,
+        });
+    if (!stickerImages?.length && receiptChoice) {
       const reply = receiptChoice.reply;
       if (sendReplies) {
         const delivery = await sendMetaWhatsAppText({
@@ -1847,6 +1861,7 @@ export async function POST(request: Request) {
         activationUrl: new URL("/login/student/activar", request.url).toString(),
         serviceMode: true,
         history,
+        stickerImages,
       });
     } catch (error) {
       retryableFailure = true;
