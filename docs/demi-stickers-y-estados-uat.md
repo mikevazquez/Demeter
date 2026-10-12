@@ -23,7 +23,7 @@ Pruebas automatizadas: normalización estática, animación real de tres fotogra
 | STK-07 archivo corrupto          | Aprobado rechazo de contenido                   | Satisfactorio: pide aclaración y conserva revisión de archivo                  |
 | STK-08 webhook duplicado         | Aprobada deduplicación                          | Satisfactorio: duplicate_already_handled; sin nueva entrega                    |
 
-Los ocho escenarios observados fueron satisfactorios con el modelo real y transporte capturado. La aceptación final de Mike está pendiente. STK-05 comprueba el bloqueo de confirmaciones pendientes en tests de runtime; en el recorrido vivo no se creó una nueva reserva pendiente. Archivos vencidos/no descargables no se reprodujeron separadamente en el recorrido vivo. No se afirma entrega externa de Meta.
+Los ocho escenarios observados fueron satisfactorios con el modelo real y transporte capturado. Mike autorizó la promoción de stickers el 12 de octubre de 2026. STK-05 comprueba el bloqueo de confirmaciones pendientes en tests de runtime; en el recorrido vivo no se creó una nueva reserva pendiente. Archivos vencidos/no descargables no se reprodujeron separadamente en el recorrido vivo. No se afirma entrega externa de Meta.
 
 ## Respuestas a estados: resultado de investigación
 
@@ -39,7 +39,7 @@ Fuentes primarias consultadas: documentación de Meta en Postman (Messages Objec
 
 ## Promoción
 
-UAT de los ocho escenarios observados ejecutado satisfactoriamente por Codex. Aceptación de Mike pendiente. Promoción pendiente de autorización explícita para este alcance. Reversión: restaurar deployment anterior; no requiere migración ni borrar historial.
+UAT de los ocho escenarios observados ejecutado satisfactoriamente por Codex. Mike autorizó la promoción de stickers el 12 de octubre de 2026. Promoción explícitamente autorizada para stickers; ver registro siguiente. Reversión: restaurar deployment anterior; no requiere migración ni borrar historial.
 
 ## Evidencia técnica y preview — 12 de octubre de 2026
 
@@ -86,3 +86,11 @@ Se consultó Meta desde un build de preview con la configuración sandbox y sin 
 Bloqueo concreto: renovar la conexión/credencial de Meta del sandbox mediante la configuración segura de la integración. Después, verificar que el número de prueba y callback sean aislados, publicar un estado ficticio y responder desde un contacto de prueba autorizado para inspeccionar `context` y la referencia al contenido. No se necesitan tokens en el chat. La integración de estados sigue sin afirmarse viable hasta esa prueba.
 
 La ejecución de diagnóstico usó una orden de build específica del deployment; no cambió el build del proyecto ni la conexión de producción. Código diagnosticado: 630d832b8ec5852230913e9db45c963330c8177b.
+
+## Autorización de promoción de stickers — 12 de octubre de 2026
+
+Mike indicó: «Autorizo promoción de sticker de Demi.» Alcance: lectura conversacional de stickers estáticos/animados y sus protecciones. UAT funcional revisado: ad0dd6daa85a3521611c05da4a1ab414e6e4332c, ocho escenarios satisfactorios con transporte capturado. No cubre respuestas a estados ni renovación de credenciales de Meta.
+
+Candidato integrado sobre main 6b4b3f0ed00bdf792e23c97a424ce2246699f69a sin conflictos; se conservan los cambios recientes de actividades y mínimos por sesión. No requiere migración ni copia de fixtures a producción. Script de diagnóstico de estados conservado en codex/demi-status-investigation y excluido de esta promoción.
+
+Rollback previsto: restaurar dpl_AfRhaSEM6P8ts669gBkVdsGyu39U, conservando conversaciones e históricos. Promoción por PR #272 y build de main con configuración de producción; no promover el preview sandbox.
