@@ -10,6 +10,7 @@ function source(path: string) {
 describe("admin session minimum and activity save regressions", () => {
   const sessionPage = source("app/admin/agenda/[sessionId]/page.tsx");
   const sessionActions = source("app/admin/agenda/[sessionId]/actions.ts");
+  const agendaPage = source("app/admin/agenda/page.tsx");
   const activityActions = source("app/admin/actividades/actions.ts");
   const packageActions = source("app/admin/productos/por-clases/actions.ts");
   const overloadFix = source("supabase/migrations/20261012141153_activities_rpc_overload_fix.sql");
@@ -23,7 +24,17 @@ describe("admin session minimum and activity save regressions", () => {
     expect(sessionActions).toContain("minimum_reservations_enabled: minimumReservationsEnabled");
     expect(sessionActions).toContain("minimumReservations > capacity");
     expect(sessionActions).toContain("minimumReviewMinutesBefore > 10080");
+    expect(sessionActions).toContain('formData.has("minimum_settings_present")');
     expect(sessionActions).toContain("item.id === sessionId ? minimumUpdate : {}");
+  });
+
+  it("shows and saves minimum settings in the agenda session editor", () => {
+    expect(agendaPage).toContain("minimum_reservations_enabled,minimum_reservations,minimum_review_minutes_before");
+    expect(agendaPage).toContain('name="minimum_settings_present"');
+    expect(agendaPage).toContain('name="minimum_reservations_enabled"');
+    expect(agendaPage).toContain('name="minimum_reservations"');
+    expect(agendaPage).toContain('name="minimum_review_minutes_before"');
+    expect(agendaPage).toContain('"Sin mínimo de personas"');
   });
 
   it("removes the ambiguous public RPC overload used by the activity wizard", () => {

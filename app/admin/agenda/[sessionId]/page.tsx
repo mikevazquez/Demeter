@@ -543,6 +543,7 @@ export default async function SessionDetailPage({
             <form action={setMinimumOverride} className="admin-minimum-override-form">
               <input type="hidden" name="session_id" value={sessionId} />
               <input type="hidden" name="return_to" value={returnTo} />
+              <input type="hidden" name="minimum_settings_present" value="1" />
               <input
                 type="hidden"
                 name="enabled"

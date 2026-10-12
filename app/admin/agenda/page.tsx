@@ -231,7 +231,7 @@ export default async function AgendaPage({
   const { data: sessions } = await supabase
     .from("class_sessions")
     .select(
-      "id,starts_at,ends_at,capacity,status,notes,template_id,space_id,instructor_id,recurring_schedule_id,is_schedule_exception",
+      "id,starts_at,ends_at,capacity,status,notes,template_id,space_id,instructor_id,recurring_schedule_id,is_schedule_exception,minimum_reservations_enabled,minimum_reservations,minimum_review_minutes_before",
     )
     .eq("studio_id", studio.id)
     .gte("starts_at", weekStartUtc.toISOString())
@@ -338,6 +338,7 @@ export default async function AgendaPage({
     schedule: "No se pudo crear el horario recurrente.",
     activity: "No se pudo crear la actividad. Revisa también el precio de clase suelta.",
     color: "No se pudo guardar el color de la actividad.",
+    minimum: "El mínimo debe ser de 1 al cupo y la revisión debe programarse entre 15 minutos y 7 días antes.",
     edit: "No se pudieron guardar los cambios de la sesión.",
   };
 
@@ -542,12 +543,18 @@ export default async function AgendaPage({
               <strong>{statusLabel(selectedSession.status)}</strong>
               {selectedSession.is_schedule_exception ? <em>Excepción</em> : null}
             </div>
+            <div className="agenda-editor-minimum-status">
+              {selectedSession.minimum_reservations_enabled
+                ? `Mínimo activo: ${selectedSession.minimum_reservations} personas`
+                : "Sin mínimo de personas"}
+            </div>
 
             {canEdit && selectedSession.status === "scheduled" ? (
               <>
                 <form action={updateSession} className="agenda-editor-form">
                   <input type="hidden" name="session_id" value={selectedSession.id} />
                   <input type="hidden" name="return_to" value={returnTo} />
+                  <input type="hidden" name="minimum_settings_present" value="1" />
 
                   <label className="agenda-editor-field">
                     <span>Horario</span>
@@ -594,6 +601,41 @@ export default async function AgendaPage({
                       required
                     />
                   </label>
+
+                  <fieldset className="agenda-editor-minimum">
+                    <legend>Mínimo de personas para esta sesión</legend>
+                    <label className="agenda-editor-minimum-toggle">
+                      <input
+                        type="checkbox"
+                        name="minimum_reservations_enabled"
+                        defaultChecked={selectedSession.minimum_reservations_enabled}
+                      />
+                      <span>Cancelar si no alcanza el mínimo</span>
+                    </label>
+                    <div className="agenda-editor-minimum-fields">
+                      <label className="agenda-editor-field">
+                        <span>Personas mínimas</span>
+                        <input
+                          name="minimum_reservations"
+                          type="number"
+                          min="1"
+                          max={selectedSession.capacity}
+                          defaultValue={selectedSession.minimum_reservations}
+                        />
+                      </label>
+                      <label className="agenda-editor-field">
+                        <span>Revisar antes de iniciar (minutos)</span>
+                        <input
+                          name="minimum_review_minutes_before"
+                          type="number"
+                          min="15"
+                          max="10080"
+                          defaultValue={selectedSession.minimum_review_minutes_before}
+                        />
+                      </label>
+                    </div>
+                    <small>Este ajuste aplica solo a esta sesión.</small>
+                  </fieldset>
 
                   <label className="agenda-editor-notes">
                     <span>Notas</span>

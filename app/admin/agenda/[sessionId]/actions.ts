@@ -124,7 +124,8 @@ export async function updateSession(formData: FormData) {
   const capacity = Number(formData.get("capacity"));
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const scope = String(formData.get("scope") ?? "single");
-  const minimumSettingsProvided = formData.has("minimum_reservations_enabled");
+  const minimumSettingsProvided =
+    formData.has("minimum_settings_present") || formData.has("minimum_reservations_enabled");
   const minimumReservationsEnabled =
     String(formData.get("minimum_reservations_enabled") ?? "") === "on";
   const minimumReservations = Number(formData.get("minimum_reservations"));
@@ -219,7 +220,7 @@ export async function updateSession(formData: FormData) {
     }
     for (const item of future ?? []) {
       const nextStart = new Date(new Date(item.starts_at).getTime() + delta);
-      await supabase
+      const { error } = await supabase
         .from("class_sessions")
         .update({
           starts_at: nextStart.toISOString(),
@@ -233,6 +234,7 @@ export async function updateSession(formData: FormData) {
         })
         .eq("id", item.id)
         .eq("studio_id", studio.id);
+      if (error) redirect(withQuery(returnUrl, "error", "edit"));
     }
     const [datePart, timePart] = startsLocal.split("T");
     const weekday = new Date(`${datePart}T12:00:00Z`).getUTCDay();
