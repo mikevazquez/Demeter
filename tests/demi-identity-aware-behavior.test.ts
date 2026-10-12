@@ -6,7 +6,9 @@ describe("Demi identity-aware behavior", () => {
   const source = readFileSync(join(process.cwd(), "lib/assistant/orchestrator.ts"), "utf8");
 
   it("prevents Meta Inbox identity lookup from being called in WhatsApp", () => {
-    expect(source).toContain('input.channel !== "whatsapp" || tool.name !== "identify_meta_contact"');
+    expect(source).toContain(
+      'input.channel !== "whatsapp" || tool.name !== "identify_meta_contact"',
+    );
   });
 
   it("includes student and prospect identity rules", () => {
