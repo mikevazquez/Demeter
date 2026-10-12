@@ -62,18 +62,13 @@ describe("Demi isolated UAT clock", () => {
     const after = await getTemporaryInformation(context("2026-11-11T06:00:00.000Z"), {
       topic: "aro",
     });
-    const realClock = await getTemporaryInformation(context(), {
-      topic: "aro",
-    });
+    const realClock = await getTemporaryInformation(context(), { topic: "aro" });
 
     expect(before).toMatchObject({
       checked_on_local: "2026-11-10",
       items: [{ title: "Taller de aro" }],
     });
     expect(after).toMatchObject({ checked_on_local: "2026-11-11", items: [] });
-    expect(realClock).toMatchObject({
-      checked_on_local: "2026-12-01",
-      items: [],
-    });
+    expect(realClock).toMatchObject({ checked_on_local: "2026-12-01", items: [] });
   });
 });

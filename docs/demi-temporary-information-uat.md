@@ -2,36 +2,60 @@
 
 ## Alcance
 
-Demi consulta información temporal guardada por cada estudio. La promoción inicia en `promotion_starts_on`. La respuesta termina en `registration_deadline` cuando existe; si se deja vacío, termina en `event_ends_on`. Los límites son inclusivos y se calculan con la zona horaria del estudio. La información vencida se conserva para historial y deja de ofrecerse.
+Demi consulta eventos, talleres y promociones guardados por estudio. Responde desde promotion_starts_on hasta registration_deadline inclusive; sin fecha límite de inscripción, hasta event_ends_on inclusive. Usa la zona horaria del estudio. Vencidos, borradores y archivados se conservan y no se ofrecen. No envía promociones proactivas.
 
-La consulta usa el orquestador compartido de canales. No envía promociones de forma proactiva.
+## Cierre UAT — 11 de octubre de 2026, America/Mexico_City
 
-## Matriz de seguimiento UAT
+**Validación técnica: 8/8 aprobadas. UAT conversacional/UI ejecutado por Codex: 8/8 satisfactorios. Aceptación final de Mike y autorización de promoción: pendientes. Producción sin modificaciones.**
 
-“Aprobado automático” significa que pasó la prueba técnica indicada; no representa aceptación conversacional del usuario. La UAT final sigue pendiente hasta probar el preview/canal.
+“Aprobado en ejecución” describe lo comprobado por Codex; no sustituye la aceptación final de Mike ni autoriza producción.
 
-| ID      | Caso                                                                                                 | Resultado técnico                                                                                                     | UAT conversacional / UI | Siguiente paso                                                                           |
-| ------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------- |
-| TEMP-01 | Taller anunciado el 2026-10-01; ocurre del 2026-11-01 al 2026-11-30, sin fecha límite de inscripción | **Aprobado automático**: disponible desde el inicio de promoción y hasta el último día del taller; se excluye después | Pendiente               | Probar preguntas antes, durante y después de la vigencia                                 |
-| TEMP-02 | Evento hasta 2026-11-30 con inscripción cerrada el 2026-11-10                                        | **Aprobado automático**: disponible hasta el 10 inclusive; se excluye desde el 11                                     | Pendiente               | Confirmar la respuesta en conversación en la fecha límite y al día siguiente             |
-| TEMP-03 | Preguntar horario del taller de aro                                                                  | **Aprobado automático**: devuelve los datos almacenados; el runtime no agrega hechos ausentes                         | Pendiente               | Confirmar que Demi redacte correctamente el horario cargado                              |
-| TEMP-04 | Preguntar por el evento antes de `promotion_starts_on`                                               | **Aprobado automático**: el evento todavía no se ofrece                                                               | Pendiente               | Confirmar el comportamiento con una pregunta real                                        |
-| TEMP-05 | Evento vencido, en borrador o archivado; conservarlo en historial                                    | **Aprobado automático** para excluir esos estados; revisión de código confirma archivado trazable sin borrado         | Pendiente               | Verificar en la interfaz que el archivado conserva el registro y no aparece como vigente |
-| TEMP-06 | Consultar la misma información desde canales de Demi                                                 | **Aprobado automático** para el dispatcher compartido                                                                 | Pendiente               | Ejecutar al menos una conversación por cada canal habilitado                             |
-| TEMP-07 | Preguntar por un dato que no se cargó, como el precio                                                | **Aprobado automático** para el payload: sólo expone hechos guardados                                                 | Pendiente               | Confirmar que la respuesta conversacional admita que ese dato no está disponible         |
-| TEMP-08 | Límites inclusivos en la zona horaria del estudio                                                    | **Aprobado automático**: se verificó el cambio de fecha local y el límite inclusivo                                   | Pendiente               | Confirmar en una conversación cerca del cambio de día local                              |
+| ID      | Caso                                            | Técnico  | UAT ejecutado                         | Evidencia                                                                                                                                                                                                                                |
+| ------- | ----------------------------------------------- | -------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TEMP-01 | Promoción anticipada, sin cierre de inscripción | Aprobada | **Aprobado en ejecución**             | Aro ofrecido el 11/oct, antes del evento. Reloj UAT: 30/sep excluido; 5/nov disponible; 30/nov disponible; 1/dic excluido.                                                                                                               |
+| TEMP-02 | Inscripción cierra antes del fin del evento     | Aprobada | **Aprobado en ejecución**             | Trapecio disponible el 10/nov hasta 23:59 local; excluido desde 11/nov 00:00, aunque el evento termina el 30/nov.                                                                                                                        |
+| TEMP-03 | Horario guardado                                | Aprobada | **Aprobado en ejecución**             | Respuesta: domingos de 9:00 a 10:30 y sede Tonalá, desde los datos guardados.                                                                                                                                                            |
+| TEMP-04 | Antes de iniciar promoción                      | Aprobada | **Aprobado en ejecución**             | Acrobacia programada para anunciarse desde 20/oct no se ofreció el 11/oct. Aro no se ofreció el 30/sep.                                                                                                                                  |
+| TEMP-05 | Vencidos, borradores, archivados e historial    | Aprobada | **Aprobado en ejecución**             | Equilibrio vencido, contorsión en borrador y malabares archivado excluidos. UI mostró registros y estados. Contorsión y péndulo se archivaron desde UI, conservando IDs y contenido. Después, Demi dejó de ofrecer el péndulo publicado. |
+| TEMP-06 | Canales de Demi                                 | Aprobada | **Aprobado con transporte capturado** | WhatsApp, Facebook Messenger e Instagram recorrieron sus receptores, consultaron datos y respondieron correctamente; HTTP 200 y outcome replied. Entrega externa de Meta no comprobada.                                                  |
+| TEMP-07 | Dato no cargado                                 | Aprobada | **Aprobado en ejecución**             | Precio omitido deliberadamente. Demi reconoció que no tiene publicado el precio; no inventó importe.                                                                                                                                     |
+| TEMP-08 | Límites y zona local                            | Aprobada | **Aprobado con reloj UAT**            | 2026-11-11T05:59:00.000Z = 10/nov 23:59 local: disponible. 2026-11-11T06:00:00.000Z = 11/nov 00:00 local: excluido. checked_on_local registrado en ambos casos.                                                                          |
 
-## Evidencia técnica
+## Preview y conexión comprobada
 
-- 12 pruebas automatizadas del feature: 4 de reglas/datos y 8 del runtime compartido.
-- Suite completa: 187 archivos y 1,241 pruebas aprobadas.
-- `npm run lint` y `npm run typecheck` aprobados; lint reporta advertencias preexistentes en archivos ajenos a este cambio.
-- `git diff --check` y formato Prettier aprobados.
-- Base de datos y código modificados sólo en sandbox/develop. No se desplegó a producción.
+- [Preview estable](https://demeterbueno-git-codex-demi-seasonal-events-demeter3.vercel.app/admin/mas/demi/temporales).
+- [Banco UAT](https://demeterbueno-git-codex-demi-seasonal-events-demeter3.vercel.app/admin/mas/demi/uat).
+- Rama: codex/demi-seasonal-events.
+- Versión funcional verificada: a561487af221e17d83ccc6eac1efbe8608e756ef. Despliegue: dpl_7RyWsZ2EfcAYfuvuwXroe1Q77Dkb.
+- Build: “Preview isolation verified: Studio Flow Sandbox”.
+- Registro creado desde UI y leído con el mismo ID en sandbox hedouonyhynuvwbckdlg: 8bdbbc4a-0791-4263-b379-f4c30a044f69. Esto comprueba conexión efectiva.
+- Canales: estudio aislado 29af8ae6-1c55-497d-b53c-d6d7b6fc828d; ejecución 3b03aaf5-b014-4277-bc69-cef7aa2ba271. Se agregaron fixtures TEMP sin alterar evidencias anteriores.
+- El reloj sólo se establece desde acciones autenticadas del banco sandbox. No proviene de cabeceras entrantes ni cambia el reloj del servidor, reservas o fechas del estudio.
 
-## Preview y cierre de UAT
+## Correcciones necesarias para probar
 
-- Preview: https://demeterbueno-nk1gp3wy8-demeter3.vercel.app/admin/mas/demi/temporales
-- Rama: `codex/demi-seasonal-events`; commit: `cb72bb1b4ec302e5545d0dddc2296cfa671713c4`.
-- Vercel terminó el build y verificó el aislamiento: “Preview isolation verified: Studio Flow Sandbox”. La ruta devuelve la pantalla de acceso de administración; requiere iniciar sesión con una cuenta autorizada.
-- Pendiente: ejecutar los casos conversacionales y comprobar el historial UI según la matriz. La promoción a producción permanece separada y requiere autorización explícita.
+1. La configuración consultaba Demi y Polina juntas con maybeSingle. Se delimitó a assistant_key = demi.
+2. Instagram buscaba una credencial real dentro de UAT. En el contexto aislado ahora valida la firma ficticia de la ejecución. Fuera de UAT conserva la credencial específica y la validación de firma.
+3. Se agregó fecha UTC opcional al banco Meta para probar vigencias y registrar la medianoche local.
+
+## Evidencia técnica y límites
+
+- Suite completa actual: **188 archivos, 1,242 pruebas aprobadas**.
+- Feature: 4 pruebas de reglas, 8 de runtime y 1 del reloj UAT.
+- Typecheck aprobado.
+- Lint aprobado sin errores; 19 advertencias preexistentes ajenas a este cambio.
+- Formato Prettier y git diff --check aprobados.
+- Build Vercel aprobado con TypeScript e aislamiento verificados.
+- [Evidencia de canales y herramientas](./demi-temporary-information-uat-evidence-20261011.json).
+- Fixtures con prefijo UAT TEMP; permanecen en sandbox y no deben copiarse a producción.
+- Incidencia independiente: “Crear escenarios aislados” mostró React #441. Se recuperó una ejecución existente para completar TEMP. La creación de una nueva ejecución no se marcó como aprobada.
+- La revisión de UI fue de escritorio. No se afirma UAT móvil ni recepción externa de Meta.
+- Al vencer un evento en una conversación ya iniciada, Demi vuelve a consultar y deja de ofrecerlo. Puede redactar una disculpa por la respuesta anterior, aunque hubiera sido vigente; mejora de copy posible, sin bloqueo funcional de este alcance.
+
+## Promoción pendiente
+
+Migración: supabase/migrations/20261012020450_demi_temporary_information.sql.
+
+La comparación con main mantiene el alcance en información temporal, configuración y herramientas UAT. Antes de promover: aceptación final de Mike, autorización explícita vinculada a este alcance y versión, y revisión de main y del destino.
+
+Reversión: regresar al despliegue previo y conservar la tabla e históricos. No borrar registros para ocultar incidencias.

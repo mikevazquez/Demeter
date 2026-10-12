@@ -400,9 +400,7 @@ export async function POST(request: Request) {
     // Instagram-specific secret is stored in a separate vault record.
     const { data: instagramSecret, error: instagramSecretError } = await supabase.rpc(
       "service_get_meta_instagram_app_secret",
-      {
-        target_studio_id: studioId,
-      },
+      { target_studio_id: studioId },
     );
     if (instagramSecretError || typeof instagramSecret !== "string" || !instagramSecret) {
       console.warn("[demi-meta-inbox] instagram_app_secret_missing");
@@ -481,9 +479,7 @@ export async function POST(request: Request) {
     runtimeContext = await loadRuntimeContext(supabase, studioId);
   } catch (error) {
     return json(
-      {
-        error: error instanceof Error ? error.message : "assistant_runtime_unavailable",
-      },
+      { error: error instanceof Error ? error.message : "assistant_runtime_unavailable" },
       503,
     );
   }
@@ -650,11 +646,7 @@ export async function POST(request: Request) {
     if (prepared.handoff_open === true) {
       let blockingHandoff = true;
       try {
-        blockingHandoff = await hasBlockingOpenHandoff({
-          supabase,
-          studioId,
-          conversationId,
-        });
+        blockingHandoff = await hasBlockingOpenHandoff({ supabase, studioId, conversationId });
       } catch {
         retryableFailure = true;
         await markEvent(supabase, studioId, event.id, {
@@ -843,10 +835,7 @@ export async function POST(request: Request) {
           message,
         });
         if (receipt.handled)
-          deterministicReply = {
-            reply: receipt.reply,
-            outcome: "meta_group_receipt",
-          };
+          deterministicReply = { reply: receipt.reply, outcome: "meta_group_receipt" };
       } catch {
         await supabase.rpc("assistant_create_handoff", {
           target_studio_id: studioId,
@@ -894,10 +883,7 @@ export async function POST(request: Request) {
     let assistantResult;
     try {
       assistantResult = deterministicReply
-        ? {
-            reply: deterministicReply.reply,
-            trace: { deterministic: deterministicReply.outcome },
-          }
+        ? { reply: deterministicReply.reply, trace: { deterministic: deterministicReply.outcome } }
         : await runAssistantTurn({
             supabase,
             studio: {
@@ -911,10 +897,7 @@ export async function POST(request: Request) {
               assistant_name: runtimeContext.config.assistant_name,
               model: runtimeContext.config.model,
               reasoning_effort: runtimeContext.config.reasoning_effort as
-                | "none"
-                | "low"
-                | "medium"
-                | "high",
+                "none" | "low" | "medium" | "high",
               personality_instructions: runtimeContext.config.personality_instructions,
               monthly_budget_usd_micros: runtimeContext.config.monthly_budget_usd_micros,
               conversation_budget_usd_micros: runtimeContext.config.conversation_budget_usd_micros,
@@ -945,10 +928,7 @@ export async function POST(request: Request) {
     if (!sendReplies) {
       await markEvent(supabase, studioId, event.id, {
         processing_status: "processed",
-        processing_result: {
-          outcome: "shadow_completed",
-          trace: assistantResult.trace,
-        },
+        processing_result: { outcome: "shadow_completed", trace: assistantResult.trace },
         processed_at: new Date().toISOString(),
       });
       outcomes.push({
@@ -1030,12 +1010,7 @@ export async function POST(request: Request) {
   }
 
   return json(
-    {
-      ok: !retryableFailure,
-      accepted: true,
-      messages: messages.length,
-      outcomes,
-    },
+    { ok: !retryableFailure, accepted: true, messages: messages.length, outcomes },
     retryableFailure ? 500 : 200,
   );
 }
