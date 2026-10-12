@@ -194,6 +194,15 @@ export async function sendDemiUatMessage(form: FormData) {
     if (!["whatsapp", "facebook_messenger", "instagram"].includes(channel))
       throw new Error("demi_uat_channel_invalid");
     const isInbox = channel !== "whatsapp";
+    const asOf = String(form.get("temporaryInformationNow") ?? "").trim();
+    if (
+      asOf &&
+      (!isInbox ||
+        !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(asOf) ||
+        !Number.isFinite(Date.parse(asOf)))
+    ) {
+      throw new Error("demi_uat_clock_invalid");
+    }
     const attachmentScenario = String(form.get("attachmentScenario") ?? "");
     const waScenario = String(form.get("waScenario") ?? "");
     if (
@@ -387,6 +396,7 @@ export async function sendDemiUatMessage(form: FormData) {
     const response = await withDemiUatScope(
       {
         runId: id,
+        temporaryInformationNow: asOf || undefined,
         studioId: ctx.run.studio_id,
         supabase: ctx.service,
         config,
@@ -413,6 +423,7 @@ export async function sendDemiUatMessage(form: FormData) {
       channel,
       attachment_scenario: attachmentScenario || null,
       provider_id: providerId,
+      temporary_information_now: asOf || null,
       http_status: response.status,
       result: await response.json(),
       state: await snapshot(ctx),

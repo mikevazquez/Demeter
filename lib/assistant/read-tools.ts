@@ -15,6 +15,8 @@ export type AssistantStudioContext = {
   name: string;
   timezone: string;
   currency: string;
+  /** Only supplied by the authenticated, isolated UAT receiver. */
+  temporaryInformationNow?: string;
 };
 
 export type AssistantToolContext = {
@@ -548,7 +550,10 @@ export async function getStudioInformation(ctx: AssistantToolContext) {
 }
 
 export async function getTemporaryInformation(ctx: AssistantToolContext, args: { topic: string }) {
-  const today = localParts(new Date().toISOString(), ctx.studio.timezone).date;
+  const today = localParts(
+    ctx.studio.temporaryInformationNow ?? new Date().toISOString(),
+    ctx.studio.timezone,
+  ).date;
   const { data, error } = await ctx.supabase
     .from("demi_temporary_information")
     .select(
