@@ -41,6 +41,13 @@ type HistoryMessage = {
   content: string;
 };
 
+function isWhatsAppIdentityLookupBlocked(
+  channel: OrchestratorInput["channel"],
+  toolName: string,
+) {
+  return channel === "whatsapp" && toolName === "identify_meta_contact";
+}
+
 type OpenAIOutputItem = {
   type: string;
   id?: string;
@@ -952,7 +959,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
               tool.name !== "get_student_package_status",
           ),
           ...assistantActionToolDefinitions
-            .filter((tool) => input.channel !== "whatsapp" || tool.name !== "identify_meta_contact")
+            .filter((tool) => !isWhatsAppIdentityLookupBlocked(input.channel, tool.name))
             .filter((tool) =>
               input.studentId || input.testSimulation
                 ? true
