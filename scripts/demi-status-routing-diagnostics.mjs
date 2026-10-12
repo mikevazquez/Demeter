@@ -63,13 +63,11 @@ try {
     process.env.SUPABASE_SERVICE_ROLE_KEY,
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
-  const saved = await db
-    .from("demi_uat_artifacts")
-    .insert({
-      run_id: "3b03aaf5-b014-4277-bc69-cef7aa2ba271",
-      kind: "whatsapp_status_routing_diagnostic",
-      payload: safe,
-    });
+  const saved = await db.from("demi_uat_artifacts").insert({
+    run_id: "3b03aaf5-b014-4277-bc69-cef7aa2ba271",
+    kind: "whatsapp_status_routing_diagnostic",
+    payload: safe,
+  });
   if (saved.error) throw Error("status_diagnostic_evidence_failed");
   console.log("[status-routing] " + JSON.stringify(safe));
 } finally {
