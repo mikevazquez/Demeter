@@ -945,7 +945,12 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     input.improvePrompt || stickerTurn
       ? []
       : [
-          ...assistantReadToolDefinitions,
+          ...assistantReadToolDefinitions.filter(
+            (tool) =>
+              input.studentId ||
+              input.testSimulation ||
+              tool.name !== "get_student_package_status",
+          ),
           ...assistantActionToolDefinitions
             .filter((tool) => input.channel !== "whatsapp" || tool.name !== "identify_meta_contact")
             .filter((tool) =>
