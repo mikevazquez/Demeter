@@ -185,7 +185,11 @@ export async function getDemiUatRun(id: string) {
     .order("created_at", { ascending: false })
     .limit(150);
   if (error) throw new Error("demi_uat_evidence_unavailable");
-  return { run: ctx.run, state: await snapshot(ctx), artifacts: artifacts ?? [] };
+  return {
+    run: ctx.run,
+    state: await snapshot(ctx),
+    artifacts: artifacts ?? [],
+  };
 }
 export async function sendDemiUatMessage(form: FormData) {
   const id = String(form.get("runId") ?? "");
@@ -523,7 +527,10 @@ export async function runDemiUatFollowups(id: string, days: number) {
       `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/demi-followup-worker`,
       {
         method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${secret}` },
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${secret}`,
+        },
         body: JSON.stringify({
           studio_id: ctx.run.studio_id,
           as_of: new Date(Date.now() + days * 86400000).toISOString(),
@@ -531,7 +538,12 @@ export async function runDemiUatFollowups(id: string, days: number) {
       },
     );
     const result = await response.json();
-    await record(ctx, "followup_worker", { days, result, before, after: await snapshot(ctx) });
+    await record(ctx, "followup_worker", {
+      days,
+      result,
+      before,
+      after: await snapshot(ctx),
+    });
     if (!response.ok) throw new Error("demi_uat_followup_worker_failed");
   });
   return getDemiUatRun(id);

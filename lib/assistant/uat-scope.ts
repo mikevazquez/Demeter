@@ -45,7 +45,11 @@ export async function captureDemiUatText(input: {
   const { data, error } = await scope.supabase.rpc("service_capture_demi_uat_delivery", {
     p_studio: scope.studioId,
     p_kind: "whatsapp_reply",
-    p_payload: { recipient: input.recipientWaId, text: input.text, captured: true },
+    p_payload: {
+      recipient: input.recipientWaId,
+      text: input.text,
+      captured: true,
+    },
   });
   if (error || !data) throw new Error("demi_uat_capture_failed");
   if (data.failed)

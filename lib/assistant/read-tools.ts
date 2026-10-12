@@ -444,7 +444,10 @@ export async function getCommercialOptions(
           compatibility_filtered: true,
           single_class:
             sessionScope.drop_in_price_minor != null
-              ? { price_minor: sessionScope.drop_in_price_minor, currency: ctx.studio.currency }
+              ? {
+                  price_minor: sessionScope.drop_in_price_minor,
+                  currency: ctx.studio.currency,
+                }
               : null,
         }
       : { compatibility_filtered: false }),
