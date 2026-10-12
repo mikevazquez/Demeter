@@ -1857,6 +1857,16 @@
   border-radius: 18px;
 }
 
+.activities-v2-card-icon.program-card-icon.is-workshop {
+  background: var(--activities-blue-soft);
+  color: var(--activities-blue);
+}
+
+.activities-v2-card-icon.program-card-icon.is-event {
+  background: var(--activities-purple-soft);
+  color: var(--activities-purple);
+}
+
 .activities-v2-card-main {
   min-width: 0;
 }
