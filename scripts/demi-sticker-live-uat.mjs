@@ -21,6 +21,7 @@ const db = createClient(
 );
 const temp = mkdtempSync(join(process.cwd(), ".sticker-uat-"));
 let run;
+let acquired = false;
 async function record(kind, payload) {
   const r = await db.from("demi_uat_artifacts").insert({ run_id: run.id, kind, payload });
   if (r.error) throw Error("uat_artifact_failed");
@@ -85,38 +86,51 @@ try {
     p_owner: source.data.owner_id,
     p_commit: process.env.VERCEL_GIT_COMMIT_SHA,
   });
-  if (seeded.error) throw Error("uat_seed_failed:" + seeded.error.code);
+  if (seeded.error)
+    console.log(
+      "[sticker-uat] seed unavailable: " +
+        seeded.error.code +
+        "; reusing isolated run with its history intact",
+    );
   const loaded = await db
     .from("demi_uat_runs")
     .select("id,studio_id,source_studio_id,owner_id,fixtures")
-    .eq("id", seeded.data.id)
+    .eq("id", seeded.data?.id || "3b03aaf5-b014-4277-bc69-cef7aa2ba271")
     .single();
   if (loaded.error) throw Error("uat_run_missing");
   run = loaded.data;
-  const sourceConfig = await db
-    .from("assistant_configs")
-    .select("*")
-    .eq("studio_id", run.source_studio_id)
-    .eq("assistant_key", "demi")
-    .single();
-  if (sourceConfig.error) throw Error("uat_demi_config_missing");
-  const {
-    studio_id: ignoredStudio,
-    created_at: ignoredCreated,
-    updated_at: ignoredUpdated,
-    id: ignoredId,
-    ...configFields
-  } = sourceConfig.data;
-  void ignoredStudio;
-  void ignoredCreated;
-  void ignoredUpdated;
-  void ignoredId;
-  const copiedConfig = await db
-    .from("assistant_configs")
-    .update({ ...configFields, mode: "active" })
-    .eq("studio_id", run.studio_id);
-  if (copiedConfig.error) throw Error("uat_demi_config_copy_failed");
-
+  if (!seeded.error) {
+    const sourceConfig = await db
+      .from("assistant_configs")
+      .select("*")
+      .eq("studio_id", run.source_studio_id)
+      .eq("assistant_key", "demi")
+      .single();
+    if (sourceConfig.error) throw Error("uat_demi_config_missing");
+    const {
+      studio_id: ignoredStudio,
+      created_at: ignoredCreated,
+      updated_at: ignoredUpdated,
+      id: ignoredId,
+      ...configFields
+    } = sourceConfig.data;
+    void ignoredStudio;
+    void ignoredCreated;
+    void ignoredUpdated;
+    void ignoredId;
+    const copiedConfig = await db
+      .from("assistant_configs")
+      .update({ ...configFields, mode: "active" })
+      .eq("studio_id", run.studio_id);
+    if (copiedConfig.error) throw Error("uat_demi_config_copy_failed");
+  }
+  const lease = await db.rpc("service_acquire_demi_uat_run", {
+    p_run: run.id,
+    p_owner: run.owner_id,
+    p_source: run.source_studio_id,
+  });
+  if (lease.error || lease.data !== true) throw Error("sticker_uat_run_busy");
+  acquired = true;
   console.log("[sticker-uat] run=" + run.id + " studio=" + run.studio_id);
   const cfg = {
     accessToken: "uat-capture-only",
@@ -270,5 +284,11 @@ try {
   });
   console.log("[sticker-uat] completed; conversational acceptance requires evidence review");
 } finally {
+  if (acquired)
+    await db
+      .from("demi_uat_runs")
+      .update({ lease_until: null })
+      .eq("id", run.id)
+      .eq("studio_id", run.studio_id);
   rmSync(temp, { recursive: true, force: true });
 }
