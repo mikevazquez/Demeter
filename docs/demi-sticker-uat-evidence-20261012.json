@@ -1,0 +1,1042 @@
+{
+  "project": "mikevazquez/Demeter",
+  "environment": "sandbox",
+  "supabase": "hedouonyhynuvwbckdlg",
+  "run_id": "3b03aaf5-b014-4277-bc69-cef7aa2ba271",
+  "studio_id": "29af8ae6-1c55-497d-b53c-d6d7b6fc828d",
+  "functional_commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+  "deployment": "dpl_GCJG3cxypjqRcHx91VzRkM8uoy7i",
+  "review": {
+    "reviewer": "Codex",
+    "result": "8 observed scenarios satisfactory in captured transport",
+    "user_acceptance": "pending",
+    "external_meta_delivery": "not tested",
+    "limitations": [
+      "STK-05 did not create a new live pending booking; server-confirmation blocking was checked separately in runtime tests.",
+      "STK-07 live case used corrupt content; expired/inaccessible media were not separately reproduced.",
+      "Animation samples at most three frames; no claim to read every instant."
+    ]
+  },
+  "artifacts": [
+    {
+      "kind": "sticker_uat_case",
+      "payload": {
+        "after": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "event": {
+          "id": "76ec525e-aa96-4195-89c4-a914de286b44",
+          "last_error_code": null,
+          "outbound_turn_id": "4f8da838-b3d5-4953-a983-b96b463a6783",
+          "processing_result": {
+            "trace": {
+              "model": "gpt-5.6-luna",
+              "toolCalls": [],
+              "modelCalls": 1,
+              "inputTokens": 2791,
+              "outputTokens": 12,
+              "reasoningTokens": 0,
+              "cachedInputTokens": 0,
+              "estimatedCostUsdMicros": 573
+            },
+            "outcome": "replied",
+            "provider_message_id": "uat:4aff8298-463c-464b-81af-73b4772e2a4b"
+          },
+          "processing_status": "processed",
+          "assistant_conversation_id": "d233c322-d901-4771-b09b-17ababf996c1"
+        },
+        "reply": "¡Hola! 😊 ¿Cómo estás?",
+        "before": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+        "result": {
+          "ok": true,
+          "accepted": true,
+          "messages": 1,
+          "outcomes": [
+            {
+              "outcome": "replied",
+              "provider_message_id": "uat-inbound-6b225469-b851-4eb7-b20e-6700f5a0222a"
+            }
+          ]
+        },
+        "case_id": "STK-01",
+        "fixture": "saludo",
+        "persona": "former_no_package",
+        "transport": "captured",
+        "http_status": 200,
+        "provider_id": "uat-inbound-6b225469-b851-4eb7-b20e-6700f5a0222a",
+        "review_status": "pending_human_review",
+        "integrity_unchanged": true
+      }
+    },
+    {
+      "kind": "sticker_uat_case",
+      "payload": {
+        "after": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "event": {
+          "id": "cf5ede99-e849-4150-a9fb-de281f043591",
+          "last_error_code": null,
+          "outbound_turn_id": "eba17d3f-1933-4219-9731-32c9e0e70e90",
+          "processing_result": {
+            "trace": {
+              "model": "gpt-5.6-luna",
+              "toolCalls": [],
+              "modelCalls": 1,
+              "inputTokens": 2814,
+              "outputTokens": 9,
+              "reasoningTokens": 0,
+              "cachedInputTokens": 2466,
+              "estimatedCostUsdMicros": 130
+            },
+            "outcome": "replied",
+            "provider_message_id": "uat:850242fe-484a-4d4c-836a-ba0a7bccc634"
+          },
+          "processing_status": "processed",
+          "assistant_conversation_id": "d233c322-d901-4771-b09b-17ababf996c1"
+        },
+        "reply": "¡Con gusto! 😊",
+        "before": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+        "result": {
+          "ok": true,
+          "accepted": true,
+          "messages": 1,
+          "outcomes": [
+            {
+              "outcome": "replied",
+              "provider_message_id": "uat-inbound-980165db-bc12-47c0-bbb0-c9e4eb661ff2"
+            }
+          ]
+        },
+        "case_id": "STK-02",
+        "fixture": "gracias",
+        "persona": "former_no_package",
+        "transport": "captured",
+        "http_status": 200,
+        "provider_id": "uat-inbound-980165db-bc12-47c0-bbb0-c9e4eb661ff2",
+        "review_status": "pending_human_review",
+        "integrity_unchanged": true
+      }
+    },
+    {
+      "kind": "sticker_uat_case",
+      "payload": {
+        "after": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "event": {
+          "id": "9a7eb384-75b4-47bd-bdc7-a5bcd69f97b8",
+          "last_error_code": null,
+          "outbound_turn_id": "2c606ac9-57b6-4a92-a910-77913a6892ba",
+          "processing_result": {
+            "trace": {
+              "model": "gpt-5.6-luna",
+              "toolCalls": [],
+              "modelCalls": 1,
+              "inputTokens": 3778,
+              "outputTokens": 27,
+              "reasoningTokens": 0,
+              "cachedInputTokens": 2466,
+              "estimatedCostUsdMicros": 345
+            },
+            "outcome": "replied",
+            "provider_message_id": "uat:b94ff0cb-157f-40c6-9e8b-a71639ad6ff2"
+          },
+          "processing_status": "processed",
+          "assistant_conversation_id": "e7d5a52b-afb8-4bf4-a594-1c930223a04a"
+        },
+        "reply": "¡Hola! 😊 Gracias a ti. Cuando quieras continuar con la reserva, escríbeme y te ayudo.",
+        "before": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+        "result": {
+          "ok": true,
+          "accepted": true,
+          "messages": 1,
+          "outcomes": [
+            {
+              "outcome": "replied",
+              "provider_message_id": "uat-inbound-1669d061-8d63-48f6-993d-7600f94bedd9"
+            }
+          ]
+        },
+        "case_id": "STK-03",
+        "fixture": "animado",
+        "persona": "companion",
+        "transport": "captured",
+        "http_status": 200,
+        "provider_id": "uat-inbound-1669d061-8d63-48f6-993d-7600f94bedd9",
+        "review_status": "pending_human_review",
+        "integrity_unchanged": true
+      }
+    },
+    {
+      "kind": "sticker_uat_case",
+      "payload": {
+        "after": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "event": {
+          "id": "91102cc7-166b-4c81-b386-05ae15bc4d2c",
+          "last_error_code": null,
+          "outbound_turn_id": "b55a707d-4764-4e6e-88a3-8ae5a1607e95",
+          "processing_result": {
+            "trace": {
+              "model": "gpt-5.6-luna",
+              "toolCalls": [],
+              "modelCalls": 1,
+              "inputTokens": 2603,
+              "outputTokens": 90,
+              "reasoningTokens": 65,
+              "cachedInputTokens": 2466,
+              "estimatedCostUsdMicros": 185
+            },
+            "outcome": "replied",
+            "provider_message_id": "uat:56466bc8-beb7-4569-ae07-0d85fc5881f1"
+          },
+          "processing_status": "processed",
+          "assistant_conversation_id": "d233c322-d901-4771-b09b-17ababf996c1"
+        },
+        "reply": "💜 Recibido, aunque no alcanzo a identificar qué quiere decir el sticker 😅",
+        "before": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+        "result": {
+          "ok": true,
+          "accepted": true,
+          "messages": 1,
+          "outcomes": [
+            {
+              "outcome": "replied",
+              "provider_message_id": "uat-inbound-5ddda44f-22e5-47a7-850e-e4aeb00db213"
+            }
+          ]
+        },
+        "case_id": "STK-04",
+        "fixture": "ambiguo",
+        "persona": "former_no_package",
+        "transport": "captured",
+        "http_status": 200,
+        "provider_id": "uat-inbound-5ddda44f-22e5-47a7-850e-e4aeb00db213",
+        "review_status": "pending_human_review",
+        "integrity_unchanged": true
+      }
+    },
+    {
+      "kind": "sticker_uat_case",
+      "payload": {
+        "after": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "event": {
+          "id": "a04ddcbe-b0d4-4c03-af9a-2c7b46ae8236",
+          "last_error_code": null,
+          "outbound_turn_id": "e7dbbc6e-56fd-48c7-8a57-75f057b3c3c6",
+          "processing_result": {
+            "trace": {
+              "model": "gpt-5.6-luna",
+              "toolCalls": [],
+              "modelCalls": 1,
+              "inputTokens": 2791,
+              "outputTokens": 109,
+              "reasoningTokens": 89,
+              "cachedInputTokens": 2466,
+              "estimatedCostUsdMicros": 246
+            },
+            "outcome": "replied",
+            "provider_message_id": "uat:a4427ef3-a3f2-4983-89a6-9ed288b1c5fa"
+          },
+          "processing_status": "processed",
+          "assistant_conversation_id": "803ba31c-e33c-4226-8a8c-35f2e74453eb"
+        },
+        "reply": "¡Va! 😊 Escríbeme qué te gustaría confirmar para ayudarte.",
+        "before": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+        "result": {
+          "ok": true,
+          "accepted": true,
+          "messages": 1,
+          "outcomes": [
+            {
+              "outcome": "replied",
+              "provider_message_id": "uat-inbound-1cd7dbaf-c604-4dfd-ae43-f690ea8464fa"
+            }
+          ]
+        },
+        "case_id": "STK-05",
+        "fixture": "confirmacion",
+        "persona": "student_active",
+        "transport": "captured",
+        "http_status": 200,
+        "provider_id": "uat-inbound-1cd7dbaf-c604-4dfd-ae43-f690ea8464fa",
+        "review_status": "pending_human_review",
+        "integrity_unchanged": true
+      }
+    },
+    {
+      "kind": "sticker_uat_case",
+      "payload": {
+        "after": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "event": {
+          "id": "e8831aa4-4cdb-4c78-945d-1187acf156c3",
+          "last_error_code": null,
+          "outbound_turn_id": "0c878470-b90e-4ccf-9e09-a2d9f3883533",
+          "processing_result": {
+            "trace": {
+              "model": "gpt-5.6-luna",
+              "toolCalls": [],
+              "modelCalls": 1,
+              "inputTokens": 2820,
+              "outputTokens": 86,
+              "reasoningTokens": 54,
+              "cachedInputTokens": 2466,
+              "estimatedCostUsdMicros": 224
+            },
+            "outcome": "replied",
+            "provider_message_id": "uat:899bc4b9-4a64-4205-a4b2-1e8fcd151ca9"
+          },
+          "processing_status": "processed",
+          "assistant_conversation_id": "803ba31c-e33c-4226-8a8c-35f2e74453eb"
+        },
+        "reply": "¿Te refieres a reservar una clase y confirmar el pago? Escríbeme la fecha y horario que quieres para revisarlo.",
+        "before": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+        "result": {
+          "ok": true,
+          "accepted": true,
+          "messages": 1,
+          "outcomes": [
+            {
+              "outcome": "replied",
+              "provider_message_id": "uat-inbound-d31ab75b-d217-45dd-9586-1b6283cdb57f"
+            }
+          ]
+        },
+        "case_id": "STK-06",
+        "fixture": "accion",
+        "persona": "student_active",
+        "transport": "captured",
+        "http_status": 200,
+        "provider_id": "uat-inbound-d31ab75b-d217-45dd-9586-1b6283cdb57f",
+        "review_status": "pending_human_review",
+        "integrity_unchanged": true
+      }
+    },
+    {
+      "kind": "sticker_uat_case",
+      "payload": {
+        "after": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "event": {
+          "id": "4a87309b-2f6d-4101-a804-c352cbb472be",
+          "last_error_code": null,
+          "outbound_turn_id": "92968893-d9f9-4cc7-8e76-1545f5f75916",
+          "processing_result": {
+            "trace": {
+              "deterministic": "media_handoff"
+            },
+            "outcome": "replied",
+            "provider_message_id": "uat:0a6725a9-e173-4ce0-a667-36330741a6e3"
+          },
+          "processing_status": "processed",
+          "assistant_conversation_id": "d233c322-d901-4771-b09b-17ababf996c1"
+        },
+        "reply": "Recibí tu sticker, pero no pude verlo bien. ¿Me escribes qué querías decir?",
+        "before": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+        "result": {
+          "ok": true,
+          "accepted": true,
+          "messages": 1,
+          "outcomes": [
+            {
+              "outcome": "media_handoff",
+              "provider_message_id": "uat-inbound-afee92a5-ee6a-46ed-95b7-59eee12b4432"
+            }
+          ]
+        },
+        "case_id": "STK-07",
+        "fixture": "corrupto",
+        "persona": "former_no_package",
+        "transport": "captured",
+        "http_status": 200,
+        "provider_id": "uat-inbound-afee92a5-ee6a-46ed-95b7-59eee12b4432",
+        "review_status": "pending_human_review",
+        "integrity_unchanged": true
+      }
+    },
+    {
+      "kind": "sticker_uat_case",
+      "payload": {
+        "result": {
+          "ok": true,
+          "accepted": true,
+          "messages": 1,
+          "outcomes": [
+            {
+              "outcome": "duplicate_already_handled",
+              "provider_message_id": "uat-inbound-6b225469-b851-4eb7-b20e-6700f5a0222a"
+            }
+          ]
+        },
+        "case_id": "STK-08",
+        "http_status": 200,
+        "review_status": "pending_human_review",
+        "deliveries_after": 39,
+        "deliveries_before": 39
+      }
+    },
+    {
+      "kind": "sticker_uat_summary",
+      "payload": {
+        "after": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+        "baseline": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "integrity_unchanged": true
+      }
+    },
+    {
+      "kind": "sticker_uat_case",
+      "payload": {
+        "after": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "event": {
+          "id": "a5321ef3-1977-41d1-aa50-37dda27b868a",
+          "last_error_code": null,
+          "outbound_turn_id": "67cb7752-301c-467e-bb52-cddd1554e31b",
+          "processing_result": {
+            "trace": {
+              "model": "gpt-5.6-luna",
+              "toolCalls": [],
+              "modelCalls": 1,
+              "inputTokens": 2904,
+              "outputTokens": 45,
+              "reasoningTokens": 28,
+              "cachedInputTokens": 2466,
+              "estimatedCostUsdMicros": 191
+            },
+            "outcome": "replied",
+            "provider_message_id": "uat:e9486de8-8966-4991-9623-dd7aecb8094f"
+          },
+          "processing_status": "processed",
+          "assistant_conversation_id": "d233c322-d901-4771-b09b-17ababf996c1"
+        },
+        "reply": "¡Hola! 😊 ¿En qué te ayudo?",
+        "before": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+        "result": {
+          "ok": true,
+          "accepted": true,
+          "messages": 1,
+          "outcomes": [
+            {
+              "outcome": "replied",
+              "provider_message_id": "uat-inbound-b6b1f7d3-2329-4f59-9715-68d3cfe3f5ea"
+            }
+          ]
+        },
+        "case_id": "STK-01",
+        "fixture": "saludo",
+        "persona": "former_no_package",
+        "transport": "captured",
+        "http_status": 200,
+        "provider_id": "uat-inbound-b6b1f7d3-2329-4f59-9715-68d3cfe3f5ea",
+        "review_status": "pending_human_review",
+        "integrity_unchanged": true
+      }
+    },
+    {
+      "kind": "sticker_uat_case",
+      "payload": {
+        "after": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "event": {
+          "id": "82ebaa6e-cfff-422b-928a-aff9db4b7125",
+          "last_error_code": null,
+          "outbound_turn_id": "79a06a6f-a7bc-49fc-9a14-73c8f32c328f",
+          "processing_result": {
+            "trace": {
+              "model": "gpt-5.6-luna",
+              "toolCalls": [],
+              "modelCalls": 1,
+              "inputTokens": 2930,
+              "outputTokens": 11,
+              "reasoningTokens": 0,
+              "cachedInputTokens": 2466,
+              "estimatedCostUsdMicros": 156
+            },
+            "outcome": "replied",
+            "provider_message_id": "uat:2fa69569-8442-4e1e-8dad-b6020a59475c"
+          },
+          "processing_status": "processed",
+          "assistant_conversation_id": "d233c322-d901-4771-b09b-17ababf996c1"
+        },
+        "reply": "¡De nada! 😊💜",
+        "before": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+        "result": {
+          "ok": true,
+          "accepted": true,
+          "messages": 1,
+          "outcomes": [
+            {
+              "outcome": "replied",
+              "provider_message_id": "uat-inbound-632d7188-277a-4134-a826-a2c089410199"
+            }
+          ]
+        },
+        "case_id": "STK-02",
+        "fixture": "gracias",
+        "persona": "former_no_package",
+        "transport": "captured",
+        "http_status": 200,
+        "provider_id": "uat-inbound-632d7188-277a-4134-a826-a2c089410199",
+        "review_status": "pending_human_review",
+        "integrity_unchanged": true
+      }
+    },
+    {
+      "kind": "sticker_uat_case",
+      "payload": {
+        "after": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "event": {
+          "id": "172f0a20-42f1-4acd-8057-be284ee14f4c",
+          "last_error_code": null,
+          "outbound_turn_id": "b9d7737b-50b0-4160-9204-e6d187e647a0",
+          "processing_result": {
+            "trace": {
+              "model": "gpt-5.6-luna",
+              "toolCalls": [],
+              "modelCalls": 1,
+              "inputTokens": 3816,
+              "outputTokens": 68,
+              "reasoningTokens": 47,
+              "cachedInputTokens": 2466,
+              "estimatedCostUsdMicros": 401
+            },
+            "outcome": "replied",
+            "provider_message_id": "uat:4ae26e9a-a43c-4821-8a5c-dabe460bf2b1"
+          },
+          "processing_status": "processed",
+          "assistant_conversation_id": "e7d5a52b-afb8-4bf4-a594-1c930223a04a"
+        },
+        "reply": "¡Hola! De nada, que estés muy bien 😊 ¡Hasta luego!",
+        "before": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+        "result": {
+          "ok": true,
+          "accepted": true,
+          "messages": 1,
+          "outcomes": [
+            {
+              "outcome": "replied",
+              "provider_message_id": "uat-inbound-a2a2ae07-181a-4bed-a72a-525d62d98324"
+            }
+          ]
+        },
+        "case_id": "STK-03",
+        "fixture": "animado",
+        "persona": "companion",
+        "transport": "captured",
+        "http_status": 200,
+        "provider_id": "uat-inbound-a2a2ae07-181a-4bed-a72a-525d62d98324",
+        "review_status": "pending_human_review",
+        "integrity_unchanged": true
+      }
+    },
+    {
+      "kind": "sticker_uat_case",
+      "payload": {
+        "after": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "event": {
+          "id": "606922e3-2d1c-4642-93a6-9b4668ff1522",
+          "last_error_code": null,
+          "outbound_turn_id": "6e340f29-2001-4a61-a189-54496de016d4",
+          "processing_result": {
+            "trace": {
+              "model": "gpt-5.6-luna",
+              "toolCalls": [],
+              "modelCalls": 1,
+              "inputTokens": 2712,
+              "outputTokens": 50,
+              "reasoningTokens": 42,
+              "cachedInputTokens": 2466,
+              "estimatedCostUsdMicros": 159
+            },
+            "outcome": "replied",
+            "provider_message_id": "uat:5914882e-1823-42e9-a91a-8da531dd2d70"
+          },
+          "processing_status": "processed",
+          "assistant_conversation_id": "d233c322-d901-4771-b09b-17ababf996c1"
+        },
+        "reply": "💜",
+        "before": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+        "result": {
+          "ok": true,
+          "accepted": true,
+          "messages": 1,
+          "outcomes": [
+            {
+              "outcome": "replied",
+              "provider_message_id": "uat-inbound-9c4fe7c5-f212-46c6-b8bf-03a7c3c231aa"
+            }
+          ]
+        },
+        "case_id": "STK-04",
+        "fixture": "ambiguo",
+        "persona": "former_no_package",
+        "transport": "captured",
+        "http_status": 200,
+        "provider_id": "uat-inbound-9c4fe7c5-f212-46c6-b8bf-03a7c3c231aa",
+        "review_status": "pending_human_review",
+        "integrity_unchanged": true
+      }
+    },
+    {
+      "kind": "sticker_uat_case",
+      "payload": {
+        "after": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "event": {
+          "id": "af0aaea0-db40-43c3-be50-937838d76b32",
+          "last_error_code": null,
+          "outbound_turn_id": "cba5857b-3ab3-430b-9678-49a34a6bc837",
+          "processing_result": {
+            "trace": {
+              "model": "gpt-5.6-luna",
+              "toolCalls": [],
+              "modelCalls": 1,
+              "inputTokens": 2861,
+              "outputTokens": 100,
+              "reasoningTokens": 74,
+              "cachedInputTokens": 2466,
+              "estimatedCostUsdMicros": 249
+            },
+            "outcome": "replied",
+            "provider_message_id": "uat:44847b3c-681d-45bf-8ce9-ddd2db5dfd49"
+          },
+          "processing_status": "processed",
+          "assistant_conversation_id": "803ba31c-e33c-4226-8a8c-35f2e74453eb"
+        },
+        "reply": "¿Sí quieres reservar? 😊 Escríbeme la fecha y el horario que buscas para revisarlo.",
+        "before": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+        "result": {
+          "ok": true,
+          "accepted": true,
+          "messages": 1,
+          "outcomes": [
+            {
+              "outcome": "replied",
+              "provider_message_id": "uat-inbound-507b0cc2-b176-49c4-a6f1-923f3977cb26"
+            }
+          ]
+        },
+        "case_id": "STK-05",
+        "fixture": "confirmacion",
+        "persona": "student_active",
+        "transport": "captured",
+        "http_status": 200,
+        "provider_id": "uat-inbound-507b0cc2-b176-49c4-a6f1-923f3977cb26",
+        "review_status": "pending_human_review",
+        "integrity_unchanged": true
+      }
+    },
+    {
+      "kind": "sticker_uat_case",
+      "payload": {
+        "after": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "event": {
+          "id": "53c1a724-5fd5-4c87-81c7-da2a51c426b0",
+          "last_error_code": null,
+          "outbound_turn_id": "75c87a3f-3e80-424a-b685-7887db9aae86",
+          "processing_result": {
+            "trace": {
+              "model": "gpt-5.6-luna",
+              "toolCalls": [],
+              "modelCalls": 1,
+              "inputTokens": 2896,
+              "outputTokens": 90,
+              "reasoningTokens": 45,
+              "cachedInputTokens": 2466,
+              "estimatedCostUsdMicros": 244
+            },
+            "outcome": "replied",
+            "provider_message_id": "uat:f3db2769-2cf1-4e24-a4eb-6b966761a417"
+          },
+          "processing_status": "processed",
+          "assistant_conversation_id": "803ba31c-e33c-4226-8a8c-35f2e74453eb"
+        },
+        "reply": "Claro 😊 Escríbeme la fecha y el horario que quieres reservar, y te ayudo a revisar la disponibilidad. Si quieres confirmar un pago, mándame también el comprobante por aquí.",
+        "before": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+        "result": {
+          "ok": true,
+          "accepted": true,
+          "messages": 1,
+          "outcomes": [
+            {
+              "outcome": "replied",
+              "provider_message_id": "uat-inbound-12ec024b-8a8c-4f82-aa93-015132c99087"
+            }
+          ]
+        },
+        "case_id": "STK-06",
+        "fixture": "accion",
+        "persona": "student_active",
+        "transport": "captured",
+        "http_status": 200,
+        "provider_id": "uat-inbound-12ec024b-8a8c-4f82-aa93-015132c99087",
+        "review_status": "pending_human_review",
+        "integrity_unchanged": true
+      }
+    },
+    {
+      "kind": "sticker_uat_case",
+      "payload": {
+        "after": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "event": {
+          "id": "ba65bdbe-7a89-4be8-aeae-c0f6be429ed3",
+          "last_error_code": null,
+          "outbound_turn_id": "8a9c7ff5-ee34-4c60-bba6-809f0e3bfc30",
+          "processing_result": {
+            "trace": {
+              "deterministic": "media_handoff"
+            },
+            "outcome": "replied",
+            "provider_message_id": "uat:bd723e54-38d3-4ef1-80e7-f297fb8d9b6f"
+          },
+          "processing_status": "processed",
+          "assistant_conversation_id": "d233c322-d901-4771-b09b-17ababf996c1"
+        },
+        "reply": "Recibí tu sticker, pero no pude verlo bien. ¿Me escribes qué querías decir?",
+        "before": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+        "result": {
+          "ok": true,
+          "accepted": true,
+          "messages": 1,
+          "outcomes": [
+            {
+              "outcome": "media_handoff",
+              "provider_message_id": "uat-inbound-df17a1ff-78d1-4996-bd92-e441c1c54935"
+            }
+          ]
+        },
+        "case_id": "STK-07",
+        "fixture": "corrupto",
+        "persona": "former_no_package",
+        "transport": "captured",
+        "http_status": 200,
+        "provider_id": "uat-inbound-df17a1ff-78d1-4996-bd92-e441c1c54935",
+        "review_status": "pending_human_review",
+        "integrity_unchanged": true
+      }
+    },
+    {
+      "kind": "sticker_uat_case",
+      "payload": {
+        "result": {
+          "ok": true,
+          "accepted": true,
+          "messages": 1,
+          "outcomes": [
+            {
+              "outcome": "duplicate_already_handled",
+              "provider_message_id": "uat-inbound-b6b1f7d3-2329-4f59-9715-68d3cfe3f5ea"
+            }
+          ]
+        },
+        "case_id": "STK-08",
+        "http_status": 200,
+        "review_status": "pending_human_review",
+        "deliveries_after": 46,
+        "deliveries_before": 46
+      }
+    },
+    {
+      "kind": "sticker_uat_summary",
+      "payload": {
+        "after": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "commit": "ad0dd6daa85a3521611c05da4a1ab414e6e4332c",
+        "baseline": {
+          "sales": 3,
+          "payments": 4,
+          "reservations": 5,
+          "credit_ledger": 21,
+          "assistant_pending_actions": 5,
+          "assistant_tool_executions": 64,
+          "assistant_enrollment_intents": 0,
+          "assistant_transfer_purchase_intents": 1
+        },
+        "integrity_unchanged": true
+      }
+    }
+  ]
+}
