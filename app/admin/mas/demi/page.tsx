@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
@@ -100,14 +101,7 @@ export default async function DemiDemoPage() {
     { data: adminChanges },
     exchangeRate,
   ] = await Promise.all([
-    supabase
-      .from("assistant_configs")
-      .select(
-        "assistant_name,mode,model,reasoning_effort,personality_instructions,monthly_budget_usd_micros,conversation_budget_usd_micros",
-      )
-      .eq("studio_id", studio.id)
-      .eq("assistant_key", "demi")
-      .maybeSingle(),
+    loadDemiRuntimeConfig(supabase, studio.id),
     supabase
       .from("assistant_model_calls")
       .select("estimated_cost_usd_micros,input_tokens,output_tokens")
