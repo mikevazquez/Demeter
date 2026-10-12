@@ -29,6 +29,9 @@ La consulta usa el orquestador compartido de canales. No envía promociones de f
 - `git diff --check` y formato Prettier aprobados.
 - Base de datos y código modificados sólo en sandbox/develop. No se desplegó a producción.
 
-## Pendiente para completar UAT
+## Preview y cierre de UAT
 
-No hay un preview con conexión a sandbox que se haya podido verificar: las variables de entorno de Vercel aparecen cifradas y no es posible confirmar el destino de la base de datos. Para ejecutar la parte manual necesito una URL de preview configurada al sandbox y acceso de prueba por el flujo habitual de la aplicación. No compartas secretos en el chat. Después se registrará aquí el resultado por caso; cualquier promoción seguirá requiriendo autorización explícita.
+- Preview: https://demeterbueno-nk1gp3wy8-demeter3.vercel.app/admin/mas/demi/temporales
+- Rama: `codex/demi-seasonal-events`; commit: `cb72bb1b4ec302e5545d0dddc2296cfa671713c4`.
+- Vercel terminó el build y verificó el aislamiento: “Preview isolation verified: Studio Flow Sandbox”. La ruta devuelve la pantalla de acceso de administración; requiere iniciar sesión con una cuenta autorizada.
+- Pendiente: ejecutar los casos conversacionales y comprobar el historial UI según la matriz. La promoción a producción permanece separada y requiere autorización explícita.
