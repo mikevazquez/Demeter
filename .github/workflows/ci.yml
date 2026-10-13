@@ -39,7 +39,7 @@ jobs:
         run: npm run format:check
 
       - name: Governance manifest policy tests
-        run: node --test tests/validate-release-manifest.test.mjs
+        run: node --test scripts/governance-policy-checks.mjs
 
       - name: Lint
         run: npm run lint
