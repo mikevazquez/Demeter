@@ -60,18 +60,17 @@ Ejecución: `ad93f428-125f-498a-89e4-2f5da2f6572a`; estudio ficticio: `b91b5227-
 
 La ejecución confirma la barrera principal antes del comprobante, pero no cierra GRP-A–F ni INF-A–B. No se declara UAT conversacional aprobado. La base Sandbox conserva la ejecución y evidencia para retomar; producción no fue modificada.
 
-
 ## Regresión M06: estado de pago después del comprobante — 13 oct 2026
 
 Se corrigió en Sandbox el estado comercial prematuro de las reservas grupales por transferencia: el trigger `sync_trial_transfer_commercial_status` mantiene `payment_pending` mientras el intento está `provisional_active` y sólo cambia a `paid` cuando el intento pasa a `validated`. Migración: `supabase/migrations/20261013052000_demi_trial_payment_reservation_status.sql`. No se aplicó a producción.
 
 Ejecución conversacional del preview: `d170b680-a671-4be3-a9f1-4c0fd0d22b2f`; conversación: `bac86936-fbfb-4a83-99f3-019145e16797`; estudio ficticio: `2c3a6944-9fa2-40a3-84de-f888b5b76a61`; grupo: `d206620b-bf58-4da8-bb01-837d94a8cf85`.
 
-| Paso | Resultado |
-| --- | --- |
-| Pregunta de grupo y selección de horario | Demi dio el costo total de $300 y datos de transferencia UAT marcados **NO TRANSFERIR**. Grupo en `awaiting_receipt`; cero reservas del grupo. |
-| Comprobante | Se registró con el simulador de comprobante sintético; sin transferencia bancaria real. Grupo pasó a `awaiting_participants`. |
-| Nombres y teléfonos | Demi creó las dos reservas sólo después de recibirlos. Ambas quedaron `payment_pending`: `4e555ea6-f0d1-490f-be7b-1d0889516990` y `6bbe5a7b-16ca-4eff-a98b-bef6fb59b1c7`. |
-| Validación humana ficticia | Ambos intentos pasaron a `validated`; las reservas cambiaron a `paid` y se registraron dos pagos UAT de $150. No se movió dinero. |
+| Paso                                     | Resultado                                                                                                                                                                 |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pregunta de grupo y selección de horario | Demi dio el costo total de $300 y datos de transferencia UAT marcados **NO TRANSFERIR**. Grupo en `awaiting_receipt`; cero reservas del grupo.                            |
+| Comprobante                              | Se registró con el simulador de comprobante sintético; sin transferencia bancaria real. Grupo pasó a `awaiting_participants`.                                             |
+| Nombres y teléfonos                      | Demi creó las dos reservas sólo después de recibirlos. Ambas quedaron `payment_pending`: `4e555ea6-f0d1-490f-be7b-1d0889516990` y `6bbe5a7b-16ca-4eff-a98b-bef6fb59b1c7`. |
+| Validación humana ficticia               | Ambos intentos pasaron a `validated`; las reservas cambiaron a `paid` y se registraron dos pagos UAT de $150. No se movió dinero.                                         |
 
 Las pruebas dinámicas `tests/demi-2-group-uat.sql` (19 variantes) y `tests/demi-2-rejection-scope-uat.sql` (rechazo sin marcar la reserva como pagada) pasaron con datos sintéticos y rollback. M06 quedó como **Pasó todas las variantes** en la matriz de la ejecución. No se enviaron mensajes externos de Meta. Esto cierra la regresión de M06; no aprueba automáticamente los otros casos conversacionales GRP-A–F ni INF-A–B, ni autoriza promoción.
