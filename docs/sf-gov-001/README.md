@@ -46,7 +46,7 @@ descripción de la entrega incluye identidad SHA, UAT identificados,
 archivos de migración con hash, módulos, enlaces y rollback.
 
 ```sh
-node --test tests/validate-release-manifest.test.mjs
+node --test scripts/governance-policy-checks.mjs
 node scripts/validate-release-manifest.mjs docs/sf-gov-001/release-manifest.example.json
 ```
 
