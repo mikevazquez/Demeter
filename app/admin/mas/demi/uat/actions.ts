@@ -74,10 +74,7 @@ const TABLES = [
 ];
 
 async function context() {
-  assertDemiUatEnvironment(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.VERCEL_ENV,
-  );
+  assertDemiUatEnvironment(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.VERCEL_ENV);
   const admin = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
   return { ...admin, service: createServiceClient() };
 }
@@ -98,14 +95,11 @@ async function locked<T>(
   action: (ctx: Awaited<ReturnType<typeof ownedRun>>) => Promise<T>,
 ) {
   const ctx = await ownedRun(id);
-  const { data, error } = await ctx.service.rpc(
-    "service_acquire_demi_uat_run",
-    {
-      p_run: id,
-      p_owner: ctx.user.id,
-      p_source: ctx.studio.id,
-    },
-  );
+  const { data, error } = await ctx.service.rpc("service_acquire_demi_uat_run", {
+    p_run: id,
+    p_owner: ctx.user.id,
+    p_source: ctx.studio.id,
+  });
   if (error || data !== true) throw new Error("demi_uat_run_busy");
   try {
     return await action(ctx);
@@ -119,11 +113,7 @@ async function locked<T>(
     if (release.error) throw new Error("demi_uat_release_failed");
   }
 }
-async function record(
-  ctx: Awaited<ReturnType<typeof ownedRun>>,
-  kind: string,
-  payload: Json,
-) {
+async function record(ctx: Awaited<ReturnType<typeof ownedRun>>, kind: string, payload: Json) {
   const { error } = await ctx.service
     .from("demi_uat_artifacts")
     .insert({ run_id: ctx.run.id, kind, payload });
@@ -135,17 +125,10 @@ async function snapshot(ctx: Awaited<ReturnType<typeof ownedRun>>) {
     const batch = await Promise.all(
       TABLES.slice(offset, offset + 6).map(async (table) => {
         const query = () =>
-          ctx.service
-            .from(table)
-            .select("*")
-            .eq("studio_id", ctx.run.studio_id)
-            .limit(300);
+          ctx.service.from(table).select("*").eq("studio_id", ctx.run.studio_id).limit(300);
         let result = await query();
         if (result.error) result = await query();
-        return [
-          table,
-          result.error ? { error: result.error.message } : result.data,
-        ] as const;
+        return [table, result.error ? { error: result.error.message } : result.data] as const;
       }),
     );
     entries.push(...batch);
@@ -190,8 +173,7 @@ export async function createDemiUatRun() {
     p_owner: ctx.user.id,
     p_commit: process.env.VERCEL_GIT_COMMIT_SHA ?? "local",
   });
-  if (error || !data?.id)
-    throw new Error(error?.message ?? "demi_uat_seed_failed");
+  if (error || !data?.id) throw new Error(error?.message ?? "demi_uat_seed_failed");
   return getDemiUatRun(data.id);
 }
 export async function getDemiUatRun(id: string) {
@@ -229,14 +211,10 @@ export async function sendDemiUatMessage(form: FormData) {
     const waScenario = String(form.get("waScenario") ?? "");
     if (
       waScenario &&
-      (isInbox ||
-        !["unsupported_text_ad", "unsupported_empty"].includes(waScenario))
+      (isInbox || !["unsupported_text_ad", "unsupported_empty"].includes(waScenario))
     )
       throw new Error("demi_uat_whatsapp_scenario_invalid");
-    if (
-      attachmentScenario &&
-      (!isInbox || !["video", "unsupported"].includes(attachmentScenario))
-    )
+    if (attachmentScenario && (!isInbox || !["video", "unsupported"].includes(attachmentScenario)))
       throw new Error("demi_uat_attachment_scenario_invalid");
     const key = String(form.get("persona") ?? "");
     const person = ctx.run.fixtures.people[key];
@@ -247,19 +225,14 @@ export async function sendDemiUatMessage(form: FormData) {
     const asSticker = form.get("asSticker") === "on";
     if (
       asSticker &&
-      (isInbox ||
-        !(file instanceof File) ||
-        file.type !== "image/webp" ||
-        !file.size)
+      (isInbox || !(file instanceof File) || file.type !== "image/webp" || !file.size)
     )
       throw new Error("demi_uat_sticker_requires_whatsapp_webp");
     const media = new Map<string, MetaDownloadedMedia>();
     const mediaId = String(Date.now());
     const hasFile = file instanceof File && file.size > 0;
-    if (hasFile && waScenario)
-      throw new Error("demi_uat_whatsapp_scenario_with_file");
-    if (hasFile && attachmentScenario)
-      throw new Error("demi_uat_attachment_scenario_with_file");
+    if (hasFile && waScenario) throw new Error("demi_uat_whatsapp_scenario_with_file");
+    if (hasFile && attachmentScenario) throw new Error("demi_uat_attachment_scenario_with_file");
     if (hasFile) {
       if (
         file.size > 900 * 1024 ||
@@ -282,12 +255,7 @@ export async function sendDemiUatMessage(form: FormData) {
         fileSize: file.size,
       });
     }
-    if (
-      !text &&
-      !hasFile &&
-      !attachmentScenario &&
-      waScenario !== "unsupported_empty"
-    )
+    if (!text && !hasFile && !attachmentScenario && waScenario !== "unsupported_empty")
       throw new Error("demi_uat_message_required");
     const attachmentUrl = `https://cdn.fbcdn.net/uat/${mediaId}`;
     if (hasFile) media.set(attachmentUrl, media.get(mediaId)!);
@@ -296,9 +264,7 @@ export async function sendDemiUatMessage(form: FormData) {
       throw new Error("demi_uat_repeat_invalid");
     if (previousId) {
       const { data } = await ctx.service
-        .from(
-          isInbox ? "assistant_meta_inbox_events" : "assistant_whatsapp_events",
-        )
+        .from(isInbox ? "assistant_meta_inbox_events" : "assistant_whatsapp_events")
         .select("id")
         .eq("studio_id", ctx.run.studio_id)
         .eq("provider_event_id", previousId)
@@ -347,9 +313,7 @@ export async function sendDemiUatMessage(form: FormData) {
         ? {
             [type]: {
               id: mediaId,
-              ...(asSticker
-                ? {}
-                : { caption: text || "Comprobante ficticio UAT" }),
+              ...(asSticker ? {} : { caption: text || "Comprobante ficticio UAT" }),
               mime_type: file.type,
               filename: file.name,
             },
@@ -369,9 +333,7 @@ export async function sendDemiUatMessage(form: FormData) {
               value: {
                 messaging_product: "whatsapp",
                 metadata: { phone_number_id: config.phoneNumberId },
-                contacts: [
-                  { wa_id: person.wa_id, profile: { name: `UAT ${key}` } },
-                ],
+                contacts: [{ wa_id: person.wa_id, profile: { name: `UAT ${key}` } }],
                 messages: [message],
               },
             },
@@ -397,9 +359,7 @@ export async function sendDemiUatMessage(form: FormData) {
           : "image"
       : null;
     const inboxAccountId =
-      channel === "instagram"
-        ? inboxConfig.instagramUserId
-        : inboxConfig.pageId;
+      channel === "instagram" ? inboxConfig.instagramUserId : inboxConfig.pageId;
     const inboxBody = {
       object: channel === "instagram" ? "instagram" : "page",
       entry: [
@@ -439,14 +399,10 @@ export async function sendDemiUatMessage(form: FormData) {
       channel,
       attachment_scenario: attachmentScenario || null,
       whatsapp_scenario: waScenario || null,
-      normalized_whatsapp_message: isInbox
-        ? null
-        : extractMetaInboundMessages(whatsappBody)[0],
+      normalized_whatsapp_message: isInbox ? null : extractMetaInboundMessages(whatsappBody)[0],
       provider_id: providerId,
       text,
-      file: hasFile
-        ? { name: file.name, size: file.size, type: file.type }
-        : null,
+      file: hasFile ? { name: file.name, size: file.size, type: file.type } : null,
       state: await snapshot(ctx),
     });
     const response = await withDemiUatScope(
@@ -492,22 +448,14 @@ export async function configureDemiUatFailures(id: string, count: number) {
     throw new Error("demi_uat_failure_count_invalid");
   await locked(id, async (ctx) => {
     const faults = { ...ctx.run.faults, delivery_failures_remaining: count };
-    const { error } = await ctx.service
-      .from("demi_uat_runs")
-      .update({ faults })
-      .eq("id", id);
+    const { error } = await ctx.service.from("demi_uat_runs").update({ faults }).eq("id", id);
     if (error) throw new Error("demi_uat_fault_config_failed");
     await record(ctx, "fault_config", { faults });
   });
   return getDemiUatRun(id);
 }
-export async function moveDemiUatSession(
-  id: string,
-  sessionKey: string,
-  hours: number,
-) {
-  if (![-2, 0, 4, 5, 6, 8, 24].includes(hours))
-    throw new Error("demi_uat_clock_invalid");
+export async function moveDemiUatSession(id: string, sessionKey: string, hours: number) {
+  if (![-2, 0, 4, 5, 6, 8, 24].includes(hours)) throw new Error("demi_uat_clock_invalid");
   await locked(id, async (ctx) => {
     const sessionId = ctx.run.fixtures.sessions[sessionKey];
     if (!sessionId) throw new Error("demi_uat_session_invalid");
@@ -547,8 +495,7 @@ export async function runDemiUatNotifications(id: string, makeDue: boolean) {
         .update({ available_at: now, next_attempt_at: now })
         .eq("studio_id", ctx.run.studio_id)
         .in("state", ["pending", "retry_wait"]);
-      if (jobs.error || deliveries.error)
-        throw new Error("demi_uat_due_change_failed");
+      if (jobs.error || deliveries.error) throw new Error("demi_uat_due_change_failed");
     }
     const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!secret) throw new Error("demi_uat_worker_not_configured");
@@ -579,8 +526,7 @@ export async function runDemiUatNotifications(id: string, makeDue: boolean) {
 }
 
 export async function runDemiUatFollowups(id: string, days: number) {
-  if (![0, 1, 2, 3, 7, 14, 15, 30].includes(days))
-    throw new Error("demi_uat_clock_invalid");
+  if (![0, 1, 2, 3, 7, 14, 15, 30].includes(days)) throw new Error("demi_uat_clock_invalid");
   await locked(id, async (ctx) => {
     const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!secret) throw new Error("demi_uat_worker_not_configured");
@@ -619,20 +565,14 @@ export async function simulateDemiUatGroupReceipt(id: string, groupId: string) {
   await locked(id, async (ctx) => {
     const { data: group, error: groupError } = await ctx.service
       .from("demi_group_bookings")
-      .select(
-        "id,conversation_id,amount_minor,currency,status,receipt_event_id",
-      )
+      .select("id,conversation_id,amount_minor,currency,status,receipt_event_id")
       .eq("studio_id", ctx.run.studio_id)
       .eq("id", groupId)
       .single();
     if (groupError || !group) throw new Error("demi_uat_group_not_found");
     if (group.status !== "awaiting_receipt" || group.receipt_event_id)
       throw new Error("demi_uat_group_not_awaiting_receipt");
-    if (
-      !Number.isInteger(group.amount_minor) ||
-      group.amount_minor <= 0 ||
-      !group.currency
-    )
+    if (!Number.isInteger(group.amount_minor) || group.amount_minor <= 0 || !group.currency)
       throw new Error("demi_uat_group_amount_invalid");
 
     const eventId = randomUUID();
@@ -643,24 +583,21 @@ export async function simulateDemiUatGroupReceipt(id: string, groupId: string) {
       .digest("hex");
     const path = `uat-synthetic://${ctx.run.id}/${group.id}/${eventId}`;
     const before = await snapshot(ctx);
-    const { error: eventError } = await ctx.service
-      .from("assistant_whatsapp_events")
-      .insert({
-        id: eventId,
-        studio_id: ctx.run.studio_id,
-        provider: "meta_whatsapp",
-        provider_event_id: providerId,
-        phone_number_id: "UAT-SYNTHETIC",
-        contact_wa_id: ctx.run.fixtures.people.prospect?.wa_id ?? null,
-        message_type: "image",
-        body_preview:
-          "SIMULACIÓN UAT — COMPROBANTE SINTÉTICO — NO ES UN PAGO REAL",
-        media_id: mediaId,
-        payload_fingerprint: hash,
-        assistant_conversation_id: group.conversation_id,
-        processing_status: "processed",
-        processing_result: { synthetic_uat: true, money_transferred: false },
-      });
+    const { error: eventError } = await ctx.service.from("assistant_whatsapp_events").insert({
+      id: eventId,
+      studio_id: ctx.run.studio_id,
+      provider: "meta_whatsapp",
+      provider_event_id: providerId,
+      phone_number_id: "UAT-SYNTHETIC",
+      contact_wa_id: ctx.run.fixtures.people.prospect?.wa_id ?? null,
+      message_type: "image",
+      body_preview: "SIMULACIÓN UAT — COMPROBANTE SINTÉTICO — NO ES UN PAGO REAL",
+      media_id: mediaId,
+      payload_fingerprint: hash,
+      assistant_conversation_id: group.conversation_id,
+      processing_status: "processed",
+      processing_result: { synthetic_uat: true, money_transferred: false },
+    });
     if (eventError) throw new Error("demi_uat_synthetic_receipt_event_failed");
 
     const receipt = await ctx.service.rpc("service_record_demi_group_receipt", {
@@ -696,13 +633,8 @@ export async function simulateDemiUatGroupReceipt(id: string, groupId: string) {
   return getDemiUatRun(id);
 }
 
-export async function reviewDemiUatGroup(
-  id: string,
-  groupId: string,
-  decision: string,
-) {
-  if (!["approved", "rejected"].includes(decision))
-    throw new Error("demi_uat_review_invalid");
+export async function reviewDemiUatGroup(id: string, groupId: string, decision: string) {
+  if (!["approved", "rejected"].includes(decision)) throw new Error("demi_uat_review_invalid");
   await locked(id, async (ctx) => {
     const group = await ctx.service
       .from("demi_group_bookings")
@@ -730,13 +662,8 @@ export async function reviewDemiUatGroup(
   return getDemiUatRun(id);
 }
 
-export async function reviewDemiUatReceipt(
-  id: string,
-  intentId: string,
-  decision: string,
-) {
-  if (!["approved", "rejected"].includes(decision))
-    throw new Error("demi_uat_review_invalid");
+export async function reviewDemiUatReceipt(id: string, intentId: string, decision: string) {
+  if (!["approved", "rejected"].includes(decision)) throw new Error("demi_uat_review_invalid");
   await locked(id, async (ctx) => {
     const { data, error } = await ctx.service
       .from("assistant_transfer_purchase_intents")
@@ -764,13 +691,8 @@ export async function reviewDemiUatReceipt(
   return getDemiUatRun(id);
 }
 
-export async function markDemiUatAttendance(
-  id: string,
-  reservationId: string,
-  status: string,
-) {
-  if (!["attended", "no_show"].includes(status))
-    throw new Error("demi_uat_attendance_invalid");
+export async function markDemiUatAttendance(id: string, reservationId: string, status: string) {
+  if (!["attended", "no_show"].includes(status)) throw new Error("demi_uat_attendance_invalid");
   await locked(id, async (ctx) => {
     const { data, error } = await ctx.service
       .from("reservations")
@@ -801,9 +723,7 @@ export async function markDemiUatAttendance(
 export async function checkDemiUatMeta(runId: string) {
   const ctx = await ownedRun(runId);
   const run = ctx.run;
-  const diagnostics = await getMetaWhatsAppAdminDiagnostics(
-    run.source_studio_id,
-  );
+  const diagnostics = await getMetaWhatsAppAdminDiagnostics(run.source_studio_id);
   const routing = diagnostics.connected
     ? await getMetaWhatsAppWebhookRouting(run.source_studio_id)
     : null;
@@ -833,9 +753,7 @@ export async function sendDemiUatMetaTest(runId: string, recipient: string) {
     const run = ctx.run;
     const phone = normalizeMexicanPhone(recipient);
     if (!phone) throw new Error("meta_test_phone_invalid");
-    const diagnostics = await getMetaWhatsAppAdminDiagnostics(
-      run.source_studio_id,
-    );
+    const diagnostics = await getMetaWhatsAppAdminDiagnostics(run.source_studio_id);
     const zeroVariable = diagnostics.templates.find(
       (t) => t.status === "APPROVED" && t.testReady && t.variableCount === 0,
     );
@@ -845,9 +763,7 @@ export async function sendDemiUatMetaTest(runId: string, recipient: string) {
         ? await getMetaWhatsAppUatWelcome(run.source_studio_id)
         : null;
     if (!diagnostics.connected || !template)
-      throw new Error(
-        diagnostics.errorCode ?? "meta_compatible_welcome_template_unavailable",
-      );
+      throw new Error(diagnostics.errorCode ?? "meta_compatible_welcome_template_unavailable");
     const { data: existing, error: lookupError } = await ctx.service
       .from("demi_uat_artifacts")
       .select("id")
@@ -905,8 +821,7 @@ export async function sendDemiUatMetaTest(runId: string, recipient: string) {
             template: template.name,
             language: template.language,
             status: "requires_review",
-            error_code:
-              error instanceof Error ? error.message : "meta_test_failed",
+            error_code: error instanceof Error ? error.message : "meta_test_failed",
             delivery_verified: false,
           },
         })
@@ -954,9 +869,7 @@ export async function reviewDemiUatHandoff(
     });
     if (result.error || !result.data?.ok)
       throw new Error(
-        result.error?.message ??
-          result.data?.reason_code ??
-          "demi_uat_handoff_failed",
+        result.error?.message ?? result.data?.reason_code ?? "demi_uat_handoff_failed",
       );
   });
   return getDemiUatRun(id);
