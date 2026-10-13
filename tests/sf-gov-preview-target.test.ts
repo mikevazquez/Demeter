@@ -8,7 +8,9 @@ const candidate = "https://sdmxtlgjkodidjtvikng.supabase.co";
 
 describe("SF-GOV-001 Preview service role isolation", () => {
   it("allows the historical Sandbox target in generic Preview", () => {
-    expect(() => assertServiceTargetIsolation({ url: sandbox, vercelEnv: "preview" })).not.toThrow();
+    expect(() =>
+      assertServiceTargetIsolation({ url: sandbox, vercelEnv: "preview" }),
+    ).not.toThrow();
   });
 
   it("blocks production as a Preview service-role target", () => {
