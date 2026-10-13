@@ -35,12 +35,6 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Inspect Preview test formatting (temporary)
-        run: |
-          npx prettier --write tests/sf-gov-preview-target.test.ts
-          git diff -- tests/sf-gov-preview-target.test.ts
-          exit 1
-
       - name: Format check
         run: npm run format:check
 
