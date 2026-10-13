@@ -3,12 +3,8 @@
   "baseline_sha": "e76495ee63173de8634c664cd33fa5a9ef0f24e0",
   "candidate_sha": "0000000000000000000000000000000000000000",
   "target": "sandbox-candidate",
-  "modules": [
-    "governance"
-  ],
-  "uat_case_ids": [
-    "GOV-UAT-01"
-  ],
+  "modules": ["governance"],
+  "uat_case_ids": ["GOV-UAT-01"],
   "migrations": [],
   "edge_functions": [],
   "impact": "Documentation and CI checks; no production changes",
