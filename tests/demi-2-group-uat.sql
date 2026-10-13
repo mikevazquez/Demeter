@@ -48,6 +48,7 @@ begin
  r:=public.service_complete_demi_group(s,c,g,people);
  if not coalesce((r->>'ok')::boolean,false) or (r->>'reserved_count')::integer<>2 then raise exception 'group_complete:%',r; end if;
  if (select count(*) from public.demi_group_participants where group_id=g and reservation_id is not null)<>2 then raise exception 'group_reservations'; end if;
+ if exists(select 1 from public.demi_group_participants gp join public.reservations r on r.id=gp.reservation_id where gp.group_id=g and r.commercial_status::text<>'payment_pending') then raise exception 'provisional_group_marked_paid'; end if;
  if (select sum(total_minor) from public.sales where studio_id=s)<>30000 then raise exception 'group_total_duplicated'; end if;
  out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','two_profiles_reservations_single_allocation','passed',true));
  r:=public.service_prepare_demi_group(s,c,session,2,2);
@@ -60,6 +61,7 @@ begin
  perform set_config('request.jwt.claims',jsonb_build_object('role','service_role','sub',actor)::text,true);
  r:=public.admin_review_demi_group(g,'approved','UAT proof review');
  if not coalesce((r->>'ok')::boolean,false) or (select sum(amount_minor) from public.payments where studio_id=s)<>30000 then raise exception 'group_review:%',r; end if;
+ if exists(select 1 from public.demi_group_participants gp join public.reservations r on r.id=gp.reservation_id where gp.group_id=g and r.commercial_status::text<>'paid') then raise exception 'validated_group_still_payment_pending'; end if;
  r:=public.admin_review_demi_group(g,'approved','UAT replay');
  if (select sum(amount_minor) from public.payments where studio_id=s)<>30000 then raise exception 'group_double_payment'; end if;
  out:=out||jsonb_build_array(jsonb_build_object('case','M06','variant','review_allocations_once','passed',true));

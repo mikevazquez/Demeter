@@ -348,7 +348,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     name: "complete_group_booking",
     strict: true,
     description:
-      "Después de comprobante bancario aceptado o payment_verified=true de Mercado Pago, completa el group_id: puede ser una primera clase individual preparada con prepare_first_class_payment (un participante) o un grupo. Si llegan datos incompletos después del pago, llama esta herramienta con las personas conocidas y una cadena vacía en cada nombre o celular faltante, sin inventarlos: el bloqueo guarda lo recibido para pedir únicamente lo que falte. Recibe juntos los datos faltantes de cada participante y crea reservas individuales con cupo y elegibilidad reales; la transferencia es provisional y el pago Mercado Pago verificado no requiere revisión manual. El pagador no se convierte automáticamente en participante. En grupos mixtos, informa confirmada la reserva cubierta por créditos propios y provisional sólo la cubierta por una transferencia pendiente; el rechazo de esa transferencia no afecta la reserva con créditos propios. Reporta cada resultado y cualquier importe no asignado; no confirma todo el grupo ante un fallo parcial. Si human_review_created=true, informa la canalización real al equipo y espera su resolución; no ofrezcas seguir reservando ni ejecutar devoluciones durante la atención humana. Una prueba con reserva pendiente requiere cambiar/cancelar la existente.",
+      "Después de comprobante bancario aceptado o payment_verified=true de Mercado Pago, completa el group_id con nombre y teléfono de cada participante juntos. Usa cadenas vacías para datos faltantes, sin inventarlos. resource_ref=null inicialmente: si devuelve group_resource_selection_required, muestra los resource_options con sus etiquetas y disponibilidad y pregunta qué pole elige cada participante. Conserva los datos ya recibidos y vuelve a llamar con resource_ref de cada elección; no elijas por la persona ni escales ese paso normal. No solicites poles antes del comprobante. Crea reservas individuales con cupo y elegibilidad reales; transferencia provisional sujeta a revisión y pago verificado sin revisión manual. El pagador no se convierte automáticamente en participante. En grupos mixtos, la transferencia pendiente no afecta la reserva cubierta por créditos propios. Reporta cada resultado y cualquier importe no asignado; no confirma todo ante un fallo parcial. Si human_review_created=true, informa la canalización real al equipo. Una prueba con reserva pendiente requiere cambiar/cancelar la existente.",
     parameters: {
       type: "object",
       properties: {
@@ -360,8 +360,13 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
             properties: {
               name: { type: "string" },
               phone: { type: "string", description: "Diez dígitos mexicanos, sin lada." },
+              resource_ref: {
+                type: ["string", "null"],
+                description:
+                  "Pole elegido para esta persona, de resource_options; null si aún no se eligió o no se requiere.",
+              },
             },
-            required: ["name", "phone"],
+            required: ["name", "phone", "resource_ref"],
             additionalProperties: false,
           },
         },

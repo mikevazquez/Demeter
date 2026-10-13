@@ -11,6 +11,7 @@ import {
   runDemiUatNotifications,
   runDemiUatFollowups,
   reviewDemiUatGroup,
+  simulateDemiUatGroupReceipt,
   reviewDemiUatHandoff,
   reviewDemiUatReceipt,
   markDemiUatAttendance,
@@ -446,7 +447,18 @@ export default function Bank({
               >
                 Rechazar pago grupal
               </button>
+              <button
+                disabled={busy || !groupId}
+                onClick={() => perform(() => simulateDemiUatGroupReceipt(data.run.id, groupId))}
+              >
+                Simular comprobante aceptado (sin pago real)
+              </button>
             </div>
+            <p>
+              Sólo crea evidencia sintética para probar la etapa posterior al comprobante en esta
+              ejecución UAT. No es evidencia bancaria, no registra dinero real y nunca acepta pagos
+              en producción.
+            </p>
           </section>
           <section>
             <h2>6. Acciones del equipo</h2>
