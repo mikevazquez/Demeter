@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
+import { verifySchemaAttestation } from "./verify-schema-attestation.mjs";
+
 const COMMIT = /^[0-9a-f]{40}$/i;
 const CHECKSUM = /^[0-9a-f]{64}$/i;
 const CHANGE_ID = /^SF-[A-Z0-9-]+-\d{2,4}$/;
@@ -21,7 +23,10 @@ function uniqueNames(value) {
   return Array.isArray(value) && value.every(text) && new Set(value).size === value.length;
 }
 
-export function validateReleaseManifest(manifest, { checkedOutSha } = {}) {
+export function validateReleaseManifest(
+  manifest,
+  { checkedOutSha, schemaAttestation, schemaAttestationKey, now } = {},
+) {
   if (!object(manifest)) return ["Expected a manifest JSON object"];
   const errors = [];
 
@@ -86,6 +91,12 @@ export function validateReleaseManifest(manifest, { checkedOutSha } = {}) {
       errors.push("production-staged requires passing evidence for every UAT");
     if (!text(manifest.sandbox_candidate_run))
       errors.push("production-staged requires sandbox_candidate_run");
+    const attestationErrors = verifySchemaAttestation(schemaAttestation, {
+      key: schemaAttestationKey,
+      checkedOutSha: checkedOutSha ?? manifest.candidate_sha,
+      now,
+    });
+    errors.push(...attestationErrors.map((error) => "schema_attestation: " + error));
   }
 
   if (
@@ -114,12 +125,21 @@ export function validateReleaseManifest(manifest, { checkedOutSha } = {}) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const path = process.argv[2];
   if (!path) {
-    console.error("Usage: node scripts/validate-release-manifest.mjs <file.json> [SHA]");
+    console.error(
+      "Usage: node scripts/validate-release-manifest.mjs <file.json> [SHA] [schema-attestation.json]",
+    );
     process.exit(2);
   }
   try {
     const manifest = JSON.parse(readFileSync(path, "utf8"));
-    const issues = validateReleaseManifest(manifest, { checkedOutSha: process.argv[3] });
+    const schemaAttestation = process.argv[4]
+      ? JSON.parse(readFileSync(process.argv[4], "utf8"))
+      : undefined;
+    const issues = validateReleaseManifest(manifest, {
+      checkedOutSha: process.argv[3],
+      schemaAttestation,
+      schemaAttestationKey: process.env.SF_GOV_SCHEMA_ATTESTATION_KEY,
+    });
     issues.forEach((issue) => console.error("FAIL: " + issue));
     if (issues.length) process.exitCode = 1;
     else console.log("PASS: manifest structure valid; release approval not implied");
