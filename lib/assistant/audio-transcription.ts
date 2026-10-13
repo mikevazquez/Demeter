@@ -1,4 +1,5 @@
 import "server-only";
+import { assertCandidateRuntimeExternalEffectAllowed } from "./external-effect-policy";
 import {
   downloadMetaWhatsAppMedia,
   type MetaWhatsAppWebhookConfig,
@@ -9,6 +10,7 @@ export async function transcribeDemiAudio(input: {
   config: MetaWhatsAppWebhookConfig;
   mediaId: string;
 }): Promise<string> {
+  assertCandidateRuntimeExternalEffectAllowed("openai_transcription");
   const key = process.env.OPENAI_API_KEY?.trim();
   if (!key) throw new Error("audio_model_not_configured");
   const media = await downloadMetaWhatsAppMedia({ ...input, kind: "audio" });
@@ -56,6 +58,7 @@ export async function transcribeDemiAudioBytes(
     new Blob([new Uint8Array(media.bytes)], { type: mimeType }),
     `audio.${extension}`,
   );
+  assertCandidateRuntimeExternalEffectAllowed("openai_transcription");
   const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
     method: "POST",
     headers: { authorization: `Bearer ${key}` },
