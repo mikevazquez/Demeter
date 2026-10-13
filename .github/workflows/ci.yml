@@ -35,12 +35,6 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Show Prettier changes for migration guard
-        run: |
-          npx prettier --write scripts/check-migration-grants.mjs scripts/check-migration-grants.test.mjs
-          git diff -- scripts/check-migration-grants.mjs scripts/check-migration-grants.test.mjs
-          exit 1
-
       - name: Format check
         run: npm run format:check
 
