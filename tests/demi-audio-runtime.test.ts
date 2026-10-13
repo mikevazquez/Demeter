@@ -20,6 +20,8 @@ function load() {
   )(
     (name: string) => {
       if (name === "server-only") return {};
+      if (name === "./external-effect-policy")
+        return { assertCandidateRuntimeExternalEffectAllowed: vi.fn() };
       if (name === "./meta-whatsapp-channel") return { downloadMetaWhatsAppMedia: download };
       throw new Error(name);
     },
