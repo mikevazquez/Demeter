@@ -21,7 +21,7 @@ Este directorio contiene **solo resúmenes de metadatos** de los catálogos Post
 
 `scripts/verify-schema-attestation.mjs` y `scripts/validate-release-manifest.mjs` exigen una atestación HMAC-SHA256 firmada, con referencias exactas de los dos proyectos, SHA del candidato, fecha UTC dentro de 60 minutos y paridad completa. El CLI usa la variable `SF_GOV_SCHEMA_ATTESTATION_KEY`; sin ella, o con firma inválida, caducada, SHA incorrecto o drift, **deniega**. El código y sus tests no contienen ninguna clave real.
 
-**Pendiente para hacerlo confiable:** conectar un **firmante de confianza** que lea ambas bases en modo solo lectura y firme los resultados *directamente* dentro de un GitHub Environment protegido y aprobado por un revisor, con secreto aislado de los PR. El verificador criptográfico comprueba integridad respecto a la clave; **no prueba por sí mismo que la fuente haya sido una BD real**. Nunca aceptar una atestación creada por un actor que controla tanto el JSON como el secreto. Tampoco un PASS del verificador reemplaza el UAT completo ni la autorización explícita del propietario para producción.
+**Pendiente para hacerlo confiable:** conectar un **firmante de confianza** que lea ambas bases en modo solo lectura y firme los resultados _directamente_ dentro de un GitHub Environment protegido y aprobado por un revisor, con secreto aislado de los PR. El verificador criptográfico comprueba integridad respecto a la clave; **no prueba por sí mismo que la fuente haya sido una BD real**. Nunca aceptar una atestación creada por un actor que controla tanto el JSON como el secreto. Tampoco un PASS del verificador reemplaza el UAT completo ni la autorización explícita del propietario para producción.
 
 ## UAT todavía pendientes
 
