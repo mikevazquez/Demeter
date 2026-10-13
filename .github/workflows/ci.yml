@@ -35,6 +35,11 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Inspect formatting differences (temporary)
+        run: |
+          npx prettier --write scripts/check-schema-drift.mjs scripts/check-schema-drift.test.mjs
+          git diff -- scripts/check-schema-drift.mjs scripts/check-schema-drift.test.mjs
+
       - name: Format check
         run: npm run format:check
 
