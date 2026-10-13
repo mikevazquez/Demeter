@@ -10,7 +10,9 @@ test("rejects TRUNCATE to anon", () => {
 });
 
 test("rejects dangerous privileges mixed with DML", () => {
-  const issues = unsafe("GRANT SELECT, TRIGGER, REFERENCES ON TABLE public.students TO authenticated;");
+  const issues = unsafe(
+    "GRANT SELECT, TRIGGER, REFERENCES ON TABLE public.students TO authenticated;",
+  );
   assert.deepEqual(issues[0].privileges, ["trigger", "references"]);
 });
 
@@ -47,7 +49,10 @@ test("allows normal DML with RLS", () => {
 });
 
 test("allows privileged service_role grants", () => {
-  assert.deepEqual(unsafe("GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO service_role;"), []);
+  assert.deepEqual(
+    unsafe("GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO service_role;"),
+    [],
+  );
 });
 
 test("allows function grants, not table grants", () => {
