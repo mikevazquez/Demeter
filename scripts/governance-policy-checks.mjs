@@ -2,9 +2,44 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { validateReleaseManifest } from "./validate-release-manifest.mjs";
+import {
+  SCHEMA_CANDIDATE_REF,
+  SCHEMA_PRODUCTION_REF,
+  signSchemaPayload,
+} from "./verify-schema-attestation.mjs";
 
 const baseline = "0".repeat(40);
 const candidate = "1".repeat(40);
+const schemaKey = "test-only-schema-key-".repeat(3);
+const now = new Date("2026-10-13T18:00:00.000Z");
+const report = [
+  "column",
+  "extension",
+  "index",
+  "policy",
+  "routine",
+  "table_rls",
+  "trigger",
+].map((kind, i) => ({
+  kind,
+  object_count: i + 1,
+  fingerprint: String(i).repeat(32),
+}));
+
+function attestation() {
+  const payload = {
+    version: 1,
+    source: "supabase-readonly",
+    baseline_ref: SCHEMA_PRODUCTION_REF,
+    candidate_ref: SCHEMA_CANDIDATE_REF,
+    candidate_sha: candidate,
+    captured_at: "2026-10-13T17:50:00.000Z",
+    baseline: structuredClone(report),
+    candidate: structuredClone(report),
+  };
+  return { ...payload, signature: signSchemaPayload(payload, schemaKey) };
+}
+
 
 function draft() {
   return {
@@ -68,7 +103,15 @@ test("validates a complete candidate without granting release approval", () => {
       evidence_url: m.references.pr,
     },
   ];
-  assert.deepEqual(validateReleaseManifest(m, { checkedOutSha: candidate }), []);
+  assert.deepEqual(
+    validateReleaseManifest(m, {
+      checkedOutSha: candidate,
+      schemaAttestation: attestation(),
+      schemaAttestationKey: schemaKey,
+      now,
+    }),
+    [],
+  );
 });
 
 test("rejects secret property names", () => {
@@ -111,4 +154,37 @@ test("rejects evidence for unlisted cases", () => {
 
 test("rejects missing manifest", () => {
   assert.deepEqual(validateReleaseManifest(null), ["Expected a manifest JSON object"]);
+});
+
+test("blocks production staging without protected schema attestation", () => {
+  const m = draft();
+  m.target = "production-staged";
+  m.sandbox_candidate_run = "candidate #45";
+  m.uat_evidence = [
+    { case_id: "GOV-UAT-01", result: "passed", evidence_url: m.references.pr },
+  ];
+  assert.match(
+    validateReleaseManifest(m, { checkedOutSha: candidate }).join("; "),
+    /schema_attestation/,
+  );
+});
+
+test("blocks production staging with tampered signed schema evidence", () => {
+  const m = draft();
+  m.target = "production-staged";
+  m.sandbox_candidate_run = "candidate #45";
+  m.uat_evidence = [
+    { case_id: "GOV-UAT-01", result: "passed", evidence_url: m.references.pr },
+  ];
+  const forged = attestation();
+  forged.candidate[0].fingerprint = "f".repeat(32);
+  assert.match(
+    validateReleaseManifest(m, {
+      checkedOutSha: candidate,
+      schemaAttestation: forged,
+      schemaAttestationKey: schemaKey,
+      now,
+    }).join("; "),
+    /signature verification failed/,
+  );
 });
