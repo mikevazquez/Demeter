@@ -11,8 +11,20 @@ export type CandidateExternalEffect =
 export function assertCandidateExternalEffectAllowed(input: {
   effect: CandidateExternalEffect;
   candidatePreview?: string;
+  supabaseUrls?: (string | undefined)[];
 }) {
-  if (input.candidatePreview?.trim() && input.candidatePreview.trim() !== "0") {
+  const targetsCandidate = input.supabaseUrls?.some((value) => {
+    if (!value) return false;
+    try {
+      return new URL(value).hostname === "sdmxtlgjkodidjtvikng.supabase.co";
+    } catch {
+      return false;
+    }
+  });
+  if (
+    targetsCandidate ||
+    (input.candidatePreview?.trim() && input.candidatePreview.trim() !== "0")
+  ) {
     throw new Error(`candidate_preview_external_effect_forbidden:${input.effect}`);
   }
 }
@@ -21,5 +33,6 @@ export function assertCandidateRuntimeExternalEffectAllowed(effect: CandidateExt
   assertCandidateExternalEffectAllowed({
     effect,
     candidatePreview: process.env.SF_GOV_CANDIDATE_PREVIEW,
+    supabaseUrls: [process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_URL],
   });
 }
