@@ -11,6 +11,9 @@ import { certifySchemaParity } from "./certify-schema-parity.mjs";
 const fixturePath = fileURLToPath(new URL("../docs/sf-gov-001/schema-audit/", import.meta.url));
 const baseline = JSON.parse(readFileSync(join(fixturePath, "2026-10-13-production.json")));
 const candidate = JSON.parse(readFileSync(join(fixturePath, "2026-10-13-candidate.json")));
+const negativeControl = JSON.parse(
+  readFileSync(join(fixturePath, "2026-10-13-candidate-readonly-negative.json")),
+);
 const program = fileURLToPath(new URL("./certify-schema-parity.mjs", import.meta.url));
 
 function runSchemaGate(left, right) {
@@ -68,4 +71,15 @@ test("duplicated or unknown categories reject invalid evidence", () => {
       { kind: "unknown", object_count: 0, fingerprint: "0".repeat(32) },
     ]),
   );
+});
+
+test("live Candidate read-only negative control changes only the injected column", () => {
+  const result = runSchemaGate(candidate, negativeControl);
+  assert.equal(result.status, 1);
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.certified, false);
+  assert.deepEqual(report.mismatches.map((item) => item.kind), ["column"]);
+  assert.equal(negativeControl[0].object_count, candidate[0].object_count + 1);
+  assert.notEqual(negativeControl[0].fingerprint, candidate[0].fingerprint);
+  assert.deepEqual(negativeControl.slice(1), candidate.slice(1));
 });
