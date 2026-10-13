@@ -96,6 +96,7 @@ function orchestratorHarness(
   const mod = serverModule<typeof import("../lib/assistant/orchestrator")>(
     "lib/assistant/orchestrator.ts",
     {
+      "./external-effect-policy": { assertCandidateRuntimeExternalEffectAllowed: vi.fn() },
       "./costs": { estimateModelCostUsdMicros: () => ({ usdMicros: 10 }) },
       "./test-simulation": { simulateAssistantAction: simulate, simulatedReadTool: () => null },
       "./action-tools": {
