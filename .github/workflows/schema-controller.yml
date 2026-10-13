@@ -1,0 +1,65 @@
+name: SF GOV protected schema controller
+on:
+  push:
+    branches: [governance/sf-gov-001-controller]
+    paths: [controller/request.json]
+permissions:
+  contents: read
+concurrency:
+  group: sf-gov-schema-controller
+  cancel-in-progress: false
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: sf-gov-schema-capture
+    steps:
+      - name: Require protected controller branch
+        env:
+          REF_PROTECTED: ${{ github.ref_protected }}
+          CONTROLLER_REF: ${{ github.ref }}
+          CONTROLLER_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$REF_PROTECTED" = true
+          test "$CONTROLLER_REF" = refs/heads/governance/sf-gov-001-controller
+          [[ "$CONTROLLER_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git init .
+          git remote add origin https://github.com/mikevazquez/Demeter.git
+          git fetch --depth=1 origin "$CONTROLLER_SHA"
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$CONTROLLER_SHA"
+      - name: Verify installed runtime before credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e 'if (Number(process.versions.node.split(".")[0]) < 22) process.exit(1)'
+          /usr/bin/psql --version
+          /usr/bin/psql --version | awk '{split($3,v,"."); if (v[1] < 17) exit 1}'
+          node --test scripts/controller-request.test.mjs
+      - name: Read immutable manifest as data
+        id: request
+        shell: bash
+        run: |
+          set -euo pipefail
+          CANDIDATE_SHA=$(node scripts/controller-request.mjs controller/request.json "$RUNNER_TEMP/manifest.json")
+          [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          echo "candidate_sha=$CANDIDATE_SHA" >> "$GITHUB_OUTPUT"
+      - name: Capture read-only metadata and enforce UAT gate
+        env:
+          CANDIDATE_SHA: ${{ steps.request.outputs.candidate_sha }}
+          SF_GOV_PRODUCTION_READER_URL: ${{ secrets.SF_GOV_PRODUCTION_READER_URL }}
+          SF_GOV_CANDIDATE_READER_URL: ${{ secrets.SF_GOV_CANDIDATE_READER_URL }}
+          SF_GOV_SCHEMA_ATTESTATION_KEY: ${{ secrets.SF_GOV_SCHEMA_ATTESTATION_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/capture-release-gate.mjs "$RUNNER_TEMP/manifest.json" "$CANDIDATE_SHA" "$RUNNER_TEMP/schema-evidence.json"
+      - name: Retain successful signed metadata evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: schema-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/schema-evidence.json
+          if-no-files-found: error
+          retention-days: 7
