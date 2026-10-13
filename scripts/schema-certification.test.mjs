@@ -78,7 +78,10 @@ test("live Candidate read-only negative control changes only the injected column
   assert.equal(result.status, 1);
   const report = JSON.parse(result.stdout);
   assert.equal(report.certified, false);
-  assert.deepEqual(report.mismatches.map((item) => item.kind), ["column"]);
+  assert.deepEqual(
+    report.mismatches.map((item) => item.kind),
+    ["column"],
+  );
   assert.equal(negativeControl[0].object_count, candidate[0].object_count + 1);
   assert.notEqual(negativeControl[0].fingerprint, candidate[0].fingerprint);
   assert.deepEqual(negativeControl.slice(1), candidate.slice(1));
