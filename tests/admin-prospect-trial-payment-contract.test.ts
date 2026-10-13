@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 const action = readFileSync("app/admin/alumnas/contactos/[contactId]/agendar/actions.ts", "utf8");
 const page = readFileSync("app/admin/alumnas/contactos/[contactId]/agendar/page.tsx", "utf8");
 const migration = readFileSync(
-  "supabase/migrations/20261013010000_admin_schedule_prospect_trial.sql",
+  "supabase/migrations/20261013052500_admin_schedule_prospect_trial.sql",
   "utf8",
 );
 
