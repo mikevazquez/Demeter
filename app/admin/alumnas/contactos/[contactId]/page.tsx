@@ -136,9 +136,14 @@ export default async function ContactPage({
         <article className="crm-card">
           <h2>Expediente de alumna</h2>
           <p className="crm-meta">
-            Este prospecto todavía no tiene inscripción, paquetes ni reservas vinculadas. Revisa sus
-            datos antes de darlo de alta.
+            Este prospecto todavía no tiene inscripción, paquetes ni reservas vinculadas. Puedes
+            agendar su primera clase sin convertirlo manualmente en alumna.
           </p>
+          {can(CAPABILITIES.SCHEDULE_WRITE) ? (
+            <Link className="crm-btn" href={`/admin/alumnas/contactos/${contact.id}/agendar`}>
+              Agendar primera clase
+            </Link>
+          ) : null}
           {can(CAPABILITIES.STUDENTS_WRITE) ? (
             <Link className="crm-btn" href="/admin/alumnas#alta-rapida">
               Ir al alta de alumna
