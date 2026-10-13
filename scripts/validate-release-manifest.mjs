@@ -45,4 +45,86 @@ export function validateReleaseManifest(manifest, { checkedOutSha } = {}) {
         CHECKSUM.test(entry.sha256 ?? ""),
     )
   )
-    errors.push("migrations require versioned path and SHA256 checksum"...[truncated]
+    errors.push("migrations require versioned path and SHA256 checksum");
+  if (!uniqueNames(manifest.edge_functions)) errors.push("edge_functions must be unique slugs");
+  if (!text(manifest.impact)) errors.push("impact is required");
+  if (!text(manifest.rollback_plan)) errors.push("rollback_plan is required");
+  if (
+    !object(manifest.references) ||
+    !SAFE_URL.test(manifest.references.pr ?? "") ||
+    !SAFE_URL.test(manifest.references.notion ?? "")
+  )
+    errors.push("references require valid GitHub PR and Notion URLs");
+
+  const evidence = manifest.uat_evidence;
+  if (
+    !Array.isArray(evidence) ||
+    !evidence.every(
+      (item) =>
+        object(item) &&
+        text(item.case_id) &&
+        ["pending", "passed", "failed", "blocked"].includes(item.result) &&
+        (item.result !== "passed" || SAFE_URL.test(item.evidence_url ?? "")),
+    )
+  )
+    errors.push("uat_evidence must contain result and proof for passed cases");
+
+  if (Array.isArray(evidence) && Array.isArray(manifest.uat_case_ids)) {
+    const listed = new Set(manifest.uat_case_ids);
+    if (
+      new Set(evidence.map((x) => x.case_id)).size !== evidence.length ||
+      evidence.some((x) => !listed.has(x.case_id))
+    )
+      errors.push("uat_evidence contains duplicate or unlisted case IDs");
+  }
+
+  if (manifest.target === "production-staged") {
+    if (
+      evidence?.length !== manifest.uat_case_ids?.length ||
+      evidence?.some((item) => item.result !== "passed")
+    )
+      errors.push("production-staged requires passing evidence for every UAT");
+    if (!text(manifest.sandbox_candidate_run))
+      errors.push("production-staged requires sandbox_candidate_run");
+  }
+
+  if (
+    checkedOutSha &&
+    (!COMMIT.test(checkedOutSha) ||
+      checkedOutSha.toLowerCase() !== manifest.candidate_sha?.toLowerCase())
+  )
+    errors.push("checked-out SHA differs from manifest candidate SHA");
+
+  function checkSecretFields(value, parent = "manifest") {
+    if (Array.isArray(value))
+      return value.forEach((item, index) => checkSecretFields(item, parent + "[" + index + "]"));
+    if (!object(value)) return;
+    for (const [key, child] of Object.entries(value)) {
+      if (SECRET_PROPERTY.test(key)) errors.push(parent + "." + key + ": secrets are prohibited");
+      else checkSecretFields(child, parent + "." + key);
+    }
+  }
+  checkSecretFields(manifest);
+
+  // JSON is self-attested and cannot prove consent. Production release requires
+  // a separate platform-enforced protected-environment reviewer tied to the SHA.
+  return errors;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const path = process.argv[2];
+  if (!path) {
+    console.error("Usage: node scripts/validate-release-manifest.mjs <file.json> [SHA]");
+    process.exit(2);
+  }
+  try {
+    const manifest = JSON.parse(readFileSync(path, "utf8"));
+    const issues = validateReleaseManifest(manifest, { checkedOutSha: process.argv[3] });
+    issues.forEach((issue) => console.error("FAIL: " + issue));
+    if (issues.length) process.exitCode = 1;
+    else console.log("PASS: manifest structure valid; release approval not implied");
+  } catch (error) {
+    console.error("FAIL: " + (error instanceof Error ? error.message : String(error)));
+    process.exitCode = 1;
+  }
+}
