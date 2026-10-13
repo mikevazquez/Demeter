@@ -47,6 +47,9 @@ jobs:
       - name: Physical schema drift and rollback in isolated PostgreSQL
         run: node --test scripts/schema-physical-drift.test.mjs
 
+      - name: Protected capture contract and isolated SQL negative tests
+        run: node --test scripts/schema-capture.test.mjs
+
       - name: Preview service role isolation negative tests
         run: npx vitest run tests/sf-gov-preview-target.test.ts
 
