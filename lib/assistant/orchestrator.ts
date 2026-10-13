@@ -1,4 +1,5 @@
 import "server-only";
+import { assertCandidateRuntimeExternalEffectAllowed } from "./external-effect-policy";
 
 import { conversationGuidance, needsFirstVisitGuidance } from "./conversation-guidance";
 import { testPersonaLabel } from "./prompt-workbench";
@@ -1260,6 +1261,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       throw new Error("assistant_budget_exceeded");
     }
 
+    assertCandidateRuntimeExternalEffectAllowed("openai_responses");
     const startedAt = Date.now();
     let response: Response;
     try {
