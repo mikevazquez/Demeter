@@ -31,8 +31,8 @@ function evidence(left = baseline, right = baseline) {
     candidate_ref: SCHEMA_CANDIDATE_REF,
     candidate_sha: sha,
     captured_at: "2026-10-13T17:50:00.000Z",
-    baseline: left,
-    candidate: right,
+    baseline: structuredClone(left),
+    candidate: structuredClone(right),
   };
   return { ...payload, signature: signSchemaPayload(payload, key) };
 }
