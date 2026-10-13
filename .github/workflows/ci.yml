@@ -35,11 +35,6 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Inspect Candidate formatting (temporary)
-        run: |
-          npx prettier --write lib/assistant/external-effect-policy.ts tests/sf-gov-candidate-external-effect.test.ts
-          git diff -- lib/assistant/external-effect-policy.ts tests/sf-gov-candidate-external-effect.test.ts
-
       - name: Format check
         run: npm run format:check
 
