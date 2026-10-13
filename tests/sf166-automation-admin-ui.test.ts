@@ -14,7 +14,7 @@ describe("SF-166 automation admin UI", () => {
 
     expect(more).toContain('title: "Notificaciones"');
     expect(more).toContain('href: "/admin/notificaciones"');
-    expect(more).toContain("CAPABILITIES.AUTOMATIONS_READ");
+    expect(more).toContain("CAPABILITIES.NOTIFICATIONS_READ");
     expect(layout).toContain('href: "/admin/notificaciones"');
     expect(layout).toContain('label: "Notificaciones"');
   });

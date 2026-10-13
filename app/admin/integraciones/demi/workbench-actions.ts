@@ -22,7 +22,7 @@ import { proposeDemiAdminPlan, type DemiAdminPlan } from "@/lib/assistant/admin-
 const hash = (text: string) => createHash("sha256").update(text).digest("hex");
 
 export async function saveDemiPrompt(instructions: string, note: string) {
-  const { supabase, studio, user } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio, user } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   if (!validPrompt(instructions)) return { ok: false as const, error: "invalid_prompt" };
   const { data, error } = await supabase
     .from("assistant_prompt_versions")
@@ -43,7 +43,7 @@ export async function saveDemiPrompt(instructions: string, note: string) {
 }
 
 export async function activateDemiPrompt(versionId: string, expectedActive: string) {
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   const { data, error } = await supabase.rpc("admin_activate_demi_prompt", {
     p_studio_id: studio.id,
     p_version_id: versionId,
@@ -63,7 +63,7 @@ export async function testDemiPrompt(input: {
   persona: TestPersona;
   improve?: boolean;
 }) {
-  const { supabase, studio, user } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio, user } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   if (!validPrompt(input.instructions)) return { ok: false as const, error: "invalid_prompt" };
   const message = String(input.message ?? "").trim();
   if (!message || message.length > 2000) return { ok: false as const, error: "invalid_message" };
@@ -242,7 +242,7 @@ export async function testDemiPrompt(input: {
 }
 
 export async function setDemiHandoffPolicy(policyId: string, enabled: boolean) {
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   const { error } = await supabase
     .from("assistant_handoff_policies")
     .update({
@@ -257,7 +257,7 @@ export async function setDemiHandoffPolicy(policyId: string, enabled: boolean) {
 }
 
 export async function reviewDemiLearning(proposalId: string, decision: "approved" | "rejected") {
-  const { supabase, studio, user } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio, user } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   const { data: proposal, error: readError } = await supabase
     .from("assistant_learning_proposals")
     .select("id,proposed_instruction,status")
@@ -287,7 +287,7 @@ export async function reviewDemiLearning(proposalId: string, decision: "approved
 }
 
 export async function proposeDemiAdminChange(instructionInput: string) {
-  const { supabase, studio, user } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio, user } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   const instruction = String(instructionInput ?? "").trim();
   if (!instruction || instruction.length > 4000)
     return { ok: false as const, error: "invalid_message" };
@@ -391,7 +391,7 @@ export async function proposeDemiAdminChange(instructionInput: string) {
 }
 
 export async function applyDemiAdminChange(requestIdInput: string) {
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   const requestId = String(requestIdInput ?? "").trim();
   if (!requestId) return { ok: false as const, error: "request_failed" };
 
@@ -420,7 +420,7 @@ export async function applyDemiAdminChange(requestIdInput: string) {
 }
 
 export async function rejectDemiAdminChange(requestIdInput: string) {
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   const requestId = String(requestIdInput ?? "").trim();
   const { error } = await supabase
     .from("assistant_admin_change_requests")

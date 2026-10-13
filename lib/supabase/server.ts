@@ -7,7 +7,7 @@ import {
   type AuthPortal,
 } from "@/lib/supabase/session-policy";
 
-export async function createClient(explicitPortal?: AuthPortal) {
+export async function createClient(explicitPortal?: AuthPortal, studioId?: string) {
   const cookieStore = await cookies();
   const headerStore = await headers();
   const headerPortal = headerStore.get(AUTH_PORTAL_HEADER);
@@ -15,6 +15,7 @@ export async function createClient(explicitPortal?: AuthPortal) {
 
   return createServerClient(env.supabaseUrl, env.supabasePublishableKey, {
     cookieOptions: authCookieOptions(portal),
+    ...(studioId ? { global: { headers: { "x-studio-id": studioId } } } : {}),
     cookies: {
       getAll() {
         return cookieStore.getAll();

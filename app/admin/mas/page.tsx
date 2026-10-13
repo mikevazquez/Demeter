@@ -58,7 +58,7 @@ const items: MoreItem[] = [
     title: "Notificaciones",
     description: "Procesos, marketing, plantillas y horarios de envío.",
     href: "/admin/notificaciones",
-    capability: CAPABILITIES.AUTOMATIONS_READ,
+    capability: CAPABILITIES.NOTIFICATIONS_READ,
   },
   {
     title: "Retos",
@@ -82,6 +82,7 @@ const items: MoreItem[] = [
     title: "Integraciones",
     description: "Conecta Mercado Pago, Asistian, Meta y otros servicios externos.",
     href: "/admin/integraciones",
+    capability: CAPABILITIES.INTEGRATIONS_READ,
     ownerOnly: true,
   },
   {

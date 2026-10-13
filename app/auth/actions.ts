@@ -1,5 +1,7 @@
 "use server";
 
+import { canActivateStudioAccount } from "@/lib/saas/studio-activation";
+
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
@@ -290,8 +292,8 @@ export async function signIn(formData: FormData) {
   }
 
   if (account.must_change_password) {
-    const supportsActivation = studioAccess.memberships.some(
-      (membership) => membership.role === "instructor",
+    const supportsActivation = canActivateStudioAccount(
+      studioAccess.memberships.map((membership) => membership.role),
     );
     if (!supportsActivation) {
       await accessClient.auth.signOut();
@@ -387,15 +389,15 @@ export async function completeStudioPasswordActivation(formData: FormData) {
     redirect(portalDestination(membership, studioAccess.capabilities));
   }
 
-  const hasInstructorMembership = studioAccess.memberships.some(
-    (membership) => membership.role === "instructor",
+  const hasActivatableMembership = canActivateStudioAccount(
+    studioAccess.memberships.map((membership) => membership.role),
   );
-  if (!hasInstructorMembership) redirect("/login/studio?error=activation");
+  if (!hasActivatableMembership) redirect("/login/studio?error=activation");
 
   const { error: passwordError } = await supabase.auth.updateUser({ password });
   if (passwordError) redirect("/login/studio/activar?error=password");
 
-  const { error: activationError } = await supabase.rpc("instructor_complete_password_activation");
+  const { error: activationError } = await supabase.rpc("studio_complete_password_activation");
   if (activationError) redirect("/login/studio/activar?error=save");
 
   if (studioAccess.memberships.length > 1) {
@@ -406,30 +408,6 @@ export async function completeStudioPasswordActivation(formData: FormData) {
   const membership = studioAccess.memberships[0];
   await setSelectedStudio(membership.studio_id);
   redirect(portalDestination(membership, studioAccess.capabilities));
-}
-
-export async function createInitialOwnerAccount(formData: FormData) {
-  const fullName = String(formData.get("full_name") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-
-  if (!fullName || !email || password.length < 8) {
-    redirect("/setup?error=invalid");
-  }
-
-  const supabase = await createClient("admin");
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { full_name: fullName } },
-  });
-
-  if (error || !data.user) {
-    redirect("/setup?error=signup");
-  }
-
-  await supabase.auth.signOut();
-  redirect("/setup?created=1");
 }
 
 export async function signOut(formData?: FormData) {

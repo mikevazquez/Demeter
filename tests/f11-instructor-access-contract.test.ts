@@ -31,7 +31,7 @@ describe("F11 instructor access provisioning", () => {
     expect(migration).toContain("must_change_password = true");
     expect(migration).toContain("public.instructor_complete_password_activation()");
     expect(auth).toContain('redirect("/login/studio/activar")');
-    expect(auth).toContain('supabase.rpc("instructor_complete_password_activation")');
+    expect(auth).toContain('supabase.rpc("studio_complete_password_activation")');
     expect(auth).toContain("supabase.auth.updateUser({ password })");
   });
 

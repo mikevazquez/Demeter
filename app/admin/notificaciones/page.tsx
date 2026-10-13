@@ -118,7 +118,7 @@ export default async function NotificationsPage({
 }) {
   const [query, ctx] = await Promise.all([
     searchParams,
-    getAdminContext(CAPABILITIES.AUTOMATIONS_READ),
+    getAdminContext(CAPABILITIES.NOTIFICATIONS_READ),
   ]);
   const activeTab = tabs.some((tab) => tab.key === query.tab) ? query.tab! : "procesos";
   const activeCategory = NOTIFICATION_PROCESS_CATEGORIES.some(
@@ -126,7 +126,7 @@ export default async function NotificationsPage({
   )
     ? query.category!
     : "all";
-  const canManage = ctx.can(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const canManage = ctx.can(CAPABILITIES.NOTIFICATIONS_MANAGE);
 
   const [{ data: rawSnapshot }, { data: automationInstances }, { data: marketingConfigs }] =
     await Promise.all([

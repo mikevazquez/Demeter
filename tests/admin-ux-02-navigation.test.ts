@@ -107,7 +107,7 @@ describe("ADMIN-UX-02 navigation architecture", () => {
   it("preserves capability-driven navigation and instructor-only Studio access", () => {
     expect(layout).toContain("CAPABILITIES.PRODUCTS_READ");
     expect(layout).toContain("CAPABILITIES.INSTRUCTORS_READ");
-    expect(layout).toContain("CAPABILITIES.AUTOMATIONS_READ");
+    expect(layout).toContain("CAPABILITIES.NOTIFICATIONS_READ");
     expect(layout).not.toContain("CAPABILITIES.REQUIRED_ACTIONS_READ");
     expect(layout).toContain('label: "Mis clases"');
   });

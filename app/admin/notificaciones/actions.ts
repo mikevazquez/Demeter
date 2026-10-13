@@ -69,7 +69,7 @@ export async function toggleNotificationProcessAction(formData: FormData) {
     redirect(processUrl(process.key, { error: "notification_process_essential" }));
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.NOTIFICATIONS_MANAGE);
 
   const { error } = await supabase.rpc("admin_set_notification_rules_enabled", {
     p_studio_id: studio.id,
@@ -101,7 +101,7 @@ export async function toggleNotificationChannelAction(formData: FormData) {
   }
 
   const enabled = String(formData.get("next_enabled") ?? "") === "true";
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.NOTIFICATIONS_MANAGE);
 
   if (enabled && channel === "email") {
     redirect(processUrl(process.key, { error: "notification_email_provider_not_configured" }));
@@ -301,7 +301,7 @@ export async function saveNotificationMessageAction(formData: FormData) {
     redirect(processUrl(process.key, { error: "notification_message_title_body_required" }));
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.NOTIFICATIONS_MANAGE);
   const { error } = await supabase.rpc("admin_update_notification_rules_message", {
     p_studio_id: studio.id,
     p_rule_keys: [...process.ruleKeys],
@@ -333,7 +333,7 @@ export async function saveNotificationLeadTimeAction(formData: FormData) {
     redirect(processUrl(process.key, { error: "notification_timing_out_of_range" }));
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.NOTIFICATIONS_MANAGE);
   const { error } = await supabase.rpc("admin_update_notification_rules_lead_time", {
     p_studio_id: studio.id,
     p_rule_keys: [...process.ruleKeys],
@@ -360,7 +360,7 @@ export async function saveNotificationPreferencesAction(formData: FormData) {
     redirect(listUrl("preferencias", { error: "notification_marketing_limit_invalid" }));
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.NOTIFICATIONS_MANAGE);
   const { error } = await supabase.rpc("admin_save_notification_settings", {
     p_studio_id: studio.id,
     p_push_enabled: formData.has("push_enabled"),
@@ -400,7 +400,7 @@ export async function savePackageRecoveryDelayAction(formData: FormData) {
     redirect(marketingUrl(marketingKey, { error: "package_recovery_delay_out_of_range" }));
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.NOTIFICATIONS_MANAGE);
   const { error } = await supabase.rpc("admin_update_package_recovery_delay", {
     p_studio_id: studio.id,
     p_first_days: days,
@@ -421,7 +421,7 @@ export async function updatePackageRecoveryRuleAction(formData: FormData) {
     redirect(listUrl("marketing", { error: "package_recovery_rule_invalid" }));
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.NOTIFICATIONS_MANAGE);
   const enabled = String(formData.get("next_enabled") ?? "") === "true";
   const channel = String(formData.get("channel") ?? "").trim();
 
@@ -595,7 +595,7 @@ export async function saveMarketingCommunicationAction(formData: FormData) {
     redirect(marketingUrl(marketingKey, { error: "marketing_message_required" }));
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.NOTIFICATIONS_MANAGE);
   const selectedChannels: OutboundChannel[] = ["push", "whatsapp", "email"].filter((channel) =>
     formData.has(`${channel}_enabled`),
   ) as OutboundChannel[];

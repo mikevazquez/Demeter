@@ -206,8 +206,8 @@ export default async function NotificationProcessPage({
     NOTIFICATION_PROCESS_CATEGORIES.find((category) => category.key === process.category)?.label ??
     "Proceso";
 
-  const ctx = await getAdminContext(CAPABILITIES.AUTOMATIONS_READ);
-  const canManage = ctx.can(CAPABILITIES.AUTOMATIONS_MANAGE);
+  const ctx = await getAdminContext(CAPABILITIES.NOTIFICATIONS_READ);
+  const canManage = ctx.can(CAPABILITIES.NOTIFICATIONS_MANAGE);
   const { data } = await ctx.supabase.rpc("admin_notification_rules_snapshot", {
     p_studio_id: ctx.studio.id,
   });

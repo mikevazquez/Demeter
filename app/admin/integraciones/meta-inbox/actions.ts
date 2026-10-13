@@ -31,7 +31,7 @@ export async function saveMetaInboxConnection(formData: FormData) {
     redirect("/admin/integraciones/meta-inbox?connection=error&code=required_fields");
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
 
   // Validate newly entered Facebook Page credentials before replacing the saved token.
   // Never put a token into a URL, logs, an error message, or client-side state.
@@ -256,7 +256,7 @@ export async function saveMetaInboxPilotContacts(formData: FormData) {
   const instagramContactId = String(formData.get("instagram_contact_id") ?? "").trim();
   const messengerContactId = String(formData.get("messenger_contact_id") ?? "").trim();
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   const { error } = await supabase.rpc("admin_set_meta_inbox_pilot_contacts", {
     target_studio_id: studio.id,
     target_instagram_contact_id: instagramContactId || null,
@@ -280,7 +280,7 @@ export async function diagnoseMetaInboxApp(formData: FormData) {
     redirect("/admin/integraciones/meta-inbox?app_check=invalid_id");
   }
 
-  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   let result: "valid" | "mismatch" | "not_configured" | "unavailable" = "unavailable";
 
   try {
@@ -353,7 +353,7 @@ export async function manageInstagramWebhookSubscription(formData: FormData) {
     redirect("/admin/integraciones/meta-inbox?ig_subscription=invalid");
   }
 
-  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   if (
     studio.id !== "9fe23cfa-fb47-4670-afeb-ed4a56433772" ||
     process.env.VERCEL_ENV !== "preview"
@@ -428,7 +428,7 @@ export async function manageInstagramWebhookSubscription(formData: FormData) {
 /** Store the Instagram application's signing secret independently from Messenger. */
 export async function saveInstagramSigningSecret(formData: FormData) {
   const secret = String(formData.get("instagram_app_secret") ?? "").trim();
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   if (
     studio.id !== "9fe23cfa-fb47-4670-afeb-ed4a56433772" ||
     process.env.VERCEL_ENV !== "preview"
@@ -448,7 +448,7 @@ export async function saveInstagramSigningSecret(formData: FormData) {
 
 /** Verify the saved Instagram credential without revealing it to the browser. */
 export async function diagnoseInstagramSavedToken() {
-  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   if (
     studio.id !== "9fe23cfa-fb47-4670-afeb-ed4a56433772" ||
     process.env.VERCEL_ENV !== "preview"
@@ -520,7 +520,7 @@ export async function diagnoseInstagramSavedToken() {
  * message bodies, identifiers or access tokens to the client or logs.
  */
 export async function diagnoseInstagramConversationsRead() {
-  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   if (
     studio.id !== "9fe23cfa-fb47-4670-afeb-ed4a56433772" ||
     process.env.VERCEL_ENV !== "preview"

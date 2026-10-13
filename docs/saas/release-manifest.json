@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "status": "prepared_not_authorized",
+  "source_code_sha": "44eddd04524d1a2104e92d67564a64a20025e9be",
+  "baseline_main_sha": "7f6c4634d2e64c050ba2d652d42623f1d6ddc71a",
+  "production_project_ref": "qfhojvgvhrbautvczffq",
+  "sandbox_project_ref": "hedouonyhynuvwbckdlg",
+  "stripe_live_account": "acct_1TwcF07pc7DxswTf",
+  "migrations": [
+    "20261011192941_saas_restore_platform_and_billing_dependencies.sql",
+    "20261011193659_saas_owner_usage_visibility.sql",
+    "20261011194902_saas_plan_dependency_catalog.sql",
+    "20261012034141_saas_recurring_template_resource_compatibility.sql",
+    "20261012034759_saas_activity_package_discipline_bridge.sql"
+  ],
+  "edge_functions": [
+    {
+      "name": "provision-studio",
+      "verify_jwt": true
+    },
+    {
+      "name": "saas-stripe-checkout",
+      "verify_jwt": true
+    },
+    {
+      "name": "saas-stripe-portal",
+      "verify_jwt": true
+    },
+    {
+      "name": "saas-stripe-webhook",
+      "verify_jwt": false
+    }
+  ],
+  "required_secret_names": [
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SIGNING_SECRET",
+    "SAAS_BILLING_RETURN_ORIGINS"
+  ],
+  "allowed_return_origins": ["https://demeterbueno.vercel.app"],
+  "webhook": {
+    "url": "https://qfhojvgvhrbautvczffq.supabase.co/functions/v1/saas-stripe-webhook",
+    "api_version": "2026-08-26.dahlia",
+    "enabled_events": [
+      "checkout.session.completed",
+      "checkout.session.expired",
+      "customer.subscription.created",
+      "customer.subscription.updated",
+      "customer.subscription.deleted",
+      "customer.subscription.paused",
+      "customer.subscription.resumed",
+      "customer.subscription.trial_will_end",
+      "invoice.paid",
+      "invoice.payment_failed",
+      "invoice.payment_action_required"
+    ],
+    "status": "not_created_until_release"
+  },
+  "portal_configuration_id": "bpc_1UPc1A7pc7DxswTf0QgPm9gq",
+  "commercial_policy": {
+    "currency": "mxn",
+    "tax_behavior": "inclusive",
+    "adaptive_pricing_enabled": false,
+    "automatic_tax_enabled": false,
+    "trial_days": 0,
+    "grace_days": 3
+  },
+  "pending_gates": ["final_candidate_checks", "final_release_authorization"],
+  "sha256": {
+    "supabase/migrations/20261011192941_saas_restore_platform_and_billing_dependencies.sql": "b569fff8bc4fa07ce0ee30205e0bf7e1fc55cc3e01301593fce7b6ac2f8545a9",
+    "supabase/migrations/20261011193659_saas_owner_usage_visibility.sql": "d690a61351871cbff54bfd0cb04d6529a06901a83107227cfd1a9f1d5efe9d3e",
+    "supabase/migrations/20261011194902_saas_plan_dependency_catalog.sql": "e8b2459a4ae14a031aa9ef2f9cdfac7a9bbc02636ac500d6fe5b31f5184e7f0d",
+    "supabase/migrations/20261012034141_saas_recurring_template_resource_compatibility.sql": "fac3e6e9b5f435c3f786813b82cfc5ddc021ae25c7d51c553880608a9a908d69",
+    "supabase/migrations/20261012034759_saas_activity_package_discipline_bridge.sql": "20e10100c66d6ff935a92ca0914aca3479b368747ca91f802ac6524c528c386b",
+    "supabase/functions/provision-studio/index.ts": "85446546370bb1c77cc99014bca01262a19109db623c038f6e65d3a720d77c6a",
+    "supabase/functions/saas-stripe-checkout/index.ts": "07a1cb1974343d45a3ba26297fc04d687308115ffe1e58854a4c148fe143f145",
+    "supabase/functions/saas-stripe-portal/index.ts": "7cf825ae4a5ab6ce4a670d64f0ef400930e2e5ad30bae3be8d3716a712999b30",
+    "supabase/functions/saas-stripe-webhook/index.ts": "3a0fe13f861e6b8d1848c4ccb02101bce0457e508f6098f533fbaae7bf1fedf7",
+    "supabase/functions/_shared/stripe-billing.ts": "7e8c529f8deb1619209f76614ee4964a33a30b30131a47fddecfb2fd177d4437",
+    "docs/saas/release-live-price-mapping.sql": "7010680a131a343440dbe55030cb3398e46007ce43962eb9c0107c3b95edc81a"
+  },
+  "functional_acceptance": {
+    "response": "Funciona como espero",
+    "scope": "Presented Preview plans, Sandbox portals and integral-flow evidence",
+    "client_date": "2026-10-11",
+    "timezone": "America/Mexico_City"
+  },
+  "restoration_rehearsal": {
+    "project_ref": "uweqtwmgpsftnntyzpbh",
+    "backup_utc": "2026-10-12T05:10:44Z",
+    "result": "database_restoration_and_migration_rehearsal_passed",
+    "evidence": "docs/saas/s12-restoration-rehearsal-20261012.md"
+  }
+}

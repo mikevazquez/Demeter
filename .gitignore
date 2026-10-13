@@ -8,3 +8,6 @@ out/
 *.log
 .DS_Store
 coverage/
+
+# Private Studio Flow logical backups
+/studio-flow-backup-*/

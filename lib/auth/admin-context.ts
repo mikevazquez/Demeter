@@ -6,7 +6,7 @@ import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
 import { createClient } from "@/lib/supabase/server";
 
 async function getAdminContextImpl(requiredCapability?: Capability) {
-  const supabase = await createClient("admin");
+  let supabase = await createClient("admin");
   const {
     data: { user },
     error: authError,
@@ -53,13 +53,17 @@ async function getAdminContextImpl(requiredCapability?: Capability) {
     redirect("/login/studio/seleccionar");
   }
 
-  const [studioResult, roleCapabilitiesResult] = await Promise.all([
+  // Scope implicit RPCs only after validating the selected membership.
+  supabase = await createClient("admin", membership.studio_id);
+
+  const [studioResult, roleCapabilitiesResult, planCapabilitiesResult] = await Promise.all([
     supabase
       .from("studios")
       .select("id, name, slug, logo_path, timezone, locale, currency, primary_color, status")
       .eq("id", membership.studio_id)
       .single(),
     supabase.from("role_capabilities").select("capability_key").eq("role", membership.role),
+    supabase.rpc("current_studio_capabilities", { p_studio_id: membership.studio_id }),
   ]);
 
   if (studioResult.error || roleCapabilitiesResult.error) {
@@ -74,18 +78,38 @@ async function getAdminContextImpl(requiredCapability?: Capability) {
     redirect("/login/studio?error=access");
   }
 
-  const capabilities = new Set(
+  if (planCapabilitiesResult.error) {
+    // Entitlement lookup failures must never revoke a valid authentication session.
+    throw new Error("admin_plan_lookup_temporarily_unavailable");
+  }
+
+  const roleCapabilitiesSet = new Set(
     (roleCapabilities ?? []).map((item) => item.capability_key as Capability),
   );
   const canUseStudioPortal =
-    capabilities.has(CAPABILITIES.ADMIN_PORTAL) || capabilities.has(CAPABILITIES.INSTRUCTOR_PORTAL);
+    roleCapabilitiesSet.has(CAPABILITIES.ADMIN_PORTAL) ||
+    roleCapabilitiesSet.has(CAPABILITIES.INSTRUCTOR_PORTAL);
 
   if (!canUseStudioPortal) {
     await supabase.auth.signOut();
     redirect("/login/studio?error=access");
   }
 
+  const capabilities = new Set<Capability>(
+    (planCapabilitiesResult.data ?? [])
+      .map((item: { capability_key: string }) => item.capability_key as Capability)
+      .filter((capability: Capability) => roleCapabilitiesSet.has(capability)),
+  );
+
+  if (
+    !capabilities.has(CAPABILITIES.ADMIN_PORTAL) &&
+    !capabilities.has(CAPABILITIES.INSTRUCTOR_PORTAL)
+  ) {
+    redirect("/login/studio?error=subscription");
+  }
+
   if (requiredCapability && !capabilities.has(requiredCapability)) {
+    if (membership.role === "owner") redirect("/admin/suscripcion?error=plan_access");
     redirect(
       capabilities.has(CAPABILITIES.ADMIN_PORTAL)
         ? "/admin?error=access"

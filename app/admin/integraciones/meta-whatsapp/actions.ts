@@ -42,7 +42,7 @@ export async function saveMetaWhatsAppConnection(formData: FormData) {
     );
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
 
   const { error } = await supabase.rpc("admin_set_meta_whatsapp_connection", {
     target_studio_id: studio.id,
@@ -72,7 +72,7 @@ export async function updateMetaWhatsAppAccessToken(formData: FormData) {
     redirect("/admin/integraciones/meta-whatsapp?token=error&code=meta_access_token_invalid");
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
 
   let current;
   try {
@@ -111,7 +111,7 @@ export async function updateMetaWhatsAppAppSecret(formData: FormData) {
     redirect("/admin/integraciones/meta-whatsapp?secret=error&code=meta_app_secret_invalid");
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
 
   let current;
   try {
@@ -145,7 +145,7 @@ export async function updateMetaWhatsAppAppSecret(formData: FormData) {
 }
 
 export async function verifyMetaWhatsAppConnection() {
-  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
   const diagnostics = await getMetaWhatsAppAdminDiagnostics(studio.id);
 
   revalidatePath("/admin/integraciones/meta-whatsapp");
@@ -162,7 +162,7 @@ export async function verifyMetaWhatsAppConnection() {
 }
 
 export async function subscribeCurrentMetaWhatsAppApp() {
-  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
 
   try {
     await subscribeMetaWhatsAppApp(studio.id);
@@ -185,7 +185,7 @@ export async function sendMetaWhatsAppTestMessage(formData: FormData) {
   const templateName = separator > 0 ? templateKey.slice(0, separator) : "";
   const languageCode = separator > 0 ? templateKey.slice(separator + 2) : "";
 
-  const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
 
   try {
     await sendMetaWhatsAppTemplateTest({
@@ -212,7 +212,7 @@ export async function activateMetaWhatsAppPilot(formData: FormData) {
     redirect("/admin/integraciones/meta-whatsapp?pilot=error&code=pilot_phone_required");
   }
 
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
 
   const { error: pilotError } = await supabase.rpc("admin_set_meta_whatsapp_pilot_contact", {
     target_studio_id: studio.id,
@@ -244,7 +244,7 @@ export async function activateMetaWhatsAppPilot(formData: FormData) {
 }
 
 export async function disableMetaWhatsAppPilot() {
-  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.INTEGRATIONS_MANAGE);
 
   const { error } = await supabase
     .from("assistant_configs")
