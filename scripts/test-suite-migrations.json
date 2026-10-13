@@ -1,5 +1,5 @@
 {
-  "reason": "User approved replacing pre-V2 Intelligence source-text contracts with executable tests of the approved V2 product (b62b2d0). Database/RLS/action contracts are retained. Other listed renames reflect reviewed route/template/history changes. The user-approved Intelligence update replaces five-view navigation contracts with six views and validates real conversation sources while keeping unmeasured qualification explicit. The user-approved student portal visual update keeps available-place counts in the agenda, occupancy in detail/confirmation, and routes payment to existing class-detail checkout; the two corresponding contract names are updated without removing their assertions.",
+  "reason": "User approved replacing pre-V2 Intelligence source-text contracts with executable tests of the approved V2 product (b62b2d0). Database/RLS/action contracts are retained. Other listed renames reflect reviewed route/template/history changes. The user-approved Intelligence update replaces five-view navigation contracts with six views and validates real conversation sources while keeping unmeasured qualification explicit. Block A of the administration redesign replaces six named contracts: settings capability instead of Owner-only configuration, same-weekday navigation, operational KPIs instead of the acquisition counter, explicit drop-in selection, and grouped Rewards navigation. Each exact rename maps to a passing replacement test; no tests are retired or skipped for Block A. Preserve the baseline student-portal replacements from main alongside Block A.",
   "replacementFile": "tests/inteligencia-v2-runtime.test.tsx",
   "retiredTests": [
     "tests/inteligencia-02-conversion-events.test.ts :: INTEL-02 conversion event intelligence builds conversion intelligence from immutable domain events",
@@ -113,6 +113,30 @@
     {
       "from": "tests/inteligencia-v2-runtime.test.tsx :: Inteligencia V2 runtime explains missing lead coverage instead of inventing a lead-to-booking rate",
       "to": "tests/inteligencia-v2-runtime.test.tsx :: Inteligencia V2 runtime reads real conversations and explains unmeasured qualification"
+    },
+    {
+      "from": "tests/admin-studio-branding-contract.test.ts :: Studio public branding configuration restricts portal identity changes to the Owner",
+      "to": "tests/admin-studio-branding-contract.test.ts :: Studio public branding configuration authorizes portal identity changes by settings capability"
+    },
+    {
+      "from": "tests/admin-ux-02-visual-parity.test.ts :: ADMIN-UX-02 approved visual parity always moves week arrows to Monday of the target week",
+      "to": "tests/admin-ux-02-visual-parity.test.ts :: ADMIN-UX-02 approved visual parity preserves the selected weekday when moving between weeks"
+    },
+    {
+      "from": "tests/admin-ux-02-visual-parity.test.ts :: ADMIN-UX-02 approved visual parity counts active students from currently valid product acquisitions",
+      "to": "tests/admin-ux-02-visual-parity.test.ts :: ADMIN-UX-02 approved visual parity excludes cancelled classes from occupancy and attendance KPIs"
+    },
+    {
+      "from": "tests/f8-attendance-contract.test.ts :: F8 attendance contracts allows an existing student without valid commercial eligibility to join as a walk-in",
+      "to": "tests/f8-attendance-contract.test.ts :: F8 attendance contracts requires an explicit drop-in action when package eligibility fails"
+    },
+    {
+      "from": "tests/retos01-challenges.test.ts :: RETOS-01 exposes Retos as a separate admin and student module",
+      "to": "tests/retos01-challenges.test.ts :: RETOS-01 groups admin challenges under rewards and retains student access"
+    },
+    {
+      "from": "tests/studio-business-profile.test.ts :: Studio business profile provides an owner-only settings entry for public studio information",
+      "to": "tests/studio-business-profile.test.ts :: Studio business profile provides a capability-authorized settings entry for public studio information"
     },
     {
       "from": "tests/minimum-reservation-cancellation.test.ts :: CANCELACION-MIN-01 automatic minimum reservation cancellation shows capacity as occupied over total in student booking views",

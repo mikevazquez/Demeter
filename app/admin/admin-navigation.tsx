@@ -197,7 +197,11 @@ export function AdminMobileNavigation({ items }: { items: AdminNavItem[] }) {
   const mobileItems = items.filter((item) => item.enabled);
 
   return (
-    <nav className="admin-mobile-nav" aria-label="Navegación móvil">
+    <nav
+      className="admin-mobile-nav"
+      aria-label="Principal"
+      style={{ gridTemplateColumns: `repeat(${mobileItems.length}, minmax(0, 1fr))` }}
+    >
       {mobileItems.map((item) => {
         const active = isActivePath(pathname, item);
         return (

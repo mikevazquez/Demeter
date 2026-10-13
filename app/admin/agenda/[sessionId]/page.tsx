@@ -719,6 +719,14 @@ export default async function SessionDetailPage({
                 <button className="primary-button" type="submit">
                   Guardar cambios
                 </button>
+                <label className="grid gap-2">
+                  <span>Motivo para cancelar la clase</span>
+                  <textarea
+                    name="reason"
+                    maxLength={500}
+                    placeholder="Necesario solo para cancelar"
+                  />
+                </label>
                 <button
                   className="admin-session-cancel-button"
                   type="submit"

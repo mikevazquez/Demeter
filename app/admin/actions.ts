@@ -76,6 +76,8 @@ export type TodayStudentCandidate = {
   fullName: string;
   eligible: boolean;
   detail: string;
+  dropInPriceMinor?: number | null;
+  reasonCode?: string | null;
 };
 
 export async function searchStudentsForToday(
@@ -90,7 +92,7 @@ export async function searchStudentsForToday(
   const { supabase, studio, can } = await getAdminContext();
   const { data: session } = await supabase
     .from("class_sessions")
-    .select("id,status")
+    .select("id,status,template_id")
     .eq("studio_id", studio.id)
     .eq("id", normalizedSessionId)
     .maybeSingle();
@@ -98,18 +100,22 @@ export async function searchStudentsForToday(
   if (!session || session.status === "cancelled") return [];
 
   const canPostCloseAdd = session.status === "completed" && can(CAPABILITIES.ATTENDANCE_WRITE);
-  if (!canPostCloseAdd && !can(CAPABILITIES.SCHEDULE_WRITE)) return [];
+  if (
+    !canPostCloseAdd &&
+    !(can(CAPABILITIES.SCHEDULE_WRITE) || can(CAPABILITIES.RESERVATIONS_MANAGE))
+  )
+    return [];
 
-  const [{ data: students }, { data: existingReservations }] = await Promise.all([
+  const [{ data: template }] = await Promise.all([
     supabase
-      .from("students")
-      .select("id,full_name")
+      .from("class_templates")
+      .select("drop_in_price_minor")
+      .eq("id", session.template_id)
       .eq("studio_id", studio.id)
-      .eq("active", true)
-      .eq("lifecycle_status", "active")
-      .ilike("full_name", `%${normalizedSearch}%`)
-      .order("full_name")
-      .limit(12),
+      .maybeSingle(),
+  ]);
+  const [{ data: people }, { data: existingReservations }] = await Promise.all([
+    supabase.rpc("admin_search_people", { target_studio_id: studio.id, q: normalizedSearch }),
     supabase
       .from("reservations")
       .select("student_id")
@@ -120,7 +126,13 @@ export async function searchStudentsForToday(
   const alreadyBooked = new Set(
     (existingReservations ?? []).flatMap((item) => (item.student_id ? [item.student_id] : [])),
   );
-  const candidates = (students ?? []).filter((item) => !alreadyBooked.has(item.id)).slice(0, 8);
+  const candidates = (
+    (people ?? []) as { id: string; full_name: string; href: string; inactive: boolean }[]
+  )
+    .filter(
+      (item) => !item.inactive && !item.href.includes("/contactos/") && !alreadyBooked.has(item.id),
+    )
+    .slice(0, 8);
 
   if (canPostCloseAdd) {
     return candidates.map((student) => ({
@@ -151,6 +163,12 @@ export async function searchStudentsForToday(
         id: student.id,
         fullName: student.full_name,
         eligible: eligibility.eligible === true,
+        reasonCode: eligibility.reason_code,
+        dropInPriceMinor: ["no_active_product", "outside_product", "no_credits"].includes(
+          eligibility.reason_code ?? "",
+        )
+          ? template?.drop_in_price_minor
+          : null,
         detail:
           eligibility.eligible === true
             ? eligibility.unlimited
@@ -202,7 +220,7 @@ export async function bookStudentFromToday(formData: FormData) {
     redirect(withQuery(returnUrl, "created", "post-close-attendee"));
   }
 
-  if (!can(CAPABILITIES.SCHEDULE_WRITE)) {
+  if (!(can(CAPABILITIES.SCHEDULE_WRITE) || can(CAPABILITIES.RESERVATIONS_MANAGE))) {
     redirect(withQuery(returnUrl, "error", "forbidden"));
   }
 
@@ -234,26 +252,20 @@ export async function bookStudentFromToday(formData: FormData) {
     redirect(withQuery(returnUrl, "created", "booking"));
   }
 
-  const commercialPendingReasons = new Set(["no_active_product", "outside_product", "no_credits"]);
-  const reason = result.reason_code ?? "booking";
+  redirect(withQuery(returnUrl, "error", result.reason_code ?? "booking"));
+}
 
-  if (!commercialPendingReasons.has(reason)) {
-    redirect(withQuery(returnUrl, "error", reason));
-  }
-
-  if (!can(CAPABILITIES.ATTENDANCE_WRITE)) {
-    redirect(withQuery(returnUrl, "error", "forbidden"));
-  }
-
-  const { error } = await supabase.rpc("add_existing_walkin_student", {
+export async function bookDropInFromToday(formData: FormData) {
+  const sessionId = String(formData.get("session_id") ?? "");
+  const studentId = String(formData.get("student_id") ?? "");
+  const returnDate = String(formData.get("return_date") ?? "");
+  const returnUrl = operationReturnUrl(formData, returnDate, sessionId);
+  const { supabase } = await getAdminContext(CAPABILITIES.RESERVATIONS_MANAGE);
+  const { error } = await supabase.rpc("admin_book_drop_in", {
     target_session_id: sessionId,
     target_student_id: studentId,
   });
-
-  if (error) {
-    redirect(withQuery(returnUrl, "error", error.message));
-  }
-
+  if (error) redirect(withQuery(returnUrl, "error", error.message));
   refreshSession(sessionId);
   redirect(withQuery(returnUrl, "created", "walkin-existing"));
 }
@@ -269,7 +281,7 @@ export async function cancelReservationFromToday(formData: FormData) {
     redirect(withQuery(returnUrl, "error", "cancel_reason_required"));
   }
 
-  const { supabase } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
+  const { supabase } = await getAdminContext(CAPABILITIES.RESERVATIONS_MANAGE);
   const { data, error } = await supabase.rpc("cancel_reservation", {
     target_reservation_id: reservationId,
     target_reason: reason,
@@ -293,7 +305,7 @@ export async function setAttendanceFromToday(formData: FormData) {
   const returnDate = String(formData.get("return_date") ?? "");
   const returnUrl = operationReturnUrl(formData, returnDate, sessionId);
 
-  if (!sessionId || !reservationId || !["attended", "no_show"].includes(status)) {
+  if (!sessionId || !reservationId || !["reserved", "attended", "no_show"].includes(status)) {
     redirect(withQuery(returnUrl, "error", "attendance"));
   }
 
@@ -352,7 +364,7 @@ export async function recordPendingClassPaymentAndAttendanceFromToday(formData: 
   }
 
   const { supabase } = await getAdminContext(CAPABILITIES.ATTENDANCE_WRITE);
-  const { data, error } = await supabase.rpc("record_asistian_class_payment_and_attendance", {
+  const { data, error } = await supabase.rpc("record_class_payment_and_attendance", {
     target_reservation_id: reservationId,
     payment_method: paymentMethod,
     payment_reference: paymentReference || null,
@@ -403,11 +415,13 @@ export async function createWalkinFromToday(formData: FormData) {
   }
 
   const { supabase } = await getAdminContext(CAPABILITIES.ATTENDANCE_WRITE);
-  const { error } = await supabase.rpc("create_walkin_student", {
+  const { error } = await supabase.rpc("admin_create_walkin", {
     target_session_id: sessionId,
     p_first_name: firstName,
     p_last_name: lastName || null,
     p_phone: phone,
+    p_kind: String(formData.get("class_kind") ?? "trial"),
+    p_payment_method: String(formData.get("payment_method") ?? "pay_later"),
   });
 
   if (error) {

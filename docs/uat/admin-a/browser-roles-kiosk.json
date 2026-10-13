@@ -1,0 +1,65 @@
+{
+  "checks": [
+    {
+      "name": "Undo survives navigation inside admin",
+      "passed": true
+    },
+    {
+      "name": "Undo sends no walk-in or payment mutation",
+      "passed": true
+    },
+    {
+      "name": "Reception role is real and configuration hidden",
+      "passed": true
+    },
+    {
+      "name": "Reception cannot edit or cancel schedules",
+      "passed": true
+    },
+    {
+      "name": "Coach sees only assigned class",
+      "passed": true
+    },
+    {
+      "name": "Coach has three navigation destinations",
+      "passed": true
+    },
+    {
+      "name": "Coach cannot add students or walk-ins",
+      "passed": true
+    },
+    {
+      "name": "Legacy coach roster redirects inline",
+      "passed": true
+    },
+    {
+      "name": "Coach denied unassigned class",
+      "passed": true
+    },
+    {
+      "name": "Kiosk camera starts with rear preference",
+      "passed": true
+    },
+    {
+      "name": "Kiosk requests front camera and saves preference",
+      "passed": true
+    },
+    {
+      "name": "Kiosk restores saved camera",
+      "passed": true
+    },
+    {
+      "name": "Kiosk has clock and no student roster",
+      "passed": true
+    },
+    {
+      "name": "Correct PIN exits kiosk",
+      "passed": true
+    },
+    {
+      "name": "No browser errors",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

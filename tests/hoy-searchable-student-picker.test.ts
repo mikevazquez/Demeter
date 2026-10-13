@@ -15,7 +15,9 @@ describe("Hoy searchable student picker", () => {
   });
 
   it("requires choosing a matching student before adding", () => {
-    expect(canSelectStudentCandidate({ eligible: false, detail: "sin paquete activo" })).toBe(true);
+    expect(canSelectStudentCandidate({ eligible: false, detail: "sin paquete activo" })).toBe(
+      false,
+    );
     expect(canSelectStudentCandidate({ eligible: false, detail: "clase llena" })).toBe(false);
     expect(hasSelectedStudent("  ")).toBe(false);
     expect(hasSelectedStudent("student-123")).toBe(true);

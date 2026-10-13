@@ -12,11 +12,11 @@ describe("SF-166 automation admin UI", () => {
     const more = source("app/admin/mas/page.tsx");
     const layout = source("app/admin/layout.tsx");
 
-    expect(more).toContain('title: "Notificaciones"');
-    expect(more).toContain('href: "/admin/notificaciones"');
+    expect(more).toContain('title: "Notificaciones y automatizaciones"');
+    expect(more).toContain('"/admin/notificaciones"');
     expect(more).toContain("CAPABILITIES.AUTOMATIONS_READ");
-    expect(layout).toContain('href: "/admin/notificaciones"');
-    expect(layout).toContain('label: "Notificaciones"');
+    expect(layout).toContain('"/admin/notificaciones"');
+    expect(layout).toContain('label: "Más"');
   });
 
   it("renders the approved catalog and execution audit surfaces", () => {

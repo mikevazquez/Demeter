@@ -1,7 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { BrowserQRCodeReader } from "@zxing/browser";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+
+import { verifyKioskExit } from "./actions";
 
 type CheckInResponse = {
   ok?: boolean;
@@ -12,6 +15,7 @@ type CheckInResponse = {
   ends_at?: string;
   checked_in_at?: string | null;
   available_at?: string;
+  credits_left?: number | null;
 };
 
 type Feedback =
@@ -20,9 +24,10 @@ type Feedback =
   | { kind: "error"; title: string; detail: string; meta?: string }
   | null;
 
-function formatTime(value?: string) {
+function formatTime(value?: string, timeZone?: string) {
   if (!value) return "";
   return new Intl.DateTimeFormat("es-MX", {
+    timeZone,
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
@@ -34,14 +39,16 @@ function feedbackForDuration(kind: Exclude<Feedback, null>["kind"] | undefined) 
   return 3800;
 }
 
-function feedbackFor(result: CheckInResponse): Feedback {
-  const classLine = [result.activity, formatTime(result.starts_at)].filter(Boolean).join(" · ");
+function feedbackFor(result: CheckInResponse, timeZone: string): Feedback {
+  const classLine = [result.activity, formatTime(result.starts_at, timeZone)]
+    .filter(Boolean)
+    .join(" · ");
 
   if (result.status === "success") {
     return {
       kind: "success",
-      title: "Asistencia registrada",
-      detail: result.student_name ?? "Check-in correcto",
+      title: `¡Bienvenida, ${result.student_name ?? "alumna"}!`,
+      detail: `Asistencia registrada en ${result.activity ?? "tu clase"}.${result.credits_left != null ? ` Te quedan ${result.credits_left} clases.` : ""}`,
       meta: classLine,
     };
   }
@@ -55,12 +62,19 @@ function feedbackFor(result: CheckInResponse): Feedback {
     };
   }
 
+  if (result.status === "payment_pending")
+    return {
+      kind: "duplicate",
+      title: `${result.student_name ?? "Alumna"}, tienes un pago pendiente`,
+      detail: "Pasa a recepción para registrar tu pago y tu asistencia.",
+    };
+
   if (result.status === "too_early") {
     return {
       kind: "error",
       title: "Tu check-in todavía no está disponible",
       detail: result.available_at
-        ? `Podrás registrarlo a partir de las ${formatTime(result.available_at)}.`
+        ? `Podrás registrarlo a partir de las ${formatTime(result.available_at, timeZone)}.`
         : "Intenta de nuevo más cerca del inicio de tu clase.",
     };
   }
@@ -96,7 +110,46 @@ function feedbackFor(result: CheckInResponse): Feedback {
   };
 }
 
-export function KioskScanner({ studioName }: { studioName: string }) {
+export function KioskScanner({
+  studioName,
+  timeZone,
+  message,
+  targetClass,
+}: {
+  studioName: string;
+  timeZone: string;
+  message: string;
+  targetClass: { name: string; startsAt: string; endsAt: string } | null;
+}) {
+  const router = useRouter();
+  const [clock, setClock] = useState<string>("");
+  const [camera, setCamera] = useState<"environment" | "user" | null>(null);
+  useEffect(() => {
+    const initial = window.requestAnimationFrame(() => {
+      setCamera(
+        localStorage.getItem("studio-flow-kiosk-camera") === "user" ? "user" : "environment",
+      );
+      tick();
+    });
+    const tick = () =>
+      setClock(
+        new Intl.DateTimeFormat("es-MX", {
+          timeZone,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }).format(new Date()),
+      );
+    const timer = setInterval(tick, 1000);
+    return () => {
+      window.cancelAnimationFrame(initial);
+      clearInterval(timer);
+    };
+  }, [timeZone]);
+  const [exitOpen, setExitOpen] = useState(false);
+  const [pin, setPin] = useState("");
+  const [exitError, setExitError] = useState("");
+  const [exitPending, startExit] = useTransition();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
   const busyRef = useRef(false);
@@ -124,7 +177,9 @@ export function KioskScanner({ studioName }: { studioName: string }) {
           cache: "no-store",
         });
         const result = (await response.json()) as CheckInResponse;
-        nextFeedback = feedbackFor(result);
+        nextFeedback = feedbackFor(result, timeZone);
+        if (nextFeedback?.kind === "success" && message)
+          nextFeedback = { ...nextFeedback, meta: message };
         setFeedback(nextFeedback);
       } catch {
         nextFeedback = {
@@ -140,7 +195,7 @@ export function KioskScanner({ studioName }: { studioName: string }) {
 
       resetTimerRef.current = setTimeout(resetReader, feedbackDurationMs);
     },
-    [resetReader],
+    [resetReader, message, timeZone],
   );
 
   useEffect(() => {
@@ -151,11 +206,11 @@ export function KioskScanner({ studioName }: { studioName: string }) {
     });
 
     async function start() {
-      if (!videoRef.current) return;
+      if (!videoRef.current || !camera) return;
 
       try {
-        const controls = await reader.decodeFromVideoDevice(
-          undefined,
+        const controls = await reader.decodeFromConstraints(
+          { video: { facingMode: { ideal: camera } }, audio: false },
           videoRef.current,
           (result) => {
             if (!disposed && result) void submitToken(result.getText());
@@ -186,7 +241,7 @@ export function KioskScanner({ studioName }: { studioName: string }) {
       controlsRef.current = null;
       if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
     };
-  }, [submitToken]);
+  }, [submitToken, camera]);
 
   const feedbackTone =
     feedback?.kind === "success"
@@ -196,7 +251,7 @@ export function KioskScanner({ studioName }: { studioName: string }) {
         : "border-rose-200 bg-rose-50";
 
   return (
-    <main className="fixed inset-0 z-[300] overflow-auto bg-[#f5f8fb] text-[#10203a]">
+    <main className="flow-kiosk fixed inset-0 z-[300] overflow-auto" data-timezone={timeZone}>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,rgba(23,168,120,0.08),transparent_38%)]" />
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-6 sm:px-8">
@@ -207,16 +262,90 @@ export function KioskScanner({ studioName }: { studioName: string }) {
             </p>
             <p className="mt-1 text-xs text-[#718096]">{studioName}</p>
           </div>
-          <a
-            href="/admin"
-            className="rounded-full border border-[#dce4eb] bg-white px-4 py-2 text-xs font-semibold text-[#607086] shadow-sm transition hover:border-[#bfe3d6] hover:text-[#0f8f66]"
-          >
-            Salir del modo kiosco
-          </a>
+          <time aria-label="Hora del estudio">{clock}</time>
+          <button type="button" onClick={() => setExitOpen(true)} className="flow-kiosk-exit">
+            Salir
+          </button>
         </header>
 
+        {exitOpen ? (
+          <div
+            className="flow-kiosk-pin"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="kiosk-pin-title"
+          >
+            <h2 id="kiosk-pin-title">PIN para salir del kiosco</h2>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                startExit(async () => {
+                  const result = await verifyKioskExit(pin);
+                  if (result.ok) router.push("/admin");
+                  else {
+                    setPin("");
+                    setExitError(
+                      result.blocked ? "Intenta de nuevo en un minuto" : "PIN incorrecto",
+                    );
+                  }
+                });
+              }}
+            >
+              <input
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]{4}"
+                maxLength={4}
+                aria-label="PIN de cuatro dígitos"
+                value={pin}
+                onChange={(event) => setPin(event.target.value.replace(/\D/g, ""))}
+                autoFocus
+                required
+              />
+              <div className="flow-kiosk-keypad">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((digit) => (
+                  <button
+                    type="button"
+                    key={digit}
+                    disabled={exitPending || pin.length === 4}
+                    onClick={() => setPin((value) => value + digit)}
+                  >
+                    {digit}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  aria-label="Borrar último dígito"
+                  onClick={() => setPin((value) => value.slice(0, -1))}
+                >
+                  ⌫
+                </button>
+              </div>
+              <p role="alert">{exitError}</p>
+              <button disabled={exitPending}>Salir</button>
+              <button
+                type="button"
+                onClick={() => {
+                  setExitOpen(false);
+                  setPin("");
+                  setExitError("");
+                }}
+              >
+                Cancelar
+              </button>
+            </form>
+          </div>
+        ) : null}
         <section className="flex flex-1 flex-col items-center justify-center py-8">
           <div className="w-full max-w-2xl text-center">
+            {targetClass ? (
+              <p>
+                {targetClass.name} · {formatTime(targetClass.startsAt, timeZone)}–
+                {formatTime(targetClass.endsAt, timeZone)}
+              </p>
+            ) : (
+              <p>No hay una clase próxima. Tu reserva determina el check-in disponible.</p>
+            )}
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#0f8f66]">
               Check-in
             </p>
@@ -285,6 +414,17 @@ export function KioskScanner({ studioName }: { studioName: string }) {
             ) : null}
           </div>
 
+          <button
+            type="button"
+            className="flow-kiosk-camera"
+            onClick={() => {
+              const next = camera === "user" ? "environment" : "user";
+              localStorage.setItem("studio-flow-kiosk-camera", next);
+              setCamera(next);
+            }}
+          >
+            Cambiar a cámara {camera === "user" ? "trasera" : "frontal"}
+          </button>
           <div className="mt-5 flex items-center gap-2 text-xs text-[#718096]">
             <span className="h-2 w-2 rounded-full bg-[#17a878] shadow-[0_0_10px_rgba(23,168,120,0.35)]" />
             Lector listo

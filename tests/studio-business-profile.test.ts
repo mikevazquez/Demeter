@@ -15,9 +15,9 @@ describe("Studio business profile", () => {
   const reads = source("lib/assistant/read-tools.ts");
   const contracts = source("lib/assistant/tool-contracts.ts");
 
-  it("provides an owner-only settings entry for public studio information", () => {
-    expect(more).toContain('title: "Información del estudio"');
-    expect(more).toContain('href: "/admin/configuracion/empresa"');
+  it("provides a capability-authorized settings entry for public studio information", () => {
+    expect(source("app/admin/configuracion/page.tsx")).toContain('"Información del estudio"');
+    expect(more).toContain('href: "/admin/configuracion"');
     expect(page).toContain("BusinessProfileForm");
     expect(actions).toContain("owner_update_studio_business_profile_v1");
   });

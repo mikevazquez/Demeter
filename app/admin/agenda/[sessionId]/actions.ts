@@ -286,9 +286,11 @@ export async function updateSession(formData: FormData) {
 
 export async function cancelSession(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "");
-  const returnUrl = sessionManagementReturn(formData, sessionId);
+  const reason = String(formData.get("reason") ?? "").trim();
   const scope = String(formData.get("scope") ?? "single");
-  if (!sessionId) redirect("/admin/agenda");
+  const returnUrl = sessionManagementReturn(formData, sessionId);
+  if (!sessionId || !reason)
+    redirect(withQuery(returnUrl, "error", "cancellation_reason_required"));
   const { supabase, studio } = await getAdminContext(CAPABILITIES.SCHEDULE_WRITE);
   const { data: session } = await supabase
     .from("class_sessions")
@@ -297,28 +299,31 @@ export async function cancelSession(formData: FormData) {
     .eq("studio_id", studio.id)
     .single();
   if (!session) redirect(returnUrl);
+  const { data: future } =
+    scope === "future" && session.recurring_schedule_id
+      ? await supabase
+          .from("class_sessions")
+          .select("id")
+          .eq("studio_id", studio.id)
+          .eq("recurring_schedule_id", session.recurring_schedule_id)
+          .gte("starts_at", session.starts_at)
+          .eq("status", "scheduled")
+      : { data: [session] };
+  for (const target of future ?? []) {
+    const { error } = await supabase.rpc("admin_cancel_session", {
+      target_session_id: target.id,
+      reason,
+    });
+    if (error) redirect(withQuery(returnUrl, "error", error.message));
+  }
   if (scope === "future" && session.recurring_schedule_id) {
-    await supabase
-      .from("class_sessions")
-      .update({ status: "cancelled" })
-      .eq("studio_id", studio.id)
-      .eq("recurring_schedule_id", session.recurring_schedule_id)
-      .gte("starts_at", session.starts_at)
-      .eq("status", "scheduled");
-    await supabase
+    const { error } = await supabase
       .from("recurring_schedules")
       .update({ active: false, updated_at: new Date().toISOString() })
       .eq("id", session.recurring_schedule_id)
       .eq("studio_id", studio.id);
-  } else
-    await supabase
-      .from("class_sessions")
-      .update({
-        status: "cancelled",
-        is_schedule_exception: Boolean(session.recurring_schedule_id),
-      })
-      .eq("id", sessionId)
-      .eq("studio_id", studio.id);
+    if (error) redirect(withQuery(returnUrl, "error", error.message));
+  }
   revalidatePath(`/admin/agenda/${sessionId}`);
   revalidatePath("/admin/agenda");
   revalidatePath("/admin");

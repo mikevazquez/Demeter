@@ -140,14 +140,14 @@ describe("F9 sales contracts", () => {
     const existingStudentForm = source("app/admin/hoy/ExistingStudentAddForm.tsx");
 
     expect(adminActions).toContain(
-      'new Set(["no_active_product", "outside_product", "no_credits"])',
+      '["no_active_product", "outside_product", "no_credits"].includes',
     );
     expect(adminActions).not.toContain(
       'new Set(["no_active_product", "outside_product", "no_credits", "enrollment_required"])',
     );
     expect(operations).toContain('error === "enrollment_required"');
     expect(existingStudentForm).toContain("canSelectStudentCandidate(candidate)");
-    expect(canSelectStudentCandidate({ eligible: false, detail: "sin créditos" })).toBe(true);
+    expect(canSelectStudentCandidate({ eligible: false, detail: "sin créditos" })).toBe(false);
     expect(canSelectStudentCandidate({ eligible: false, detail: "inscripción no vigente" })).toBe(
       false,
     );
@@ -185,8 +185,8 @@ describe("F9 sales contracts", () => {
     const wizard = source("app/admin/ventas/nueva/page.tsx");
     const sharedSaleForm = source("app/admin/alumnas/[studentId]/alta/StudentOnboardingForm.tsx");
     const detail = source("app/admin/ventas/[saleId]/page.tsx");
-    expect(layout).toContain('{ href: "/admin", label: "Hoy", enabled: true }');
-    expect(layout).toContain('{ href: "/admin/alumnas", label: "Alumnas", enabled: true }');
+    expect(layout).toContain('label: "Hoy"');
+    expect(layout).toContain('label: "Alumnas"');
     expect(layout).not.toContain('label: "Empresa"');
     expect(layout).not.toContain('label: "Ventas"');
     expect(layout).not.toMatch(/href:\s*"\/admin\/ventas"/);

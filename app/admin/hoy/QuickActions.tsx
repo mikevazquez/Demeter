@@ -1,5 +1,7 @@
 "use client";
+import { Plus, UserPlus, ShoppingBag, CalendarBlank, CaretRight, X } from "@phosphor-icons/react";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   createQuickSale,
@@ -61,6 +63,45 @@ export default function QuickActions({ canStudents, canSales, locale }: Props) {
     if (studentId) return [];
     return students;
   }, [studentId, students]);
+
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const overlay = document.querySelector<HTMLElement>(".hoy-quick-overlay");
+    const focusable = () =>
+      Array.from(
+        overlay?.querySelectorAll<HTMLElement>(
+          "button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex='0']",
+        ) ?? [],
+      ).filter((item) => item.getClientRects().length);
+    focusable()[0]?.focus();
+    const key = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(null);
+      }
+      if (event.key !== "Tab") return;
+      const items = focusable(),
+        first = items[0],
+        last = items.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      }
+      if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    document.addEventListener("keydown", key);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", key);
+      if (previous?.isConnected) previous.focus();
+    };
+  }, [open]);
 
   useEffect(() => {
     if (open !== "sale" || studentId || studentQuery.trim().length < 2) return;
@@ -172,38 +213,88 @@ export default function QuickActions({ canStudents, canSales, locale }: Props) {
   return (
     <div className="hoy-quick-root">
       <button
-        className="hoy-header-action"
+        className="flow-icon-button"
+        aria-label="Acciones rápidas"
         type="button"
         onClick={() => setOpen(open ? null : "menu")}
       >
-        Atajos
+        <Plus size={25} aria-hidden="true" />
       </button>
 
       {open === "menu" ? (
-        <div className="hoy-shortcuts-menu hoy-shortcuts-menu-inline">
-          {canStudents ? (
-            <button
-              type="button"
-              onClick={() => {
-                setMessage(null);
-                setOpen("student");
-              }}
-            >
-              Nueva alumna
-            </button>
-          ) : null}
-          {canSales ? (
-            <button
-              type="button"
-              onClick={() => {
-                setMessage(null);
-                setOpen("sale");
-                void ensureProductsLoaded();
-              }}
-            >
-              Nueva venta
-            </button>
-          ) : null}
+        <div
+          className="hoy-quick-overlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setOpen(null);
+          }}
+        >
+          <section
+            className="hoy-quick-card hoy-shortcuts-menu"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="quick-menu-title"
+          >
+            <div className="hoy-sheet-grab" aria-hidden="true" />
+            <header>
+              <h2 id="quick-menu-title">Acciones rápidas</h2>
+              <button
+                type="button"
+                aria-label="Cerrar acciones rápidas"
+                onClick={() => setOpen(null)}
+              >
+                <X size={20} />
+              </button>
+            </header>
+            <div className="hoy-shortcuts-options">
+              {canStudents ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMessage(null);
+                    setOpen("student");
+                  }}
+                >
+                  <span className="hoy-shortcut-icon is-green">
+                    <UserPlus size={20} />
+                  </span>
+                  <span className="hoy-shortcut-copy">
+                    <b>Nueva alumna</b>
+                    <small>Nombre y teléfono bastan para crearla.</small>
+                  </span>
+                  <CaretRight size={18} />
+                </button>
+              ) : null}
+              {canSales ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMessage(null);
+                    setOpen("sale");
+                    void ensureProductsLoaded();
+                  }}
+                >
+                  <span className="hoy-shortcut-icon is-violet">
+                    <ShoppingBag size={20} />
+                  </span>
+                  <span className="hoy-shortcut-copy">
+                    <b>Nueva venta</b>
+                    <small>Paquete, inscripción o clase suelta.</small>
+                  </span>
+                  <CaretRight size={18} />
+                </button>
+              ) : null}
+              <Link href="/admin/alumnas">
+                <span className="hoy-shortcut-icon is-blue">
+                  <CalendarBlank size={20} />
+                </span>
+                <span className="hoy-shortcut-copy">
+                  <b>Reservar para una alumna</b>
+                  <small>Elige a la alumna y la clase.</small>
+                </span>
+                <CaretRight size={18} />
+              </Link>
+            </div>
+          </section>
         </div>
       ) : null}
 
@@ -214,7 +305,7 @@ export default function QuickActions({ canStudents, canSales, locale }: Props) {
             if (event.target === event.currentTarget) close();
           }}
         >
-          <section className="hoy-quick-card">
+          <section className="hoy-quick-card hoy-v2">
             <header>
               <div>
                 <span>Atajo</span>
@@ -265,7 +356,7 @@ export default function QuickActions({ canStudents, canSales, locale }: Props) {
             if (event.target === event.currentTarget) close();
           }}
         >
-          <section className="hoy-quick-card">
+          <section className="hoy-quick-card hoy-v2">
             <header>
               <div>
                 <span>Alumna creada</span>
@@ -304,7 +395,7 @@ export default function QuickActions({ canStudents, canSales, locale }: Props) {
             if (event.target === event.currentTarget) close();
           }}
         >
-          <section className="hoy-quick-card hoy-quick-sale">
+          <section className="hoy-quick-card hoy-quick-sale hoy-v2">
             <header>
               <div>
                 <span>Atajo</span>

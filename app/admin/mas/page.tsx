@@ -1,156 +1,185 @@
 import Link from "next/link";
-
+import { signOut } from "@/app/auth/actions";
 import { getAdminContext } from "@/lib/auth/admin-context";
-import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
+import { CAPABILITIES, STUDIO_ROLE_LABELS, type Capability } from "@/lib/auth/capabilities";
 
-type MoreItem = {
+type Item = {
   title: string;
   description: string;
   href: string;
-  capability?: Capability;
+  capability: Capability;
   ownerOnly?: boolean;
 };
-
-const items: MoreItem[] = [
+const groups: { title: string; tone: string; items: Item[] }[] = [
   {
-    title: "Demi",
-    description: "Personalidad, objetivos, reglas, pruebas y atención del asistente del estudio.",
-    href: "/admin/mas/demi",
-    ownerOnly: true,
+    title: "Tu estudio día a día",
+    tone: "green",
+    items: [
+      {
+        title: "Actividades",
+        description: "Clases, horarios, cupos y reglas.",
+        href: "/admin/actividades",
+        capability: CAPABILITIES.SCHEDULE_READ,
+      },
+      {
+        title: "Paquetes",
+        description: "Por clases, ilimitados, por disciplina y talleres.",
+        href: "/admin/productos",
+        capability: CAPABILITIES.PRODUCTS_READ,
+      },
+      {
+        title: "Equipo",
+        description: "Coaches, recepción y permisos.",
+        href: "/admin/instructores",
+        capability: CAPABILITIES.INSTRUCTORS_READ,
+      },
+      {
+        title: "Recursos y espacios",
+        description: "Salones, tubos y aros.",
+        href: "/admin/configuracion/recursos",
+        capability: CAPABILITIES.SETTINGS_WRITE,
+      },
+      {
+        title: "Documentos",
+        description: "Responsivas, reglamento y firmas.",
+        href: "/admin/documentos",
+        capability: CAPABILITIES.DOCUMENTS_READ,
+      },
+      {
+        title: "Evaluaciones",
+        description: "Niveles y criterios por disciplina.",
+        href: "/admin/evaluaciones",
+        capability: CAPABILITIES.EVALUATIONS_READ,
+      },
+    ],
   },
   {
-    title: "Actividades",
-    description: "Qué ofreces, horarios, recursos y forma de acceso.",
-    href: "/admin/actividades",
-    capability: CAPABILITIES.SCHEDULE_READ,
+    title: "Crecer y retener",
+    tone: "violet",
+    items: [
+      {
+        title: "Inteligencia",
+        description: "Ingresos, asistencia, conversión y retención.",
+        href: "/admin/inteligencia",
+        capability: CAPABILITIES.REPORTS_READ,
+      },
+      {
+        title: "Notificaciones y automatizaciones",
+        description: "Qué detona cada mensaje, por qué canal y cuándo.",
+        href: "/admin/notificaciones",
+        capability: CAPABILITIES.AUTOMATIONS_READ,
+      },
+      {
+        title: "Recompensas y retos",
+        description: "Medallas, logros, retos y premios.",
+        href: "/admin/recompensas",
+        capability: CAPABILITIES.REWARDS_READ,
+      },
+    ],
   },
   {
-    title: "Inteligencia",
-    description: "Ingresos, conversión, clases, retención y señales para decidir.",
-    href: "/admin/inteligencia",
-    capability: CAPABILITIES.REPORTS_READ,
+    title: "Asistentes IA",
+    tone: "red",
+    items: [
+      {
+        title: "Demi y Polina",
+        description: "Instrucciones, pruebas y consumo.",
+        href: "/admin/mas/demi",
+        capability: CAPABILITIES.SETTINGS_WRITE,
+      },
+    ],
   },
   {
-    title: "Documentos",
-    description: "Contratos, responsivas, reglamentos y consentimientos.",
-    href: "/admin/documentos",
-    capability: CAPABILITIES.DOCUMENTS_READ,
-  },
-  {
-    title: "Evaluaciones",
-    description: "Configura disciplinas, niveles y criterios técnicos.",
-    href: "/admin/evaluaciones",
-    capability: CAPABILITIES.EVALUATIONS_READ,
-  },
-  {
-    title: "Paquetes",
-    description: "Paquetes por clases, restricciones, ilimitados y talleres.",
-    href: "/admin/productos",
-    capability: CAPABILITIES.PRODUCTS_READ,
-  },
-  {
-    title: "Equipo",
-    description: "Miembros del estudio, perfiles operativos y estado.",
-    href: "/admin/instructores",
-    capability: CAPABILITIES.INSTRUCTORS_READ,
-  },
-  {
-    title: "Notificaciones",
-    description: "Procesos, marketing, plantillas y horarios de envío.",
-    href: "/admin/notificaciones",
-    capability: CAPABILITIES.AUTOMATIONS_READ,
-  },
-  {
-    title: "Retos",
-    description: "Crea retos individuales y competencias con ranking, premios y progreso.",
-    href: "/admin/retos",
-    capability: CAPABILITIES.REWARDS_READ,
-  },
-  {
-    title: "Rewards",
-    description: "Programas, logros, medallas, seguimiento y recompensas generadas.",
-    href: "/admin/recompensas",
-    capability: CAPABILITIES.REWARDS_READ,
-  },
-  {
-    title: "Información del estudio",
-    description: "Domicilio, teléfono, correo y página web que Demi puede consultar.",
-    href: "/admin/configuracion/empresa",
-    ownerOnly: true,
-  },
-  {
-    title: "Integraciones",
-    description: "Conecta Mercado Pago, Asistian, Meta y otros servicios externos.",
-    href: "/admin/integraciones",
-    ownerOnly: true,
-  },
-  {
-    title: "Apariencia",
-    description: "Nombre, logo, color e identidad visible del estudio.",
-    href: "/admin/configuracion/apariencia",
-    ownerOnly: true,
-  },
-  {
-    title: "Región y formatos",
-    description: "Zona horaria, moneda, formato regional y prefijo telefónico.",
-    href: "/admin/configuracion/region",
-    ownerOnly: true,
-  },
-  {
-    title: "Pagos y transferencias",
-    description: "Datos bancarios que Demi comparte cuando una alumna elige transferencia.",
-    href: "/admin/configuracion/pagos",
-    ownerOnly: true,
-  },
-  {
-    title: "Recursos y espacios",
-    description: "Recursos físicos, mapas y distribución de los espacios.",
-    href: "/admin/configuracion/recursos",
-    ownerOnly: true,
-  },
-  {
-    title: "Plan y suscripción",
-    description: "Estado del plan, periodo contratado y facturación de Studio Flow.",
-    href: "/admin/suscripcion",
-    ownerOnly: true,
+    title: "Configuración",
+    tone: "blue",
+    items: [
+      {
+        title: "Configuración del estudio",
+        description: "Datos, reservas, festivos, pagos, apariencia y región.",
+        href: "/admin/configuracion",
+        capability: CAPABILITIES.SETTINGS_WRITE,
+      },
+      {
+        title: "Integraciones",
+        description: "Mercado Pago, Asistian y WhatsApp.",
+        href: "/admin/integraciones",
+        capability: CAPABILITIES.SETTINGS_WRITE,
+      },
+      {
+        title: "Plan y suscripción",
+        description: "Tu plan de StudioFlow.",
+        href: "/admin/suscripcion",
+        capability: CAPABILITIES.PLAN_MANAGE,
+        ownerOnly: true,
+      },
+    ],
   },
 ];
 
 export default async function MorePage() {
   const ctx = await getAdminContext();
-  const visibleItems = items.filter((item) => {
-    if (item.ownerOnly) return ctx.membership.role === "owner";
-    return item.capability ? ctx.can(item.capability) : false;
-  });
-
+  const coach = ctx.can(CAPABILITIES.INSTRUCTOR_PORTAL) && !ctx.can(CAPABILITIES.ADMIN_PORTAL);
   return (
-    <main className="dashboard-shell admin-module-page more-page admin-ux04-secondary">
-      <header className="module-header">
-        <div>
-          <h1>Más</h1>
-          <p>Herramientas y áreas de gestión disponibles para tu rol.</p>
+    <main className="dashboard-shell admin-module-page more-page flow-more">
+      <header className="hoy-product-header">
+        <div className="hoy-product-wordmark">
+          <span>
+            STUDIO <b>FLOW</b>
+          </span>
+          <small>{ctx.studio.name}</small>
         </div>
+        <details className="flow-account">
+          <summary>{STUDIO_ROLE_LABELS[ctx.membership.role] ?? "Equipo"}</summary>
+          <div>
+            <strong>{ctx.profile?.full_name ?? "Tu cuenta"}</strong>
+            <p>{ctx.user.email}</p>
+            <form action={signOut}>
+              <input type="hidden" name="mode" value="studio" />
+              <button type="submit">Cerrar sesión</button>
+            </form>
+          </div>
+        </details>
       </header>
-
-      {visibleItems.length ? (
-        <section className="more-list">
-          {visibleItems.map((item) => (
-            <Link key={item.href} href={item.href} className="more-row">
-              <span className="more-row-icon" aria-hidden="true">
-                ◇
-              </span>
-              <span className="more-row-copy">
-                <strong>{item.title}</strong>
-                <small>{item.description}</small>
-              </span>
-              <span className="module-chevron" aria-hidden="true">
-                ›
-              </span>
-            </Link>
-          ))}
+      <h1>Más</h1>
+      {coach ? (
+        <section className="flow-card">
+          <h2>Tu cuenta de coach</h2>
+          <p>
+            Tienes acceso a Mis clases y a la agenda de tus clases. Para cambios de horario, ventas
+            o alumnas, pide apoyo a administración.
+          </p>
         </section>
       ) : (
-        <section className="empty-state">No tienes herramientas adicionales disponibles.</section>
+        groups.map((group) => {
+          const items = group.items.filter(
+            (item) =>
+              (ctx.membership.role !== "reception" ||
+                ["Actividades", "Paquetes"].includes(item.title)) &&
+              (!item.ownerOnly || ctx.membership.role === "owner") &&
+              ctx.can(item.capability),
+          );
+          return items.length ? (
+            <section key={group.title} className={`flow-more-group is-${group.tone}`}>
+              <h2>{group.title}</h2>
+              <div className="more-list">
+                {items.map((item) => (
+                  <Link key={item.href} href={item.href} className="more-row">
+                    <span className="more-row-icon" aria-hidden="true">
+                      {item.title.slice(0, 1)}
+                    </span>
+                    <span className="more-row-copy">
+                      <strong>{item.title}</strong>
+                      <small>{item.description}</small>
+                    </span>
+                    <span className="module-chevron" aria-hidden="true">
+                      ›
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null;
+        })
       )}
     </main>
   );

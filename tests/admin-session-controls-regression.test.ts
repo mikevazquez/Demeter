@@ -37,7 +37,9 @@ describe("Admin session controls regression", () => {
     expect(today).toContain(
       'paymentDueOnAttendance: reservation.commercial_status === "payment_pending"',
     );
-    expect(today).toContain("individualPriceMinor: template?.drop_in_price_minor ?? null");
+    expect(today).toContain(
+      "reservation.class_amount_minor ?? template?.drop_in_price_minor ?? null",
+    );
   });
 
   it("requires payment capture before attendance for a pending trial reservation", () => {
@@ -50,7 +52,7 @@ describe("Admin session controls regression", () => {
     expect(paymentDialog).toContain('<option value="transferencia">Transferencia</option>');
     expect(paymentDialog).toContain('<option value="tarjeta">Tarjeta</option>');
     expect(adminActions).toContain("recordPendingClassPaymentAndAttendanceFromToday");
-    expect(adminActions).toContain('rpc("record_asistian_class_payment_and_attendance"');
+    expect(adminActions).toContain('rpc("record_class_payment_and_attendance"');
   });
 
   it("keeps session editing available directly from Agenda", () => {

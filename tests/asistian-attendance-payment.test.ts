@@ -53,7 +53,7 @@ describe("Asistian pending payment attendance", () => {
 
     expect(migration).toContain("enforce_asistian_payment_before_attendance");
     expect(migration).toContain("asistian_payment_required");
-    expect(actions).toContain('supabase.rpc("record_asistian_class_payment_and_attendance"');
+    expect(actions).toContain('supabase.rpc("record_class_payment_and_attendance"');
     expect(actions).toContain('"paid-attendance"');
   });
 });

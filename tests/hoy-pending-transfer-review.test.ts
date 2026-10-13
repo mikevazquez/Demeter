@@ -18,11 +18,11 @@ describe("Hoy pending transfer reviews", () => {
 
   it("links each pending payment to the student's existing transfer review UI", () => {
     expect(page).toContain("?view=packages#transferencias");
-    expect(page).toContain("pago por validar");
+    expect(page).toContain("Transferencia por validar");
   });
 
   it("renders a visually important Hoy card", () => {
-    expect(page).toContain('className="hoy-priority"');
+    expect(page).toContain('className="flow-todo"');
     expect(css).toContain(".hoy-priority");
     expect(css).toContain(".hoy-priority-item");
   });

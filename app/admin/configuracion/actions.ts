@@ -14,11 +14,6 @@ const extensionByMime: Record<string, string> = {
   "image/webp": "webp",
 };
 
-function configurationPath(params?: Record<string, string>) {
-  const query = new URLSearchParams(params);
-  return query.size ? `/admin/configuracion?${query.toString()}` : "/admin/configuracion";
-}
-
 function identityConfigurationPath(formData: FormData, params?: Record<string, string>) {
   const target =
     String(formData.get("return_to") ?? "").trim() === "appearance"
@@ -40,7 +35,7 @@ function regionalConfigurationPath(formData: FormData, params?: Record<string, s
 export async function saveStudioPortalIdentityAction(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
-  if (ctx.membership.role !== "owner") {
+  if (!ctx.can(CAPABILITIES.SETTINGS_WRITE)) {
     redirect("/admin?error=access");
   }
 
@@ -150,7 +145,7 @@ export async function saveStudioPortalIdentityAction(formData: FormData) {
 export async function saveStudioRegionalSettingsAction(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
-  if (ctx.membership.role !== "owner") {
+  if (!ctx.can(CAPABILITIES.SETTINGS_WRITE)) {
     redirect("/admin?error=access");
   }
 
@@ -195,7 +190,7 @@ export async function saveStudioRegionalSettingsAction(formData: FormData) {
 export async function saveStudioBankTransferSettingsAction(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
-  if (ctx.membership.role !== "owner") {
+  if (!ctx.can(CAPABILITIES.SETTINGS_WRITE)) {
     redirect("/admin?error=access");
   }
 
@@ -253,7 +248,7 @@ export async function saveStudioBankTransferSettingsAction(formData: FormData) {
 export async function saveStudioBusinessProfileAction(formData: FormData) {
   const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
 
-  if (ctx.membership.role !== "owner") {
+  if (!ctx.can(CAPABILITIES.SETTINGS_WRITE)) {
     redirect("/admin?error=access");
   }
 

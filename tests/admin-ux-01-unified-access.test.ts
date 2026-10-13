@@ -73,14 +73,14 @@ describe("ADMIN-UX-01 unified Studio access", () => {
     expect(adminLayout).toContain('label: "Mis clases"');
     expect(adminLayout).toContain('activeFor: ["/coach"]');
     expect(myClasses).toContain("Mis clases");
-    expect(myClasses).toContain("Operar clase");
+    expect(myClasses).toContain("<TodayClasses");
     expect(coachLayout).toContain("<AdminLayout>{children}</AdminLayout>");
     expect(coachHome).toContain('"/admin/mis-clases"');
   });
 
   it("does not expose admin entity navigation to instructor-only access", () => {
     const instructorNav =
-      adminLayout.split("const desktopNavItems = instructorOnly")[1]?.split(": [")[0] ?? "";
+      adminLayout.split("const primaryNavItems = instructorOnly")[1]?.split(": [")[0] ?? "";
     expect(instructorNav).toContain('label: "Mis clases"');
     expect(instructorNav).not.toContain('label: "Alumnas"');
     expect(instructorNav).not.toContain('label: "Empresa"');

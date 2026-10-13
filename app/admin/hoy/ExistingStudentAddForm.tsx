@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { useUndoableOperations } from "./UndoableOperations";
+
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import {
@@ -11,6 +14,7 @@ import {
 
 import {
   bookStudentFromToday,
+  bookDropInFromToday,
   searchStudentsForToday,
   type TodayStudentCandidate,
 } from "../actions";
@@ -24,6 +28,7 @@ export function ExistingStudentAddForm({
   returnDate: string;
   returnTo?: string;
 }) {
+  const queue = useUndoableOperations();
   const [query, setQuery] = useState("");
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [matches, setMatches] = useState<TodayStudentCandidate[]>([]);
@@ -48,10 +53,24 @@ export function ExistingStudentAddForm({
   }, [normalizedQuery, query, sessionId]);
 
   return (
-    <form action={bookStudentFromToday} className="today-add-form is-existing">
+    <form
+      action={bookStudentFromToday}
+      className="today-add-form is-existing"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+        const data = new FormData(event.currentTarget, submitter);
+        const dropIn = submitter?.dataset.operation === "drop-in";
+        queue({
+          key: `booking:${sessionId}:${data.get("student_id")}`,
+          label: "Agregar alumna",
+          action: dropIn ? bookDropInFromToday : bookStudentFromToday,
+          data,
+        });
+      }}
+    >
       <input type="hidden" name="session_id" value={sessionId} />
       <input type="hidden" name="return_date" value={returnDate} />
-      <input type="hidden" name="student_id" value={selectedStudentId} />
       {returnTo ? <input type="hidden" name="return_to" value={returnTo} /> : null}
 
       <div className="grid gap-2">
@@ -62,7 +81,7 @@ export function ExistingStudentAddForm({
             setQuery(event.target.value);
             setSelectedStudentId("");
           }}
-          placeholder="Busca por nombre…"
+          placeholder="Busca por nombre o teléfono"
           aria-label="Buscar alumna"
           autoComplete="off"
           className="min-h-12 w-full rounded-xl border border-white/15 bg-black/25 px-3.5 text-base text-white outline-none transition placeholder:text-zinc-500 focus:border-fuchsia-500/60"
@@ -71,7 +90,6 @@ export function ExistingStudentAddForm({
         {normalizedQuery ? (
           <div
             className="grid max-h-60 gap-1.5 overflow-y-auto rounded-xl border border-white/10 bg-black/20 p-1"
-            role="listbox"
             aria-busy={isPending}
           >
             {!canSearchStudents(query) ? (
@@ -86,34 +104,60 @@ export function ExistingStudentAddForm({
                 const selected = candidate.id === selectedStudentId;
 
                 return (
-                  <button
-                    key={candidate.id}
-                    type="button"
-                    disabled={disabled}
-                    role="option"
-                    aria-selected={selected}
-                    onClick={() => {
-                      if (disabled) return;
-                      setSelectedStudentId(candidate.id);
-                      setQuery(candidate.fullName);
-                    }}
-                    className={[
-                      "flex min-h-14 w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition",
-                      selected
-                        ? "border-fuchsia-500/50 bg-fuchsia-500/10"
-                        : "border-transparent bg-white/[0.035]",
-                      disabled
-                        ? "cursor-not-allowed opacity-40"
-                        : "hover:border-fuchsia-500/35 hover:bg-fuchsia-500/[0.07]",
-                    ].join(" ")}
-                  >
-                    <span className="min-w-0 truncate text-sm font-semibold text-white">
-                      {candidate.fullName}
-                    </span>
-                    <small className="max-w-[46%] shrink-0 text-right text-[11px] text-zinc-500">
-                      {candidate.detail}
-                    </small>
-                  </button>
+                  <div key={candidate.id}>
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      aria-pressed={selected}
+                      onClick={() => {
+                        if (disabled) return;
+                        setSelectedStudentId(candidate.id);
+                        setQuery(candidate.fullName);
+                      }}
+                      className={[
+                        "flex min-h-14 w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition",
+                        selected
+                          ? "border-fuchsia-500/50 bg-fuchsia-500/10"
+                          : "border-transparent bg-white/[0.035]",
+                        disabled
+                          ? "cursor-not-allowed opacity-40"
+                          : "hover:border-fuchsia-500/35 hover:bg-fuchsia-500/[0.07]",
+                      ].join(" ")}
+                    >
+                      <span className="min-w-0 truncate text-sm font-semibold text-white">
+                        {candidate.fullName}
+                      </span>
+                      <small className="max-w-[46%] shrink-0 text-right text-[11px] text-zinc-500">
+                        {candidate.detail}
+                      </small>
+                    </button>
+                    {!candidate.eligible &&
+                    ["no_active_product", "outside_product", "no_credits"].includes(
+                      candidate.reasonCode ?? "",
+                    ) ? (
+                      <div className="flow-picker-commercial">
+                        {candidate.dropInPriceMinor && candidate.dropInPriceMinor > 0 ? (
+                          <button
+                            type="submit"
+                            name="student_id"
+                            value={candidate.id}
+                            data-operation="drop-in"
+                            formAction={bookDropInFromToday}
+                          >
+                            Cobrar clase suelta ·{" "}
+                            {new Intl.NumberFormat("es-MX", {
+                              style: "currency",
+                              currency: "MXN",
+                              maximumFractionDigits: 0,
+                            }).format(candidate.dropInPriceMinor / 100)}
+                          </button>
+                        ) : null}
+                        <Link href={`/admin/ventas/nueva?student_id=${candidate.id}`}>
+                          Vender paquete
+                        </Link>
+                      </div>
+                    ) : null}
+                  </div>
                 );
               })
             ) : (
@@ -128,6 +172,8 @@ export function ExistingStudentAddForm({
       <button
         className="primary-button"
         type="submit"
+        name="student_id"
+        value={selectedStudentId}
         disabled={!hasSelectedStudent(selectedStudentId)}
       >
         {selectedCandidate ? `Agregar ${selectedCandidate.fullName}` : "Selecciona una alumna"}

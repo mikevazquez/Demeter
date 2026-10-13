@@ -150,7 +150,7 @@ export default async function AgendaPage({
 }: {
   searchParams: Promise<{ error?: string; created?: string; date?: string; session?: string }>;
 }) {
-  const [params, { supabase, studio, can, user, profile }] = await Promise.all([
+  const [params, { supabase, studio, membership, can, user, profile }] = await Promise.all([
     searchParams,
     getAdminContext(CAPABILITIES.SCHEDULE_READ),
   ]);
@@ -228,7 +228,11 @@ export default async function AgendaPage({
     );
   }
 
-  const { data: sessions } = await supabase
+  const instructorOnly = can(CAPABILITIES.INSTRUCTOR_PORTAL) && !can(CAPABILITIES.ADMIN_PORTAL);
+  const currentInstructor = instructorOnly
+    ? (instructors ?? []).find((item) => item.person_id === membership.person_id)
+    : null;
+  let sessionsQuery = supabase
     .from("class_sessions")
     .select(
       "id,starts_at,ends_at,capacity,status,notes,template_id,space_id,instructor_id,recurring_schedule_id,is_schedule_exception,minimum_reservations_enabled,minimum_reservations,minimum_review_minutes_before",
@@ -237,6 +241,12 @@ export default async function AgendaPage({
     .gte("starts_at", weekStartUtc.toISOString())
     .lt("starts_at", weekAfterUtc.toISOString())
     .order("starts_at", { ascending: true });
+  if (instructorOnly)
+    sessionsQuery = sessionsQuery.eq(
+      "instructor_id",
+      currentInstructor?.id ?? "00000000-0000-0000-0000-000000000000",
+    );
+  const { data: sessions } = await sessionsQuery;
 
   const sessionIds = (sessions ?? []).map((session) => session.id);
   const { data: reservations } = sessionIds.length
@@ -669,6 +679,14 @@ export default async function AgendaPage({
                     Guardar cambios
                   </button>
 
+                  <label className="grid gap-2">
+                    <span>Motivo para cancelar la clase</span>
+                    <textarea
+                      name="reason"
+                      maxLength={500}
+                      placeholder="Necesario solo para cancelar"
+                    />
+                  </label>
                   <button
                     className="agenda-cancel-button"
                     type="submit"
