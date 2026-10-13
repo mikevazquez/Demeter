@@ -30,7 +30,9 @@ export function signSchemaPayload(payload, key) {
   if (typeof key !== "string" || key.length < 32) {
     throw new Error("A protected attestation key of at least 32 characters is required.");
   }
-  return createHmac("sha256", key).update(JSON.stringify(canonical(payload))).digest("hex");
+  return createHmac("sha256", key)
+    .update(JSON.stringify(canonical(payload)))
+    .digest("hex");
 }
 
 export function verifySchemaAttestation(
@@ -80,9 +82,7 @@ export function verifySchemaAttestation(
   const { signature: unusedSignature, ...payload } = attestation;
   void unusedSignature;
   const expected = signSchemaPayload(payload, key);
-  if (
-    !timingSafeEqual(Buffer.from(signature, "hex"), Buffer.from(expected, "hex"))
-  ) {
+  if (!timingSafeEqual(Buffer.from(signature, "hex"), Buffer.from(expected, "hex"))) {
     errors.push("Schema attestation signature verification failed");
     return errors;
   }
@@ -101,7 +101,9 @@ export function verifySchemaAttestation(
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   try {
     if (process.argv.length !== 4) {
-      throw new Error("Usage: node scripts/verify-schema-attestation.mjs evidence.json checked-out-sha");
+      throw new Error(
+        "Usage: node scripts/verify-schema-attestation.mjs evidence.json checked-out-sha",
+      );
     }
     const evidence = JSON.parse(readFileSync(process.argv[2], "utf8"));
     const errors = verifySchemaAttestation(evidence, {
