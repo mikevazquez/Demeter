@@ -6,6 +6,8 @@ import {
   type TemporaryInformation,
 } from "./temporary-information";
 import "server-only";
+import { loadDemiRuntimeConfig } from "./runtime-config";
+import { preparationFromStudioPrompt } from "./class-preparation";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CommercialOptionsArgs, SearchClassAvailabilityArgs } from "./tool-contracts";
@@ -525,6 +527,18 @@ export async function getStudioInformation(ctx: AssistantToolContext) {
     return { ok: false, error: "studio_information_unavailable" };
   }
 
+  let preparationText = preparation?.instruction?.trim() || null;
+  let preparationSource: string | null = preparationText ? "first_class_preparation_rule" : null;
+  if (!preparationText) {
+    const config = await loadDemiRuntimeConfig(ctx.supabase, ctx.studio.id);
+    if (config.error) return { ok: false, error: "studio_information_unavailable" };
+    preparationText = preparationFromStudioPrompt(
+      config.data?.personality_instructions ?? "",
+      disciplines ?? [],
+    );
+    if (preparationText) preparationSource = "active_studio_prompt";
+  }
+
   const normalizedLocations = (locations ?? []).map((location) => ({
     name: location.name,
     address: location.address,
@@ -544,7 +558,8 @@ export async function getStudioInformation(ctx: AssistantToolContext) {
     website_url: studioDetails?.website_url ?? null,
     primary_location: primaryLocation,
     locations: normalizedLocations,
-    first_class_preparation: preparation?.instruction?.trim() || null,
+    first_class_preparation: preparationText,
+    first_class_preparation_source: preparationSource,
     active_disciplines: disciplines ?? [],
   };
 }

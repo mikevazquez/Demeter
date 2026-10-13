@@ -941,6 +941,12 @@ describe("Demi shared commercial price", () => {
       {
         "./enrollment-state": { resolveEnrollmentStatus },
         "./temporary-information": temporaryInformation,
+        "./runtime-config": {
+          loadDemiRuntimeConfig: () => {
+            throw new Error("Unexpected configuration read in commercial price test");
+          },
+        },
+        "./class-preparation": { preparationFromStudioPrompt: () => null },
       },
     );
     const sessionId = "11111111-1111-4111-8111-111111111111";
