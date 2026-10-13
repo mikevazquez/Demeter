@@ -23,7 +23,10 @@ describe("SF-GOV-001 Candidate external effect isolation", () => {
 
   it("fails closed on a misconfigured nonempty Candidate flag", () => {
     expect(() =>
-      assertCandidateExternalEffectAllowed({ effect: "meta_whatsapp_send", candidatePreview: "true" }),
+      assertCandidateExternalEffectAllowed({
+        effect: "meta_whatsapp_send",
+        candidatePreview: "true",
+      }),
     ).toThrow("candidate_preview_external_effect_forbidden:meta_whatsapp_send");
   });
 
