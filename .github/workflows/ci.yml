@@ -42,7 +42,7 @@ jobs:
         run: node --test scripts/governance-policy-checks.mjs scripts/check-migration-grants.test.mjs
 
       - name: Schema drift detection and negative control
-        run: node --test scripts/check-schema-drift.test.mjs
+        run: node --test scripts/check-schema-drift.test.mjs scripts/schema-certification.test.mjs
 
       - name: Reject dangerous table grants in changed migrations
         env:
