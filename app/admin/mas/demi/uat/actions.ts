@@ -545,6 +545,83 @@ export async function runDemiUatFollowups(id: string, days: number) {
   return getDemiUatRun(id);
 }
 
+
+/**
+ * Records a clearly synthetic full receipt only inside this owned UAT run.
+ * It never represents a bank transfer or creates a payment.
+ */
+export async function simulateDemiUatGroupReceipt(id: string, groupId: string) {
+  await locked(id, async (ctx) => {
+    const { data: group, error: groupError } = await ctx.service
+      .from("demi_group_bookings")
+      .select("id,conversation_id,amount_minor,currency,status,receipt_event_id")
+      .eq("studio_id", ctx.run.studio_id)
+      .eq("id", groupId)
+      .single();
+    if (groupError || !group) throw new Error("demi_uat_group_not_found");
+    if (group.status !== "awaiting_receipt" || group.receipt_event_id)
+      throw new Error("demi_uat_group_not_awaiting_receipt");
+    if (!Number.isInteger(group.amount_minor) || group.amount_minor <= 0 || !group.currency)
+      throw new Error("demi_uat_group_amount_invalid");
+
+    const eventId = randomUUID();
+    const providerId = `uat-synthetic-receipt-${eventId}`;
+    const mediaId = `uat-synthetic-media-${eventId}`;
+    const hash = createHmac("sha256", ctx.run.id)
+      .update(`synthetic-full-receipt:${group.id}:${eventId}`)
+      .digest("hex");
+    const path = `uat-synthetic://${ctx.run.id}/${group.id}/${eventId}`;
+    const before = await snapshot(ctx);
+    const { error: eventError } = await ctx.service.from("assistant_whatsapp_events").insert({
+      id: eventId,
+      studio_id: ctx.run.studio_id,
+      provider: "meta_whatsapp",
+      provider_event_id: providerId,
+      phone_number_id: "UAT-SYNTHETIC",
+      contact_wa_id: ctx.run.fixtures.people.prospect?.wa_id ?? null,
+      message_type: "image",
+      body_preview: "SIMULACIÓN UAT — COMPROBANTE SINTÉTICO — NO ES UN PAGO REAL",
+      media_id: mediaId,
+      payload_fingerprint: hash,
+      assistant_conversation_id: group.conversation_id,
+      processing_status: "processed",
+      processing_result: { synthetic_uat: true, money_transferred: false },
+    });
+    if (eventError) throw new Error("demi_uat_synthetic_receipt_event_failed");
+
+    const receipt = await ctx.service.rpc("service_record_demi_group_receipt", {
+      p_studio: ctx.run.studio_id,
+      p_conversation: group.conversation_id,
+      p_group: group.id,
+      p_event: eventId,
+      p_provider: providerId,
+      p_media: mediaId,
+      p_path: path,
+      p_hash: hash,
+      p_amount: group.amount_minor,
+      p_currency: group.currency,
+      p_confidence: 1,
+    });
+    await record(ctx, "synthetic_group_receipt", {
+      group_id: group.id,
+      event_id: eventId,
+      provider_id: providerId,
+      media_id: mediaId,
+      amount_minor: group.amount_minor,
+      currency: group.currency,
+      synthetic: true,
+      money_transferred: false,
+      result: receipt.data,
+      error: receipt.error?.message ?? null,
+      before,
+      after: await snapshot(ctx),
+    });
+    if (receipt.error || (receipt.data as Json | null)?.ok !== true)
+      throw new Error("demi_uat_synthetic_receipt_failed");
+  });
+  return getDemiUatRun(id);
+}
+
 export async function reviewDemiUatGroup(id: string, groupId: string, decision: string) {
   if (!["approved", "rejected"].includes(decision)) throw new Error("demi_uat_review_invalid");
   await locked(id, async (ctx) => {
