@@ -57,9 +57,7 @@ export function compareSchemaReports(baseline, candidate) {
 
 function run() {
   if (process.argv.length !== 4) {
-    console.error(
-      "Usage: node scripts/check-schema-drift.mjs baseline.json candidate.json",
-    );
+    console.error("Usage: node scripts/check-schema-drift.mjs baseline.json candidate.json");
     process.exitCode = 2;
     return;
   }
