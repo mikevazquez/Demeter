@@ -38,10 +38,7 @@ function evidence(left = baseline, right = baseline) {
 }
 
 test("valid signed, fresh and equivalent evidence passes cryptographic gate", () => {
-  assert.deepEqual(
-    verifySchemaAttestation(evidence(), { key, checkedOutSha: sha, now }),
-    [],
-  );
+  assert.deepEqual(verifySchemaAttestation(evidence(), { key, checkedOutSha: sha, now }), []);
 });
 
 test("real Candidate drift remains blocked even with a valid signature", () => {
@@ -85,9 +82,7 @@ test("rejects expired or future-dated evidence", () => {
 
 test("rejects mismatched commit and project identity", () => {
   assert.match(
-    verifySchemaAttestation(evidence(), { key, checkedOutSha: "b".repeat(40), now }).join(
-      "; ",
-    ),
+    verifySchemaAttestation(evidence(), { key, checkedOutSha: "b".repeat(40), now }).join("; "),
     /candidate SHA/,
   );
   const changed = evidence();
