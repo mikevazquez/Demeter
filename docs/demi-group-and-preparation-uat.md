@@ -43,20 +43,19 @@ Scripts: `scripts/demi-group-resource-fix-uat.sql` y `scripts/demi-group-no-reso
 
 La aprobación recibida registra el UAT técnico de sandbox. Falta ejecutar y aceptar la conversación real con Demi para cerrar la matriz conversacional. No se modificó producción. Antes de promover: matriz UAT cerrada, autorización específica y comprobar las definiciones vigentes. Las migraciones abortan si cambió el fragmento esperado; conservan las reglas de precios e identidad de cada entorno. Exportar las cuatro definiciones modificadas como reversión antes de aplicar a producción y restaurar sólo código si se requiere, sin borrar comprobantes, ventas, participantes ni reservas históricas.
 
-
 ## Ejecución conversacional real del preview — 12 oct 2026
 
 Se corrigió en Sandbox la preparación del banco: la función copiaba dos veces las políticas de atención humana y fallaba con la restricción única. Migración registrada en `supabase/migrations/20261012232400_demi_uat_remove_duplicate_handoff_seed.sql`; el cambio elimina únicamente la segunda copia redundante. No toca producción.
 
 Ejecución: `ad93f428-125f-498a-89e4-2f5da2f6572a`; estudio ficticio: `b91b5227-24bf-4b86-8cf1-044997164102`. Modelo real, transporte capturado, sin entrega externa.
 
-| Paso | Resultado |
-| --- | --- |
-| Pregunta por primera clase para dos | Demi respondió $300 total ($150 por persona), ofreció transferencia y mostró datos ficticios con “NO TRANSFERIR”; no pidió datos de participantes. |
-| Elección de horario | `prepare_group_booking` creó grupo `965ebbae-7d5b-4022-a02b-13fa91566701` en `awaiting_receipt`; 2 participantes, $300 MXN, `reservation_confirmed=false`. |
-| Estado de reservas en la sesión elegida | 0 reservas vinculadas al grupo antes de recibir comprobante. |
-| Completar sin comprobante | Sigue pendiente: el banco no permite simular revisión aprobada si el grupo continúa `awaiting_receipt`; no se aceptó una transferencia ni se creó reserva. |
-| Recibir comprobante y pedir datos después | Pendiente de adjuntar un archivo ficticio de comprobante al mensaje. |
-| Ropa para Exotic | Pendiente en conversación: el fixture aislado sólo activa Pole Fitness, por lo que no sirve para validar Exotic. |
+| Paso                                      | Resultado                                                                                                                                                  |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pregunta por primera clase para dos       | Demi respondió $300 total ($150 por persona), ofreció transferencia y mostró datos ficticios con “NO TRANSFERIR”; no pidió datos de participantes.         |
+| Elección de horario                       | `prepare_group_booking` creó grupo `965ebbae-7d5b-4022-a02b-13fa91566701` en `awaiting_receipt`; 2 participantes, $300 MXN, `reservation_confirmed=false`. |
+| Estado de reservas en la sesión elegida   | 0 reservas vinculadas al grupo antes de recibir comprobante.                                                                                               |
+| Completar sin comprobante                 | Sigue pendiente: el banco no permite simular revisión aprobada si el grupo continúa `awaiting_receipt`; no se aceptó una transferencia ni se creó reserva. |
+| Recibir comprobante y pedir datos después | Pendiente de adjuntar un archivo ficticio de comprobante al mensaje.                                                                                       |
+| Ropa para Exotic                          | Pendiente en conversación: el fixture aislado sólo activa Pole Fitness, por lo que no sirve para validar Exotic.                                           |
 
 La ejecución confirma la barrera principal antes del comprobante, pero no cierra GRP-A–F ni INF-A–B. No se declara UAT conversacional aprobado. La base Sandbox conserva la ejecución y evidencia para retomar; producción no fue modificada.
