@@ -38,6 +38,8 @@ const role = {
   role: "sf_gov_schema_reader",
   safe: true,
   memberships: 0,
+  data_access: 0,
+  definer_access: 0,
   readonly: "on",
   database: "postgres",
 };
@@ -100,6 +102,8 @@ test("capture refuses unsafe role, inherited membership, writable transaction an
   for (const identity of [
     { ...role, safe: false },
     { ...role, memberships: 1 },
+    { ...role, data_access: 1 },
+    { ...role, definer_access: 1 },
     { ...role, readonly: "off" },
     { ...role, role: "postgres" },
     null,
@@ -186,6 +190,33 @@ test("fixed capture SQL executes catalog-only in isolated PostgreSQL and rolls b
     assert.equal(sets[0].rows[0].json_build_object.safe, false); // local superuser is not an approved reader
     const state = await db.query("SHOW transaction_read_only");
     assert.equal(state.rows[0].transaction_read_only, "off");
+  } finally {
+    await db.close();
+  }
+});
+
+test("catalog audit detects PUBLIC definer execution and explicit table access for a real isolated reader role", async () => {
+  const { PGlite } = await import("@electric-sql/pglite");
+  const db = new PGlite();
+  try {
+    await db.exec(`CREATE ROLE sf_gov_schema_reader NOLOGIN NOSUPERUSER NOBYPASSRLS;
+      CREATE TABLE public.capture_acl_probe(id int);
+      CREATE FUNCTION public.capture_acl_function() RETURNS int LANGUAGE sql SECURITY DEFINER AS 'SELECT 1';
+      GRANT USAGE ON SCHEMA public TO sf_gov_schema_reader;
+      SET ROLE sf_gov_schema_reader;`);
+    let results = await db.exec(CAPTURE_SQL);
+    let identity = results.find((r) => r.rows[0]?.json_build_object)?.rows[0].json_build_object;
+    assert.equal(identity.safe, true);
+    assert.equal(identity.data_access, 0);
+    assert.equal(identity.definer_access, 1);
+    await db.exec(`RESET ROLE;
+      REVOKE EXECUTE ON FUNCTION public.capture_acl_function() FROM PUBLIC;
+      GRANT SELECT ON public.capture_acl_probe TO sf_gov_schema_reader;
+      SET ROLE sf_gov_schema_reader;`);
+    results = await db.exec(CAPTURE_SQL);
+    identity = results.find((r) => r.rows[0]?.json_build_object)?.rows[0].json_build_object;
+    assert.equal(identity.data_access, 1);
+    assert.equal(identity.definer_access, 0);
   } finally {
     await db.close();
   }

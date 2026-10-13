@@ -21,6 +21,15 @@ SELECT json_build_object(
   'role', current_user,
   'safe', NOT (rolsuper OR rolcreaterole OR rolcreatedb OR rolreplication OR rolbypassrls),
   'memberships', (SELECT count(*) FROM pg_auth_members WHERE member = r.oid),
+  'data_access', (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
+    AND c.relkind IN ('r','p','v','m','f')
+    AND has_schema_privilege(current_user,n.oid,'USAGE')
+    AND has_table_privilege(current_user,c.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')),
+  'definer_access', (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+    WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND p.prosecdef
+    AND has_schema_privilege(current_user,n.oid,'USAGE')
+    AND has_function_privilege(current_user,p.oid,'EXECUTE')),
   'readonly', current_setting('transaction_read_only'),
   'database', current_database()
 ) FROM pg_roles r WHERE rolname = current_user;
@@ -85,6 +94,8 @@ export function captureProject(connection, ref, run = spawnSync) {
     role?.role !== "sf_gov_schema_reader" ||
     role.safe !== true ||
     role.memberships !== 0 ||
+    role.data_access !== 0 ||
+    role.definer_access !== 0 ||
     role.readonly !== "on" ||
     role.database !== "postgres"
   ) {

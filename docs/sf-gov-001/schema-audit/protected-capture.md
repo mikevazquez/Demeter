@@ -11,7 +11,9 @@ conectividad IPv6 al endpoint directo; si no están disponibles, falla cerrado.
 
 Ejecuta el SQL versionado en transacción REPEATABLE READ READ ONLY con timeout,
 search_path limitado a pg_catalog y rollback. Comprueba identidad, ausencia de
-atributos privilegiados y membresías. No hereda variables de entorno hacia psql,
+atributos privilegiados y membresías; rechaza permisos efectivos sobre relaciones
+fuera de catálogos y ejecución efectiva de SECURITY DEFINER fuera de catálogos.
+No hereda variables de entorno hacia psql,
 ni transmite la clave de firma al proceso hijo. Errores de conexión no se imprimen.
 Solo firma si las siete categorías están completas y son iguales. Conserva los
 controles existentes de fecha, SHA y proyecto.
@@ -38,6 +40,15 @@ jobs del candidato. INV-UAT-01 sigue Preparado, no Aprobado.
 
 ## Activación concreta, aún no ejecutada
 
+Auditoría SELECT-only del 13 octubre 2026: el rol dedicado no existe en ninguna
+de las dos bases. Producción tiene 35 funciones SECURITY DEFINER fuera de catálogos
+con EXECUTE a PUBLIC; Candidate tiene 4. Ninguna relación de public/auth/storage
+registra SELECT a PUBLIC. Estos recuentos no prueban acceso efectivo sin revisar
+USAGE y controles internos. El capturador ahora exige cero accesos efectivos a
+esas funciones y a relaciones fuera de catálogos. Prueba aislada con rol PostgreSQL
+real: detectó el EXECUTE heredado de PUBLIC y luego un GRANT SELECT explícito.
+No se crearon roles ni revocaron permisos en bases remotas.
+
 1. Preparar un controlador de gobierno separado del despliegue de la app, con
    checkout de un SHA revisado e inmutable de estos scripts y su SQL. No ejecutar
    npm install, código ni workflows del candidato en ese job. El manifiesto se
@@ -55,8 +66,9 @@ jobs del candidato. INV-UAT-01 sigue Preparado, no Aprobado.
    chat o Notion. Aplicar igualmente en Candidate bajo el alcance autorizado.
 4. Antes de activar, auditar privilegios efectivos heredados de PUBLIC, funciones
    SECURITY DEFINER, grants de tablas y capacidad de SET ROLE. NO revocar PUBLIC
-   masivamente: puede romper negocio. El chequeo del capturador cubre atributos y
-   membresías, **no certifica por sí solo todos los ACL**. Si los permisos efectivos
+   masivamente: puede romper negocio. El chequeo cubre atributos, membresías,
+   relaciones y SECURITY DEFINER accesibles, **no certifica por sí solo todos los
+   ACL ni efectos de funciones invoker/extensiones**. Si los permisos efectivos
    exceden la lectura de catálogo, detener y proponer corrección específica.
 5. Guardar exclusivamente en ese entorno los secretos
    `SF_GOV_PRODUCTION_READER_URL`, `SF_GOV_CANDIDATE_READER_URL` y
