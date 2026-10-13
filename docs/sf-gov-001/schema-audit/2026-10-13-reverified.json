@@ -1,0 +1,81 @@
+{
+  "checked_on": "2026-10-13",
+  "source": "Supabase connector SELECT-only BEGIN READ ONLY; schema-fingerprint.sql; COMMIT",
+  "query_sha_source": "fa37016a206f7d2d0f1876dec3bcc8cda84ad917",
+  "production_frontend_sha": "87749e84d324c6c5263c0f0128075cbe8c7e61b7",
+  "not_release_attestation": true,
+  "qfhojvgvhrbautvczffq": [
+    {
+      "kind": "column",
+      "object_count": 2653,
+      "fingerprint": "a2ff50d6d9d5dde8b132fa828ad66347"
+    },
+    {
+      "kind": "extension",
+      "object_count": 7,
+      "fingerprint": "de8f1532294bda82d8f252d2815ea46f"
+    },
+    {
+      "kind": "index",
+      "object_count": 787,
+      "fingerprint": "6d9b1b0e894b4f31d1271a6061b11e4d"
+    },
+    {
+      "kind": "policy",
+      "object_count": 352,
+      "fingerprint": "708cc8c2d7cf268f864b701b167895aa"
+    },
+    {
+      "kind": "routine",
+      "object_count": 383,
+      "fingerprint": "f33ded2742ca6b616aa9333cb0f9d689"
+    },
+    {
+      "kind": "table_rls",
+      "object_count": 218,
+      "fingerprint": "e66f715ec2d4134f446766efc26ced53"
+    },
+    {
+      "kind": "trigger",
+      "object_count": 172,
+      "fingerprint": "eff3b6cd2083307d1a454053a4e25f21"
+    }
+  ],
+  "sdmxtlgjkodidjtvikng": [
+    {
+      "kind": "column",
+      "object_count": 772,
+      "fingerprint": "32ed305bb3ec9f4ef34f24ac8cadd654"
+    },
+    {
+      "kind": "extension",
+      "object_count": 5,
+      "fingerprint": "97088d43d6a8be0bf80955be2cd1a6ca"
+    },
+    {
+      "kind": "index",
+      "object_count": 254,
+      "fingerprint": "abbb49d3cfd0232a2086e4188054e98d"
+    },
+    {
+      "kind": "policy",
+      "object_count": 123,
+      "fingerprint": "52424981cfe4b19317d2feb870a7b686"
+    },
+    {
+      "kind": "routine",
+      "object_count": 95,
+      "fingerprint": "31ae18b5d759e91277dee17562268317"
+    },
+    {
+      "kind": "table_rls",
+      "object_count": 66,
+      "fingerprint": "4e620727910a196fb9f48f9db92570ea"
+    },
+    {
+      "kind": "trigger",
+      "object_count": 20,
+      "fingerprint": "31c00aad9a7edef0ac4866629db1fccc"
+    }
+  ]
+}

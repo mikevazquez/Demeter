@@ -44,6 +44,9 @@ jobs:
       - name: Schema drift detection and negative control
         run: node --test scripts/check-schema-drift.test.mjs scripts/schema-certification.test.mjs scripts/schema-attestation.test.mjs
 
+      - name: Physical schema drift and rollback in isolated PostgreSQL
+        run: node --test scripts/schema-physical-drift.test.mjs
+
       - name: Preview service role isolation negative tests
         run: npx vitest run tests/sf-gov-preview-target.test.ts
 
