@@ -37,7 +37,9 @@ jobs:
 
       - name: Format check
         run: npm run format:check
-        continue-on-error: ${{ github.event_name == 'pull_request' && github.head_ref == 'promote/inteligencia-13-prod' }}
+
+      - name: Governance manifest policy tests
+        run: node --test tests/validate-release-manifest.test.mjs
 
       - name: Lint
         run: npm run lint
