@@ -35,11 +35,6 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Inspect schema attestation formatting (temporary)
-        run: |
-          npx prettier --write docs/sf-gov-001/schema-audit/README.md scripts/governance-policy-checks.mjs scripts/schema-attestation.test.mjs scripts/schema-certification.test.mjs scripts/verify-schema-attestation.mjs
-          git diff -- docs/sf-gov-001/schema-audit/README.md scripts/governance-policy-checks.mjs scripts/schema-attestation.test.mjs scripts/schema-certification.test.mjs scripts/verify-schema-attestation.mjs
-
       - name: Format check
         run: npm run format:check
 
