@@ -41,6 +41,9 @@ jobs:
       - name: Governance policy and migration grant tests
         run: node --test scripts/governance-policy-checks.mjs scripts/check-migration-grants.test.mjs
 
+      - name: Schema drift detection and negative control
+        run: node --test scripts/check-schema-drift.test.mjs
+
       - name: Reject dangerous table grants in changed migrations
         env:
           MIGRATION_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
