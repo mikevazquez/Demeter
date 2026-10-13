@@ -1,6 +1,6 @@
 # Demi: grupos con poles e indicaciones de clase
 
-Estado: UAT conversacional de GRP-A–F e INF-A–B ejecutado y aprobado en Sandbox el 12 de octubre de 2026 (Ciudad de México). La promoción sigue pendiente de autorización específica; producción no se modificó.
+Estado: los ocho escenarios conversacionales GRP-A–F e INF-A–B pasaron en Sandbox el 12 de octubre de 2026 (Ciudad de México). La aceptación final y la promoción siguen pendientes; producción no se modificó.
 
 Preview verificado: https://demeterbueno-7zn7uhv7m-demeter3.vercel.app (READY, commit 0d2a95215a10f9e5906d1c9f46201817ac3c52c3). El build verificó la conexión a `hedouonyhynuvwbckdlg`. La aplicación carga y solicita la sesión del estudio.
 
@@ -24,16 +24,16 @@ Se corrigieron dos requisitos detectados al ejecutar la prueba: el trigger de re
 
 Mike aprobó el resultado de las pruebas técnicas de sandbox. Esta aprobación no demuestra por sí sola que se haya ejecutado una conversación real en el preview; esos resultados se conservan como pendientes para no atribuirles pruebas que no ocurrieron.
 
-| Caso                                               | Validación técnica                                      | UAT conversacional                                                         |
-| -------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Caso                                               | Validación técnica                                      | UAT conversacional                                                                                            |
+| -------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | GRP-A: dos primeras clases con poles, pago primero | Aprobada en DB; no crea fichas ni reservas              | Pasó en conversación: total, horario y pago primero; no pidió poles ni datos personales antes del comprobante |
-| GRP-B: completar sin comprobante                   | Aprobada; bloquea creación                              | Pasó: rechazó apartar antes del comprobante y pidió enviarlo               |
-| GRP-C: comprobante sin datos personales            | Aprobada; cero fichas y reservas                        | Pasó: pidió nombres completos y teléfonos de 10 dígitos; antes, cero perfiles/reservas |
-| GRP-D: elegir un pole por participante             | Aprobada; dos opciones reales y dos asignaciones        | Pasó: ofreció 2 poles; asignó uno por persona y conservó la selección       |
-| GRP-E: capacidad y reintento                       | Aprobada; rechaza sobreocupación y evita duplicados     | Pasó: rechazó compartir un pole con cupo 1, sugirió alternativa y reintento sin duplicados |
-| GRP-F: mismo caso sin poles                        | Aprobada en DB; conserva flujo previo                   | Pasó: sin selección de poles, completó tras comprobante y datos             |
-| INF-A: ropa para Exotic guardada en prompt         | Aprobada en runtime; fuentes moderna y legacy           | Pasó: respondió rodilleras y ropa del prompt, sin «no configurada»          |
-| INF-B: prioridad y dato ausente                    | Aprobada en runtime; regla específica gana y no inventa | Pasó: regla específica reemplazó el prompt; sin color configurado, no inventó |
+| GRP-B: completar sin comprobante                   | Aprobada; bloquea creación                              | Pasó: rechazó apartar antes del comprobante y pidió enviarlo                                                  |
+| GRP-C: comprobante sin datos personales            | Aprobada; cero fichas y reservas                        | Pasó: pidió nombres completos y teléfonos de 10 dígitos; antes, cero perfiles/reservas                        |
+| GRP-D: elegir un pole por participante             | Aprobada; dos opciones reales y dos asignaciones        | Pasó: ofreció 2 poles; asignó uno por persona y conservó la selección                                         |
+| GRP-E: capacidad y reintento                       | Aprobada; rechaza sobreocupación y evita duplicados     | Pasó: rechazó compartir un pole con cupo 1, sugirió alternativa y reintento sin duplicados                    |
+| GRP-F: mismo caso sin poles                        | Aprobada en DB; conserva flujo previo                   | Pasó: sin selección de poles, completó tras comprobante y datos                                               |
+| INF-A: ropa para Exotic guardada en prompt         | Aprobada en runtime; fuentes moderna y legacy           | Pasó: respondió rodilleras y ropa del prompt, sin «no configurada»                                            |
+| INF-B: prioridad y dato ausente                    | Aprobada en runtime; regla específica gana y no inventa | Pasó: regla específica reemplazó el prompt; sin color configurado, no inventó                                 |
 
 Pruebas de DB: 9 aserciones con poles y 5 sin poles, comprobante y personas sintéticos, BEGIN/ROLLBACK. No se enviaron mensajes WhatsApp reales. Estas pruebas no validan reconocimiento de imagen ni comportamiento de modelo real.
 
@@ -41,7 +41,7 @@ Scripts: `scripts/demi-group-resource-fix-uat.sql` y `scripts/demi-group-no-reso
 
 ## Promoción y reversión
 
-La aprobación recibida registra el UAT técnico de sandbox. Falta ejecutar y aceptar la conversación real con Demi para cerrar la matriz conversacional. No se modificó producción. Antes de promover: matriz UAT cerrada, autorización específica y comprobar las definiciones vigentes. Las migraciones abortan si cambió el fragmento esperado; conservan las reglas de precios e identidad de cada entorno. Exportar las cuatro definiciones modificadas como reversión antes de aplicar a producción y restaurar sólo código si se requiere, sin borrar comprobantes, ventas, participantes ni reservas históricas.
+La aprobación previa registró el UAT técnico de Sandbox. La ejecución conversacional posterior está documentada más abajo y los ocho casos pasaron; queda pendiente la aceptación final del resultado y la autorización específica de promoción. No se modificó producción. Antes de promover: matriz UAT cerrada, autorización específica y comprobar las definiciones vigentes. Las migraciones abortan si cambió el fragmento esperado; conservan las reglas de precios e identidad de cada entorno. Exportar las cuatro definiciones modificadas como reversión antes de aplicar a producción y restaurar sólo código si se requiere, sin borrar comprobantes, ventas, participantes ni reservas históricas.
 
 ## Ejecución conversacional real del preview — 12 oct 2026
 
@@ -75,7 +75,6 @@ Ejecución conversacional del preview: `d170b680-a671-4be3-a9f1-4c0fd0d22b2f`; c
 
 Las pruebas dinámicas `tests/demi-2-group-uat.sql` (19 variantes) y `tests/demi-2-rejection-scope-uat.sql` (rechazo sin marcar la reserva como pagada) pasaron con datos sintéticos y rollback. M06 quedó como **Pasó todas las variantes** en la matriz de la ejecución. No se enviaron mensajes externos de Meta. Esto cierra la regresión de M06; no aprueba automáticamente los otros casos conversacionales GRP-A–F ni INF-A–B, ni autoriza promoción.
 
-
 ## UAT conversacional completado — 12 oct 2026, Sandbox
 
 Preview del PR: https://demeterbueno-git-codex-demi-group-flow-regression-demeter3.vercel.app  
@@ -84,15 +83,15 @@ Ejecución aislada: `0f5db82d-c1b8-4d88-a50a-bbf61c962994`; estudio ficticio: `2
 
 El banco aislado sólo trae Pole Fitness sin recurso obligatorio. Para evaluar GRP-D/E se añadió únicamente a este estudio de prueba una sesión con dos poles UAT de capacidad uno. Para INF-A/B se activó Exotic Pole en este fixture; se usó el prompt clonado de 20,020 caracteres. La regla `first_class_preparation` creada para la prueba fue sintética, se desactivó al terminar y no se tocó la configuración fuente ni producción.
 
-| Caso | Resultado conversacional y evidencia de estado |
-| --- | --- |
-| GRP-A | Demi cotizó $300 para dos, listó horarios y explicó transferencia primero; no solicitó datos personales ni poles antes del comprobante. Grupo `15abf68c-f9ac-4a73-b48d-9fdf93910650` quedó `awaiting_receipt`, con 0 reservas. |
-| GRP-B | Ante “apártalas aunque no tenga comprobante”, rechazó apartar y volvió a pedir el comprobante. El mismo grupo siguió sin recibo y sin reservas. |
-| GRP-C | Tras comprobante sintético —sin transferencia real— solicitó ambos nombres y celulares de 10 dígitos juntos. Antes de compartirlos: 0 perfiles y 0 reservas; estado `awaiting_participants`. |
-| GRP-D | En `Pole Fitness UAT`, ofreció `Pole UAT 1` y `Pole UAT 2`; tras confirmar Ana/1 y Bety/2, las asignaciones guardadas coincidieron y se crearon exactamente dos reservas. |
-| GRP-E | Rechazó que ambas usaran Pole 1 por capacidad 1, explicó el motivo y sugirió Ana/1 y Bety/2. La selección corregida creó dos reservas; el mensaje de confirmación repetido no duplicó ninguna. |
-| GRP-F | En la sesión sin poles, el flujo mantuvo el orden comprobante → datos y creó dos reservas sin pedir asignaciones de recurso. Las dos quedaron `payment_pending`. |
-| INF-A | Con la regla específica ausente, respondió rodilleras y ropa cómoda que deje la piel en contacto con el tubo para Exotic, usando lo guardado en el prompt. |
+| Caso  | Resultado conversacional y evidencia de estado                                                                                                                                                                                   |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GRP-A | Demi cotizó $300 para dos, listó horarios y explicó transferencia primero; no solicitó datos personales ni poles antes del comprobante. Grupo `15abf68c-f9ac-4a73-b48d-9fdf93910650` quedó `awaiting_receipt`, con 0 reservas.   |
+| GRP-B | Ante “apártalas aunque no tenga comprobante”, rechazó apartar y volvió a pedir el comprobante. El mismo grupo siguió sin recibo y sin reservas.                                                                                  |
+| GRP-C | Tras comprobante sintético —sin transferencia real— solicitó ambos nombres y celulares de 10 dígitos juntos. Antes de compartirlos: 0 perfiles y 0 reservas; estado `awaiting_participants`.                                     |
+| GRP-D | En `Pole Fitness UAT`, ofreció `Pole UAT 1` y `Pole UAT 2`; tras confirmar Ana/1 y Bety/2, las asignaciones guardadas coincidieron y se crearon exactamente dos reservas.                                                        |
+| GRP-E | Rechazó que ambas usaran Pole 1 por capacidad 1, explicó el motivo y sugirió Ana/1 y Bety/2. La selección corregida creó dos reservas; el mensaje de confirmación repetido no duplicó ninguna.                                   |
+| GRP-F | En la sesión sin poles, el flujo mantuvo el orden comprobante → datos y creó dos reservas sin pedir asignaciones de recurso. Las dos quedaron `payment_pending`.                                                                 |
+| INF-A | Con la regla específica ausente, respondió rodilleras y ropa cómoda que deje la piel en contacto con el tubo para Exotic, usando lo guardado en el prompt.                                                                       |
 | INF-B | Con regla específica sintética “únicamente camiseta azul”, contestó únicamente eso; al desactivar la regla y preguntar el color, dijo que no hay uno específico y limitó la respuesta a las indicaciones presentes en el prompt. |
 
 Grupo sin poles: `15abf68c-f9ac-4a73-b48d-9fdf93910650`, conversación `e4599bbd-cf0f-43f7-8ddf-fbbcd784a034`, reservas `b2b3e6e9-493c-4faf-8df3-888b5050816a` y `731eef17-060c-499c-bcea-868eda134c6b`.  
