@@ -1,3 +1,4 @@
+import { candidateExternalEffectsBlocked } from "../_shared/candidate-external-policy.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { withSupabase } from "npm:@supabase/server";
 
@@ -86,6 +87,9 @@ function validReturnBaseUrl(value: unknown) {
 const handler = {
   fetch: withSupabase({ auth: "user" }, async (request, context) => {
     if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405);
+    if (candidateExternalEffectsBlocked(Deno.env.get("SF_GOV_CANDIDATE_PREVIEW"))) {
+      return Response.json({ error: "candidate_external_effect_forbidden" }, { status: 503 });
+    }
 
     const userClient = context.supabase;
 
