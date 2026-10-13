@@ -17,6 +17,8 @@ function load() {
       if (name === "server-only") return {};
       if (name === "node:crypto") return crypto;
       if (name === "./uat-scope") return { demiUatScope: () => null };
+      if (name === "./external-effect-policy")
+        return { assertCandidateRuntimeExternalEffectAllowed: vi.fn() };
       throw new Error(name);
     },
     loaded,
