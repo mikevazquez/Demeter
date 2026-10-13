@@ -3,6 +3,7 @@ import "server-only";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { demiUatScope } from "./uat-scope";
+import { assertCandidateRuntimeExternalEffectAllowed } from "./external-effect-policy";
 
 type JsonObject = Record<string, unknown>;
 
@@ -359,6 +360,7 @@ export async function sendMetaInboxText(input: {
           responseSnapshot: data,
         };
   }
+  assertCandidateRuntimeExternalEffectAllowed("meta_inbox_send");
   const recipient = input.recipientId.trim();
   const text = input.text.trim();
 
