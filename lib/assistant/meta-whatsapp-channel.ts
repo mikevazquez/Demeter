@@ -1,5 +1,6 @@
 import "server-only";
 import { demiUatScope, captureDemiUatText } from "./uat-scope";
+import { assertCandidateRuntimeExternalEffectAllowed } from "./external-effect-policy";
 
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -429,6 +430,7 @@ export async function sendMetaWhatsAppText(input: {
 }): Promise<MetaTextDeliveryResult> {
   const captured = await captureDemiUatText(input);
   if (captured) return captured;
+  assertCandidateRuntimeExternalEffectAllowed("meta_whatsapp_send");
   const recipient = input.recipientWaId.replace(/\D/g, "");
   const text = input.text.trim();
 
