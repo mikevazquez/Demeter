@@ -19,6 +19,7 @@ begin
  execute 'set local role authenticated';perform set_config('request.jwt.claims',jsonb_build_object('role','authenticated','sub',owner)::text,true);perform set_config('request.jwt.claim.role','authenticated',true);perform set_config('request.jwt.claim.sub',owner::text,true);
  r:=public.admin_review_transfer_purchase(trial_intent,'rejected','UAT: documento no corresponde al ingreso');
  if not coalesce((r->>'ok')::boolean,false) or (select status from public.demi_group_bookings where id=g)<>'rejected' or not exists(select 1 from public.demi_group_receipts where group_id=g) then raise exception 'parent_rejection_or_history:%',r; end if;
+ if (select commercial_status::text from public.reservations where id=(select reservation_id from public.demi_group_participants where group_id=g and ordinal=1))<>'payment_pending' then raise exception 'rejected_reservation_was_marked_paid'; end if;
  execute 'set local role service_role';perform set_config('request.jwt.claims','{"role":"service_role"}',true);perform set_config('request.jwt.claim.role','service_role',true);
  r:=public.service_complete_demi_group(s,c,g,'[{"name":"M12 Primera UAT","phone":"9998881111"}]');
  if coalesce((r->>'ok')::boolean,false) then raise exception 'rejected_group_replayed'; end if;
