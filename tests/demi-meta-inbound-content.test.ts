@@ -14,7 +14,8 @@ new Function(
   }).code,
 )(
   (name: string) => {
-    if (name === "server-only" || name === "./uat-scope") return {};
+    if (name === "server-only" || name === "./uat-scope" || name === "./external-effect-policy")
+      return {};
     if (name === "node:crypto") return requireBuiltin(name);
     throw new Error(name);
   },
