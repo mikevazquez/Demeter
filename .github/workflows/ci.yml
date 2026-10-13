@@ -38,8 +38,13 @@ jobs:
       - name: Format check
         run: npm run format:check
 
-      - name: Governance manifest policy tests
-        run: node --test scripts/governance-policy-checks.mjs
+      - name: Governance policy and migration grant tests
+        run: node --test scripts/governance-policy-checks.mjs scripts/check-migration-grants.test.mjs
+
+      - name: Reject dangerous table grants in changed migrations
+        env:
+          MIGRATION_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/check-migration-grants.mjs "$MIGRATION_BASE_SHA"
 
       - name: Lint
         run: npm run lint
