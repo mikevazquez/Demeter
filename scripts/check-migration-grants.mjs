@@ -88,7 +88,13 @@ function main() {
   for (const path of files) {
     for (const issue of inspectMigrationGrants(readFileSync(path, "utf8"))) {
       findings.push(
-        path + ":" + issue.line + " " + issue.privileges.join(", ") + " to " + issue.roles.join(", "),
+        path +
+          ":" +
+          issue.line +
+          " " +
+          issue.privileges.join(", ") +
+          " to " +
+          issue.roles.join(", "),
       );
     }
   }
