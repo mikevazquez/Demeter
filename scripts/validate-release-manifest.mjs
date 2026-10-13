@@ -10,6 +10,7 @@ const SAFE_URL =
   /^https:\/\/(?:github\.com\/mikevazquez\/Demeter\/(?:pull|actions\/runs)\/\d+|app\.notion\.com\/p\/[0-9a-f]+(?:\?[^\s]*)?)$/i;
 const SECRET_PROPERTY =
   /(?:password|secret|token|private.key|credential|authorization.header|access.key|apikey|api_key)/i;
+const TWO_STAGE_CASES = new Set(["PIL-UAT-01", "DOC-UAT-01"]);
 
 function object(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -25,10 +26,11 @@ function uniqueNames(value) {
 
 export function validateReleaseManifest(
   manifest,
-  { checkedOutSha, schemaAttestation, schemaAttestationKey, now } = {},
+  { checkedOutSha, schemaAttestation, schemaAttestationKey, now, uatPhase = "predeployment" } = {},
 ) {
   if (!object(manifest)) return ["Expected a manifest JSON object"];
   const errors = [];
+  if (!["predeployment", "closure"].includes(uatPhase)) errors.push("Unknown UAT phase");
 
   if (!CHANGE_ID.test(manifest.change_id ?? "")) errors.push("change_id must follow SF-MODULE-NNN");
   if (!COMMIT.test(manifest.baseline_sha ?? ""))
@@ -62,6 +64,19 @@ export function validateReleaseManifest(
     errors.push("references require valid GitHub PR and Notion URLs");
 
   const evidence = manifest.uat_evidence;
+  const validPhaseProof = (phase) =>
+    object(phase) &&
+    phase.result === "passed" &&
+    SAFE_URL.test(phase.evidence_url ?? "") &&
+    COMMIT.test(phase.candidate_sha ?? "") &&
+    phase.candidate_sha.toLowerCase() === manifest.candidate_sha?.toLowerCase();
+  const phasedCase = (item) =>
+    manifest.change_id === "SF-GOV-001" && TWO_STAGE_CASES.has(item?.case_id);
+  const awaitingClosure = (item) =>
+    phasedCase(item) &&
+    item.result === "pending" &&
+    validPhaseProof(item.phases?.predeployment) &&
+    item.phases?.postdeployment?.result === "pending";
   if (
     !Array.isArray(evidence) ||
     !evidence.every(
@@ -75,10 +90,26 @@ export function validateReleaseManifest(
     errors.push("uat_evidence must contain result and proof for passed cases");
 
   if (Array.isArray(evidence) && Array.isArray(manifest.uat_case_ids)) {
+    for (const item of evidence) {
+      if (!object(item)) continue;
+      if (item.phases && !phasedCase(item)) {
+        errors.push("Two-stage UAT is limited to SF-GOV-001 PIL-UAT-01 and DOC-UAT-01");
+      }
+      if (phasedCase(item) && item.result === "passed") {
+        if (
+          !validPhaseProof(item.phases?.predeployment) ||
+          !validPhaseProof(item.phases?.postdeployment)
+        ) {
+          errors.push(
+            item.case_id + " cannot be passed before both stages have SHA-bound evidence",
+          );
+        }
+      }
+    }
     const listed = new Set(manifest.uat_case_ids);
     if (
-      new Set(evidence.map((x) => x.case_id)).size !== evidence.length ||
-      evidence.some((x) => !listed.has(x.case_id))
+      new Set(evidence.map((x) => x?.case_id)).size !== evidence.length ||
+      evidence.some((x) => !listed.has(x?.case_id))
     )
       errors.push("uat_evidence contains duplicate or unlisted case IDs");
   }
@@ -86,9 +117,15 @@ export function validateReleaseManifest(
   if (manifest.target === "production-staged") {
     if (
       evidence?.length !== manifest.uat_case_ids?.length ||
-      evidence?.some((item) => item.result !== "passed")
+      (Array.isArray(evidence) &&
+        evidence.some(
+          (item) =>
+            item?.result !== "passed" && !(uatPhase === "predeployment" && awaitingClosure(item)),
+        ))
     )
-      errors.push("production-staged requires passing evidence for every UAT");
+      errors.push(
+        "production-staged requires passing evidence for every UAT; only approved two-stage cases may await closure",
+      );
     if (!text(manifest.sandbox_candidate_run))
       errors.push("production-staged requires sandbox_candidate_run");
     const attestationErrors = verifySchemaAttestation(schemaAttestation, {
@@ -97,6 +134,15 @@ export function validateReleaseManifest(
       now,
     });
     errors.push(...attestationErrors.map((error) => "schema_attestation: " + error));
+  }
+
+  if (
+    uatPhase === "closure" &&
+    (!Array.isArray(evidence) ||
+      evidence.length !== manifest.uat_case_ids?.length ||
+      evidence.some((item) => item?.result !== "passed"))
+  ) {
+    errors.push("UAT closure requires every case passed with complete evidence");
   }
 
   if (
@@ -126,11 +172,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const path = process.argv[2];
   if (!path) {
     console.error(
-      "Usage: node scripts/validate-release-manifest.mjs <file.json> [SHA] [schema-attestation.json]",
+      "Usage: node scripts/validate-release-manifest.mjs <file.json> [SHA] [schema-attestation.json] [--closure]",
     );
     process.exit(2);
   }
   try {
+    if (process.argv[5] && process.argv[5] !== "--closure")
+      throw new Error("Unknown UAT phase argument");
     const manifest = JSON.parse(readFileSync(path, "utf8"));
     const schemaAttestation = process.argv[4]
       ? JSON.parse(readFileSync(process.argv[4], "utf8"))
@@ -139,6 +187,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       checkedOutSha: process.argv[3],
       schemaAttestation,
       schemaAttestationKey: process.env.SF_GOV_SCHEMA_ATTESTATION_KEY,
+      uatPhase: process.argv[5] === "--closure" ? "closure" : "predeployment",
     });
     issues.forEach((issue) => console.error("FAIL: " + issue));
     if (issues.length) process.exitCode = 1;

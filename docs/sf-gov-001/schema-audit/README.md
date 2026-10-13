@@ -25,9 +25,18 @@ Este directorio contiene **solo resúmenes de metadatos** de los catálogos Post
 
 ## UAT todavía pendientes
 
-- Ejecutar un ensayo de diferencia **física** de esquema en una base efímera/aislada autorizada y confirmar reversión total (sin afectar producción ni Sandbox histórico).
+- El ensayo DDL físico local ya pasó en `scripts/schema-physical-drift.test.mjs`: PostgreSQL WASM, rechazo durante ALTER y aceptación tras ROLLBACK. Ver `2026-10-13-physical-negative.md`. No certifica restauración Supabase.
 - Instalar y proteger el firmante y el secreto sin exponer valores en logs o Notion; ligar el gate a un workflow real de certificación del SHA exacto.
 - Aislar Preview de credenciales y efectos externos (pagos, WhatsApp, Meta, correo, cron). Ningún test debe contactar destinatarios reales.
 - No recrear Mirror (eliminado intencionalmente) ni generar costos sin autorización.
 
-**Estado actual:** detector y control negativo de solo lectura implementados; Candidate NO equivalente; `INV-UAT-01` continúa Preparado hasta completar la prueba física y la procedencia verificable.
+**Estado actual:** detector, control negativo de solo lectura y ensayo DDL local implementados; Candidate NO equivalente; `INV-UAT-01` continúa Preparado por procedencia y gate protegido pendientes.
+
+**Prerrequisito de firmante revisado (solo lectura, 13 octubre):** en producción
+y Candidate no existe el rol propuesto `sf_gov_schema_reader`; sí existe
+`supabase_read_only_user`, con `rolbypassrls=true`. No se recuperó ni reutilizó
+su contraseña y no se cambió ningún permiso. El nombre "read only" no
+demuestra por sí solo una cuenta limitada a catálogos. Antes de activar un
+capturador protegido hay que definir y verificar permisos mínimos y el
+mecanismo de secretos; cualquier cambio productivo requiere autorización
+independiente. La aprobación GOV-COM-02 no cubre esa activación.

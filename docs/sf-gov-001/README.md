@@ -6,12 +6,12 @@
 
 ## Estructura de entornos
 
-| Entorno           | Uso                                   | Datos      | Integraciones  |
-| ----------------- | ------------------------------------- | ---------- | -------------- |
-| Producción        | Operación real de Studio Flow         | Reales     | Reales         |
-| Espejo            | Línea base de producción reproducible | Sintéticos | Deshabilitadas |
-| Sandbox candidato | Cambios autorizados para integración  | Sintéticos | Simuladores    |
-| Previews por PR   | Desarrollo y pruebas por módulo       | Sintéticos | Simuladores    |
+| Entorno           | Uso                                   | Datos      | Integraciones |
+| ----------------- | ------------------------------------- | ---------- | ------------- |
+| Producción        | Operación real de Studio Flow         | Reales     | Reales        |
+| Espejo            | Retirado; no recrear sin autorización | No aplica  | No aplica     |
+| Sandbox candidato | Cambios autorizados para integración  | Sintéticos | Simuladores   |
+| Previews por PR   | Desarrollo y pruebas por módulo       | Sintéticos | Simuladores   |
 
 No se certificará ningún preview hasta verificar **todas** sus
 credenciales y destinos externos. Una URL de Supabase Sandbox no garantiza
@@ -35,9 +35,37 @@ de prueba no pueden enviar mensajes a personas reales.
    Pruebas no destructivas sobre el build preparado; promoción del mismo
    artefacto, no de un Preview reconstruido.
 7. **Cierre**: smoke, monitoreo, incidentes, Bitácora Notion, rollback
-   documentado y sincronización del espejo con producción.
+   documentado y actualización de la referencia verificable de producción.
 
 **Los UAT aprobados no constituyen permiso de promoción.**
+
+## GOV-COM-02: validación previa y cierre posterior
+
+Mike autorizó esta separación el 13 de octubre de 2026, 14:40
+America/Mexico_City. Es una decisión metodológica, no autorización productiva.
+
+Solo para `SF-GOV-001`, `PIL-UAT-01` y `DOC-UAT-01` pueden mantener su
+resultado global `pending` antes de producción cuando su etapa
+`phases.predeployment` está `passed`, con `evidence_url` válido y
+`candidate_sha` idéntico al del manifiesto. Su etapa
+`phases.postdeployment` debe permanecer `pending`. Los demás casos conservan
+el requisito de aprobación completa antes de preparar producción.
+
+No se marca un caso global `passed` hasta que **ambas** etapas tengan
+evidencia y el mismo SHA. Para validar el cierre completo se usa:
+
+```sh
+node scripts/validate-release-manifest.mjs RELEASE.json FULL_SHA SCHEMA_ATTESTATION.json --closure
+```
+
+El cierre rechaza cualquier caso pendiente. Esta regla no omite los checks
+de firma, paridad del esquema, identidad del artefacto ni aprobación humana
+protegida. Los JSON y los tests solo validan estructura; no autentican por
+sí solos la aprobación UAT ni autorizan un despliegue.
+
+En Notion se conservan los 18 casos originales. PIL-UAT-01 continúa
+Bloqueado y DOC-UAT-01 Preparado hasta completar sus evidencias; aprobar
+esta regla no equivale a aprobar sus etapas.
 
 ## Validación mecánica del manifiesto
 
@@ -61,7 +89,7 @@ autorización se impone exclusivamente por un **reviewer protegido en
 GitHub/Vercel** con registros de auditoría que no pueda falsificar la
 persona que modifica la rama.
 
-## Observaciones del diagnóstico
+## Observaciones del diagnóstico inicial (histórico)
 
 - Baseline identificado: `e76495ee63173de8634c664cd33fa5a9ef0f24e0`.
 - 322 ramas, 52 PR abiertos; el Sandbox actual contiene trabajo adicional

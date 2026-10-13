@@ -177,3 +177,123 @@ test("blocks production staging with tampered signed schema evidence", () => {
     /signature verification failed/,
   );
 });
+
+function twoStageManifest() {
+  const m = draft();
+  m.target = "production-staged";
+  m.sandbox_candidate_run = "synthetic-candidate-run";
+  m.uat_case_ids = ["GOV-UAT-01", "PIL-UAT-01", "DOC-UAT-01"];
+  m.uat_evidence = [
+    { case_id: "GOV-UAT-01", result: "passed", evidence_url: m.references.pr },
+    ...["PIL-UAT-01", "DOC-UAT-01"].map((case_id) => ({
+      case_id,
+      result: "pending",
+      phases: {
+        predeployment: {
+          result: "passed",
+          evidence_url: m.references.pr,
+          candidate_sha: candidate,
+        },
+        postdeployment: { result: "pending" },
+      },
+    })),
+  ];
+  return m;
+}
+
+function schemaOptions() {
+  return {
+    checkedOutSha: candidate,
+    schemaAttestation: attestation(),
+    schemaAttestationKey: schemaKey,
+    now,
+  };
+}
+
+test("GOV-COM-02 permits only prevalidated PIL/DOC to await closure without marking passed", () => {
+  const m = twoStageManifest();
+  assert.deepEqual(validateReleaseManifest(m, schemaOptions()), []);
+  assert.deepEqual(
+    m.uat_evidence.slice(1).map((item) => item.result),
+    ["pending", "pending"],
+  );
+  assert.match(
+    validateReleaseManifest(m, { ...schemaOptions(), uatPhase: "closure" }).join(";"),
+    /closure requires/,
+  );
+});
+
+test("GOV-COM-02 refuses missing, failed, blocked, stale-SHA or unlinked predeployment proof", () => {
+  for (const patch of [
+    undefined,
+    { result: "pending" },
+    { result: "failed" },
+    { result: "blocked" },
+    { result: "passed", evidence_url: "https://example.com/fake", candidate_sha: candidate },
+    { result: "passed", evidence_url: draft().references.pr, candidate_sha: baseline },
+  ]) {
+    const m = twoStageManifest();
+    m.uat_evidence[1].phases.predeployment = patch;
+    assert.ok(validateReleaseManifest(m, schemaOptions()).length > 0);
+  }
+});
+
+test("GOV-COM-02 does not exempt other cases or projects", () => {
+  const m = twoStageManifest();
+  m.uat_evidence[0].result = "pending";
+  assert.ok(validateReleaseManifest(m, schemaOptions()).length > 0);
+  const other = twoStageManifest();
+  other.change_id = "SF-OTHER-001";
+  assert.match(validateReleaseManifest(other, schemaOptions()).join(";"), /limited to/);
+});
+
+test("GOV-COM-02 refuses failed or blocked postdeployment and premature global approval", () => {
+  for (const result of ["failed", "blocked", "passed"]) {
+    const m = twoStageManifest();
+    m.uat_evidence[1].phases.postdeployment.result = result;
+    assert.ok(validateReleaseManifest(m, schemaOptions()).length > 0);
+  }
+  const m = twoStageManifest();
+  m.uat_evidence[1].result = "passed";
+  m.uat_evidence[1].evidence_url = m.references.pr;
+  assert.match(validateReleaseManifest(m, schemaOptions()).join(";"), /both stages/);
+});
+
+test("GOV-COM-02 closure accepts both complete stages and refuses wrong postdeployment SHA", () => {
+  const m = twoStageManifest();
+  for (const item of m.uat_evidence.slice(1)) {
+    item.result = "passed";
+    item.evidence_url = m.references.pr;
+    item.phases.postdeployment = { ...item.phases.predeployment };
+  }
+  assert.deepEqual(validateReleaseManifest(m, { ...schemaOptions(), uatPhase: "closure" }), []);
+  m.uat_evidence[2].phases.postdeployment.candidate_sha = baseline;
+  assert.match(
+    validateReleaseManifest(m, { ...schemaOptions(), uatPhase: "closure" }).join(";"),
+    /both stages/,
+  );
+});
+
+test("GOV-COM-02 preserves schema attestation and SHA gates", () => {
+  const m = twoStageManifest();
+  assert.match(
+    validateReleaseManifest(m, { checkedOutSha: candidate }).join(";"),
+    /schema_attestation/,
+  );
+  assert.match(
+    validateReleaseManifest(m, { ...schemaOptions(), checkedOutSha: baseline }).join(";"),
+    /SHA/,
+  );
+  assert.match(
+    validateReleaseManifest(m, { ...schemaOptions(), uatPhase: "skip" }).join(";"),
+    /Unknown UAT phase/,
+  );
+});
+
+test("malformed UAT evidence is rejected without crashing the gate", () => {
+  const m = twoStageManifest();
+  m.uat_evidence = [null];
+  assert.ok(validateReleaseManifest(m, schemaOptions()).length > 0);
+  m.uat_evidence = {};
+  assert.ok(validateReleaseManifest(m, schemaOptions()).length > 0);
+});
