@@ -12,19 +12,13 @@ const baseline = "0".repeat(40);
 const candidate = "1".repeat(40);
 const schemaKey = "test-only-schema-key-".repeat(3);
 const now = new Date("2026-10-13T18:00:00.000Z");
-const report = [
-  "column",
-  "extension",
-  "index",
-  "policy",
-  "routine",
-  "table_rls",
-  "trigger",
-].map((kind, i) => ({
-  kind,
-  object_count: i + 1,
-  fingerprint: String(i).repeat(32),
-}));
+const report = ["column", "extension", "index", "policy", "routine", "table_rls", "trigger"].map(
+  (kind, i) => ({
+    kind,
+    object_count: i + 1,
+    fingerprint: String(i).repeat(32),
+  }),
+);
 
 function attestation() {
   const payload = {
@@ -39,7 +33,6 @@ function attestation() {
   };
   return { ...payload, signature: signSchemaPayload(payload, schemaKey) };
 }
-
 
 function draft() {
   return {
@@ -160,9 +153,7 @@ test("blocks production staging without protected schema attestation", () => {
   const m = draft();
   m.target = "production-staged";
   m.sandbox_candidate_run = "candidate #45";
-  m.uat_evidence = [
-    { case_id: "GOV-UAT-01", result: "passed", evidence_url: m.references.pr },
-  ];
+  m.uat_evidence = [{ case_id: "GOV-UAT-01", result: "passed", evidence_url: m.references.pr }];
   assert.match(
     validateReleaseManifest(m, { checkedOutSha: candidate }).join("; "),
     /schema_attestation/,
@@ -173,9 +164,7 @@ test("blocks production staging with tampered signed schema evidence", () => {
   const m = draft();
   m.target = "production-staged";
   m.sandbox_candidate_run = "candidate #45";
-  m.uat_evidence = [
-    { case_id: "GOV-UAT-01", result: "passed", evidence_url: m.references.pr },
-  ];
+  m.uat_evidence = [{ case_id: "GOV-UAT-01", result: "passed", evidence_url: m.references.pr }];
   const forged = attestation();
   forged.candidate[0].fingerprint = "f".repeat(32);
   assert.match(
