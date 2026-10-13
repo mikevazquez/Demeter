@@ -17,6 +17,8 @@ describe("Demi provisional trial transfer reservation status", () => {
   it("marks the reservation paid only after the transfer intent is validated", () => {
     expect(migration).toContain("new.status = 'validated'");
     expect(migration).toContain("commercial_status = 'paid'");
-    expect(migration).toContain("after update of status on public.assistant_transfer_purchase_intents");
+    expect(migration).toContain(
+      "after update of status on public.assistant_transfer_purchase_intents",
+    );
   });
 });
