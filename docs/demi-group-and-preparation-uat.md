@@ -1,6 +1,6 @@
 # Demi: grupos con poles e indicaciones de clase
 
-Estado: los ocho escenarios conversacionales GRP-A–F e INF-A–B pasaron en Sandbox el 12 de octubre de 2026 (Ciudad de México). La aceptación final y la promoción siguen pendientes; producción no se modificó.
+Estado: los ocho escenarios conversacionales GRP-A–F e INF-A–B pasaron en Sandbox el 12 de octubre de 2026 (Ciudad de México), y Mike aceptó el UAT el 13 de octubre. La promoción a producción sigue pendiente de autorización explícita; producción no se modificó.
 
 Preview verificado: https://demeterbueno-7zn7uhv7m-demeter3.vercel.app (READY, commit 0d2a95215a10f9e5906d1c9f46201817ac3c52c3). El build verificó la conexión a `hedouonyhynuvwbckdlg`. La aplicación carga y solicita la sesión del estudio.
 
