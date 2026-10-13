@@ -1,0 +1,37 @@
+[
+  {
+    "kind": "column",
+    "object_count": 772,
+    "fingerprint": "32ed305bb3ec9f4ef34f24ac8cadd654"
+  },
+  {
+    "kind": "extension",
+    "object_count": 5,
+    "fingerprint": "97088d43d6a8be0bf80955be2cd1a6ca"
+  },
+  {
+    "kind": "index",
+    "object_count": 254,
+    "fingerprint": "abbb49d3cfd0232a2086e4188054e98d"
+  },
+  {
+    "kind": "policy",
+    "object_count": 123,
+    "fingerprint": "52424981cfe4b19317d2feb870a7b686"
+  },
+  {
+    "kind": "routine",
+    "object_count": 95,
+    "fingerprint": "31ae18b5d759e91277dee17562268317"
+  },
+  {
+    "kind": "table_rls",
+    "object_count": 66,
+    "fingerprint": "4e620727910a196fb9f48f9db92570ea"
+  },
+  {
+    "kind": "trigger",
+    "object_count": 20,
+    "fingerprint": "31c00aad9a7edef0ac4866629db1fccc"
+  }
+]
