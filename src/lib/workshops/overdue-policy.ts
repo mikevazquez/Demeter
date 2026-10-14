@@ -26,7 +26,7 @@ export type BalanceDecision =
 /** Pure policy evaluator. Caller MUST recheck payment and lock reservations atomically before release. */
 export function decideOverdueBalance(input: BalanceDecisionInput): BalanceDecision {
   const { snapshot, paidMinor, evaluatedAt, alreadyReleased } = input;
-  if (!Number.isSafeInteger(snapshot.totalMinor) || snapshot.balanceDueMinor < 0)
+  if (!Number.isSafeInteger(snapshot.totalMinor) || snapshot.totalMinor < 0)
     throw new Error("Invalid purchase total");
   if (!Number.isSafeInteger(paidMinor) || paidMinor < 0)
     throw new Error("Invalid paid amount");
@@ -34,7 +34,7 @@ export function decideOverdueBalance(input: BalanceDecisionInput): BalanceDecisi
   const now = Date.parse(evaluatedAt);
   if (!Number.isFinite(due) || !Number.isFinite(now)) throw new Error("Invalid date");
   if (alreadyReleased) return { action: "none", reason: "already_released" };
-  if (paidMinor >= snapshot.balanceDueMinor) return { action: "none", reason: "paid" };
+  if (paidMinor >= snapshot.totalMinor) return { action: "none", reason: "paid" };
   if (now <= due) return { action: "none", reason: "not_due" };
   if (snapshot.overduePolicy.mode === "keep_and_notify")
     return { action: "notify", reason: "overdue_keep" };
