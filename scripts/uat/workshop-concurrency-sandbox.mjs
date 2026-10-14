@@ -14,6 +14,7 @@
  *   WORKSHOP_UAT_STUDENT_B_ID
  *   WORKSHOP_UAT_IDEMPOTENCY_A
  *   WORKSHOP_UAT_IDEMPOTENCY_B
+ *   WORKSHOP_UAT_ACK_SYNTHETIC_PAYMENTS=I_ACKNOWLEDGE_SANDBOX_ONLY
  *
  * This creates SYNTHETIC payment, sale and reservation rows in Sandbox.
  * It does NOT verify actual funds. It must not be wired into CI by default.
@@ -35,9 +36,16 @@ for (const name of required) {
   if (!process.env[name]) throw new Error(`Missing ${name}`);
 }
 const env = process.env;
+if (env.WORKSHOP_UAT_ACK_SYNTHETIC_PAYMENTS !== 'I_ACKNOWLEDGE_SANDBOX_ONLY') {
+  throw new Error('Explicit acknowledgement required: this test writes synthetic payment records');
+}
 const url = new URL(env.WORKSHOP_UAT_SUPABASE_URL);
 if (!url.hostname.endsWith('.supabase.co') || url.hostname.split('.')[0] !== 'hedouonyhynuvwbckdlg') {
   throw new Error('Refusing to run outside the approved Sandbox project');
+}
+if (env.WORKSHOP_UAT_IDEMPOTENCY_A === '11111111-2222-4333-8444-555555555555' ||
+    env.WORKSHOP_UAT_IDEMPOTENCY_B === '11111111-2222-4333-8444-555555555555') {
+  throw new Error('Do not reuse the original deposit checkout key');
 }
 if (env.WORKSHOP_UAT_STUDENT_A_ID === env.WORKSHOP_UAT_STUDENT_B_ID ||
     env.WORKSHOP_UAT_IDEMPOTENCY_A === env.WORKSHOP_UAT_IDEMPOTENCY_B) {
