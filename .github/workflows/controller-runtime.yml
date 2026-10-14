@@ -1,0 +1,19 @@
+name: SF GOV controller runtime
+on:
+  pull_request:
+    branches: [governance/sf-gov-001-controller]
+    paths:
+      - .github/workflows/controller-runtime.yml
+      - .github/workflows/schema-controller.yml
+permissions: {}
+jobs:
+  client:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Install PostgreSQL 17 client before credentials
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client-17
+          /usr/bin/psql --version
+          /usr/bin/psql --version | awk '{split($3,v,"."); if (v[1] < 17) exit 1}'
