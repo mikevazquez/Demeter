@@ -1405,7 +1405,12 @@ async function deliver(
 const handler = {
   fetch: withSupabase({ auth: "none" }, async (request, context) => {
     if (request.method !== "POST") return response({ error: "method_not_allowed" }, 405);
-    if (candidateExternalEffectsBlocked(Deno.env.get("SF_GOV_CANDIDATE_PREVIEW"), Deno.env.get("SUPABASE_URL")))
+    if (
+      candidateExternalEffectsBlocked(
+        Deno.env.get("SF_GOV_CANDIDATE_PREVIEW"),
+        Deno.env.get("SUPABASE_URL"),
+      )
+    )
       return response({ error: "candidate_external_effect_forbidden" }, 503);
 
     const adminClient = context.supabaseAdmin;
