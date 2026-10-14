@@ -154,6 +154,8 @@ function harness(
         ? { createClient: () => client }
         : name === "../_shared/demi-mercadopago.ts"
           ? { demiTestSeller: async () => true }
+          : name === "../_shared/candidate-external-policy.ts"
+            ? { candidateExternalEffectsBlocked: () => false }
           : (() => {
               throw Error(name);
             })(),
