@@ -10,6 +10,7 @@ DECLARE
   v_purchase uuid := '52389716-de8c-4330-88d6-a5398ab60c05';
   v_sale uuid := '080f5a7c-8d3f-4abd-b77b-6be37a7f2569';
   v_count integer;
+  v_error text;
 BEGIN
   IF (SELECT count(*) FROM public.workshop_purchases WHERE id = v_purchase AND studio_id = v_studio AND offer_id = v_offer AND total_minor = 60000 AND paid_minor = 30000 AND status = 'reserved') <> 1 THEN
     RAISE EXCEPTION 'UAT failed: original deposit purchase missing or inconsistent';
@@ -33,6 +34,34 @@ BEGIN
   IF v_count <> 2 THEN
     RAISE EXCEPTION 'UAT failed: RPC permissions incorrect';
   END IF;
-  RAISE NOTICE 'Workshop UAT fixture checks passed (read-only); concurrency and payment authorization remain unverified';
+  BEGIN
+    PERFORM public.workshop_checkout_preflight(
+      v_studio, v_offer,
+      'b2fb771e-206e-46cb-84dc-cc4c16722778'::uuid,
+      ARRAY[v_session, v_session]
+    );
+    RAISE EXCEPTION 'UAT failed: duplicate session accepted';
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
+    IF v_error <> 'duplicate_session' THEN
+      RAISE EXCEPTION 'UAT failed: unexpected duplicate selection result: %', v_error;
+    END IF;
+  END;
+  BEGIN
+    PERFORM public.workshop_checkout_confirm(
+      v_studio, v_offer,
+      'b2fb771e-206e-46cb-84dc-cc4c16722778'::uuid,
+      ARRAY[v_session],
+      '11111111-2222-4333-8444-555555555555'::uuid,
+      40000, 'cash', 'UAT-CONFLICT-CHECK-NO-PAYMENT'
+    );
+    RAISE EXCEPTION 'UAT failed: conflicting idempotency accepted';
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
+    IF v_error <> 'idempotency_conflict' THEN
+      RAISE EXCEPTION 'UAT failed: unexpected idempotency result: %', v_error;
+    END IF;
+  END;
+  RAISE NOTICE 'Workshop fixture and negative checks passed; concurrency and payment authorization remain unverified';
 END
 $uat$;
