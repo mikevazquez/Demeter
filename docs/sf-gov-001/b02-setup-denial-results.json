@@ -1,0 +1,14 @@
+{
+  "source_sha": "10c84a5ae11f33599e4d4e3b038411e4fb8a83cd",
+  "deployment": "dpl_41wG3msHR4SedrqTUJxqsczYvpXx",
+  "auth_signup_requests": 0,
+  "blocked_hosts": ["vercel.live", "vercel.live"],
+  "tests": [
+    {
+      "case": "signup_form_denied",
+      "error": ["isolated"],
+      "notice_visible": true,
+      "path": "/setup"
+    }
+  ]
+}

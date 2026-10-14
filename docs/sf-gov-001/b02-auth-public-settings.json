@@ -1,0 +1,33 @@
+{
+  "disable_signup": false,
+  "mailer_autoconfirm": false,
+  "phone_autoconfirm": false,
+  "external": {
+    "anonymous_users": false,
+    "apple": false,
+    "azure": false,
+    "bitbucket": false,
+    "discord": false,
+    "facebook": false,
+    "snapchat": false,
+    "figma": false,
+    "fly": false,
+    "github": false,
+    "gitlab": false,
+    "google": false,
+    "keycloak": false,
+    "kakao": false,
+    "linkedin": false,
+    "linkedin_oidc": false,
+    "notion": false,
+    "spotify": false,
+    "slack": false,
+    "slack_oidc": false,
+    "workos": false,
+    "twitch": false,
+    "twitter": false,
+    "email": true,
+    "phone": false,
+    "zoom": false
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "project_ref": "sdmxtlgjkodidjtvikng",
+  "operation": "PATCH /v1/projects/sdmxtlgjkodidjtvikng/config/auth",
+  "payload": { "disable_signup": true },
+  "dashboard_action": "Authentication -> Sign In / Providers -> Allow new users to sign up: OFF; Save",
+  "scope": "Candidate only; no SMTP, email provider, anonymous sign-in, existing user or production changes",
+  "reason": "Public Auth settings report disable_signup=false and mailer_autoconfirm=false; direct signup can dispatch confirmation email independently of the guarded application",
+  "expected": "Public settings disable_signup=true; existing synthetic password login remains available; bounded official Admin createUser remains the fixture path",
+  "status": "prepared; not applied by this file"
+}
