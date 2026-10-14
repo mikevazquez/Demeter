@@ -27,7 +27,7 @@ function load(path: string) {
     loaded,
     loaded.exports,
   );
-  return loaded.exports as Record<string, (...args: any[]) => Promise<unknown>>;
+  return loaded.exports as Record<string, (...args: unknown[]) => Promise<unknown>>;
 }
 
 afterEach(() => vi.unstubAllGlobals());
