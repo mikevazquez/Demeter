@@ -29,3 +29,16 @@ Secret: `WORKSHOP_UAT_SERVICE_ROLE_KEY` (Sandbox only). Run `node scripts/uat/wo
 **Pass criteria:** exactly one successful checkout, exactly one `session_full` rejection, exactly one active reservation, one synthetic purchase/sale/payment, and no purchase for the losing idempotency key. Confirm SQL independently after execution.
 
 **Critical limitation:** This test uses the existing checkout RPC, which records a synthetic cash payment without independent payment verification. It must never be exposed to end users. Test-only credentials and data. Production remains protected.
+
+
+## Segundo fixture listo (2026-10-14)
+
+El primer fixture ya tiene una reserva activa y **no** debe reutilizarse para probar una carrera con cupo vacio. Se creo otro fixture aislado:
+
+- Oferta B: `9ac9cde5-d679-4207-91ac-7bf9da273a34`
+- Sesion B: `812c71b9-2e1f-496c-9131-fa9fe7c1fd6f`
+- Precio completo: 60000 centavos; capacidad 1; sesion no visible a Demi.
+- Compradores: los mismos dos estudiantes sinteticos.
+- Usar claves de idempotencia **nuevas** para la carrera B.
+
+La ejecucion paralela real sigue pendiente; no marcar TALL-04 como aprobado.
