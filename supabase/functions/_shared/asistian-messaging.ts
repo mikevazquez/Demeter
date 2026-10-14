@@ -1,3 +1,4 @@
+import { candidateExternalEffectsBlocked } from "../_shared/candidate-external-policy.ts";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.116.0";
 
 export type AsistianDeliveryResult =
@@ -73,6 +74,14 @@ async function createAsistianSignature(secret: string, body: string) {
 export async function sendAsistianWebhook(
   input: AsistianDeliveryInput,
 ): Promise<AsistianDeliveryResult> {
+  if (
+    candidateExternalEffectsBlocked(
+      Deno.env.get("SF_GOV_CANDIDATE_PREVIEW"),
+      Deno.env.get("SUPABASE_URL"),
+    )
+  ) {
+    return { status: "skipped", errorCode: "candidate_external_effect_forbidden", retryable: false };
+  }
   const [
     { data: configuredUrl, error: webhookError },
     { data: configuredSecret, error: signingSecretError },
