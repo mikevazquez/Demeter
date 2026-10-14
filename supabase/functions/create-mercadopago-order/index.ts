@@ -87,10 +87,12 @@ function validReturnBaseUrl(value: unknown) {
 const handler = {
   fetch: withSupabase({ auth: "user" }, async (request, context) => {
     if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405);
-    if (candidateExternalEffectsBlocked(
+    if (
+      candidateExternalEffectsBlocked(
         Deno.env.get("SF_GOV_CANDIDATE_PREVIEW"),
         Deno.env.get("SUPABASE_URL"),
-      )) {
+      )
+    ) {
       return Response.json({ error: "candidate_external_effect_forbidden" }, { status: 503 });
     }
 
