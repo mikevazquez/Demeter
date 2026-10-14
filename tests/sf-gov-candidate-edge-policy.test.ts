@@ -46,8 +46,17 @@ describe("SF-GOV-001 Candidate Edge external effect policy", () => {
       "reconcile-mercadopago-order",
       "send-push-notification",
       "notification-delivery-worker",
+      "demi-followup-worker",
     ]) {
       const source = readFileSync(`supabase/functions/${path}/index.ts`, "utf8");
+      expect(source, path).toContain("candidateExternalEffectsBlocked(");
+      expect(source, path).toContain('Deno.env.get("SUPABASE_URL")');
+    }
+  });
+
+  it("guards shared Asistian and Meta send adapters", () => {
+    for (const path of ["asistian-messaging", "meta-whatsapp"]) {
+      const source = readFileSync(`supabase/functions/_shared/${path}.ts`, "utf8");
       expect(source, path).toContain("candidateExternalEffectsBlocked(");
       expect(source, path).toContain('Deno.env.get("SUPABASE_URL")');
     }
