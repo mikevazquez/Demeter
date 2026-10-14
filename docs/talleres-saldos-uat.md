@@ -39,3 +39,8 @@ No merge, no despliegue a produccion, no promocion sin autorizacion explicita.
 ### Evidencia adicional de atomicidad — 2026-10-14 (Sandbox)
 
 Se ejecutó un bloque PL/pgSQL de prueba con una elevación temporal de capacidad dentro de una subtransacción que se revierte al terminar. Se llamó a `workshop_checkout_confirm` para una alumna que ya tenía reserva activa, con clave sintética `55555555-5555-4555-8555-555555555555`. El RPC devolvió `student_already_reserved`; las aserciones verificaron ausencia de compra y venta persistidas para la clave y restauración de capacidad original a 1. El bloque terminó sin excepción. **Prueba técnica superada; no cierra UAT completo ni prueba concurrencia real.**
+
+
+### Regresión SQL integrada — 2026-10-14
+
+Se ejecutó íntegramente `scripts/uat/workshop-checkout-sandbox.sql` mediante Supabase MCP `execute_sql` en el proyecto Sandbox `hedouonyhynuvwbckdlg`. Resultado: bloque DO completado sin excepción (`[]`), lo que confirma todas las aserciones del script, incluidas integridad de compra/venta/pago/reserva, capacidad, permisos RPC, selección duplicada e idempotencia conflictiva. **No equivale a una prueba concurrente de dos conexiones, a autorización real de pago ni a aprobación formal de TALL-01–18.**
