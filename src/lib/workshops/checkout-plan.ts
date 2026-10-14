@@ -1,4 +1,9 @@
-import { calculateDeposit, quoteWorkshopPurchase, type WorkshopOffer, type WorkshopSelection } from "./purchase-quote";
+import {
+  calculateDeposit,
+  quoteWorkshopPurchase,
+  type WorkshopOffer,
+  type WorkshopSelection,
+} from "./purchase-quote";
 import type { OverdueBalancePolicy } from "./overdue-policy";
 
 export interface WorkshopCheckoutSettings {
@@ -10,7 +15,15 @@ export interface WorkshopCheckoutSettings {
 }
 
 export type WorkshopCheckoutPlan =
-  | { ok: true; sessionIds: string[]; totalMinor: number; dueNowMinor: number; balanceMinor: number; dueAt: string | null; overduePolicy: OverdueBalancePolicy }
+  | {
+      ok: true;
+      sessionIds: string[];
+      totalMinor: number;
+      dueNowMinor: number;
+      balanceMinor: number;
+      dueAt: string | null;
+      overduePolicy: OverdueBalancePolicy;
+    }
   | { ok: false; reason: string };
 
 /**
@@ -33,11 +46,13 @@ export function planWorkshopCheckout(
   } catch {
     return { ok: false, reason: "invalid_deposit" };
   }
-  if (amounts.balanceMinor > 0 &&
-      (!settings.dueAt || !Number.isFinite(Date.parse(settings.dueAt))))
+  if (amounts.balanceMinor > 0 && (!settings.dueAt || !Number.isFinite(Date.parse(settings.dueAt))))
     return { ok: false, reason: "balance_due_date_required" };
-  if (settings.overduePolicy.mode === "release_after_grace" &&
-      (!Number.isSafeInteger(settings.overduePolicy.graceMinutes) || settings.overduePolicy.graceMinutes < 0))
+  if (
+    settings.overduePolicy.mode === "release_after_grace" &&
+    (!Number.isSafeInteger(settings.overduePolicy.graceMinutes) ||
+      settings.overduePolicy.graceMinutes < 0)
+  )
     return { ok: false, reason: "invalid_grace" };
   return {
     ok: true,

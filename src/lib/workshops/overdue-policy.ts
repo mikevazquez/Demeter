@@ -1,6 +1,5 @@
 export type OverdueBalancePolicy =
-  | { mode: "keep_and_notify" }
-  | { mode: "release_after_grace"; graceMinutes: number };
+  { mode: "keep_and_notify" } | { mode: "release_after_grace"; graceMinutes: number };
 
 export interface WorkshopPurchasePolicySnapshot {
   studioId: string;
@@ -28,8 +27,7 @@ export function decideOverdueBalance(input: BalanceDecisionInput): BalanceDecisi
   const { snapshot, paidMinor, evaluatedAt, alreadyReleased } = input;
   if (!Number.isSafeInteger(snapshot.totalMinor) || snapshot.totalMinor < 0)
     throw new Error("Invalid purchase total");
-  if (!Number.isSafeInteger(paidMinor) || paidMinor < 0)
-    throw new Error("Invalid paid amount");
+  if (!Number.isSafeInteger(paidMinor) || paidMinor < 0) throw new Error("Invalid paid amount");
   const due = Date.parse(snapshot.dueAt);
   const now = Date.parse(evaluatedAt);
   if (!Number.isFinite(due) || !Number.isFinite(now)) throw new Error("Invalid date");
@@ -40,7 +38,6 @@ export function decideOverdueBalance(input: BalanceDecisionInput): BalanceDecisi
     return { action: "notify", reason: "overdue_keep" };
   const grace = snapshot.overduePolicy.graceMinutes;
   if (!Number.isSafeInteger(grace) || grace < 0) throw new Error("Invalid grace period");
-  if (now <= due + grace * 60_000)
-    return { action: "notify", reason: "within_grace" };
+  if (now <= due + grace * 60_000) return { action: "notify", reason: "within_grace" };
   return { action: "release", reason: "grace_expired" };
 }
