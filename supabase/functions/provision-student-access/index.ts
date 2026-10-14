@@ -46,6 +46,15 @@ function buildStudentActivationLink(baseUrl: string, tokenHash: string) {
 function activationButtonSuffix(activationLink: string) {
   const prefix = Deno.env.get("META_STUDENT_ACTIVATION_BUTTON_BASE_URL")?.trim();
   if (!prefix || !prefix.startsWith("https://") || !activationLink.startsWith(prefix)) return null;
+  // Prevent an arbitrary HTTPS origin or lookalike path from being accepted.
+  try {
+    const base = new URL(prefix);
+    const link = new URL(activationLink);
+    if (base.origin !== link.origin || link.pathname !== "/login/student/activar") return null;
+    if (base.hash || base.username || base.password || link.hash) return null;
+  } catch {
+    return null;
+  }
   const suffix = activationLink.slice(prefix.length);
   if (!suffix || suffix.length > 2048 || /\s|#/.test(suffix)) return null;
   return suffix;
