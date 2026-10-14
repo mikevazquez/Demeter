@@ -171,15 +171,17 @@ export function buildMetaWhatsAppTemplatePayload(input: {
     });
   }
 
-  // Only supply a dynamic URL-button parameter when the approved Meta template
-  // has a dynamic URL suffix. A static URL button must NOT receive parameters.
+  // The approved template must have a dynamic URL button at index 0.
+  // A static button must not receive parameters.
   if (input.internalTemplate === "student_welcome") {
     const buttonSuffix = input.variables.activation_button_suffix;
-    if (typeof buttonSuffix === "string" && buttonSuffix.trim()) {
+    if (buttonSuffix !== undefined && buttonSuffix !== null) {
       if (
+        typeof buttonSuffix !== "string" ||
+        !buttonSuffix.trim() ||
         buttonSuffix.length > 2048 ||
-        /[\\s#]/.test(buttonSuffix) ||
-        /^(?:https?:)?\\/\\//i.test(buttonSuffix)
+        /\s|#/.test(buttonSuffix) ||
+        /^(?:https?:)?\/\//i.test(buttonSuffix)
       ) {
         throw new Error("activation_button_suffix_invalid");
       }
