@@ -1,0 +1,39 @@
+name: SF GOV controller access probe
+on:
+  pull_request:
+    branches: [governance/sf-gov-001-controller]
+    paths: [.github/workflows/controller-access-probe.yml]
+  push:
+    branches: [governance/sf-gov-001-controller]
+    paths: [.github/workflows/controller-access-probe.yml]
+permissions: {}
+jobs:
+  reject-pr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    environment: sf-gov-schema-capture
+    steps:
+      - run: |
+          echo "::error::NEGATIVE_PROBE_UNEXPECTED_ACCESS"
+          exit 1
+  allow-controller:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    environment: sf-gov-schema-capture
+    steps:
+      - name: Verify protected controller identity
+        env:
+          EXPECTED_REF: refs/heads/governance/sf-gov-001-controller
+          ACTUAL_REF: ${{ github.ref }}
+          PROTECTED: ${{ github.ref_protected }}
+        run: |
+          set -eu
+          test "$ACTUAL_REF" = "$EXPECTED_REF"
+          test "$PROTECTED" = true
+          echo "PASS: approved protected controller; no checkout, secrets or database access"
+      - name: Report runtime prerequisites without credentials
+        run: |
+          node --version
+          if test -x /usr/bin/psql; then /usr/bin/psql --version; else echo "psql unavailable"; fi
