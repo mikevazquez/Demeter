@@ -34,3 +34,8 @@ Fixture de prueba: `scripts/uat/workshop-checkout-sandbox.sql` (solo lectura; ej
 **Bloqueador critico:** `workshop_checkout_confirm` acepta `p_confirmed_amount_minor` y `p_payment_method` suministrados por el invocador; el permiso `service_role` no verifica por si solo que el dinero haya sido recibido. No exponer el RPC a rutas de cliente, portal o Demi hasta reemplazar este contrato por evidencia de pago validada en backend. Inscripcion obligatoria falla cerrada, pendiente de integrar.
 
 No merge, no despliegue a produccion, no promocion sin autorizacion explicita.
+
+
+### Evidencia adicional de atomicidad — 2026-10-14 (Sandbox)
+
+Se ejecutó un bloque PL/pgSQL de prueba con una elevación temporal de capacidad dentro de una subtransacción que se revierte al terminar. Se llamó a `workshop_checkout_confirm` para una alumna que ya tenía reserva activa, con clave sintética `55555555-5555-4555-8555-555555555555`. El RPC devolvió `student_already_reserved`; las aserciones verificaron ausencia de compra y venta persistidas para la clave y restauración de capacidad original a 1. El bloque terminó sin excepción. **Prueba técnica superada; no cierra UAT completo ni prueba concurrencia real.**
