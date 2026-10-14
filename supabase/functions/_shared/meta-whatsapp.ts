@@ -1,3 +1,4 @@
+import { candidateExternalEffectsBlocked } from "./candidate-external-policy.ts";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.116.0";
 import * as QRCode from "npm:qrcode@1.5.4";
 
@@ -205,6 +206,19 @@ async function uploadMetaWhatsAppImage(input: {
 export async function sendMetaWhatsAppTemplate(
   input: MetaWhatsAppDeliveryInput,
 ): Promise<MetaWhatsAppDeliveryResult> {
+  if (
+    candidateExternalEffectsBlocked(
+      Deno.env.get("SF_GOV_CANDIDATE_PREVIEW"),
+      Deno.env.get("SUPABASE_URL"),
+    )
+  ) {
+    return {
+      status: "skipped",
+      errorCode: "candidate_external_effect_forbidden",
+      retryable: false,
+      responseSnapshot: {},
+    };
+  }
   let connection: MetaWhatsAppConnection | null;
 
   try {
