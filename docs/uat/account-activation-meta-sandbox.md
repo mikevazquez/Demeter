@@ -31,3 +31,14 @@
 | ACT-10 | Verificación de entornos | Ningún cambio ni mensaje real en producción |
 
 **Criterio de aprobación:** evidencia del envío real a número de prueba, entrega y activación; pruebas de seguridad y regresión completas. Aprobar UAT no autoriza promoción a producción.
+
+## Evidencia histórica recuperada (14-oct-2026)
+- `demeter_bienvenida`: aprobada según matriz histórica; no consta que su botón sea dinámico.
+- `demeter_bienvenida_acceso`: pendiente según esa matriz; su estado actual **no verificado**.
+- El diseño anterior `student_welcome_v2` incluía botón con URL **fija**; no equivale a una URL dinámica `{{1}}`.
+- La URL histórica de acceso fue `https://demeterbueno.vercel.app/login/student`, que no demuestra que incluya un token de activación.
+- Las Edge Functions `meta-template-status-live` y `meta-template-audit-once` están deshabilitadas (410). No se deben reactivar para saltar controles.
+- La nueva capacidad opcional `activation_button_suffix` en la rama no debe utilizarse hasta comprobar los componentes de la plantilla Meta real.
+
+## Decisión de seguridad
+**No enviar ni desplegar un enlace individual con `student_welcome` mientras no esté comprobado que el botón aprobado es dinámico y apunta a la ruta correcta.** Una URL fija a login no cumple ACT-02. No marcar entregado ni aprobado por la mera aceptación de Meta.
