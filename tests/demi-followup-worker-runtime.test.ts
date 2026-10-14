@@ -94,6 +94,8 @@ function harness(
     transformSync(source, { loader: "ts", format: "cjs" }).code,
   )(
     (name: string) => {
+      if (name === "../_shared/candidate-external-policy.ts")
+        return { candidateExternalEffectsBlocked: () => false };
       if (name !== "npm:@supabase/supabase-js@2.116.0") throw new Error(name);
       return { createClient: () => client };
     },
