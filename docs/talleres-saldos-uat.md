@@ -27,7 +27,7 @@ Todos PENDIENTES. No promover sin autorizacion explicita.
 | TALL-08 reserva atomica | Primera compra genero 1 compra, 1 venta, 1 pago y 1 reserva; rechazo por cupo no persistio datos | Parcial; faltan fallos inducidos y multiples sesiones |
 | TALL-13 regresion | Seis consultas de integridad devolvieron true; RPC anon/authenticated sin permiso de ejecucion | Parcial; falta suite automatizada y smoke completo |
 
-Idempotencia: reintento identico devolvio `replayed: true` sin duplicar registros. El conflicto de idempotencia con importe distinto y las compras concurrentes siguen pendientes.
+Idempotencia: reintento identico devolvio `replayed: true` sin duplicar registros. El 2026-10-14 se comprobo que importe diferente con la misma clave devuelve `idempotency_conflict` y que seleccion duplicada devuelve `duplicate_session`. Las compras concurrentes siguen pendientes.
 
 Fixture de prueba: `scripts/uat/workshop-checkout-sandbox.sql` (solo lectura; ejecutar exclusivamente en Sandbox). Registro sintetico: compra `52389716-de8c-4330-88d6-a5398ab60c05`, venta `080f5a7c-8d3f-4abd-b77b-6be37a7f2569`.
 
