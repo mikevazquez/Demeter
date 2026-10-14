@@ -12,8 +12,10 @@ new Function(
   }).code,
 )(loaded, loaded.exports);
 
-const candidateExternalEffectsBlocked = loaded.exports
-  .candidateExternalEffectsBlocked as (flag?: string | null, url?: string | null) => boolean;
+const candidateExternalEffectsBlocked = loaded.exports.candidateExternalEffectsBlocked as (
+  flag?: string | null,
+  url?: string | null,
+) => boolean;
 
 describe("SF-GOV-001 Candidate Edge external effect policy", () => {
   it("denies by Candidate target even when flag is absent, empty or 0", () => {
