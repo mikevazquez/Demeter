@@ -7,10 +7,7 @@ const candidateUrl = "https://sdmxtlgjkodidjtvikng.supabase.co";
 
 function exerciseProbe(supabaseUrl: string | undefined, candidateFlag: string | undefined) {
   let handler: (() => Response) | undefined;
-  const source = readFileSync(functionFile, "utf8").replace(
-    /^import .*;\s*$/gm,
-    "",
-  );
+  const source = readFileSync(functionFile, "utf8").replace(/^import .*;\s*$/gm, "");
   const policy = (flag: string | undefined, url: string | undefined) => {
     if (flag?.trim() && flag.trim() !== "0") return true;
     try {
@@ -40,21 +37,15 @@ function exerciseProbe(supabaseUrl: string | undefined, candidateFlag: string | 
 afterEach(() => vi.restoreAllMocks());
 
 describe("SF-OS-001 Candidate Edge denial probe", () => {
-  it.each([undefined, "", "0", "1"])(
-    "reports PASS for Candidate without requiring flag %s",
-    (flag) => {
-      const response = exerciseProbe(candidateUrl, flag);
-      expect(response.status).toBe(200);
-    },
-  );
+  it.each([undefined, "", "0", "1"])("reports PASS for Candidate without requiring flag %s", (flag) => {
+    const response = exerciseProbe(candidateUrl, flag);
+    expect(response.status).toBe(200);
+  });
 
-  it.each([undefined, "", "0"])(
-    "fails closed for non-Candidate URL with flag %s",
-    (flag) => {
-      const response = exerciseProbe("https://hedouonyhynuvwbckdlg.supabase.co", flag);
-      expect(response.status).toBe(503);
-    },
-  );
+  it.each([undefined, "", "0"])("fails closed for non-Candidate URL with flag %s", (flag) => {
+    const response = exerciseProbe("https://hedouonyhynuvwbckdlg.supabase.co", flag);
+    expect(response.status).toBe(503);
+  });
 
   it("fails closed when runtime URL is missing", () => {
     expect(exerciseProbe(undefined, undefined).status).toBe(503);
