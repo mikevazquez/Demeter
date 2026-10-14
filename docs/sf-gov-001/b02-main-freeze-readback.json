@@ -1,0 +1,19 @@
+{
+  "observed_at": "2026-10-14T22:29:51.218Z",
+  "ruleset_id": 24974628,
+  "enforcement": "active",
+  "scope": ["~DEFAULT_BRANCH"],
+  "bypass_actors": [],
+  "rules": [
+    "deletion",
+    "non_fast_forward",
+    "pull_request",
+    "required_status_checks",
+    "code_quality",
+    "update"
+  ],
+  "installed_by": "Product Owner administrator",
+  "verified_by": "GET ruleset readback",
+  "production_write_attempted": false,
+  "scope_limit": "main update containment; not direct Vercel/Supabase promotion certification"
+}

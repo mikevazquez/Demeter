@@ -1,0 +1,34 @@
+{
+  "observed_at": "2026-10-14T22:12:08.621593+00:00",
+  "source_sha": "3ea7a1894a6f5addad05f777cfd2495fcd31f542",
+  "project": "sdmxtlgjkodidjtvikng",
+  "results": [
+    {
+      "case": "missing_nonce",
+      "status": 403,
+      "response": {
+        "error": "bootstrap_unauthorized"
+      },
+      "request_id": "01a13c79-012a-769b-bcc1-2366187a1424"
+    },
+    {
+      "case": "arbitrary_role",
+      "status": 400,
+      "response": {
+        "error": "invalid_fixture_request"
+      },
+      "request_id": "01a13c79-0606-7a44-8ff9-929ccc9de759"
+    },
+    {
+      "case": "bounded_fixture",
+      "status": 201,
+      "response": {
+        "created": true,
+        "user_id": "6567cdc2-e503-4f95-92e4-5b697ffe8d73",
+        "synthetic": true,
+        "no_email_requested": true
+      },
+      "request_id": "01a13c79-0a11-7be2-aca6-589f53546a4c"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "source_sha": "3ea7a1894a6f5addad05f777cfd2495fcd31f542",
+  "observed_at": "2026-10-14T22:23:47.869090+00:00",
+  "tests": [
+    {
+      "case": "tampered_privileged_role_signature",
+      "function": "sf-gov-candidate-denial-probe",
+      "status": 401,
+      "response": {
+        "code": "UNAUTHORIZED_ASYMMETRIC_JWT",
+        "message": "Invalid JWT"
+      },
+      "request_id": "01a13c83-b963-7ff2-aefa-be1b6a243e6f"
+    },
+    {
+      "case": "tampered_privileged_role_signature",
+      "function": "create-mercadopago-order",
+      "status": 401,
+      "response": {
+        "code": "UNAUTHORIZED_ASYMMETRIC_JWT",
+        "message": "Invalid JWT"
+      },
+      "request_id": "01a13c83-bacb-7d1e-af39-43fe50939fa6"
+    }
+  ],
+  "own_profile": {
+    "status": 200,
+    "rows": 1,
+    "only_expected_fixture": true,
+    "request_id": "01a13c83-bc0d-7c42-a963-86f81ec4c3ba"
+  },
+  "global_sign_out": {
+    "status": 204,
+    "request_id": "01a13c83-bdc5-7b4f-9d5a-1eb275bef90c"
+  },
+  "refresh_after_sign_out": {
+    "status": 400,
+    "error_code": "refresh_token_not_found",
+    "request_id": "01a13c83-beb1-741b-a50b-33d40c630320"
+  }
+}

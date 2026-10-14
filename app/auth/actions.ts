@@ -10,6 +10,7 @@ import {
 import { studentAuthEmailFromPhone } from "@/lib/auth/student-login-identifier";
 import { normalizeMexicanPhone } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
+import { assertCandidateRuntimeExternalEffectAllowed } from "@/lib/assistant/external-effect-policy";
 
 type LoginMode = "studio" | "student";
 
@@ -409,6 +410,13 @@ export async function completeStudioPasswordActivation(formData: FormData) {
 }
 
 export async function createInitialOwnerAccount(formData: FormData) {
+  // Auth.signUp can dispatch confirmation email independently of provider keys.
+  try {
+    assertCandidateRuntimeExternalEffectAllowed("auth_confirmation_email");
+  } catch {
+    redirect("/setup?error=isolated");
+  }
+
   const fullName = String(formData.get("full_name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");

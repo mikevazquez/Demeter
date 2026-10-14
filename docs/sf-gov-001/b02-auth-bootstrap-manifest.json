@@ -1,0 +1,18 @@
+{
+  "source_sha": "3ea7a1894a6f5addad05f777cfd2495fcd31f542",
+  "project": "sdmxtlgjkodidjtvikng",
+  "function": "sf-gov-b02-auth-bootstrap",
+  "issued_at_ms": 1792015894349,
+  "expires_at_ms": 1792016494349,
+  "nonce_sha256": "60d1ca163f7266aa6b29142efc9d7899f81cba2fef98eb17d3d2fc7773cf4e4b",
+  "files": [
+    {
+      "name": "sf-gov-b02-auth-bootstrap/index.ts",
+      "sha256": "da182e9ca64813cb4272863c93db01d5fb0c477ccc33789541af5ec1ccbf7570"
+    },
+    {
+      "name": "_shared/candidate-auth-bootstrap.ts",
+      "sha256": "b82485fe75c04e30f58461e42029b1b1c2324375b9756a2025faf03147e9f725"
+    }
+  ]
+}

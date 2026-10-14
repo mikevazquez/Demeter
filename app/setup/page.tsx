@@ -37,6 +37,11 @@ export default async function SetupPage({
             No se pudo crear la cuenta. Puede que el correo ya exista.
           </div>
         ) : null}
+        {error === "isolated" ? (
+          <div className="notice error">
+            La creación de cuentas está deshabilitada en este entorno de pruebas.
+          </div>
+        ) : null}
 
         {created !== "1" ? (
           <form action={createInitialOwnerAccount} className="auth-form">

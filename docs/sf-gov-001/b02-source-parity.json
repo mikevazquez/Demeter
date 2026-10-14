@@ -1,0 +1,38 @@
+{
+  "current_sha": "3ea7a1894a6f5addad05f777cfd2495fcd31f542",
+  "deployed_source_sha": "d95c189c896e3fa6deb1349ff23ac9ae2b23e45e",
+  "functions": [
+    {
+      "function": "create-mercadopago-order",
+      "source_matches_prior_deployment_manifest": true
+    },
+    {
+      "function": "create-demi-mercadopago-order",
+      "source_matches_prior_deployment_manifest": true
+    },
+    {
+      "function": "demi-payment-worker",
+      "source_matches_prior_deployment_manifest": true
+    },
+    {
+      "function": "mercadopago-webhook",
+      "source_matches_prior_deployment_manifest": true
+    },
+    {
+      "function": "reconcile-mercadopago-order",
+      "source_matches_prior_deployment_manifest": true
+    },
+    {
+      "function": "send-push-notification",
+      "source_matches_prior_deployment_manifest": true
+    },
+    {
+      "function": "notification-delivery-worker",
+      "source_matches_prior_deployment_manifest": true
+    },
+    {
+      "function": "demi-followup-worker",
+      "source_matches_prior_deployment_manifest": true
+    }
+  ]
+}

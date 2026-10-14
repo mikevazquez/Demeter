@@ -1,0 +1,119 @@
+{
+  "observed_at": "2026-10-14T22:13:17.285033+00:00",
+  "source_sha": "3ea7a1894a6f5addad05f777cfd2495fcd31f542",
+  "project": "sdmxtlgjkodidjtvikng",
+  "retired_bootstrap": [
+    {
+      "case": "nonce_replay",
+      "status": 503,
+      "response": {
+        "error": "bootstrap_permanently_disabled"
+      },
+      "request_id": "01a13c7a-1a4d-7737-bd1b-f6ca31dc2564"
+    },
+    {
+      "case": "missing_nonce",
+      "status": 503,
+      "response": {
+        "error": "bootstrap_permanently_disabled"
+      },
+      "request_id": "01a13c7a-1c84-71ea-9404-feb97e0c3dbf"
+    }
+  ],
+  "tests": [
+    {
+      "function": "sf-gov-candidate-denial-probe",
+      "status": 200,
+      "response": {
+        "check": "sf-gov-candidate-denial-probe",
+        "candidate_target": true,
+        "external_effects_blocked": true,
+        "no_external_requests_performed": true,
+        "result": "PASS"
+      },
+      "request_id": "01a13c7a-214f-7e3e-8171-1e1222c85a4c"
+    },
+    {
+      "function": "create-mercadopago-order",
+      "status": 503,
+      "response": {
+        "error": "candidate_external_effect_forbidden"
+      },
+      "request_id": "01a13c7a-2270-7a84-8106-a762c5320c20"
+    },
+    {
+      "function": "reconcile-mercadopago-order",
+      "status": 503,
+      "response": {
+        "error": "candidate_external_effect_forbidden"
+      },
+      "request_id": "01a13c7a-2406-7602-8caa-8b152ba2ce52"
+    },
+    {
+      "function": "create-demi-mercadopago-order",
+      "status": 503,
+      "response": {
+        "error": "candidate_external_effect_forbidden"
+      },
+      "request_id": "01a13c7a-2571-70d8-b26a-da741e2d83c6"
+    },
+    {
+      "function": "demi-payment-worker",
+      "status": 503,
+      "response": {
+        "error": "candidate_external_effect_forbidden"
+      },
+      "request_id": "01a13c7a-2709-74c8-a31c-bcbf23ee222a"
+    },
+    {
+      "function": "mercadopago-webhook",
+      "status": 503,
+      "response": {
+        "error": "candidate_external_effect_forbidden"
+      },
+      "request_id": "01a13c7a-2891-7aae-866c-f016a32a5f38"
+    },
+    {
+      "function": "send-push-notification",
+      "status": 503,
+      "response": {
+        "error": "candidate_external_effect_forbidden"
+      },
+      "request_id": "01a13c7a-29eb-743d-8a53-fb78bd58704d"
+    },
+    {
+      "function": "notification-delivery-worker",
+      "status": 503,
+      "response": {
+        "error": "candidate_external_effect_forbidden"
+      },
+      "request_id": "01a13c7a-2b14-7fee-aa8c-bba941ee407d"
+    },
+    {
+      "function": "demi-followup-worker",
+      "status": 503,
+      "response": {
+        "error": "candidate_external_effect_forbidden"
+      },
+      "request_id": "01a13c7a-2ccc-7b6f-bb00-6f5a3569f5ea"
+    }
+  ],
+  "sign_in": {
+    "status": 200,
+    "request_id": "01a13c7a-1d92-73a7-8291-bdb2045a6859"
+  },
+  "session_claims": {
+    "algorithm": "ES256",
+    "kid_present": true,
+    "role": "authenticated",
+    "is_anonymous": false,
+    "user_id": "6567cdc2-e503-4f95-92e4-5b697ffe8d73",
+    "synthetic": true,
+    "fixture": "SF-GOV-001-B02-DIAGNOSTIC"
+  },
+  "user_verified": {
+    "status": 200,
+    "synthetic_user_matches": true,
+    "request_id": "01a13c7a-1fe7-715c-9c67-d3e93b53d8e4"
+  }
+}

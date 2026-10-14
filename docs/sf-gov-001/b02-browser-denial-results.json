@@ -1,0 +1,17 @@
+{
+  "source_sha": "3ea7a1894a6f5addad05f777cfd2495fcd31f542",
+  "deployment": "dpl_GkGEyHm9Cr5LcMGQoRQFzxoKAkRC",
+  "login_requests": [
+    {
+      "status": 200,
+      "path": "/login/studio",
+      "action_redirect_present": true
+    }
+  ],
+  "blocked_hosts": ["vercel.live", "vercel.live"],
+  "final_path": "/login/studio",
+  "error_code": "pending",
+  "visible_notice": ["Tu cuenta existe, pero todav\u00eda no tiene acceso asignado al estudio."],
+  "auth_cookie_names": [],
+  "no_business_access": true
+}

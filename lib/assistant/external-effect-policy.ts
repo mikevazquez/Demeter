@@ -7,6 +7,7 @@ export type CandidateExternalEffect =
   | "openai_transcription"
   | "meta_admin_request"
   | "asistian_webhook"
+  | "auth_confirmation_email"
   | "exchange_rate_read";
 
 /**

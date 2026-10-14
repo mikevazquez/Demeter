@@ -2,6 +2,24 @@
 
 Date: 14 October 2026. **B02 OPEN. No production promotion authorized.**
 
+## Current execution record (supersedes historical status below)
+
+The Product Owner delegated technical code/security/QA review to the assistant. Do not ask Mike or another human to review code routinely. Human authorization remains mandatory for functionality and production promotion. The historical `b02-main-ruleset-proposal.json` is superseded and unapproved; do not apply it.
+
+Execution SHA `3ea7a1894a6f5addad05f777cfd2495fcd31f542` passed CI #3354, run 38645839152. Its delegated technical review is COMMENT 5525560021, not a human approval. Candidate now has 10 functions: diagnostic, eight guarded provider functions, and retired bootstrap v2 (all verify_jwt=true). A bounded Admin createUser bootstrap created exactly one fixed `.invalid` fixture without mail, invitations, Auth SQL or global Auth configuration changes. It was immediately replaced by a permanent-denial version with no SDK/admin client/service-role reads. Twenty bootstrap tests pass; preserve the identity and deployment history.
+
+The fixture `6567cdc2-e503-4f95-92e4-5b697ffe8d73` has no business membership/role. A verified real user session (ES256, kid, authenticated, not anonymous) returned diagnostic 200/PASS and eight provider-route 503 guard denials, including create-order/reconcile. A forged privileged JWT returned 401. Global signout, denied refresh and zero remaining Auth sessions were checked; previously issued access JWTs may remain valid until expiry. Browser E2E authenticated the account but correctly denied studio access with `pending`; this is negative authorization evidence, not successful admin/student UAT. Sanitized request IDs/results and source-parity evidence accompany this document.
+
+Preview deployment `dpl_GkGEyHm9Cr5LcMGQoRQFzxoKAkRC` is READY for that execution SHA. Its seven branch-specific inert overrides passed preflight. The matrix now records 146 rows (70 branch / 76 runtime); dynamic credential/destination resolution and remaining runtime coverage are still pending. Eight guarded Edge source files match the previously deployed bundles; a new commit does not imply a new Edge bundle.
+
+After the Product Owner saved the configuration, GET confirmed ruleset 24974628 ACTIVE, scope `~DEFAULT_BRANCH`, empty bypass list and rule `update` at `2026-10-14T22:29:51.218Z`. Main updates are frozen. Do not request this configuration again. This is containment, not proof of all direct Vercel/Supabase production permissions or a release controller. No production write/merge/deploy was attempted. GitHub administration through this integration still returns 403. Production main remains `87749e84d324c6c5263c0f0128075cbe8c7e61b7`.
+
+Additional mail boundary found after that execution: `/setup` used `Auth.signUp`, which can send confirmation mail independently of provider keys. The current delta denies that action before client creation in Preview/Candidate, displays an isolation notice, and adds six tests with a mocked non-Candidate positive control. Record the final commit/CI and live negative result separately before claiming runtime validation for this correction.
+
+**Remaining DoD:** prove promotion controls across the remaining direct paths; resolve dynamic destinations/credentials and safe integration coverage; perform the UAT/role/tenant criteria required by issue #287. Keep PR #278 draft and issue #287 open. B03 starts only after B02 closes with evidence. No production promotion, paid infrastructure, real UAT recipients/payments/messages, history deletion or Mirror recreation.
+
+The sections below are historical evidence, not current instructions. In particular their human-review proposal and zero-user/one-function state are superseded above. Current decisions, sanitized manifests and exact continuity message are in Notion: https://app.notion.com/p/3f9d78f7146381c088cdf4f77835f43a.
+
 ## Scope and evidence
 
 Continue PR #278 and issue #287; preserve all history. Initial source SHA for this continuation was `b7e7a3790131e80624e0d81fa78d2c91e9ea8813`, not the older transfer SHA. CI #3351 failed formatting of the partial audit document. That document is formatted in this change. The final SHA and final CI must be recorded in issue #287 after push.
