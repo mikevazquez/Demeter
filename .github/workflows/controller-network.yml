@@ -1,0 +1,26 @@
+name: SF GOV controller network prerequisites
+on:
+  pull_request:
+    branches: [governance/sf-gov-001-controller]
+    paths: [.github/workflows/controller-network.yml]
+permissions: {}
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Resolve fixed endpoints and inspect local routes without connecting
+        shell: python
+        run: |
+          import socket, subprocess, json
+          for ref in ["qfhojvgvhrbautvczffq", "sdmxtlgjkodidjtvikng"]:
+              host = "db." + ref + ".supabase.co"
+              try:
+                  addresses = sorted(set(x[4][0] for x in socket.getaddrinfo(host, 5432, type=socket.SOCK_STREAM)))
+                  routes = []
+                  for addr in addresses:
+                      result = subprocess.run(["ip", "-6" if ":" in addr else "-4", "route", "get", addr], capture_output=True, text=True, timeout=5)
+                      routes.append({"family": "IPv6" if ":" in addr else "IPv4", "route_available": result.returncode == 0})
+                  print(json.dumps({"project": ref, "dns_ok": True, "routes": routes, "database_connection_attempted": False}))
+              except Exception as error:
+                  print(json.dumps({"project": ref, "dns_ok": False, "error_type": type(error).__name__, "database_connection_attempted": False}))
