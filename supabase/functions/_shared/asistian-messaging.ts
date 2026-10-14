@@ -80,7 +80,11 @@ export async function sendAsistianWebhook(
       Deno.env.get("SUPABASE_URL"),
     )
   ) {
-    return { status: "skipped", errorCode: "candidate_external_effect_forbidden", retryable: false };
+    return {
+      status: "skipped",
+      errorCode: "candidate_external_effect_forbidden",
+      retryable: false,
+    };
   }
   const [
     { data: configuredUrl, error: webhookError },
