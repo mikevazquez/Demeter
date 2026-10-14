@@ -265,6 +265,9 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
         providerTemplateKey: overrideProviderTemplate ?? "waitlist_promoted",
       };
 
+    // Account creation uses the approved student welcome provider template.
+    // Keep the internal event key unchanged for inbox and audit records.
+    case "account_created":
     case "student_welcome":
       return {
         title: `Bienvenida a ${studioName}`,
