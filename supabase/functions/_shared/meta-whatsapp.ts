@@ -318,14 +318,24 @@ export async function sendMetaWhatsAppTemplate(
     headerImageId = media.mediaId;
   }
 
-  const payload = buildMetaWhatsAppTemplatePayload({
-    recipient,
-    internalTemplate,
-    metaTemplateName,
-    languageCode: connection.languageCode,
-    variables: input.variables,
-    headerImageId,
-  });
+  let payload: ReturnType<typeof buildMetaWhatsAppTemplatePayload>;
+  try {
+    payload = buildMetaWhatsAppTemplatePayload({
+      recipient,
+      internalTemplate,
+      metaTemplateName,
+      languageCode: connection.languageCode,
+      variables: input.variables,
+      headerImageId,
+    });
+  } catch {
+    return {
+      status: "error",
+      errorCode: "meta_whatsapp_template_parameters_invalid",
+      retryable: false,
+      responseSnapshot: { template_key: internalTemplate },
+    };
+  }
 
   const endpoint = `https://graph.facebook.com/${connection.graphApiVersion}/${connection.phoneNumberId}/messages`;
   const controller = new AbortController();
