@@ -272,6 +272,7 @@ export async function downloadMetaInboxAttachment(
 ) {
   const injected = demiUatScope()?.media.get(urlText);
   if (injected) return injected;
+  assertCandidateRuntimeExternalEffectAllowed("meta_inbox_media_read");
   let url: URL;
   try {
     url = new URL(urlText);
