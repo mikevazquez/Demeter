@@ -99,12 +99,42 @@ const losers = results.filter((r) => r.error?.message?.includes('session_full'))
 const { count: afterCount, error: afterError } = await admin
   .from('reservations').select('id', { count: 'exact', head: true })
   .eq('session_id', sessionId).in('status', ['reserved', 'attended']);
-const passed = winners.length === 1 && losers.length === 1 && !afterError && afterCount === 1;
+const keys = [env.WORKSHOP_UAT_IDEMPOTENCY_A, env.WORKSHOP_UAT_IDEMPOTENCY_B];
+const { data: purchases, error: purchasesError } = await admin
+  .from('workshop_purchases')
+  .select('id,sale_id,student_id,idempotency_key,status')
+  .eq('studio_id', env.WORKSHOP_UAT_STUDIO_ID)
+  .in('idempotency_key', keys);
+const { data: linkedSessions, error: linksError } = await admin
+  .from('workshop_purchase_sessions')
+  .select('purchase_id,session_id,reservation_id')
+  .in('purchase_id', (purchases ?? []).map((p) => p.id));
+const { data: payments, error: paymentsError } = await admin
+  .from('payments')
+  .select('id,sale_id,amount_minor,kind')
+  .in('sale_id', (purchases ?? []).map((p) => p.sale_id).filter(Boolean));
+const winnerPurchase = purchases?.[0];
+const persistedCorrectly = !purchasesError && !linksError && !paymentsError &&
+  purchases?.length === 1 &&
+  winnerPurchase?.status === 'reserved' &&
+  linkedSessions?.length === 1 &&
+  linkedSessions[0].purchase_id === winnerPurchase.id &&
+  linkedSessions[0].session_id === sessionId &&
+  Boolean(linkedSessions[0].reservation_id) &&
+  payments?.length === 1 &&
+  payments[0].sale_id === winnerPurchase.sale_id &&
+  payments[0].amount_minor === offer.full_price_minor &&
+  payments[0].kind === 'payment';
+const passed = winners.length === 1 && losers.length === 1 &&
+  !afterError && afterCount === 1 && persistedCorrectly;
 console.log(JSON.stringify({
   passed,
   winnerCount: winners.length,
   soldOutRejections: losers.length,
   activeReservations: afterCount,
+  persistedPurchaseCount: purchases?.length ?? null,
+  persistedPaymentCount: payments?.length ?? null,
+  purchaseIntegrityPassed: persistedCorrectly,
   errors: results.map((r) => r.error?.message ?? null),
 }, null, 2));
 if (!passed) process.exitCode = 1;
