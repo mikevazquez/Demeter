@@ -1,0 +1,61 @@
+name: Sandbox notification functions (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type DEPLOY_SANDBOX to confirm the Sandbox-only deployment'
+        required: true
+        type: string
+      function_name:
+        description: 'Select one function (deploy independently after UAT review)'
+        required: true
+        type: choice
+        options:
+          - notification-delivery-worker
+          - provision-student-access
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sandbox-notification-functions
+  cancel-in-progress: false
+
+jobs:
+  deploy-sandbox:
+    if: ${{ inputs.confirmation == 'DEPLOY_SANDBOX' }}
+    runs-on: ubuntu-latest
+    environment: studio-flow-sandbox
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_SANDBOX }}
+      SUPABASE_PROJECT_REF: hedouonyhynuvwbckdlg
+    steps:
+      - name: Checkout selected ref
+        uses: actions/checkout@v4
+      - name: Verify access token is configured
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::error::SUPABASE_ACCESS_TOKEN_SANDBOX is missing"
+            exit 1
+          fi
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Deploy selected function to Sandbox only
+        env:
+          FUNCTION_NAME: ${{ inputs.function_name }}
+        run: |
+          case "$FUNCTION_NAME" in
+            notification-delivery-worker)
+              supabase functions deploy notification-delivery-worker --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+              ;;
+            provision-student-access)
+              supabase functions deploy provision-student-access --project-ref "$SUPABASE_PROJECT_REF"
+              ;;
+            *)
+              echo "::error::Function not allowed"
+              exit 1
+              ;;
+          esac
