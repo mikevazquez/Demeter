@@ -30,6 +30,15 @@ jobs:
           git fetch --depth=1 origin "$CONTROLLER_SHA"
           git checkout --detach FETCH_HEAD
           test "$(git rev-parse HEAD)" = "$CONTROLLER_SHA"
+      - name: Install PostgreSQL 17 client before credentials
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error --location --proto '=https' -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" | sudo tee /etc/apt/sources.list.d/sf-gov-pgdg.list >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client-17
+          /usr/bin/psql --version
+          /usr/bin/psql --version | awk '{split($3,v,"."); if (v[1] < 17) exit 1}'
       - name: Verify installed runtime before credentials
         shell: bash
         run: |
