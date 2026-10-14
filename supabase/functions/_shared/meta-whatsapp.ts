@@ -163,7 +163,11 @@ async function uploadMetaWhatsAppImage(input: {
 }) {
   const form = new FormData();
   form.append("messaging_product", "whatsapp");
-  form.append("file", new Blob([input.bytes], { type: "image/png" }), "reservation-checkin-qr.png");
+  form.append(
+    "file",
+    new Blob([new Uint8Array(input.bytes)], { type: "image/png" }),
+    "reservation-checkin-qr.png",
+  );
 
   const endpoint = `https://graph.facebook.com/${input.connection.graphApiVersion}/${input.connection.phoneNumberId}/media`;
   const response = await (input.fetcher ?? fetch)(endpoint, {
