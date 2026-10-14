@@ -6,7 +6,7 @@ export interface WorkshopPurchasePolicySnapshot {
   studioId: string;
   workshopId: string;
   purchaseId: string;
-  balanceDueMinor: number;
+  totalMinor: number;
   dueAt: string;
   overduePolicy: OverdueBalancePolicy;
 }
@@ -26,8 +26,8 @@ export type BalanceDecision =
 /** Pure policy evaluator. Caller MUST recheck payment and lock reservations atomically before release. */
 export function decideOverdueBalance(input: BalanceDecisionInput): BalanceDecision {
   const { snapshot, paidMinor, evaluatedAt, alreadyReleased } = input;
-  if (!Number.isSafeInteger(snapshot.balanceDueMinor) || snapshot.balanceDueMinor < 0)
-    throw new Error("Invalid outstanding balance");
+  if (!Number.isSafeInteger(snapshot.totalMinor) || snapshot.balanceDueMinor < 0)
+    throw new Error("Invalid purchase total");
   if (!Number.isSafeInteger(paidMinor) || paidMinor < 0)
     throw new Error("Invalid paid amount");
   const due = Date.parse(snapshot.dueAt);
