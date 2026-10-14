@@ -13,6 +13,15 @@ const offer: WorkshopOffer = {
 };
 
 describe("workshop purchase quote", () => {
+  it("keeps the individual price when selecting every session individually", () => {
+    expect(
+      quoteWorkshopPurchase(offer, { mode: "sessions", sessionIds: ["pendulo", "aro", "telas"] }),
+    ).toEqual({
+      ok: true,
+      sessionIds: ["pendulo", "aro", "telas"],
+      totalMinor: 45000,
+    });
+  });
   it("reserves all sessions at full workshop price", () => {
     expect(quoteWorkshopPurchase(offer, { mode: "full" })).toEqual({
       ok: true,
@@ -45,12 +54,15 @@ describe("workshop purchase quote", () => {
     });
   });
   it("rejects unknown session IDs and prevents undercharging", () => {
-    expect(quoteWorkshopPurchase(offer, { mode: "sessions", sessionIds: ["unknown"] }))
-      .toEqual({ ok: false, reason: "invalid_session" });
+    expect(quoteWorkshopPurchase(offer, { mode: "sessions", sessionIds: ["unknown"] })).toEqual({
+      ok: false,
+      reason: "invalid_session",
+    });
   });
   it("does not accept repeated IDs to inflate the number of selected sessions", () => {
-    expect(quoteWorkshopPurchase(offer, { mode: "sessions", sessionIds: ["pendulo", "pendulo", "aro"] }))
-      .toEqual({ ok: false, reason: "invalid_session" });
+    expect(
+      quoteWorkshopPurchase(offer, { mode: "sessions", sessionIds: ["pendulo", "pendulo", "aro"] }),
+    ).toEqual({ ok: false, reason: "invalid_session" });
   });
   it("calculates deposits without discounting the full amount", () => {
     expect(calculateDeposit(60000, { mode: "fixed", amountMinor: 30000 })).toEqual({

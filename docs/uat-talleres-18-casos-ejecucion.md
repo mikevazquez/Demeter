@@ -154,3 +154,19 @@
 4. Corregir fallo en rama, repetir y adjuntar evidencia.
 5. Marcar `APROBADO` solo si todos los criterios están probados; de lo contrario `PARCIAL`, `FALLÓ` o `BLOQUEADO`.
 6. No merge, no promoción y no manipular pagos reales.
+
+## Bloque TALL-02 — 14 octubre 2026, continuación desde c97586e5
+
+**Estado: PARCIAL; 0/18 aprobados.** Supabase destino hedouonyhynuvwbckdlg. PR #284 Draft; producción y main sin cambios.
+
+- Diagnóstico ejecutado: `scripts/uat/workshop-pricing-diagnostic-sandbox.sql`. Tres sesiones individuales de 15000 se cotizaban como 60000 al seleccionar todas, frente a 45000 esperado. Dos individuales: 30000 y dos reservas vinculadas. El RPC original no distingue modalidad; el motor TypeScript sí.
+- Corrección aislada: migración `20261014064453_workshop_explicit_purchase_mode.sql`, aplicada en Sandbox como `workshop_explicit_purchase_mode`. Nuevos RPC v2 exigen modo explícito full/sessions y conservan selection_mode en compras nuevas; históricos mantienen NULL. RPC anteriores conservados por compatibilidad, sin conectar nuevas rutas.
+- Ejecución posterior: `scripts/uat/workshop-pricing-v2-sandbox.sql`: completo 3 sesiones = 60000; individuales 1/2/3 = 15000/30000/45000. En cada escenario coincidieron cotización, compra, venta y pago; cantidad de reservas correcta; reintento sin duplicados. Cambio de política de oferta no alteró snapshot de compra.
+- Negativos comprobados: completo con selección parcial rechazado; individuales deshabilitadas rechazadas incluso seleccionando todas; precio individual ausente rechazado; compra completa no depende del precio individual. RPC v2 SECURITY INVOKER, sin EXECUTE para anon/authenticated.
+- Todas las filas sintéticas y sus efectos se revirtieron mediante subtransacciones después de las aserciones. Esto comprueba escritura transaccional, **NO persistencia durable entre peticiones ni UAT E2E**. No se borraron históricos ni se enviaron pagos/mensajes reales.
+- Vitest local: 17/17 pruebas de workshops pasaron, incluyendo regresión nueva de todas las sesiones en modo individual.
+- Advisors de seguridad consultados; no equivalen a certificación del Sandbox ni del pago. Las tablas workshop mantienen su aislamiento previo.
+- Preview c97586e5 READY verificado. Acceso Vercel resuelto mediante enlace temporal de la conexión existente; navegador llega a /login/studio y no dispone de sesión administrativa. Se requiere acceso seguro a cuenta Sandbox para la validación visual.
+- **Trabajo de ingeniería pendiente:** conectar interfaz al flujo nuevo con autorización de pago confiable; no conectar v2 directamente a portal/Demi ni pasar pagos declarados por cliente. V2 aún conserva el contrato de pago interno inseguro y no resuelve ese gate. Completar persistencia durable y pruebas funcionales de UI. TALL-03 requiere negativos multi-sesión completos; TALL-17 cambio de configuración del estudio y decisión posterior; TALL-18 accesos cruzados/RLS.
+- La migración v2 depende del esquema workshop/RPC previo existente en Sandbox que aún no está íntegramente versionado en esta rama; no constituye paquete promovible.
+

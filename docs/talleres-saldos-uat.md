@@ -72,3 +72,7 @@ Regla: `APROBADO` solo con criterios completos y evidencia de ejecución; tests 
 | TALL-18 aislamiento multiestudio | Pendiente | RPC valida estudio | Pruebas negativas cruzadas en DB y portal |
 
 **Orden de ejecución:** TALL-02, 03, 17 y 18 (pruebas SQL/negativas), luego 01, 05–12, 14–15; TALL-04/16 requieren ejecutor concurrente. No confundir avance parcial con cierre.
+
+### Continuación TALL-02 · 14 octubre 2026
+
+PARCIAL, 0/18 aprobados. Se reprodujo y corrigió en RPC v2 el error de seleccionar todas las sesiones individuales: 45000 esperado, 60000 obtenido en RPC original. Pruebas SQL v2: completo 60000, individuales 15000/30000/45000, coincidencia compra/venta/pago y reservas; idempotencia, snapshots y negativos pasaron con rollback de fixtures. Vitest 17/17. Evidencia, scripts, migración aplicada y límites en el apartado «Bloque TALL-02» de `docs/uat-talleres-18-casos-ejecucion.md`. Faltan autorización de pago confiable, interfaz integrada y persistencia durable; navegador requiere sesión administrativa de Sandbox. No certificar ni promover.
