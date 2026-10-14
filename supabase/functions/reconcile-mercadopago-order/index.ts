@@ -206,7 +206,12 @@ async function searchNonApprovedPayment(
 const handler = {
   fetch: withSupabase({ auth: "user" }, async (request, context) => {
     if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405);
-    if (candidateExternalEffectsBlocked(Deno.env.get("SF_GOV_CANDIDATE_PREVIEW"), Deno.env.get("SUPABASE_URL")))
+    if (
+      candidateExternalEffectsBlocked(
+        Deno.env.get("SF_GOV_CANDIDATE_PREVIEW"),
+        Deno.env.get("SUPABASE_URL"),
+      )
+    )
       return jsonResponse({ error: "candidate_external_effect_forbidden" }, 503);
 
     let payload: ReconcileRequest;
