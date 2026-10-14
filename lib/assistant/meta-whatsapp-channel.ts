@@ -225,6 +225,7 @@ export async function downloadMetaWhatsAppMedia(input: {
       throw new Error("meta_media_type_unsupported");
     return media;
   }
+  assertCandidateRuntimeExternalEffectAllowed("meta_whatsapp_media_read");
   const mediaId = input.mediaId.trim();
   if (!/^\d+$/.test(mediaId)) {
     throw new Error("meta_media_id_invalid");
