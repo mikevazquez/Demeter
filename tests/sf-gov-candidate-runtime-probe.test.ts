@@ -37,10 +37,13 @@ function exerciseProbe(supabaseUrl: string | undefined, candidateFlag: string | 
 afterEach(() => vi.restoreAllMocks());
 
 describe("SF-OS-001 Candidate Edge denial probe", () => {
-  it.each([undefined, "", "0", "1"])("reports PASS for Candidate without requiring flag %s", (flag) => {
-    const response = exerciseProbe(candidateUrl, flag);
-    expect(response.status).toBe(200);
-  });
+  it.each([undefined, "", "0", "1"])(
+    "reports PASS for Candidate without requiring flag %s",
+    (flag) => {
+      const response = exerciseProbe(candidateUrl, flag);
+      expect(response.status).toBe(200);
+    },
+  );
 
   it.each([undefined, "", "0"])("fails closed for non-Candidate URL with flag %s", (flag) => {
     const response = exerciseProbe("https://hedouonyhynuvwbckdlg.supabase.co", flag);
