@@ -156,9 +156,9 @@ function harness(
           ? { demiTestSeller: async () => true }
           : name === "../_shared/candidate-external-policy.ts"
             ? { candidateExternalEffectsBlocked: () => false }
-          : (() => {
-              throw Error(name);
-            })(),
+            : (() => {
+                throw Error(name);
+              })(),
     {
       env: {
         get: (key: string) =>
