@@ -1,6 +1,6 @@
 /**
  * Prevent Candidate Edge Functions from invoking real providers or dispatching
- * notifications. No effect unless the isolated Candidate flag is configured.
+ * notifications. Denies by Candidate destination even if the flag is not configured.
  */
 export function candidateExternalEffectsBlocked(
   flag: string | null | undefined,
