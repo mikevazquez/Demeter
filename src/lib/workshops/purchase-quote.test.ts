@@ -44,6 +44,14 @@ describe("workshop purchase quote", () => {
       reason: "invalid_session",
     });
   });
+  it("rejects unknown session IDs and prevents undercharging", () => {
+    expect(quoteWorkshopPurchase(offer, { mode: "sessions", sessionIds: ["unknown"] }))
+      .toEqual({ ok: false, reason: "invalid_session" });
+  });
+  it("does not accept repeated IDs to inflate the number of selected sessions", () => {
+    expect(quoteWorkshopPurchase(offer, { mode: "sessions", sessionIds: ["pendulo", "pendulo", "aro"] }))
+      .toEqual({ ok: false, reason: "invalid_session" });
+  });
   it("calculates deposits without discounting the full amount", () => {
     expect(calculateDeposit(60000, { mode: "fixed", amountMinor: 30000 })).toEqual({
       dueNowMinor: 30000,
