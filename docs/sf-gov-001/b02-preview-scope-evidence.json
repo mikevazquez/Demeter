@@ -1,0 +1,77 @@
+{
+  "observed_at": "2026-10-14",
+  "project": "demeterbueno",
+  "project_id": "prj_nE53dwTfcSsoLkx1XeAm6rsJ1AJ6",
+  "team_id": "team_8g4Uh1DAr1lWxyZJtGnvnmMR",
+  "branch": "governance/sf-gov-001-release-gates",
+  "production_modified": false,
+  "new_infrastructure": false,
+  "global_preview_secrets_modified": false,
+  "new_deployment_required": true,
+  "overrides": [
+    {
+      "id": "TA1nsiMpd25WdtWS",
+      "key": "NEXT_PUBLIC_SUPABASE_URL",
+      "target": ["preview"],
+      "gitBranch": "governance/sf-gov-001-release-gates",
+      "type": "encrypted",
+      "createdAt": 1792010648377,
+      "value_kind": "Candidate API URL"
+    },
+    {
+      "id": "teqPkRT7OB1eVLKe",
+      "key": "SUPABASE_URL",
+      "target": ["preview"],
+      "gitBranch": "governance/sf-gov-001-release-gates",
+      "type": "encrypted",
+      "createdAt": 1792010648377,
+      "value_kind": "Candidate API URL"
+    },
+    {
+      "id": "yLQkEUWJv8gGIM0Y",
+      "key": "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+      "target": ["preview"],
+      "gitBranch": "governance/sf-gov-001-release-gates",
+      "type": "encrypted",
+      "createdAt": 1792010648377,
+      "value_kind": "Candidate public publishable key"
+    },
+    {
+      "id": "6qTHbwV9dLa5iVXX",
+      "key": "SUPABASE_SERVICE_ROLE_KEY",
+      "target": ["preview"],
+      "gitBranch": "governance/sf-gov-001-release-gates",
+      "type": "encrypted",
+      "createdAt": 1792010648377,
+      "value_kind": "inert noncredential marker"
+    },
+    {
+      "id": "bcCqFIMSq3ZmlFuS",
+      "key": "OPENAI_API_KEY",
+      "target": ["preview"],
+      "gitBranch": "governance/sf-gov-001-release-gates",
+      "type": "encrypted",
+      "createdAt": 1792010648377,
+      "value_kind": "inert noncredential marker"
+    },
+    {
+      "id": "IwXsZkUOoVmVhq4r",
+      "key": "MERCADOPAGO_ACCESS_TOKEN",
+      "target": ["preview"],
+      "gitBranch": "governance/sf-gov-001-release-gates",
+      "type": "encrypted",
+      "createdAt": 1792010648377,
+      "value_kind": "inert noncredential marker"
+    },
+    {
+      "id": "iroS7BWAbutMT2hB",
+      "key": "SF_GOV_CANDIDATE_PREVIEW",
+      "target": ["preview"],
+      "gitBranch": "governance/sf-gov-001-release-gates",
+      "type": "encrypted",
+      "createdAt": 1792010648377,
+      "value_kind": "deny enabled"
+    }
+  ],
+  "rollback": "Do not delete the overrides while a Candidate build is active. Preserve history. Revert to a known safe deny-only deployment first; removing overrides restores inherited provider secrets and is not a safe standalone rollback."
+}

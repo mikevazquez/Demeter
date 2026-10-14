@@ -1,0 +1,369 @@
+{
+  "observed_at": "2026-10-14",
+  "certified": false,
+  "candidate": {
+    "project": "sdmxtlgjkodidjtvikng",
+    "network_extensions": [],
+    "network_schemas": [],
+    "note": "No installed pg_cron/pg_net/http; no cron schema. Not a universal network barrier."
+  },
+  "sandbox": [
+    {
+      "jobid": 1,
+      "jobname": "sf253_rewards_schedule_sync",
+      "schedule": "* * * * *",
+      "active": true,
+      "command_md5": "0eb9be0403ed1e8f412624fa7496201f",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 2,
+      "jobname": "studio_flow_due_evaluations",
+      "schedule": "0 14 * * *",
+      "active": true,
+      "command_md5": "6e180d0ee0889442e5603bb64cfe2d98",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 3,
+      "jobname": "studio_flow_evaluation_schedule_reminders",
+      "schedule": "5 14 * * *",
+      "active": true,
+      "command_md5": "1fd36b3b29a7c44fbefc0edf67dd1e9d",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 4,
+      "jobname": "studio-flow-finalize-due-sessions",
+      "schedule": "* * * * *",
+      "active": true,
+      "command_md5": "d308559cde335027a5701cd64584b157",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 8,
+      "jobname": "studio_flow_minimum_reservation_review",
+      "schedule": "* * * * *",
+      "active": true,
+      "command_md5": "acec2e3dbd54854447504156ad6bfe74",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 9,
+      "jobname": "studio_flow_activate_document_versions",
+      "schedule": "*/5 * * * *",
+      "active": true,
+      "command_md5": "105da9b60737609e49dac1a3d1f851fa",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 16,
+      "jobname": "studio_flow_notification_engine",
+      "schedule": "* * * * *",
+      "active": true,
+      "command_md5": "a24c5e4063b493c170548d8148f3daaf",
+      "network_dispatch": true,
+      "uses_vault": true,
+      "edge_targets": ["notification-engine-worker"]
+    },
+    {
+      "jobid": 17,
+      "jobname": "studio_flow_notification_delivery",
+      "schedule": "* * * * *",
+      "active": true,
+      "command_md5": "660382db1ca5afef41b4a512c9d78e7b",
+      "network_dispatch": true,
+      "uses_vault": true,
+      "edge_targets": ["notification-delivery-worker"]
+    },
+    {
+      "jobid": 19,
+      "jobname": "retos01-settle-competitive",
+      "schedule": "*/10 * * * *",
+      "active": true,
+      "command_md5": "6bab0c668c297b36533e3b145841798c",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 20,
+      "jobname": "studio_flow_close_reward_medal_months",
+      "schedule": "12 * * * *",
+      "active": true,
+      "command_md5": "2be643397c773099ceccacc796ee4e69",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 23,
+      "jobname": "asistian-sync01-retry-contact",
+      "schedule": "*/5 * * * *",
+      "active": true,
+      "command_md5": "c91a46d29eb11508b2fe7401ea9c86a4",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 24,
+      "jobname": "studio_flow_notification_operational_due",
+      "schedule": "0 * * * *",
+      "active": true,
+      "command_md5": "8b7a24480761ede5264f41cc0ef607f4",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 25,
+      "jobname": "studio_flow_notification_package_activation_due",
+      "schedule": "5 * * * *",
+      "active": true,
+      "command_md5": "c8bd088e2f74e88eb57e6cfefd024540",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 26,
+      "jobname": "studio_flow_coach_roster_due",
+      "schedule": "*/5 * * * *",
+      "active": true,
+      "command_md5": "170a831c056c0e279aaa559df49e4336",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 27,
+      "jobname": "studio_flow_crm_inactivity_daily",
+      "schedule": "0 14 * * *",
+      "active": true,
+      "command_md5": "e74369de65812475b648adec6be6dfb4",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 28,
+      "jobname": "studio_flow_demi_followups",
+      "schedule": "*/5 * * * *",
+      "active": true,
+      "command_md5": "e15be2af777acb3e7fe3f65d52a0c327",
+      "network_dispatch": true,
+      "uses_vault": true,
+      "edge_targets": ["demi-followup-worker"]
+    },
+    {
+      "jobid": 29,
+      "jobname": "studio_flow_demi_payments",
+      "schedule": "*/5 * * * *",
+      "active": true,
+      "command_md5": "8bc279c4e42f8fd9d277ffa32e0538ee",
+      "network_dispatch": true,
+      "uses_vault": true,
+      "edge_targets": ["demi-payment-worker"]
+    },
+    {
+      "jobid": 32,
+      "jobname": "studio_flow_birthdays_due",
+      "schedule": "*/15 * * * *",
+      "active": true,
+      "command_md5": "90081260b58fa82d263725bc5c25c773",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 33,
+      "jobname": "studio_flow_campaigns_due",
+      "schedule": "* * * * *",
+      "active": true,
+      "command_md5": "f29d488b745945895795e4ac5be348f6",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    }
+  ],
+  "production": [
+    {
+      "jobid": 1,
+      "jobname": "sf253_rewards_schedule_sync",
+      "schedule": "* * * * *",
+      "active": true,
+      "command_md5": "0eb9be0403ed1e8f412624fa7496201f",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 2,
+      "jobname": "studio_flow_due_evaluations",
+      "schedule": "0 14 * * *",
+      "active": true,
+      "command_md5": "6e180d0ee0889442e5603bb64cfe2d98",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 3,
+      "jobname": "studio_flow_evaluation_schedule_reminders",
+      "schedule": "5 14 * * *",
+      "active": true,
+      "command_md5": "1fd36b3b29a7c44fbefc0edf67dd1e9d",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 5,
+      "jobname": "studio-flow-finalize-due-sessions",
+      "schedule": "* * * * *",
+      "active": true,
+      "command_md5": "d308559cde335027a5701cd64584b157",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 6,
+      "jobname": "studio_flow_minimum_reservation_review",
+      "schedule": "* * * * *",
+      "active": true,
+      "command_md5": "acec2e3dbd54854447504156ad6bfe74",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 7,
+      "jobname": "studio_flow_activate_document_versions",
+      "schedule": "*/5 * * * *",
+      "active": true,
+      "command_md5": "105da9b60737609e49dac1a3d1f851fa",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 10,
+      "jobname": "studio_flow_notification_engine",
+      "schedule": "* * * * *",
+      "active": true,
+      "command_md5": "a24c5e4063b493c170548d8148f3daaf",
+      "network_dispatch": true,
+      "uses_vault": true,
+      "edge_targets": ["notification-engine-worker"]
+    },
+    {
+      "jobid": 11,
+      "jobname": "studio_flow_notification_delivery",
+      "schedule": "* * * * *",
+      "active": true,
+      "command_md5": "660382db1ca5afef41b4a512c9d78e7b",
+      "network_dispatch": true,
+      "uses_vault": true,
+      "edge_targets": ["notification-delivery-worker"]
+    },
+    {
+      "jobid": 12,
+      "jobname": "studio_flow_close_reward_medal_months",
+      "schedule": "12 * * * *",
+      "active": true,
+      "command_md5": "2be643397c773099ceccacc796ee4e69",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 13,
+      "jobname": "studio_flow_notification_operational_due",
+      "schedule": "0 * * * *",
+      "active": true,
+      "command_md5": "8b7a24480761ede5264f41cc0ef607f4",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 14,
+      "jobname": "studio_flow_notification_package_activation_due",
+      "schedule": "5 * * * *",
+      "active": true,
+      "command_md5": "c8bd088e2f74e88eb57e6cfefd024540",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 15,
+      "jobname": "retos01-settle-competitive",
+      "schedule": "*/10 * * * *",
+      "active": true,
+      "command_md5": "6bab0c668c297b36533e3b145841798c",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 16,
+      "jobname": "studio_flow_coach_roster_due",
+      "schedule": "*/5 * * * *",
+      "active": true,
+      "command_md5": "170a831c056c0e279aaa559df49e4336",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 17,
+      "jobname": "studio_flow_crm_inactivity_daily",
+      "schedule": "0 14 * * *",
+      "active": true,
+      "command_md5": "e74369de65812475b648adec6be6dfb4",
+      "network_dispatch": false,
+      "uses_vault": false,
+      "edge_targets": []
+    },
+    {
+      "jobid": 18,
+      "jobname": "studio_flow_demi_followups",
+      "schedule": "*/5 * * * *",
+      "active": true,
+      "command_md5": "e15be2af777acb3e7fe3f65d52a0c327",
+      "network_dispatch": true,
+      "uses_vault": true,
+      "edge_targets": ["demi-followup-worker"]
+    },
+    {
+      "jobid": 19,
+      "jobname": "studio_flow_demi_payments",
+      "schedule": "*/5 * * * *",
+      "active": true,
+      "command_md5": "8bc279c4e42f8fd9d277ffa32e0538ee",
+      "network_dispatch": true,
+      "uses_vault": true,
+      "edge_targets": ["demi-payment-worker"]
+    }
+  ],
+  "limitations": [
+    "network_dispatch indicates direct net.http text in command only; procedures and triggers may dispatch indirectly.",
+    "Commands/headers/vault values not retrieved; destination identity unresolved.",
+    "No jobs modified or invoked."
+  ]
+}

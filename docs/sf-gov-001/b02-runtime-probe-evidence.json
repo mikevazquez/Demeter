@@ -1,0 +1,24 @@
+{
+  "observed_at": "2026-10-14T20:33:12.608909+00:00",
+  "source_sha": "b7e7a3790131e80624e0d81fa78d2c91e9ea8813",
+  "endpoint": "https://sdmxtlgjkodidjtvikng.supabase.co/functions/v1/sf-gov-candidate-denial-probe",
+  "credential_kind": "project legacy anon JWT, NOT authenticated user",
+  "results": [
+    {
+      "case": "missing_jwt",
+      "status": 401,
+      "body": "{\"code\":\"UNAUTHORIZED_NO_AUTH_HEADER\",\"message\":\"Missing authorization header\"}"
+    },
+    {
+      "case": "invalid_jwt",
+      "status": 401,
+      "body": "{\"code\":\"UNAUTHORIZED_INVALID_JWT_FORMAT\",\"message\":\"Invalid JWT\"}"
+    },
+    {
+      "case": "project_anon_jwt",
+      "status": 200,
+      "body": "{\"check\":\"sf-gov-candidate-denial-probe\",\"candidate_target\":true,\"external_effects_blocked\":true,\"no_external_requests_performed\":true,\"result\":\"PASS\"}",
+      "request_id": "01a13c1e-7937-716c-8082-d72085b1f59e"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import "server-only";
+import { assertCandidateRuntimeExternalEffectAllowed } from "./external-effect-policy";
 
 export type DemiAdminRuleCategory =
   "behavior" | "commercial" | "booking" | "payment" | "communication" | "safety";
@@ -209,6 +210,7 @@ export async function proposeDemiAdminPlan(input: {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) throw new Error("openai_not_configured");
 
+  assertCandidateRuntimeExternalEffectAllowed("openai_responses");
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },

@@ -1,3 +1,4 @@
+import { assertCandidateRuntimeExternalEffectAllowed } from "../assistant/external-effect-policy";
 import type {
   MessagingProvider,
   MessagingProviderInput,
@@ -141,6 +142,7 @@ export class AsistianMessagingProvider implements MessagingProvider {
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 
     try {
+      assertCandidateRuntimeExternalEffectAllowed("asistian_webhook");
       const response = await this.fetcher(webhookUrl, {
         method: "POST",
         headers: {
@@ -174,6 +176,17 @@ export class AsistianMessagingProvider implements MessagingProvider {
         },
       };
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.startsWith("candidate_preview_external_effect_forbidden:")
+      ) {
+        return {
+          status: "error",
+          errorCode: "candidate_preview_external_effect_forbidden",
+          errorMessage: "El entorno de prueba bloquea las solicitudes externas.",
+          retryable: false,
+        };
+      }
       const timedOut = error instanceof Error && error.name === "AbortError";
       return {
         status: "error",

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { assertCandidateRuntimeExternalEffectAllowed } from "../lib/assistant/external-effect-policy";
 function load(rows: unknown[]) {
   const request = vi.fn(async () => Response.json({ data: rows }));
   vi.stubGlobal("fetch", request);
@@ -23,6 +24,8 @@ function load(rows: unknown[]) {
   )(
     (name: string) => {
       if (name === "server-only") return {};
+      if (name === "./external-effect-policy")
+        return { assertCandidateRuntimeExternalEffectAllowed };
       if (name.endsWith("meta-whatsapp-channel"))
         return { loadMetaWhatsAppWebhookConfig: async () => config };
       if (name.endsWith("supabase/service")) return { createServiceClient: () => ({}) };

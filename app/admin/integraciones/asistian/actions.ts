@@ -1,5 +1,7 @@
 "use server";
 
+import { assertCandidateRuntimeExternalEffectAllowed } from "@/lib/assistant/external-effect-policy";
+
 import { createHmac } from "node:crypto";
 import { redirect } from "next/navigation";
 
@@ -95,6 +97,7 @@ export async function sendAsistianMappingProbe(formData: FormData) {
 
   let response: Response;
   try {
+    assertCandidateRuntimeExternalEffectAllowed("asistian_webhook");
     response = await fetch(webhookUrl, {
       method: "POST",
       headers: {
@@ -170,6 +173,7 @@ export async function sendAsistianHandshake(formData: FormData) {
   let response: Response;
 
   try {
+    assertCandidateRuntimeExternalEffectAllowed("asistian_webhook");
     response = await fetch(webhookUrl, {
       method: "POST",
       headers: {

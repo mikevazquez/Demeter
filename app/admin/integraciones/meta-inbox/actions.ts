@@ -1,5 +1,7 @@
 "use server";
 
+import { assertCandidateRuntimeExternalEffectAllowed } from "@/lib/assistant/external-effect-policy";
+
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
@@ -92,6 +94,7 @@ export async function saveMetaInboxConnection(formData: FormData) {
           // or raw URL is logged or returned to the client.
           const url = new URL("https://graph.facebook.com/" + graphApiVersion + "/debug_token");
           url.searchParams.set("input_token", pageAccessToken);
+          assertCandidateRuntimeExternalEffectAllowed("meta_admin_request");
           const response = await fetch(url, {
             method: "GET",
             headers: {
@@ -168,6 +171,7 @@ export async function saveMetaInboxConnection(formData: FormData) {
     let resolvedId = "";
     let resolvedUsername = "";
     try {
+      assertCandidateRuntimeExternalEffectAllowed("meta_admin_request");
       const response = await fetch(
         `https://graph.instagram.com/${graphApiVersion}/me?fields=id,user_id,username`,
         {
@@ -303,6 +307,7 @@ export async function diagnoseMetaInboxApp(formData: FormData) {
       // Never return, persist, or log the Meta App Secret or resulting token.
       const url = new URL(`https://graph.facebook.com/${apiVersion}/${appId}`);
       url.searchParams.set("fields", "id,name");
+      assertCandidateRuntimeExternalEffectAllowed("meta_admin_request");
       const response = await fetch(url, {
         method: "GET",
         headers: {
@@ -383,6 +388,7 @@ export async function manageInstagramWebhookSubscription(formData: FormData) {
       outcome = "missing_credentials";
     } else {
       const url = `https://graph.instagram.com/${version}/${accountId}/subscribed_apps`;
+      assertCandidateRuntimeExternalEffectAllowed("meta_admin_request");
       const response = await fetch(url, {
         method: operation === "subscribe" ? "POST" : "GET",
         headers: {
@@ -476,6 +482,7 @@ export async function diagnoseInstagramSavedToken() {
     if (error || !token || !/^\d+$/.test(accountId) || !/^v\d+\.\d+$/.test(version)) {
       result = "missing";
     } else {
+      assertCandidateRuntimeExternalEffectAllowed("meta_admin_request");
       const response = await fetch(
         `https://graph.instagram.com/${version}/me?fields=id,user_id,username`,
         {
@@ -555,6 +562,7 @@ export async function diagnoseInstagramConversationsRead() {
         url.searchParams.set("platform", "instagram");
         url.searchParams.set("limit", "10");
         url.searchParams.set("fields", "id,updated_time");
+        assertCandidateRuntimeExternalEffectAllowed("meta_admin_request");
         const response = await fetch(url, {
           method: "GET",
           headers: { authorization: `Bearer ${accessToken}`, accept: "application/json" },

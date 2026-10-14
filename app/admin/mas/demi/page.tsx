@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { assertCandidateRuntimeExternalEffectAllowed } from "@/lib/assistant/external-effect-policy";
 import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
@@ -15,6 +16,7 @@ const USD_TO_MXN_FALLBACK = 18.5;
 
 async function getUsdToMxnRate() {
   try {
+    assertCandidateRuntimeExternalEffectAllowed("exchange_rate_read");
     const response = await fetch("https://open.er-api.com/v6/latest/USD", {
       next: { revalidate: 86_400 },
     });

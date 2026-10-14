@@ -1,3 +1,4 @@
+import { assertCandidateRuntimeExternalEffectAllowed } from "../lib/assistant/external-effect-policy";
 import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
 import { describe, expect, it, vi } from "vitest";
@@ -6,13 +7,21 @@ import { trialReceiptConfirmation } from "../lib/assistant/receipt-confirmation"
 
 const receiptReader = { exports: {} as typeof import("../lib/assistant/receipt-reader") };
 new Function(
+  "require",
   "module",
   "exports",
   transformSync(
     readFileSync("lib/assistant/receipt-reader.ts", "utf8").replace('import "server-only";', ""),
     { loader: "ts", format: "cjs" },
   ).code,
-)(receiptReader, receiptReader.exports);
+)(
+  (id: string) => {
+    if (id === "./external-effect-policy") return { assertCandidateRuntimeExternalEffectAllowed };
+    throw new Error(id);
+  },
+  receiptReader,
+  receiptReader.exports,
+);
 
 function harness(
   amount = 15000,

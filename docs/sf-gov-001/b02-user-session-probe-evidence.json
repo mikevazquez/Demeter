@@ -1,0 +1,7 @@
+{
+  "observed_at": "2026-10-14T20:49:24.430553+00:00",
+  "no_email_or_phone_supplied": true,
+  "status": 422,
+  "error": "{\"code\":422,\"error_code\":\"anonymous_provider_disabled\",\"msg\":\"Anonymous sign-ins are disabled\"}",
+  "synthetic_anonymous_user_created": false
+}

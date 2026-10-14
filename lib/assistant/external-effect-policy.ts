@@ -4,7 +4,10 @@ export type CandidateExternalEffect =
   | "meta_whatsapp_media_read"
   | "meta_inbox_media_read"
   | "openai_responses"
-  | "openai_transcription";
+  | "openai_transcription"
+  | "meta_admin_request"
+  | "asistian_webhook"
+  | "exchange_rate_read";
 
 /**
  * A Candidate Preview must never call real external services. Existing
@@ -35,6 +38,11 @@ export function assertCandidateExternalEffectAllowed(input: {
 }
 
 export function assertCandidateRuntimeExternalEffectAllowed(effect: CandidateExternalEffect) {
+  // Preview builds of this governance branch deny provider traffic regardless
+  // of inherited secrets or a missing Candidate flag.
+  if (process.env.VERCEL_ENV === "preview") {
+    throw new Error(`candidate_preview_external_effect_forbidden:${effect}`);
+  }
   assertCandidateExternalEffectAllowed({
     effect,
     candidatePreview: process.env.SF_GOV_CANDIDATE_PREVIEW,

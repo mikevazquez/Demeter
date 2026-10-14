@@ -1,4 +1,5 @@
 import "server-only";
+import { assertCandidateRuntimeExternalEffectAllowed } from "./external-effect-policy";
 
 type ReceiptReading = {
   amountMinor: number | null;
@@ -50,6 +51,7 @@ export async function readTransferReceipt(input: {
     ? [{ type: "input_file", filename: "comprobante.pdf", file_data: dataUrl }]
     : [{ type: "input_image", image_url: dataUrl, detail: "high" }];
 
+  assertCandidateRuntimeExternalEffectAllowed("openai_responses");
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },

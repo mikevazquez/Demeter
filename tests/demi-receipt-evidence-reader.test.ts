@@ -1,15 +1,24 @@
+import { assertCandidateRuntimeExternalEffectAllowed } from "../lib/assistant/external-effect-policy";
 import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
 import { afterEach, describe, expect, it, vi } from "vitest";
 const loaded = { exports: {} as typeof import("../lib/assistant/receipt-reader") };
 new Function(
+  "require",
   "module",
   "exports",
   transformSync(
     readFileSync("lib/assistant/receipt-reader.ts", "utf8").replace('import "server-only";', ""),
     { loader: "ts", format: "cjs" },
   ).code,
-)(loaded, loaded.exports);
+)(
+  (id: string) => {
+    if (id === "./external-effect-policy") return { assertCandidateRuntimeExternalEffectAllowed };
+    throw new Error(id);
+  },
+  loaded,
+  loaded.exports,
+);
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();

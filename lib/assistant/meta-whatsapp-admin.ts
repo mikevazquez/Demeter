@@ -1,4 +1,5 @@
 import "server-only";
+import { assertCandidateRuntimeExternalEffectAllowed } from "./external-effect-policy";
 
 import {
   loadMetaWhatsAppWebhookConfig,
@@ -50,6 +51,7 @@ async function graphRequest(
   path: string,
   init?: RequestInit,
 ): Promise<JsonObject> {
+  assertCandidateRuntimeExternalEffectAllowed("meta_admin_request");
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10_000);
 

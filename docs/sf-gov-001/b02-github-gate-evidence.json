@@ -1,0 +1,131 @@
+{
+  "source_sha": "b7e7a3790131e80624e0d81fa78d2c91e9ea8813",
+  "run_url": "https://github.com/mikevazquez/Demeter/actions/runs/38626984212",
+  "denial_cause_proven": "PR merge ref excluded by deployment branch policy",
+  "human_main_review_certified": false,
+  "environment-denial-annotations": [
+    {
+      "annotation_level": "failure",
+      "message": "Branch \"refs/pull/278/merge\" is not allowed to deploy to sf-gov-schema-capture due to environment protection rules.",
+      "title": ".github#L1"
+    },
+    {
+      "annotation_level": "failure",
+      "message": "The deployment was rejected or didn't satisfy other protection rules.",
+      "title": ""
+    }
+  ],
+  "environment-reviewers": {
+    "deployment_branch_policy": {
+      "custom_branch_policies": true,
+      "protected_branches": false
+    },
+    "name": "sf-gov-schema-capture",
+    "protection_rules": [
+      {
+        "prevent_self_review": false,
+        "reviewers": [
+          {
+            "login": "mikevazquez",
+            "type": "User"
+          }
+        ],
+        "type": "required_reviewers"
+      },
+      {
+        "prevent_self_review": null,
+        "reviewers": [],
+        "type": "branch_policy"
+      }
+    ]
+  },
+  "environment-branches": {
+    "branch_policies": [
+      {
+        "name": "governance/sf-gov-001-controller",
+        "type": "branch"
+      }
+    ]
+  },
+  "environment-denial-jobs": [
+    {
+      "conclusion": "failure",
+      "id": 116068526370,
+      "status": "completed",
+      "steps": []
+    }
+  ],
+  "main-ruleset-current": {
+    "id": 24974628,
+    "name": "Studio Flow - Protecci\u00f3n de producci\u00f3n.",
+    "target": "branch",
+    "source_type": "Repository",
+    "source": "mikevazquez/Demeter",
+    "enforcement": "active",
+    "conditions": {
+      "ref_name": {
+        "exclude": [],
+        "include": [
+          "~DEFAULT_BRANCH"
+        ]
+      }
+    },
+    "rules": [
+      {
+        "type": "deletion"
+      },
+      {
+        "type": "non_fast_forward"
+      },
+      {
+        "type": "pull_request",
+        "parameters": {
+          "required_approving_review_count": 0,
+          "dismiss_stale_reviews_on_push": false,
+          "required_reviewers": [],
+          "require_code_owner_review": false,
+          "require_last_push_approval": false,
+          "required_review_thread_resolution": true,
+          "require_extra_approval_for_unattributed_changes": true,
+          "allowed_merge_methods": [
+            "merge",
+            "squash",
+            "rebase"
+          ]
+        }
+      },
+      {
+        "type": "required_status_checks",
+        "parameters": {
+          "strict_required_status_checks_policy": true,
+          "do_not_enforce_on_create": false,
+          "required_status_checks": [
+            {
+              "context": "quality",
+              "integration_id": 15368
+            }
+          ]
+        }
+      },
+      {
+        "type": "code_quality",
+        "parameters": {
+          "severity": "errors"
+        }
+      }
+    ],
+    "node_id": "RRS_lACqUmVwb3NpdG9yec5RsBRBzgF9FSQ",
+    "created_at": "2026-10-13T06:06:40.546Z",
+    "updated_at": "2026-10-13T06:26:02.401Z",
+    "bypass_actors": [],
+    "current_user_can_bypass": "never",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/mikevazquez/Demeter/rulesets/24974628"
+      },
+      "html": {
+        "href": "https://github.com/mikevazquez/Demeter/rules/24974628"
+      }
+    }
+  }
+}
