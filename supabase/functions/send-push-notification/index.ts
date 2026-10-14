@@ -1,3 +1,4 @@
+import { candidateExternalEffectsBlocked } from "../_shared/candidate-external-policy.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.116.0";
 import { sendPushNotification, WebPushError } from "npm:@mmmike/web-push@1.3.0/send";
@@ -50,6 +51,8 @@ Deno.serve(async (request) => {
   if (request.method !== "POST") {
     return jsonResponse({ error: "method_not_allowed" }, 405);
   }
+  if (candidateExternalEffectsBlocked(Deno.env.get("SF_GOV_CANDIDATE_PREVIEW"), Deno.env.get("SUPABASE_URL")))
+    return jsonResponse({ error: "candidate_external_effect_forbidden" }, 503);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")?.trim();
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim();
