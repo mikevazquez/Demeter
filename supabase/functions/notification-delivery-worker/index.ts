@@ -1,8 +1,10 @@
+import { sendProviderEmail, type EmailConnection } from "../_shared/email-provider.ts";
 import { withSupabase } from "npm:@supabase/server@1.7.0";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.116.0";
 import { sendPushNotification, WebPushError } from "npm:@mmmike/web-push@1.3.0/send";
 import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts";
 import { sendMetaWhatsAppTemplate } from "../_shared/meta-whatsapp.ts";
+import { isMetaWhatsAppTemplateKey } from "../_shared/meta-whatsapp-template.ts";
 import {
   buildAsistianVariables,
   formatNotificationDateTimeParts,
@@ -191,7 +193,7 @@ function formatSessionStart(variables: JsonObject) {
   }
 }
 
-function renderMessage(delivery: DeliveryRow): RenderedMessage {
+function renderMessageContent(delivery: DeliveryRow): RenderedMessage {
   const variables = delivery.template_variables ?? {};
   const policy = delivery.channel_policy ?? {};
 
@@ -215,10 +217,21 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
   const startLabel = formatSessionStart(variables);
 
   switch (delivery.template_key) {
+    case "coach_roster_reminder":
+      return {
+        title: "Tu próxima clase 👩‍🏫",
+        body: `${className}${startLabel ? ` · ${startLabel}` : ""}. ${String(variables.roster_count ?? 0)} alumnas: ${safeText(variables.roster_names) ?? "Sin reservas"}`,
+        url: "/coach/clases",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: "coach_roster_reminder",
+      };
+
     case "class_reminder":
       return {
         title: "Tu clase es pronto",
-        body: startLabel ? `${className} comienza ${startLabel}.` : `${className} comienza pronto.`,
+        body: startLabel
+          ? `¡Ya casi es hora! ⏰ ${className} comienza ${startLabel}. Alista todo, te esperamos con gusto 💚`
+          : `¡Ya casi es hora! ⏰ ${className} comienza pronto. Alista todo, te esperamos con gusto 💚`,
         url: delivery.recipient_type === "student" ? "/student" : "/admin/mis-clases",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "class_reminder",
@@ -228,8 +241,8 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       return {
         title: "Reserva confirmada",
         body: startLabel
-          ? `Tu lugar en ${className} quedó reservado para ${startLabel}.`
-          : `Tu lugar en ${className} quedó reservado.`,
+          ? `¡Qué emoción! 🎉 Tu lugar en ${className} quedó reservado para ${startLabel}. ¡Nos encantará verte! 💚`
+          : `¡Qué emoción! 🎉 Tu lugar en ${className} quedó reservado. ¡Nos encantará verte! 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "reservation_confirmed",
@@ -238,7 +251,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
     case "reservation_cancelled_by_student":
       return {
         title: "Reserva cancelada",
-        body: `Tu reserva de ${className} quedó cancelada.`,
+        body: `Tu reserva de ${className} quedó cancelada 😔. Si quieres buscar otra clase, aquí estamos para ayudarte 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         // This operational notification uses the already approved generic cancellation template.
@@ -248,7 +261,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
     case "reservation_cancelled":
       return {
         title: "Reserva cancelada",
-        body: `Tu reserva de ${className} fue cancelada.`,
+        body: `Tu reserva de ${className} fue cancelada 😔. Revisa en Demeter el estado de tu crédito; si tienes dudas, aquí estamos para ayudarte 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "reservation_cancelled",
@@ -258,17 +271,18 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       return {
         title: "¡Ya tienes lugar!",
         body: startLabel
-          ? `Se liberó un lugar en ${className} para ${startLabel}.`
-          : `Se liberó un lugar en ${className}.`,
+          ? `¡Buenas noticias! 🎉 Se liberó un lugar en ${className} para ${startLabel}. Tu reserva ya está confirmada; ¡te esperamos! 💚`
+          : `¡Buenas noticias! 🎉 Se liberó un lugar en ${className}. Tu reserva ya está confirmada; ¡te esperamos! 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "waitlist_promoted",
       };
 
+    case "account_created":
     case "student_welcome":
       return {
         title: `Bienvenida a ${studioName}`,
-        body: "Tu acceso a Studio Flow está listo.",
+        body: "¡Qué gusto tenerte en Demeter! 👋 Tu acceso ya está listo. Actívalo y nos encantará acompañarte en tus clases 💚",
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "student_welcome",
@@ -278,8 +292,8 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       return {
         title: "Clase cancelada",
         body: startLabel
-          ? `${className} de ${startLabel} fue cancelada.`
-          : `${className} fue cancelada.`,
+          ? `${className} de ${startLabel} fue cancelada 📣. Gracias por estar al pendiente; revisa tu agenda actualizada 🙌`
+          : `${className} fue cancelada 📣. Gracias por estar al pendiente; revisa tu agenda actualizada 🙌`,
         url: "/admin/mis-clases",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "class_cancelled_coach",
@@ -294,10 +308,10 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
         title: "Cambio de horario",
         body:
           oldLabel && startLabel
-            ? `${className} cambió de ${oldLabel} a ${startLabel}.`
+            ? `¡Actualizamos el horario de ${className}! 🗓️ Ahora nos vemos de ${oldLabel} a ${startLabel}. ¡Revisa tu agenda y aquí estamos si necesitas ayuda! 💚`
             : startLabel
-              ? `${className} ahora será ${startLabel}.`
-              : `El horario de ${className} cambió.`,
+              ? `¡Actualizamos el horario de ${className}! 🗓️ Ahora nos vemos ${startLabel}. Revisa tu agenda y aquí estamos si necesitas ayuda 💚`
+              : `¡Actualizamos el horario de ${className}! 🗓️ Revisa los detalles en tu agenda; si tienes dudas, aquí estamos para ayudarte 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "class_rescheduled",
@@ -308,8 +322,8 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       return {
         title: "Tu clase fue cancelada",
         body: startLabel
-          ? `${className} de ${startLabel} se canceló por no alcanzar el mínimo de reservas. Tu crédito fue restaurado cuando correspondía.`
-          : `${className} se canceló por no alcanzar el mínimo de reservas. Tu crédito fue restaurado cuando correspondía.`,
+          ? `Lo sentimos 😔 ${className} de ${startLabel} tuvo que cancelarse porque no se reunió el grupo mínimo. Revisa en Demeter el estado de tu crédito; si necesitas apoyo, escríbenos 💚`
+          : `Lo sentimos 😔 ${className} tuvo que cancelarse porque no se reunió el grupo mínimo. Revisa en Demeter el estado de tu crédito; si necesitas apoyo, escríbenos 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "class_cancelled_student",
@@ -320,8 +334,8 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       return {
         title: "Tu evaluación es pronto",
         body: startLabel
-          ? `Tienes una evaluación de ${discipline} el ${startLabel}.`
-          : `Tienes una evaluación de ${discipline} programada pronto.`,
+          ? `¡Tu evaluación de ${discipline} ya casi llega! ⏰ Te esperamos el ${startLabel}. ¡Qué emoción ver todo lo que has avanzado! 💚`
+          : `¡Tu evaluación de ${discipline} ya casi llega! ⏰ Te esperamos pronto. ¡Qué emoción ver todo lo que has avanzado! 💚`,
         url: "/student/evaluaciones",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "evaluation_reminder",
@@ -331,7 +345,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
     case "package_activated":
       return {
         title: "Paquete activo",
-        body: `Tu paquete quedó activo desde ${safeText(variables.starts_on) ?? "hoy"} y vence el ${safeText(variables.expires_on) ?? "la fecha indicada"}.`,
+        body: `¡Qué emoción seguir entrenando contigo! 🎉 Tu paquete está activo desde ${safeText(variables.starts_on) ?? "hoy"} y vence el ${safeText(variables.expires_on) ?? "la fecha indicada"}. ¡Disfruta cada clase! 💚`,
         url: "/student/paquete",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "package_activated",
@@ -340,7 +354,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
     case "package_expired":
       return {
         title: "Paquete vencido",
-        body: `Tu paquete venció el ${safeText(variables.expires_on) ?? "la fecha indicada"}. Consulta las opciones disponibles para seguir reservando.`,
+        body: `Tu paquete terminó su vigencia el ${safeText(variables.expires_on) ?? "la fecha indicada"} ⌛. Nos encantará verte de nuevo; revisa en Demeter las opciones para seguir entrenando 💚`,
         url: "/student/paquete",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "package_expired",
@@ -349,7 +363,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
     case "package_expiring":
       return {
         title: "Tu paquete está por vencer",
-        body: `Tu paquete vence el ${safeText(variables.expires_on) ?? "la fecha indicada"}.`,
+        body: `Tu paquete está por vencer ⏳. Revisa su vigencia en Demeter y, si quieres seguir reservando, aquí estamos para ayudarte 💚`,
         url: "/student/paquete",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "package_expiring",
@@ -358,7 +372,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
     case "session_cancelled_by_studio":
       return {
         title: "Clase cancelada por el estudio",
-        body: `${className} fue cancelada por el estudio.`,
+        body: `Lo sentimos 😔 ${className} tuvo que cancelarse. Revisa en Demeter el estado de tu reserva y crédito; si necesitas ayuda, aquí estamos 💚`,
         url: "/student/mis-clases",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "class_cancelled_student",
@@ -368,7 +382,7 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       const discipline = safeText(variables.discipline_name) ?? "tu disciplina";
       return {
         title: "Tienes una evaluación disponible",
-        body: `Ya puedes agendar tu evaluación de ${discipline} desde Studio Flow.`,
+        body: `¡Ya puedes agendar tu evaluación de ${discipline}! ✨ Entra a Demeter y elige el horario que mejor te quede. ¡Vamos contigo! 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "evaluation_invitation",
@@ -380,8 +394,8 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       return {
         title: "Evaluación programada",
         body: startLabel
-          ? `Tu evaluación de ${discipline} quedó programada para ${startLabel}.`
-          : `Tu evaluación de ${discipline} quedó programada.`,
+          ? `¡Listo! 🎉 Tu evaluación de ${discipline} quedó programada para ${startLabel}. ¡Te deseamos mucho éxito! 💚`
+          : `¡Listo! 🎉 Tu evaluación de ${discipline} quedó programada. ¡Te deseamos mucho éxito! 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "evaluation_scheduled",
@@ -392,16 +406,188 @@ function renderMessage(delivery: DeliveryRow): RenderedMessage {
       const discipline = safeText(variables.discipline_name) ?? "tu disciplina";
       return {
         title: "Resultados de evaluación disponibles",
-        body: `Ya puedes consultar los resultados de tu evaluación de ${discipline} en Studio Flow.`,
+        body: `¡Ya están listos los resultados de tu evaluación de ${discipline}! 🏅 Revísalos en Demeter cuando puedas. ¡Felicidades por tu esfuerzo! 💚`,
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "evaluation_completed",
       };
     }
 
+    case "birthday":
+      return {
+        title: "🎂 ¡Feliz cumpleaños!",
+        body: `¡Feliz cumpleaños, ${safeText(variables.recipient_name) ?? "alumna"}! Hoy celebramos contigo. Te deseamos un día especial 💚`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "birthday",
+      };
+
+    case "challenge_invitation":
+      return {
+        title: "Nuevo reto disponible",
+        body: `¡Hay un nuevo reto para ti! 🏆 ${safeText(variables.challenge_name) ?? "Anímate a participar"}. Nos encantará acompañarte 💚`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "challenge_invitation",
+      };
+
+    case "workshop_event":
+      return {
+        title: "Nuevo evento en Demeter",
+        body: `¡Tenemos un plan especial! 🎟️ ${safeText(variables.event_name) ?? "Un taller para disfrutar"} · ${safeText(variables.event_date) ?? "próximamente"}. Revisa los detalles en Demeter 💚`,
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "workshop_event",
+      };
+
+    case "referral_invitation":
+      return {
+        title: "Invita a alguien a Demeter",
+        body: "¿Con quién te gustaría compartir tu pasión por el movimiento? 🤸 Invita a alguien especial a conocer Demeter; nos encantará recibirle 💚",
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "referral_invitation",
+      };
+
+    case "package_recovery_1":
+      return {
+        title: "Vuelve a tus clases",
+        body: "¡Te extrañamos en el estudio! 💖 Si te gustaría volver a tus clases, escríbenos y buscamos juntas una opción que te funcione 💚",
+        url: "/student/paquete",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "package_recovery_1",
+      };
+
+    case "package_recovery_2":
+      return {
+        title: "Te esperamos de vuelta",
+        body: "Nos encantaría volver a verte por aquí 🫶 Cuando quieras retomar, escríbenos y con gusto te contamos las opciones disponibles 💚",
+        url: "/student/paquete",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: overrideProviderTemplate ?? "package_recovery_2",
+      };
+
     default:
+      if (isMetaWhatsAppTemplateKey(delivery.template_key)) {
+        const providerAliases: Record<string, string> = {
+          account_created: "student_welcome",
+          late_cancellation: "reservation_cancelled",
+          reservation_modified: "class_rescheduled",
+        };
+        const providerTemplateKey = providerAliases[delivery.template_key] ?? delivery.template_key;
+        const labels: Record<string, string> = {
+          account_created: "💚 ¡Qué gusto tenerte aquí!",
+          attendance_no_show: "💚 Te esperamos en clase",
+          credit_restored: "🎁 ¡Buenas noticias!",
+          document_new_version: "📄 Actualizamos un documento",
+          documents_pending: "📝 Dejemos todo listo",
+          evaluation_completed: "🏅 ¡Ya están tus resultados!",
+          evaluation_invitation: "✨ Da tu siguiente paso",
+          evaluation_scheduled: "🎉 Evaluación programada",
+          guardian_signature_pending: "✍️ Falta una firma",
+          late_cancellation: "⏰ Tu cancelación quedó registrada",
+          package_activated: "🎉 ¡A disfrutar tu paquete!",
+          package_expired: "💚 Nos encantará verte de nuevo",
+          package_expiring: "⏳ Tu paquete está por vencer",
+          password_reset: "🔐 Tu acceso está listo",
+          payment_confirmed: "✅ ¡Pago recibido!",
+          payment_pending: "💳 Te ayudamos con tu pago",
+          reservation_modified: "🗓️ Actualizamos tu reserva",
+          session_coach_changed: "👩‍🏫 Tenemos una actualización",
+          studio_closure: "📢 Un aviso sobre tu clase",
+          waitlist_expired: "💚 ¿Buscamos otra clase?",
+        };
+        const label = labels[delivery.template_key] ?? "💚 Tenemos una actualización para ti";
+        const bodies: Record<string, string> = {
+          account_created:
+            "¡Qué gusto tenerte en Demeter! 👋 Tu cuenta ya está lista. Actívala y nos encantará acompañarte en tus clases 💚",
+          attendance_no_show: `Hoy no pudimos verte en ${className} 😔. Cuando quieras, aquí estamos para ayudarte a encontrar tu próxima clase 💚`,
+          credit_restored:
+            "¡Buenas noticias! 🎁 El crédito de tu reserva ya volvió a tu paquete. ¡Te esperamos pronto en clase! 💚",
+          document_new_version:
+            "Actualizamos un documento del estudio 📄 Cuando tengas un momento, revísalo en Demeter. Si necesitas ayuda, aquí estamos 💚",
+          documents_pending:
+            "Te falta completar un documento para dejar todo listo 📝 Entra a Demeter cuando puedas; si necesitas apoyo, aquí estamos 💚",
+          evaluation_completed: `¡Ya están listos los resultados de tu evaluación de ${safeText(variables.discipline_name) ?? "tu disciplina"}! 🏅 Revísalos en Demeter. ¡Felicidades por tu esfuerzo! 💚`,
+          evaluation_invitation: `¡Ya puedes agendar tu evaluación de ${safeText(variables.discipline_name) ?? "tu disciplina"}! ✨ Elige el horario que mejor te quede; ¡vamos contigo! 💚`,
+          evaluation_scheduled: `¡Listo! 🎉 Tu evaluación quedó programada${startLabel ? ` para ${startLabel}` : ""}. ¡Te deseamos mucho éxito! 💚`,
+          guardian_signature_pending:
+            "Para completar el proceso, falta la firma de tu responsable ✍️ Cuando puedan, revisen el documento en Demeter. Si necesitan apoyo, aquí estamos 💚",
+          late_cancellation: `Tu reserva de ${className} quedó cancelada ⏰. Revisa en Demeter el estado de tu crédito; si tienes dudas, escríbenos y te ayudamos 💚`,
+          package_activated: `¡Qué emoción seguir entrenando contigo! 🎉 Tu paquete está activo y vence el ${safeText(variables.expires_on) ?? "la fecha indicada"}. ¡Disfruta cada clase! 💚`,
+          package_expired:
+            "Tu paquete terminó su vigencia, pero nos encantará verte de nuevo 💚 Revisa en Demeter las opciones para seguir entrenando ✨",
+          package_expiring:
+            "Tu paquete está por vencer ⏳ Revisa su vigencia en Demeter y, si quieres seguir reservando, aquí estamos para ayudarte 💚",
+          password_reset:
+            "Solicitaste un nuevo acceso temporal 🔐 Entra con el enlace recibido y cambia tu contraseña. Si no fuiste tú, avísanos de inmediato.",
+          payment_confirmed:
+            "¡Listo, tu pago quedó registrado! ✅ Gracias por tu confianza. Puedes consultar los detalles en Demeter 💚",
+          payment_pending:
+            "Tu pago sigue pendiente 💳 Si ya lo realizaste, comparte tu comprobante y con gusto te ayudamos a revisarlo 💚",
+          reservation_modified: `¡Actualizamos tu reserva de ${className}! 🗓️ Revisa los detalles en Demeter; si necesitas ayuda, aquí estamos 💚`,
+          session_coach_changed: `Tenemos una actualización para ti 👩‍🏫 Cambió el coach de ${className}. Revisa tu agenda; ¡te esperamos con gusto! 💚`,
+          studio_closure: `Hay un cambio en el estudio que afecta tu clase ${className} 📢 Revisa los detalles de tu reserva en Demeter; si necesitas apoyo, escríbenos 💚`,
+          waitlist_expired: `Esta vez no se liberó un lugar a tiempo para ${className} 🥺 Puedes revisar otras opciones en Demeter; nos encantará verte en otra clase 💚`,
+        };
+        return {
+          title: label,
+          body:
+            bodies[delivery.template_key] ??
+            `¡Tenemos una actualización para ti! 💚 Revisa los detalles en ${studioName}.`,
+          url: delivery.recipient_type === "student" ? "/student" : "/admin",
+          tag: `notification-${delivery.id}`,
+          providerTemplateKey,
+        };
+      }
       throw new Error(`notification_template_unsupported:${delivery.template_key}`);
   }
+}
+
+const PUSH_EMOJI_BY_TEMPLATE: Record<string, string> = {
+  account_created: "👋",
+  attendance_no_show: "⚠️",
+  reservation_cancelled: "❌",
+  reservation_cancelled_by_student: "❌",
+  late_cancellation: "⏰",
+  class_reminder: "⏰",
+  reservation_confirmed: "✅",
+  reservation_modified: "📝",
+  waitlist_promoted: "🎉",
+  credit_restored: "🎁",
+  document_new_version: "📄",
+  documents_pending: "📝",
+  evaluation_completed: "🏅",
+  evaluation_invitation: "✨",
+  evaluation_reminder: "📝",
+  evaluation_scheduled: "📅",
+  guardian_signature_pending: "✍️",
+  package_activated: "🎉",
+  package_expired: "⌛",
+  package_expiring: "⏳",
+  password_reset: "🔐",
+  payment_confirmed: "✅",
+  payment_pending: "💳",
+  session_cancelled_by_studio: "📢",
+  session_coach_changed: "👩‍🏫",
+  class_cancelled_coach: "📢",
+  class_cancelled_student: "❌",
+  class_rescheduled: "🗓️",
+  studio_closure: "📢",
+  waitlist_expired: "⏳",
+};
+
+function withPushEmoji(title: string, templateKey: string) {
+  const value = title.trim();
+  if (/^\p{Extended_Pictographic}/u.test(value)) return value;
+  return `${PUSH_EMOJI_BY_TEMPLATE[templateKey] ?? "📨"} ${value}`;
+}
+
+function renderMessage(delivery: DeliveryRow): RenderedMessage {
+  const message = renderMessageContent(delivery);
+  return delivery.channel_key === "push"
+    ? { ...message, title: withPushEmoji(message.title, delivery.template_key) }
+    : message;
 }
 
 async function loadDelivery(adminClient: SupabaseClient, deliveryId: string): Promise<DeliveryRow> {
@@ -422,6 +608,37 @@ async function loadDelivery(adminClient: SupabaseClient, deliveryId: string): Pr
     channel_policy: isObject(data.channel_policy) ? data.channel_policy : {},
     message_snapshot: isObject(data.message_snapshot) ? data.message_snapshot : {},
   } as DeliveryRow;
+}
+
+async function packageRecoveryStillEligible(adminClient: SupabaseClient, delivery: DeliveryRow) {
+  if (!delivery.template_key.startsWith("package_recovery_")) return true;
+  const acquisitionId = safeUuid(delivery.template_variables.acquisition_id);
+  const studentId = delivery.recipient_entity_id;
+  if (!acquisitionId || !studentId) return false;
+
+  const { data: original, error: originalError } = await adminClient
+    .from("product_acquisitions")
+    .select("id,created_at")
+    .eq("id", acquisitionId)
+    .eq("studio_id", delivery.studio_id)
+    .eq("student_id", studentId)
+    .maybeSingle();
+
+  if (originalError) throw new Error("package_recovery_eligibility_lookup_failed");
+  if (!original) return false;
+
+  const { data: renewed, error: renewedError } = await adminClient
+    .from("product_acquisitions")
+    .select("id")
+    .eq("studio_id", delivery.studio_id)
+    .eq("student_id", studentId)
+    .eq("status", "active")
+    .is("refunded_at", null)
+    .gt("created_at", original.created_at)
+    .limit(1);
+
+  if (renewedError) throw new Error("package_recovery_eligibility_lookup_failed");
+  return (renewed ?? []).length === 0;
 }
 
 async function sendInbox(
@@ -608,7 +825,6 @@ async function sendPush(
         const ok = await sendPushNotification(
           {
             endpoint: row.endpoint,
-            expirationTime: row.expiration_time,
             keys: {
               p256dh: row.p256dh,
               auth: row.auth_secret,
@@ -836,14 +1052,67 @@ async function sendWhatsAppMeta(
   };
 }
 
-async function sendEmail(): Promise<AdapterResult> {
-  return {
-    status: "skipped",
-    providerKey: "email",
-    errorCode: "email_provider_not_configured",
-    errorMessage: "No email provider is configured for Studio Flow yet.",
-    response: {},
-  };
+async function sendEmail(
+  adminClient: SupabaseClient,
+  delivery: DeliveryRow,
+  message: RenderedMessage,
+): Promise<AdapterResult> {
+  const { data, error } = await adminClient.rpc("service_get_email_connection", {
+    p_studio_id: delivery.studio_id,
+  });
+  if (error)
+    return {
+      status: "retry",
+      providerKey: "email",
+      errorCode: "email_connection_lookup_failed",
+      response: {},
+    };
+  if (!data)
+    return {
+      status: "skipped",
+      providerKey: "email",
+      errorCode: "email_provider_not_configured",
+      response: {},
+    };
+  const to = String(delivery.recipient_snapshot.email ?? "").trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))
+    return {
+      status: "skipped",
+      providerKey: data.provider,
+      errorCode: "recipient_email_missing",
+      response: {},
+    };
+  try {
+    const result = await sendProviderEmail(
+      data as EmailConnection,
+      to,
+      message.title,
+      message.body,
+      delivery.id,
+    );
+    if (result.ok)
+      return {
+        status: "accepted",
+        providerKey: data.provider,
+        providerMessageId: result.messageId,
+        httpStatus: result.status,
+        response: {},
+      };
+    return {
+      status: result.status === 429 || result.status >= 500 ? "retry" : "failed",
+      providerKey: data.provider,
+      errorCode: "email_provider_rejected",
+      httpStatus: result.status,
+      response: {},
+    };
+  } catch {
+    return {
+      status: "retry",
+      providerKey: data.provider,
+      errorCode: "email_provider_unavailable",
+      response: {},
+    };
+  }
 }
 
 async function runAdapter(
@@ -851,6 +1120,42 @@ async function runAdapter(
   delivery: DeliveryRow,
   message: RenderedMessage,
 ): Promise<AdapterResult> {
+  // Sandbox operational bank: capture after rendering, before any network adapter.
+  if (
+    new URL(Deno.env.get("SUPABASE_URL") ?? "https://invalid.local").hostname ===
+    "hedouonyhynuvwbckdlg.supabase.co"
+  ) {
+    const { data, error } = await adminClient.rpc("service_capture_demi_uat_delivery", {
+      p_studio: delivery.studio_id,
+      p_kind: "notification_delivery",
+      p_payload: {
+        delivery_id: delivery.id,
+        channel: delivery.channel_key,
+        template: delivery.template_key,
+        message,
+        captured: true,
+      },
+    });
+    if (error) throw new Error("demi_uat_capture_lookup_failed");
+    if (data) {
+      if (data.failed)
+        return {
+          status: "retry",
+          providerKey: "demi_uat_capture",
+          errorCode: "demi_uat_injected_delivery_failure",
+          httpStatus: 503,
+          response: data,
+        };
+      return {
+        status: "delivered",
+        providerKey: "demi_uat_capture",
+        providerMessageId: `uat:${data.artifact_id}`,
+        httpStatus: 200,
+        response: data,
+      };
+    }
+  }
+
   if (!delivery.adapter_enabled) {
     return {
       status: "skipped",
@@ -870,7 +1175,7 @@ async function runAdapter(
     case "meta_whatsapp":
       return sendWhatsAppMeta(adminClient, delivery, message);
     case "email_provider":
-      return sendEmail();
+      return sendEmail(adminClient, delivery, message);
     default:
       return {
         status: "failed",
@@ -881,10 +1186,16 @@ async function runAdapter(
   }
 }
 
-async function handoffJobs(adminClient: SupabaseClient, workerId: string, batchSize: number) {
+async function handoffJobs(
+  adminClient: SupabaseClient,
+  workerId: string,
+  batchSize: number,
+  uatStudio?: string,
+) {
   const { data: claims, error: claimError } = await adminClient.rpc(
-    "system_claim_notification_jobs",
+    uatStudio ? "service_claim_demi_uat_jobs" : "system_claim_notification_jobs",
     {
+      ...(uatStudio ? { p_studio: uatStudio } : {}),
       p_worker_id: workerId,
       p_limit: batchSize,
       p_lease_seconds: 120,
@@ -961,6 +1272,55 @@ async function processDelivery(
     }
 
     attemptId = String(startedAttempt);
+
+    if (delivery.recipient_type === "student" && delivery.recipient_entity_id) {
+      const { data: active, error: activeError } = await adminClient.rpc(
+        "service_student_notification_active",
+        {
+          p_studio_id: delivery.studio_id,
+          p_student_id: delivery.recipient_entity_id,
+          p_template_key: delivery.template_key,
+        },
+      );
+      if (activeError) throw new Error("notification_recipient_status_lookup_failed");
+      if (!active) {
+        const { data: skipped, error: skipError } = await adminClient.rpc(
+          "system_mark_notification_delivery_attempt_skipped",
+          {
+            p_attempt_id: attemptId,
+            p_reason_code: "recipient_inactive",
+            p_reason_safe: "La destinataria ya no está activa.",
+            p_response_snapshot: { eligibility: "inactive" },
+          },
+        );
+        if (skipError || skipped !== true) throw new Error("notification_inactive_skip_failed");
+        return {
+          ok: true,
+          deliveryId: delivery.id,
+          channel: delivery.channel_key,
+          outcome: "skipped",
+        };
+      }
+    }
+
+    if (!(await packageRecoveryStillEligible(adminClient, delivery))) {
+      const { data, error } = await adminClient.rpc(
+        "system_mark_notification_delivery_attempt_skipped",
+        {
+          p_attempt_id: attemptId,
+          p_reason_code: "package_renewed_before_recovery",
+          p_reason_safe: "A newer active package was purchased before recovery delivery.",
+          p_response_snapshot: { eligibility: "renewed_package" },
+        },
+      );
+      if (error || data !== true) throw new Error("package_recovery_delivery_skip_failed");
+      return {
+        ok: true,
+        deliveryId: delivery.id,
+        channel: delivery.channel_key,
+        outcome: "skipped",
+      };
+    }
 
     const message = renderMessage(delivery);
 
@@ -1053,7 +1413,7 @@ async function processDelivery(
       );
 
       if (error || data !== true) throw new Error("notification_delivery_mark_skipped_failed");
-    } else {
+    } else if (result.status === "failed" || result.status === "retry") {
       const { data, error } = await adminClient.rpc(
         "system_mark_notification_delivery_attempt_failed",
         {
@@ -1106,10 +1466,16 @@ async function processDelivery(
   }
 }
 
-async function deliver(adminClient: SupabaseClient, workerId: string, batchSize: number) {
+async function deliver(
+  adminClient: SupabaseClient,
+  workerId: string,
+  batchSize: number,
+  uatStudio?: string,
+) {
   const { data: claims, error: claimError } = await adminClient.rpc(
-    "system_claim_notification_deliveries",
+    uatStudio ? "service_claim_demi_uat_deliveries" : "system_claim_notification_deliveries",
     {
+      ...(uatStudio ? { p_studio: uatStudio } : {}),
       p_worker_id: workerId,
       p_limit: batchSize,
       p_lease_seconds: 120,
@@ -1133,15 +1499,31 @@ const handler = {
     if (request.method !== "POST") return response({ error: "method_not_allowed" }, 405);
 
     const adminClient = context.supabaseAdmin;
-    const dispatchToken = safeText(request.headers.get("x-studio-flow-dispatch-token"));
-    if (!dispatchToken) return response({ error: "unauthenticated" }, 401);
-
-    const { data: authorized, error: authError } = await adminClient.rpc(
-      "verify_automation_dispatch_token",
-      { p_token: dispatchToken },
-    );
-
-    if (authError || authorized !== true) return response({ error: "forbidden" }, 403);
+    let uatStudio: string | undefined;
+    const uatRunId = safeUuid(request.headers.get("x-demi-uat-run"));
+    if (uatRunId) {
+      const sandbox =
+        new URL(Deno.env.get("SUPABASE_URL") ?? "https://invalid.local").hostname ===
+        "hedouonyhynuvwbckdlg.supabase.co";
+      const secret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (!sandbox || !secret || request.headers.get("authorization") !== `Bearer ${secret}`)
+        return response({ error: "forbidden" }, 403);
+      const { data, error } = await adminClient
+        .from("demi_uat_runs")
+        .select("studio_id")
+        .eq("id", uatRunId)
+        .single();
+      if (error || !data) return response({ error: "uat_run_not_found" }, 404);
+      uatStudio = data.studio_id;
+    } else {
+      const dispatchToken = safeText(request.headers.get("x-studio-flow-dispatch-token"));
+      if (!dispatchToken) return response({ error: "unauthenticated" }, 401);
+      const { data: authorized, error: authError } = await adminClient.rpc(
+        "verify_automation_dispatch_token",
+        { p_token: dispatchToken },
+      );
+      if (authError || authorized !== true) return response({ error: "forbidden" }, 403);
+    }
 
     let body: JsonObject = {};
     try {
@@ -1155,8 +1537,8 @@ const handler = {
     const workerId = `${WORKER_ID_PREFIX}:${crypto.randomUUID()}`;
 
     try {
-      const handoff = await handoffJobs(adminClient, workerId, batchSize);
-      const deliveries = await deliver(adminClient, workerId, batchSize);
+      const handoff = await handoffJobs(adminClient, workerId, batchSize, uatStudio);
+      const deliveries = await deliver(adminClient, workerId, batchSize, uatStudio);
 
       return response({
         ok: true,
