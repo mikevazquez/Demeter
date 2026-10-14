@@ -1,5 +1,5 @@
 export type CandidateExternalEffect =
-  "meta_whatsapp_send" | "meta_inbox_send" | "openai_responses" | "openai_transcription";
+  "meta_whatsapp_send" | "meta_inbox_send" | "meta_whatsapp_media_read" | "meta_inbox_media_read" | "openai_responses" | "openai_transcription";
 
 /**
  * A Candidate Preview must never call real external services. Existing
