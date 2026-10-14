@@ -3,7 +3,12 @@ import { createClient } from "npm:@supabase/supabase-js@2.116.0";
 import { demiTestSeller } from "../_shared/demi-mercadopago.ts";
 
 Deno.serve(async (request: Request) => {
-  if (candidateExternalEffectsBlocked(Deno.env.get("SF_GOV_CANDIDATE_PREVIEW"), Deno.env.get("SUPABASE_URL")))
+  if (
+    candidateExternalEffectsBlocked(
+      Deno.env.get("SF_GOV_CANDIDATE_PREVIEW"),
+      Deno.env.get("SUPABASE_URL"),
+    )
+  )
     return Response.json({ error: "candidate_external_effect_forbidden" }, { status: 503 });
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const url = Deno.env.get("SUPABASE_URL");
