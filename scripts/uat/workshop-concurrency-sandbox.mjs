@@ -80,6 +80,20 @@ if (offerSessionsError || offerSessionCount !== 1) {
 if (offer.deposit_mode !== 'full') {
   throw new Error('Use a dedicated full-payment synthetic offer for this concurrency test');
 }
+const studentIds = [env.WORKSHOP_UAT_STUDENT_A_ID, env.WORKSHOP_UAT_STUDENT_B_ID];
+const keys = [env.WORKSHOP_UAT_IDEMPOTENCY_A, env.WORKSHOP_UAT_IDEMPOTENCY_B];
+const { data: students, error: studentsError } = await admin
+  .from('students').select('id,studio_id').in('id', studentIds);
+if (studentsError || students?.length !== 2 ||
+    students.some((student) => student.studio_id !== env.WORKSHOP_UAT_STUDIO_ID)) {
+  throw new Error('Both synthetic students must belong to the approved Sandbox studio');
+}
+const { count: existingKeys, error: existingKeysError } = await admin
+  .from('workshop_purchases').select('id', { count: 'exact', head: true })
+  .eq('studio_id', env.WORKSHOP_UAT_STUDIO_ID).in('idempotency_key', keys);
+if (existingKeysError || existingKeys !== 0) {
+  throw new Error('Both idempotency keys must be unused before the race');
+}
 const attempt = (studentId, key) => client().rpc('workshop_checkout_confirm', {
   p_studio_id: env.WORKSHOP_UAT_STUDIO_ID,
   p_offer_id: env.WORKSHOP_UAT_OFFER_ID,
@@ -99,7 +113,6 @@ const losers = results.filter((r) => r.error?.message?.includes('session_full'))
 const { count: afterCount, error: afterError } = await admin
   .from('reservations').select('id', { count: 'exact', head: true })
   .eq('session_id', sessionId).in('status', ['reserved', 'attended']);
-const keys = [env.WORKSHOP_UAT_IDEMPOTENCY_A, env.WORKSHOP_UAT_IDEMPOTENCY_B];
 const { data: purchases, error: purchasesError } = await admin
   .from('workshop_purchases')
   .select('id,sale_id,student_id,idempotency_key,status')
