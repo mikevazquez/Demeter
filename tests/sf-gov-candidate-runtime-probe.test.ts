@@ -8,14 +8,18 @@ const candidateUrl = "https://sdmxtlgjkodidjtvikng.supabase.co";
 function exerciseProbe(supabaseUrl: string | undefined, candidateFlag: string | undefined) {
   let handler: (() => Response) | undefined;
   const source = readFileSync(functionFile, "utf8").replace(/^import .*;\s*$/gm, "");
-  const policy = (flag: string | undefined, url: string | undefined) => {
-    if (flag?.trim() && flag.trim() !== "0") return true;
-    try {
-      return new URL(url ?? "").hostname === "sdmxtlgjkodidjtvikng.supabase.co";
-    } catch {
-      return false;
-    }
-  };
+  // Load the actual shared Edge policy: never validate a duplicate implementation.
+  const policyLoaded = { exports: {} as Record<string, unknown> };
+  const policySource = readFileSync(
+    "supabase/functions/_shared/candidate-external-policy.ts",
+    "utf8",
+  );
+  new Function(
+    "module",
+    "exports",
+    transformSync(policySource, { loader: "ts", format: "cjs" }).code,
+  )(policyLoaded, policyLoaded.exports);
+  const policy = policyLoaded.exports.candidateExternalEffectsBlocked;
   const compiled = transformSync(source, { loader: "ts", format: "cjs" }).code;
   const environment = new Map<string, string>();
   if (supabaseUrl !== undefined) environment.set("SUPABASE_URL", supabaseUrl);
