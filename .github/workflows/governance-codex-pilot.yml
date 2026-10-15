@@ -1,7 +1,10 @@
 name: Governance - Codex sandbox pilot
 
-# Opt-in pilot: no automatic issue triggers, commits, pushes, merges or deployments.
+# Single smoke run from the pilot PR; no commits, pushes, merges or deployments.
 on:
+  pull_request:
+    paths:
+      - .github/workflows/governance-codex-pilot.yml
   workflow_dispatch:
     inputs:
       issue_number:
@@ -14,18 +17,18 @@ permissions:
   issues: read
 
 concurrency:
-  group: codex-pilot-${{ inputs.issue_number }}
+  group: codex-pilot-${{ github.event_name }}-${{ github.event.pull_request.number || inputs.issue_number }}
   cancel-in-progress: false
 
 jobs:
   propose-patch:
-    if: github.repository == "mikevazquez/Demeter"
+    if: github.repository == "mikevazquez/Demeter" && (github.event_name == "workflow_dispatch" || github.head_ref == "chore/governance-codex-dispatch-pilot-20261015")
     runs-on: ubuntu-latest
     environment: "Preview – demeterbueno"
     timeout-minutes: 45
     env:
       GH_REPO: ${{ github.repository }}
-      ISSUE_NUMBER: ${{ inputs.issue_number }}
+      ISSUE_NUMBER: ${{ github.event_name == 'pull_request' && '291' || inputs.issue_number }}
     steps:
       - name: Check out code without repository credentials
         uses: actions/checkout@v4
@@ -72,7 +75,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: codex-pilot-${{ inputs.issue_number }}-${{ github.run_id }}
+          name: codex-pilot-${{ env.ISSUE_NUMBER }}-${{ github.run_id }}
           path: |
             /tmp/codex-changes.patch
             /tmp/codex-result.txt
