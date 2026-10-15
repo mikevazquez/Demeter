@@ -86,9 +86,15 @@ test("B03 two-tenant positive/negative access rehearsal without external effects
       try {
         await db.exec("SET LOCAL ROLE authenticated;");
         await db.query("SELECT set_config('request.jwt.claim.sub', $1, true)", [uid]);
-        const studios = (await db.query("SELECT id FROM public.studios ORDER BY id")).rows.map((x) => x.id);
-        const memberships = (await db.query("SELECT studio_id FROM public.studio_memberships ORDER BY studio_id")).rows.map((x) => x.studio_id);
-        const students = (await db.query("SELECT id FROM public.students ORDER BY id")).rows.map((x) => x.id);
+        const studios = (await db.query("SELECT id FROM public.studios ORDER BY id")).rows.map(
+          (x) => x.id,
+        );
+        const memberships = (
+          await db.query("SELECT studio_id FROM public.studio_memberships ORDER BY studio_id")
+        ).rows.map((x) => x.studio_id);
+        const students = (await db.query("SELECT id FROM public.students ORDER BY id")).rows.map(
+          (x) => x.id,
+        );
         return { studios, memberships, students };
       } finally {
         await db.exec("ROLLBACK;");
@@ -108,16 +114,27 @@ test("B03 two-tenant positive/negative access rehearsal without external effects
       students: ["student-a"],
     });
     const outsiderAccess = await readAs(outsider);
-    assert.deepEqual(outsiderAccess, { studios: [], memberships: [], students: [] });
-    console.log(JSON.stringify({
-      engine: "ephemeral-pglite",
-      fixture: "synthetic-only",
-      candidate_connected: false,
-      emails_sent: 0,
-      payments_sent: 0,
-      provider_calls: 0,
-      scenarios: { admin: "pass", student: "pass", cross_tenant: "pass", no_membership: "pass" },
-    }));
+    assert.deepEqual(outsiderAccess, {
+      studios: [],
+      memberships: [],
+      students: [],
+    });
+    console.log(
+      JSON.stringify({
+        engine: "ephemeral-pglite",
+        fixture: "synthetic-only",
+        candidate_connected: false,
+        emails_sent: 0,
+        payments_sent: 0,
+        provider_calls: 0,
+        scenarios: {
+          admin: "pass",
+          student: "pass",
+          cross_tenant: "pass",
+          no_membership: "pass",
+        },
+      }),
+    );
   } finally {
     await db.close();
   }
