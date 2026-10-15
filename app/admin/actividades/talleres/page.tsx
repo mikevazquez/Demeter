@@ -23,6 +23,11 @@ export default async function WorkshopsPage() {
           <h1>Talleres configurables</h1>
           <p>Consulta fechas, precios y registra compras con anticipo o pago completo.</p>
         </div>
+        {ctx.can("products.write") && ctx.can("schedule.write") ? (
+          <Link className="activities-v2-primary" href="/admin/actividades/talleres/nuevo">
+            Nuevo taller
+          </Link>
+        ) : null}
       </header>
       {error ? (
         <p role="alert">

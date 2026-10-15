@@ -8,6 +8,7 @@ import { purchaseWorkshop } from "@/app/admin/actividades/talleres/actions";
 const id = "00000000-0000-4000-8000-000000000001";
 function form() {
   const data = new FormData();
+  data.set("offer_revision", "1");
   for (const name of ["offer_id", "student_id", "request_id", "session_ids"]) data.set(name, id);
   data.set("purchase_mode", "sessions");
   data.set("received_amount", "300.29");
@@ -41,7 +42,7 @@ describe("authenticated workshop server action", () => {
     });
     const result = await purchaseWorkshop({ error: null }, form());
     expect(mocks.context).toHaveBeenCalledWith("sales.write");
-    expect(mocks.rpc).toHaveBeenCalledWith("admin_purchase_workshop", {
+    expect(mocks.rpc).toHaveBeenCalledWith("admin_purchase_workshop_checked", {
       p_studio_id: "signed-studio",
       p_offer_id: id,
       p_student_id: id,
@@ -52,6 +53,7 @@ describe("authenticated workshop server action", () => {
       p_payment_method: "bank_transfer",
       p_reference: "BANK-29",
       p_received: true,
+      p_expected_revision: 1,
     });
     expect(result.receipt).toMatchObject({ saleId: id, paidMinor: 30029 });
     expect(mocks.revalidate).toHaveBeenCalledWith(`/admin/ventas/${id}`);

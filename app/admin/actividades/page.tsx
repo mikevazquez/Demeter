@@ -63,6 +63,7 @@ export default async function ActivitiesPage() {
       )
       .eq("studio_id", studio.id)
       .is("program_id", null)
+      .is("workshop_offer_id", null)
       .order("active", { ascending: false })
       .order("name"),
     supabase

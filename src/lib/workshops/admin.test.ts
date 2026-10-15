@@ -18,6 +18,7 @@ describe("workshop received money input", () => {
   );
   it("preserves explicit individual selection even when every session is chosen, and ignores client totals/tenant", () => {
     const data = new FormData();
+    data.set("offer_revision", "1");
     for (const name of ["offer_id", "student_id", "request_id"])
       data.set(name, "00000000-0000-4000-8000-000000000001");
     data.append("session_ids", "00000000-0000-4000-8000-000000000002");

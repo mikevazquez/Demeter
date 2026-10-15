@@ -8,6 +8,7 @@ export interface WorkshopSummary {
 export interface WorkshopAdminContext {
   offer: {
     id: string;
+    revision: number;
     title: string;
     fullPriceMinor: number;
     allowIndividualSessions: boolean;
@@ -61,6 +62,13 @@ export function workshopPurchaseInput(data: FormData) {
   const amountMinor = receivedAmountMinor(String(data.get("received_amount") ?? ""));
   const method = String(data.get("payment_method") ?? "");
   const reference = String(data.get("reference") ?? "").trim();
+  const revisionText = String(data.get("offer_revision") ?? "");
+  if (
+    !/^\d+$/.test(revisionText) ||
+    Number(revisionText) < 1 ||
+    Number(revisionText) > 2_147_483_647
+  )
+    return { ok: false as const, error: "Actualiza el taller antes de registrar la compra." };
   if (![offerId, studentId, requestId].every((id) => workshopUuid.test(id)))
     return { ok: false as const, error: "Elige el taller y la alumna antes de continuar." };
   if (
@@ -87,11 +95,16 @@ export function workshopPurchaseInput(data: FormData) {
     amountMinor,
     method,
     reference,
+    revision: Number(revisionText),
   };
 }
 
 export function workshopPurchaseError(message: string) {
   const errors: [string, string][] = [
+    [
+      "workshop_revision_conflict",
+      "El taller cambió. Actualiza la página y revisa el precio antes de registrar el pago.",
+    ],
     [
       "idempotency_conflict",
       "Esta solicitud ya se usó con otros datos. Revisa la venta antes de intentar otra compra.",

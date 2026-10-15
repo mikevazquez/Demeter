@@ -29,6 +29,9 @@ export default async function WorkshopPage({ params }: { params: Promise<{ offer
           <header className="program-detail-summary">
             <div className="program-detail-heading">
               <h1>{context.offer.title}</h1>
+              {ctx.can("products.write") && ctx.can("schedule.write") ? (
+                <Link href={`/admin/actividades/talleres/${offerId}/editar`}>Editar taller</Link>
+              ) : null}
               <p>{context.sessions.length} fechas</p>
             </div>
           </header>

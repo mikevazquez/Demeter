@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
@@ -29,7 +29,7 @@ export default async function ActivityDetailPage({
     supabase
       .from("class_templates")
       .select(
-        "id,name,description,duration_minutes,capacity,drop_in_price_minor,individual_purchase_notes,requires_resource,color_hex,active,minimum_reservations_enabled,minimum_reservations,minimum_review_minutes_before,allow_minimum_reservation_override",
+        "id,name,description,duration_minutes,capacity,drop_in_price_minor,individual_purchase_notes,requires_resource,color_hex,active,minimum_reservations_enabled,minimum_reservations,minimum_review_minutes_before,allow_minimum_reservation_override,workshop_offer_id",
       )
       .eq("id", activityId)
       .eq("studio_id", studio.id)
@@ -59,6 +59,8 @@ export default async function ActivityDetailPage({
   ]);
 
   if (!activity) notFound();
+  if (activity.workshop_offer_id)
+    redirect(`/admin/actividades/talleres/${activity.workshop_offer_id}/editar`);
 
   const personMap = new Map(
     (persons ?? []).map((item) => [

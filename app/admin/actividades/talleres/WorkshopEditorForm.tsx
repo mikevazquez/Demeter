@@ -1,0 +1,372 @@
+"use client";
+import Link from "next/link";
+import { useActionState, useRef, useState } from "react";
+import { receivedAmountMinor } from "@/src/lib/workshops/admin";
+import type {
+  WorkshopDraft,
+  WorkshopEditorContext,
+  WorkshopEditorDate,
+} from "@/src/lib/workshops/editor";
+import { saveWorkshop } from "./editor-actions";
+
+type Row = Omit<WorkshopEditorDate, "priceMinor"> & { key: string; price: string };
+const emptyRow = (key: string): Row => ({
+  key,
+  sessionId: "",
+  date: "",
+  time: "10:00",
+  disciplineId: "",
+  instructorId: "",
+  spaceId: "",
+  durationMinutes: 60,
+  capacity: 10,
+  price: "",
+});
+export function WorkshopEditorForm({
+  context,
+  offerId,
+  requestId,
+}: {
+  context: WorkshopEditorContext;
+  offerId?: string;
+  requestId: string;
+}) {
+  const initial = context.draft;
+  const [state, action, pending] = useActionState(saveWorkshop, { error: null });
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [fullPrice, setFullPrice] = useState(initial ? String(initial.fullPriceMinor / 100) : "");
+  const [allowIndividual, setAllowIndividual] = useState(initial?.allowIndividualSessions ?? false);
+  const [enrollment, setEnrollment] = useState(
+    initial?.requiresEnrollment == null
+      ? "inherit"
+      : initial.requiresEnrollment
+        ? "required"
+        : "not_required",
+  );
+  const [depositMode, setDepositMode] = useState<WorkshopDraft["depositMode"]>(
+    initial?.depositMode ?? "full",
+  );
+  const [deposit, setDeposit] = useState(
+    initial?.depositValue == null
+      ? "50"
+      : String(initial.depositMode === "fixed" ? initial.depositValue / 100 : initial.depositValue),
+  );
+  const [due, setDue] = useState(initial?.balanceDueLocal ?? "");
+  const [overdue, setOverdue] = useState(initial?.overdueMode ?? "inherit");
+  const [grace, setGrace] = useState(String(initial?.graceMinutes ?? 0));
+  const [rows, setRows] = useState<Row[]>(() =>
+    initial?.dates.length
+      ? initial.dates.map((row, index) => ({
+          ...row,
+          key: row.sessionId || `new-${index}`,
+          price: row.priceMinor == null ? "" : String(row.priceMinor / 100),
+        }))
+      : [emptyRow("new-0")],
+  );
+  const sequence = useRef(rows.length);
+  const updateRow = (key: string, patch: Partial<Row>) =>
+    setRows((previous) => previous.map((row) => (row.key === key ? { ...row, ...patch } : row)));
+  const payload: WorkshopDraft | Pick<WorkshopDraft, "title"> = context.locked
+    ? { title: title.trim() }
+    : {
+        title: title.trim(),
+        fullPriceMinor: receivedAmountMinor(fullPrice) ?? 0,
+        allowIndividualSessions: allowIndividual,
+        requiresEnrollment: enrollment === "inherit" ? null : enrollment === "required",
+        depositMode,
+        depositValue:
+          depositMode === "full"
+            ? null
+            : depositMode === "fixed"
+              ? (receivedAmountMinor(deposit) ?? 0)
+              : Number(deposit),
+        balanceDueLocal: depositMode === "full" ? "" : due,
+        overdueMode: overdue === "inherit" ? null : (overdue as WorkshopDraft["overdueMode"]),
+        graceMinutes:
+          overdue === "inherit" ? null : overdue === "keep_and_notify" ? 0 : Number(grace),
+        dates: rows.map((row) => ({
+          sessionId: row.sessionId,
+          date: row.date,
+          time: row.time,
+          disciplineId: row.disciplineId,
+          instructorId: row.instructorId,
+          spaceId: row.spaceId,
+          durationMinutes: row.durationMinutes,
+          capacity: row.capacity,
+          priceMinor: allowIndividual ? receivedAmountMinor(row.price) : null,
+        })),
+      };
+  if (state.saved)
+    return (
+      <section className="activities-stage" role="status">
+        <h2>Taller guardado</h2>
+        <p>Los cambios quedaron registrados.</p>
+        <Link href={`/admin/actividades/talleres/${state.saved.offerId}`}>Ver taller</Link>
+        <Link href="/admin/actividades/talleres">Volver a talleres</Link>
+      </section>
+    );
+  return (
+    <form action={action} onReset={(event) => event.preventDefault()} className="activities-stage">
+      <input type="hidden" name="payload" value={JSON.stringify(payload)} />
+      <input type="hidden" name="offer_id" value={offerId ?? ""} />
+      <input type="hidden" name="request_id" value={requestId} />
+      <input type="hidden" name="revision" value={context.revision ?? ""} />
+      <label className="activities-field">
+        <span>Nombre del taller</span>
+        <input
+          required
+          maxLength={80}
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          disabled={pending}
+        />
+      </label>
+      {context.locked ? (
+        <p role="status">
+          Por su historial o sus fechas, este taller solo permite cambiar el nombre. Las compras,
+          pagos y reservas se conservan.
+        </p>
+      ) : null}
+      <fieldset className="workshop-purchase-fields" disabled={pending || context.locked}>
+        <legend>Precios y políticas</legend>
+        <p>
+          Precios en {context.currency}. Horarios del estudio: {context.timeZone}.
+        </p>
+        <div className="activities-form-grid">
+          <label className="activities-field">
+            <span>Precio completo</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0.01"
+              step="0.01"
+              required
+              value={fullPrice}
+              onChange={(event) => setFullPrice(event.target.value)}
+            />
+          </label>
+          <label className="activities-field">
+            <span>Inscripción</span>
+            <select value={enrollment} onChange={(event) => setEnrollment(event.target.value)}>
+              <option value="inherit">
+                Usar configuración del estudio (
+                {context.studioPolicy.requiresEnrollment ? "obligatoria" : "no obligatoria"})
+              </option>
+              <option value="required">Obligatoria</option>
+              <option value="not_required">No obligatoria</option>
+            </select>
+          </label>
+          <label className="activities-field">
+            <span>Forma de pago</span>
+            <select
+              value={depositMode}
+              onChange={(event) => {
+                setDepositMode(event.target.value as WorkshopDraft["depositMode"]);
+                setDeposit("50");
+              }}
+            >
+              <option value="full">Pago completo</option>
+              <option value="fixed">Anticipo fijo</option>
+              <option value="percent">Anticipo porcentual</option>
+            </select>
+          </label>
+          {depositMode !== "full" ? (
+            <>
+              <label className="activities-field">
+                <span>{depositMode === "fixed" ? "Anticipo fijo" : "Porcentaje de anticipo"}</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  max={depositMode === "percent" ? 100 : undefined}
+                  step="0.01"
+                  required
+                  value={deposit}
+                  onChange={(event) => setDeposit(event.target.value)}
+                />
+              </label>
+              <label className="activities-field">
+                <span>Vencimiento del saldo</span>
+                <input
+                  type="datetime-local"
+                  required
+                  value={due}
+                  onChange={(event) => setDue(event.target.value)}
+                />
+              </label>
+            </>
+          ) : null}
+          <label className="activities-field">
+            <span>Si vence el saldo</span>
+            <select value={overdue} onChange={(event) => setOverdue(event.target.value)}>
+              <option value="inherit">Usar configuración del estudio</option>
+              <option value="keep_and_notify">Conservar reservas y avisar</option>
+              <option value="release_after_grace">Liberar después de la gracia</option>
+            </select>
+          </label>
+          {overdue === "release_after_grace" ? (
+            <label className="activities-field">
+              <span>Minutos de gracia</span>
+              <input
+                type="number"
+                min="0"
+                max="525600"
+                step="1"
+                required
+                value={grace}
+                onChange={(event) => setGrace(event.target.value)}
+              />
+            </label>
+          ) : null}
+        </div>
+        <label>
+          <input
+            type="checkbox"
+            checked={allowIndividual}
+            onChange={(event) => setAllowIndividual(event.target.checked)}
+          />{" "}
+          Permitir compra de fechas individuales
+        </label>
+        <h2>Fechas del taller</h2>
+        {rows.map((row, index) => (
+          <fieldset key={row.key} className="workshop-editor-date">
+            <legend>Fecha {index + 1}</legend>
+            <div className="activities-form-grid">
+              <label className="activities-field">
+                <span>Día</span>
+                <input
+                  type="date"
+                  required
+                  value={row.date}
+                  onChange={(event) => updateRow(row.key, { date: event.target.value })}
+                />
+              </label>
+              <label className="activities-field">
+                <span>Hora</span>
+                <input
+                  type="time"
+                  required
+                  value={row.time}
+                  onChange={(event) => updateRow(row.key, { time: event.target.value })}
+                />
+              </label>
+              <label className="activities-field">
+                <span>Disciplina</span>
+                <select
+                  required
+                  value={row.disciplineId}
+                  onChange={(event) => updateRow(row.key, { disciplineId: event.target.value })}
+                >
+                  <option value="">Seleccionar</option>
+                  {context.disciplines.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="activities-field">
+                <span>Duración en minutos</span>
+                <input
+                  type="number"
+                  min="15"
+                  max="360"
+                  step="1"
+                  required
+                  value={row.durationMinutes}
+                  onChange={(event) =>
+                    updateRow(row.key, { durationMinutes: Number(event.target.value) })
+                  }
+                />
+              </label>
+              <label className="activities-field">
+                <span>Cupo</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="10000"
+                  step="1"
+                  required
+                  value={row.capacity}
+                  onChange={(event) => updateRow(row.key, { capacity: Number(event.target.value) })}
+                />
+              </label>
+              {allowIndividual ? (
+                <label className="activities-field">
+                  <span>Precio individual</span>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    required
+                    value={row.price}
+                    onChange={(event) => updateRow(row.key, { price: event.target.value })}
+                  />
+                </label>
+              ) : null}
+              <label className="activities-field">
+                <span>Coach</span>
+                <select
+                  value={row.instructorId}
+                  onChange={(event) => updateRow(row.key, { instructorId: event.target.value })}
+                >
+                  <option value="">Sin asignar</option>
+                  {context.instructors.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="activities-field">
+                <span>Espacio</span>
+                <select
+                  value={row.spaceId}
+                  onChange={(event) => updateRow(row.key, { spaceId: event.target.value })}
+                >
+                  <option value="">Sin asignar</option>
+                  {context.spaces.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <button
+              type="button"
+              disabled={rows.length === 1}
+              onClick={() => setRows((previous) => previous.filter((item) => item.key !== row.key))}
+            >
+              Quitar fecha {index + 1}
+            </button>
+          </fieldset>
+        ))}
+        <button
+          type="button"
+          disabled={rows.length >= 100}
+          onClick={() => {
+            const row = emptyRow(`new-${sequence.current++}`);
+            setRows((previous) => [...previous, row]);
+          }}
+        >
+          Agregar fecha
+        </button>
+        {!context.disciplines.length ? (
+          <p role="alert">Necesitas una disciplina activa para crear las fechas.</p>
+        ) : null}
+      </fieldset>
+      {state.error ? (
+        <p className="activities-inline-error" role="alert">
+          {state.error}
+        </p>
+      ) : null}
+      <button
+        className="activities-next-button"
+        type="submit"
+        disabled={pending || (!context.locked && !context.disciplines.length)}
+      >
+        {pending ? "Guardando…" : "Guardar taller"}
+      </button>
+    </form>
+  );
+}

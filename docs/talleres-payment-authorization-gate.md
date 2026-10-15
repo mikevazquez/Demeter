@@ -28,7 +28,7 @@ This manual-review path records an authorized staff member's attestation. It doe
 
 The server action resolves the selected studio through `getAdminContext` and ignores tenant, total and authorization IDs submitted in the form. The database verifies the offer and active student belong to that studio. Price comes from the offer; only the received amount and a staff receipt attestation are submitted. The purchase wrapper creates/consumes authorization and creates financial/reservation rows in one transaction. Booking/document restrictions and enrollment requirements block new purchases before reservations. Failure rolls back the authorization as well; it does not reverse funds received outside the app. A replay returns the original receipt without re-running booking blockers for an already consumed authorization.
 
-`/admin/actividades/talleres` lists existing configured offers. Its detail form supports full or multiple individual dates, minimum deposit, received amount, remaining balance, due date and received cash/reviewed transfer. It preserves the same request key and all fields after a rejected response and shows confirmation only from the server receipt. Creating/editing workshop offers is not part of this screen. The earlier program flow remains separate.
+`/admin/actividades/talleres` lists existing configured offers. Its detail form supports full or multiple individual dates, minimum deposit, received amount, remaining balance, due date and received cash/reviewed transfer. It preserves the same request key and all fields after a rejected response and shows confirmation only from the server receipt. Creating/editing offers is provided by the separate authoring routes below. The earlier program flow remains separate.
 
 ## Local verification and remaining prerequisites
 
@@ -62,3 +62,13 @@ Implement a dedicated immutable workshop payment authorization record (or equiva
 3. Keep 0/18 UAT formally approved until end-to-end evidence exists.
 
 The local manual-review implementation covers part of this contract. It is not evidence of deployed payment verification or functional UAT acceptance.
+
+## Workshop authoring — local only, 2026-10-15
+
+`20261015134549_workshop_editor.sql` and `/admin/actividades/talleres/nuevo` plus `/admin/actividades/talleres/[offerId]/editar` add creation and conservative editing. Authors require `products.write` and `schedule.write`; the server derives the studio from the session. Each workshop owns inactive templates and concrete future Agenda dates, with discipline, coach, space, duration, capacity, full/individual prices, deposit, balance due date and inherited/overridden enrollment and overdue policies. Dedicated templates are hidden from regular activities; regular package eligibility excludes owned dates, including retired dates, while preserving legacy program rules.
+
+Before any purchase, payment authorization, reservation history or expired/non-scheduled/unowned date, the full configuration is editable. Retained sessions keep their IDs; removed dates are cancelled, never deleted. Once locked, only the name can change. A session trigger blocks deletion and commercial schedule/capacity changes after holds. Save requests record exact payload and revision; identical retries return the original result. Concurrent edits require the current revision. Authoring serializes schedule checks within the studio; concurrency with every generic Agenda writer remains a full-application verification prerequisite.
+
+The purchase UI submits its displayed revision to `admin_purchase_workshop_checked`. A stale, unconfirmed purchase is rejected before financial or authorization records are created. Confirmed identical retries still return their original receipt. The reader locks the offer while loading prices and revision together. Previous unchecked administrative purchase endpoints and standalone public review are revoked from clients; the trusted owner implementation remains internal.
+
+Validation: 41 PostgreSQL scenarios, 1,323 Vitest tests, lint (zero errors, 19 existing warnings), types, format and production compilation. Six editor browser component checks and six purchase regression checks passed. Browser actions/Link and external host domain helpers are explicit doubles; real Supabase sessions, PostgREST, Next transport, the full Demeter schema and end-to-end Agenda booking remain unverified. Evidence: `docs/talleres-editor-local-evidence-20261015.json`. No remote migration, push or deployment; UAT stays **0/18**.

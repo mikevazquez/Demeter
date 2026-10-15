@@ -14,8 +14,13 @@ create function auth.role() returns text language sql stable as $$
   select nullif(current_setting('request.jwt.claims', true), '')::jsonb->>'role';
 $$;
 grant usage on schema public, auth to anon, authenticated, service_role;
-create table public.studios (id uuid primary key, currency text not null default 'MXN', status text not null default 'active');
-create table public.disciplines (id uuid primary key);
+create table public.studios (id uuid primary key, currency text not null default 'MXN', status text not null default 'active', timezone text not null default 'America/Mexico_City');
+create table public.disciplines (id uuid primary key, studio_id uuid references public.studios(id), name text not null default 'Local discipline', active boolean not null default true);
+create table public.persons (id uuid primary key, studio_id uuid references public.studios(id), first_name text not null, last_name text);
+create table public.instructors (id uuid primary key, studio_id uuid references public.studios(id), person_id uuid references public.persons(id), status text not null default 'active');
+create table public.spaces (id uuid primary key, studio_id uuid references public.studios(id), name text not null, active boolean not null default true, capacity integer);
+create table public.activity_programs (id uuid primary key, studio_id uuid references public.studios(id), full_product_id uuid);
+create table public.activity_program_sessions (program_id uuid references public.activity_programs(id), session_id uuid, single_product_id uuid);
 create table public.user_accounts (id uuid primary key references auth.users(id), status text not null default 'active');
 create table public.students (
   id uuid primary key, studio_id uuid not null references public.studios(id), user_id uuid,
@@ -41,8 +46,17 @@ revoke all on function private.has_capability(uuid,text) from public;
 grant usage on schema private to authenticated, service_role;
 grant execute on function private.has_capability(uuid,text) to authenticated;
 
+create table public.class_templates (
+ id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id),
+ discipline_id uuid not null references public.disciplines(id), name text not null,
+ duration_minutes integer not null check(duration_minutes between 15 and 360),
+ capacity integer not null check(capacity>0), active boolean not null default true,
+ program_id uuid references public.activity_programs(id)
+);
 create table public.class_sessions (
-  id uuid primary key, studio_id uuid not null references public.studios(id),
+  id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id),
+  template_id uuid references public.class_templates(id), instructor_id uuid references public.instructors(id),
+  space_id uuid references public.spaces(id), assistant_visible boolean not null default true,
   starts_at timestamptz not null, capacity integer not null check(capacity>0),
   ends_at timestamptz not null default (now()+interval '21 days'),
   status text not null default 'scheduled'
@@ -80,7 +94,7 @@ insert into auth.users values
   ('00000000-0000-4000-8000-000000000013');
 insert into public.user_accounts(id) select id from auth.users;
 insert into public.role_capabilities values ('admin','sales.write'),('admin','schedule.write'),
-  ('admin','sales.read'),('admin','schedule.read'),('admin','students.read'),
+  ('admin','sales.read'),('admin','schedule.read'),('admin','students.read'),('admin','products.write'),
   ('sales_only','sales.write'),('reader','schedule.read'),('reader','sales.read');
 insert into public.studio_memberships(studio_id,user_id,role) values
   ('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000011','admin'),

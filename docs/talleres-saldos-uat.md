@@ -32,6 +32,14 @@ Resultado: **30/30 escenarios PostgreSQL**, **1,310 tests Vitest**, compilación
 - Saldo vencido: conservar y avisar, o liberar tras gracia configurable.
 - Politica historica congelada por compra; pagos y reservas idempotentes.
 
+## Alta y edición administrativa — local, 2026-10-15
+
+Se implementaron «Nuevo taller» y «Editar taller» con fechas concretas de Agenda, disciplina, duración, cupo, coach, espacio, precios completos/individuales, anticipos, vencimiento e inscripción/política heredada. Las fechas dedicadas quedan fuera de actividades y paquetes regulares. Antes de actividad comercial se permite editar la configuración; con compras, autorizaciones o historial de reservas, solo el nombre. Fechas retiradas quedan canceladas y las conservadas mantienen su identificador.
+
+El guardado es idempotente y exige la revisión vigente. La compra también exige la revisión mostrada: un precio desactualizado no puede generar un saldo imprevisto. Se verificaron carreras entre compra y edición, aislamiento por estudio y rollback ante conflictos. **41/41 escenarios PostgreSQL**, **1,323 tests Vitest**, tipos, lint, formato y build correctos; seis comprobaciones de componente del editor y seis de compra. Evidencia: `docs/talleres-editor-local-evidence-20261015.json`.
+
+Las migraciones siguen pendientes fuera del entorno local. El navegador usó dobles de acción/Link y la base de pruebas conserva motores externos reducidos: falta integración real autenticada con el esquema completo, reglas de Agenda y PostgREST en Sandbox. **UAT 0/18; PR pausado y producción sin cambios.**
+
 ## Matriz UAT pendiente
 
 TALL-01 catalogo; 02 precios; 03 compra multiple; 04 capacidad; 05 inscripcion; 06 publico externo; 07 anticipo; 08 reserva atomica; 09 vencimiento; 10 abonos; 11 cancelacion; 12 Demi/portal; 13 regresion; 14 conservar y avisar; 15 liberar tras gracia; 16 carrera con pago; 17 politica historica; 18 aislamiento multiestudio.

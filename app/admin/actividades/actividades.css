@@ -393,6 +393,15 @@
   padding-left: 14px;
 }
 
+.workshop-editor-date {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--activities-line, #e3eaf1);
+  border-radius: 16px;
+}
+
 .activities-stage {
   display: grid;
   gap: 16px;

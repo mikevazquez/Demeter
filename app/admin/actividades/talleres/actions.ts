@@ -20,7 +20,7 @@ export async function purchaseWorkshop(
   if (!input.ok) return { error: input.error };
   let response;
   try {
-    response = await ctx.supabase.rpc("admin_purchase_workshop", {
+    response = await ctx.supabase.rpc("admin_purchase_workshop_checked", {
       p_studio_id: ctx.studio.id,
       p_offer_id: input.offerId,
       p_student_id: input.studentId,
@@ -31,6 +31,7 @@ export async function purchaseWorkshop(
       p_payment_method: input.method,
       p_reference: input.reference,
       p_received: true,
+      p_expected_revision: input.revision,
     });
   } catch {
     return { error: workshopPurchaseError("") };

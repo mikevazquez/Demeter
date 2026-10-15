@@ -783,6 +783,340 @@ try {
       "1",
     );
   });
+  query(`begin; ${source("supabase/migrations/20261015134549_workshop_editor.sql")}; commit;`);
+  query(`insert into public.disciplines(id,studio_id,name) values
+    (${sqlString(id(101))},${sqlString(studio)},'Aro'),(${sqlString(id(102))},${sqlString(studio)},'Telas'),(${sqlString(id(103))},${sqlString(otherStudio)},'Other');
+    insert into public.persons(id,studio_id,first_name) values (${sqlString(id(110))},${sqlString(studio)},'Local coach'),(${sqlString(id(114))},${sqlString(otherStudio)},'Other coach');
+    insert into public.instructors(id,studio_id,person_id) values (${sqlString(id(111))},${sqlString(studio)},${sqlString(id(110))}),(${sqlString(id(113))},${sqlString(otherStudio)},${sqlString(id(114))});
+    insert into public.spaces(id,studio_id,name,capacity) values (${sqlString(id(121))},${sqlString(studio)},'Local room',8),(${sqlString(id(122))},${sqlString(studio)},'Small room',1),(${sqlString(id(123))},${sqlString(otherStudio)},'Other room',8);`);
+  let editorSequence = 0;
+  const futureDate = (days) => new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
+  const draft = () => {
+    const sequence = editorSequence++;
+    return {
+      title: `Editor ${sequence}`,
+      fullPriceMinor: 60000,
+      allowIndividualSessions: true,
+      requiresEnrollment: null,
+      depositMode: "percent",
+      depositValue: 50,
+      balanceDueLocal: futureDate(60) + "T12:00",
+      overdueMode: "release_after_grace",
+      graceMinutes: 60,
+      dates: [0, 1].map((offset) => ({
+        sessionId: "",
+        date: futureDate(100 + sequence * 4 + offset),
+        time: "10:00",
+        disciplineId: id(101 + offset),
+        durationMinutes: 60,
+        capacity: 3,
+        priceMinor: 15000,
+        instructorId: id(111),
+        spaceId: id(121),
+      })),
+    };
+  };
+  const editorContextSql = (offerId = null, scope = studio) =>
+    `select public.admin_workshop_editor_context(${sqlString(scope)},${sqlString(offerId)})`;
+  const editorContext = (offerId) =>
+    json(asRole("authenticated", admin, editorContextSql(offerId)));
+  const saveSql = (
+    body,
+    { offerId = null, revision = null, key = randomUUID(), scope = studio } = {},
+  ) =>
+    `select public.admin_save_workshop(${sqlString(scope)},${sqlString(offerId)},${sqlString(key)},${revision ?? "null"},${sqlString(JSON.stringify(body))}::jsonb)`;
+  const save = (body, options) => json(asRole("authenticated", admin, saveSql(body, options)));
+  const checkedSql = (r, revision = 1) =>
+    purchaseSql(r)
+      .replace("admin_purchase_workshop(", "admin_purchase_workshop_checked(")
+      .replace(/\)$/, `,${revision})`);
+  const checkedPurchase = (r, revision = 1) =>
+    json(asRole("authenticated", admin, checkedSql(r, revision)));
+  const purchaseFor = (context, offerId, overrides = {}) =>
+    review({ offerId, sessions: context.draft.dates.map((row) => row.sessionId) }, overrides);
+
+  await test("editor context and save require active schedule/products permissions in this studio", () => {
+    const body = draft();
+    denied(asRole("anon", null, saveSql(body)), "permission denied");
+    denied(asRole("service_role", null, saveSql(body)), "permission denied");
+    denied(asRole("authenticated", id(12), saveSql(body)), "forbidden");
+    denied(asRole("authenticated", admin, saveSql(body, { scope: otherStudio })), "forbidden");
+    denied(asRole("authenticated", admin, editorContextSql(null, otherStudio)), "forbidden");
+    const ctx = editorContext(null);
+    assert.equal(ctx.timeZone, "America/Mexico_City");
+    assert.equal(ctx.disciplines.length, 2);
+    assert.ok(!ctx.spaces.some((s) => s.id === id(123)));
+    denied(
+      asRole("authenticated", admin, "select * from private.workshop_editor_requests"),
+      "permission denied",
+    );
+  });
+  await test("creation creates dedicated Agenda dates with studio timezone and preserves inherited policy", () => {
+    const body = draft(),
+      receipt = save(body),
+      ctx = editorContext(receipt.offer_id);
+    assert.equal(receipt.revision, 1);
+    assert.equal(ctx.locked, false);
+    assert.equal(ctx.draft.requiresEnrollment, null);
+    assert.equal(ctx.draft.depositValue, 50);
+    assert.equal(ctx.draft.dates.length, 2);
+    assert.equal(ctx.draft.dates[0].date, body.dates[0].date);
+    assert.equal(ctx.draft.dates[0].time, "10:00");
+    assert.equal(
+      query(
+        `select extract(hour from starts_at at time zone 'UTC') from public.class_sessions where id=${sqlString(ctx.draft.dates[0].sessionId)}`,
+      ),
+      "16",
+    );
+    assert.equal(
+      query(
+        `select count(*) from public.class_templates where workshop_offer_id=${sqlString(receipt.offer_id)} and not active`,
+      ),
+      "2",
+    );
+    assert.equal(
+      query(
+        `select count(*) from public.class_sessions s join public.class_templates t on t.id=s.template_id where t.workshop_offer_id=${sqlString(receipt.offer_id)} and not s.assistant_visible`,
+      ),
+      "2",
+    );
+    assert.equal(
+      query(
+        `select count(*) from public.sales where student_id=${sqlString(student)} and idempotency_key=${sqlString(receipt.offer_id)}`,
+      ),
+      "0",
+    );
+  });
+  await test("creation and edits are idempotent, including simultaneous retries", async () => {
+    const body = draft(),
+      key = randomUUID();
+    const results = await Promise.all(
+      [0, 1].map(() =>
+        concurrent(
+          asRole("authenticated", admin, `${saveSql(body, { key })};select pg_sleep(0.2)`),
+        ),
+      ),
+    );
+    for (const result of results) assert.equal(result.status, 0, result.stderr);
+    const receipts = results.map((result) => JSON.parse(result.stdout.trim()));
+    assert.equal(receipts[0].offer_id, receipts[1].offer_id);
+    assert.deepEqual(receipts.map((r) => r.replayed).sort(), [false, true]);
+    denied(
+      asRole("authenticated", admin, saveSql({ ...body, title: "Changed" }, { key })),
+      "idempotency_conflict",
+    );
+  });
+  await test("invalid date, foreign discipline, insufficient space and conflicts roll back all authoring rows", () => {
+    const before = query("select count(*) from public.workshop_offers");
+    const beforeSessions = query("select count(*) from public.class_sessions");
+    for (const [patch, error] of [
+      [{ disciplineId: id(103) }, "invalid_discipline"],
+      [{ spaceId: id(122) }, "invalid_space"],
+      [{ instructorId: id(113) }, "invalid_instructor"],
+      [{ date: "2026-02-30" }, "date/time field value out of range"],
+    ]) {
+      const body = draft();
+      body.dates[1] = { ...body.dates[1], ...patch };
+      denied(asRole("authenticated", admin, saveSql(body)), error);
+    }
+    const overlap = draft();
+    overlap.dates[1].date = overlap.dates[0].date;
+    overlap.dates[1].time = "10:30";
+    denied(asRole("authenticated", admin, saveSql(overlap)), "session_conflict");
+    assert.equal(query("select count(*) from public.workshop_offers"), before);
+    assert.equal(query("select count(*) from public.class_sessions"), beforeSessions);
+  });
+  await test("unsold edit preserves existing session identity and retires removed dates without deletion", () => {
+    const made = save(draft()),
+      ctx = editorContext(made.offer_id),
+      original = ctx.draft.dates[1].sessionId;
+    const update = {
+      ...ctx.draft,
+      title: "Edited future workshop",
+      fullPriceMinor: 65000,
+      dates: [{ ...ctx.draft.dates[0], time: "11:00", capacity: 4 }],
+    };
+    const changed = save(update, { offerId: made.offer_id, revision: ctx.revision });
+    assert.equal(changed.revision, 2);
+    const after = editorContext(made.offer_id);
+    assert.equal(after.draft.dates.length, 1);
+    assert.equal(after.draft.dates[0].sessionId, ctx.draft.dates[0].sessionId);
+    assert.equal(
+      query(`select status from public.class_sessions where id=${sqlString(original)}`),
+      "cancelled",
+    );
+    denied(
+      `delete from public.class_sessions where id=${sqlString(original)}`,
+      "workshop_session_delete_forbidden",
+    );
+  });
+  await test("stale edits and cross-offer session reassignment are rejected", () => {
+    const first = save(draft()),
+      second = save(draft()),
+      a = editorContext(first.offer_id),
+      b = editorContext(second.offer_id);
+    save({ ...a.draft, title: "First update" }, { offerId: first.offer_id, revision: 1 });
+    denied(
+      asRole(
+        "authenticated",
+        admin,
+        saveSql({ ...a.draft, title: "Stale update" }, { offerId: first.offer_id, revision: 1 }),
+      ),
+      "workshop_revision_conflict",
+    );
+    const current = editorContext(first.offer_id);
+    current.draft.dates[0].sessionId = b.draft.dates[0].sessionId;
+    denied(
+      asRole(
+        "authenticated",
+        admin,
+        saveSql(current.draft, { offerId: first.offer_id, revision: 2 }),
+      ),
+      "invalid_workshop_session",
+    );
+  });
+  await test("commercial history freezes prices/policy/dates while allowing an audited name-only edit", () => {
+    const made = save(draft()),
+      ctx = editorContext(made.offer_id),
+      r = purchaseFor(ctx, made.offer_id, { amount: 30000 });
+    const purchase = checkedPurchase(r);
+    const historical = query(
+      `select to_jsonb(w)::text from public.workshop_purchases w where id=${sqlString(purchase.purchase_id)}`,
+    );
+    assert.equal(editorContext(made.offer_id).locked, true);
+    denied(
+      asRole(
+        "authenticated",
+        admin,
+        saveSql({ ...ctx.draft, fullPriceMinor: 65000 }, { offerId: made.offer_id, revision: 1 }),
+      ),
+      "workshop_edit_locked",
+    );
+    const renamed = save({ title: "New public name" }, { offerId: made.offer_id, revision: 1 });
+    assert.equal(renamed.revision, 2);
+    assert.equal(
+      query(
+        `select to_jsonb(w)::text from public.workshop_purchases w where id=${sqlString(purchase.purchase_id)}`,
+      ),
+      historical,
+    );
+    denied(
+      `update public.class_sessions set capacity=10 where id=${sqlString(r.sessions[0])}`,
+      "workshop_edit_locked",
+    );
+    denied(
+      `update public.class_sessions set status='cancelled' where id=${sqlString(r.sessions[0])}`,
+      "workshop_edit_locked",
+    );
+    assert.equal(checkedPurchase(r, 1).replayed, true);
+  });
+  await test("unconsumed reviewed payment and historical reservations also freeze configuration", () => {
+    const made = save(draft()),
+      ctx = editorContext(made.offer_id),
+      r = purchaseFor(ctx, made.offer_id);
+    // Trusted owner executes the preserved review primitive; client grant is retired.
+    query(
+      `begin;set local request.jwt.claims=${sqlString(JSON.stringify({ role: "authenticated", sub: admin }))};${authorizationSql(r)};commit;`,
+    );
+    assert.equal(editorContext(made.offer_id).locked, true);
+    denied(
+      asRole(
+        "authenticated",
+        admin,
+        saveSql(
+          { ...ctx.draft, title: "Full forbidden edit" },
+          { offerId: made.offer_id, revision: 1 },
+        ),
+      ),
+      "workshop_edit_locked",
+    );
+    const other = save(draft()),
+      o = editorContext(other.offer_id);
+    query(
+      `insert into public.reservations(studio_id,session_id,student_id,status,credits_held) values (${sqlString(studio)},${sqlString(o.draft.dates[0].sessionId)},${sqlString(student)},'cancelled',0)`,
+    );
+    assert.equal(editorContext(other.offer_id).locked, true);
+  });
+  await test("changed prices reject stale checkout without recording an unexpected balance", () => {
+    const made = save(draft()),
+      ctx = editorContext(made.offer_id),
+      r = purchaseFor(ctx, made.offer_id);
+    save({ ...ctx.draft, fullPriceMinor: 65000 }, { offerId: made.offer_id, revision: 1 });
+    denied(asRole("authenticated", admin, checkedSql(r, 1)), "workshop_revision_conflict");
+    noPurchase(r);
+    noAuthorization(r);
+    assert.equal(checkedPurchase(r, 2).total_minor, 65000);
+    denied(
+      asRole("authenticated", admin, purchaseSql({ ...r, key: randomUUID() })),
+      "permission denied",
+    );
+    denied(
+      asRole("authenticated", admin, authorizationSql({ ...r, key: randomUUID() })),
+      "permission denied",
+    );
+  });
+  await test("concurrent purchase/edit yields either a frozen edit or a stale checkout, never a mixed contract", async () => {
+    const made = save(draft()),
+      ctx = editorContext(made.offer_id),
+      r = purchaseFor(ctx, made.offer_id);
+    const results = await Promise.all([
+      concurrent(asRole("authenticated", admin, `${checkedSql(r, 1)};select pg_sleep(0.2)`)),
+      concurrent(
+        asRole(
+          "authenticated",
+          admin,
+          `${saveSql({ ...ctx.draft, fullPriceMinor: 70000 }, { offerId: made.offer_id, revision: 1 })};select pg_sleep(0.2)`,
+        ),
+      ),
+    ]);
+    assert.equal(results.filter((r) => r.status === 0).length, 1, JSON.stringify(results));
+    assert.ok(
+      results.some(
+        (r) =>
+          r.stderr.includes("workshop_edit_locked") ||
+          r.stderr.includes("workshop_revision_conflict"),
+      ),
+    );
+  });
+  await test("regular packages cannot enter owned or retired workshop dates; legacy/normal rules remain intact", () => {
+    const made = save(draft()),
+      ctx = editorContext(made.offer_id),
+      product = randomUUID();
+    assert.equal(
+      query(
+        `select private.program_product_allows_session(${sqlString(product)},${sqlString(ctx.draft.dates[0].sessionId)})`,
+      ),
+      "f",
+    );
+    const regular = json(
+      `insert into public.class_templates(studio_id,discipline_id,name,duration_minutes,capacity) values (${sqlString(studio)},${sqlString(id(101))},'Regular',60,3) returning to_jsonb(class_templates)`,
+    );
+    const session = json(
+      `insert into public.class_sessions(studio_id,template_id,starts_at,capacity) values (${sqlString(studio)},${sqlString(regular.id)},now()+interval '1000 days',3) returning to_jsonb(class_sessions)`,
+    );
+    assert.equal(
+      query(
+        `select private.program_product_allows_session(${sqlString(product)},${sqlString(session.id)})`,
+      ),
+      "t",
+    );
+    const program = randomUUID();
+    query(`insert into public.activity_programs(id,studio_id,full_product_id) values (${sqlString(program)},${sqlString(studio)},${sqlString(product)});
+      update public.class_templates set program_id=${sqlString(program)} where id=${sqlString(regular.id)};
+      insert into public.activity_program_sessions(program_id,session_id) values (${sqlString(program)},${sqlString(session.id)})`);
+    assert.equal(
+      query(
+        `select private.program_product_allows_session(${sqlString(product)},${sqlString(session.id)})`,
+      ),
+      "t",
+    );
+    assert.equal(
+      query(
+        `select private.program_product_allows_session(${sqlString(randomUUID())},${sqlString(session.id)})`,
+      ),
+      "f",
+    );
+  });
   console.log(
     `${passed}/${passed} local PostgreSQL integration scenarios passed. No remote database used.`,
   );

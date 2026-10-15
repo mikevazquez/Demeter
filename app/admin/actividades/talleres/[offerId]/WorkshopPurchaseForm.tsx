@@ -117,6 +117,7 @@ export function WorkshopPurchaseForm({
       <fieldset className="workshop-purchase-fields" disabled={pending || unavailable}>
         <input type="hidden" name="offer_id" value={offer.id} />
         <input type="hidden" name="request_id" value={requestId} />
+        <input type="hidden" name="offer_revision" value={offer.revision} />
         {(quote.ok ? quote.sessionIds : []).map((id) => (
           <input type="hidden" name="session_ids" key={id} value={id} />
         ))}
