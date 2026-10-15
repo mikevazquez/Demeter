@@ -10,12 +10,13 @@
 
 ## Matriz de riesgo y barreras
 
-| Canal | Acceso observado | Barrera existente | Riesgo residual | Barrera y prueba aún exigidas |
-| --- | --- | --- | --- | --- |
-| GitHub `main` | Rol repo admin del PO | Ruleset #24974628 ACTIVE, `update` sobre rama predeterminada, bypass vacío, `quality` requerido; entorno `sf-gov-schema-capture` rechaza ref del PR | El gate protege ref/flujo de Git, pero no credenciales administrativas de Vercel/Supabase ni otros endpoints | Controller de promoción autorizado por PO, branch de controlador restringida, prohibir ejecuciones no autorizadas; prueba de denegación y aprobación atada al mismo SHA |
-| Vercel `demeterbueno` | Team con OWNER; 7 overrides Preview aislados de rama | Build preflight verifica Candidate exacto y provider markers inertes | OWNER puede promover otro artefacto o alterar secrets/alias desde fuera del PR; Previews históricos u otras ramas no certificados | Deploy Controller con permisos mínimos y environments/roles si capacidad disponible, prohibir auto-promote a producción, verificar recursos protegidos y trazas auditables; no cambiar proyecto productivo sin «Autorizo promoción» |
-| Supabase producción `qfhojvgvhrbautvczffq` | API de administración con privilegios directos; PostgreSQL `postgres` posee DML elevado | Políticas de app, RLS y CI no restringen administrador / service-role | SQL, funciones Edge, secretos y Auth pueden mutarse fuera de GitHub | Evitar claves productivas en Candidate/CI/Preview; controlador de migraciones con aprobación externa, credenciales efímeras y alcance mínimo si plataforma lo permite, acceso/operaciones auditadas; test de rechazo de operación NO ejecutado sobre producción |
-| Supabase Candidate `sdmxtlgjkodidjtvikng` | Proyecto separado, Auth public `disable_signup=true` según settings | 8 Edge con guarda 503 antes de proveedor, diagnóstico 200/PASS, 7 overrides Preview inertes | Faltan coverage de rutas indirectas/SDK, identidad/tenant positiva | Ampliar mock/transports e identidad sintética por rol/tenant, E2E seguros, leer logs y verificar no tránsitos a proveedores |
+**GitHub `main`:** repo admin conserva acceso; ruleset #24974628 está ACTIVE con `update`, `quality` obligatorio y bypass vacío. El freeze del ref no bloquea Vercel ni Supabase. Falta controlador de promoción autorizado por PO, prueba de denegación y evidencia ligada al SHA.
+
+**Vercel `demeterbueno`:** equipo con OWNER y siete overrides exclusivos de la rama Preview. Preflight verifica Candidate y credenciales inertes, pero OWNER puede promover otro artefacto o editar secretos/alias fuera del PR. Falta verificar gate de permisos, identidad del artefacto y trazas auditables. Nada de cambios productivos sin «Autorizo promoción».
+
+**Supabase producción `qfhojvgvhrbautvczffq`:** acceso administrativo y PostgreSQL `postgres` con DML elevado. Las políticas de aplicación y CI no restringen estas vías directas. Exigir credenciales mínimas, flujo aprobado, registro de operaciones y pruebas de rechazo; no ejercitar cambios sobre producción.
+
+**Supabase Candidate `sdmxtlgjkodidjtvikng`:** Auth público `disable_signup=true`, ocho Edge con 503 antes del proveedor, diagnóstico 200/PASS y overrides Preview inertes. Falta certificar rutas indirectas/SDK e identidad sintética por rol/tenant.
 
 ## Antes de cualquier promoción de producción
 
