@@ -4,11 +4,17 @@ Solo Sandbox. Produccion protegida.
 
 ## Desarrollo local — 15 octubre 2026
 
-Se implementó una autorización inmutable de recepción manual de efectivo/transferencia, restringida a personal autenticado con `sales.write` por estudio. El checkout nuevo consume esa autorización una sola vez dentro de la transacción de venta, pago y reservas; los RPC anteriores que aceptan importes libres quedan revocados en la migración preparada. Detalles y límites en `docs/talleres-payment-authorization-gate.md`.
+Se implementó una autorización inmutable de recepción manual de efectivo/transferencia, restringida a personal autenticado con `sales.write` y `schedule.write` por estudio, cuenta y estudio activos. El checkout nuevo consume esa autorización una sola vez dentro de la transacción de venta, pago y reservas; los RPC anteriores quedan revocados en la migración preparada. Detalles y límites en `docs/talleres-payment-authorization-gate.md`.
 
-La migración nueva **solo se ejecutó en PostgreSQL local aislado**. No está aplicada a Sandbox ni producción, no se conectó a UI/portal/Demi y no se reactivó el PR pausado. Las verificaciones locales no cierran aceptación: **UAT continúa 0/18**. Sigue pendiente reconciliar el esquema base de talleres, que existe en Sandbox pero no está versionado junto con los RPC v1 en esta rama.
+La migración nueva **solo se ejecutó en PostgreSQL local aislado**. No está aplicada a Sandbox ni producción, no se conectó a UI/portal/Demi y no se reactivó el PR pausado. Las verificaciones locales no cierran aceptación: **UAT continúa 0/18**.
 
 Validación local: **17/17 escenarios de integración PostgreSQL** (distintos de la matriz UAT), **1,293 tests Vitest** sin fallos, formato y tipos correctos, lint sin errores con 19 avisos existentes. Incluye dos conexiones reales para reintentos simultáneos y último cupo, además de fallo inducido en la segunda reserva con rollback de venta, pago y reservas. Evidencia reproducible y límites: `docs/talleres-payment-local-evidence-20261015.json`; comando: `npm run test:workshops:db`.
+
+### Reconciliación posterior del historial
+
+Se recuperaron seis migraciones originales de Sandbox, incluidos esquema, restricciones y RPC v1, y se corrigió el identificador local de v2 para coincidir con `20261014064556`. El historial también reveló una autorización administrativa privada aplicada el 14 de octubre que faltaba en la rama: la revisión anterior de tablas públicas no la había detectado. En Sandbox los RPC de confirmación con importe libre ya están revocados para roles cliente.
+
+La secuencia original reconstruye el mismo catálogo del módulo en PostgreSQL local. La migración de reemplazo conserva evidencia histórica, impide reutilizar solicitudes/referencias anteriores y revoca ambos puntos de entrada del flujo histórico. La verificación actual pasa **23/23 escenarios PostgreSQL**, **1,293 tests Vitest**, formato, tipos y lint sin errores (19 avisos existentes). Las dependencias externas de Demeter siguen reducidas en el fixture: el resultado no equivale a reconstruir toda la aplicación ni a validar JWT/PostgREST. Evidencia actualizada: `docs/talleres-schema-replay-evidence-20261015.json`.
 
 - Catalogo de disciplinas independiente de sesiones.
 - Precio completo o seleccion de varias sesiones individuales.
@@ -25,6 +31,8 @@ TALL-01 catalogo; 02 precios; 03 compra multiple; 04 capacidad; 05 inscripcion; 
 Todos PENDIENTES. No promover sin autorizacion explicita.
 
 ## Evidencia tecnica parcial — Sandbox (2026-10-14)
+
+Registro histórico anterior a `workshop_trusted_admin_payment`. El estado actual de permisos y la reconciliación del esquema están descritos en el apartado de desarrollo local del 15 de octubre.
 
 **UAT cerrados: 0/18.** Los siguientes resultados no equivalen a aprobacion integral del caso.
 

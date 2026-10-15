@@ -1,7 +1,7 @@
 // Isolated PostgreSQL integration tests. No remote URL, credentials or ports.
 // Requires Docker; deliberately separate from Vitest and all Sandbox UAT scripts.
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { spawn, spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { setTimeout } from "node:timers/promises";
@@ -159,15 +159,124 @@ try {
     assert.ok(attempt < 100, "PostgreSQL did not become ready");
     await setTimeout(100);
   }
-  for (const path of [
-    "supabase/tests/fixtures/workshop-payment-host.sql",
-    "supabase/tests/fixtures/workshop-checkout-v1.sql",
-    "supabase/migrations/20261014064453_workshop_explicit_purchase_mode.sql",
+  const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+  query(source("supabase/tests/fixtures/workshop-payment-host.sql"));
+  const history = JSON.parse(
+    source("supabase/tests/fixtures/workshop-migration-history-20261015.json"),
+  );
+  await test("six historical migrations reconstruct the exact Sandbox workshop catalog", () => {
+    const versions = history.migrations.map((migration) => migration.version);
+    assert.deepEqual(versions, [...versions].sort());
+    assert.equal(versions.length, 6);
+    for (const migration of history.migrations) {
+      const sql = source(migration.path);
+      assert.equal(
+        createHash("sha256").update(sql.trimEnd()).digest("hex"),
+        migration.normalizedSha256,
+      );
+      query(`begin; ${sql}; commit;`);
+    }
+    const actual = json(source("supabase/tests/workshop-catalog.sql"));
+    const expected = JSON.parse(
+      source("supabase/tests/fixtures/workshop-sandbox-catalog-20261015.json"),
+    );
+    assert.deepEqual(actual, expected);
+  });
+  // Exercise a real historical confirmed purchase BEFORE applying the replacement.
+  // Its evidence must survive migration, while its callable paths are retired.
+  const legacy = review(offer({ count: 1 }));
+  const legacyReceipt = json(
+    asRole(
+      "authenticated",
+      admin,
+      `select public.admin_confirm_workshop_payment(${sqlString(legacy.offerId)},${sqlString(legacy.student)},${array(legacy.sessions)},'full',${sqlString(legacy.key)},60000,'transfer',${sqlString(legacy.reference)},true)`,
+    ),
+  );
+  const legacyEvidenceSql = `select to_jsonb(a) from private.workshop_payment_authorizations a where id=${sqlString(legacyReceipt.authorization_id)}`;
+  const legacyEvidence = json(legacyEvidenceSql);
+  const replacement = source(
     "supabase/migrations/20261015120000_workshop_verified_manual_payment.sql",
-  ])
-    query(readFileSync(new URL(`../${path}`, import.meta.url), "utf8"));
+  );
+  query(`begin; ${replacement}; commit;`);
 
-  await test("only authenticated staff with sales.write in this studio can attest", () => {
+  await test("all seven module tables enable RLS and deny direct client writes", () => {
+    const tables =
+      json(`select jsonb_build_object('count',count(*),'rls',bool_and(c.relrowsecurity),
+      'client_writes',bool_or(has_table_privilege('anon',c.oid,'INSERT') or has_table_privilege('anon',c.oid,'UPDATE')
+        or has_table_privilege('anon',c.oid,'DELETE') or has_table_privilege('authenticated',c.oid,'INSERT')
+        or has_table_privilege('authenticated',c.oid,'UPDATE') or has_table_privilege('authenticated',c.oid,'DELETE')))
+      from pg_class c join pg_namespace n on n.oid=c.relnamespace
+      where n.nspname in ('public','private') and left(c.relname,9)='workshop_' and c.relkind='r'`);
+    assert.deepEqual(tables, { count: 7, rls: true, client_writes: false });
+  });
+
+  await test("replacement preserves historical authorization, purchase and payment records", () => {
+    assert.deepEqual(json(legacyEvidenceSql), legacyEvidence);
+    assert.equal(
+      query(
+        `select count(*) from public.payments where sale_id=${sqlString(legacyReceipt.sale_id)}`,
+      ),
+      "1",
+    );
+    assert.equal(
+      query(
+        `select count(*) from public.workshop_purchases where id=${sqlString(legacyReceipt.purchase_id)}`,
+      ),
+      "1",
+    );
+  });
+  await test("both public and private historical review entrypoints are retired for all client roles", () => {
+    for (const role of ["anon", "authenticated", "service_role"]) {
+      for (const schema of ["public", "private"]) {
+        denied(
+          asRole(
+            role,
+            admin,
+            `select ${schema}.admin_confirm_workshop_payment(null,null,null,null,null,null,null,null,null)`,
+          ),
+          "permission denied",
+        );
+      }
+    }
+  });
+  await test("historical request IDs and received-payment references cannot be spent again", () => {
+    denied(
+      asRole("authenticated", admin, authorizationSql({ ...legacy, reference: randomUUID() })),
+      "idempotency_conflict",
+    );
+    denied(
+      asRole("authenticated", admin, authorizationSql({ ...legacy, key: randomUUID() })),
+      "historical_payment_conflict",
+    );
+    assert.equal(
+      query(
+        `select count(*) from public.workshop_payment_authorizations where provider_event_id=${sqlString(legacy.reference)}`,
+      ),
+      "0",
+    );
+  });
+  await test("review preserves schedule permissions and active account/studio restrictions", () => {
+    const r = review(offer());
+    query(
+      `update public.studio_memberships set role='sales_only' where user_id=${sqlString(admin)}`,
+    );
+    denied(asRole("authenticated", admin, authorizationSql(r)), "forbidden");
+    query(`update public.studio_memberships set role='admin' where user_id=${sqlString(admin)};
+      update public.user_accounts set status='inactive' where id=${sqlString(admin)}`);
+    denied(asRole("authenticated", admin, authorizationSql(r)), "forbidden");
+    query(`update public.user_accounts set status='active' where id=${sqlString(admin)};
+      update public.studios set status='inactive' where id=${sqlString(studio)}`);
+    denied(asRole("authenticated", admin, authorizationSql(r)), "forbidden");
+    query(`update public.studios set status='active' where id=${sqlString(studio)}`);
+    const authorization = authorize(r);
+    query(`update public.studios set status='inactive' where id=${sqlString(studio)}`);
+    denied(asRole("service_role", null, confirmSql(authorization, r)), "studio_inactive");
+    unconsumed(authorization);
+    noPurchase(r);
+    query(`update public.studios set status='active' where id=${sqlString(studio)}`);
+  });
+
+  await test("only authenticated staff with sales/schedule permissions in this studio can attest", () => {
     const r = review(offer());
     denied(asRole("anon", null, authorizationSql(r)), "permission denied");
     denied(asRole("service_role", null, authorizationSql(r)), "permission denied");

@@ -1,6 +1,6 @@
 -- LOCAL DEVELOPMENT ONLY: not applied to Sandbox or Production.
--- Requires the existing workshop schema and explicit purchase-mode migration.
--- Manual receipt attestation is limited to authenticated staff with sales.write.
+-- Requires the recovered workshop history, including trusted_admin_payment.
+-- Manual receipt attestation preserves the existing sales/schedule and active-account gates.
 -- No provider/webhook path is enabled by this migration.
 
 create table public.workshop_payment_authorizations (
@@ -101,7 +101,10 @@ declare
   v_id uuid;
 begin
   if v_actor is null or auth.role() is distinct from 'authenticated'
-     or not coalesce(private.has_capability(p_studio_id, 'sales.write'), false) then
+     or not coalesce(private.has_capability(p_studio_id, 'sales.write'), false)
+     or not coalesce(private.has_capability(p_studio_id, 'schedule.write'), false)
+     or not exists (select 1 from public.user_accounts where id = v_actor and status = 'active')
+     or not exists (select 1 from public.studios where id = p_studio_id and status = 'active') then
     raise exception 'forbidden';
   end if;
   -- An upload, OCR result, pending transfer or a service-role caller is not an attestation.
@@ -133,6 +136,13 @@ begin
   if exists (select 1 from public.workshop_purchases
              where studio_id = p_studio_id and idempotency_key = p_idempotency_key) then
     raise exception 'idempotency_conflict';
+  end if;
+  -- Keep historical private evidence intact and prevent reusing its request or
+  -- bank/receipt reference through the replacement authorization path.
+  if exists (select 1 from private.workshop_payment_authorizations
+             where studio_id = p_studio_id and
+               (request_id = p_idempotency_key or nullif(btrim(reference), '') = v_reference)) then
+    raise exception 'historical_payment_conflict';
   end if;
   select currency into v_currency from public.studios where id = p_studio_id for share;
   if v_currency is distinct from p_currency then raise exception 'currency_mismatch'; end if;
@@ -187,6 +197,9 @@ begin
   if not exists (select 1 from public.studios where id = p_studio_id and currency = v_auth.currency) then
     raise exception 'currency_mismatch';
   end if;
+  if not exists (select 1 from public.studios where id = p_studio_id and status = 'active') then
+    raise exception 'studio_inactive';
+  end if;
   v_quote := private.workshop_payment_quote(
     v_auth.studio_id, v_auth.offer_id, v_auth.student_id, v_auth.session_ids, v_auth.selection_mode);
   if (v_quote->>'total_minor')::integer is distinct from v_auth.total_minor then
@@ -217,6 +230,13 @@ grant execute on function public.admin_authorize_workshop_payment(uuid,uuid,uuid
 to authenticated;
 revoke all on function public.workshop_checkout_confirm_authorized(uuid,uuid,uuid) from public, anon, authenticated, service_role;
 grant execute on function public.workshop_checkout_confirm_authorized(uuid,uuid,uuid) to service_role;
+
+-- Supersede BOTH entrypoints of the recovered trusted-admin implementation.
+-- Its private authorizations and consumed purchase links remain untouched for audit.
+revoke all on function public.admin_confirm_workshop_payment(uuid,uuid,uuid[],text,uuid,integer,text,text,boolean)
+from public, anon, authenticated, service_role;
+revoke all on function private.admin_confirm_workshop_payment(uuid,uuid,uuid[],text,uuid,integer,text,text,boolean)
+from public, anon, authenticated, service_role;
 
 comment on table public.workshop_payment_authorizations is
 'Immutable staff attestation of received workshop funds; no OCR or provider verification implied. Consumption is atomic with checkout.';

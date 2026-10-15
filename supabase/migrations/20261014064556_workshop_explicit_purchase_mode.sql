@@ -82,4 +82,3 @@ revoke all on function public.workshop_checkout_preflight_v2(uuid,uuid,uuid,uuid
 revoke all on function public.workshop_checkout_confirm_v2(uuid,uuid,uuid,uuid[],text,uuid,integer,text,text) from public,anon,authenticated;
 grant execute on function public.workshop_checkout_preflight_v2(uuid,uuid,uuid,uuid[],text) to service_role;
 grant execute on function public.workshop_checkout_confirm_v2(uuid,uuid,uuid,uuid[],text,uuid,integer,text,text) to service_role;
-

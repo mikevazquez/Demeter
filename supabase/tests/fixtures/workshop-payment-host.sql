@@ -1,6 +1,6 @@
 -- Reduced host schema for isolated PostgreSQL integration tests ONLY.
--- Workshop columns and v1 functions were reconciled read-only with Sandbox on
--- 2026-10-15. This is not a full Demeter migration replay or Supabase/PostgREST.
+-- No workshop tables or RPCs are mocked: the runner installs their recovered
+-- migrations. External Demeter/Auth tables below remain reduced dependencies.
 create role anon nologin;
 create role authenticated nologin;
 create role service_role nologin bypassrls;
@@ -14,7 +14,9 @@ create function auth.role() returns text language sql stable as $$
   select nullif(current_setting('request.jwt.claims', true), '')::jsonb->>'role';
 $$;
 grant usage on schema public, auth to anon, authenticated, service_role;
-create table public.studios (id uuid primary key, currency text not null default 'MXN');
+create table public.studios (id uuid primary key, currency text not null default 'MXN', status text not null default 'active');
+create table public.disciplines (id uuid primary key);
+create table public.user_accounts (id uuid primary key references auth.users(id), status text not null default 'active');
 create table public.students (
   id uuid primary key, studio_id uuid not null references public.studios(id), user_id uuid
 );
@@ -59,47 +61,12 @@ create table public.reservations (
   student_id uuid not null references public.students(id), student_user_id uuid,
   status text not null, credits_held integer not null
 );
-create table public.workshop_studio_policies (
-  studio_id uuid primary key references public.studios(id),
-  requires_enrollment boolean not null default false,
-  overdue_mode text not null default 'keep_and_notify', grace_minutes integer not null default 0
-);
-create table public.workshop_offers (
-  id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id),
-  title text not null, full_price_minor integer not null check(full_price_minor>=0),
-  allow_individual_sessions boolean not null default false, requires_enrollment boolean,
-  overdue_mode text, grace_minutes integer, deposit_mode text not null default 'full',
-  deposit_value numeric(12,2), balance_due_at timestamptz,
-  check(deposit_mode in ('full','fixed','percent')),
-  check(deposit_value>=0),
-  check((deposit_mode='full' and deposit_value is null)
-    or (deposit_mode='fixed' and deposit_value is not null and deposit_value<=full_price_minor)
-    or (deposit_mode='percent' and deposit_value is not null and deposit_value<=100))
-);
-create table public.workshop_offer_sessions (
-  offer_id uuid references public.workshop_offers(id),
-  session_id uuid references public.class_sessions(id),
-  individual_price_minor integer check(individual_price_minor>=0), primary key(offer_id,session_id)
-);
-create table public.workshop_purchases (
-  id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id),
-  offer_id uuid not null references public.workshop_offers(id),
-  student_id uuid not null references public.students(id), sale_id uuid references public.sales(id),
-  total_minor integer not null check(total_minor>=0), paid_minor integer not null check(paid_minor>=0),
-  balance_due_at timestamptz, overdue_mode text not null, grace_minutes integer not null,
-  status text not null default 'pending_payment', idempotency_key uuid not null,
-  unique(studio_id,idempotency_key), check(paid_minor<=total_minor),
-  check(status<>'reserved' or paid_minor>=total_minor or balance_due_at is not null)
-);
-create table public.workshop_purchase_sessions (
-  purchase_id uuid references public.workshop_purchases(id),
-  session_id uuid references public.class_sessions(id),
-  reservation_id uuid unique references public.reservations(id), primary key(purchase_id,session_id)
-);
 create table public.studio_payment_methods (
   studio_id uuid references public.studios(id), code text,
   active boolean not null default true, primary key(studio_id,code)
 );
+-- Match Supabase public-schema service-role defaults for newly migrated tables.
+alter default privileges in schema public grant all on tables to service_role;
 grant select,insert,update,delete on all tables in schema public to service_role;
 
 insert into public.studios(id) values
@@ -108,7 +75,8 @@ insert into auth.users values
   ('00000000-0000-4000-8000-000000000011'),
   ('00000000-0000-4000-8000-000000000012'),
   ('00000000-0000-4000-8000-000000000013');
-insert into public.role_capabilities values ('admin','sales.write');
+insert into public.user_accounts(id) select id from auth.users;
+insert into public.role_capabilities values ('admin','sales.write'),('admin','schedule.write'),('sales_only','sales.write');
 insert into public.studio_memberships(studio_id,user_id,role) values
   ('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000011','admin'),
   ('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000012','student'),
