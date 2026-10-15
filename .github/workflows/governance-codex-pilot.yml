@@ -21,6 +21,7 @@ jobs:
   propose-patch:
     if: github.repository == 'mikevazquez/Demeter'
     runs-on: ubuntu-latest
+    environment: Sandbox
     timeout-minutes: 45
     env:
       GH_REPO: ${{ github.repository }}
