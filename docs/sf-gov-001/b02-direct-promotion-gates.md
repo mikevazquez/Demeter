@@ -43,3 +43,11 @@ La separación en ambientes no evita por sí misma operaciones del propietario (
 ## Siguiente bloque operativo
 
 Implementar/verificar el controlador de promoción **sin conceder acceso productivo al ejecutor de CI**. Si el plan o permisos actuales no ofrecen un enforcement verificable sin cambiar producción, mantener B02 bloqueado e informar exactamente la decisión administrativa requerida al PO. Al cerrar B02, habilitar B03 de identidades sintéticas por rol y tenant con sus gates independientes.
+
+## Ensayo GitHub Production de solo aprobación (sin promoción)
+
+En la rama de gobierno existe el workflow `.github/workflows/sf-gov-production-approval-rehearsal.yml`: entrada `workflow_dispatch` solo en `main`, actor `mikevazquez`, SHA hexadecimal exacto de 40 caracteres y alcance no vacío. El job de revisión consume `environment: Production`, sin permisos de token (`permissions: {}`), checkout, credenciales ni comandos de despliegue. CI valida estáticamente esta estructura en `scripts/sf-gov-production-approval-rehearsal.test.mjs`.
+
+**No está activo para producción mientras el PR #278 siga DRAFT y sin merge.** Ni el texto del alcance ni el actor ni una ejecución verde equivalen a «Autorizo promoción». La protección de GitHub Environment debe comprobarse con una ejecución **pendiente de revisión** y con negativa ante rama/actor/SHA incorrectos **después de una habilitación independiente expresamente autorizada**, sin habilitar credenciales reales en el ensayo. Un job de ambiente no puede impedir que el propietario despliegue directamente por el panel Vercel o ejecute SQL con credenciales administrativas Supabase: son bloqueos independientes que siguen sin certificarse.
+
+Nunca agregar al workflow de ensayo `vercel promote`, `supabase db push`, deploy Edge, service-role, alias ni secretos. Un release real requiere controlador separado y manifest/UAT/PO vinculados a la misma versión.
