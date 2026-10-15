@@ -18,7 +18,9 @@ create table public.studios (id uuid primary key, currency text not null default
 create table public.disciplines (id uuid primary key);
 create table public.user_accounts (id uuid primary key references auth.users(id), status text not null default 'active');
 create table public.students (
-  id uuid primary key, studio_id uuid not null references public.studios(id), user_id uuid
+  id uuid primary key, studio_id uuid not null references public.studios(id), user_id uuid,
+  full_name text not null default 'Local student', active boolean not null default true,
+  lifecycle_status text not null default 'active'
 );
 create table public.studio_memberships (
   studio_id uuid references public.studios(id), user_id uuid references auth.users(id),
@@ -42,6 +44,7 @@ grant execute on function private.has_capability(uuid,text) to authenticated;
 create table public.class_sessions (
   id uuid primary key, studio_id uuid not null references public.studios(id),
   starts_at timestamptz not null, capacity integer not null check(capacity>0),
+  ends_at timestamptz not null default (now()+interval '21 days'),
   status text not null default 'scheduled'
 );
 create table public.sales (
@@ -76,7 +79,9 @@ insert into auth.users values
   ('00000000-0000-4000-8000-000000000012'),
   ('00000000-0000-4000-8000-000000000013');
 insert into public.user_accounts(id) select id from auth.users;
-insert into public.role_capabilities values ('admin','sales.write'),('admin','schedule.write'),('sales_only','sales.write');
+insert into public.role_capabilities values ('admin','sales.write'),('admin','schedule.write'),
+  ('admin','sales.read'),('admin','schedule.read'),('admin','students.read'),
+  ('sales_only','sales.write'),('reader','schedule.read'),('reader','sales.read');
 insert into public.studio_memberships(studio_id,user_id,role) values
   ('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000011','admin'),
   ('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000012','student'),
@@ -87,3 +92,22 @@ insert into public.students(id,studio_id) values
   ('00000000-0000-4000-8000-000000000023','00000000-0000-4000-8000-000000000002');
 insert into public.studio_payment_methods(studio_id,code)
 select id,code from public.studios cross join (values ('cash'),('bank_transfer')) methods(code);
+
+-- Explicit external-domain contract doubles; NOT the actual documents/enrollment engines.
+create table private.local_booking_gate_fixture (
+  student_id uuid, session_id uuid, blocked boolean not null default false,
+  enrollment_missing boolean not null default false, primary key(student_id,session_id)
+);
+create function private.student_booking_blockers(p_student_id uuid,p_session_id uuid)
+returns jsonb language sql stable set search_path='' as $$
+  select case when exists(select 1 from private.local_booking_gate_fixture
+    where student_id=p_student_id and session_id=p_session_id and blocked)
+    then '["local_booking_block"]'::jsonb else '[]'::jsonb end;
+$$;
+create function private.student_enrollment_requirement_for_booking(p_student_id uuid,p_session_id uuid)
+returns jsonb language sql stable set search_path='' as $$
+  select jsonb_build_object('missing',exists(select 1 from private.local_booking_gate_fixture
+    where student_id=p_student_id and session_id=p_session_id and enrollment_missing));
+$$;
+revoke all on function private.student_booking_blockers(uuid,uuid) from public,anon,authenticated,service_role;
+revoke all on function private.student_enrollment_requirement_for_booking(uuid,uuid) from public,anon,authenticated,service_role;

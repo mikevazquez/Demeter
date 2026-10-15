@@ -182,6 +182,13 @@ export default async function ActivitiesPage() {
 
       <section className="activities-v2-section">
         <h2>Talleres y eventos</h2>
+        {can("sales.read") ? (
+          <p>
+            <Link href="/admin/actividades/talleres">
+              Talleres configurables · precios y anticipos
+            </Link>
+          </p>
+        ) : null}
         <div className="activities-v2-list">
           {(programs ?? []).map((program) => (
             <Link

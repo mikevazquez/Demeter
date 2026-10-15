@@ -1,6 +1,6 @@
 # Workshop payment authorization gate — Sandbox
 
-Status: replacement manual-review gate implemented and tested locally on 2026-10-15; not applied to Sandbox or Production and not connected to UI, portal or Demi. Provider verification remains pending.
+Status: replacement manual-review gate and administrative purchase UI implemented locally on 2026-10-15. Neither migration is applied to Sandbox or Production. Portal, Demi and provider verification remain pending.
 
 ## Reconciled Sandbox history — 2026-10-15
 
@@ -20,15 +20,23 @@ Both old amount-taking confirmation RPCs lose execution privileges for `service_
 
 Authorizations bind the exact offer, student, canonical session selection, purchase mode, quoted total, received amount and currency. Only the first consumption may update the record; evidence edits and deletions are rejected. Identical retries return the original receipt, even if later payments change the purchase balance. Policy snapshots are still taken when the purchase is created.
 
-This manual-review path records an authorized staff member's attestation. It does not establish bank API verification, verify webhook signatures or make a receipt upload/OCR result authoritative. No service-only API for minting arbitrary payment authorizations was added. Required enrollment continues to fail closed until the real enrollment subsystem is connected.
+This manual-review path records an authorized staff member's attestation. It does not establish bank API verification, verify webhook signatures or make a receipt upload/OCR result authoritative. No service-only API for minting arbitrary payment authorizations was added. Offer-level required enrollment continues to fail closed; the admin wrapper additionally invokes Demeter's booking blockers and enrollment requirement helpers.
+
+## Administrative purchase integration — local only
+
+`20261015132728_workshop_admin_checkout.sql` adds an authenticated list/detail RPC and an atomic administrative purchase RPC. The list/detail query requires sales/schedule read permissions; student identities are returned only with `students.read`. Both private implementations have invoker wrappers and explicit grants, and recheck active accounts/studios. No direct table grants or browser service credentials were added.
+
+The server action resolves the selected studio through `getAdminContext` and ignores tenant, total and authorization IDs submitted in the form. The database verifies the offer and active student belong to that studio. Price comes from the offer; only the received amount and a staff receipt attestation are submitted. The purchase wrapper creates/consumes authorization and creates financial/reservation rows in one transaction. Booking/document restrictions and enrollment requirements block new purchases before reservations. Failure rolls back the authorization as well; it does not reverse funds received outside the app. A replay returns the original receipt without re-running booking blockers for an already consumed authorization.
+
+`/admin/actividades/talleres` lists existing configured offers. Its detail form supports full or multiple individual dates, minimum deposit, received amount, remaining balance, due date and received cash/reviewed transfer. It preserves the same request key and all fields after a rejected response and shows confirmation only from the server receipt. Creating/editing workshop offers is not part of this screen. The earlier program flow remains separate.
 
 ## Local verification and remaining prerequisites
 
 Run `npm run test:workshops:db` with Docker. The runner creates an ephemeral PostgreSQL 17 container with networking disabled and no published ports, reconstructs the module from all six historical migrations, compares its catalog to the metadata-only Sandbox snapshot, creates a local historical purchase, and applies the replacement. It then verifies historical evidence preservation, permissions, atomicity, idempotency and concurrency, and removes the container. CI includes the same command. It never accepts remote connection strings or uses remote business records.
 
-No workshop tables or RPCs are mocked. Local replay matches the captured six tables, twelve indexes, seven functions, columns, constraints, RLS, policies and client grants before the replacement. The external host fixture still supplies reduced Auth, studio, student, Agenda and sales tables plus the repository capability join. This is not a replay of all Demeter migrations or verification of Supabase JWTs, PostgREST, financial triggers and SaaS entitlement rules. No UAT case is closed by these local checks.
+No workshop tables or RPCs are mocked. Local replay matches the captured six tables, twelve indexes, seven functions, columns, constraints, RLS, policies and client grants before the replacement. The external host fixture still supplies reduced Auth, studio, student, Agenda and sales tables plus the repository capability join. External booking/enrollment helpers use explicit contract doubles to test blocking and rollback; their actual rules are not validated here. This is not a replay of all Demeter migrations or verification of Supabase JWTs, PostgREST, financial triggers and SaaS entitlement rules. No UAT case is closed by these local checks.
 
-Remaining release prerequisites: complete full-application migration/integration verification, validate against the full Sandbox schema after reactivation, connect a trusted admin/backend flow with tenant resolution, implement provider signature/order matching if online payments are added, and execute the 18 functional UAT cases. Current replay evidence is in `docs/talleres-schema-replay-evidence-20261015.json`; the earlier payment evidence remains a record of the previous local iteration.
+Remaining release prerequisites: complete full-application integration verification, validate actual domain helpers and an authenticated browser flow against the full Sandbox schema after reactivation, implement provider signature/order matching if online payments are added, and execute the 18 functional UAT cases. Current administrative evidence is in `docs/talleres-admin-local-evidence-20261015.json`. The earlier schema/payment evidence remains a record of those local iterations.
 
 ## Existing payment source reviewed
 

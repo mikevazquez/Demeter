@@ -6,7 +6,7 @@ Solo Sandbox. Produccion protegida.
 
 Se implementó una autorización inmutable de recepción manual de efectivo/transferencia, restringida a personal autenticado con `sales.write` y `schedule.write` por estudio, cuenta y estudio activos. El checkout nuevo consume esa autorización una sola vez dentro de la transacción de venta, pago y reservas; los RPC anteriores quedan revocados en la migración preparada. Detalles y límites en `docs/talleres-payment-authorization-gate.md`.
 
-La migración nueva **solo se ejecutó en PostgreSQL local aislado**. No está aplicada a Sandbox ni producción, no se conectó a UI/portal/Demi y no se reactivó el PR pausado. Las verificaciones locales no cierran aceptación: **UAT continúa 0/18**.
+Las migraciones nuevas **solo se ejecutaron en PostgreSQL local aislado**. No están aplicadas a Sandbox ni producción y no se reactivó el PR pausado. La interfaz administrativa local se describe más adelante; portal y Demi siguen pendientes. Las verificaciones locales no cierran aceptación: **UAT continúa 0/18**.
 
 Validación local: **17/17 escenarios de integración PostgreSQL** (distintos de la matriz UAT), **1,293 tests Vitest** sin fallos, formato y tipos correctos, lint sin errores con 19 avisos existentes. Incluye dos conexiones reales para reintentos simultáneos y último cupo, además de fallo inducido en la segunda reserva con rollback de venta, pago y reservas. Evidencia reproducible y límites: `docs/talleres-payment-local-evidence-20261015.json`; comando: `npm run test:workshops:db`.
 
@@ -15,6 +15,14 @@ Validación local: **17/17 escenarios de integración PostgreSQL** (distintos de
 Se recuperaron seis migraciones originales de Sandbox, incluidos esquema, restricciones y RPC v1, y se corrigió el identificador local de v2 para coincidir con `20261014064556`. El historial también reveló una autorización administrativa privada aplicada el 14 de octubre que faltaba en la rama: la revisión anterior de tablas públicas no la había detectado. En Sandbox los RPC de confirmación con importe libre ya están revocados para roles cliente.
 
 La secuencia original reconstruye el mismo catálogo del módulo en PostgreSQL local. La migración de reemplazo conserva evidencia histórica, impide reutilizar solicitudes/referencias anteriores y revoca ambos puntos de entrada del flujo histórico. La verificación actual pasa **23/23 escenarios PostgreSQL**, **1,293 tests Vitest**, formato, tipos y lint sin errores (19 avisos existentes). Las dependencias externas de Demeter siguen reducidas en el fixture: el resultado no equivale a reconstruir toda la aplicación ni a validar JWT/PostgREST. Evidencia actualizada: `docs/talleres-schema-replay-evidence-20261015.json`.
+
+### Compra administrativa local
+
+Se añadió el listado y detalle de talleres configurables existentes, con compra completa o selección de varias fechas, resumen de anticipo/saldo/vencimiento y registro de efectivo o transferencia revisada. La acción obtiene el estudio de la sesión administrativa, y el RPC confirma autorización, venta, pago y reservas en una sola transacción, sin credenciales de servicio en el navegador. No se añadió alta/edición de ofertas en este bloque.
+
+Las reglas de documentos/restricciones e inscripción de Demeter se consultan antes de reservar. Las pruebas locales usan dobles explícitos de esos dos motores externos; falta ejecutarlos con el esquema completo y una sesión administrativa real. El navegador se probó con datos y acción simulados, incluidos precios individuales, error/reintento, confirmación y móvil. Esto **no cierra UAT** ni confirma transporte Next/Auth/PostgREST de extremo a extremo.
+
+Resultado: **30/30 escenarios PostgreSQL**, **1,310 tests Vitest**, compilación, tipos, lint y formato correctos; seis comprobaciones de navegador de componente. Evidencia actual: `docs/talleres-admin-local-evidence-20261015.json`. Migraciones solo locales, producción sin cambios y **0/18 UAT aprobados**.
 
 - Catalogo de disciplinas independiente de sesiones.
 - Precio completo o seleccion de varias sesiones individuales.
