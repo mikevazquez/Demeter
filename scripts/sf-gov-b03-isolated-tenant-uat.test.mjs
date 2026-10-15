@@ -78,7 +78,7 @@ test("B03 two-tenant positive/negative access rehearsal without external effects
       CREATE POLICY memberships_self_read ON public.studio_memberships TO authenticated
         USING (user_id = auth.uid());
       CREATE POLICY students_member_read ON public.students TO authenticated
-        USING (user_id = auth.uid() OR private.is_studio_admin(studio_id));
+        USING (private.is_studio_member(studio_id) AND (user_id = auth.uid() OR private.is_studio_admin(studio_id)));
     `);
 
     async function readAs(uid) {
@@ -108,7 +108,7 @@ test("B03 two-tenant positive/negative access rehearsal without external effects
       students: ["student-a"],
     });
     const outsiderAccess = await readAs(outsider);
-    assert.deepEqual(outsiderAccess, { studios: [], memberships: [], students: ["student-b"] });
+    assert.deepEqual(outsiderAccess, { studios: [], memberships: [], students: [] });
     console.log(JSON.stringify({
       engine: "ephemeral-pglite",
       fixture: "synthetic-only",
