@@ -201,7 +201,7 @@ try {
   const legacyEvidenceSql = `select to_jsonb(a) from private.workshop_payment_authorizations a where id=${sqlString(legacyReceipt.authorization_id)}`;
   const legacyEvidence = json(legacyEvidenceSql);
   const replacement = source(
-    "supabase/migrations/20261015120000_workshop_verified_manual_payment.sql",
+    "supabase/migrations/20261015141539_workshop_verified_manual_payment.sql",
   );
   query(`begin; ${replacement}; commit;`);
 
@@ -643,7 +643,7 @@ try {
     `update public.studio_payment_methods set active=true where studio_id=${sqlString(studio)}`,
   );
   query(
-    `begin; ${source("supabase/migrations/20261015132728_workshop_admin_checkout.sql")}; commit;`,
+    `begin; ${source("supabase/migrations/20261015141548_workshop_admin_checkout.sql")}; commit;`,
   );
   const contextSql = (scope, offerId = null) =>
     `select public.admin_workshop_context(${sqlString(scope)},${sqlString(offerId)})`;
@@ -783,7 +783,7 @@ try {
       "1",
     );
   });
-  query(`begin; ${source("supabase/migrations/20261015134549_workshop_editor.sql")}; commit;`);
+  query(`begin; ${source("supabase/migrations/20261015141559_workshop_editor.sql")}; commit;`);
   query(`insert into public.disciplines(id,studio_id,name) values
     (${sqlString(id(101))},${sqlString(studio)},'Aro'),(${sqlString(id(102))},${sqlString(studio)},'Telas'),(${sqlString(id(103))},${sqlString(otherStudio)},'Other');
     insert into public.persons(id,studio_id,first_name) values (${sqlString(id(110))},${sqlString(studio)},'Local coach'),(${sqlString(id(114))},${sqlString(otherStudio)},'Other coach');
