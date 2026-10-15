@@ -4,7 +4,7 @@ import { expect, test } from "vitest";
 test("governance shared journal and existing executor gate", () => {
   const output = execFileSync(
     process.execPath,
-    ["--test", "tests/automation/governance-shared.node.mjs"],
+    ["--test", "--test-reporter=tap", "tests/automation/governance-shared.node.mjs"],
     {
       cwd: process.cwd(),
       encoding: "utf8",

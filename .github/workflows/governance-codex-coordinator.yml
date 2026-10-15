@@ -47,7 +47,7 @@ jobs:
       - name: Test coordinator controls before selection
         run: |
           node --test tests/automation/coordinator.node.mjs
-          node --test tests/automation/governance.node.mjs tests/automation/governance-shared.node.mjs
+          node --test tests/automation/governance.node.mjs tests/automation/governance-shared.node.mjs tests/automation/governance-failures.node.mjs
       - name: Read shared state and apply Governance decision gate
         env:
           GH_TOKEN: ${{ github.token }}

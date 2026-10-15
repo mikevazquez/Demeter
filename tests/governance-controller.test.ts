@@ -4,7 +4,7 @@ import { expect, test } from "vitest";
 test("governance decision core and durable local ledger", () => {
   const output = execFileSync(
     process.execPath,
-    ["--test", "tests/automation/governance.node.mjs"],
+    ["--test", "--test-reporter=tap", "tests/automation/governance.node.mjs"],
     {
       cwd: process.cwd(),
       encoding: "utf8",

@@ -53,6 +53,10 @@ Do not declare these checks passed based only on this document.
 
 ## Limits retained
 
+The next increment implements the recorder's bounded observation-read recovery
+and artifact-only notices; see [failure handling](governance-failure-evidence.md).
+Its simulated failures do not certify recovery from a live provider outage.
+
 Policy in Actions is the hosted controller's dated, hash-bound snapshot, not a
 live Notion read. Snapshot renewal remains with the existing authorized hosted
 controller. This bridge does not add tasks, modify queue contracts, issue new

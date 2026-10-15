@@ -3,6 +3,12 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import { pathToFileURL } from "node:url";
 import {
+  recoverRead,
+  ReadRecoveryBlocked,
+  readSourceVersion,
+  classifyReadError,
+} from "./governance-failures.mjs";
+import {
   canonical,
   digest,
   evaluateGovernance,
@@ -90,6 +96,26 @@ export function githubClient(token, fetcher = globalThis.fetch) {
     if (!response.ok) {
       const error = new Error(`GitHub request failed with HTTP ${response.status}`);
       error.status = response.status;
+      error.rateLimited =
+        response.status === 429 ||
+        (response.status === 403 &&
+          (response.headers.get("x-ratelimit-remaining") === "0" ||
+            response.headers.get("retry-after") !== null));
+      const retry = response.headers.get("retry-after");
+      const reset = Number(response.headers.get("x-ratelimit-reset"));
+      const delay =
+        retry === null
+          ? error.rateLimited && reset > 0
+            ? reset * 1000 - Date.now()
+            : 0
+          : /^\d+$/.test(retry)
+            ? Number(retry) * 1000
+            : /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), /.test(retry)
+              ? Date.parse(retry) - Date.now()
+              : NaN;
+      // Out-of-range/unknown server deadlines are deferred, never changed into an immediate retry.
+      error.retryAfterUnsupported = !Number.isFinite(delay) || delay > 168 * 3600000;
+      error.retryAfterMs = error.retryAfterUnsupported ? 0 : Math.max(0, delay);
       error.code =
         response.status === 401
           ? "CREDENTIAL"
@@ -286,7 +312,7 @@ export async function verifyCodeIdentity(api, sourceSha, currentHead) {
 }
 
 /** Complete typed observations only. No issue body or customer data is retained. */
-export async function observeShared(api, context, current) {
+export async function collectShared(api, context, current) {
   await verifyCodeIdentity(api, context.sourceSha, current.head);
   const queue = await readFileAt(api, QUEUE, current.head);
   const profile = JSON.parse(queue.text);
@@ -396,10 +422,14 @@ export async function observeShared(api, context, current) {
       })),
     },
   };
+  return { profile, observation, fresh };
+}
+
+function decideShared({ profile, observation, fresh }, current) {
   const result = evaluateGovernance(profile, observation, current.record.state);
   const cycle = result.state.events.findLast((event) => event.type === "cycle");
   const signature = digest({
-    queue: queue.sha,
+    queue: observation.queueBlobSha,
     findings: cycle.data.findings,
     delivered: cycle.data.delivered,
     outcome: cycle.data.outcome,
@@ -411,6 +441,10 @@ export async function observeShared(api, context, current) {
     allowed: fresh && cycle.data.outcome !== "blocked",
     observation,
   };
+}
+
+export async function observeShared(api, context, current) {
+  return decideShared(await collectShared(api, context, current), current);
 }
 
 /** gate reads; record writes only the journal; recover checks an exact expected revision. */
@@ -425,7 +459,7 @@ export async function runShared(api, context, mode, expectedRevision = null) {
     "run context",
   );
   const ledger = new SharedLedger(api);
-  const current = await ledger.read();
+  let current = await ledger.read();
   await verifyCodeIdentity(api, context.sourceSha, current.head);
   if (mode === "recover") {
     invariant(
@@ -458,7 +492,32 @@ export async function runShared(api, context, mode, expectedRevision = null) {
       eligibleTaskIds: [],
     };
   }
-  const checked = await observeShared(api, context, current);
+  let checked;
+  let readRecovery = null;
+  if (mode === "record") {
+    const clock = context.now || (() => context.at);
+    const recoveryLedger = {
+      async read() {
+        const latest = await ledger.read();
+        await verifyCodeIdentity(api, context.sourceSha, latest.head);
+        return latest;
+      },
+      commit: (...args) => ledger.commit(...args),
+    };
+    const recovered = await recoverRead(
+      recoveryLedger,
+      {
+        ...context,
+        sourceVersion: context.sourceVersion || digest([REPOSITORY, BRANCH, "governance-read-v1"]),
+      },
+      (revision) => collectShared(api, { ...context, at: clock() }, revision),
+      { now: clock },
+    );
+    current = recovered.current;
+    readRecovery = recovered.report;
+    recovered.value.observation.capturedAt = clock();
+    checked = decideShared(recovered.value, current);
+  } else checked = await observeShared(api, context, current);
   const cycle = checked.result.state.events.findLast((event) => event.type === "cycle");
   const summary = {
     mode,
@@ -478,6 +537,7 @@ export async function runShared(api, context, mode, expectedRevision = null) {
     noticesSent: false,
     runtimeUat: false,
     productionAuthorized: false,
+    ...(readRecovery ? { readRecovery } : {}),
   };
   if (
     mode === "record" &&
@@ -529,6 +589,8 @@ async function main() {
     runId: Number(process.env.GITHUB_RUN_ID),
     attempt: Number(process.env.GITHUB_RUN_ATTEMPT),
     at: new Date().toISOString(),
+    now: () => new Date().toISOString(),
+    sourceVersion: readSourceVersion(JSON.parse(fs.readFileSync(QUEUE, "utf8"))),
   };
   const result = await runShared(
     githubClient(process.env.GH_TOKEN),
@@ -550,7 +612,39 @@ async function main() {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((error) => {
-    console.error(error.message);
+    if (process.argv[2] === "record") {
+      fs.mkdirSync("/tmp/governance-shared", { recursive: true });
+      fs.writeFileSync(
+        "/tmp/governance-shared/record.json",
+        `${JSON.stringify(
+          {
+            mode: "record",
+            allowed: false,
+            verified: false,
+            readRecovery:
+              error instanceof ReadRecoveryBlocked
+                ? { ...error.report, durable: true }
+                : {
+                    reason: "journal-or-validation-unverified",
+                    kind: classifyReadError(error).kind,
+                    durable: false,
+                    notices: [],
+                    noticesSent: false,
+                  },
+            noticesSent: false,
+            runtimeUat: false,
+            productionAuthorized: false,
+          },
+          null,
+          2,
+        )}\n`,
+      );
+    }
+    console.error(
+      error instanceof ReadRecoveryBlocked
+        ? error.message
+        : "Governance operation failed; source or journal remains unverified",
+    );
     process.exitCode = 1;
   });
 }

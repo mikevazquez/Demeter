@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { initialState } from "../../scripts/governance-evaluator.mjs";
+import { ReadRecoveryBlocked } from "../../scripts/governance-failures.mjs";
 import {
   REPOSITORY,
   BRANCH,
@@ -426,6 +427,65 @@ test("SHARED-24 HTTP writer calls only fixed journal path with no force", async 
   assert.equal(writes[0].body.tree[0].path, JOURNAL);
   assert.equal(writes[2].route, `${P}/git/refs/heads/${BRANCH}`);
 });
+test("SHARED-26 integrated record retries a transient source after durable reservation", async () => {
+  const f = fixture();
+  let reads = 0;
+  const api = async (...args) => {
+    if (args[0] === "GET" && args[1] === `${P}/issues/1` && ++reads === 1)
+      throw Object.assign(new Error("temporary"), { status: 503 });
+    return f.api(...args);
+  };
+  const result = await runShared(api, ctx(), "record");
+  assert.equal(reads, 2);
+  assert.equal(result.readRecovery.recovered, true);
+  assert.equal(result.allowed, true);
+  const current = await new SharedLedger(f.api).read();
+  assert.deepEqual(
+    current.record.state.events.map((event) => event.type),
+    ["failure", "retry_claim", "retry_result", "cycle"],
+  );
+  assert.equal(current.record.state.events[2].data.result, "success");
+  assert.ok(f.writes().every((call) => call.method !== "PATCH" || call.body.force === false));
+});
+
+test("SHARED-27 repeated source failure has one retry and one artifact-only notice", async () => {
+  const f = fixture();
+  let reads = 0;
+  const api = async (...args) => {
+    if (args[0] === "GET" && args[1] === `${P}/issues/1`) {
+      reads++;
+      throw Object.assign(new Error("temporary"), { status: 503 });
+    }
+    return f.api(...args);
+  };
+  await assert.rejects(runShared(api, ctx(), "record"), (error) => {
+    assert.ok(error instanceof ReadRecoveryBlocked);
+    assert.equal(error.report.reason, "budget_exhausted");
+    assert.equal(error.report.notices[0].sent, false);
+    return true;
+  });
+  await assert.rejects(runShared(api, ctx(11), "record"), (error) => {
+    assert.deepEqual(error.report.notices, []);
+    return true;
+  });
+  assert.equal(reads, 2);
+});
+
+test("SHARED-28 conflict while recording failure never authorizes a retry", async () => {
+  const f = fixture();
+  let reads = 0;
+  f.race = true;
+  const api = async (...args) => {
+    if (args[0] === "GET" && args[1] === `${P}/issues/1`) {
+      reads++;
+      throw Object.assign(new Error("temporary"), { status: 503 });
+    }
+    return f.api(...args);
+  };
+  await assert.rejects(runShared(api, ctx(), "record"), SharedConflict);
+  assert.equal(reads, 1);
+});
+
 test("SHARED-25 persisted state is informational, never UAT or production approval", async () => {
   const f = fixture();
   const r = await runShared(f.api, ctx(), "record");
