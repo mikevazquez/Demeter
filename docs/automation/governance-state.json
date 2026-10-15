@@ -1,13 +1,43 @@
 {
   "version": 1,
-  "sequence": 0,
-  "parent": null,
-  "signature": null,
+  "sequence": 1,
+  "parent": "b41724c585b5902d66e4554b3bb6d8a0c2f13c2281b37084688075ddd02107ce",
+  "signature": "402bd25ab05521a8ac348f01b9b0e50a8de9a94fb9ff5f59f574724854a5bec4",
   "state": {
     "version": 1,
     "repository": "mikevazquez/Demeter",
     "controlBranch": "chore/governance-autonomous-coordinator-20261015",
-    "events": []
+    "events": [
+      {
+        "id": "b7a0ffebe4a2fb71df8f62bfc0906792128159eacd90e3e40bc0aa5b7c47742a",
+        "type": "cycle",
+        "at": "2026-10-15T17:32:03.432Z",
+        "data": {
+          "inputHash": "aa2b694a73756fb9df6a901203b6c7bca661a994b667b81061410144ab346ffc",
+          "controlSha": "bfe712aa5a72ffa1718dab47b7df461a1a27028b",
+          "queueBlobSha": "23157dc329061e8a2d4b8d5eaeb5412aaf206868",
+          "policyVersion": "2026-10-15T07:49:26.240Z",
+          "findings": [
+            {
+              "rule": "G02",
+              "status": "verified",
+              "versionMatches": true
+            },
+            {
+              "rule": "G06",
+              "status": "verified"
+            }
+          ],
+          "delivered": [
+            "acceptance-1-v1",
+            "acceptance-2-v1",
+            "acceptance-isolation-v1"
+          ],
+          "gapObserved": false,
+          "outcome": "idle"
+        }
+      }
+    ]
   },
-  "sha256": "b41724c585b5902d66e4554b3bb6d8a0c2f13c2281b37084688075ddd02107ce"
+  "sha256": "f40bbfd474fc2eede0bc37f3e73dfe2852b2a54e389b59b5901f3dfd9f185d57"
 }
