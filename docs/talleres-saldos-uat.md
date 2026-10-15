@@ -2,6 +2,14 @@
 
 Solo Sandbox. Produccion protegida.
 
+## Desarrollo local — 15 octubre 2026
+
+Se implementó una autorización inmutable de recepción manual de efectivo/transferencia, restringida a personal autenticado con `sales.write` por estudio. El checkout nuevo consume esa autorización una sola vez dentro de la transacción de venta, pago y reservas; los RPC anteriores que aceptan importes libres quedan revocados en la migración preparada. Detalles y límites en `docs/talleres-payment-authorization-gate.md`.
+
+La migración nueva **solo se ejecutó en PostgreSQL local aislado**. No está aplicada a Sandbox ni producción, no se conectó a UI/portal/Demi y no se reactivó el PR pausado. Las verificaciones locales no cierran aceptación: **UAT continúa 0/18**. Sigue pendiente reconciliar el esquema base de talleres, que existe en Sandbox pero no está versionado junto con los RPC v1 en esta rama.
+
+Validación local: **17/17 escenarios de integración PostgreSQL** (distintos de la matriz UAT), **1,293 tests Vitest** sin fallos, formato y tipos correctos, lint sin errores con 19 avisos existentes. Incluye dos conexiones reales para reintentos simultáneos y último cupo, además de fallo inducido en la segunda reserva con rollback de venta, pago y reservas. Evidencia reproducible y límites: `docs/talleres-payment-local-evidence-20261015.json`; comando: `npm run test:workshops:db`.
+
 - Catalogo de disciplinas independiente de sesiones.
 - Precio completo o seleccion de varias sesiones individuales.
 - Inscripcion opcional configurable por estudio y taller.
