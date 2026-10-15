@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "sequence": 1,
-  "parent": "b41724c585b5902d66e4554b3bb6d8a0c2f13c2281b37084688075ddd02107ce",
+  "sequence": 2,
+  "parent": "f40bbfd474fc2eede0bc37f3e73dfe2852b2a54e389b59b5901f3dfd9f185d57",
   "signature": "402bd25ab05521a8ac348f01b9b0e50a8de9a94fb9ff5f59f574724854a5bec4",
   "state": {
     "version": 1,
@@ -36,8 +36,21 @@
           "gapObserved": false,
           "outcome": "idle"
         }
+      },
+      {
+        "id": "910f0fd1b1cb631e54eac9ce0e463d06d029135e02ea4d8051b5731068ed9230",
+        "type": "execution_lease",
+        "at": "2026-10-15T22:04:07.181Z",
+        "data": {
+          "taskId": "acceptance-lease-live-20261015-v1",
+          "contractHash": "a25054a6168f8543697a44a7a6d2bf0f1f2e8f4de4a1f813606d53c0e5e9db76",
+          "sourceSha": "3857c0b075d964fd0a0baaa22bf555902c248bb9",
+          "runId": 38814466479,
+          "runAttempt": 1,
+          "maximumStages": 2
+        }
       }
     ]
   },
-  "sha256": "f40bbfd474fc2eede0bc37f3e73dfe2852b2a54e389b59b5901f3dfd9f185d57"
+  "sha256": "fab246625780d6daa752b580ab1ba89e9441857cca04e6ead0b8186be22a7be7"
 }
