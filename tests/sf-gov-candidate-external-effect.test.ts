@@ -13,6 +13,10 @@ const effects: CandidateExternalEffect[] = [
   "meta_inbox_media_read",
   "openai_responses",
   "openai_transcription",
+  "meta_admin_request",
+  "asistian_webhook",
+  "auth_confirmation_email",
+  "exchange_rate_read",
 ];
 
 describe("SF-GOV-001 Candidate external effect isolation", () => {
@@ -54,6 +58,18 @@ describe("SF-GOV-001 Candidate external effect isolation", () => {
           }),
         ).toThrow(`candidate_preview_external_effect_forbidden:${effect}`);
       }
+    }
+  });
+
+  it("blocks all audited external effects in a governance Preview even with inherited non-Candidate targets", () => {
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("SF_GOV_CANDIDATE_PREVIEW", "0");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://hedouonyhynuvwbckdlg.supabase.co");
+    vi.stubEnv("SUPABASE_URL", "https://hedouonyhynuvwbckdlg.supabase.co");
+    for (const effect of effects) {
+      expect(() => assertCandidateRuntimeExternalEffectAllowed(effect)).toThrow(
+        `candidate_preview_external_effect_forbidden:${effect}`,
+      );
     }
   });
 
