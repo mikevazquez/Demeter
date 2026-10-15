@@ -487,10 +487,9 @@ export async function sendMetaWhatsAppText(input: {
 
       if (!response.ok) {
         const retryable = retryableHttpStatus(response.status);
+        // A 5xx can arrive after delivery. Only explicit rate limiting is retried inline.
         const canRetryInline =
-          retryable &&
-          (response.status === 429 || response.status >= 500) &&
-          attempt < retryDelaysMs.length;
+          retryable && response.status === 429 && attempt < retryDelaysMs.length;
 
         if (canRetryInline) {
           await new Promise<void>((resolve) => setTimeout(resolve, retryDelaysMs[attempt]));
