@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "repository": "mikevazquez/Demeter",
+  "controlBranch": "chore/governance-autonomous-coordinator-20261015",
+  "maxTasksPerRun": 2,
+  "source": {
+    "pageId": "3fad78f7146381e9a97fc3c454e6516a",
+    "url": "https://app.notion.com/p/3fad78f7146381e9a97fc3c454e6516a?pvs=204",
+    "lastEditedAt": "2026-10-15T07:49:26.240Z",
+    "capturedAt": "2026-10-15T09:32:25Z",
+    "expiresAt": "2026-10-17T09:32:25Z",
+    "snapshotPath": ".github/codex-coordinator/notion-policy.txt",
+    "sha256": "b6eeb95a8a92893d64db82551949335a7223628315894bc1fe90d54bbe60f980"
+  },
+  "tasks": [
+    {
+      "id": "acceptance-1-v1",
+      "issueNumber": 292,
+      "issueBodySha256": "a39390d9e6838044676d1fc9de385b86bb2cc97d2f16f08b6fc34e8cad9b8d93",
+      "issueUpdatedAt": "2026-10-15T09:32:25Z",
+      "owner": "codex-1",
+      "status": "ready",
+      "kind": "documentation",
+      "allowedPaths": ["docs/automation/executor-boundaries.md"],
+      "requiredText": ["AUTONOMY-EXECUTOR-V1"],
+      "checks": []
+    },
+    {
+      "id": "acceptance-2-v1",
+      "issueNumber": 293,
+      "issueBodySha256": "8ca4a3b3a6d43889171da7941cfe2ecc54eb24b75924c44bac84c6e341390770",
+      "issueUpdatedAt": "2026-10-15T09:32:25Z",
+      "owner": "codex-1",
+      "status": "ready",
+      "kind": "documentation",
+      "allowedPaths": ["docs/automation/executor-recovery.md"],
+      "requiredText": ["AUTONOMY-RECOVERY-V1"],
+      "checks": []
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+Here is the result of "fetch" for the Page with URL https://app.notion.com/p/3fad78f7146381e9a97fc3c454e6516a as of 2026-10-15T07:49:26.240Z:
+<page url="https://app.notion.com/p/3fad78f7146381e9a97fc3c454e6516a" icon="🛡️">
+<ancestor-path></ancestor-path>
+<properties>
+{"title":"Protocolo Universal de Desarrollo — Skills v1.0"}
+</properties>
+<iconMetadata>{"type":"emoji","emoji":"🛡️"}</iconMetadata>
+<content>
+## Governance 2.0 — Política operativa aprobada (15 de octubre de 2026)
+**Estado:** decisión operativa aprobada por el usuario. **Sustituye** cualquier práctica de pedir confirmaciones repetitivas para operaciones rutinarias de desarrollo; **conserva** las reglas de autorización y protección de los proyectos. El resto del protocolo v1.0 continúa vigente en lo que no contradiga esta sección.
+### Objetivo
+Proteger la arquitectura existente de Studio Flow y otros proyectos **sin reconstruirlos ni ralentizar su desarrollo**. Governance mide resultados verificados y bloques cerrados, no recomendaciones emitidas ni aprobaciones solicitadas.
+### Autonomía predeterminada en desarrollo
+- Cuando el usuario encargue un bloque, recuperar contexto y ejecutarlo de extremo a extremo **en la ejecución activa y dentro de los permisos realmente disponibles**, sin pedir «Continúa» para cada subpaso.
+- Investigar, editar código en ramas aisladas, correr comandos y pruebas, corregir fallos y volver a probar; avanzar subpasos independientes sin aprobación redundante.
+- Si una vía falla, diagnosticar, probar alternativas seguras y documentar el bloqueo **solo** si requiere intervención humana real. No repetir intentos idénticos indefinidamente.
+- Separar trabajos que no compartan archivos, datos, ramas ni efectos; paralelizarlos cuando las herramientas lo soporten, con propietario por bloque. No afirmar que se crearon subagentes o ejecuciones paralelas si no se ejecutaron.
+- Hacer reportes al completar el bloque, ante fallos que no puedan resolverse con medios disponibles o cuando la persona deba tomar una decisión. Las actualizaciones de progreso obligatorias del entorno de conversación no equivalen a solicitar aprobaciones.
+### Camino directo primero: credenciales y conexiones
+1. Verificar primero conectores, APIs, sesiones y credenciales que estén **disponibles en la ejecución actual y autorizadas para el objetivo**.
+2. Priorizar API o conexión directa frente a pedir al usuario ingreso manual, edición de archivos, copiar comandos o repetir configuraciones.
+3. Si una credencial ya fue configurada pero no está accesible desde la sesión actual, buscar métodos alternativos disponibles antes de solicitar una nueva intervención.
+4. Nunca afirmar que una contraseña o token existe o puede recuperarse sin comprobarlo; no exponer secretos en reportes. No usar credenciales de producción para sustituir una credencial de Sandbox.
+5. La vía más corta debe seguir siendo segura, autorizada y compatible con los límites reales del conector.
+### Límites de aprobación humana
+- **Sandbox/desarrollo:** ejecución autónoma para operaciones de riesgo controlado cuando el aislamiento efectivo esté verificado; sin aprobaciones por cada archivo o comando.
+- **UAT:** ejecutar automáticamente verificaciones seguras, guardar evidencia por SHA/entorno/caso y pedir aceptación humana cuando corresponda a funcionalidades o escenarios manuales. No inventar resultados.
+- **Producción:** cambios, datos, deploys, secretos y efectos de producción exigen autorización explícita y específica del usuario, respetando gates técnicos pertinentes. «Listo», «Aprobado», «Continúa» o «UAT aprobado» no sustituyen «Autorizo promoción» cuando esa es la política del proyecto. Las solicitudes explícitas de operaciones directas en producción pueden atenderse bajo autorización concreta y controles proporcionales; no exigir trámites ajenos al riesgo.
+- **Seguridad irreversible / acceso no disponible:** solicitar intervención humana cuando sea insustituible; no suponer que una instrucción textual bloquea permisos técnicamente concedidos.
+### Resultado exigible
+Por bloque informar: objetivo, cambio real y lugar, SHA/PR si existe, pruebas y evidencias, UAT pendiente si aplica, problemas resueltos mediante reintentos, riesgos residuales, y **solo** la mínima acción humana necesaria.
+### Alcance técnico de esta decisión
+Este protocolo **no habilita automáticamente** nuevas herramientas, permisos, ejecución persistente ni llamadas de un agente a otros agentes. El Coordinador actualmente configurado con GitHub y Notion en lectura requiere integración ejecutora separada para delegar cambios; no afirmar orquestación automática hasta probarla.
+---
+**Versión:** 1.0
+**Fecha:** 14 de octubre de 2026
+**Estado:** Aprobado para uso operativo tras seis validaciones funcionales individuales y una prueba conjunta reportadas por el usuario.
+**Aplicación:** Studio Flow, Finance Core y futuras aplicaciones. Cada proyecto conserva su gobierno y autorizaciones.
+## Principio rector
+Trabajar con contexto verificable, bloques definidos, aislamiento efectivo, pruebas con evidencia y autorización de producción independiente. Una Skill no concede acceso ni ejecuta trabajo en segundo plano.
+## Las seis Skills y sus funciones
+1. **Universal Project Memory:** recuperar decisiones, contexto, entornos, PR, SHA, evidencias y propietarios; distinguir histórico, reportado, verificado y no comprobado.
+2. **Universal Dev Orchestrator:** definir objetivos, alcance, rama, entorno, aceptación y Definition of Done; ejecutar bloques mínimos sin duplicar trabajos paralelos.
+3. **Universal Bug Investigator:** reproducir de forma segura, separar síntomas e hipótesis de causas raíz comprobadas, proponer correcciones y regresiones.
+4. **Universal UAT Automation:** conservar identificadores de casos; registrar SHA, entorno, resultado y evidencias; no afirmar aprobaciones sin ejecución verificable.
+5. **Universal Safe Deployment:** auditar CI, UAT, aislamiento, permisos, rollback y autorización exacta antes de promover y verificar posteriormente.
+6. **Interaction Protocol:** comunicación clara en español, visual cuando aporta valor, por bloques y sin actualizaciones innecesarias.
+## Secuencia operativa
+### Fase 1. Recuperación
+- Identificar proyecto, reglas aprobadas, repositorio, rama, SHA, tenant y entorno.
+- Revisar fuentes oficiales y conversaciones disponibles, detectando trabajo paralelo.
+- No convertir evidencia histórica en estado actual.
+### Fase 2. Planificación
+- Crear contrato del bloque: objetivo, prerrequisitos, responsable, alcance, criterios de aceptación, riesgos, pruebas y Definition of Done.
+- Resolver discrepancias antes de intervenir sobre áreas afectadas.
+### Fase 3. Investigación e implementación
+- Reproducir incidentes con aislamiento real y datos sintéticos cuando sea viable.
+- Distinguir hechos, hipótesis y causas comprobadas.
+- Implementar el cambio mínimo en rama y entorno aislados; preservar históricos financieros, reservas y auditoría.
+- Evitar mensajes reales, cobros, webhooks y cambios irreversibles sin autorización apropiada.
+### Fase 4. Verificación y UAT
+- Comprobar formato, lint, tipos, build y pruebas aplicables; marcar explícitamente lo no ejecutado.
+- Mantener la matriz original y evidencias por caso, entorno y SHA.
+- Separar éxito técnico de aceptación humana.
+### Fase 5. Gate de producción
+- Verificar que el SHA de implementación corresponda al evaluado por CI y UAT.
+- Confirmar aislamiento, credenciales por entorno, protecciones de ramas, riesgos, planes de rollback y ausencia de cambios paralelos conflictivos.
+- **«Listo», «Continúa», «Aprobado» y «UAT aprobado» NO autorizan producción.** En proyectos con política estricta exigir **«Autorizo promoción»** para proyecto, SHA y alcance concretos, además de todos los gates.
+- No tocar producción ni desplegar sin autorización válida.
+### Fase 6. Despliegue y cierre
+- Verificar SHA y destino realmente desplegados, pruebas de salud, integridad de datos, logs y umbrales de reversión.
+- Registrar evidencias, riesgos restantes y resumen de continuidad.
+- No cerrar un bloque sin satisfacer su Definition of Done.
+## Estados obligatorios
+- **No iniciado:** trabajo aún no empezado.
+- **En curso:** trabajo activo con responsable.
+- **Implementado sin verificar:** cambio aplicado sin evidencia suficiente de prueba.
+- **Verificado:** controles técnicos probados en SHA y entorno exactos.
+- **UAT aprobado:** aceptación explícita de alcance y versión, independiente de promoción.
+- **Bloqueado:** existe requisito o riesgo sin resolver.
+- **Producción autorizada:** existe autorización explícita aplicable, sin que esto signifique que ya se desplegó.
+- **Desplegado / verificado en producción:** registrar ambos estados de manera separada con evidencia.
+## Registro mínimo de evidencia
+Proyecto, bloque, responsable, fuente oficial, entorno, rama, SHA, caso o requisito, resultado esperado, observación real, marca temporal, enlace a evidencia, riesgos y siguiente acción.
+## Trabajo entre conversaciones
+- Antes de ejecutar, recuperar estado, decisiones y propietarios reales.
+- No editar ramas, PR ni entornos con trabajo concurrente conflictivo.
+- Entregar una transferencia que incluya último bloque cerrado, tareas abiertas, fuente, SHA, entornos, responsable, DoD y acciones prohibidas.
+- No suponer que otras conversaciones están sincronizadas o que una tarea paralela ya terminó.
+## Reglas de comunicación
+- Informar al cierre de un bloque o al requerir intervención real del usuario.
+- Verde = verificado/aprobado; amarillo = pendiente; rojo = bloqueado/fallido.
+- Para «Cómo vamos», informar estado verificable; para «Continúa», avanzar solo en trabajo elegible y seguro; para «Resuélvelo», actuar dentro de permisos y gobierno del proyecto.
+## Cierre de esta iniciativa
+Las seis Skills fueron aprobadas individualmente y su prueba conjunta fue aprobada por el usuario el 14 de octubre de 2026. Este cierre acredita el sistema metodológico, no los estados UAT ni la seguridad de producción de proyectos particulares.
+**Control de cambios:** Cualquier revisión futura del protocolo requiere actualizar su versión y registrar el cambio.
+</content>
+</page>
