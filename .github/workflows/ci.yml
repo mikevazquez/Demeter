@@ -62,6 +62,9 @@ jobs:
       - name: B03 synthetic tenant membership UAT negative tests
         run: npx vitest run tests/sf-gov-b03-tenant-selection.test.ts
 
+      - name: B03 fixture authorization and target negative preflight tests
+        run: npx vitest run tests/sf-gov-b03-fixture-preflight.test.ts
+
       - name: B03 isolated two-tenant PostgreSQL UAT rehearsal
         run: node --test scripts/sf-gov-b03-isolated-tenant-uat.test.mjs
 
