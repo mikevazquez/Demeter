@@ -1,0 +1,61 @@
+# SF-GOV-001 / B02: approval-only rehearsal. No production credentials/deploy commands.
+# Not active on main until a separately authorized change is merged.
+name: SF GOV production approval rehearsal
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: "Immutable 40-character release commit SHA"
+        required: true
+        type: string
+      release_scope:
+        description: "Specific Studio Flow modules authorized for release"
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.validate.outputs.sha }}
+    steps:
+      - name: Deny unauthorized ref, actor and invalid manifest
+        id: validate
+        env:
+          GIT_REF: ${{ github.ref }}
+          GIT_ACTOR: ${{ github.actor }}
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          RELEASE_SCOPE: ${{ inputs.release_scope }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GIT_REF" != "refs/heads/main" || "$GIT_ACTOR" != "mikevazquez" ]]; then
+            echo "::error::DENY: only the Studio Flow owner on main may request review"
+            exit 1
+          fi
+          if [[ ! "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ || -z "${RELEASE_SCOPE//[[:space:]]/}" ]]; then
+            echo "::error::DENY: invalid SHA or empty scope"
+            exit 1
+          fi
+          echo "sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
+
+  owner-review:
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+    steps:
+      - name: Record approval checkpoint only
+        env:
+          RELEASE_SHA: ${{ needs.preflight.outputs.sha }}
+          RELEASE_SCOPE: ${{ inputs.release_scope }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "APPROVAL_CHECKPOINT_ONLY: Studio Flow"
+          echo "requested_sha=$RELEASE_SHA"
+          echo "scope=$RELEASE_SCOPE"
+          echo "NO_DEPLOY: this workflow does not merge, promote, access secrets or authorize production changes by itself"
