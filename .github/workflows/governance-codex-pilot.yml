@@ -57,12 +57,52 @@ jobs:
           NODE
 
       - name: Run Codex in workspace-only sandbox
+        id: codex
         uses: openai/codex-action@v1
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           permission-profile: ":workspace"
           prompt-file: .codex-task.txt
           output-file: /tmp/codex-result.txt
+
+      - name: Classify API failure without exposing credentials
+        if: failure() && steps.codex.outcome == 'failure'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        shell: bash
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const key = process.env.OPENAI_API_KEY;
+          const redact = value => typeof value === 'string'
+            ? value.replaceAll(key || '\0', '[REDACTED]').replace(/sk-[A-Za-z0-9_-]+/g, '[REDACTED]')
+            : value;
+          let evidence;
+          try {
+            const response = await fetch('https://api.openai.com/v1/responses', {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ model: 'gpt-6.1-sol', input: 'Reply OK.', max_output_tokens: 16, store: false }),
+              signal: AbortSignal.timeout(20000)
+            });
+            const body = await response.json();
+            evidence = {
+              status: response.status,
+              requestId: response.headers.get('x-request-id'),
+              organization: response.headers.get('openai-organization'),
+              project: response.headers.get('openai-project'),
+              errorCode: redact(body.error?.code),
+              errorType: redact(body.error?.type),
+              errorMessage: redact(body.error?.message),
+              responseReceived: true
+            };
+          } catch (error) {
+            evidence = { responseReceived: false, errorName: error.name };
+          }
+          const output = JSON.stringify(evidence, null, 2);
+          fs.writeFileSync('/tmp/codex-api-diagnostic.json', output);
+          console.log(output);
+          NODE
 
       - name: Verify smoke test result and unchanged checkout
         if: env.ISSUE_NUMBER == '291'
@@ -104,6 +144,7 @@ jobs:
         with:
           name: codex-pilot-${{ env.ISSUE_NUMBER }}-${{ github.run_id }}
           path: |
+            /tmp/codex-api-diagnostic.json
             /tmp/codex-evidence.json
             /tmp/codex-issue.json
             /tmp/codex-changes.patch
