@@ -11,6 +11,7 @@ The Sandbox database contains `assistant_transfer_purchase_intents` with `status
 The current Sandbox RPC `workshop_checkout_confirm` takes caller-supplied `p_confirmed_amount_minor` and `p_payment_method`. It must **not** be exposed to Demi, students or a client-accessible API. A server using `service_role` must not pass unverified values to it.
 
 Implement a dedicated immutable workshop payment authorization record (or equivalent existing verified provider event) with:
+
 - `studio_id`, `offer_id`, `student_id`, `idempotency_key`, `amount_minor`, `currency`, `provider`, `provider_event_id`, `verified_at`, `verified_by`/provider signature verification, and `consumed_purchase_id`.
 - Unique provider event per provider and studio; unique checkout consumption; RLS denied to untrusted roles.
 - Provider webhook signature and amount/currency/order matching verified **server-side**; for bank transfers require explicit approved review with trusted actor, not receipt presence.

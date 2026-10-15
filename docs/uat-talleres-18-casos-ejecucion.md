@@ -169,4 +169,3 @@
 - Preview c97586e5 READY verificado. Acceso Vercel resuelto mediante enlace temporal de la conexión existente; navegador llega a /login/studio y no dispone de sesión administrativa. Se requiere acceso seguro a cuenta Sandbox para la validación visual.
 - **Trabajo de ingeniería pendiente:** conectar interfaz al flujo nuevo con autorización de pago confiable; no conectar v2 directamente a portal/Demi ni pasar pagos declarados por cliente. V2 aún conserva el contrato de pago interno inseguro y no resuelve ese gate. Completar persistencia durable y pruebas funcionales de UI. TALL-03 requiere negativos multi-sesión completos; TALL-17 cambio de configuración del estudio y decisión posterior; TALL-18 accesos cruzados/RLS.
 - La migración v2 depende del esquema workshop/RPC previo existente en Sandbox que aún no está íntegramente versionado en esta rama; no constituye paquete promovible.
-

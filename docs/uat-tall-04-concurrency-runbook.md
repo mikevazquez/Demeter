@@ -3,6 +3,7 @@
 Estado: **LISTO PARA EJECUTAR, NO APROBADO**.
 
 El 2026-10-14 se verificó en Sandbox:
+
 - Estudio: `9fe23cfa-fb47-4670-afeb-ed4a56433772`
 - Oferta sintética exclusiva: `a5f0cf20-803a-4524-b78b-5e68d5a413c4`
 - Sesión sintética exclusiva: `25e4a80d-4b8c-4986-9d8a-20530c3d54cb`
@@ -13,6 +14,7 @@ El 2026-10-14 se verificó en Sandbox:
 Ejecutor: `scripts/uat/workshop-concurrency-sandbox.mjs`. Necesita dos clientes Supabase independientes y una clave service_role **solo de Sandbox**, inyectada como secreto de entorno; nunca en GitHub, mensajes ni salida de CI.
 
 Variables no secretas:
+
 ```dotenv
 WORKSHOP_UAT_SUPABASE_URL=https://hedouonyhynuvwbckdlg.supabase.co
 WORKSHOP_UAT_STUDIO_ID=9fe23cfa-fb47-4670-afeb-ed4a56433772
@@ -29,7 +31,6 @@ Secret: `WORKSHOP_UAT_SERVICE_ROLE_KEY` (Sandbox only). Run `node scripts/uat/wo
 **Pass criteria:** exactly one successful checkout, exactly one `session_full` rejection, exactly one active reservation, one synthetic purchase/sale/payment, and no purchase for the losing idempotency key. Confirm SQL independently after execution.
 
 **Critical limitation:** This test uses the existing checkout RPC, which records a synthetic cash payment without independent payment verification. It must never be exposed to end users. Test-only credentials and data. Production remains protected.
-
 
 ## Segundo fixture listo (2026-10-14)
 
