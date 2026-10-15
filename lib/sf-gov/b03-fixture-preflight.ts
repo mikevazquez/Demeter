@@ -37,7 +37,10 @@ export function evaluateB03FixtureReadiness(input: FixturePreflight): {
   ) {
     reasons.push("candidate_target_required");
   }
-  if (!/^[a-f0-9]{40}$/.test(input.expectedSha) || input.expectedSha !== input.observedSha) {
+  if (
+    !/^[a-f0-9]{40}$/.test(input.expectedSha) ||
+    input.expectedSha !== input.observedSha
+  ) {
     reasons.push("sha_mismatch");
   }
   if (
@@ -52,7 +55,8 @@ export function evaluateB03FixtureReadiness(input: FixturePreflight): {
     reasons.push("synthetic_identity_allowlist_required");
   }
   if (!input.outboundDenied) reasons.push("outbound_not_certified");
-  if (!input.authAdminProvisioningVerified) reasons.push("auth_admin_method_not_verified");
+  if (!input.authAdminProvisioningVerified)
+    reasons.push("auth_admin_method_not_verified");
   if (!input.cleanupPlanVerified) reasons.push("cleanup_not_verified");
   if (input.productionPromotionRequested) reasons.push("production_forbidden");
   return { ready: reasons.length === 0, reasons };
