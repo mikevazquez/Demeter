@@ -12,6 +12,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { createServiceClient } from "@/lib/supabase/service";
 import { assertDemiUatEnvironment } from "@/lib/assistant/uat-environment";
+import { assertCandidateRuntimeExternalEffectAllowed } from "@/lib/assistant/external-effect-policy";
 import { withDemiUatScope } from "@/lib/assistant/uat-scope";
 import { validateUatCaseResult } from "@/lib/assistant/uat-cases";
 import {
@@ -481,6 +482,7 @@ export async function moveDemiUatSession(id: string, sessionKey: string, hours: 
 }
 
 export async function runDemiUatNotifications(id: string, makeDue: boolean) {
+  assertCandidateRuntimeExternalEffectAllowed("notification_worker_trigger");
   await locked(id, async (ctx) => {
     const before = await snapshot(ctx);
     if (makeDue) {
@@ -526,6 +528,7 @@ export async function runDemiUatNotifications(id: string, makeDue: boolean) {
 }
 
 export async function runDemiUatFollowups(id: string, days: number) {
+  assertCandidateRuntimeExternalEffectAllowed("followup_worker_trigger");
   if (![0, 1, 2, 3, 7, 14, 15, 30].includes(days)) throw new Error("demi_uat_clock_invalid");
   await locked(id, async (ctx) => {
     const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
