@@ -60,7 +60,11 @@ function harness(httpStatus = 200, failOutboundPersistence = false) {
         ) {
           return { data: null, error: { code: "23505" }, count: 0 };
         }
-        if (failOutboundPersistence && table === "assistant_turns" && payload.role === "assistant") {
+        if (
+          failOutboundPersistence &&
+          table === "assistant_turns" &&
+          payload.role === "assistant"
+        ) {
           return { data: null, error: { code: "synthetic_failure" }, count: 0 };
         }
         const inserted = { id: `row-${++nextId}`, attempt_count: 0, ...payload };
@@ -232,18 +236,21 @@ describe("Demi signed webhook replay with simulated persistence and real sender"
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it.each([500, 503])("quarantines HTTP %s and never sends again on webhook replay", async (status) => {
-    const h = harness(status);
-    for (let i = 0; i < 4; i += 1) expect((await h.post(h.request())).status).toBe(200);
-    expect(h.transport).toHaveBeenCalledTimes(1);
-    expect(h.model).toHaveBeenCalledTimes(1);
-    expect(h.rows.assistant_whatsapp_events[0]).toMatchObject({
-      processing_status: "human_review",
-      processing_result: { retryable: false, outcome_unknown: true },
-    });
-    expect(h.rows.assistant_whatsapp_deliveries).toHaveLength(1);
-    expect(h.rows.assistant_turns.filter((row) => row.role === "assistant")).toHaveLength(0);
-  });
+  it.each([500, 503])(
+    "quarantines HTTP %s and never sends again on webhook replay",
+    async (status) => {
+      const h = harness(status);
+      for (let i = 0; i < 4; i += 1) expect((await h.post(h.request())).status).toBe(200);
+      expect(h.transport).toHaveBeenCalledTimes(1);
+      expect(h.model).toHaveBeenCalledTimes(1);
+      expect(h.rows.assistant_whatsapp_events[0]).toMatchObject({
+        processing_status: "human_review",
+        processing_result: { retryable: false, outcome_unknown: true },
+      });
+      expect(h.rows.assistant_whatsapp_deliveries).toHaveLength(1);
+      expect(h.rows.assistant_turns.filter((row) => row.role === "assistant")).toHaveLength(0);
+    },
+  );
 
   it("handles twelve simultaneous copies with one conditional claim and one send", async () => {
     const h = harness();
@@ -256,7 +263,10 @@ describe("Demi signed webhook replay with simulated persistence and real sender"
 
   it("does not suppress two distinct inbound events merely because their text matches", async () => {
     const h = harness();
-    await Promise.all([h.post(h.request("wamid.synthetic-a")), h.post(h.request("wamid.synthetic-b"))]);
+    await Promise.all([
+      h.post(h.request("wamid.synthetic-a")),
+      h.post(h.request("wamid.synthetic-b")),
+    ]);
     expect(h.transport).toHaveBeenCalledTimes(2);
     expect(h.rows.assistant_whatsapp_events).toHaveLength(2);
   });
