@@ -21,15 +21,15 @@ Transformar una solicitud como «corrige este problema» en un bloque verificabl
 
 ## Separación de responsabilidades
 
-| Rol lógico | Puede | No puede |
-| --- | --- | --- |
-| Solicitante | Definir resultado, aceptar UAT, autorizar promoción específica | Conceder permisos implícitos con un «continúa» |
-| Coordinador | Recuperar gobierno, admitir tareas dentro de contrato, detectar duplicados, asignar y verificar | Cambiar reglas, secretos, producción o ampliar allowlists unilateralmente |
-| Investigador | Consultar código, logs y evidencias autorizadas | Escribir en producción o asumir hipótesis como hechos |
-| Ejecutor Codex | Modificar rutas admitidas en rama aislada, probar y reparar | Publicar, acceder a secretos productivos o ejecutar tareas no admitidas |
-| Certificador | Reconstruir artefactos y validar resultados de forma independiente | Modificar el resultado certificado |
-| Publicador restringido | Abrir PR Draft desde artefactos certificados | Fusionar o desplegar sin gates y autorización |
-| Responsable UAT | Validar experiencia/resultado de negocio | Sustituir la evidencia técnica o autorización de producción |
+| Rol lógico             | Puede                                                                                           | No puede                                                                  |
+| ---------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Solicitante            | Definir resultado, aceptar UAT, autorizar promoción específica                                  | Conceder permisos implícitos con un «continúa»                            |
+| Coordinador            | Recuperar gobierno, admitir tareas dentro de contrato, detectar duplicados, asignar y verificar | Cambiar reglas, secretos, producción o ampliar allowlists unilateralmente |
+| Investigador           | Consultar código, logs y evidencias autorizadas                                                 | Escribir en producción o asumir hipótesis como hechos                     |
+| Ejecutor Codex         | Modificar rutas admitidas en rama aislada, probar y reparar                                     | Publicar, acceder a secretos productivos o ejecutar tareas no admitidas   |
+| Certificador           | Reconstruir artefactos y validar resultados de forma independiente                              | Modificar el resultado certificado                                        |
+| Publicador restringido | Abrir PR Draft desde artefactos certificados                                                    | Fusionar o desplegar sin gates y autorización                             |
+| Responsable UAT        | Validar experiencia/resultado de negocio                                                        | Sustituir la evidencia técnica o autorización de producción               |
 
 ## Aislamiento entre productos y trabajos
 
@@ -43,6 +43,7 @@ Transformar una solicitud como «corrige este problema» en un bloque verificabl
 **Fase A — Documentación (este PR):** aprobar o corregir el contrato de entrada/salida y separación de roles, sin activar automatizaciones nuevas.
 
 **Fase B — Prueba controlada en entorno aislado (futuro PR):**
+
 - Una incidencia sintética admitida se transforma en bloque con DoD y propietario.
 - El ejecutor realiza un cambio permitido; una prueba falla y se corrige dentro del presupuesto.
 - El certificador independiente reconstruye el SHA y el publicador crea exactamente un PR Draft.
