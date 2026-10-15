@@ -9,7 +9,7 @@ test("governance decision core and durable local ledger", () => {
       cwd: process.cwd(),
       encoding: "utf8",
       timeout: 25000,
-      env: { PATH: process.env.PATH ?? "" },
+      env: { PATH: process.env.PATH ?? "", NODE_ENV: "test" },
     },
   );
   console.log(output);
