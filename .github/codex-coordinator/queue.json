@@ -55,6 +55,25 @@
         ]
       ],
       "acceptanceRetryProbe": true
+    },
+    {
+      "id": "acceptance-lease-live-20261015-v1",
+      "issueNumber": 300,
+      "issueBodySha256": "5a1a3d47482746bfe20cc33493b37b40fc4f56951453aa83e330c49639f552e7",
+      "issueUpdatedAt": "2026-10-15T22:01:44Z",
+      "owner": "codex-1",
+      "status": "ready",
+      "kind": "code",
+      "allowedPaths": ["tests/automation/lease-live-proof.mjs"],
+      "requiredText": ["AUTONOMY-LEASE-LIVE-V1"],
+      "checks": [
+        [
+          "node",
+          "-e",
+          "const fs=require('node:fs'),assert=require('node:assert/strict');\nassert.deepEqual(Object.keys(process.env).sort(),['PATH','PWD']);\nassert.equal(fs.existsSync('/home/runner/.codex/config.toml'),false);\nassert.equal(fs.readFileSync('/proc/net/route','utf8').trim().split('\\n').length,1);\nassert.throws(()=>fs.writeFileSync('.git/automation-lease-probe','blocked'),e=>e.code==='EROFS');\nimport('./tests/automation/lease-live-proof.mjs').then((m)=>{assert.deepEqual(Object.keys(m),['leasedExecutionProof']);assert.deepEqual(m.leasedExecutionProof,{marker:'AUTONOMY-LEASE-LIVE-V1',taskId:'acceptance-lease-live-20261015-v1',maxGenerationStages:2,productionAuthorized:false});assert.equal(Object.isFrozen(m.leasedExecutionProof),true);console.log('LEASE_ISOLATION_CHECKS_PASS: no credentials, no route, hidden Codex home, read-only Git, synthetic fixture verified');}).catch(e=>{console.error(e.message);process.exitCode=1;});"
+        ]
+      ],
+      "acceptanceRetryProbe": true
     }
   ],
   "hostedController": {
