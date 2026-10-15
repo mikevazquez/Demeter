@@ -24,7 +24,11 @@ test("B02 approval rehearsal requires a Production environment review and no sec
     "SUPABASE_SERVICE_ROLE_KEY",
     "VERCEL_TOKEN",
   ]) {
-    assert.equal(workflow.includes(forbidden), false, `unexpected production-capable command: ${forbidden}`);
+    assert.equal(
+      workflow.includes(forbidden),
+      false,
+      `unexpected production-capable command: ${forbidden}`,
+    );
   }
 });
 
