@@ -39,7 +39,6 @@ describe("SF-GOV-001 Candidate external effect isolation", () => {
     }
   });
 
-
   afterEach(() => vi.unstubAllEnvs());
   for (const effect of effects) {
     it(`blocks real ${effect} in Candidate Preview`, () => {
