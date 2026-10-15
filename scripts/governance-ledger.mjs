@@ -6,7 +6,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { canonical, digest, initialState, invariant, validateState } from "./governance-evaluator.mjs";
+import {
+  canonical,
+  digest,
+  initialState,
+  invariant,
+  validateState,
+} from "./governance-evaluator.mjs";
 
 const LIMIT = 4 * 1024 * 1024;
 const REVISION = /^\d{12}\.json$/;
@@ -34,14 +40,20 @@ export class GovernanceLedger {
 
   checkDirectory() {
     const stat = fs.lstatSync(this.directory);
-    invariant(stat.isDirectory() && stat.dev === this.device && stat.ino === this.inode, "directory identity");
+    invariant(
+      stat.isDirectory() && stat.dev === this.device && stat.ino === this.inode,
+      "directory identity",
+    );
     invariant(fs.realpathSync(this.directory) === this.directory, "directory path");
   }
 
   read() {
     this.checkDirectory();
     const names = fs.readdirSync(this.directory).filter((name) => !name.startsWith(".pending-"));
-    invariant(names.every((name) => REVISION.test(name)), "unexpected journal entry");
+    invariant(
+      names.every((name) => REVISION.test(name)),
+      "unexpected journal entry",
+    );
     names.sort();
     let result = { revision: null, sequence: 0, state: structuredClone(this.empty) };
     for (const name of names) {
@@ -74,7 +86,10 @@ export class GovernanceLedger {
     invariant(next.repository === this.empty.repository, "repository namespace");
     invariant(next.controlBranch === this.empty.controlBranch, "branch namespace");
     invariant(next.events.length >= previous.events.length, "history deletion");
-    invariant(canonical(next.events.slice(0, previous.events.length)) === canonical(previous.events), "history rewrite");
+    invariant(
+      canonical(next.events.slice(0, previous.events.length)) === canonical(previous.events),
+      "history rewrite",
+    );
   }
 
   commit(expectedRevision, next) {
@@ -114,7 +129,9 @@ export class GovernanceLedger {
     } catch (error) {
       if (!linked && error.code === "EEXIST") throw new LedgerConflict();
       if (linked) {
-        const uncertain = new Error("Revision published; durability uncertain. Read before retrying.");
+        const uncertain = new Error(
+          "Revision published; durability uncertain. Read before retrying.",
+        );
         uncertain.code = "RECONCILE_REQUIRED";
         throw uncertain;
       }

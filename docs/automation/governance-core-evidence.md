@@ -11,7 +11,7 @@ Codex, the admitted queue, the certification stage or the deterministic publishe
   evidence classification and append-only retry/notification receipts.
 - `scripts/governance-ledger.mjs`: private local POSIX journal, parent hashes,
   no-replace atomic revision publication, optimistic concurrency, history checks
-  and recovery after a process restart. Corruption and missing history fail closed.
+  and recovery after a process restart. Corruption and interior history gaps fail closed.
 - `tests/automation/governance.node.mjs`: 37 deterministic tests, including two
   actual competing Node processes and a separate-process journal read.
 - `tests/governance-controller.test.ts`: runs that suite from the existing Vitest CI.
@@ -55,7 +55,8 @@ A notice receipt does not resolve a technical failure.
 The local journal requires a persistent, private POSIX directory owned by the
 controller. Its hash chain detects accidental corruption, not a malicious actor
 who controls that directory. It is not shared storage for independent hosted
-runners. Complete snapshots are bounded to 4 MiB and history to 10,000 events;
+runners. Removal of a suffix of revisions cannot be detected without an external
+expected-head reference. Complete snapshots are bounded to 4 MiB and history to 10,000 events;
 capacity exhaustion stops writes instead of silently truncating audit history.
 Production-grade archival and a shared-store adapter remain separate work.
 

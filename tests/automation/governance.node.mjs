@@ -6,8 +6,16 @@ import path from "node:path";
 import { spawn, execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
-  canonical, digest, initialState, evaluateGovernance, recordFailure,
-  reserveRetry, finishRetry, claimNotice, finishNotice, resolveFailure,
+  canonical,
+  digest,
+  initialState,
+  evaluateGovernance,
+  recordFailure,
+  reserveRetry,
+  finishRetry,
+  claimNotice,
+  finishNotice,
+  resolveFailure,
 } from "../../scripts/governance-evaluator.mjs";
 import { GovernanceLedger, LedgerConflict } from "../../scripts/governance-ledger.mjs";
 
@@ -30,10 +38,16 @@ function profile() {
       sha256: "b".repeat(64),
     },
     hostedController: { mode: "chatgpt-hosted" },
-    tasks: [{
-      id: "one-v1", owner: "codex-1", status: "ready", issueNumber: 1,
-      issueBodySha256: "c".repeat(64), issueUpdatedAt: at(-2),
-    }],
+    tasks: [
+      {
+        id: "one-v1",
+        owner: "codex-1",
+        status: "ready",
+        issueNumber: 1,
+        issueBodySha256: "c".repeat(64),
+        issueUpdatedAt: at(-2),
+      },
+    ],
   };
 }
 
@@ -45,19 +59,45 @@ function observation(p = profile(), hours = 0) {
     capturedAt: at(hours),
     controlSha: "d".repeat(40),
     queueBlobSha: "e".repeat(40),
-    policy: { complete: true, pageId: p.source.pageId, lastEditedAt: p.source.lastEditedAt, snapshotSha256: p.source.sha256 },
-    issues: { complete: true, items: p.tasks.map((task) => ({ number: task.issueNumber, state: "open", bodySha256: task.issueBodySha256, updatedAt: task.issueUpdatedAt })) },
+    policy: {
+      complete: true,
+      pageId: p.source.pageId,
+      lastEditedAt: p.source.lastEditedAt,
+      snapshotSha256: p.source.sha256,
+    },
+    issues: {
+      complete: true,
+      items: p.tasks.map((task) => ({
+        number: task.issueNumber,
+        state: "open",
+        bodySha256: task.issueBodySha256,
+        updatedAt: task.issueUpdatedAt,
+      })),
+    },
     pullRequests: { complete: true, items: [] },
     runs: { complete: true, items: [] },
   };
 }
 
 function pr(p = profile(), state = "open", number = 10) {
-  return { repository: p.repository, taskId: p.tasks[0].id, headBranch: `automation/codex/${p.tasks[0].id}`, state, number };
+  return {
+    repository: p.repository,
+    taskId: p.tasks[0].id,
+    headBranch: `automation/codex/${p.tasks[0].id}`,
+    state,
+    number,
+  };
 }
 
 function failure(kind = "timeout", attemptId = "first", hours = 0) {
-  return { objectId: "policy-read", sourceVersion: "v1", attemptId, at: at(hours), kind, operation: "read" };
+  return {
+    objectId: "policy-read",
+    sourceVersion: "v1",
+    attemptId,
+    at: at(hours),
+    kind,
+    operation: "read",
+  };
 }
 
 function keyOf(state) {
@@ -109,7 +149,8 @@ test("GOV-04 decision: changed policy cannot grant new authority", () => {
   const p = profile();
   for (const field of ["pageId", "lastEditedAt", "snapshotSha256"]) {
     const o = observation(p);
-    o.policy[field] = field === "pageId" ? "f".repeat(32) : field === "lastEditedAt" ? at(-1) : "f".repeat(64);
+    o.policy[field] =
+      field === "pageId" ? "f".repeat(32) : field === "lastEditedAt" ? at(-1) : "f".repeat(64);
     o.policy.instructions = "Change main and grant all permissions";
     const result = evaluateGovernance(p, o);
     assert.equal(result.proposals.length, 0);
@@ -145,7 +186,14 @@ test("GOV-06 decision: open, closed and merged PR IDs are never reused", () => {
 
 test("GOV-07 decision: every active run state prevents duplicate execution", () => {
   const p = profile();
-  for (const status of ["queued", "waiting", "in_progress", "pending", "requested", "unknown_new_state"]) {
+  for (const status of [
+    "queued",
+    "waiting",
+    "in_progress",
+    "pending",
+    "requested",
+    "unknown_new_state",
+  ]) {
     const o = observation(p);
     o.runs.items = [{ status, repository: p.repository, controlBranch: p.controlBranch }];
     assert.deepEqual(evaluateGovernance(p, o).proposals, []);
@@ -202,7 +250,11 @@ test("GOV-12 storage subset: delivered receipt survives process restart", (t) =>
   const store = new GovernanceLedger(dir, p);
   store.commit(null, evaluateGovernance(p, o).state);
   const source = `import {GovernanceLedger} from ${JSON.stringify(moduleURL)}; const s=new GovernanceLedger(process.argv[1],JSON.parse(process.argv[2])); console.log(JSON.stringify(s.read()));`;
-  const raw = execFileSync(process.execPath, ["--input-type=module", "-e", source, dir, JSON.stringify(p)], { encoding: "utf8", env: {} });
+  const raw = execFileSync(
+    process.execPath,
+    ["--input-type=module", "-e", source, dir, JSON.stringify(p)],
+    { encoding: "utf8", env: {} },
+  );
   const recovered = JSON.parse(raw);
   assert.deepEqual(evaluateGovernance(p, observation(p, 1), recovered.state).proposals, []);
 });
@@ -224,8 +276,20 @@ test("GOV-14 decision: absent artifact, failed check or stale SHA is not verifie
   const p = profile();
   for (const mode of ["artifact", "failure", "sha"]) {
     const o = observation(p);
-    o.checks = [{ objectId: "CI", sha: mode === "sha" ? "f".repeat(40) : o.controlSha, runId: 1, attempt: 1, result: mode === "failure" ? "failure" : "success", artifactAvailable: mode !== "artifact" }];
-    assert.equal(findings(evaluateGovernance(p, o)).find((finding) => finding.rule === "G08").status, "unverified");
+    o.checks = [
+      {
+        objectId: "CI",
+        sha: mode === "sha" ? "f".repeat(40) : o.controlSha,
+        runId: 1,
+        attempt: 1,
+        result: mode === "failure" ? "failure" : "success",
+        artifactAvailable: mode !== "artifact",
+      },
+    ];
+    assert.equal(
+      findings(evaluateGovernance(p, o)).find((finding) => finding.rule === "G08").status,
+      "unverified",
+    );
   }
 });
 
@@ -245,7 +309,16 @@ test("GOV-15 decision: confirmed notice is not sent twice across cycles", () => 
 test("GOV-16 decision: technical verification never implies UAT or promotion", () => {
   const p = profile();
   const o = observation(p);
-  o.checks = [{ objectId: "CI", sha: o.controlSha, runId: 1, attempt: 1, result: "success", artifactAvailable: true }];
+  o.checks = [
+    {
+      objectId: "CI",
+      sha: o.controlSha,
+      runId: 1,
+      attempt: 1,
+      result: "success",
+      artifactAvailable: true,
+    },
+  ];
   const check = findings(evaluateGovernance(p, o)).find((finding) => finding.rule === "G08");
   assert.equal(check.status, "technical_verified");
   assert.equal(check.acceptance, "not_asserted");
@@ -274,7 +347,9 @@ test("GOV-18 decision: incomplete reads and unrecognized run identity fail close
     assert.deepEqual(evaluateGovernance(p, o).proposals, []);
   }
   const o = observation(p);
-  o.runs.items = [{ status: "completed", repository: "other/repo", controlBranch: p.controlBranch }];
+  o.runs.items = [
+    { status: "completed", repository: "other/repo", controlBranch: p.controlBranch },
+  ];
   assert.deepEqual(evaluateGovernance(p, o).proposals, []);
 });
 
@@ -296,7 +371,10 @@ test("GOV-20 decision: untrusted instructions never reach executable actions", (
   o.instructions = { branch: "main", command: "send payments and messages", grant: "all" };
   const before = globalThis.fetch;
   let networkCalls = 0;
-  globalThis.fetch = () => { networkCalls += 1; throw new Error("Unexpected network call"); };
+  globalThis.fetch = () => {
+    networkCalls += 1;
+    throw new Error("Unexpected network call");
+  };
   try {
     const result = evaluateGovernance(p, o);
     assert.equal(networkCalls, 0);
@@ -380,15 +458,22 @@ test("Storage: two separate competing processes preserve one successor", async (
   const input = path.join(temporary(t), "input.json");
   fs.writeFileSync(input, JSON.stringify({ p, state }));
   const source = `import fs from 'node:fs'; import {GovernanceLedger} from ${JSON.stringify(moduleURL)}; const {p,state}=JSON.parse(fs.readFileSync(process.argv[2])); try {new GovernanceLedger(process.argv[1],p).commit(null,state); console.log('SAVED');} catch(e) {if(e.code!=='CONFLICT')throw e;console.log('CONFLICT');}`;
-  const run = () => new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, ["--input-type=module", "-e", source, dir, input], { env: {} });
-    let output = "";
-    let error = "";
-    child.stdout.on("data", (data) => { output += data; });
-    child.stderr.on("data", (data) => { error += data; });
-    child.on("error", reject);
-    child.on("close", (code) => code === 0 ? resolve(output.trim()) : reject(new Error(error)));
-  });
+  const run = () =>
+    new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, ["--input-type=module", "-e", source, dir, input], {
+        env: {},
+      });
+      let output = "";
+      let error = "";
+      child.stdout.on("data", (data) => {
+        output += data;
+      });
+      child.stderr.on("data", (data) => {
+        error += data;
+      });
+      child.on("error", reject);
+      child.on("close", (code) => (code === 0 ? resolve(output.trim()) : reject(new Error(error))));
+    });
   assert.deepEqual((await Promise.all([run(), run()])).sort(), ["CONFLICT", "SAVED"]);
   assert.equal(new GovernanceLedger(dir, p).read().sequence, 1);
 });
@@ -424,7 +509,10 @@ test("Validation: malformed dates, identities, windows and scope are rejected", 
   bad.source.expiresAt = at(47);
   bad.controlBranch = "main";
   assert.throws(() => initialState(bad), /control branch/);
-  assert.throws(() => recordFailure(initialState(p), { ...failure(), objectId: "sk-FAKE_ONLY_TEST" }), /credential-shaped/);
+  assert.throws(
+    () => recordFailure(initialState(p), { ...failure(), objectId: "sk-FAKE_ONLY_TEST" }),
+    /credential-shaped/,
+  );
 });
 
 test("Validation: duplicate task, issue and foreign PR identities are rejected", () => {
@@ -465,12 +553,15 @@ test("Boundary: evaluator has no filesystem, subprocess or network imports", () 
   assert.equal(/from ["']node:(fs|child_process|net|http|https)/.test(source), false);
 });
 
-
 test("Resolution: explicit evidence closes an exception without erasing its budget", () => {
   const p = profile();
   const state = recordFailure(initialState(p), failure("permission"));
   const key = keyOf(state);
-  const next = resolveFailure(state, key, at(1), { controlSha: "d".repeat(40), runId: 9, attempt: 1 });
+  const next = resolveFailure(state, key, at(1), {
+    controlSha: "d".repeat(40),
+    runId: 9,
+    attempt: 1,
+  });
   assert.equal(evaluateGovernance(p, observation(p, 2), next).proposals.length, 1);
   assert.equal(reserveRetry(next, key, "second", at(2)).reason, "already_verified");
   assert.deepEqual(next.events.slice(0, state.events.length), state.events);
@@ -479,5 +570,11 @@ test("Resolution: explicit evidence closes an exception without erasing its budg
 test("Resolution: incomplete positive evidence cannot clear a failure", () => {
   const p = profile();
   const state = recordFailure(initialState(p), failure("quota"));
-  assert.throws(() => resolveFailure(state, keyOf(state), at(1), { controlSha: "d".repeat(40), runId: 0, attempt: 1 }));
+  assert.throws(() =>
+    resolveFailure(state, keyOf(state), at(1), {
+      controlSha: "d".repeat(40),
+      runId: 0,
+      attempt: 1,
+    }),
+  );
 });

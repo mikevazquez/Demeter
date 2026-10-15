@@ -5,7 +5,15 @@ const HOUR = 3_600_000;
 const ACTIVE = new Set(["queued", "pending", "waiting", "requested", "in_progress"]);
 const TERMINAL = new Set(["credential", "permission", "quota", "scope", "authority"]);
 const ERRORS = new Set([...TERMINAL, "timeout", "rate_limit", "server", "result"]);
-const TYPES = new Set(["cycle", "failure", "retry_claim", "retry_result", "notice_claim", "notice_sent", "resolution"]);
+const TYPES = new Set([
+  "cycle",
+  "failure",
+  "retry_claim",
+  "retry_result",
+  "notice_claim",
+  "notice_sent",
+  "resolution",
+]);
 
 export function invariant(condition, label) {
   if (!condition) throw new Error(`Invalid governance input: ${label}`);
@@ -25,7 +33,10 @@ export function canonical(value, depth = 0) {
   }
   invariant(value && Object.getPrototypeOf(value) === Object.prototype, "plain JSON");
   const keys = Object.keys(value).sort();
-  invariant(!keys.some((key) => ["__proto__", "constructor", "prototype"].includes(key)), "JSON key");
+  invariant(
+    !keys.some((key) => ["__proto__", "constructor", "prototype"].includes(key)),
+    "JSON key",
+  );
   return `{${keys.map((key) => `${JSON.stringify(key)}:${canonical(value[key], depth + 1)}`).join(",")}}`;
 }
 
@@ -34,7 +45,10 @@ export function digest(value) {
 }
 
 function utc(value) {
-  invariant(typeof value === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value), "UTC");
+  invariant(
+    typeof value === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value),
+    "UTC",
+  );
   invariant(Number.isFinite(Date.parse(value)), "date");
   invariant(new Date(value).toISOString() === value, "calendar date");
   return Date.parse(value);
@@ -75,7 +89,10 @@ function profileCheck(profile) {
   invariant(profile.maxTasksPerRun > 0 && profile.maxTasksPerRun <= 3, "batch limit");
   const tasks = array(profile.tasks);
   invariant(new Set(tasks.map((task) => task.id)).size === tasks.length, "duplicate task");
-  invariant(new Set(tasks.map((task) => task.issueNumber)).size === tasks.length, "duplicate issue");
+  invariant(
+    new Set(tasks.map((task) => task.issueNumber)).size === tasks.length,
+    "duplicate issue",
+  );
   for (const task of tasks) {
     id(task.id);
     id(task.owner);
@@ -88,7 +105,12 @@ function profileCheck(profile) {
 
 export function initialState(profile) {
   profileCheck(profile);
-  return { version: 1, repository: profile.repository, controlBranch: profile.controlBranch, events: [] };
+  return {
+    version: 1,
+    repository: profile.repository,
+    controlBranch: profile.controlBranch,
+    events: [],
+  };
 }
 
 export function validateState(state) {
@@ -141,7 +163,10 @@ export function recordFailure(state, failure) {
     notBefore: new Date(utc(failure.at) + delay).toISOString(),
   };
   const prior = state.events.filter((event) => event.data.key === key);
-  invariant(prior.every((event) => !event.data.operation || event.data.operation === data.operation), "operation drift");
+  invariant(
+    prior.every((event) => !event.data.operation || event.data.operation === data.operation),
+    "operation drift",
+  );
   return append(state, "failure", [key, failure.attemptId], failure.at, data);
 }
 
@@ -165,13 +190,20 @@ export function reserveRetry(state, key, attemptId, at) {
   id(attemptId);
   utc(at);
   const events = failureEvents(state, key);
-  invariant(events.some((event) => event.type === "failure"), "failure required");
+  invariant(
+    events.some((event) => event.type === "failure"),
+    "failure required",
+  );
   const deny = (reason) => ({ state: structuredClone(state), permitted: false, reason });
   if (!unresolved(state, key)) return deny("already_verified");
   if (events.some((event) => TERMINAL.has(event.data.kind))) return deny("terminal");
   const claims = events.filter((event) => event.type === "retry_claim");
   const results = events.filter((event) => event.type === "retry_result");
-  if (claims.some((claim) => !results.some((result) => result.data.attemptId === claim.data.attemptId))) {
+  if (
+    claims.some(
+      (claim) => !results.some((result) => result.data.attemptId === claim.data.attemptId),
+    )
+  ) {
     return deny("reconcile_interruption");
   }
   const attempts = new Set(events.map((event) => event.data.attemptId));
@@ -186,22 +218,38 @@ export function finishRetry(state, key, attemptId, at, result, evidenceId, kind 
   validateState(state);
   id(evidenceId);
   invariant(["success", "failure", "unknown"].includes(result), "retry result");
-  const claim = state.events.find((event) => event.type === "retry_claim" && event.data.key === key && event.data.attemptId === attemptId);
+  const claim = state.events.find(
+    (event) =>
+      event.type === "retry_claim" && event.data.key === key && event.data.attemptId === attemptId,
+  );
   invariant(claim && utc(at) >= utc(claim.at), "claim required");
   if (result === "unknown") return structuredClone(state);
   invariant(result !== "failure" || ERRORS.has(kind), "failure classification");
-  return append(state, "retry_result", [key, attemptId], at, { key, attemptId, result, evidenceId, kind });
+  return append(state, "retry_result", [key, attemptId], at, {
+    key,
+    attemptId,
+    result,
+    evidenceId,
+    kind,
+  });
 }
 
 /** A trusted adapter may record positive evidence; this never resets retry history. */
 export function resolveFailure(state, key, at, evidence) {
   validateState(state);
   sha(key, 64);
-  invariant(state.events.some((event) => event.type === "failure" && event.data.key === key), "known failure");
+  invariant(
+    state.events.some((event) => event.type === "failure" && event.data.key === key),
+    "known failure",
+  );
   sha(evidence.controlSha);
   invariant(Number.isSafeInteger(evidence.runId) && evidence.runId > 0, "resolution run");
   invariant(Number.isSafeInteger(evidence.attempt) && evidence.attempt > 0, "resolution attempt");
-  const receipt = { controlSha: evidence.controlSha, runId: evidence.runId, attempt: evidence.attempt };
+  const receipt = {
+    controlSha: evidence.controlSha,
+    runId: evidence.runId,
+    attempt: evidence.attempt,
+  };
   return append(state, "resolution", [key, receipt], at, { key, evidence: receipt });
 }
 
@@ -209,14 +257,22 @@ export function resolveFailure(state, key, at, evidence) {
 export function claimNotice(state, notice, at) {
   validateState(state);
   sha(notice.key, 64);
-  const exists = state.events.some((event) => event.type === "notice_claim" && event.data.key === notice.key);
+  const exists = state.events.some(
+    (event) => event.type === "notice_claim" && event.data.key === notice.key,
+  );
   if (exists) return { state: structuredClone(state), permitted: false };
-  return { state: append(state, "notice_claim", notice.key, at, { key: notice.key }), permitted: true };
+  return {
+    state: append(state, "notice_claim", notice.key, at, { key: notice.key }),
+    permitted: true,
+  };
 }
 
 export function finishNotice(state, key, at, receipt) {
   id(receipt);
-  invariant(state.events.some((event) => event.type === "notice_claim" && event.data.key === key), "notice claim");
+  invariant(
+    state.events.some((event) => event.type === "notice_claim" && event.data.key === key),
+    "notice claim",
+  );
   return append(state, "notice_sent", key, at, { key, receipt });
 }
 
@@ -225,8 +281,15 @@ export function evaluateGovernance(profile, observation, previous = initialState
   profileCheck(profile);
   validateState(previous);
   canonical(observation);
-  invariant(previous.repository === profile.repository && previous.controlBranch === profile.controlBranch, "ledger scope");
-  invariant(observation.repository === profile.repository && observation.controlBranch === profile.controlBranch, "observation scope");
+  invariant(
+    previous.repository === profile.repository && previous.controlBranch === profile.controlBranch,
+    "ledger scope",
+  );
+  invariant(
+    observation.repository === profile.repository &&
+      observation.controlBranch === profile.controlBranch,
+    "observation scope",
+  );
   id(observation.cycleId);
   const now = utc(observation.capturedAt);
   sha(observation.controlSha);
@@ -247,17 +310,27 @@ export function evaluateGovernance(profile, observation, previous = initialState
   const findings = [];
   const proposals = [];
   const delivered = new Set(previous.events.flatMap((event) => event.data.delivered || []));
-  const missing = ["policy", "issues", "pullRequests", "runs"].filter((name) => observation[name]?.complete !== true);
+  const missing = ["policy", "issues", "pullRequests", "runs"].filter(
+    (name) => observation[name]?.complete !== true,
+  );
   let allowed = missing.length === 0;
   if (missing.length) findings.push({ rule: "G01", status: "unknown", sources: missing });
   const eligible = [];
   if (allowed) {
     const policy = observation.policy;
-    const same = page(policy.pageId) === page(profile.source.pageId) && policy.lastEditedAt === profile.source.lastEditedAt && policy.snapshotSha256 === profile.source.sha256;
+    const same =
+      page(policy.pageId) === page(profile.source.pageId) &&
+      policy.lastEditedAt === profile.source.lastEditedAt &&
+      policy.snapshotSha256 === profile.source.sha256;
     findings.push({ rule: "G02", status: same ? "verified" : "blocked", versionMatches: same });
     allowed = same;
     const runs = array(observation.runs.items);
-    const unknown = runs.some((run) => ![...ACTIVE, "completed"].includes(run.status) || run.repository !== profile.repository || run.controlBranch !== profile.controlBranch);
+    const unknown = runs.some(
+      (run) =>
+        ![...ACTIVE, "completed"].includes(run.status) ||
+        run.repository !== profile.repository ||
+        run.controlBranch !== profile.controlBranch,
+    );
     const active = runs.some((run) => ACTIVE.has(run.status));
     allowed = allowed && !unknown && !active;
     findings.push({ rule: "G06", status: unknown ? "unknown" : active ? "blocked" : "verified" });
@@ -269,21 +342,32 @@ export function evaluateGovernance(profile, observation, previous = initialState
       invariant(Number.isSafeInteger(pr.number) && pr.number > 0, "PR number");
       delivered.add(pr.taskId);
     }
-    const duplicatePRs = prs.some((pr) => prs.filter((other) => other.taskId === pr.taskId).length > 1);
+    const duplicatePRs = prs.some(
+      (pr) => prs.filter((other) => other.taskId === pr.taskId).length > 1,
+    );
     if (duplicatePRs) {
       allowed = false;
       findings.push({ rule: "G06", status: "blocked", reason: "duplicate_publication" });
     }
     const issues = array(observation.issues.items);
-    invariant(new Set(issues.map((issue) => issue.number)).size === issues.length, "duplicate observed issue");
+    invariant(
+      new Set(issues.map((issue) => issue.number)).size === issues.length,
+      "duplicate observed issue",
+    );
     for (const task of profile.tasks) {
       if (delivered.has(task.id)) continue;
       const issue = issues.find((item) => item.number === task.issueNumber);
-      const matches = issue && issue.state === "open" && issue.bodySha256 === task.issueBodySha256 && issue.updatedAt === task.issueUpdatedAt;
+      const matches =
+        issue &&
+        issue.state === "open" &&
+        issue.bodySha256 === task.issueBodySha256 &&
+        issue.updatedAt === task.issueUpdatedAt;
       if (matches && task.status === "ready") eligible.push(task.id);
       else findings.push({ rule: "G04", taskId: task.id, status: "blocked" });
     }
-    for (const issue of issues.filter((item) => !profile.tasks.some((task) => task.issueNumber === item.number))) {
+    for (const issue of issues.filter(
+      (item) => !profile.tasks.some((task) => task.issueNumber === item.number),
+    )) {
       invariant(Number.isSafeInteger(issue.number) && issue.number > 0, "candidate number");
       findings.push({ rule: "G04", issueNumber: issue.number, status: "candidate_not_admitted" });
     }
@@ -295,10 +379,22 @@ export function evaluateGovernance(profile, observation, previous = initialState
     invariant(typeof check.artifactAvailable === "boolean", "artifact availability");
     invariant(Number.isSafeInteger(check.runId) && check.runId > 0, "run ID");
     invariant(Number.isSafeInteger(check.attempt) && check.attempt > 0, "attempt number");
-    const verified = check.result === "success" && check.artifactAvailable && check.sha === observation.controlSha;
-    findings.push({ rule: "G08", objectId: check.objectId, sha: check.sha, runId: check.runId, attempt: check.attempt, status: verified ? "technical_verified" : "unverified", acceptance: "not_asserted", promotion: "not_authorized" });
+    const verified =
+      check.result === "success" && check.artifactAvailable && check.sha === observation.controlSha;
+    findings.push({
+      rule: "G08",
+      objectId: check.objectId,
+      sha: check.sha,
+      runId: check.runId,
+      attempt: check.attempt,
+      status: verified ? "technical_verified" : "unverified",
+      acceptance: "not_asserted",
+      promotion: "not_authorized",
+    });
   }
-  const keys = new Set(state.events.filter((event) => event.type === "failure").map((event) => event.data.key));
+  const keys = new Set(
+    state.events.filter((event) => event.type === "failure").map((event) => event.data.key),
+  );
   const notices = [];
   for (const key of keys) {
     if (!unresolved(state, key)) continue;
@@ -306,15 +402,35 @@ export function evaluateGovernance(profile, observation, previous = initialState
     const events = failureEvents(state, key);
     const terminal = events.find((event) => TERMINAL.has(event.data.kind));
     const exhausted = new Set(events.map((event) => event.data.attemptId)).size >= 2;
-    findings.push({ rule: "G09", key, status: "blocked", reason: terminal?.data.kind || (exhausted ? "budget_exhausted" : "retry_pending") });
+    findings.push({
+      rule: "G09",
+      key,
+      status: "blocked",
+      reason: terminal?.data.kind || (exhausted ? "budget_exhausted" : "retry_pending"),
+    });
     if (terminal && ["credential", "permission", "quota"].includes(terminal.data.kind)) {
       const notice = { key: digest([key, terminal.data.kind]), reason: terminal.data.kind };
-      if (!state.events.some((event) => event.type === "notice_claim" && event.data.key === notice.key)) notices.push(notice);
+      if (
+        !state.events.some(
+          (event) => event.type === "notice_claim" && event.data.key === notice.key,
+        )
+      )
+        notices.push(notice);
     }
   }
   const refresh = !profile.hostedController || utc(profile.source.expiresAt) - now < 24 * HOUR;
   if (allowed && (refresh || eligible.length)) {
-    proposals.push({ type: "refresh_snapshot", repository: profile.repository, branch: profile.controlBranch, expectedQueueBlobSha: observation.queueBlobSha, expectedControlSha: observation.controlSha, admittedSourceVersion: profile.source.lastEditedAt, capturedAt: observation.capturedAt, expiresAt: new Date(now + 48 * HOUR).toISOString(), eligibleTaskIds: eligible.slice(0, profile.maxTasksPerRun) });
+    proposals.push({
+      type: "refresh_snapshot",
+      repository: profile.repository,
+      branch: profile.controlBranch,
+      expectedQueueBlobSha: observation.queueBlobSha,
+      expectedControlSha: observation.controlSha,
+      admittedSourceVersion: profile.source.lastEditedAt,
+      capturedAt: observation.capturedAt,
+      expiresAt: new Date(now + 48 * HOUR).toISOString(),
+      eligibleTaskIds: eligible.slice(0, profile.maxTasksPerRun),
+    });
   }
   const lastCycle = previous.events.findLast((event) => event.type === "cycle");
   const gapObserved = !!lastCycle && now - utc(lastCycle.at) > 12 * HOUR;
