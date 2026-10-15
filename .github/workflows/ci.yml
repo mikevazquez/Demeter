@@ -59,6 +59,9 @@ jobs:
       - name: Candidate external effect negative tests
         run: npx vitest run tests/sf-gov-candidate-external-effect.test.ts
 
+      - name: B03 synthetic tenant membership UAT negative tests
+        run: npx vitest run tests/sf-gov-b03-tenant-selection.test.ts
+
       - name: Reject dangerous table grants in changed migrations
         env:
           MIGRATION_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
