@@ -171,12 +171,19 @@ export async function reserveSharedExecution(api, context, selected) {
     Array.isArray(selected) && selected.every((t) => eligible.includes(t.id)),
     "selection changed",
   );
-  const reserved = reserveExecution(current.record.state, profile, context, selected);
+  const reconciled = await reconcileInterruptedExecutions(
+    api,
+    current.record.state,
+    profile,
+    context,
+  );
+  const reserved = reserveExecution(reconciled.state, profile, context, selected);
   const saved = await ledger.commit(current, reserved.state, current.record.signature);
   // No output enabling a model call is returned until shared read-back succeeds.
   return {
     tasks: reserved.tasks,
     blocked: reserved.blocked,
+    reconciliations: reconciled.reconciliations,
     changed: saved.changed,
     revision: saved.record.sha256,
     sequence: saved.record.sequence,
@@ -211,7 +218,7 @@ export async function collectOperationOutcomes(api, context, profile) {
       run.head_sha === context.sourceSha &&
       run.head_branch === BRANCH &&
       run.path === WORKFLOW &&
-      run.run_attempt === context.attempt,
+      run.run_attempt >= context.attempt,
     "outcome run identity",
   );
   const jobs = await pages(
@@ -264,6 +271,88 @@ export async function collectOperationOutcomes(api, context, profile) {
     });
   }
   return results;
+}
+
+/**
+ * Reconciles terminal originating runs without granting another model call.
+ * Active or unverifiable runs remain blocked and create no durable receipt.
+ */
+export async function reconcileInterruptedExecutions(api, state, profile, context) {
+  scope(state, profile);
+  checkContext(context);
+  let next = structuredClone(state);
+  const reconciliations = [];
+  for (const lease of state.events.filter((event) => event.type === "execution_lease")) {
+    if (
+      lease.data.runId === context.runId &&
+      lease.data.runAttempt === context.attempt &&
+      lease.data.sourceSha === context.sourceSha
+    )
+      continue;
+    if (
+      state.events.some(
+        (event) =>
+          event.type === "execution_reconciliation" &&
+          event.data.taskId === lease.data.taskId,
+      )
+    )
+      continue;
+    const origin = {
+      sourceSha: lease.data.sourceSha,
+      runId: lease.data.runId,
+      attempt: lease.data.runAttempt,
+      at: context.at,
+    };
+    const run = await api("GET", `${PREFIX}/actions/runs/${origin.runId}`);
+    invariant(
+      run.id === origin.runId &&
+        run.head_sha === origin.sourceSha &&
+        run.head_branch === BRANCH &&
+        run.path === WORKFLOW &&
+        run.run_attempt >= origin.attempt,
+      "reconciliation run identity",
+    );
+    if (run.status !== "completed") {
+      reconciliations.push({
+        taskId: lease.data.taskId,
+        state: "origin-run-active",
+        runId: origin.runId,
+        runAttempt: origin.attempt,
+        budgetReleased: false,
+        automaticRerun: false,
+      });
+      continue;
+    }
+    invariant(RESULTS.includes(run.conclusion), "reconciliation run conclusion");
+    const outcomes = await collectOperationOutcomes(api, origin, profile);
+    next = addOperationOutcomes(next, origin, outcomes);
+    const taskOutcomes = outcomes.filter((result) => result.taskId === lease.data.taskId);
+    const observedJobIds = [...new Set(taskOutcomes.map((result) => result.jobId))].sort(
+      (a, b) => a - b,
+    );
+    const observedStages = [...new Set(taskOutcomes.map((result) => result.stage))]
+      .filter((stage) => stage === 1 || stage === 2)
+      .sort((a, b) => a - b);
+    const data = {
+      taskId: lease.data.taskId,
+      contractHash: lease.data.contractHash,
+      sourceSha: lease.data.sourceSha,
+      runId: lease.data.runId,
+      runAttempt: lease.data.runAttempt,
+      runStatus: "completed",
+      runConclusion: run.conclusion,
+      observedJobIds,
+      observedStages,
+      disposition: taskOutcomes.length
+        ? "stage-results-recorded"
+        : "interrupted-without-stage-result",
+      budgetReleased: false,
+      automaticRerun: false,
+    };
+    next = append(next, "execution_reconciliation", lease.data.taskId, context.at, data);
+    reconciliations.push({ ...data, state: "reconciled" });
+  }
+  return { state: next, reconciliations };
 }
 export function addOperationOutcomes(state, context, results) {
   checkContext(context);

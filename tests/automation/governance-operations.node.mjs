@@ -9,6 +9,7 @@ import {
   reserveSharedExecution,
   checkSharedExecution,
   collectOperationOutcomes,
+  reconcileInterruptedExecutions,
   addOperationOutcomes,
   recordSharedOutcomes,
   consolidateOperations,
@@ -66,6 +67,49 @@ function outcomeFixture(f, { conclusion = "failure", task = true, phase = "execu
           },
         ],
       };
+    }
+    return base(method, route, body);
+  };
+}
+function interruptedFixture(
+  f,
+  {
+    status = "completed",
+    conclusion = "cancelled",
+    runAttempt = 1,
+    jobs = [
+      {
+        id: 101,
+        run_id: context.runId,
+        run_attempt: 1,
+        head_sha: context.sourceSha,
+        name: "execute (accepted-v1, false)",
+        status: "completed",
+        conclusion: "failure",
+        steps: [
+          { name: "Execute task with Codex", status: "completed", conclusion: "failure" },
+        ],
+      },
+    ],
+  } = {},
+) {
+  const base = f.raw;
+  f.raw = async (method, route, body) => {
+    if (method === "GET" && route.endsWith(`/actions/runs/${context.runId}`)) {
+      f.calls.push({ method, route, body });
+      return {
+        id: context.runId,
+        head_sha: context.sourceSha,
+        head_branch: BRANCH,
+        path: ".github/workflows/governance-codex-coordinator.yml",
+        run_attempt: runAttempt,
+        status,
+        conclusion: status === "completed" ? conclusion : null,
+      };
+    }
+    if (method === "GET" && route.includes(`/actions/runs/${context.runId}/attempts/1/jobs`)) {
+      f.calls.push({ method, route, body });
+      return { total_count: jobs.length, jobs };
     }
     return base(method, route, body);
   };
@@ -374,4 +418,144 @@ test("OPS-30 workflow retains certification and no production action", () => {
     "utf8",
   );
   assert.doesNotMatch(d, /child_process|OPENAI_API_KEY/);
+});
+
+test("OPS-31 terminal originating run reconciles observed stages without releasing budget", async () => {
+  const f = fixture();
+  interruptedFixture(f);
+  const leased = reserveExecution(initialState(f.profile), f.profile, context, selected).state;
+  const nextContext = { ...context, runId: 11, at: "2026-10-15T19:00:00.000Z" };
+  const result = await reconcileInterruptedExecutions(f.api, leased, f.profile, nextContext);
+  const receipt = result.state.events.find((event) => event.type === "execution_reconciliation");
+  assert.equal(receipt.data.disposition, "stage-results-recorded");
+  assert.deepEqual(receipt.data.observedStages, [1]);
+  assert.deepEqual(receipt.data.observedJobIds, [101]);
+  assert.equal(receipt.data.budgetReleased, false);
+  assert.equal(receipt.data.automaticRerun, false);
+  assert.equal(reserveExecution(result.state, f.profile, nextContext, selected).tasks.length, 0);
+});
+
+test("OPS-32 terminal run without task job preserves the consumed reservation", async () => {
+  const f = fixture();
+  interruptedFixture(f, { jobs: [] });
+  const leased = reserveExecution(initialState(f.profile), f.profile, context, selected).state;
+  const result = await reconcileInterruptedExecutions(
+    f.api,
+    leased,
+    f.profile,
+    { ...context, runId: 11, at: "2026-10-15T19:00:00.000Z" },
+  );
+  const receipt = result.state.events.at(-1);
+  assert.equal(receipt.data.disposition, "interrupted-without-stage-result");
+  assert.deepEqual(receipt.data.observedStages, []);
+  assert.equal(result.state.events.filter((event) => event.type === "execution_outcome").length, 0);
+});
+
+test("OPS-33 active originating run stays transient and creates no receipt", async () => {
+  const f = fixture();
+  interruptedFixture(f, { status: "in_progress" });
+  const leased = reserveExecution(initialState(f.profile), f.profile, context, selected).state;
+  const result = await reconcileInterruptedExecutions(
+    f.api,
+    leased,
+    f.profile,
+    { ...context, runId: 11, at: "2026-10-15T19:00:00.000Z" },
+  );
+  assert.deepEqual(result.state, leased);
+  assert.equal(result.reconciliations[0].state, "origin-run-active");
+  assert.equal(f.calls.some((call) => call.route.includes("/jobs")), false);
+});
+
+test("OPS-34 originating run identity and conclusion fail closed", async () => {
+  const badIdentity = fixture();
+  interruptedFixture(badIdentity);
+  const base = badIdentity.raw;
+  badIdentity.raw = async (method, route, body) => {
+    const response = await base(method, route, body);
+    if (method === "GET" && route.endsWith(`/actions/runs/${context.runId}`))
+      response.head_sha = "e".repeat(40);
+    return response;
+  };
+  const invalidConclusion = fixture();
+  interruptedFixture(invalidConclusion, { conclusion: "invented" });
+  for (const f of [badIdentity, invalidConclusion]) {
+    const leased = reserveExecution(initialState(f.profile), f.profile, context, selected).state;
+    await assert.rejects(
+      reconcileInterruptedExecutions(
+        f.api,
+        leased,
+        f.profile,
+        { ...context, runId: 11, at: "2026-10-15T19:00:00.000Z" },
+      ),
+    );
+  }
+});
+
+test("OPS-35 reconciliation is durable and idempotent after restart", async () => {
+  const f = fixture();
+  interruptedFixture(f);
+  const leased = reserveExecution(initialState(f.profile), f.profile, context, selected).state;
+  const nextContext = { ...context, runId: 11, at: "2026-10-15T19:00:00.000Z" };
+  const first = await reconcileInterruptedExecutions(f.api, leased, f.profile, nextContext);
+  const reads = f.calls.length;
+  const second = await reconcileInterruptedExecutions(f.api, first.state, f.profile, nextContext);
+  assert.deepEqual(second.state, first.state);
+  assert.deepEqual(second.reconciliations, []);
+  assert.equal(f.calls.length, reads);
+});
+
+test("OPS-36 historical attempt remains attributable after a later workflow rerun", async () => {
+  const f = fixture();
+  interruptedFixture(f, { runAttempt: 2 });
+  const leased = reserveExecution(initialState(f.profile), f.profile, context, selected).state;
+  const result = await reconcileInterruptedExecutions(
+    f.api,
+    leased,
+    f.profile,
+    { ...context, runId: 11, at: "2026-10-15T19:00:00.000Z" },
+  );
+  assert.equal(result.state.events.at(-1).data.runAttempt, 1);
+  assert.equal(result.state.events.at(-1).data.runConclusion, "cancelled");
+});
+
+test("OPS-37 reconciliation receipts cannot release or expand generation budget", async () => {
+  const f = fixture();
+  interruptedFixture(f);
+  const leased = reserveExecution(initialState(f.profile), f.profile, context, selected).state;
+  const result = await reconcileInterruptedExecutions(
+    f.api,
+    leased,
+    f.profile,
+    { ...context, runId: 11, at: "2026-10-15T19:00:00.000Z" },
+  );
+  for (const change of [
+    (data) => (data.budgetReleased = true),
+    (data) => (data.automaticRerun = true),
+    (data) => (data.observedStages = [1, 2, 3]),
+    (data) => (data.observedJobIds = [101, 101]),
+  ]) {
+    const bad = structuredClone(result.state);
+    change(bad.events.at(-1).data);
+    assert.throws(() => validateState(bad));
+  }
+});
+
+test("OPS-38 shared writer persists reconciliation and remains blocked after a fresh read", async () => {
+  const f = fixture();
+  f.prs = false;
+  await reserveSharedExecution(f.api, context, selected);
+  interruptedFixture(f);
+  const nextContext = { ...context, runId: 11, at: "2026-10-15T19:00:00.000Z" };
+  const result = await reserveSharedExecution(f.api, nextContext, selected);
+  const recovered = await new SharedLedger(f.api).read();
+  assert.equal(result.tasks.length, 0);
+  assert.equal(result.blocked[0].reason, "existing-generation-reservation");
+  assert.equal(result.reconciliations[0].state, "reconciled");
+  assert.equal(
+    recovered.record.state.events.some(
+      (event) =>
+        event.type === "execution_reconciliation" && event.data.budgetReleased === false,
+    ),
+    true,
+  );
 });

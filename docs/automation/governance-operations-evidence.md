@@ -24,9 +24,25 @@ alone does not establish quota, credential or permission failure. Job status nev
 authorizes an automatic rerun. The report distinguishes budget blocks from unfinished
 work. No notification is sent or marked delivered by this increment.
 
-`OPS-01` through `OPS-30` use synthetic contracts and an in-memory GitHub transport,
+Before reserving new work, the same journal writer now inspects every unreconciled
+generation lease owned by an earlier run. It accepts only the exact repository,
+control branch, workflow path, source SHA, run ID and historical attempt recorded in
+the lease. A terminal GitHub Actions run contributes its completed job and model-step
+results plus one immutable reconciliation receipt. A later workflow rerun may expose
+an older attempt, but cannot rewrite its owner identity. Active runs create no receipt;
+unknown conclusions, mismatched identity and unavailable evidence fail closed.
+
+Reconciliation never releases the lease, resets either stage, changes the contract,
+or authorizes another model call. A terminal run with no task-stage job is recorded as
+`interrupted-without-stage-result`; the consumed reservation remains blocked. Repeated
+runs recover the existing receipt without querying or appending it again. Orphan-branch
+recovery continues to use the pre-existing credential-free provenance and certification
+path, and it still grants no generation budget.
+
+`OPS-01` through `OPS-38` use synthetic contracts and an in-memory GitHub transport,
 plus workflow wiring assertions. The previous core/shared/read-recovery tests remain;
-the independent core suite now includes 120 cases. The executor's 29 tests remain
+the independent core suite count must be re-established on the exact changed SHA. The
+executor's 29 tests remain
 separate. Run all suites with Node 22. The new Vitest wrapper explicitly requests TAP.
 Remote evidence must name the tested SHA, run, attempt, artifact and journal revision.
 Component tests are not a claim that the entire GOV-01 through GOV-20 matrix passed.
@@ -43,8 +59,8 @@ wiring, reading, non-duplication and journal recovery; it does not demonstrate a
 live model call under a lease. Such a test requires its own explicitly admitted
 nonfunctional contract. Do not recycle existing IDs just to obtain a green run.
 
-Remaining: evidence-based reconciliation of interrupted generation reservations,
-provider-specific generation failure classification and a notification consumer
-with real delivery receipts. The prior recorder read-recovery implementation is
-preserved; it is not claimed to cover every executor failure. Three scheduled
-six-hour cycles and service availability remain separate evidence requirements.
+Remaining: live evidence of an actually interrupted generation reservation,
+provider-specific generation failure classification and a notification consumer with
+real delivery receipts. The prior recorder read-recovery implementation is preserved;
+it is not claimed to cover every executor failure. Three scheduled six-hour cycles
+and service availability remain separate evidence requirements.

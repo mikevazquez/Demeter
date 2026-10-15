@@ -15,6 +15,7 @@ const TYPES = new Set([
   "resolution",
   "execution_lease",
   "execution_outcome",
+  "execution_reconciliation",
 ]);
 
 export function invariant(condition, label) {
@@ -126,11 +127,31 @@ export function validateState(state) {
   for (const event of events) {
     sha(event.id, 64);
     invariant(TYPES.has(event.type), "event type");
-    if (event.type === "execution_lease" || event.type === "execution_outcome") {
+    if (
+      event.type === "execution_lease" ||
+      event.type === "execution_outcome" ||
+      event.type === "execution_reconciliation"
+    ) {
       const d = event.data;
       const lease = event.type === "execution_lease";
+      const reconciliation = event.type === "execution_reconciliation";
       const keys = lease
         ? ["taskId", "contractHash", "sourceSha", "runId", "runAttempt", "maximumStages"]
+        : reconciliation
+          ? [
+              "taskId",
+              "contractHash",
+              "sourceSha",
+              "runId",
+              "runAttempt",
+              "runStatus",
+              "runConclusion",
+              "observedJobIds",
+              "observedStages",
+              "disposition",
+              "budgetReleased",
+              "automaticRerun",
+            ]
         : [
             "taskId",
             "stage",
@@ -154,6 +175,59 @@ export function validateState(state) {
         sha(d.contractHash, 64);
         invariant(d.maximumStages === 2, "operation budget");
         invariant(event.id === digest([event.type, d.taskId]), "lease identity");
+      } else if (reconciliation) {
+        id(d.taskId);
+        sha(d.contractHash, 64);
+        invariant(d.runStatus === "completed", "reconciliation terminal run");
+        invariant(
+          [
+            "success",
+            "failure",
+            "timed_out",
+            "cancelled",
+            "skipped",
+            "action_required",
+            "neutral",
+            "stale",
+            "startup_failure",
+          ].includes(d.runConclusion),
+          "reconciliation conclusion",
+        );
+        invariant(
+          Array.isArray(d.observedJobIds) &&
+            d.observedJobIds.every((job) => Number.isSafeInteger(job) && job > 0) &&
+            new Set(d.observedJobIds).size === d.observedJobIds.length,
+          "reconciliation jobs",
+        );
+        invariant(
+          Array.isArray(d.observedStages) &&
+            d.observedStages.every((stage) => stage === 1 || stage === 2) &&
+            new Set(d.observedStages).size === d.observedStages.length,
+          "reconciliation stages",
+        );
+        invariant(
+          ["stage-results-recorded", "interrupted-without-stage-result"].includes(
+            d.disposition,
+          ),
+          "reconciliation disposition",
+        );
+        invariant(
+          d.budgetReleased === false && d.automaticRerun === false,
+          "reconciliation budget",
+        );
+        invariant(event.id === digest([event.type, d.taskId]), "reconciliation identity");
+        const owner = events.find(
+          (candidate) =>
+            candidate.type === "execution_lease" && candidate.data.taskId === d.taskId,
+        );
+        invariant(
+          owner &&
+            owner.data.contractHash === d.contractHash &&
+            owner.data.sourceSha === d.sourceSha &&
+            owner.data.runId === d.runId &&
+            owner.data.runAttempt === d.runAttempt,
+          "reconciliation lease",
+        );
       } else {
         invariant(d.taskId === null || /^[a-zA-Z0-9_-]+$/.test(id(d.taskId)), "outcome task");
         invariant(
