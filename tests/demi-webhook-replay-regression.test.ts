@@ -203,11 +203,14 @@ function harness(httpStatus = 200, failOutboundPersistence = false) {
       ],
     });
     const signature = crypto.createHmac("sha256", secret).update(body).digest("hex");
-    return new Request(`https://example.test/api/integrations/meta-whatsapp/webhook?studio=${studioId}`, {
-      method: "POST",
-      body,
-      headers: { "x-hub-signature-256": `sha256=${signatureValid ? signature : "0".repeat(64)}` },
-    });
+    return new Request(
+      `https://example.test/api/integrations/meta-whatsapp/webhook?studio=${studioId}`,
+      {
+        method: "POST",
+        body,
+        headers: { "x-hub-signature-256": `sha256=${signatureValid ? signature : "0".repeat(64)}` },
+      },
+    );
   };
   return { rows, rpc, model, transport, request, post: route.POST };
 }
