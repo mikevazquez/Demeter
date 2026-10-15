@@ -17,9 +17,29 @@ const effects: CandidateExternalEffect[] = [
   "asistian_webhook",
   "auth_confirmation_email",
   "exchange_rate_read",
+  "notification_worker_trigger",
+  "followup_worker_trigger",
 ];
 
 describe("SF-GOV-001 Candidate external effect isolation", () => {
+  it("guards Demi UAT worker dispatch before any locked side effects", async () => {
+    const { readFileSync } = await import("node:fs");
+    const source = readFileSync("app/admin/mas/demi/uat/actions.ts", "utf8");
+    for (const [name, effect] of [
+      ["runDemiUatNotifications", "notification_worker_trigger"],
+      ["runDemiUatFollowups", "followup_worker_trigger"],
+    ]) {
+      const start = source.indexOf(`export async function ${name}(`);
+      expect(start).toBeGreaterThanOrEqual(0);
+      const segment = source.slice(start, start + 360);
+      const denial = segment.indexOf(`assertCandidateRuntimeExternalEffectAllowed("${effect}")`);
+      const locked = segment.indexOf("await locked(");
+      expect(denial, name).toBeGreaterThanOrEqual(0);
+      expect(locked, name).toBeGreaterThan(denial);
+    }
+  });
+
+
   afterEach(() => vi.unstubAllEnvs());
   for (const effect of effects) {
     it(`blocks real ${effect} in Candidate Preview`, () => {
