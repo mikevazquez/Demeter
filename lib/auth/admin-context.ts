@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
 import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
+import { selectAuthorizedStudioMembership } from "@/lib/auth/studio-membership-selection";
 import { createClient } from "@/lib/supabase/server";
 
 async function getAdminContextImpl(requiredCapability?: Capability) {
@@ -44,10 +45,7 @@ async function getAdminContextImpl(requiredCapability?: Capability) {
 
   const cookieStore = await cookies();
   const selectedStudioId = cookieStore.get(STUDIO_CONTEXT_COOKIE)?.value;
-  const selectedMembership = selectedStudioId
-    ? memberships.find((item) => item.studio_id === selectedStudioId)
-    : null;
-  const membership = selectedMembership ?? (memberships.length === 1 ? memberships[0] : null);
+  const membership = selectAuthorizedStudioMembership(memberships, selectedStudioId);
 
   if (!membership) {
     redirect("/login/studio/seleccionar");
