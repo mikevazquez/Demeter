@@ -1,0 +1,32 @@
+name: Temporary isolated formatting for PR 302
+on:
+  push:
+    branches:
+      - docs/governance-saas-agent-operating-model-20261015
+    paths:
+      - .github/workflows/governance-pr302-format.yml
+jobs:
+  format:
+    if: github.ref == 'refs/heads/docs/governance-saas-agent-operating-model-20261015' && github.actor == 'mikevazquez'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx prettier --write docs/automation/saas-agent-operating-model.md tests/automation/saas-agent-operating-model.test.mjs
+      - name: Commit formatting only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- docs/automation/saas-agent-operating-model.md tests/automation/saas-agent-operating-model.test.mjs
+          if ! git diff --cached --quiet; then
+            git commit -m "style(governance): apply repository Prettier formatting"
+            git push origin HEAD:docs/governance-saas-agent-operating-model-20261015
+          fi
