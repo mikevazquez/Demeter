@@ -8,7 +8,9 @@ export type CandidateExternalEffect =
   | "meta_admin_request"
   | "asistian_webhook"
   | "auth_confirmation_email"
-  | "exchange_rate_read";
+  | "exchange_rate_read"
+  | "notification_worker_trigger"
+  | "followup_worker_trigger";
 
 /**
  * A Candidate Preview must never call real external services. Existing
