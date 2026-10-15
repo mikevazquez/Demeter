@@ -326,6 +326,37 @@ test("real verifier retry accepts a repaired result and rejects later scope expa
   invoke(1);
   assert.equal(fs.existsSync("/tmp/coordinator-result.json"), false);
   assert.equal(JSON.parse(fs.readFileSync("/tmp/coordinator-failure.json")).retryable, true);
+  const firstAttempt = path.join(temporary, "first-attempt");
+  fs.mkdirSync(firstAttempt);
+  for (const name of ["coordinator-candidate.json", "coordinator-failure.json"])
+    fs.copyFileSync(`/tmp/${name}`, path.join(firstAttempt, name));
+  const retryWorkspace = path.join(temporary, "fresh-retry");
+  execFileSync("git", ["clone", "--no-local", workspace, retryWorkspace], { stdio: "pipe" });
+  const mock = path.join(temporary, "mock-github.mjs");
+  fs.writeFileSync(
+    mock,
+    `globalThis.fetch = async url => String(url).includes('/git/ref/') ? new Response('', {status:404}) : new Response(JSON.stringify(String(url).includes('/pulls?') ? [] : ${JSON.stringify(issue())}), {status:200});`,
+  );
+  execFileSync(process.execPath, [script, "prepare-repair", task.id, firstAttempt], {
+    cwd: retryWorkspace,
+    env: {
+      ...process.env,
+      CONTROL_SHA: controlSha,
+      GH_TOKEN: "fixture-only",
+      NODE_OPTIONS: `--import=${mock}`,
+    },
+    stdio: "pipe",
+  });
+  assert.equal(
+    fs
+      .readFileSync(path.join(retryWorkspace, task.allowedPaths[0]), "utf8")
+      .includes("misses the required marker"),
+    true,
+  );
+  assert.equal(
+    fs.readFileSync("/tmp/coordinator-retry.txt", "utf8").includes("Acceptance criterion missing"),
+    true,
+  );
   fs.writeFileSync(path.join(workspace, task.allowedPaths[0]), files()[0].content);
   invoke(2);
   assert.equal(JSON.parse(fs.readFileSync("/tmp/coordinator-result.json")).attempt, 2);

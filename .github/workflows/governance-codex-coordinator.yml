@@ -118,20 +118,8 @@ jobs:
         if: steps.prepare.outputs.recovery != 'true'
         id: verify1
         run: node /opt/coordinator-runtime/coordinator.mjs verify "$TASK_ID" 1
-      - name: Repair once using actual verifier feedback
-        if: steps.verify1.outputs.valid == 'false' && steps.verify1.outputs.retryable == 'true'
-        uses: openai/codex-action@1d82a3dba7c7988ec71ecae1ed5b8e8db96495c5 # v1
-        continue-on-error: true
-        with:
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          permission-profile: ":workspace"
-          prompt-file: /tmp/coordinator-retry.txt
-          output-file: /tmp/coordinator-codex-retry.txt
-      - name: Validate repair attempt
-        if: steps.verify1.outputs.valid == 'false' && steps.verify1.outputs.retryable == 'true'
-        run: node /opt/coordinator-runtime/coordinator.mjs verify "$TASK_ID" 2
-      - name: Require a validated result
-        run: node /opt/coordinator-runtime/coordinator.mjs assert-result
+      - name: Require a completed or explicitly repairable first attempt
+        run: node /opt/coordinator-runtime/coordinator.mjs assert-attempt
       - name: Retain per-task result and failure evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -141,12 +129,90 @@ jobs:
             /tmp/coordinator-task.json
             /tmp/coordinator-result.json
             /tmp/coordinator-failure.json
+            /tmp/coordinator-candidate.json
             /tmp/coordinator-codex.txt
             /tmp/coordinator-codex-retry.txt
           retention-days: 14
 
-  certify:
+  repair:
     needs: [select, execute]
+    if: always() && needs.select.result == 'success' && needs.select.outputs.has_tasks == 'true'
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        task: ${{ fromJSON(needs.select.outputs.tasks) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: "Preview – demeterbueno"
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    env:
+      CONTROL_SHA: ${{ needs.select.outputs.control_sha }}
+      TASK_ID: ${{ matrix.task.id }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ needs.select.outputs.control_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: coordinator-generated-${{ matrix.task.id }}-${{ github.run_attempt }}
+          path: /tmp/coordinator-first-attempt
+      - name: Restore only admitted repairable work from first attempt
+        id: repair
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CODEX_NOTION_TOKEN: ${{ secrets.CODEX_NOTION_TOKEN }}
+        run: node scripts/codex-coordinator.mjs prepare-repair "$TASK_ID" /tmp/coordinator-first-attempt
+      - name: Prepare fresh isolated retry runner
+        if: steps.repair.outputs.repair_needed == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y bubblewrap
+          if test -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns; then sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0; fi
+          if test -f /proc/sys/kernel/unprivileged_userns_clone; then sudo sysctl -w kernel.unprivileged_userns_clone=1; fi
+          mkdir -p /home/runner/.codex
+          sudo mkdir -p /opt/coordinator-runtime
+          sudo cp scripts/codex-coordinator.mjs /opt/coordinator-runtime/coordinator.mjs
+          sudo cp .github/codex-coordinator/queue.json /opt/coordinator-runtime/queue.json
+          sudo chmod -R a-w /opt/coordinator-runtime
+      - name: Install baseline dependencies for repair checks
+        if: steps.repair.outputs.repair_needed == 'true' && steps.repair.outputs.needs_deps == 'true'
+        run: npm ci --ignore-scripts
+      - name: Repair once using actual verifier feedback on a fresh runner
+        if: steps.repair.outputs.repair_needed == 'true'
+        uses: openai/codex-action@1d82a3dba7c7988ec71ecae1ed5b8e8db96495c5 # v1
+        continue-on-error: true
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ":workspace"
+          prompt-file: /tmp/coordinator-retry.txt
+          output-file: /tmp/coordinator-codex-retry.txt
+      - name: Validate the final bounded attempt
+        if: steps.repair.outputs.repair_needed == 'true'
+        env:
+          COORDINATOR_CONFIG: /opt/coordinator-runtime/queue.json
+        run: |
+          node /opt/coordinator-runtime/coordinator.mjs verify "$TASK_ID" 2
+          node /opt/coordinator-runtime/coordinator.mjs assert-result
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: coordinator-repaired-${{ matrix.task.id }}-${{ github.run_attempt }}
+          path: |
+            /tmp/coordinator-result.json
+            /tmp/coordinator-failure.json
+            /tmp/coordinator-codex-retry.txt
+          retention-days: 14
+
+  certify:
+    needs: [select, execute, repair]
     if: always() && needs.select.result == 'success' && needs.select.outputs.has_tasks == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -162,7 +228,7 @@ jobs:
           node-version: 22
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          pattern: coordinator-generated-*-${{ github.run_attempt }}
+          pattern: coordinator-*-${{ github.run_attempt }}
           path: /tmp/coordinator-generated
       - name: Prepare credential-free independent validator
         run: |
@@ -189,7 +255,7 @@ jobs:
 
   publish:
     needs: [select, certify]
-    if: needs.certify.result == 'success'
+    if: always() && needs.select.result == 'success' && needs.certify.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: "Preview – demeterbueno"
@@ -221,4 +287,34 @@ jobs:
         with:
           name: coordinator-publication-${{ github.run_attempt }}
           path: /tmp/coordinator-published
+          retention-days: 14
+
+  report:
+    needs: [select, execute, repair, certify, publish]
+    if: always() && github.repository == 'mikevazquez/Demeter' && github.ref == 'refs/heads/chore/governance-autonomous-coordinator-20261015' && github.actor == 'mikevazquez'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CONTROL_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: coordinator-*-${{ github.run_attempt }}
+          path: /tmp/coordinator-report-input
+      - name: Consolidate verified results and unresolved gates
+        env:
+          COORDINATOR_JOBS: ${{ toJSON(needs) }}
+        run: node scripts/codex-coordinator.mjs report /tmp/coordinator-report-input
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coordinator-report-${{ github.run_attempt }}
+          path: /tmp/coordinator-report
+          if-no-files-found: error
           retention-days: 14

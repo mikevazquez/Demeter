@@ -10,7 +10,8 @@ ciclo de trabajo del agente; no retoma bloques funcionales ni modifica producci�
 2. Un único ejecutor procesa las tareas seleccionadas en secuencia. Recupera la
    orden y el contexto, ejecuta Codex y valida los archivos y criterios del contrato.
 3. Si la validación detecta un problema corregible, Codex recibe el error real y
-   dispone de un segundo intento. Las violaciones de alcance no se reintentan.
+   dispone de un segundo intento en un runner nuevo, restaurando solo los archivos
+   admitidos del intento anterior. Las violaciones de alcance no se reintentan.
 4. `certify` reconstruye el resultado en otro runner desde el SHA original y vuelve
    a validar el alcance y las pruebas. No dispone de credenciales de publicación.
 5. `publish` verifica la procedencia del artefacto certificado y crea una rama y
@@ -40,7 +41,10 @@ Las tareas de documentación se limitan a archivos Markdown exactos en
 `docs/automation/`. Las tareas de código admiten archivos concretos en `app`,
 `components`, `lib` y `tests`, con comprobaciones obligatorias. Este segundo modo
 requiere validación específica antes de admitir trabajo funcional. El lote inicial
-solo contiene las pruebas de aceptación #292 y #293.
+contiene las pruebas de aceptación #292, #293 y #295. La última comprueba el modo
+código y sus límites de ejecución sin modificar el comportamiento de la aplicación.
+Incluye un fallo controlado de aceptación en el primer intento para probar la
+reparación real en un runner nuevo; esa sonda no se aplica a tareas ordinarias.
 
 ## Aislamiento y verificaciones
 
@@ -63,7 +67,9 @@ El workflow se activa por cambios de control en la rama
 `chore/governance-autonomous-coordinator-20261015` y acepta `workflow_dispatch` sobre
 esa rama si GitHub lo permite. Está restringido al repositorio y al actor propietario.
 La concurrencia global cubre todo el ciclo y la matriz tiene `max-parallel: 1`.
-Cada ejecución consume hasta dos tareas independientes de la cola inicial.
+Cada ejecución consume hasta tres tareas independientes de la cola inicial,
+siempre en secuencia por un solo ejecutor. Un job final consolida resultados,
+PRs y bloqueos en un reporte JSON y Markdown, incluso si una fase falla.
 
 El cron declarado no constituye un servicio periódico activo: GitHub ejecuta los
 eventos programados desde la rama predeterminada y el guard actual exige la rama

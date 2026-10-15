@@ -74,6 +74,10 @@ export function validateConfig(config, now = Date.now()) {
     );
     assert(task.kind === "documentation" || task.kind === "code", "Unsupported task kind");
     assert(
+      !task.acceptanceRetryProbe || task.id.startsWith("acceptance-"),
+      "Retry probes are restricted to explicit acceptance tasks",
+    );
+    assert(
       Array.isArray(task.allowedPaths) &&
         task.allowedPaths.length > 0 &&
         task.allowedPaths.length <= 20,
@@ -130,7 +134,7 @@ export function assertIssue(task, issue) {
   );
 }
 
-export function validateFiles(task, files) {
+export function validateFiles(task, files, acceptance = true) {
   assert(
     files.length > 0 && files.length <= task.allowedPaths.length,
     "No changes or too many files",
@@ -148,7 +152,7 @@ export function validateFiles(task, files) {
     );
     assert(file.content.trim().length >= 40, "Empty or incomplete task result");
   }
-  for (const required of task.requiredText)
+  for (const required of acceptance ? task.requiredText : [])
     assert(
       files.some((f) => f.content.includes(required)),
       `Acceptance criterion missing: ${required}`,
@@ -352,7 +356,7 @@ async function prepare(config, id) {
   );
 }
 
-export function collectFiles(task) {
+export function collectFiles(task, acceptance = true) {
   const changes = git("diff", "--no-ext-diff", "--no-textconv", "--name-only", "-z", "HEAD")
     .split("\0")
     .filter(Boolean);
@@ -374,44 +378,55 @@ export function collectFiles(task) {
       deleted: false,
     };
   });
-  validateFiles(task, files);
+  validateFiles(task, files, acceptance);
   return files;
 }
 function checks(task) {
   for (const command of task.checks) {
     // Fresh PID/network namespaces, no inherited credentials and no access to Codex home.
-    execFileSync(
-      "bwrap",
-      [
-        "--unshare-all",
-        "--die-with-parent",
-        "--ro-bind",
-        "/",
-        "/",
-        "--dev",
-        "/dev",
-        "--proc",
-        "/proc",
-        "--tmpfs",
-        "/tmp",
-        "--tmpfs",
-        "/home/runner/.codex",
-        "--bind",
-        root,
-        root,
-        "--ro-bind",
-        path.join(root, ".git"),
-        path.join(root, ".git"),
-        "--chdir",
-        root,
-        "--clearenv",
-        "--setenv",
-        "PATH",
-        process.env.PATH,
-        ...command,
-      ],
-      { stdio: "inherit", timeout: 120000 },
-    );
+    try {
+      const output = execFileSync(
+        "bwrap",
+        [
+          "--unshare-all",
+          "--die-with-parent",
+          "--ro-bind",
+          "/",
+          "/",
+          "--dev",
+          "/dev",
+          "--proc",
+          "/proc",
+          "--tmpfs",
+          "/tmp",
+          "--tmpfs",
+          "/home/runner/.codex",
+          "--bind",
+          root,
+          root,
+          "--ro-bind",
+          path.join(root, ".git"),
+          path.join(root, ".git"),
+          "--chdir",
+          root,
+          "--clearenv",
+          "--setenv",
+          "PATH",
+          process.env.PATH,
+          ...command,
+        ],
+        {
+          encoding: "utf8",
+          stdio: ["ignore", "pipe", "pipe"],
+          maxBuffer: 1024 * 1024,
+          timeout: 120000,
+        },
+      );
+      if (output) console.log(output.slice(-8000));
+    } catch (error) {
+      const feedback = String(error.stderr || error.stdout || error.message).slice(-4000);
+      throw new Error(`Check failed: ${feedback}`);
+    }
   }
 }
 function verify(config, id, attempt) {
@@ -425,6 +440,10 @@ function verify(config, id, attempt) {
     );
     const files = collectFiles(task);
     checks(task);
+    assert(
+      !(task.acceptanceRetryProbe === true && attempt === 1),
+      "Acceptance retry probe: revalidate the admitted fixture on a fresh second attempt without changing its scope",
+    );
     assert(
       digest(JSON.stringify(collectFiles(task))) === digest(JSON.stringify(files)),
       "Checks changed task files",
@@ -444,7 +463,7 @@ function verify(config, id, attempt) {
     output("valid", "true");
   } catch (error) {
     const violation =
-      /Scope|scope|too many files|symlink|Deleted|Binary|Protected|escaped|Contract|regular/.test(
+      /Scope violation|Orphan scope|too many files|symlink|Deleted|Binary|Protected|escaped|Contract|regular/.test(
         error.message,
       );
     write("/tmp/coordinator-failure.json", {
@@ -453,6 +472,20 @@ function verify(config, id, attempt) {
       message: error.message,
       retryable: !violation,
     });
+    if (!violation) {
+      try {
+        const files = collectFiles(task, false);
+        write("/tmp/coordinator-candidate.json", {
+          id,
+          sourceSha: admitted.sourceSha,
+          runId: admitted.runId,
+          contractHash: admitted.contractHash,
+          files,
+        });
+      } catch {
+        /* A missing or structurally invalid candidate is retried from the original checkout. */
+      }
+    }
     fs.writeFileSync(
       "/tmp/coordinator-retry.txt",
       fs.readFileSync("/tmp/coordinator-prompt.txt", "utf8") +
@@ -462,6 +495,60 @@ function verify(config, id, attempt) {
     output("retryable", String(!violation));
     summary(`Task ${id}, attempt ${attempt}: ${error.message}`);
   }
+}
+
+async function prepareRepair(config, id, directory) {
+  const task = config.tasks.find((item) => item.id === id);
+  assert(task, "Unknown repair task");
+  const successful = path.join(directory, "coordinator-result.json");
+  if (fs.existsSync(successful)) {
+    output("repair_needed", "false");
+    return;
+  }
+  const failure = read(path.join(directory, "coordinator-failure.json"));
+  assert(
+    failure.id === id && failure.attempt === 1 && failure.retryable === true,
+    "Task failure is terminal; no model retry authorized",
+  );
+  await prepare(config, id);
+  if (fs.existsSync("/tmp/coordinator-result.json")) {
+    output("repair_needed", "false");
+    return;
+  }
+  const candidatePath = path.join(directory, "coordinator-candidate.json");
+  if (fs.existsSync(candidatePath)) {
+    const candidate = read(candidatePath);
+    assert(
+      candidate.id === id &&
+        candidate.sourceSha === process.env.CONTROL_SHA &&
+        candidate.runId === process.env.GITHUB_RUN_ID &&
+        candidate.contractHash === digest(JSON.stringify(task)),
+      "Repair candidate provenance mismatch",
+    );
+    validateFiles(task, candidate.files, false);
+    for (const item of candidate.files) {
+      for (
+        let parent = path.dirname(path.resolve(item.path));
+        parent !== root;
+        parent = path.dirname(parent)
+      )
+        if (fs.existsSync(parent))
+          assert(!fs.lstatSync(parent).isSymbolicLink(), "Symlink parent rejected");
+      if (fs.existsSync(item.path))
+        assert(
+          fs.lstatSync(item.path).isFile() && !fs.lstatSync(item.path).isSymbolicLink(),
+          "Unsafe repair destination",
+        );
+      fs.mkdirSync(path.dirname(item.path), { recursive: true });
+      fs.writeFileSync(item.path, item.content);
+    }
+  }
+  fs.writeFileSync(
+    "/tmp/coordinator-retry.txt",
+    fs.readFileSync("/tmp/coordinator-prompt.txt", "utf8") +
+      `\n\nActual first-attempt verifier feedback: ${failure.message}. Repair only within the original scope; do not alter any control or verifier.`,
+  );
+  output("repair_needed", "true");
 }
 
 function certify(config, directory) {
@@ -530,91 +617,173 @@ function certify(config, directory) {
 async function publish(config, directory) {
   const source = await context(config);
   let count = 0;
+  const failures = [];
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
-    const file = path.join(directory, entry.name, "coordinator-result.json");
-    if (!fs.existsSync(file)) continue;
-    const result = read(file);
-    const task = config.tasks.find((item) => item.id === result.id);
-    assert(task, "Unknown artifact task");
-    assert(
-      result.certified &&
-        result.validated &&
-        result.sourceSha === process.env.CONTROL_SHA &&
-        result.runId === process.env.GITHUB_RUN_ID,
-      "Artifact provenance mismatch",
-    );
-    assert(
-      result.contractHash === digest(JSON.stringify(task)) &&
-        result.filesHash === digest(JSON.stringify(result.files)),
-      "Artifact or contract digest mismatch",
-    );
-    validateFiles(task, result.files);
-    assertIssue(task, await api(config, `issues/${task.issueNumber}`));
-    const state = await existing(config, task);
-    if (state.pulls.length) {
-      summary(`Skipped duplicate ${task.id}: ${state.pulls[0].html_url}`);
-      continue;
-    }
-    const baseSha = state.branch
-      ? result.recoveryBaseSha || process.env.CONTROL_SHA
-      : process.env.CONTROL_SHA;
-    if (baseSha !== process.env.CONTROL_SHA) {
-      const ancestry = await api(config, `compare/${baseSha}...${process.env.CONTROL_SHA}`);
+    try {
+      const file = path.join(directory, entry.name, "coordinator-result.json");
+      if (!fs.existsSync(file)) continue;
+      const result = read(file);
+      const task = config.tasks.find((item) => item.id === result.id);
+      assert(task, "Unknown artifact task");
       assert(
-        ["ahead", "identical"].includes(ancestry.status),
-        "Publication baseline is not a trusted ancestor",
+        result.certified &&
+          result.validated &&
+          result.sourceSha === process.env.CONTROL_SHA &&
+          result.runId === process.env.GITHUB_RUN_ID,
+        "Artifact provenance mismatch",
       );
-    }
-    const parent = await api(config, `git/commits/${baseSha}`);
-    const elements = [];
-    for (const item of result.files) {
-      const blob = await post(config, "git/blobs", { content: item.content, encoding: "utf-8" });
-      elements.push({ path: item.path, mode: "100644", type: "blob", sha: blob.sha });
-    }
-    const tree = await post(config, "git/trees", { base_tree: parent.tree.sha, tree: elements });
-    let commit;
-    if (state.branch) {
-      // Recover a ref created before a PR request failed. Never overwrite another result.
-      commit = await api(config, `git/commits/${state.branch.object.sha}`);
       assert(
-        commit.parents.length === 1 &&
-          commit.parents[0].sha === baseSha &&
-          commit.message.includes(`Contract: ${result.contractHash}`) &&
-          commit.tree.sha === tree.sha,
-        "Existing task branch differs; refusing to overwrite",
+        result.contractHash === digest(JSON.stringify(task)) &&
+          result.filesHash === digest(JSON.stringify(result.files)),
+        "Artifact or contract digest mismatch",
       );
-    } else {
-      commit = await post(config, "git/commits", {
-        message: `chore(codex): ${task.id}\n\nContract: ${result.contractHash}\nSource: ${process.env.CONTROL_SHA}`,
-        tree: tree.sha,
-        parents: [process.env.CONTROL_SHA],
+      validateFiles(task, result.files);
+      assertIssue(task, await api(config, `issues/${task.issueNumber}`));
+      const state = await existing(config, task);
+      if (state.pulls.length) {
+        summary(`Skipped duplicate ${task.id}: ${state.pulls[0].html_url}`);
+        continue;
+      }
+      const baseSha = state.branch
+        ? result.recoveryBaseSha || process.env.CONTROL_SHA
+        : process.env.CONTROL_SHA;
+      if (baseSha !== process.env.CONTROL_SHA) {
+        const ancestry = await api(config, `compare/${baseSha}...${process.env.CONTROL_SHA}`);
+        assert(
+          ["ahead", "identical"].includes(ancestry.status),
+          "Publication baseline is not a trusted ancestor",
+        );
+      }
+      const parent = await api(config, `git/commits/${baseSha}`);
+      const elements = [];
+      for (const item of result.files) {
+        const blob = await post(config, "git/blobs", { content: item.content, encoding: "utf-8" });
+        elements.push({ path: item.path, mode: "100644", type: "blob", sha: blob.sha });
+      }
+      const tree = await post(config, "git/trees", { base_tree: parent.tree.sha, tree: elements });
+      let commit;
+      if (state.branch) {
+        // Recover a ref created before a PR request failed. Never overwrite another result.
+        commit = await api(config, `git/commits/${state.branch.object.sha}`);
+        assert(
+          commit.parents.length === 1 &&
+            commit.parents[0].sha === baseSha &&
+            commit.message.includes(`Contract: ${result.contractHash}`) &&
+            commit.tree.sha === tree.sha,
+          "Existing task branch differs; refusing to overwrite",
+        );
+      } else {
+        commit = await post(config, "git/commits", {
+          message: `chore(codex): ${task.id}\n\nContract: ${result.contractHash}\nSource: ${process.env.CONTROL_SHA}`,
+          tree: tree.sha,
+          parents: [process.env.CONTROL_SHA],
+        });
+        await post(config, "git/refs", { ref: `refs/heads/${branchFor(task)}`, sha: commit.sha });
+      }
+      const pull = await post(config, "pulls", {
+        title: `[Codex] ${task.id}`,
+        head: branchFor(task),
+        base: config.controlBranch,
+        draft: true,
+        body: `Refs #${task.issueNumber}. Owner: ${task.owner}.\n\nAutomatically executed and deterministically validated; attempt ${result.attempt}.\nSource SHA: ${process.env.CONTROL_SHA}\nContract SHA256: ${result.contractHash}\nFiles SHA256: ${result.filesHash}\nNotion context: ${source.mode}, expires ${source.expiresAt}.\n\nEvidence: https://github.com/${config.repository}/actions/runs/${process.env.GITHUB_RUN_ID}\n\nNo merge, deployment or production authorization. Code-task checks ran without network or publication credentials. CI is not presumed: PRs created using GITHUB_TOKEN do not automatically trigger other workflows.`,
       });
-      await post(config, "git/refs", { ref: `refs/heads/${branchFor(task)}`, sha: commit.sha });
+      count++;
+      summary(`Published ${task.id}: ${pull.html_url}`);
+      write(path.join("/tmp/coordinator-published", `${task.id}.json`), {
+        id: task.id,
+        sha: commit.sha,
+        pr: pull.html_url,
+        sourceSha: process.env.CONTROL_SHA,
+      });
+    } catch (error) {
+      const failure = { id: entry.name, message: error.message, stage: "publish" };
+      failures.push(failure);
+      write(
+        path.join(
+          "/tmp/coordinator-published",
+          `failure-${entry.name.replace(/[^a-z0-9-]/g, "_")}.json`,
+        ),
+        failure,
+      );
+      summary(`Publication blocked for ${entry.name}: ${error.message}`);
     }
-    const pull = await post(config, "pulls", {
-      title: `[Codex] ${task.id}`,
-      head: branchFor(task),
-      base: config.controlBranch,
-      draft: true,
-      body: `Refs #${task.issueNumber}. Owner: ${task.owner}.\n\nAutomatically executed and deterministically validated; attempt ${result.attempt}.\nSource SHA: ${process.env.CONTROL_SHA}\nContract SHA256: ${result.contractHash}\nFiles SHA256: ${result.filesHash}\nNotion context: ${source.mode}, expires ${source.expiresAt}.\n\nEvidence: https://github.com/${config.repository}/actions/runs/${process.env.GITHUB_RUN_ID}\n\nNo merge, deployment or production authorization. Code-task checks ran without network or publication credentials. CI is not presumed: PRs created using GITHUB_TOKEN do not automatically trigger other workflows.`,
-    });
-    count++;
-    summary(`Published ${task.id}: ${pull.html_url}`);
-    write(path.join("/tmp/coordinator-published", `${task.id}.json`), {
-      id: task.id,
-      sha: commit.sha,
-      pr: pull.html_url,
-      sourceSha: process.env.CONTROL_SHA,
-    });
   }
   summary(`Published ${count} draft PR(s).`);
+  assert(failures.length === 0, failures.map((failure) => failure.message).join("; "));
+}
+
+function report(config, directory) {
+  const documents = [];
+  const walk = (folder) => {
+    if (!fs.existsSync(folder)) return;
+    for (const entry of fs.readdirSync(folder, { withFileTypes: true })) {
+      const full = path.join(folder, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.name.endsWith(".json") && fs.statSync(full).size <= 4 * 1024 * 1024)
+        documents.push({ name: entry.name, value: read(full) });
+    }
+  };
+  walk(directory);
+  const selection = documents.find((d) => d.name === "coordinator-selection.json")?.value;
+  const rows = config.tasks.map((task) => {
+    const skipped = selection?.skipped.find((item) => item.id === task.id);
+    const records = documents.filter((d) => d.value.id === task.id);
+    const publication = records.find((d) => d.value.pr)?.value;
+    const certified = records.find((d) => d.value.certified)?.value;
+    const generated = records.find((d) => d.name === "coordinator-result.json")?.value;
+    const failure = records.find((d) => d.value.message)?.value;
+    return {
+      id: task.id,
+      issue: task.issueNumber,
+      owner: task.owner,
+      state: publication
+        ? "PR prepared"
+        : skipped
+          ? "already published"
+          : failure
+            ? "blocked"
+            : certified
+              ? "certified; publication incomplete"
+              : generated
+                ? "generated; certification incomplete"
+                : "not completed",
+      pr: publication?.pr || skipped?.url,
+      attempt: generated?.attempt,
+      reason: failure?.message,
+    };
+  });
+  const result = {
+    sourceSha: process.env.CONTROL_SHA,
+    runId: process.env.GITHUB_RUN_ID,
+    jobs: JSON.parse(process.env.COORDINATOR_JOBS || "{}"),
+    notion: selection?.source || { mode: "unavailable" },
+    tasks: rows,
+  };
+  write("/tmp/coordinator-report/report.json", result);
+  const markdown = [
+    "# Autonomous coordinator result",
+    `Source: ${result.sourceSha}`,
+    `Notion: ${result.notion.mode}`,
+    "",
+    "| Task | State | PR |",
+    "| --- | --- | --- |",
+    ...rows.map((row) => `| ${row.id} | ${row.state} | ${row.pr || "—"} |`),
+    "",
+    "No production authorization or deployment is implied.",
+  ].join("\n");
+  fs.mkdirSync("/tmp/coordinator-report", { recursive: true });
+  fs.writeFileSync("/tmp/coordinator-report/report.md", markdown);
+  summary(markdown);
 }
 
 export async function main(command, id, argument) {
-  const config = validateConfig(read(configPath));
+  const loaded = read(configPath);
+  if (command === "report") return report(loaded, id);
+  const config = validateConfig(loaded);
   if (command === "select") return select(config);
   if (command === "prepare") return prepare(config, id);
+  if (command === "prepare-repair") return prepareRepair(config, id, argument);
   if (command === "verify") return verify(config, id, Number(argument));
   if (command === "certify") return certify(config, id);
   if (command === "publish") return publish(config, id);
@@ -622,6 +791,15 @@ export async function main(command, id, argument) {
     assert(
       fs.existsSync("/tmp/coordinator-result.json"),
       "Task did not pass validation after bounded retries",
+    );
+    return;
+  }
+  if (command === "assert-attempt") {
+    if (fs.existsSync("/tmp/coordinator-result.json")) return;
+    assert(
+      fs.existsSync("/tmp/coordinator-failure.json") &&
+        read("/tmp/coordinator-failure.json").retryable === true,
+      "First attempt failed outside repairable scope",
     );
     return;
   }
