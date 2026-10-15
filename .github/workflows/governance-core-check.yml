@@ -7,6 +7,10 @@ on:
       - scripts/governance-*.mjs
       - tests/automation/governance.node.mjs
       - tests/governance-controller.test.ts
+      - tests/governance-shared-controller.test.ts
+      - tests/automation/governance-shared.node.mjs
+      - .github/workflows/governance-codex-coordinator.yml
+      - docs/automation/governance-shared-evidence.md
       - docs/automation/governance-core-evidence.md
       - .github/workflows/governance-core-check.yml
   workflow_dispatch:
@@ -35,16 +39,17 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/governance-core-evidence
-          env -i PATH="$PATH" node --test tests/automation/governance.node.mjs | tee /tmp/governance-core-evidence/tests.tap
+          env -i PATH="$PATH" node --test tests/automation/governance.node.mjs tests/automation/governance-shared.node.mjs | tee /tmp/governance-core-evidence/tests.tap
       - name: Install pinned baseline tooling without lifecycle scripts
         run: npm ci --ignore-scripts
       - name: Format reviewed files only in the disposable checkout
         run: >-
           node node_modules/prettier/bin/prettier.cjs --write
-          scripts/governance-evaluator.mjs scripts/governance-ledger.mjs
+          scripts/governance-evaluator.mjs scripts/governance-ledger.mjs scripts/governance-shared.mjs
           tests/automation/governance.node.mjs tests/governance-controller.test.ts
-          docs/automation/governance-core-evidence.md
-          .github/workflows/governance-core-check.yml
+          tests/automation/governance-shared.node.mjs tests/governance-shared-controller.test.ts
+          docs/automation/governance-core-evidence.md docs/automation/governance-shared-evidence.md
+          .github/workflows/governance-core-check.yml .github/workflows/governance-codex-coordinator.yml
       - name: Require source formatting to match the committed revision
         run: git diff --exit-code
       - name: Collect tested source and evidence without secrets
@@ -54,7 +59,7 @@ jobs:
           RUN_ID: ${{ github.run_id }}
         run: |
           mkdir -p /tmp/governance-core-evidence/source
-          cp --parents scripts/governance-evaluator.mjs scripts/governance-ledger.mjs tests/automation/governance.node.mjs tests/governance-controller.test.ts docs/automation/governance-core-evidence.md .github/workflows/governance-core-check.yml /tmp/governance-core-evidence/source/
+          cp --parents scripts/governance-shared.mjs tests/automation/governance-shared.node.mjs tests/governance-shared-controller.test.ts docs/automation/governance-shared-evidence.md .github/workflows/governance-codex-coordinator.yml scripts/governance-evaluator.mjs scripts/governance-ledger.mjs tests/automation/governance.node.mjs tests/governance-controller.test.ts docs/automation/governance-core-evidence.md .github/workflows/governance-core-check.yml /tmp/governance-core-evidence/source/
           printf '{"sourceSha":"%s","runId":"%s","scope":"decision-core-and-local-ledger","runtimeUat":false}\n' "$SOURCE_SHA" "$RUN_ID" > /tmp/governance-core-evidence/manifest.json
           if test -d node_modules/prettier; then tar -czf /tmp/governance-core-evidence/prettier-tooling.tgz -C node_modules prettier; fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

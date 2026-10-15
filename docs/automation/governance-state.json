@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "sequence": 0,
+  "parent": null,
+  "signature": null,
+  "state": {
+    "version": 1,
+    "repository": "mikevazquez/Demeter",
+    "controlBranch": "chore/governance-autonomous-coordinator-20261015",
+    "events": []
+  },
+  "sha256": "b41724c585b5902d66e4554b3bb6d8a0c2f13c2281b37084688075ddd02107ce"
+}

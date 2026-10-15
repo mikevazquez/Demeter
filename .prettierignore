@@ -1,3 +1,5 @@
 node_modules
 .next
 coverage
+# Generated journal has its own integrity validation; never source code.
+docs/automation/governance-state.json

@@ -7,6 +7,8 @@ on:
       - .github/codex-coordinator/**
       - .github/workflows/governance-codex-coordinator.yml
       - scripts/codex-coordinator.mjs
+      - scripts/governance-shared.mjs
+      - scripts/governance-evaluator.mjs
       - tests/automation/**
   workflow_dispatch:
   schedule:
@@ -30,9 +32,10 @@ jobs:
       contents: read
       issues: read
       pull-requests: read
+      actions: read
     outputs:
-      tasks: ${{ steps.select.outputs.tasks }}
-      has_tasks: ${{ steps.select.outputs.has_tasks }}
+      tasks: ${{ steps.admit.outputs.tasks }}
+      has_tasks: ${{ steps.admit.outputs.has_tasks }}
       control_sha: ${{ github.sha }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -42,7 +45,13 @@ jobs:
         with:
           node-version: 22
       - name: Test coordinator controls before selection
-        run: node --test tests/automation/coordinator.node.mjs
+        run: |
+          node --test tests/automation/coordinator.node.mjs
+          node --test tests/automation/governance.node.mjs tests/automation/governance-shared.node.mjs
+      - name: Read shared state and apply Governance decision gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/governance-shared.mjs gate
       - name: Select admitted tasks and skip already published work
         id: select
         env:
@@ -50,11 +59,22 @@ jobs:
           CODEX_NOTION_TOKEN: ${{ secrets.CODEX_NOTION_TOKEN }}
           CONTROL_SHA: ${{ github.sha }}
         run: node scripts/codex-coordinator.mjs select
+      - name: Intersect selection with the shared Governance gate
+        id: admit
+        env:
+          SELECTED_TASKS: ${{ steps.select.outputs.tasks }}
+        run: node scripts/governance-shared.mjs admit
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: coordinator-selection-${{ github.run_attempt }}
           path: /tmp/coordinator-selection.json
+          retention-days: 14
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: governance-shared-gate-${{ github.sha }}-${{ github.run_attempt }}
+          path: /tmp/governance-shared/gate.json
           retention-days: 14
 
   execute:
@@ -316,5 +336,66 @@ jobs:
         with:
           name: coordinator-report-${{ github.run_attempt }}
           path: /tmp/coordinator-report
+          if-no-files-found: error
+          retention-days: 14
+
+  persist-governance:
+    needs: [select, report]
+    if: always() && needs.report.result == 'success' && github.repository == 'mikevazquez/Demeter' && github.ref == 'refs/heads/chore/governance-autonomous-coordinator-20261015' && github.actor == 'mikevazquez'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      issues: read
+      pull-requests: read
+      actions: read
+    outputs:
+      revision: ${{ steps.record.outputs.revision }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+      - name: Persist only changed scoped observations to the shared journal
+        id: record
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/governance-shared.mjs record
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: governance-shared-record-${{ github.sha }}-${{ github.run_attempt }}
+          path: /tmp/governance-shared/record.json
+          if-no-files-found: error
+          retention-days: 14
+
+  recover-governance:
+    needs: persist-governance
+    if: always() && needs.persist-governance.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+      - name: Recover exact journal revision on an independent read-only runner
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_REVISION: ${{ needs.persist-governance.outputs.revision }}
+        run: node scripts/governance-shared.mjs recover
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: governance-shared-recovery-${{ github.sha }}-${{ github.run_attempt }}
+          path: /tmp/governance-shared/recover.json
           if-no-files-found: error
           retention-days: 14
