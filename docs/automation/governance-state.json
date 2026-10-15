@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "sequence": 3,
-  "parent": "fab246625780d6daa752b580ab1ba89e9441857cca04e6ead0b8186be22a7be7",
-  "signature": "402bd25ab05521a8ac348f01b9b0e50a8de9a94fb9ff5f59f574724854a5bec4",
+  "sequence": 4,
+  "parent": "18214b4ce69d2181669f398456a124295c5e1fb31713ac51549bb323a7427291",
+  "signature": "3139dad939b909ff0a97c698040ef72496ecd30d9a7492f91ce94b5286370656",
   "state": {
     "version": 1,
     "repository": "mikevazquez/Demeter",
@@ -85,8 +85,38 @@
           "cause": "not-established-by-job-status",
           "automaticRerun": false
         }
+      },
+      {
+        "id": "e1d9950caa3e6d9fa2edcb118c327568d5748e29359dc09dd0a43e5f1080ad96",
+        "type": "cycle",
+        "at": "2026-10-15T22:07:55.225Z",
+        "data": {
+          "inputHash": "49fbef29a74b3ad477f49d8ed9e80d13a917d0ac840468cde29d9bb8d8f6f024",
+          "controlSha": "3857c0b075d964fd0a0baaa22bf555902c248bb9",
+          "queueBlobSha": "d327cf84abb0c2a222e5c21bf5d67e59fa53bd1b",
+          "policyVersion": "2026-10-15T07:49:26.240Z",
+          "findings": [
+            {
+              "rule": "G02",
+              "status": "verified",
+              "versionMatches": true
+            },
+            {
+              "rule": "G06",
+              "status": "verified"
+            }
+          ],
+          "delivered": [
+            "acceptance-1-v1",
+            "acceptance-2-v1",
+            "acceptance-isolation-v1",
+            "acceptance-lease-live-20261015-v1"
+          ],
+          "gapObserved": false,
+          "outcome": "idle"
+        }
       }
     ]
   },
-  "sha256": "18214b4ce69d2181669f398456a124295c5e1fb31713ac51549bb323a7427291"
+  "sha256": "a05a31ffcab50806b650cc059ed06d3049b4c811a148a28ed3258ece5f911bed"
 }
