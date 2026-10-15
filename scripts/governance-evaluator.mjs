@@ -13,6 +13,8 @@ const TYPES = new Set([
   "notice_claim",
   "notice_sent",
   "resolution",
+  "execution_lease",
+  "execution_outcome",
 ]);
 
 export function invariant(condition, label) {
@@ -124,6 +126,79 @@ export function validateState(state) {
   for (const event of events) {
     sha(event.id, 64);
     invariant(TYPES.has(event.type), "event type");
+    if (event.type === "execution_lease" || event.type === "execution_outcome") {
+      const d = event.data;
+      const lease = event.type === "execution_lease";
+      const keys = lease
+        ? ["taskId", "contractHash", "sourceSha", "runId", "runAttempt", "maximumStages"]
+        : [
+            "taskId",
+            "stage",
+            "phase",
+            "sourceSha",
+            "runId",
+            "runAttempt",
+            "jobId",
+            "result",
+            "modelStep",
+            "cause",
+            "automaticRerun",
+          ];
+      invariant(canonical(Object.keys(d).sort()) === canonical(keys.sort()), "operation fields");
+      sha(d.sourceSha);
+      for (const field of ["runId", "runAttempt"]) {
+        invariant(Number.isSafeInteger(d[field]) && d[field] > 0, "operation identity");
+      }
+      if (lease) {
+        id(d.taskId);
+        sha(d.contractHash, 64);
+        invariant(d.maximumStages === 2, "operation budget");
+        invariant(event.id === digest([event.type, d.taskId]), "lease identity");
+      } else {
+        invariant(d.taskId === null || /^[a-zA-Z0-9_-]+$/.test(id(d.taskId)), "outcome task");
+        invariant(
+          [
+            "select",
+            "reserve-operations",
+            "execute",
+            "repair",
+            "certify",
+            "publish",
+            "report",
+          ].includes(d.phase),
+          "outcome phase",
+        );
+        const results = [
+          "success",
+          "failure",
+          "timed_out",
+          "cancelled",
+          "skipped",
+          "action_required",
+          "neutral",
+          "stale",
+          "startup_failure",
+        ];
+        invariant(
+          results.includes(d.result) && [...results, "not-established"].includes(d.modelStep),
+          "outcome result",
+        );
+        invariant(
+          d.stage ===
+            (d.taskId && d.phase === "execute" ? 1 : d.taskId && d.phase === "repair" ? 2 : null),
+          "outcome stage",
+        );
+        invariant(Number.isSafeInteger(d.jobId) && d.jobId > 0, "outcome job");
+        invariant(
+          d.cause === "not-established-by-job-status" && d.automaticRerun === false,
+          "outcome authority",
+        );
+        invariant(
+          event.id === digest([event.type, [d.runId, d.runAttempt, d.jobId]]),
+          "outcome identity",
+        );
+      }
+    }
     const time = utc(event.at);
     invariant(time >= previous, "event chronology");
     previous = time;

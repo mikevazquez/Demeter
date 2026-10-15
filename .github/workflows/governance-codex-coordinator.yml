@@ -8,6 +8,7 @@ on:
       - .github/workflows/governance-codex-coordinator.yml
       - scripts/codex-coordinator.mjs
       - scripts/governance-shared.mjs
+      - scripts/governance-operations.mjs
       - scripts/governance-evaluator.mjs
       - tests/automation/**
   workflow_dispatch:
@@ -47,7 +48,7 @@ jobs:
       - name: Test coordinator controls before selection
         run: |
           node --test tests/automation/coordinator.node.mjs
-          node --test tests/automation/governance.node.mjs tests/automation/governance-shared.node.mjs tests/automation/governance-failures.node.mjs
+          node --test tests/automation/governance.node.mjs tests/automation/governance-shared.node.mjs tests/automation/governance-failures.node.mjs tests/automation/governance-operations.node.mjs
       - name: Read shared state and apply Governance decision gate
         env:
           GH_TOKEN: ${{ github.token }}
@@ -77,14 +78,49 @@ jobs:
           path: /tmp/governance-shared/gate.json
           retention-days: 14
 
-  execute:
+  reserve-operations:
     needs: select
-    if: needs.select.outputs.has_tasks == 'true'
+    if: needs.select.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      issues: read
+      pull-requests: read
+      actions: read
+    outputs:
+      tasks: ${{ steps.reserve.outputs.tasks }}
+      has_tasks: ${{ steps.reserve.outputs.has_tasks }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+      - name: Reserve generation stages in the shared journal before execution
+        id: reserve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SELECTED_TASKS: ${{ needs.select.outputs.tasks }}
+        run: node scripts/governance-operations.mjs reserve
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: coordinator-operations-${{ github.run_attempt }}
+          path: /tmp/governance-operations/reserve.json
+          if-no-files-found: error
+          retention-days: 14
+
+  execute:
+    needs: [select, reserve-operations]
+    if: needs.reserve-operations.outputs.has_tasks == 'true'
     strategy:
       fail-fast: false
       max-parallel: 1
       matrix:
-        task: ${{ fromJSON(needs.select.outputs.tasks) }}
+        task: ${{ fromJSON(needs.reserve-operations.outputs.tasks) }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     environment: "Preview – demeterbueno"
@@ -92,6 +128,7 @@ jobs:
       contents: read
       issues: read
       pull-requests: read
+      actions: read
     env:
       CONTROL_SHA: ${{ needs.select.outputs.control_sha }}
       TASK_ID: ${{ matrix.task.id }}
@@ -124,6 +161,12 @@ jobs:
       - name: Install baseline dependencies only for admitted code checks
         if: steps.prepare.outputs.needs_deps == 'true'
         run: npm ci --ignore-scripts
+      - name: Check durable generation reservation before stage 1
+        if: steps.prepare.outputs.recovery != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GENERATION_STAGE: 1
+        run: node scripts/governance-operations.mjs check
       - name: Execute task with Codex
         if: steps.prepare.outputs.recovery != 'true'
         id: attempt1
@@ -155,13 +198,13 @@ jobs:
           retention-days: 14
 
   repair:
-    needs: [select, execute]
-    if: always() && needs.select.result == 'success' && needs.select.outputs.has_tasks == 'true'
+    needs: [select, reserve-operations, execute]
+    if: always() && needs.select.result == 'success' && needs.reserve-operations.result == 'success' && needs.reserve-operations.outputs.has_tasks == 'true'
     strategy:
       fail-fast: false
       max-parallel: 1
       matrix:
-        task: ${{ fromJSON(needs.select.outputs.tasks) }}
+        task: ${{ fromJSON(needs.reserve-operations.outputs.tasks) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: "Preview – demeterbueno"
@@ -169,6 +212,7 @@ jobs:
       contents: read
       issues: read
       pull-requests: read
+      actions: read
     env:
       CONTROL_SHA: ${{ needs.select.outputs.control_sha }}
       TASK_ID: ${{ matrix.task.id }}
@@ -205,6 +249,12 @@ jobs:
       - name: Install baseline dependencies for repair checks
         if: steps.repair.outputs.repair_needed == 'true' && steps.repair.outputs.needs_deps == 'true'
         run: npm ci --ignore-scripts
+      - name: Check durable generation reservation before stage 2
+        if: steps.repair.outputs.repair_needed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GENERATION_STAGE: 2
+        run: node scripts/governance-operations.mjs check
       - name: Repair once using actual verifier feedback on a fresh runner
         if: steps.repair.outputs.repair_needed == 'true'
         uses: openai/codex-action@1d82a3dba7c7988ec71ecae1ed5b8e8db96495c5 # v1
@@ -232,8 +282,8 @@ jobs:
           retention-days: 14
 
   certify:
-    needs: [select, execute, repair]
-    if: always() && needs.select.result == 'success' && needs.select.outputs.has_tasks == 'true'
+    needs: [select, reserve-operations, execute, repair]
+    if: always() && needs.select.result == 'success' && needs.reserve-operations.result == 'success' && needs.reserve-operations.outputs.has_tasks == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -310,7 +360,7 @@ jobs:
           retention-days: 14
 
   report:
-    needs: [select, execute, repair, certify, publish]
+    needs: [select, reserve-operations, execute, repair, certify, publish]
     if: always() && github.repository == 'mikevazquez/Demeter' && github.ref == 'refs/heads/chore/governance-autonomous-coordinator-20261015' && github.actor == 'mikevazquez'
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -332,6 +382,8 @@ jobs:
         env:
           COORDINATOR_JOBS: ${{ toJSON(needs) }}
         run: node scripts/codex-coordinator.mjs report /tmp/coordinator-report-input
+      - name: Consolidate durable reservation results
+        run: node scripts/governance-operations.mjs summarize
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coordinator-report-${{ github.run_attempt }}
@@ -340,8 +392,8 @@ jobs:
           retention-days: 14
 
   persist-governance:
-    needs: [select, report]
-    if: always() && needs.report.result == 'success' && github.repository == 'mikevazquez/Demeter' && github.ref == 'refs/heads/chore/governance-autonomous-coordinator-20261015' && github.actor == 'mikevazquez'
+    needs: [select, reserve-operations, execute, repair, certify, publish, report]
+    if: always() && github.repository == 'mikevazquez/Demeter' && github.ref == 'refs/heads/chore/governance-autonomous-coordinator-20261015' && github.actor == 'mikevazquez'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -363,7 +415,7 @@ jobs:
         id: record
         env:
           GH_TOKEN: ${{ github.token }}
-        run: node scripts/governance-shared.mjs record
+        run: node scripts/governance-operations.mjs record
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

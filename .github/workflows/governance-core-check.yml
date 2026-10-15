@@ -6,6 +6,10 @@ on:
     paths:
       - scripts/governance-*.mjs
       - tests/automation/governance.node.mjs
+      - tests/governance-operations-controller.test.ts
+      - tests/automation/governance-operations.node.mjs
+      - tests/automation/governance-operations-fixture.mjs
+      - docs/automation/governance-operations-evidence.md
       - tests/governance-controller.test.ts
       - tests/governance-shared-controller.test.ts
       - tests/automation/governance-shared.node.mjs
@@ -42,13 +46,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/governance-core-evidence
-          env -i PATH="$PATH" node --test tests/automation/governance.node.mjs tests/automation/governance-shared.node.mjs tests/automation/governance-failures.node.mjs | tee /tmp/governance-core-evidence/tests.tap
+          env -i PATH="$PATH" node --test tests/automation/governance.node.mjs tests/automation/governance-shared.node.mjs tests/automation/governance-failures.node.mjs tests/automation/governance-operations.node.mjs | tee /tmp/governance-core-evidence/tests.tap
       - name: Install pinned baseline tooling without lifecycle scripts
         run: npm ci --ignore-scripts
       - name: Format reviewed files only in the disposable checkout
         run: >-
           node node_modules/prettier/bin/prettier.cjs --write
-          scripts/governance-evaluator.mjs scripts/governance-ledger.mjs scripts/governance-shared.mjs scripts/governance-failures.mjs
+          scripts/governance-evaluator.mjs scripts/governance-ledger.mjs scripts/governance-shared.mjs scripts/governance-failures.mjs scripts/governance-operations.mjs
+          tests/automation/governance-operations.node.mjs tests/automation/governance-operations-fixture.mjs tests/governance-operations-controller.test.ts docs/automation/governance-operations-evidence.md
           tests/automation/governance.node.mjs tests/governance-controller.test.ts
           tests/automation/governance-shared.node.mjs tests/governance-shared-controller.test.ts
           tests/automation/governance-failures.node.mjs tests/governance-failures-controller.test.ts
@@ -63,7 +68,7 @@ jobs:
           RUN_ID: ${{ github.run_id }}
         run: |
           mkdir -p /tmp/governance-core-evidence/source
-          cp --parents docs/automation/governance-failure-evidence.md scripts/governance-failures.mjs tests/automation/governance-failures.node.mjs tests/governance-failures-controller.test.ts scripts/governance-shared.mjs tests/automation/governance-shared.node.mjs tests/governance-shared-controller.test.ts docs/automation/governance-shared-evidence.md .github/workflows/governance-codex-coordinator.yml scripts/governance-evaluator.mjs scripts/governance-ledger.mjs tests/automation/governance.node.mjs tests/governance-controller.test.ts docs/automation/governance-core-evidence.md .github/workflows/governance-core-check.yml /tmp/governance-core-evidence/source/
+          cp --parents scripts/governance-operations.mjs tests/automation/governance-operations.node.mjs tests/automation/governance-operations-fixture.mjs tests/governance-operations-controller.test.ts docs/automation/governance-operations-evidence.md docs/automation/governance-failure-evidence.md scripts/governance-failures.mjs tests/automation/governance-failures.node.mjs tests/governance-failures-controller.test.ts scripts/governance-shared.mjs tests/automation/governance-shared.node.mjs tests/governance-shared-controller.test.ts docs/automation/governance-shared-evidence.md .github/workflows/governance-codex-coordinator.yml scripts/governance-evaluator.mjs scripts/governance-ledger.mjs tests/automation/governance.node.mjs tests/governance-controller.test.ts docs/automation/governance-core-evidence.md .github/workflows/governance-core-check.yml /tmp/governance-core-evidence/source/
           printf '{"sourceSha":"%s","runId":"%s","scope":"decision-core-and-local-ledger","runtimeUat":false}\n' "$SOURCE_SHA" "$RUN_ID" > /tmp/governance-core-evidence/manifest.json
           if test -d node_modules/prettier; then tar -czf /tmp/governance-core-evidence/prettier-tooling.tgz -C node_modules prettier; fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
