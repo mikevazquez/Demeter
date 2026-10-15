@@ -7,8 +7,8 @@
     "pageId": "3fad78f7146381e9a97fc3c454e6516a",
     "url": "https://app.notion.com/p/3fad78f7146381e9a97fc3c454e6516a?pvs=204",
     "lastEditedAt": "2026-10-15T07:49:26.240Z",
-    "capturedAt": "2026-10-15T09:32:25Z",
-    "expiresAt": "2026-10-17T09:32:25Z",
+    "capturedAt": "2026-10-15T13:57:23.000Z",
+    "expiresAt": "2026-10-17T13:57:23.000Z",
     "snapshotPath": ".github/codex-coordinator/notion-policy.txt",
     "sha256": "b6eeb95a8a92893d64db82551949335a7223628315894bc1fe90d54bbe60f980"
   },
@@ -56,5 +56,11 @@
       ],
       "acceptanceRetryProbe": true
     }
-  ]
+  ],
+  "hostedController": {
+    "mode": "chatgpt-hosted",
+    "name": "Coordinar autonomía Studio Flow",
+    "notionCheckedAt": "2026-10-15T13:57:23.000Z",
+    "notionLastEditedAt": "2026-10-15T07:49:26.240Z"
+  }
 }
