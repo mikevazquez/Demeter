@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync, mkdtempSync, rmSync, readFileSync as readOutput } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -72,7 +72,7 @@ function runPreflight(overrides = {}) {
       status: result.status,
       stdout: result.stdout,
       stderr: result.stderr,
-      output: result.status === 0 ? readOutput(outputFile, "utf8") : "",
+      output: result.status === 0 ? readFileSync(outputFile, "utf8") : "",
     };
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -82,7 +82,7 @@ function runPreflight(overrides = {}) {
 test("preflight accepts only the exact reviewed main SHA, owner and bounded scope", () => {
   const result = runPreflight();
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.output, `sha=${goodSha}\\n`);
+  assert.equal(result.output, `sha=${goodSha}\n`);
 });
 
 test("preflight rejects all untrusted release requests without approval checkpoint", () => {
@@ -92,7 +92,7 @@ test("preflight rejects all untrusted release requests without approval checkpoi
     { RELEASE_SHA: "b".repeat(40) },
     { RELEASE_SHA: "malformed" },
     { RELEASE_SCOPE: "" },
-    { RELEASE_SCOPE: "studio-flow\\nINJECTED=true" },
+    { RELEASE_SCOPE: "studio-flow\nINJECTED=true" },
     { RELEASE_SCOPE: "a".repeat(121) },
   ]) {
     const result = runPreflight(override);
