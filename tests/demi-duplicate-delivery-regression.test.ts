@@ -162,12 +162,15 @@ describe("Demi duplicate delivery regression: actual sender and retry policy", (
     expect(policy(result)).toMatchObject({ retryAllowed: false, requiresReview: true });
   });
 
-  it.each(["{}", "not json"])("treats successful HTTP without a message ID as unknown: %s", async (body) => {
-    const request = vi.fn<typeof fetch>(async () => new Response(body, { status: 200 }));
-    const result = await settle(send(request));
-    expect(request).toHaveBeenCalledTimes(1);
-    expect(policy(result)).toMatchObject({ retryAllowed: false, outcomeUnknown: true });
-  });
+  it.each(["{}", "not json"])(
+    "treats successful HTTP without a message ID as unknown: %s",
+    async (body) => {
+      const request = vi.fn<typeof fetch>(async () => new Response(body, { status: 200 }));
+      const result = await settle(send(request));
+      expect(request).toHaveBeenCalledTimes(1);
+      expect(policy(result)).toMatchObject({ retryAllowed: false, outcomeUnknown: true });
+    },
+  );
 
   it("does not resend on network failure", async () => {
     const request = vi.fn<typeof fetch>(async () => {
@@ -195,11 +198,17 @@ describe("Demi duplicate delivery regression: actual sender and retry policy", (
     expect(policy(result)).toMatchObject({ retryAllowed: false, outcomeUnknown: true });
   });
 
-  it.each([{ text: " " }, { recipientWaId: "invalid" }])("rejects invalid input before transport: %j", async (overrides) => {
-    const request = vi.fn<typeof fetch>();
-    expect(await settle(send(request, overrides))).toMatchObject({ status: "error", retryable: false });
-    expect(request).not.toHaveBeenCalled();
-  });
+  it.each([{ text: " " }, { recipientWaId: "invalid" }])(
+    "rejects invalid input before transport: %j",
+    async (overrides) => {
+      const request = vi.fn<typeof fetch>();
+      expect(await settle(send(request, overrides))).toMatchObject({
+        status: "error",
+        retryable: false,
+      });
+      expect(request).not.toHaveBeenCalled();
+    },
+  );
 
   it.each([
     "meta_whatsapp_http_500",
