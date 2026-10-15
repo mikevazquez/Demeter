@@ -27,6 +27,7 @@ jobs:
         env:
           GIT_REF: ${{ github.ref }}
           GIT_ACTOR: ${{ github.actor }}
+          GIT_SHA: ${{ github.sha }}
           RELEASE_SHA: ${{ inputs.release_sha }}
           RELEASE_SCOPE: ${{ inputs.release_scope }}
         shell: bash
@@ -36,8 +37,12 @@ jobs:
             echo "::error::DENY: only the Studio Flow owner on main may request review"
             exit 1
           fi
-          if [[ ! "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ || -z "${RELEASE_SCOPE//[[:space:]]/}" ]]; then
-            echo "::error::DENY: invalid SHA or empty scope"
+          if [[ ! "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ || "$RELEASE_SHA" != "$GIT_SHA" ]]; then
+            echo "::error::DENY: release SHA does not match the reviewed main commit"
+            exit 1
+          fi
+          if [[ ! "$RELEASE_SCOPE" =~ ^[a-zA-Z0-9_.:/,+-]{1,120}$ ]]; then
+            echo "::error::DENY: release scope must be nonempty and strictly formatted"
             exit 1
           fi
           echo "sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
