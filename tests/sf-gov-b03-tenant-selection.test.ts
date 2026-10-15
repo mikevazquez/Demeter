@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { selectAuthorizedStudioMembership } from "@/lib/auth/studio-membership-selection";
@@ -6,6 +7,13 @@ const tenantA = { studio_id: "tenant-a", role: "admin", active: true };
 const tenantB = { studio_id: "tenant-b", role: "student", active: true };
 
 describe("B03 tenant membership selection — synthetic, no database or providers", () => {
+  it("keeps the frozen admin context aligned with the tested selection contract", () => {
+    const source = readFileSync("lib/auth/admin-context.ts", "utf8");
+    expect(source).toContain("memberships.find((item) => item.studio_id === selectedStudioId)");
+    expect(source).toContain("memberships.length === 1 ? memberships[0] : null");
+    expect(source).toContain(".eq(\"active\", true)");
+  });
+
   it("B03-A04: cannot select a foreign tenant with a forged cookie", () => {
     const membership = selectAuthorizedStudioMembership([tenantA, tenantB], "tenant-outsider");
     expect(membership).toBeNull();
