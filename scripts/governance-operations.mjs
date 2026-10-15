@@ -292,8 +292,7 @@ export async function reconcileInterruptedExecutions(api, state, profile, contex
     if (
       state.events.some(
         (event) =>
-          event.type === "execution_reconciliation" &&
-          event.data.taskId === lease.data.taskId,
+          event.type === "execution_reconciliation" && event.data.taskId === lease.data.taskId,
       )
     )
       continue;

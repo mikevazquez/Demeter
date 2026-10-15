@@ -86,9 +86,7 @@ function interruptedFixture(
         name: "execute (accepted-v1, false)",
         status: "completed",
         conclusion: "failure",
-        steps: [
-          { name: "Execute task with Codex", status: "completed", conclusion: "failure" },
-        ],
+        steps: [{ name: "Execute task with Codex", status: "completed", conclusion: "failure" }],
       },
     ],
   } = {},
@@ -439,12 +437,11 @@ test("OPS-32 terminal run without task job preserves the consumed reservation", 
   const f = fixture();
   interruptedFixture(f, { jobs: [] });
   const leased = reserveExecution(initialState(f.profile), f.profile, context, selected).state;
-  const result = await reconcileInterruptedExecutions(
-    f.api,
-    leased,
-    f.profile,
-    { ...context, runId: 11, at: "2026-10-15T19:00:00.000Z" },
-  );
+  const result = await reconcileInterruptedExecutions(f.api, leased, f.profile, {
+    ...context,
+    runId: 11,
+    at: "2026-10-15T19:00:00.000Z",
+  });
   const receipt = result.state.events.at(-1);
   assert.equal(receipt.data.disposition, "interrupted-without-stage-result");
   assert.deepEqual(receipt.data.observedStages, []);
@@ -455,15 +452,17 @@ test("OPS-33 active originating run stays transient and creates no receipt", asy
   const f = fixture();
   interruptedFixture(f, { status: "in_progress" });
   const leased = reserveExecution(initialState(f.profile), f.profile, context, selected).state;
-  const result = await reconcileInterruptedExecutions(
-    f.api,
-    leased,
-    f.profile,
-    { ...context, runId: 11, at: "2026-10-15T19:00:00.000Z" },
-  );
+  const result = await reconcileInterruptedExecutions(f.api, leased, f.profile, {
+    ...context,
+    runId: 11,
+    at: "2026-10-15T19:00:00.000Z",
+  });
   assert.deepEqual(result.state, leased);
   assert.equal(result.reconciliations[0].state, "origin-run-active");
-  assert.equal(f.calls.some((call) => call.route.includes("/jobs")), false);
+  assert.equal(
+    f.calls.some((call) => call.route.includes("/jobs")),
+    false,
+  );
 });
 
 test("OPS-34 originating run identity and conclusion fail closed", async () => {
@@ -481,12 +480,11 @@ test("OPS-34 originating run identity and conclusion fail closed", async () => {
   for (const f of [badIdentity, invalidConclusion]) {
     const leased = reserveExecution(initialState(f.profile), f.profile, context, selected).state;
     await assert.rejects(
-      reconcileInterruptedExecutions(
-        f.api,
-        leased,
-        f.profile,
-        { ...context, runId: 11, at: "2026-10-15T19:00:00.000Z" },
-      ),
+      reconcileInterruptedExecutions(f.api, leased, f.profile, {
+        ...context,
+        runId: 11,
+        at: "2026-10-15T19:00:00.000Z",
+      }),
     );
   }
 });
@@ -508,12 +506,11 @@ test("OPS-36 historical attempt remains attributable after a later workflow reru
   const f = fixture();
   interruptedFixture(f, { runAttempt: 2 });
   const leased = reserveExecution(initialState(f.profile), f.profile, context, selected).state;
-  const result = await reconcileInterruptedExecutions(
-    f.api,
-    leased,
-    f.profile,
-    { ...context, runId: 11, at: "2026-10-15T19:00:00.000Z" },
-  );
+  const result = await reconcileInterruptedExecutions(f.api, leased, f.profile, {
+    ...context,
+    runId: 11,
+    at: "2026-10-15T19:00:00.000Z",
+  });
   assert.equal(result.state.events.at(-1).data.runAttempt, 1);
   assert.equal(result.state.events.at(-1).data.runConclusion, "cancelled");
 });
@@ -522,12 +519,11 @@ test("OPS-37 reconciliation receipts cannot release or expand generation budget"
   const f = fixture();
   interruptedFixture(f);
   const leased = reserveExecution(initialState(f.profile), f.profile, context, selected).state;
-  const result = await reconcileInterruptedExecutions(
-    f.api,
-    leased,
-    f.profile,
-    { ...context, runId: 11, at: "2026-10-15T19:00:00.000Z" },
-  );
+  const result = await reconcileInterruptedExecutions(f.api, leased, f.profile, {
+    ...context,
+    runId: 11,
+    at: "2026-10-15T19:00:00.000Z",
+  });
   for (const change of [
     (data) => (data.budgetReleased = true),
     (data) => (data.automaticRerun = true),
@@ -553,8 +549,7 @@ test("OPS-38 shared writer persists reconciliation and remains blocked after a f
   assert.equal(result.reconciliations[0].state, "reconciled");
   assert.equal(
     recovered.record.state.events.some(
-      (event) =>
-        event.type === "execution_reconciliation" && event.data.budgetReleased === false,
+      (event) => event.type === "execution_reconciliation" && event.data.budgetReleased === false,
     ),
     true,
   );

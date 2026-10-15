@@ -152,19 +152,19 @@ export function validateState(state) {
               "budgetReleased",
               "automaticRerun",
             ]
-        : [
-            "taskId",
-            "stage",
-            "phase",
-            "sourceSha",
-            "runId",
-            "runAttempt",
-            "jobId",
-            "result",
-            "modelStep",
-            "cause",
-            "automaticRerun",
-          ];
+          : [
+              "taskId",
+              "stage",
+              "phase",
+              "sourceSha",
+              "runId",
+              "runAttempt",
+              "jobId",
+              "result",
+              "modelStep",
+              "cause",
+              "automaticRerun",
+            ];
       invariant(canonical(Object.keys(d).sort()) === canonical(keys.sort()), "operation fields");
       sha(d.sourceSha);
       for (const field of ["runId", "runAttempt"]) {
@@ -206,9 +206,7 @@ export function validateState(state) {
           "reconciliation stages",
         );
         invariant(
-          ["stage-results-recorded", "interrupted-without-stage-result"].includes(
-            d.disposition,
-          ),
+          ["stage-results-recorded", "interrupted-without-stage-result"].includes(d.disposition),
           "reconciliation disposition",
         );
         invariant(
@@ -217,8 +215,7 @@ export function validateState(state) {
         );
         invariant(event.id === digest([event.type, d.taskId]), "reconciliation identity");
         const owner = events.find(
-          (candidate) =>
-            candidate.type === "execution_lease" && candidate.data.taskId === d.taskId,
+          (candidate) => candidate.type === "execution_lease" && candidate.data.taskId === d.taskId,
         );
         invariant(
           owner &&
