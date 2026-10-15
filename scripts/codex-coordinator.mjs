@@ -169,7 +169,14 @@ async function api(config, endpoint, options = {}) {
     },
   });
   if (response.status === 404 && options.allow404) return null;
-  if (!response.ok) throw new Error(`GitHub ${response.status} at ${endpoint.split("?")[0]}`);
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}));
+    const message = String(detail.message || "").replaceAll(
+      process.env.GH_TOKEN || "\0",
+      "[REDACTED]",
+    );
+    throw new Error(`GitHub ${response.status} at ${endpoint.split("?")[0]}: ${message}`);
+  }
   return response.status === 204 ? null : response.json();
 }
 const post = (config, endpoint, data) =>
@@ -281,11 +288,16 @@ async function prepare(config, id) {
     const commit = await api(config, `git/commits/${state.branch.object.sha}`);
     assert(
       commit.parents.length === 1 &&
-        commit.parents[0].sha === process.env.CONTROL_SHA &&
         commit.message.includes(`Contract: ${digest(JSON.stringify(task))}`),
       "Orphan branch provenance mismatch",
     );
-    const comparison = await api(config, `compare/${process.env.CONTROL_SHA}...${commit.sha}`);
+    const recoveryBaseSha = commit.parents[0].sha;
+    const ancestry = await api(config, `compare/${recoveryBaseSha}...${process.env.CONTROL_SHA}`);
+    assert(
+      ["ahead", "identical"].includes(ancestry.status),
+      "Orphan baseline is not an ancestor of the trusted control source",
+    );
+    const comparison = await api(config, `compare/${recoveryBaseSha}...${commit.sha}`);
     assert(
       comparison.files?.length > 0 && comparison.files.length <= task.allowedPaths.length,
       "Invalid orphan diff",
@@ -314,6 +326,7 @@ async function prepare(config, id) {
       id,
       attempt: 0,
       recovery: true,
+      recoveryBaseSha,
       sourceSha: process.env.CONTROL_SHA,
       runId: process.env.GITHUB_RUN_ID,
       contractHash: digest(JSON.stringify(task)),
@@ -543,7 +556,17 @@ async function publish(config, directory) {
       summary(`Skipped duplicate ${task.id}: ${state.pulls[0].html_url}`);
       continue;
     }
-    const parent = await api(config, `git/commits/${process.env.CONTROL_SHA}`);
+    const baseSha = state.branch
+      ? result.recoveryBaseSha || process.env.CONTROL_SHA
+      : process.env.CONTROL_SHA;
+    if (baseSha !== process.env.CONTROL_SHA) {
+      const ancestry = await api(config, `compare/${baseSha}...${process.env.CONTROL_SHA}`);
+      assert(
+        ["ahead", "identical"].includes(ancestry.status),
+        "Publication baseline is not a trusted ancestor",
+      );
+    }
+    const parent = await api(config, `git/commits/${baseSha}`);
     const elements = [];
     for (const item of result.files) {
       const blob = await post(config, "git/blobs", { content: item.content, encoding: "utf-8" });
@@ -556,7 +579,8 @@ async function publish(config, directory) {
       commit = await api(config, `git/commits/${state.branch.object.sha}`);
       assert(
         commit.parents.length === 1 &&
-          commit.parents[0].sha === process.env.CONTROL_SHA &&
+          commit.parents[0].sha === baseSha &&
+          commit.message.includes(`Contract: ${result.contractHash}`) &&
           commit.tree.sha === tree.sha,
         "Existing task branch differs; refusing to overwrite",
       );

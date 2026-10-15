@@ -2,7 +2,7 @@
   "version": 1,
   "repository": "mikevazquez/Demeter",
   "controlBranch": "chore/governance-autonomous-coordinator-20261015",
-  "maxTasksPerRun": 2,
+  "maxTasksPerRun": 3,
   "source": {
     "pageId": "3fad78f7146381e9a97fc3c454e6516a",
     "url": "https://app.notion.com/p/3fad78f7146381e9a97fc3c454e6516a?pvs=204",
@@ -36,6 +36,24 @@
       "allowedPaths": ["docs/automation/executor-recovery.md"],
       "requiredText": ["AUTONOMY-RECOVERY-V1"],
       "checks": []
+    },
+    {
+      "id": "acceptance-isolation-v1",
+      "issueNumber": 295,
+      "issueBodySha256": "1925468e9f092333952a5fba468e117bb5be4fd0e2c844bce013e7314de72cf5",
+      "issueUpdatedAt": "2026-10-15T13:26:20Z",
+      "owner": "codex-1",
+      "status": "ready",
+      "kind": "code",
+      "allowedPaths": ["tests/automation/executor-isolation-proof.mjs"],
+      "requiredText": ["AUTONOMY-ISOLATION-V1"],
+      "checks": [
+        [
+          "node",
+          "-e",
+          "const fs=require('node:fs'),assert=require('node:assert/strict');\nassert.deepEqual(Object.keys(process.env).sort(),['PATH']);\nassert.equal(fs.existsSync('/home/runner/.codex/config.toml'),false);\nassert.equal(fs.readFileSync('/proc/net/route','utf8').trim().split('\\n').length,1);\nassert.throws(()=>fs.writeFileSync('.git/automation-isolation-probe','blocked'),e=>e.code==='EROFS');\nimport('./tests/automation/executor-isolation-proof.mjs').then(({executionBoundary:b})=>{assert.equal(b.network,'denied');assert.equal(b.publicationCredentials,'absent');assert.equal(Object.isFrozen(b),true);console.log('ISOLATION_CHECKS_PASS: no credentials, no route, hidden Codex home, read-only Git, code fixture valid');});"
+        ]
+      ]
     }
   ]
 }

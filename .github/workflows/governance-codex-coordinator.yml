@@ -88,6 +88,9 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y bubblewrap
+          if test -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns; then sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0; fi
+          if test -f /proc/sys/kernel/unprivileged_userns_clone; then sudo sysctl -w kernel.unprivileged_userns_clone=1; fi
+          mkdir -p /home/runner/.codex
           sudo mkdir -p /opt/coordinator-runtime
           sudo cp scripts/codex-coordinator.mjs /opt/coordinator-runtime/coordinator.mjs
           sudo cp .github/codex-coordinator/queue.json /opt/coordinator-runtime/queue.json
@@ -165,6 +168,9 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y bubblewrap
+          if test -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns; then sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0; fi
+          if test -f /proc/sys/kernel/unprivileged_userns_clone; then sudo sysctl -w kernel.unprivileged_userns_clone=1; fi
+          mkdir -p /home/runner/.codex
           sudo mkdir -p /opt/coordinator-runtime
           sudo cp scripts/codex-coordinator.mjs /opt/coordinator-runtime/coordinator.mjs
           sudo cp .github/codex-coordinator/queue.json /opt/coordinator-runtime/queue.json
