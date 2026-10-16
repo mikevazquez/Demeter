@@ -33,7 +33,7 @@ describe("F10 student self-password activation contracts", () => {
     expect(edgeFunction).toContain("sendActivationWhatsApp");
     expect(edgeFunction).toContain("activationLink");
     expect(edgeFunction).toContain('template: "student_welcome"');
-    expect(edgeFunction).toContain("activation_button_suffix: suffix");
+    expect(edgeFunction).toContain("activation_url: input.activationLink");
   });
 
   it("allows activation-link resend only while the account is still pending activation", () => {
