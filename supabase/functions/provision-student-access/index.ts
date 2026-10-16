@@ -64,8 +64,11 @@ async function pilotRecipientAllowed(input: {
     return { allowed: false as const, errorCode: "assistant_mode_lookup_failed" };
   }
 
+  // UAT-only release gate: this activation flow is restricted to the configured
+  // Meta pilot allowlist regardless of Demi runtime mode. General rollout must
+  // remove this gate in a separately reviewed release.
   if (runtimeConfig?.mode !== "pilot") {
-    return { allowed: true as const, errorCode: null };
+    return { allowed: false as const, errorCode: "pilot_mode_required" };
   }
 
   const { data: pilotIds, error: pilotError } = await input.adminClient.rpc(
