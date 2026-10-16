@@ -19,7 +19,7 @@ describe("SF-174 student welcome integration", () => {
     expect(linkMarker).toBeGreaterThan(-1);
     expect(sendMarker).toBeGreaterThan(linkMarker);
     expect(provision).toContain('template: "student_welcome"');
-    expect(provision).toContain("activation_button_suffix: suffix");
+    expect(provision).toContain("activation_url: input.activationLink");
   });
 
   it("uses activation links for initial onboarding", () => {
