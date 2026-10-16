@@ -42,6 +42,53 @@ function buildStudentActivationLink(baseUrl: string, tokenHash: string) {
   return activationLink.toString();
 }
 
+function normalizePilotPhone(value: string) {
+  let digits = value.replace(/\D/g, "");
+  if (/^[0-9]{10}$/.test(digits)) digits = `52${digits}`;
+  else if (/^521[0-9]{10}$/.test(digits)) digits = `52${digits.slice(3)}`;
+  return /^[1-9][0-9]{7,14}$/.test(digits) ? digits : null;
+}
+
+async function pilotRecipientAllowed(input: {
+  adminClient: Parameters<typeof sendMetaWhatsAppTemplate>[0]["adminClient"];
+  studioId: string;
+  phone: string;
+}) {
+  const { data: runtimeConfig, error: runtimeError } = await input.adminClient
+    .from("assistant_configs")
+    .select("mode")
+    .eq("studio_id", input.studioId)
+    .maybeSingle();
+
+  if (runtimeError) {
+    return { allowed: false as const, errorCode: "assistant_mode_lookup_failed" };
+  }
+
+  if (runtimeConfig?.mode !== "pilot") {
+    return { allowed: true as const, errorCode: null };
+  }
+
+  const { data: pilotIds, error: pilotError } = await input.adminClient.rpc(
+    "service_get_meta_whatsapp_pilot_wa_ids",
+    { target_studio_id: input.studioId },
+  );
+
+  if (pilotError) {
+    return { allowed: false as const, errorCode: "pilot_allowlist_lookup_failed" };
+  }
+
+  const recipient = normalizePilotPhone(input.phone);
+  const allowlist = Array.isArray(pilotIds)
+    ? pilotIds.map((value) => String(value ?? "").replace(/\D/g, ""))
+    : [];
+
+  if (!recipient || !allowlist.includes(recipient)) {
+    return { allowed: false as const, errorCode: "pilot_recipient_not_allowed" };
+  }
+
+  return { allowed: true as const, errorCode: null };
+}
+
 // Fail closed until the exact approved Meta dynamic URL prefix is verified.
 function activationButtonSuffix(activationLink: string) {
   const prefix = Deno.env.get("META_STUDENT_ACTIVATION_BUTTON_BASE_URL")?.trim();
@@ -71,6 +118,15 @@ async function sendActivationWhatsApp(input: {
   name: string;
   activationLink: string;
 }) {
+  const pilotGate = await pilotRecipientAllowed({
+    adminClient: input.adminClient,
+    studioId: input.studioId,
+    phone: input.phone,
+  });
+  if (!pilotGate.allowed) {
+    return { status: "skipped" as const, errorCode: pilotGate.errorCode };
+  }
+
   const suffix = activationButtonSuffix(input.activationLink);
   if (!suffix) {
     return { status: "skipped" as const, errorCode: "activation_button_configuration_unverified" };
