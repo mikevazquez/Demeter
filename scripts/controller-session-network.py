@@ -30,5 +30,9 @@ try:
 except Exception as error:
     result["passed"] = False
     result["error_type"] = type(error).__name__  # Never print server response/errors.
+    if isinstance(error, ssl.SSLCertVerificationError):
+        result["tls_verify_code"] = error.verify_code
+        # OpenSSL verification diagnostic only; no database/server payload.
+        result["tls_verify_reason"] = error.verify_message
 print(json.dumps(result, sort_keys=True))
 sys.exit(0 if result["passed"] else 1)
