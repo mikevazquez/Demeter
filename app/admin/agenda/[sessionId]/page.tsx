@@ -316,7 +316,7 @@ export default async function SessionDetailPage({
       })(),
       workshopBalanceMinor: (() => {
         const purchase = workshopPurchaseByReservation.get(reservation.id);
-        if (!purchase || purchase.status !== "active") return undefined;
+        if (!purchase || purchase.status !== "reserved") return undefined;
         const sale = workshopSaleById.get(purchase.sale_id);
         if (!sale || sale.status !== "confirmed") return undefined;
         return Math.max(0, sale.total_minor - (workshopPaidBySale.get(sale.id) ?? 0));
