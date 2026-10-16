@@ -3,6 +3,6 @@
   "mode": "identity-only-denial",
   "release_eligible": false,
   "database_access": false,
-  "attempt": 5,
+  "attempt": 6,
   "verify_reservation_ruleset": 25272082
 }

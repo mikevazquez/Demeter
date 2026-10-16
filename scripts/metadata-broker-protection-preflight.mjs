@@ -16,48 +16,61 @@ export async function fetchReservationProtection(
 ) {
   let stage = "request";
   try {
-    const response = await fetcher(PROTECTION_URL, {
-      redirect: "error",
-      signal: AbortSignal.timeout(10000),
-      headers: {
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-        ...(token ? { Authorization: "Bearer " + token } : {}),
-      },
-    });
-    if (!response.ok) {
-      stage = "http_" + response.status;
-      throw Error();
-    }
-    stage = "response";
-    const reader = response.body.getReader();
-    let size = 0;
-    const chunks = [];
-    try {
-      while (true) {
-        const n = await reader.read();
-        if (n.done) break;
-        size += n.value.byteLength;
-        if (size > 65536) throw Error();
-        chunks.push(Buffer.from(n.value));
+    const read = async (credential) => {
+      stage = "request";
+      const response = await fetcher(PROTECTION_URL, {
+        redirect: "error",
+        signal: AbortSignal.timeout(10000),
+        headers: {
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28",
+          "User-Agent": "StudioFlow-protection-preflight",
+          ...(credential ? { Authorization: "Bearer " + credential } : {}),
+        },
+      });
+      if (!response.ok) {
+        stage = "http_" + response.status;
+        throw Error();
       }
-    } finally {
-      await reader.cancel();
+      stage = "response";
+      const reader = response.body.getReader();
+      let size = 0;
+      const chunks = [];
+      try {
+        while (true) {
+          const n = await reader.read();
+          if (n.done) break;
+          size += n.value.byteLength;
+          if (size > 65536) throw Error();
+          chunks.push(Buffer.from(n.value));
+        }
+      } finally {
+        await reader.cancel();
+      }
+      return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    };
+    let rule = await read(token);
+    let publicFallback = false;
+    // A hidden bypass list is not an empty list. Read the same public resource
+    // once without a credential; require the full list in that response too.
+    if (token && !Array.isArray(rule.bypass_actors)) {
+      rule = await read(undefined);
+      publicFallback = true;
     }
-    const rule = JSON.parse(Buffer.concat(chunks).toString("utf8"));
     stage = "identity";
     if (
       rule.id !== VERIFIED_RULESET_ID ||
       rule.source !== "mikevazquez/Demeter"
     )
       throw Error();
-    stage = "rules";
+    stage = Array.isArray(rule.bypass_actors) ? "rules" : "bypass_unavailable";
     verifyReservationRuleset(rule);
     return {
       version: 1,
       source: "github-public-ruleset-preflight",
       ruleset_id: VERIFIED_RULESET_ID,
       protection_verified: true,
+      public_fallback_used: publicFallback,
       pattern: RESERVATION_PATTERN,
       bypass_actors: [],
       restrictions: ["update", "deletion", "non_fast_forward"],

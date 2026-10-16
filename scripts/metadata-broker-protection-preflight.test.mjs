@@ -97,3 +97,36 @@ test("ephemeral job token is sent only to the pinned GitHub endpoint and never r
   );
   assert.ok(!JSON.stringify(report).includes("fake-job-read-token"));
 });
+
+test("hidden authenticated bypass list requires an explicitly visible public response", async () => {
+  let calls = 0;
+  const result = await fetchReservationProtection(
+    async (url, options) => {
+      calls++;
+      assert.equal(url, PROTECTION_URL);
+      const data = rule();
+      if (options.headers.Authorization) delete data.bypass_actors;
+      return new Response(JSON.stringify(data));
+    },
+    { token: "fake-job-read-token" },
+  );
+  assert.equal(calls, 2);
+  assert.equal(result.protection_verified, true);
+  assert.equal(result.public_fallback_used, true);
+});
+test("two hidden bypass views still deny; missing data is never interpreted as empty", async () => {
+  let calls = 0;
+  await assert.rejects(
+    fetchReservationProtection(
+      async () => {
+        calls++;
+        const data = rule();
+        delete data.bypass_actors;
+        return new Response(JSON.stringify(data));
+      },
+      { token: "fake-job-read-token" },
+    ),
+    (e) => e.code === "bypass_unavailable",
+  );
+  assert.equal(calls, 2);
+});
