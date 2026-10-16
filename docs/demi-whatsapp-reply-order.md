@@ -26,22 +26,39 @@ las acciones.
 La comprobación no es una cola ni serializa acciones. No agrupa mensajes que
 llegan después de iniciar el envío a Meta, ni los mensajes de un mismo payload
 que el webhook ya procesa secuencialmente. Las reacciones y ediciones siguen el
-comportamiento existente. No se ha confirmado cuál de estos síntomas corresponde
-al ejemplo específico del usuario.
+comportamiento existente.
 
 Validación local: 1,283 de 1,283 pruebas aprobadas en la suite completa. Siete
 pruebas ejecutan el webhook con solicitudes controladas y transporte simulado.
-El primer CI detectó que el cargador aislado de las pruebas de comprobantes no
-reconocía las dos dependencias nuevas; se añadieron al cargador y las seis
-pruebas de comprobantes volvieron a pasar, sin cambiar sus aserciones.
 TypeScript y lint de los archivos modificados aprobados.
 
-El preview `demeterbueno-smyyzeb5s-demeter3.vercel.app`, commit
-`66bb81ef528b6ac75324450650221038bad634c6`, quedó READY en Vercel. El endpoint
-responde `400 invalid_studio` sin identificador de estudio, como corresponde.
-Esto no acredita el flujo autenticado ni una conversación real de WhatsApp.
-El acceso autorizado al panel UAT redirige al inicio de sesión del estudio; no
-se dispone de una sesión de aplicación para realizar la prueba conversacional.
+El preview `demeterbueno-d84dpfu7l-demeter3.vercel.app`, commit
+`d7fecc97d85d4dbe851d97314c0c481ec1600d93`, quedó READY en Vercel. Ejecutó
+`scripts/demi-whatsapp-order-live-uat.mjs --sandbox-capture-only` después del
+build, con el webhook, el modelo real, Supabase Sandbox y el transporte capturado.
+La ejecución creó un estudio sintético nuevo y no requirió iniciar sesión en
+el panel. Conserva los resultados en el run `079b4e1d-9655-4729-b927-7cbbcd95ec4b`.
+
+Los cinco escenarios pasaron:
+
+| Escenario                               | Resultado verificado                                              |
+| --------------------------------------- | ----------------------------------------------------------------- |
+| Texto normal                            | Una respuesta capturada                                           |
+| Dos textos solapados                    | Una respuesta; el texto anterior quedó `superseded_by_newer_text` |
+| Reenvío de los dos eventos              | Cero respuestas adicionales                                       |
+| Nueva pregunta después de la ráfaga     | Una respuesta conservando el contexto de Pole Fitness             |
+| Dos copias simultáneas del mismo evento | Un intento y una respuesta                                        |
+
+La ejecución hizo nueve llamadas al modelo y guardó cuatro entregas, todas con
+referencia `uat:`. La revisión de la conversación confirmó que la respuesta
+combinada explicó qué llevar a Pole Fitness y que la siguiente respuesta mantuvo
+esa disciplina como contexto. La instrucción de no reservar fue respetada.
+Las ventas, pagos, reservas, créditos e intenciones comerciales conservaron sus
+conteos iniciales. La reserva de ejecución se liberó al terminar.
+
+El script requiere activación explícita, entorno preview, la rama exacta del PR
+y la URL aprobada de Sandbox. Además bloquea HTTP hacia Meta y cualquier host
+ajeno a Sandbox/OpenAI. Los cinco controles locales de aislamiento pasaron.
 
 La validación SQL `tests/demi-whatsapp-reply-order-uat.sql` se ejecutó en Studio
 Flow Sandbox con el rol `service_role`: nueve aserciones aprobadas. Verifica
@@ -51,8 +68,9 @@ que usa un número de intento antiguo. Los registros sintéticos se crearon en
 una transacción con rollback. Una consulta posterior confirmó cero eventos y
 cero conversaciones de prueba persistentes.
 
-CI del commit `66bb81ef528b6ac75324450650221038bad634c6`: formato, lint,
+CI del commit `d7fecc97d85d4dbe851d97314c0c481ec1600d93`: formato, lint,
 TypeScript, comparación de la suite completa con main y build aprobados.
 No se enviaron mensajes de prueba a personas ni se modificó producción.
-Falta la prueba conversacional con sesión de estudio; la autorización de esta
-validación se limita a Sandbox y no incluye promoción a producción.
+La prueba conversacional del backend en Sandbox está aprobada. La entrega real
+por Meta queda fuera de esta validación; la autorización se limita a Sandbox
+y no incluye promoción a producción.
