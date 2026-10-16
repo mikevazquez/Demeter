@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "mode": "current-codex-session-supervised",
+  "agent": "Codex agent in the active conversation",
+  "authorization": "Hagámoslo así en lo que resuelvo el inicio de sesion",
+  "taskId": "governante-codex-local-20261015-v1",
+  "method": "The current Codex agent authored exactly the admitted fixture via apply_patch; not a nested CLI or inter-agent dispatch",
+  "outputCommit": "784dbfae6ac8fe71289878192aa9f70a2b125b7a",
+  "additionalCliInvocations": 0,
+  "priorFailedCliAttemptPreserved": true,
+  "fileSha256": "3406e508638936898e52b965714a1d789874b25741777c0af096392af5f3d5ca",
+  "files": [
+    "tests/automation/fixtures/governante-codex-local-proof.mjs"
+  ]
+}

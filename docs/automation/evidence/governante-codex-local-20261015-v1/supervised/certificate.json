@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "governante-codex-local-20261015-v1",
+  "localExecutionId": "supervised-governante-codex-20261015-v1",
+  "mode": "current-codex-session-supervised",
+  "sha": "784dbfae6ac8fe71289878192aa9f70a2b125b7a",
+  "sourceSha": "2af9188523c5e18bed2d647092c3395c6f428cd9",
+  "contractHash": "5596565edc161ac2ab0dcb028a6c701d9d10d1f2f7542e2e2a6357b577f171af",
+  "filesHash": "62ea18579a6bc89dd1ecd67659cf92cdd5fbe8d9d5b42f9d97cd791c885c4bfc",
+  "fileSha256": "3406e508638936898e52b965714a1d789874b25741777c0af096392af5f3d5ca",
+  "certifiedAt": "2026-10-16T04:02:35.135Z",
+  "decision": {
+    "state": "certified",
+    "sha": "784dbfae6ac8fe71289878192aa9f70a2b125b7a",
+    "fingerprint": "f1041a098755ec6ac7024645b5d494eac27836cd1fbd914ae6679c6ec4509f0a"
+  },
+  "proposal": {
+    "state": "draft-proposed",
+    "taskId": "governante-codex-local-20261015-v1",
+    "branch": "automation/codex/governante-codex-local-20261015-v1",
+    "sha": "784dbfae6ac8fe71289878192aa9f70a2b125b7a",
+    "mergeAuthorized": false,
+    "productionAuthorized": false
+  },
+  "issueUpdatedAt": "2026-10-16T03:59:43Z",
+  "verifierIdentity": "Trusted checker committed before generation; separate process and independently cloned source; same supervising Codex agent",
+  "scope": [
+    "tests/automation/fixtures/governante-codex-local-proof.mjs"
+  ],
+  "checks": {
+    "execution": [
+      0,
+      0
+    ],
+    "certification": [
+      0,
+      0
+    ]
+  },
+  "certified": true,
+  "productionAuthorized": false,
+  "actionsJob": false
+}

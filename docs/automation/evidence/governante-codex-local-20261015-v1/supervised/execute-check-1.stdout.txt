@@ -1,0 +1,1 @@
+LOCAL_PILOT_CERTIFICATION_PASS: exact SHA256; ESM syntax; sole frozen export; exact fields; no network route; no inherited credentials; no home/workspace; readonly Git; imports denied; VM timeout

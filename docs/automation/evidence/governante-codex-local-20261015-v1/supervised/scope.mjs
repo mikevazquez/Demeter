@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {collectFiles,validateConfig,digest} from './studio-flow-pilot/scripts/codex-coordinator.mjs';
+const config=validateConfig(JSON.parse(fs.readFileSync('/workspace/work/studio-flow-local-evidence/supervised/queue.local.json','utf8')));
+const task=config.tasks.find(t=>t.id==='governante-codex-local-20261015-v1');
+assert.equal(process.env.CODEX_PILOT_TASK_ID,task.id);
+assert.equal(config.maxTasksPerRun,1);
+const files=collectFiles(task);
+assert.deepEqual(files.map(f=>f.path),task.allowedPaths);
+console.log(JSON.stringify({taskId:task.id,sourceSha:'2af9188523c5e18bed2d647092c3395c6f428cd9',contractHash:digest(JSON.stringify(task)),files,filesHash:digest(JSON.stringify(files))},null,2));

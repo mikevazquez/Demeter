@@ -1,0 +1,14 @@
+{
+  "taskId": "governante-codex-local-20261015-v1",
+  "sourceSha": "2af9188523c5e18bed2d647092c3395c6f428cd9",
+  "contractHash": "5596565edc161ac2ab0dcb028a6c701d9d10d1f2f7542e2e2a6357b577f171af",
+  "files": [
+    {
+      "path": "tests/automation/fixtures/governante-codex-local-proof.mjs",
+      "mode": "100644",
+      "content": "// Synthetic fixture only; execution and certification require separate evidence.\nexport const pilotProof = Object.freeze({\n  marker: \"GOVERNANTE-CODEX-LOCAL-V1\",\n  taskId: \"governante-codex-local-20261015-v1\",\n  selectionLimit: 1,\n  execution: \"local-chatgpt\",\n  productionAuthorized: false,\n});\n",
+      "deleted": false
+    }
+  ],
+  "filesHash": "62ea18579a6bc89dd1ecd67659cf92cdd5fbe8d9d5b42f9d97cd791c885c4bfc"
+}
