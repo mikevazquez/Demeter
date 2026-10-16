@@ -84,3 +84,16 @@ test("hosted protection check runs before identity request and requests no prote
   assert.doesNotMatch(y, /\benvironment:|secrets\./);
   assert.match(y, /reservation-protection.json/);
 });
+
+test("ephemeral job token is sent only to the pinned GitHub endpoint and never returned", async () => {
+  const report = await fetchReservationProtection(
+    async (url, options) => {
+      assert.equal(url, PROTECTION_URL);
+      assert.equal(options.redirect, "error");
+      assert.equal(options.headers.Authorization, "Bearer fake-job-read-token");
+      return new Response(JSON.stringify(rule()));
+    },
+    { token: "fake-job-read-token" },
+  );
+  assert.ok(!JSON.stringify(report).includes("fake-job-read-token"));
+});
