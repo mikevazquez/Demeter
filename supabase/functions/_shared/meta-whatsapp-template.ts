@@ -40,7 +40,7 @@ export type MetaWhatsAppTemplateKey = (typeof META_WHATSAPP_TEMPLATE_KEYS)[numbe
 
 export const META_WHATSAPP_TEMPLATE_PARAMETERS: Record<MetaWhatsAppTemplateKey, readonly string[]> =
   {
-    student_welcome: ["nombre"],
+    student_welcome: ["nombre", "activation_url"],
     reservation_confirmed: ["nombre", "disciplina", "fecha", "hora", "coach", "ubicacion"],
     reservation_cancelled: [
       "nombre",
@@ -137,6 +137,11 @@ export function buildMetaWhatsAppTemplatePayload(input: {
             input.variables.recipient_name.trim()
               ? input.variables.recipient_name.trim()
               : "Alumna",
+          activation_url:
+            typeof input.variables.activation_url === "string" &&
+            input.variables.activation_url.trim()
+              ? input.variables.activation_url.trim()
+              : "—",
         }
       : buildAsistianVariables(input.internalTemplate, input.variables);
   const parameters = META_WHATSAPP_TEMPLATE_PARAMETERS[input.internalTemplate].map((key) => ({
@@ -167,28 +172,6 @@ export function buildMetaWhatsAppTemplatePayload(input: {
     });
   }
 
-  // student_welcome may use an approved dynamic URL button at index 0.
-  // Omit the button parameter unless a validated suffix is provided.
-  if (input.internalTemplate === "student_welcome") {
-    const buttonSuffix = input.variables.activation_button_suffix;
-    if (buttonSuffix !== undefined && buttonSuffix !== null) {
-      if (
-        typeof buttonSuffix !== "string" ||
-        !buttonSuffix.trim() ||
-        buttonSuffix.length > 2048 ||
-        /\s|#/.test(buttonSuffix) ||
-        /^(?:https?:)?\/\//i.test(buttonSuffix)
-      ) {
-        throw new Error("activation_button_suffix_invalid");
-      }
-      components.push({
-        type: "button",
-        sub_type: "url",
-        index: "0",
-        parameters: [{ type: "text", text: buttonSuffix }],
-      });
-    }
-  }
 
   return {
     messaging_product: "whatsapp",
