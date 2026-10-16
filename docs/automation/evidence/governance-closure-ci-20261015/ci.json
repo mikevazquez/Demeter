@@ -1,0 +1,101 @@
+{
+  "conclusion": "success",
+  "headSha": "27e90f1d8ec1ec75725aa6a533e45b267d4ae7ce",
+  "jobs": [
+    {
+      "completedAt": "2026-10-16T05:28:55Z",
+      "conclusion": "success",
+      "databaseId": 116826387293,
+      "name": "quality",
+      "startedAt": "2026-10-16T05:24:57Z",
+      "status": "completed",
+      "steps": [
+        { "conclusion": "success", "name": "Set up job", "number": 1, "status": "completed" },
+        { "conclusion": "success", "name": "Checkout", "number": 2, "status": "completed" },
+        { "conclusion": "success", "name": "Setup Node", "number": 3, "status": "completed" },
+        { "conclusion": "success", "name": "Install", "number": 4, "status": "completed" },
+        { "conclusion": "success", "name": "Format check", "number": 5, "status": "completed" },
+        {
+          "conclusion": "success",
+          "name": "Governance policy and migration grant tests",
+          "number": 6,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Schema drift detection and negative control",
+          "number": 7,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Physical schema drift and rollback in isolated PostgreSQL",
+          "number": 8,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Protected capture contract and isolated SQL negative tests",
+          "number": 9,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Production environment approval workflow static denial tests",
+          "number": 10,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Preview service role isolation negative tests",
+          "number": 11,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Candidate external effect negative tests",
+          "number": 12,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "B03 synthetic tenant membership UAT negative tests",
+          "number": 13,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "B03 fixture authorization and target negative preflight tests",
+          "number": 14,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "B03 isolated two-tenant PostgreSQL UAT rehearsal",
+          "number": 15,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Reject dangerous table grants in changed migrations",
+          "number": 16,
+          "status": "completed"
+        },
+        { "conclusion": "success", "name": "Lint", "number": 17, "status": "completed" },
+        { "conclusion": "success", "name": "Typecheck", "number": 18, "status": "completed" },
+        {
+          "conclusion": "success",
+          "name": "Unit tests (compare with base)",
+          "number": 19,
+          "status": "completed"
+        },
+        { "conclusion": "success", "name": "Build", "number": 20, "status": "completed" },
+        { "conclusion": "success", "name": "Post Setup Node", "number": 39, "status": "completed" },
+        { "conclusion": "success", "name": "Post Checkout", "number": 40, "status": "completed" },
+        { "conclusion": "success", "name": "Complete job", "number": 41, "status": "completed" }
+      ],
+      "url": "https://github.com/mikevazquez/Demeter/actions/runs/38855648728/job/116826387293"
+    }
+  ],
+  "status": "completed"
+}

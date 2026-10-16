@@ -1,0 +1,10 @@
+[
+  {
+    "annotation_level": "failure",
+    "message": "Branch \"refs/pull/278/merge\" is not allowed to deploy to sf-gov-schema-capture due to environment protection rules."
+  },
+  {
+    "annotation_level": "failure",
+    "message": "The deployment was rejected or didn't satisfy other protection rules."
+  }
+]
