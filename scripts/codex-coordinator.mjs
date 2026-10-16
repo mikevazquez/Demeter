@@ -256,10 +256,16 @@ function summary(value) {
 
 async function select(config) {
   const source = await context(config);
+  // A pilot selector may narrow work but must never expand the admitted queue.
+  const pilotTaskId = process.env.CODEX_PILOT_TASK_ID || "";
+  if (pilotTaskId) {
+    assert(/^[a-z0-9][a-z0-9-]{0,63}$/.test(pilotTaskId), "Invalid pilot task ID");
+    assert(config.tasks.some((task) => task.id === pilotTaskId && task.status === "ready"), "Pilot task not admitted");
+  }
   const selected = [];
   const skipped = [];
   for (const task of config.tasks) {
-    if (task.status !== "ready") continue;
+    if (task.status !== "ready" || (pilotTaskId && task.id !== pilotTaskId)) continue;
     const state = await existing(config, task);
     if (state.pulls.length) {
       skipped.push({
