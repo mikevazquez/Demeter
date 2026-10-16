@@ -48,7 +48,7 @@ describe("SF-174 student welcome integration", () => {
     expect(resendBlock).toContain("account.must_change_password !== true");
   });
 
-  it("keeps account provisioning independent from Meta delivery success", () => {
+  it("keeps account provisioning independent from Asistian delivery success", () => {
     expect(provision).toContain("const welcomeDelivery = welcomeRule?.enabled");
     expect(provision).toContain("sendActivationWhatsApp");
     expect(provision).toContain("notification_process_paused");
@@ -56,7 +56,7 @@ describe("SF-174 student welcome integration", () => {
     expect(provision).toContain("welcomeDelivery: {");
   });
 
-  it("reads the Meta connection from Vault through the service-role-only RPC", () => {
+  it("reads the webhook from Vault through the service-role-only RPC", () => {
     expect(shared).toContain('"service_get_meta_whatsapp_connection"');
     expect(shared).toContain("target_studio_id: studioId");
     expect(shared).toContain("connection.templates[internalTemplate]");
