@@ -1,0 +1,6 @@
+{"time":"2026-10-16T02:49:08.740Z","transport":"gh-api","method":"GET","path":"/repos/mikevazquez/Demeter/pulls?state=all&head=mikevazquez%3Aautomation%2Fcodex%2Fgovernante-codex-local-20261015-v1&per_page=100&page=1","status":200}
+{"time":"2026-10-16T02:49:09.459Z","transport":"gh-api","method":"GET","path":"/repos/mikevazquez/Demeter/git/ref/heads/automation/codex/governante-codex-local-20261015-v1","status":404}
+{"time":"2026-10-16T02:49:09.915Z","transport":"gh-api","method":"GET","path":"/repos/mikevazquez/Demeter/issues/306","status":200}
+{"time":"2026-10-16T02:50:03.470Z","transport":"gh-api","method":"GET","path":"/repos/mikevazquez/Demeter/issues/306","status":200}
+{"time":"2026-10-16T02:50:03.934Z","transport":"gh-api","method":"GET","path":"/repos/mikevazquez/Demeter/pulls?state=all&head=mikevazquez%3Aautomation%2Fcodex%2Fgovernante-codex-local-20261015-v1&per_page=100&page=1","status":200}
+{"time":"2026-10-16T02:50:04.580Z","transport":"gh-api","method":"GET","path":"/repos/mikevazquez/Demeter/git/ref/heads/automation/codex/governante-codex-local-20261015-v1","status":404}

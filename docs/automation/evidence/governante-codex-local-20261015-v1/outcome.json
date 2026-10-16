@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "mode": "local-chatgpt",
+  "localExecutionId": "local-governante-codex-20261015-v1",
+  "taskId": "governante-codex-local-20261015-v1",
+  "issue": 306,
+  "sourceSha": "2af9188523c5e18bed2d647092c3395c6f428cd9",
+  "checkedAt": "2026-10-16T02:52:37.206Z",
+  "state": "blocked-authentication",
+  "stages": {
+    "select": {
+      "state": "passed",
+      "selected": [
+        {
+          "id": "governante-codex-local-20261015-v1",
+          "recovery": false
+        }
+      ],
+      "otherTasksSelected": 0,
+      "originalQueueEntriesUnchanged": 4
+    },
+    "execute": {
+      "state": "blocked",
+      "exitCode": 1,
+      "codexCliInvocations": 1,
+      "providerResponse": "HTTP 401 Unauthorized; access token refresh failed",
+      "generatedFiles": 0,
+      "generatedToolCalls": 0
+    },
+    "certify": {
+      "state": "not-run-no-candidate",
+      "negativeGate": {
+        "state": "rejected",
+        "reason": "provenance"
+      }
+    },
+    "publish": {
+      "state": "not-run-no-certification",
+      "negativeGate": {
+        "state": "blocked",
+        "reason": "certification"
+      },
+      "draftCreated": false
+    }
+  },
+  "actionsJobsExecuted": false,
+  "sharedActionsJournalModified": false,
+  "noApiKeyUsed": true,
+  "noPurchasesOrSubscriptions": true,
+  "modelCosts": "No accepted model output; no billing API/invoice inspected",
+  "productionMain": "87749e84d324c6c5263c0f0128075cbe8c7e61b7",
+  "controlHead": "d3e113fb65d778f106c1ce574296123668567861",
+  "retry": "Do not silently reset consumed reservation or create another task. Reconnect local Codex ChatGPT login, reconcile this failed launch and its contract before resuming the same ID.",
+  "secondaryLauncherDiagnostic": "CLI reported code mode unavailable with code_mode_host disabled. Adjust compatible tool restrictions before any resumed launch; this does not resolve independent HTTP 401."
+}
