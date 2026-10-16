@@ -9,23 +9,23 @@ function source(path: string) {
 
 describe("SF-174 student welcome integration", () => {
   const provision = source("supabase/functions/provision-student-access/index.ts");
-  const shared = source("supabase/functions/_shared/asistian-messaging.ts");
+  const shared = source("supabase/functions/_shared/meta-whatsapp.ts");
   const actions = source("app/admin/alumnas/[studentId]/actions.ts");
 
   it("sends student_welcome only after a successful initial access link", () => {
     const linkMarker = provision.indexOf('rpc("service_link_student_access"');
-    const sendMarker = provision.lastIndexOf("sendAsistianWebhook({");
+    const sendMarker = provision.lastIndexOf("sendActivationWhatsApp({");
 
     expect(linkMarker).toBeGreaterThan(-1);
     expect(sendMarker).toBeGreaterThan(linkMarker);
     expect(provision).toContain('template: "student_welcome"');
-    expect(provision).toContain('source: "student_access_provisioning"');
+    expect(provision).toContain("activation_button_suffix: suffix");
   });
 
   it("uses activation links for initial onboarding", () => {
     expect(provision).toContain("adminClient.auth.admin.generateLink");
     expect(provision).toContain('type: "recovery"');
-    expect(provision).toContain("activation_url: activationLink");
+    expect(provision).toContain("activationLink");
     expect(provision).toContain('activationLink.searchParams.set("token_hash", tokenHash)');
     expect(provision).not.toContain("portal_entry_key");
   });
@@ -43,23 +43,23 @@ describe("SF-174 student welcome integration", () => {
         .split('if (mode === "resend" || mode === "temporary_password")')[1]
         ?.split("if (student.user_id)")[0] ?? "";
 
-    expect(resendBlock).toContain("sendAsistianWebhook");
-    expect(resendBlock).toContain('source: "student_access_activation_resend"');
+    expect(resendBlock).toContain("sendActivationWhatsApp");
+    expect(resendBlock).toContain("activationLink");
     expect(resendBlock).toContain("account.must_change_password !== true");
   });
 
-  it("keeps account provisioning independent from Asistian delivery success", () => {
+  it("keeps account provisioning independent from Meta delivery success", () => {
     expect(provision).toContain("const welcomeDelivery = welcomeRule?.enabled");
-    expect(provision).toContain("sendAsistianWebhook");
+    expect(provision).toContain("sendActivationWhatsApp");
     expect(provision).toContain("notification_process_paused");
     expect(provision).toContain("ok: true");
     expect(provision).toContain("welcomeDelivery: {");
   });
 
-  it("reads the webhook from Vault through the service-role-only RPC", () => {
-    expect(shared).toContain('"service_get_asistian_webhook"');
-    expect(shared).toContain("target_studio_id: input.studioId");
-    expect(shared).toContain("target_template: input.template");
+  it("reads the Meta connection from Vault through the service-role-only RPC", () => {
+    expect(shared).toContain('"service_get_meta_whatsapp_connection"');
+    expect(shared).toContain("target_studio_id: studioId");
+    expect(shared).toContain("connection.templates[internalTemplate]");
   });
 
   it("builds the activation URL from the active environment host", () => {
