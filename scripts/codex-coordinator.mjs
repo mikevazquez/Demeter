@@ -60,6 +60,26 @@ export function validateConfig(config, now = Date.now()) {
     config.source.pageId === "3fad78f7146381e9a97fc3c454e6516a",
     "Unexpected Notion policy source",
   );
+  // Optional intake manifests must be staged and independently admitted before
+  // entering the executable queue. Pending items never reach Codex.
+  if (config.intake && config.intake.mode !== "disabled") {
+    assert(config.intake.mode === "reviewed", "Untrusted intake mode");
+    assert(Array.isArray(config.intake.tasks), "Invalid intake manifest");
+    for (const entry of config.intake.tasks) {
+      assert(entry.state === "approved-for-queue", "Unapproved intake task");
+      assert(entry.task && entry.task.status === "ready", "Intake task not ready");
+      assert(
+        config.tasks.some((task) =>
+          task.id === entry.task.id &&
+          task.issueNumber === entry.task.issueNumber &&
+          task.issueBodySha256 === entry.task.issueBodySha256 &&
+          task.issueUpdatedAt === entry.task.issueUpdatedAt &&
+          JSON.stringify(task.allowedPaths) === JSON.stringify(entry.task.allowedPaths)
+        ),
+        "Intake task not bound to executable queue",
+      );
+    }
+  }
   const ids = new Set();
   const files = new Set();
   for (const task of config.tasks) {
