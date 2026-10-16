@@ -14,11 +14,10 @@ describe("student portal activation via Meta WhatsApp", () => {
     expect(provision).not.toContain("sendAsistianWebhook");
   });
 
-  it("enforces the Meta pilot allowlist before activation sends", () => {
-    expect(provision).toContain("service_get_meta_whatsapp_pilot_wa_ids");
-    expect(provision).toContain("service_get_meta_whatsapp_pilot_wa_ids");
-    expect(provision).toContain("pilot_recipient_not_allowed");
-    expect(provision).not.toContain("pilot_mode_required");
+  it("allows approved Meta activation without a pilot allowlist", () => {
+    expect(provision).not.toContain("pilot_recipient_not_allowed");
+    expect(provision).not.toContain("service_get_meta_whatsapp_pilot_wa_ids");
+    expect(provision).toContain("sendMetaWhatsAppTemplate");
   });
 
   it("passes the activation URL through the approved welcome body parameter", () => {
