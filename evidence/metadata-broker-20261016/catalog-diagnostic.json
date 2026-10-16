@@ -1,0 +1,83 @@
+{
+  "source": "supabase-mcp-supervised-catalog-diagnostic",
+  "captured_at": "2026-10-16T12:08:37.647Z",
+  "release_eligible": false,
+  "query_is_fixed_readonly_catalog": true,
+  "production_project": "qfhojvgvhrbautvczffq",
+  "candidate_project": "sdmxtlgjkodidjtvikng",
+  "baseline": [
+    {
+      "kind": "column",
+      "object_count": 2653,
+      "fingerprint": "ff4b6372fb30d5a2a310bfb294019181"
+    },
+    {
+      "kind": "extension",
+      "object_count": 7,
+      "fingerprint": "de8f1532294bda82d8f252d2815ea46f"
+    },
+    {
+      "kind": "index",
+      "object_count": 787,
+      "fingerprint": "415b2cc946c08eaef4c3cb3458e7881b"
+    },
+    {
+      "kind": "policy",
+      "object_count": 352,
+      "fingerprint": "bfd2fa3a030d4c0f243944b6bacb7943"
+    },
+    {
+      "kind": "routine",
+      "object_count": 383,
+      "fingerprint": "586b026f5618d7adbda78e5ea1e88170"
+    },
+    {
+      "kind": "table_rls",
+      "object_count": 218,
+      "fingerprint": "e66f715ec2d4134f446766efc26ced53"
+    },
+    {
+      "kind": "trigger",
+      "object_count": 172,
+      "fingerprint": "145b855dbbcfd80ff1c845c00d16b35c"
+    }
+  ],
+  "candidate": [
+    {
+      "kind": "column",
+      "object_count": 772,
+      "fingerprint": "920f34cb70af22035fc6cee72eaf0223"
+    },
+    {
+      "kind": "extension",
+      "object_count": 5,
+      "fingerprint": "97088d43d6a8be0bf80955be2cd1a6ca"
+    },
+    {
+      "kind": "index",
+      "object_count": 254,
+      "fingerprint": "2e0000b568602aeefe400ca9822af1fd"
+    },
+    {
+      "kind": "policy",
+      "object_count": 123,
+      "fingerprint": "294a076b5efa1651442c04e9a1877ffa"
+    },
+    {
+      "kind": "routine",
+      "object_count": 95,
+      "fingerprint": "89addd6b8136742583e5297bf79a1d30"
+    },
+    {
+      "kind": "table_rls",
+      "object_count": 66,
+      "fingerprint": "4e620727910a196fb9f48f9db92570ea"
+    },
+    {
+      "kind": "trigger",
+      "object_count": 20,
+      "fingerprint": "a9179a1c3f07a6e9e785fca037d7bc51"
+    }
+  ],
+  "trust_limitation": "Supervised connector observation; not captured by an authenticated broker, not signed, no deployed candidate SHA binding."
+}

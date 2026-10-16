@@ -1,0 +1,20 @@
+{
+  "recorded_at": "2026-10-16T12:09:22.105485+00:00",
+  "base_sha": "68ca44de6ea7f86ae94ca33dac461128ef30f054",
+  "node_version": "v24.19.0",
+  "execution": "local isolated prototype, mocked transport and reservation adapters, existing PGlite for unchanged reader negative controls",
+  "test_exit": 0,
+  "source_sha256": {
+    "scripts/metadata-broker-prototype.mjs": "d7973e35c85aebdb59e803909e1f8aba779607cdf013d506bc7ce74e851b25f7",
+    "scripts/metadata-broker-prototype.test.mjs": "563a6ff024cbb46b7e91e09234381835fff26dfae35a80593352c88fadd237f4",
+    "scripts/sql/schema-fingerprint.sql": "f6b7590bf8e08e3932c0c4fc6b46c62239fa55ccdf3b5ae8d7bd55a057782395"
+  },
+  "remote_diagnostic": "Two fixed READ ONLY catalog queries through existing Supabase MCP; no DDL, no business rows, no release attestation",
+  "production_mutation": false,
+  "deployed": false,
+  "queue_tasks_executed": 0,
+  "paid_services_activated": false,
+  "milestone_completed": false,
+  "test_count": 48,
+  "tests_passed": 48
+}
