@@ -33,6 +33,7 @@ export type MetaWhatsAppDeliveryInput = {
   eventId: string;
   recipient: unknown;
   variables: JsonObject;
+  metaTemplateNameOverride?: string;
   fetcher?: typeof fetch;
 };
 
@@ -237,8 +238,9 @@ export async function sendMetaWhatsAppTemplate(
   }
 
   const internalTemplate = input.template as MetaWhatsAppTemplateKey;
-  const metaTemplateName = safeText(connection.templates[internalTemplate]);
-  if (!metaTemplateName) {
+  const metaTemplateName =
+    safeText(input.metaTemplateNameOverride) ?? safeText(connection.templates[internalTemplate]);
+  if (!metaTemplateName || !/^[a-z0-9_]+$/.test(metaTemplateName)) {
     return {
       status: "skipped",
       errorCode: "meta_whatsapp_template_not_configured",
