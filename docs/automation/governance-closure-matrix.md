@@ -22,7 +22,7 @@ Estos frentes agrupan los criterios originales; no crean tareas ni sustituyen su
 - **Comprobado:** CI #278 reparada. [PR #308](https://github.com/mikevazquez/Demeter/pull/308) prepara Session pooler con identidad mínima ligada al proyecto, puerto 5432 y TLS verify-full. [Contrato y TLS GitHub SUCCESS](https://github.com/mikevazquez/Demeter/actions/runs/38857703808): 9 pruebas PASS, IPv4/TCP/TLS 1.3 y hostname verificado PASS. Ocho regresiones adicionales locales PASS. [Runtime PostgreSQL 17 SUCCESS](https://github.com/mikevazquez/Demeter/actions/runs/38857703823).
 - **Corrección terminada:** el runner rechazó inicialmente la cadena TLS. Se incorporó la CA pública oficial de Supabase con procedencia/huella versionadas; no se deshabilitó verificación. No volver a pedir endpoints ni tratar este diagnóstico como pendiente.
 - **Pendiente de integración:** #308 sigue Draft dirigido solo al controlador; sin merge, request.json ni activación. La rama controladora original permanece intacta.
-- **Bloqueo real:** el lector dedicado no existe en ninguna base, confirmado por SELECT-only de catálogo. Prepararlo en producción cambia producción y requiere autorización separada; no lo autoriza esta preparación. Credenciales únicamente por canal seguro del environment.
+- **Bloqueo real:** Candidate ya tiene lector NOLOGIN verificado. Producción sigue sin lector: postgres no tiene autoridad sobre net, propiedad de supabase_admin. El ajuste puntual y el alta ya están autorizados; hace falta un operador con esa autoridad, no repetir aprobación. Credenciales únicamente por canal seguro del environment.
 - **Después:** captura autenticada y negativo real por divergencia, conciliación de Candidate y B03/UAT seguro. INV-UAT-01 conserva **Preparado**.
 
 [Detalle verificable de este bloque](evidence/governance-session-pooler-20261015/README.md). No se contrataron recursos ni se usaron APIs de modelos de pago; no se ejecutó otra tarea de la cola ni se alteró producción.
@@ -103,7 +103,7 @@ Las pruebas de componentes tienen [CI aprobada](https://github.com/mikevazquez/D
 
 Ninguna fila con condición pendiente; evidencia exacta y recuperable por SHA/entorno/caso; integración operativa observada, responsables y aceptación registrados. Si se cierra un alcance revisado, guardar decisión explícita y trasladar pendientes sin convertirlos en PASS. Cerrar un bloque no concede promoción.
 
-## Lectores — continuación del 16 octubre 2026
+## Lectores — preparación previa a la autorización
 
 [Propuesta de permisos y evidencias](evidence/governance-readers-20261016/README.md): seis pruebas PostgreSQL aisladas PASS, contrato/TLS/runtime del SHA b9e1291b SUCCESS. El preflight productivo detectó dos tablas net accesibles por PUBLIC; NOINHERIT no elimina esa herencia. La propuesta conserva accesos explícitos de los roles conocidos y crea lectores NOLOGIN; no se aplicó. Falta autorización específica para el cambio productivo y administrador para credenciales seguras. El hito sigue pendiente: **9/24 terminados, falta 62,5%; fase 1 falta 62,5%**.
 
