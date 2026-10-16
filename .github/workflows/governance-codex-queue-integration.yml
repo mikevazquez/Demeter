@@ -7,6 +7,8 @@ on:
       - scripts/governance-codex-*.mjs
       - scripts/codex-coordinator.mjs
       - tests/automation/governance-codex-queue-integration.node.mjs
+      - tests/automation/coordinator.node.mjs
+      - .github/workflows/governance-codex-coordinator.yml
       - .github/workflows/governance-codex-queue-integration.yml
   workflow_dispatch:
 permissions:
