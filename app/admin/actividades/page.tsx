@@ -82,6 +82,11 @@ export default async function ActivitiesPage() {
     schedulesByActivity.set(schedule.template_id, current);
   }
 
+  const { data: workshopData } = can("sales.read")
+    ? await supabase.rpc("admin_workshop_context", { p_studio_id: studio.id })
+    : { data: null };
+  const workshopOffers = (workshopData?.offers ?? []) as { id: string; title: string; fullPriceMinor: number; sessionCount: number }[];
+
   const { data: programs } = await supabase
     .from("activity_programs")
     .select("id,name,kind,description,active")
@@ -183,14 +188,17 @@ export default async function ActivitiesPage() {
 
       <section className="activities-v2-section">
         <h2>Talleres y eventos</h2>
-        {can("sales.read") ? (
-          <p>
-            <Link href="/admin/actividades/talleres">
-              Talleres configurables · precios y anticipos
-            </Link>
-          </p>
-        ) : null}
         <div className="activities-v2-list">
+          {workshopOffers.map((offer) => (
+            <Link className="activities-v2-card" href={`/admin/actividades/talleres/${offer.id}`} key={offer.id}>
+              <span className="activities-v2-card-icon program-card-icon is-workshop"><ProgramIcon /></span>
+              <span className="activities-v2-card-main">
+                <span className="activities-v2-card-title"><strong>{offer.title}</strong><small>Taller</small></span>
+                <span className="activities-v2-card-description">{offer.sessionCount} fechas · {formatMoney(offer.fullPriceMinor, studio.locale, studio.currency)} completo</span>
+              </span>
+              <span className="activities-v2-chevron" aria-hidden="true">›</span>
+            </Link>
+          ))}
           {(programs ?? []).map((program) => (
             <Link
               className={`activities-v2-card${program.active ? "" : " is-inactive"}`}
