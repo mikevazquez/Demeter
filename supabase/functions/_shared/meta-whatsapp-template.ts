@@ -167,6 +167,29 @@ export function buildMetaWhatsAppTemplatePayload(input: {
     });
   }
 
+  // student_welcome may use an approved dynamic URL button at index 0.
+  // Omit the button parameter unless a validated suffix is provided.
+  if (input.internalTemplate === "student_welcome") {
+    const buttonSuffix = input.variables.activation_button_suffix;
+    if (buttonSuffix !== undefined && buttonSuffix !== null) {
+      if (
+        typeof buttonSuffix !== "string" ||
+        !buttonSuffix.trim() ||
+        buttonSuffix.length > 2048 ||
+        /\s|#/.test(buttonSuffix) ||
+        /^(?:https?:)?\/\//i.test(buttonSuffix)
+      ) {
+        throw new Error("activation_button_suffix_invalid");
+      }
+      components.push({
+        type: "button",
+        sub_type: "url",
+        index: "0",
+        parameters: [{ type: "text", text: buttonSuffix }],
+      });
+    }
+  }
+
   return {
     messaging_product: "whatsapp",
     recipient_type: "individual",
