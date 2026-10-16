@@ -1,0 +1,96 @@
+{
+  "authorization": {
+    "userReply": "Autorizo",
+    "scope": "Only the reviewed net/PUBLIC USAGE adjustment in production and initial NOLOGIN reader creation in production and Candidate",
+    "productionPromotionAuthorized": false,
+    "loginOrPasswordsAuthorized": false,
+    "sourceProposalSha": "b9e1291b66d0ee3866c112de199b7633c65853a4"
+  },
+  "candidate": {
+    "migrationResult": {
+      "success": true
+    },
+    "migration": [
+      {
+        "version": "20261016061746",
+        "name": "sf_gov_001_candidate_schema_reader_nologin"
+      }
+    ],
+    "verification": [
+      {
+        "reader_verification": {
+          "database": "postgres",
+          "actor": "postgres",
+          "reader": {
+            "role": "sf_gov_schema_reader",
+            "can_login": false,
+            "superuser": false,
+            "create_db": false,
+            "create_role": false,
+            "replication": false,
+            "bypass_rls": false,
+            "inherit": false,
+            "connection_limit": 2,
+            "settings": [
+              "default_transaction_read_only=on",
+              "statement_timeout=15s",
+              "search_path=pg_catalog"
+            ],
+            "memberships": 0,
+            "data_access": 0,
+            "definer_access": 0,
+            "net_usage": null
+          }
+        }
+      }
+    ]
+  },
+  "production": {
+    "migrationResult": {
+      "error": {
+        "name": "HttpException",
+        "message": "Failed to apply database migration: ERROR:  P0001: PUBLIC grants exceed reader contract; no role created\nCONTEXT:  PL/pgSQL function inline_code_block line 24 at RAISE\n"
+      }
+    },
+    "migrationHistory": [],
+    "verification": [
+      {
+        "reader_verification": {
+          "database": "postgres",
+          "actor": "postgres",
+          "reader": null
+        }
+      }
+    ],
+    "publicPreflightAfter": [
+      {
+        "reader_preflight": {
+          "database": "postgres",
+          "reader_exists": false,
+          "public_relation_access": 2,
+          "public_definer_access": 0,
+          "public_schema_create": [],
+          "public_database_privileges": [
+            "CONNECT",
+            "TEMPORARY"
+          ]
+        }
+      }
+    ],
+    "actorAuthority": [
+      {
+        "current_user": "postgres",
+        "rolsuper": false,
+        "rolcreaterole": true,
+        "member_of_net_owner": false,
+        "net_usage_grant_option": false,
+        "net_owner": "supabase_admin"
+      }
+    ]
+  },
+  "outcome": "candidate-prepared-production-blocked-by-managed-schema-owner-authority",
+  "businessRowsModified": false,
+  "cronOrHttpExecuted": false,
+  "modelApiCalled": false,
+  "checkedAtUtc": "2026-10-16T06:23:42.688954+00:00"
+}

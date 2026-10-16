@@ -1,0 +1,15 @@
+✔ PUBLIC net grants are detected and block reader creation atomically (3553.566169ms)
+✔ NOINHERIT and a per-reader REVOKE do not remove inherited PUBLIC access (2684.444345ms)
+✔ scoped net USAGE removal preserves explicit callers and permits a disabled reader with no net access (2558.596686ms)
+✔ existing reader is not adopted, altered or overwritten (2262.209499ms)
+✔ production proposal refuses an environment without the exact pg_net version (1896.187442ms)
+✔ PUBLIC access regression is detected again after the reader was prepared (1924.111155ms)
+✔ explicit net USAGE without schema ownership is rejected before ACL changes (1803.166766ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 16861.078009

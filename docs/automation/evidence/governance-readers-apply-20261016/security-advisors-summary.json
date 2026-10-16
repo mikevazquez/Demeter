@@ -1,0 +1,20 @@
+{
+  "sdmxtlgjkodidjtvikng": {
+    "checked": true,
+    "total": 3,
+    "countsByLevel": {
+      "INFO": 1,
+      "WARN": 2
+    },
+    "note": "Inventory after the operation, not a before/after regression comparison. No app/RLS changes were made; these findings are not globally cleared by creating a reader."
+  },
+  "qfhojvgvhrbautvczffq": {
+    "checked": true,
+    "total": 4,
+    "countsByLevel": {
+      "INFO": 1,
+      "WARN": 3
+    },
+    "note": "Inventory after the operation, not a before/after regression comparison. No app/RLS changes were made; these findings are not globally cleared by creating a reader."
+  }
+}

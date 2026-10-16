@@ -106,3 +106,9 @@ Ninguna fila con condición pendiente; evidencia exacta y recuperable por SHA/en
 ## Lectores — continuación del 16 octubre 2026
 
 [Propuesta de permisos y evidencias](evidence/governance-readers-20261016/README.md): seis pruebas PostgreSQL aisladas PASS, contrato/TLS/runtime del SHA b9e1291b SUCCESS. El preflight productivo detectó dos tablas net accesibles por PUBLIC; NOINHERIT no elimina esa herencia. La propuesta conserva accesos explícitos de los roles conocidos y crea lectores NOLOGIN; no se aplicó. Falta autorización específica para el cambio productivo y administrador para credenciales seguras. El hito sigue pendiente: **9/24 terminados, falta 62,5%; fase 1 falta 62,5%**.
+
+## Aplicación autorizada de lectores — resultado actual
+
+[Resultado y pruebas](evidence/governance-readers-apply-20261016/README.md). El propietario autorizó el alcance puntual mediante «Autorizo»; no volver a pedirlo. Candidate ya tiene sf_gov_schema_reader NOLOGIN (migración 20261016061746), sin membresías ni accesos efectivos de negocio. Producción sigue sin lector ni migración aplicada: la transacción abortó porque el REVOKE no pudo retirar el grant de PUBLIC. postgres carece de autoridad sobre net, cuyo propietario es supabase_admin. Hace falta un operador de Supabase con esa autoridad para aplicar únicamente el ajuste ya autorizado. [Texto listo para ese canal, no enviado](evidence/governance-readers-apply-20261016/support-request-draft.md).
+
+Siete pruebas PostgreSQL aisladas PASS; contrato/TLS y runtime del SHA c8200d13 SUCCESS. La nueva guarda rechaza una sesión sin ownership antes del REVOKE. No hubo cambios persistentes nuestros en producción ni promoción. LOGIN/contraseñas/secretos siguen pendientes por canal seguro. El hito compuesto de lectores permanece pendiente: **9/24 terminados (37,5%); falta 62,5%**.

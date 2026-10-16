@@ -40,7 +40,8 @@
     "newPaidServicesAllowed": false,
     "mirrorRecreationAllowed": false,
     "generalQueueChanged": false,
-    "coordinatorControlBranchChanged": false
+    "coordinatorControlBranchChanged": false,
+    "productionSchemaAclAndNologinReadersAuthorized": true
   },
   "phasedAcceptance": "GOV-COM-02 mantiene PIL-UAT-01 y DOC-UAT-01 con etapas previa y posterior. Los demás UAT aplicables y etapas previas deben estar aprobados antes de solicitar promoción; las etapas posteriores solo tras autorización específica.",
   "records": [
@@ -170,13 +171,15 @@
         "https://github.com/mikevazquez/Demeter/actions/runs/38523279395",
         "https://github.com/mikevazquez/Demeter/pull/308",
         "https://github.com/mikevazquez/Demeter/actions/runs/38857703808",
-        "docs/automation/evidence/governance-readers-20261016/README.md"
+        "docs/automation/evidence/governance-readers-20261016/README.md",
+        "docs/automation/evidence/governance-readers-apply-20261016/README.md"
       ],
-      "nextAction": "Decisión específica sobre propuesta b9e1291b: retirar USAGE net/PUBLIC preservando roles conocidos y alta NOLOGIN; no aplicada. Después credenciales seguras por administrador, captura autenticada, negativo por drift y conciliación Candidate.",
+      "nextAction": "Operador Supabase con autoridad de supabase_admin aplica únicamente el ajuste net/PUBLIC ya autorizado; releer ACL y crear lector productivo NOLOGIN. Candidate ya preparado: no reprovisionar. LOGIN/secretos seguros y captura autenticada siguen pendientes.",
       "closureCondition": "Atestación ligada a candidato/manifiesto exactos y denegación real ante diferencias; no usar postgres amplio como sustituto.",
       "sourceObservation": "Endpoints de ambos proyectos confirmados por capturas: [aws-0-us-east-1.pooler.supabase.com:5432](http://aws-0-us-east-1.pooler.supabase.com:5432). Prueba DNS local falló antes de conectar; falta validación en runner, adaptación y lectores mínimos. Preparado, no UAT aprobado.",
       "observedIntegration": "PR #308 Draft; 9 tests contrato + TLS real GitHub PASS; 8 regresiones locales PASS; lector ausente en ambas bases por SELECT-only. No captura autenticada ni UAT aprobado.",
-      "latestReaderAclFinding": "PUBLIC en producción permite acceso a dos tablas net; NOINHERIT no lo elimina. Seis pruebas aisladas PASS y CI contrato/TLS/runtime de b9e1291b SUCCESS. No se cambió ninguna ACL remota ni se creó lector. Candidate sin relaciones/definers PUBLIC accesibles en el preflight."
+      "latestReaderAclFinding": "PUBLIC en producción permite acceso a dos tablas net; NOINHERIT no lo elimina. Seis pruebas aisladas PASS y CI contrato/TLS/runtime de b9e1291b SUCCESS. No se cambió ninguna ACL remota ni se creó lector. Candidate sin relaciones/definers PUBLIC accesibles en el preflight.",
+      "latestReaderApplication": "Candidate NOLOGIN aplicado y verificado, cero membresías/accesos negocio. Producción abortó sin migración ni lector: postgres no es propietario de net ni tiene autoridad para revocar el grant del propietario. Autorización del usuario vigente; falta capacidad administrativa, no volver a pedir permiso."
     },
     {
       "id": "OPS-UAT-01",
@@ -892,5 +895,26 @@
     "readerExistsInEitherProject": false,
     "milestoneCompleted": false,
     "evidence": "docs/automation/evidence/governance-readers-20261016/README.md"
+  },
+  "readerApplication": {
+    "authorization": {
+      "userReply": "Autorizo",
+      "scope": "Reviewed net/PUBLIC USAGE change and NOLOGIN readers in production and Candidate",
+      "productionPromotionAuthorized": false,
+      "loginOrPasswordsAuthorized": false,
+      "status": "recorded-no-repeat-approval-needed"
+    },
+    "candidateReaderExists": true,
+    "candidateCanLogin": false,
+    "candidateMigrationVersion": "20261016061746",
+    "candidateDataAccess": 0,
+    "candidateDefinerAccess": 0,
+    "productionReaderExists": false,
+    "productionMigrationApplied": false,
+    "productionPublicRelationAccess": 2,
+    "productionBlocker": "postgres lacks authority over net owned by managed supabase_admin",
+    "operatorAction": "managed schema owner applies only the authorized net/PUBLIC USAGE change; then revalidate and create production NOLOGIN reader",
+    "milestoneCompleted": false,
+    "evidence": "docs/automation/evidence/governance-readers-apply-20261016/README.md"
   }
 }

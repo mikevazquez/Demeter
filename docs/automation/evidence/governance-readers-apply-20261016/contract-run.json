@@ -1,0 +1,56 @@
+{
+  "queriedCommit": "c8200d130bfa186c74a06114d38b204c3e248f4e",
+  "run": {
+    "id": 38860868225,
+    "name": "SF GOV controller capture contract",
+    "status": "completed",
+    "conclusion": "success",
+    "run_number": 5,
+    "jobs_url": "https://api.github.com/repos/mikevazquez/Demeter/actions/runs/38860868225/jobs",
+    "logs_url": "https://api.github.com/repos/mikevazquez/Demeter/actions/runs/38860868225/logs",
+    "workflow_id": 386352675
+  },
+  "jobs": [
+    {
+      "id": 116842602603,
+      "name": "contract",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 38860868225,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Fetch immutable PR source without credentials",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Verify request and capture contract without database or secrets",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Verify fixed Session endpoint TLS without authentication or SQL",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        }
+      ]
+    }
+  ],
+  "retrievedThrough": "connected GitHub API; CLI token failed, no credential values collected"
+}

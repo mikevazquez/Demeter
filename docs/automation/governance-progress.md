@@ -13,7 +13,7 @@ Fórmula: pendiente = (hitos pendientes / hitos de la fase) × 100. El global us
 | 3. Protección y preparación de liberación            | 2/6        | 4/6        | 33,3%      | **66,7%**  |
 | 4. Promoción autorizada y verificación de producción | 0/3        | 3/3        | 0,0%       | **100,0%** |
 
-El frente principal sigue siendo la fase 1. Bloqueo inmediato: faltan lectores mínimos y credenciales seguras; crear el lector productivo exige autorización separada porque modifica producción. Mientras tanto se verificó evidencia independiente de fase 2, sin disparar otra tarea ni forzar ciclos. Ninguna fase está cerrada globalmente.
+El frente principal sigue siendo la fase 1. Bloqueo inmediato: Candidate ya tiene lector NOLOGIN; falta autoridad del propietario gestionado de net para el ajuste productivo ya autorizado, lector productivo y credenciales seguras. Mientras tanto se verificó evidencia independiente de fase 2, sin disparar otra tarea ni forzar ciclos. Ninguna fase está cerrada globalmente.
 
 ## Fase 1 — Candidate confiable y UAT seguro
 
@@ -64,3 +64,9 @@ La automatización alojada está habilitada. Las fuentes disponibles no acredita
 ## Lectores — continuación del 16 octubre 2026
 
 [Propuesta de permisos y evidencias](evidence/governance-readers-20261016/README.md): seis pruebas PostgreSQL aisladas PASS, contrato/TLS/runtime del SHA b9e1291b SUCCESS. El preflight productivo detectó dos tablas net accesibles por PUBLIC; NOINHERIT no elimina esa herencia. La propuesta conserva accesos explícitos de los roles conocidos y crea lectores NOLOGIN; no se aplicó. Falta autorización específica para el cambio productivo y administrador para credenciales seguras. El hito sigue pendiente: **9/24 terminados, falta 62,5%; fase 1 falta 62,5%**.
+
+## Aplicación autorizada de lectores — resultado actual
+
+[Resultado y pruebas](evidence/governance-readers-apply-20261016/README.md). El propietario autorizó el alcance puntual mediante «Autorizo»; no volver a pedirlo. Candidate ya tiene sf_gov_schema_reader NOLOGIN (migración 20261016061746), sin membresías ni accesos efectivos de negocio. Producción sigue sin lector ni migración aplicada: la transacción abortó porque el REVOKE no pudo retirar el grant de PUBLIC. postgres carece de autoridad sobre net, cuyo propietario es supabase_admin. Hace falta un operador de Supabase con esa autoridad para aplicar únicamente el ajuste ya autorizado. [Texto listo para ese canal, no enviado](evidence/governance-readers-apply-20261016/support-request-draft.md).
+
+Siete pruebas PostgreSQL aisladas PASS; contrato/TLS y runtime del SHA c8200d13 SUCCESS. La nueva guarda rechaza una sesión sin ownership antes del REVOKE. No hubo cambios persistentes nuestros en producción ni promoción. LOGIN/contraseñas/secretos siguen pendientes por canal seguro. El hito compuesto de lectores permanece pendiente: **9/24 terminados (37,5%); falta 62,5%**.

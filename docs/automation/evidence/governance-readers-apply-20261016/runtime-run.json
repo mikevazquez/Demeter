@@ -1,0 +1,44 @@
+{
+  "queriedCommit": "c8200d130bfa186c74a06114d38b204c3e248f4e",
+  "run": {
+    "id": 38860868220,
+    "name": "SF GOV controller runtime",
+    "status": "completed",
+    "conclusion": "success",
+    "run_number": 7,
+    "jobs_url": "https://api.github.com/repos/mikevazquez/Demeter/actions/runs/38860868220/jobs",
+    "logs_url": "https://api.github.com/repos/mikevazquez/Demeter/actions/runs/38860868220/logs",
+    "workflow_id": 383900472
+  },
+  "jobs": [
+    {
+      "id": 116842602243,
+      "name": "client",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 38860868220,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Install PostgreSQL 17 client before credentials",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        }
+      ]
+    }
+  ],
+  "retrievedThrough": "connected GitHub API; CLI token failed, no credential values collected"
+}
