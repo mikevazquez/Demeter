@@ -12,7 +12,12 @@ describe("student portal activation via Meta WhatsApp", () => {
     expect(provision).toContain("sendMetaWhatsAppTemplate");
     expect(provision).toContain("sendActivationWhatsApp");
     expect(provision).not.toContain("sendAsistianWebhook");
+    it("enforces the Meta pilot allowlist before activation sends", () => {
+    expect(provision).toContain("service_get_meta_whatsapp_pilot_wa_ids");
+    expect(provision).toContain('runtimeConfig?.mode !== "pilot"');
+    expect(provision).toContain("pilot_recipient_not_allowed");
   });
+});
 
   it("fails closed when activation button config is missing", () => {
     expect(provision).toContain("META_STUDENT_ACTIVATION_BUTTON_BASE_URL");
