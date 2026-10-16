@@ -23,4 +23,6 @@ jobs:
         with:
           node-version: 22
       - name: Validate integration without credentials or queue mutations
-        run: node --test tests/automation/governance-codex-queue-integration.node.mjs
+        run: |
+          node --test tests/automation/governance-codex-queue-integration.node.mjs
+          node --test tests/automation/coordinator.node.mjs
