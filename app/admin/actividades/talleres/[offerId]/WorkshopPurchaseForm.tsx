@@ -279,12 +279,12 @@ export function WorkshopPurchaseForm({
             />
           </label>
         </div>
-        {quote.ok && received != null && received <= quote.totalMinor ? (
+        {quote.ok && effectiveReceived != null && effectiveReceived <= quote.totalMinor ? (
           <p aria-live="polite">
-            Saldo después del pago: <strong>{money(quote.totalMinor - received)}</strong>.
+            Saldo después del pago: <strong>{money(quote.totalMinor - effectiveReceived)}</strong>.
           </p>
         ) : null}
-        {amount && !amountValid ? (
+        {quote.ok && !amountValid ? (
           <p role="status">
             El importe debe cubrir el anticipo sin superar el total. Para dejar saldo, el taller
             necesita un vencimiento.
