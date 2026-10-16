@@ -1,6 +1,6 @@
 import { withSupabase } from "npm:@supabase/server";
 
-import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts";
+import { sendMetaWhatsAppTemplate } from "../_shared/meta-whatsapp.ts";
 
 type ProvisionRequest = {
   studentId?: unknown;
@@ -40,6 +40,49 @@ function buildStudentActivationLink(baseUrl: string, tokenHash: string) {
   activationLink.searchParams.set("token_hash", tokenHash);
   activationLink.searchParams.set("type", "recovery");
   return activationLink.toString();
+}
+
+// Fail closed until the exact approved Meta dynamic URL prefix is verified.
+function activationButtonSuffix(activationLink: string) {
+  const prefix = Deno.env.get("META_STUDENT_ACTIVATION_BUTTON_BASE_URL")?.trim();
+  if (!prefix || !prefix.startsWith("https://") || !activationLink.startsWith(prefix)) return null;
+  // Prevent an arbitrary HTTPS origin or lookalike path from being accepted.
+  try {
+    const base = new URL(prefix);
+    const link = new URL(activationLink);
+    if (base.origin !== link.origin || link.pathname !== "/login/student/activar") return null;
+    if (base.hash || base.username || base.password || link.hash) return null;
+    if (base.search || base.pathname !== "/login/student/activar") return null;
+    if (!link.searchParams.has("token_hash") || link.searchParams.get("type") !== "recovery") return null;
+  } catch {
+    return null;
+  }
+  const suffix = activationLink.slice(prefix.length);
+  if (!suffix || suffix.length > 2048 || /\s|#/.test(suffix)) return null;
+  return suffix;
+}
+
+async function sendActivationWhatsApp(input: {
+  adminClient: Parameters<typeof sendMetaWhatsAppTemplate>[0]["adminClient"];
+  studioId: string;
+  studentId: string;
+  userId: string;
+  phone: string;
+  name: string;
+  activationLink: string;
+}) {
+  const suffix = activationButtonSuffix(input.activationLink);
+  if (!suffix) {
+    return { status: "skipped" as const, errorCode: "activation_button_configuration_unverified" };
+  }
+  return await sendMetaWhatsAppTemplate({
+    adminClient: input.adminClient,
+    studioId: input.studioId,
+    template: "student_welcome",
+    eventId: `student_welcome:${input.studentId}:${input.userId}:${crypto.randomUUID()}`,
+    recipient: input.phone,
+    variables: { recipient_name: input.name, activation_button_suffix: suffix },
+  });
 }
 
 const handler = {
@@ -255,7 +298,6 @@ const handler = {
         });
       }
 
-      const welcomeEventId = `student_welcome:${student.id}:${student.user_id}:${crypto.randomUUID()}`;
       const { data: welcomeRule } = await adminClient
         .from("notification_rules")
         .select("enabled")
@@ -264,28 +306,16 @@ const handler = {
         .is("archived_at", null)
         .maybeSingle();
       const welcomeDelivery = welcomeRule?.enabled
-        ? await sendAsistianWebhook({
+        ? await sendActivationWhatsApp({
             adminClient,
             studioId: student.studio_id,
-            template: "student_welcome",
-            eventId: welcomeEventId,
-            recipient: student.phone,
-            variables: {
-              nombre: student.full_name,
-              activation_url: activationLink,
-            },
-            metadata: {
-              source: "student_access_activation_resend",
-              student_id: student.id,
-              user_id: student.user_id,
-              must_change_password: true,
-            },
+            studentId: student.id,
+            userId: student.user_id,
+            phone: student.phone,
+            name: student.full_name,
+            activationLink,
           })
-        : {
-            status: "skipped" as const,
-            errorCode: "notification_process_paused",
-            retryable: false,
-          };
+        : { status: "skipped" as const, errorCode: "notification_process_paused" };
 
       return jsonResponse({
         ok: true,
@@ -436,7 +466,6 @@ const handler = {
       });
     }
 
-    const welcomeEventId = `student_welcome:${student.id}:${provisionedUser.id}:${crypto.randomUUID()}`;
     const { data: welcomeRule } = await adminClient
       .from("notification_rules")
       .select("enabled")
@@ -445,28 +474,16 @@ const handler = {
       .is("archived_at", null)
       .maybeSingle();
     const welcomeDelivery = welcomeRule?.enabled
-      ? await sendAsistianWebhook({
+      ? await sendActivationWhatsApp({
           adminClient,
           studioId: student.studio_id,
-          template: "student_welcome",
-          eventId: welcomeEventId,
-          recipient: student.phone,
-          variables: {
-            nombre: student.full_name,
-            activation_url: activationLink,
-          },
-          metadata: {
-            source: "student_access_provisioning",
-            student_id: student.id,
-            user_id: provisionedUser.id,
-            must_change_password: true,
-          },
+          studentId: student.id,
+          userId: provisionedUser.id,
+          phone: student.phone,
+          name: student.full_name,
+          activationLink,
         })
-      : {
-          status: "skipped" as const,
-          errorCode: "notification_process_paused",
-          retryable: false,
-        };
+      : { status: "skipped" as const, errorCode: "notification_process_paused" };
 
     return jsonResponse({
       ok: true,
