@@ -7,15 +7,18 @@
 **Producción:** fuera de alcance
 
 ## Gate previo
+
 No ejecutar envío real hasta confirmar que la plantilla Meta configurada para `student_welcome`:
+
 - está aprobada;
 - usa botón URL dinámico en índice 0;
 - tiene como base exacta la ruta HTTPS `/login/student/activar`;
 - acepta el sufijo dinámico que contiene `token_hash` y `type=recovery`.
 
 ## Casos
+
 | ID | Tipo | Escenario | Esperado |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | ACT-01 | Automatizado | Contrato de código | `provision-student-access` usa Meta y no Asistian |
 | ACT-02 | Automatizado | Config faltante | El envío falla cerrado sin mandar URL incorrecta |
 | ACT-03 | Manual/Integración | Alta nueva | Llega WhatsApp con botón de activación |
@@ -27,6 +30,7 @@ No ejecutar envío real hasta confirmar que la plantilla Meta configurada para `
 | ACT-09 | Regresión | student_welcome | No rompe otros usos de Meta WhatsApp |
 
 ## Definition of Done
+
 - CI del SHA probado en verde.
 - Plantilla Meta verificada.
 - Función desplegada únicamente en Sandbox.
