@@ -54,23 +54,8 @@ async function pilotRecipientAllowed(input: {
   studioId: string;
   phone: string;
 }) {
-  const { data: runtimeConfig, error: runtimeError } = await input.adminClient
-    .from("assistant_configs")
-    .select("mode")
-    .eq("studio_id", input.studioId)
-    .maybeSingle();
-
-  if (runtimeError) {
-    return { allowed: false as const, errorCode: "assistant_mode_lookup_failed" };
-  }
-
-  // UAT-only release gate: this activation flow is restricted to the configured
-  // Meta pilot allowlist regardless of Demi runtime mode. General rollout must
-  // remove this gate in a separately reviewed release.
-  if (runtimeConfig?.mode !== "pilot") {
-    return { allowed: false as const, errorCode: "pilot_mode_required" };
-  }
-
+  // UAT-only release gate: activation sends are restricted to the configured
+  // Meta pilot allowlist even while Demi remains active for normal traffic.
   const { data: pilotIds, error: pilotError } = await input.adminClient.rpc(
     "service_get_meta_whatsapp_pilot_wa_ids",
     { target_studio_id: input.studioId },
