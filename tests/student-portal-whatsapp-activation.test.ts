@@ -21,14 +21,9 @@ describe("student portal activation via Meta WhatsApp", () => {
     expect(provision).not.toContain("pilot_mode_required");
   });
 
-  it("fails closed when activation button config is missing", () => {
-    expect(provision).toContain("META_STUDENT_ACTIVATION_BUTTON_BASE_URL");
-    expect(provision).toContain("activation_button_configuration_unverified");
-  });
-
-  it("builds a dynamic URL button for student_welcome", () => {
-    expect(template).toContain("activation_button_suffix");
-    expect(template).toContain('sub_type: "url"');
-    expect(template).toContain('index: "0"');
+  it("passes the activation URL through the approved welcome body parameter", () => {
+    expect(provision).toContain("activation_url: input.activationLink");
+    expect(template).toContain('student_welcome: ["nombre", "activation_url"]');
+    expect(template).not.toContain("activation_button_suffix");
   });
 });
