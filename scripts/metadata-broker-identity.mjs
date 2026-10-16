@@ -24,7 +24,12 @@ export function verifyGitHubOidcSignature(token, jwks, now = new Date()) {
     stage = "jwt_header";
     const header = JSON.parse(decode(parts[0]));
     if (
-      Object.keys(header).sort().join(",") !== "alg,kid,typ" ||
+      Object.keys(header).some(
+        (key) => !["alg", "kid", "typ", "x5t"].includes(key),
+      ) ||
+      (header.x5t !== undefined &&
+        (typeof header.x5t !== "string" ||
+          !/^[A-Za-z0-9_-]{20,128}$/.test(header.x5t))) ||
       header.alg !== "RS256" ||
       header.typ !== "JWT" ||
       typeof header.kid !== "string" ||

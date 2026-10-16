@@ -282,3 +282,13 @@ test("token expiry after reservation prevents the first catalog read", async () 
   );
   assert.equal(f.effects().reads, 0);
 });
+
+test("accepts the optional public x5t header without allowing remote key references", () => {
+  const h = { alg: "RS256", kid: "fixture", typ: "JWT", x5t: "a".repeat(27) };
+  assert.equal(verify(token(claims(), h)).controller_sha, sha);
+  assert.throws(
+    () =>
+      verify(token(claims(), { ...h, x5t: { url: "https://evil.example" } })),
+    /denied/,
+  );
+});

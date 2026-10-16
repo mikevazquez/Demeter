@@ -158,3 +158,26 @@ test("rehearsal workflow requests no protected environment or database credentia
   );
   assert.match(workflow, /uses: actions\/upload-artifact@[0-9a-f]{40}/);
 });
+
+test("verification clock is sampled after token retrieval, not before token issuance", async () => {
+  let clock = at;
+  const c = config({
+    now: () => clock,
+    fetcher: async (url) => {
+      if (url === OIDC_JWKS_URL) return new Response(JSON.stringify(jwks));
+      clock = new Date(at.getTime() + 2000);
+      return new Response(
+        JSON.stringify({
+          value: fixture({
+            iat: seconds + 2,
+            nbf: seconds + 2,
+            exp: seconds + 302,
+          }),
+        }),
+      );
+    },
+  });
+  const result = await rehearseOidc(c);
+  assert.equal(result.signature_verified, true);
+  assert.equal(result.production_identity_denied, true);
+});

@@ -18,7 +18,7 @@ export async function rehearseOidc({
   requestToken,
   sourceSha,
   fetcher = fetch,
-  now = new Date(),
+  now = () => new Date(),
 }) {
   let stage = "configuration";
   try {
@@ -64,9 +64,10 @@ export async function rehearseOidc({
     stage = "public_keys";
     const keys = await loadGitHubPublicKeys(fetcher);
     stage = "signature";
+    const verifiedAt = typeof now === "function" ? now() : now;
     let c;
     try {
-      c = verifyGitHubOidcSignature(token, keys, now);
+      c = verifyGitHubOidcSignature(token, keys, verifiedAt);
     } catch (error) {
       if (
         [
@@ -100,7 +101,7 @@ export async function rehearseOidc({
         token,
         keys,
         { controller_sha: CONTROLLER_SHA },
-        now,
+        verifiedAt,
       );
     } catch {
       productionDenied = true;
@@ -110,7 +111,7 @@ export async function rehearseOidc({
     parts[1] = Buffer.from(JSON.stringify(altered)).toString("base64url");
     let tamperDenied = false;
     try {
-      verifyGitHubOidcSignature(parts.join("."), keys, now);
+      verifyGitHubOidcSignature(parts.join("."), keys, verifiedAt);
     } catch {
       tamperDenied = true;
     }
@@ -119,6 +120,9 @@ export async function rehearseOidc({
       version: 1,
       source: "github-actions-live-oidc-rehearsal",
       signature_verified: true,
+      jwt_header_fields: Object.keys(
+        JSON.parse(Buffer.from(token.split(".")[0], "base64url")),
+      ).sort(),
       production_identity_denied: true,
       tampered_token_denied: true,
       release_eligible: false,
