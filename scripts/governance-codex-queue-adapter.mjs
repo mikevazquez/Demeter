@@ -21,8 +21,8 @@ export function buildReviewedIntake(request, policy, evidence, existing = []) {
     manifest: {
       mode: "reviewed",
       tasks: [{
-        state: "approved-for-queue",
-        task: { ...staged.task, status: "ready" },
+        state: "pending-review",
+        task: { ...staged.task, status: "pending-review" },
         fingerprint: staged.fingerprint,
       }],
     },
