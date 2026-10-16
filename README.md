@@ -90,3 +90,8 @@ Candidate. Un rechazo por drift no es paridad aprobada ni autorización de relea
 
 Referencia oficial de conexión Session pooler:
 https://supabase.com/docs/guides/database/connecting-to-postgres
+
+La continuación de lectores está en [la propuesta de permisos](reader-permissions-proposal.md).
+La auditoría actual detectó permisos heredados de PUBLIC sobre dos tablas net en
+producción; el alta debe denegarse hasta resolverlos con autorización específica.
+Los SQL de propuesta no se ejecutan desde workflows ni se aplicaron remotamente.
