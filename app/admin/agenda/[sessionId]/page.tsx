@@ -379,6 +379,11 @@ export default async function SessionDetailPage({
     space: "El espacio no admite ese cupo.",
     instructor: "Selecciona un instructor activo del estudio.",
     edit: "No se pudieron guardar los cambios.",
+    workshop_payment_invalid: "Revisa el importe, método y referencia del abono.",
+    workshop_payment_forbidden: "No tienes permiso para registrar este abono.",
+    workshop_payment_not_linked: "No se encontró una compra de taller válida para esta reserva.",
+    workshop_payment_exceeds_balance: "El abono supera el saldo disponible. Actualiza la sesión.",
+    workshop_payment_failed: "No se pudo registrar el abono. Revisa el historial antes de reintentar.",
     resource_space_assigned:
       "No puedes cambiar el espacio mientras existan reservas con recursos asignados. Reasigna o cancela esas reservas primero.",
     booking: "No se pudo crear la reserva.",
