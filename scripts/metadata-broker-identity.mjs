@@ -16,10 +16,12 @@ function decode(part) {
 }
 
 export function verifyGitHubOidcSignature(token, jwks, now = new Date()) {
+  let stage = "token_format";
   try {
     if (typeof token !== "string" || token.length > 16384) deny();
     const parts = token.split(".");
     if (parts.length !== 3) deny();
+    stage = "jwt_header";
     const header = JSON.parse(decode(parts[0]));
     if (
       Object.keys(header).sort().join(",") !== "alg,kid,typ" ||
@@ -29,6 +31,7 @@ export function verifyGitHubOidcSignature(token, jwks, now = new Date()) {
       !header.kid
     )
       deny();
+    stage = "public_key";
     const keys = jwks?.keys?.filter((k) => k.kid === header.kid);
     if (!Array.isArray(keys) || keys.length !== 1) deny();
     const jwk = keys[0];
@@ -40,6 +43,7 @@ export function verifyGitHubOidcSignature(token, jwks, now = new Date()) {
     )
       deny();
     const key = createPublicKey({ key: jwk, format: "jwk" });
+    stage = "signature";
     if (
       key.asymmetricKeyDetails.modulusLength < 2048 ||
       !verify(
@@ -50,6 +54,7 @@ export function verifyGitHubOidcSignature(token, jwks, now = new Date()) {
       )
     )
       deny();
+    stage = "token_time";
     const c = JSON.parse(decode(parts[1]));
     const seconds = now.getTime() / 1000;
     if (
@@ -64,10 +69,11 @@ export function verifyGitHubOidcSignature(token, jwks, now = new Date()) {
       c.nbf > c.iat
     )
       deny();
+    stage = "issuer_audience";
     if (c.iss !== OIDC_ISSUER || c.aud !== OIDC_AUDIENCE) deny();
     return c;
   } catch {
-    deny();
+    throw Object.assign(new Error("Broker identity denied"), { code: stage });
   }
 }
 

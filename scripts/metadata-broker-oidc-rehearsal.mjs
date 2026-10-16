@@ -20,6 +20,7 @@ export async function rehearseOidc({
   fetcher = fetch,
   now = new Date(),
 }) {
+  let stage = "configuration";
   try {
     if (
       typeof requestToken !== "string" ||
@@ -37,6 +38,7 @@ export async function rehearseOidc({
     )
       throw Error();
     url.searchParams.set("audience", OIDC_AUDIENCE);
+    stage = "token_request";
     const r = await fetcher(url.href, {
       headers: { Authorization: "Bearer " + requestToken },
       redirect: "error",
@@ -57,9 +59,29 @@ export async function rehearseOidc({
     } finally {
       await reader.cancel();
     }
+    stage = "token_response";
     const token = JSON.parse(Buffer.concat(chunks).toString("utf8")).value;
+    stage = "public_keys";
     const keys = await loadGitHubPublicKeys(fetcher);
-    const c = verifyGitHubOidcSignature(token, keys, now);
+    stage = "signature";
+    let c;
+    try {
+      c = verifyGitHubOidcSignature(token, keys, now);
+    } catch (error) {
+      if (
+        [
+          "token_format",
+          "jwt_header",
+          "public_key",
+          "signature",
+          "token_time",
+          "issuer_audience",
+        ].includes(error.code)
+      )
+        stage = error.code;
+      throw Error();
+    }
+    stage = "rehearsal_claims";
     if (
       c.repository !== "mikevazquez/Demeter" ||
       c.repository_id !== "1370494017" ||
@@ -71,6 +93,7 @@ export async function rehearseOidc({
       c.environment !== undefined
     )
       throw Error();
+    stage = "production_denial";
     let productionDenied = false;
     try {
       authenticateController(
@@ -108,7 +131,10 @@ export async function rehearseOidc({
       sql_executed: false,
     };
   } catch {
-    throw new Error("OIDC rehearsal denied; no production authorization");
+    throw Object.assign(
+      new Error("OIDC rehearsal denied; no production authorization"),
+      { code: stage },
+    );
   }
 }
 if (
@@ -129,9 +155,11 @@ if (
     console.log(
       "PASS: live OIDC signature verified; production identity denied; no SQL",
     );
-  } catch {
+  } catch (error) {
     console.error(
-      "DENIED: OIDC rehearsal incomplete; no production authorization",
+      "DENIED: OIDC rehearsal incomplete; no production authorization [" +
+        (error.code ?? "configuration") +
+        "]",
     );
     process.exitCode = 1;
   }

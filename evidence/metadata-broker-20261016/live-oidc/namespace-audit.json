@@ -1,0 +1,28 @@
+{
+  "observed_at": "2026-10-16T18:49:25.733Z",
+  "required_namespace_ruleset_found": false,
+  "existing_rulesets": [
+    {
+      "id": 24974628,
+      "name": "Studio Flow - Protección de producción.",
+      "enforcement": "active",
+      "patterns": ["~DEFAULT_BRANCH"],
+      "rule_types": [
+        "deletion",
+        "non_fast_forward",
+        "pull_request",
+        "required_status_checks",
+        "code_quality"
+      ]
+    },
+    {
+      "id": 25048133,
+      "name": "sf-gov-001-controller",
+      "enforcement": "active",
+      "patterns": ["refs/heads/governance/sf-gov-001-controller"],
+      "rule_types": ["deletion", "non_fast_forward", "pull_request"]
+    }
+  ],
+  "required_pattern": "refs/heads/evidence/sf-gov-broker-reservations/*",
+  "consequence": "Production reservation is denied until an active create-only ruleset is published and its ID configured."
+}
