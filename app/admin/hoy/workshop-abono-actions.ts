@@ -25,14 +25,14 @@ export async function registerWorkshopAbono(data: FormData) {
     .select("purchase_id,session_id").eq("reservation_id", reservationId).eq("session_id", sessionId).maybeSingle();
   if (!link) return fail("workshop_payment_not_linked");
   const { data: purchase } = await ctx.supabase.from("workshop_purchases")
-    .select("id,sale_id,status").eq("id", link.purchase_id).eq("studio_id", ctx.studio.id).eq("sale_id", saleId).maybeSingle();
+    .select("id,sale_id,student_id,status").eq("id", link.purchase_id).eq("studio_id", ctx.studio.id).eq("sale_id", saleId).maybeSingle();
   if (!purchase || purchase.status !== "active") fail("workshop_payment_not_linked");
   const { data: sale } = await ctx.supabase.from("sales")
-    .select("id,status").eq("id", saleId).eq("studio_id", ctx.studio.id).maybeSingle();
+    .select("id,status,student_id").eq("id", saleId).eq("studio_id", ctx.studio.id).maybeSingle();
   if (!sale || sale.status !== "confirmed") fail("workshop_payment_not_linked");
   const { data: reservation } = await ctx.supabase.from("reservations")
     .select("id,student_id").eq("id", reservationId).eq("session_id", sessionId).eq("studio_id", ctx.studio.id).maybeSingle();
-  if (!reservation) fail("workshop_payment_not_linked");
+  if (!reservation || reservation.student_id !== purchase?.student_id || reservation.student_id !== sale?.student_id) fail("workshop_payment_not_linked");
 
   // The existing transactional RPC locks the sale and enforces the remaining balance.
   const { error } = await ctx.supabase.rpc("register_sale_payment", {
@@ -42,7 +42,11 @@ export async function registerWorkshopAbono(data: FormData) {
     payment_reference: reference,
     payment_notes: "Abono de taller desde Agenda",
   });
-  if (error) fail(error.message.includes("payment_exceeds_balance") ? "workshop_payment_exceeds_balance" : "workshop_payment_failed");
+  if (error) {
+    const message = error.message ?? "";
+    if (message.includes("workshop_agenda_abono_reference_unique") || message.includes("23505")) fail("workshop_payment_duplicate");
+    fail(message.includes("payment_exceeds_balance") || message.includes("sale_already_paid") ? "workshop_payment_exceeds_balance" : "workshop_payment_failed");
+  }
   revalidatePath(back);
   revalidatePath("/admin/ventas");
   revalidatePath(`/admin/ventas/${saleId}`);
