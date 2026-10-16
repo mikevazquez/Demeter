@@ -68,6 +68,13 @@ export function WorkshopEditorForm({
   const sequence = useRef(rows.length);
   const updateRow = (key: string, patch: Partial<Row>) =>
     setRows((previous) => previous.map((row) => (row.key === key ? { ...row, ...patch } : row)));
+  const currentStepValid = [
+    Boolean(title.trim()),
+    rows.every((row) => Boolean(row.date && row.time && row.disciplineId) && row.durationMinutes >= 15 && row.capacity >= 1),
+    Boolean(receivedAmountMinor(fullPrice)) && (!allowIndividual || rows.every((row) => Boolean(receivedAmountMinor(row.price)))),
+    depositMode === "full" || (Boolean(due) && (depositMode === "fixed" ? Boolean(receivedAmountMinor(deposit)) : Number(deposit) > 0 && Number(deposit) <= 100)),
+    true,
+  ];
   const invalidDraft = !title.trim() || (!context.locked && (
     !context.disciplines.length ||
     !receivedAmountMinor(fullPrice) ||
@@ -415,6 +422,7 @@ export function WorkshopEditorForm({
           <p>${depositMode === 'full' ? 'Pago completo' : depositMode === 'fixed' ? 'Anticipo fijo: ' + deposit : 'Anticipo porcentual: ' + deposit + '%'}</p>
           <p>${allowIndividual ? 'Permite comprar fechas individuales' : 'Solo compra completa'}</p>
           <p>Confirma que las fechas, precios y condiciones sean correctos antes de guardar.</p>
+          {invalidDraft ? <p role="alert">Hay información incompleta. Regresa a los pasos anteriores para corregirla.</p> : null}
         </section>
       ) : null}
       {state.error ? (
@@ -425,7 +433,7 @@ export function WorkshopEditorForm({
       <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
         {step > 0 ? <button type="button" onClick={() => setStep((current) => current - 1)}>Anterior</button> : null}
         {step < 4 ? (
-          <button className="activities-next-button" type="button" onClick={() => setStep((current) => current + 1)}>Siguiente</button>
+          <button className="activities-next-button" type="button" disabled={!context.locked && !currentStepValid[step]} onClick={() => setStep((current) => current + 1)}>Siguiente</button>
         ) : (
       <button
         className="activities-next-button"
