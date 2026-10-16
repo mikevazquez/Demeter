@@ -68,6 +68,12 @@ export function WorkshopEditorForm({
   const sequence = useRef(rows.length);
   const updateRow = (key: string, patch: Partial<Row>) =>
     setRows((previous) => previous.map((row) => (row.key === key ? { ...row, ...patch } : row)));
+  const invalidDraft = !title.trim() || (!context.locked && (
+    !context.disciplines.length ||
+    !receivedAmountMinor(fullPrice) ||
+    rows.some((row) => !row.date || !row.time || !row.disciplineId || (allowIndividual && !receivedAmountMinor(row.price))) ||
+    (depositMode !== "full" && (!due || (depositMode === "fixed" ? !receivedAmountMinor(deposit) : !(Number(deposit) > 0 && Number(deposit) <= 100))))
+  ));
   const payload: WorkshopDraft | Pick<WorkshopDraft, "title"> = context.locked
     ? { title: title.trim() }
     : {
@@ -307,7 +313,16 @@ export function WorkshopEditorForm({
           Permitir compra de fechas individuales
         </label>
 
-          {allowIndividual ? <p>Asigna el precio de cada fecha en el paso anterior. Puedes volver sin perder datos.</p> : null}
+          {allowIndividual ? (
+            <div className="activities-form-grid">
+              {rows.map((row, index) => (
+                <label className="activities-field" key={row.key}>
+                  <span>Precio individual · Fecha {index + 1}</span>
+                  <input type="number" inputMode="decimal" min="0.01" step="0.01" required value={row.price} onChange={(event) => updateRow(row.key, { price: event.target.value })} />
+                </label>
+              ))}
+            </div>
+          ) : null}
                     <label className="activities-field">
             <span>¿Requiere inscripción al estudio?</span>
             <select value={enrollment} onChange={(event) => setEnrollment(event.target.value)}>
@@ -415,7 +430,7 @@ export function WorkshopEditorForm({
       <button
         className="activities-next-button"
         type="submit"
-        disabled={pending || !title.trim() || (!context.locked && (!context.disciplines.length || !receivedAmountMinor(fullPrice) || rows.some((row) => !row.date || !row.time || !row.disciplineId || (allowIndividual && !receivedAmountMinor(row.price))) || (depositMode !== "full" && (!due || (depositMode === "fixed" ? !receivedAmountMinor(deposit) : !(Number(deposit) > 0 && Number(deposit) <= 100)))))}
+        disabled={pending || invalidDraft}
       >
         {pending ? "Guardando…" : "Guardar taller"}
       </button>
