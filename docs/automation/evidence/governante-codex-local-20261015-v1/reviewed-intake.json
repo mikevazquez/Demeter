@@ -1,0 +1,31 @@
+{
+  "mode": "reviewed",
+  "tasks": [
+    {
+      "state": "approved-for-queue",
+      "task": {
+        "id": "governante-codex-local-20261015-v1",
+        "owner": "codex-1",
+        "status": "ready",
+        "kind": "code",
+        "allowedPaths": [
+          "tests/automation/fixtures/governante-codex-local-proof.mjs"
+        ],
+        "checks": [
+          [
+            "node",
+            "--check",
+            "tests/automation/fixtures/governante-codex-local-proof.mjs"
+          ]
+        ],
+        "issueNumber": 306,
+        "issueBodySha256": "5c258b1cf5ef8b4eebfd03706a09a0e32e4675971d4538535fdd48f08c67613b",
+        "issueUpdatedAt": "2026-10-16T02:47:13Z",
+        "requiredText": [
+          "GOVERNANTE-CODEX-LOCAL-V1"
+        ]
+      },
+      "fingerprint": "f1041a098755ec6ac7024645b5d494eac27836cd1fbd914ae6679c6ec4509f0a"
+    }
+  ]
+}

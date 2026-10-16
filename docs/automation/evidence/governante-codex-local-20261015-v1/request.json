@@ -1,0 +1,11 @@
+{
+  "id": "governante-codex-local-20261015-v1",
+  "product": "Studio Flow",
+  "owner": "codex-1",
+  "baseSha": "2af9188523c5e18bed2d647092c3395c6f428cd9",
+  "allowedPaths": [
+    "tests/automation/fixtures/governante-codex-local-proof.mjs"
+  ],
+  "externalEffects": false,
+  "productionAuthorized": false
+}

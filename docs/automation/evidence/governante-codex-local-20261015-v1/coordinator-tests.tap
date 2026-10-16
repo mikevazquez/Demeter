@@ -1,0 +1,41 @@
+✔ admits bounded development task with fresh Notion evidence (2.473958ms)
+✔ blocks stale Notion context (0.637955ms)
+✔ blocks an unbounded freshness window (0.220171ms)
+✔ blocks duplicate task identities (0.415646ms)
+✔ blocks overlapping task file scopes (0.459858ms)
+✔ rejects protected/traversal path ../README.md (0.186902ms)
+✔ rejects protected/traversal path docs/automation/../README.md (0.134825ms)
+✔ rejects protected/traversal path .github/workflows/prod.yml (0.176623ms)
+✔ rejects protected/traversal path supabase/migrations/prod.sql (0.192005ms)
+✔ rejects protected/traversal path docs/automation/AGENTS.md (0.267816ms)
+✔ code task requires independent checks (0.252809ms)
+✔ rejects arbitrary shell admission (0.365276ms)
+✔ issue edits invalidate admission (0.420215ms)
+✔ closed issue invalidates admission (0.149558ms)
+✔ accepts useful plain Markdown result (0.407372ms)
+✔ rejects out-of-scope output (0.162898ms)
+✔ rejects symlink file mode (0.084064ms)
+✔ rejects executable file mode (0.063031ms)
+✔ rejects binary output (0.081379ms)
+✔ rejects deleted files (0.136913ms)
+✔ rejects missing acceptance marker (0.092096ms)
+✔ rejects empty changes (0.061971ms)
+✔ task branch stable across retries (0.055465ms)
+✔ selection skips PRs in every state without generating again (46.036265ms)
+✔ selection detects an orphan publication for automatic recovery (2.396698ms)
+✔ pilot selector admits exactly the named task and rejects unknown ids (2.529504ms)
+✔ live Notion change stops selection rather than silently using stale context (0.436611ms)
+✔ publisher rejects forged artifact provenance before repository mutation (1.674564ms)
+✔ publisher makes one draft PR and safely deduplicates a second run (2.283343ms)
+✔ real verifier retry accepts a repaired result and rejects later scope expansion (388.09912ms)
+✔ reviewed intake matches existing coordinator queue validation (3.331866ms)
+✔ coordinator rejects manifest missing matching queue task (0.576107ms)
+✔ coordinator rejects unapproved intake and changed issue digest (1.582495ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 564.625907

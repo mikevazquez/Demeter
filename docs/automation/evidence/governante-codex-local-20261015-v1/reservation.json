@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "mode": "local-chatgpt",
+  "id": "governante-codex-local-20261015-v1",
+  "issue": "https://github.com/mikevazquez/Demeter/issues/306",
+  "sourceSha": "2af9188523c5e18bed2d647092c3395c6f428cd9",
+  "contractSha256": "d558bcda6b5eeb60acb4f6a39ae8f6cf4bb6536dfa1bcba71846460dfce0b0bb",
+  "requestFingerprint": "f1041a098755ec6ac7024645b5d494eac27836cd1fbd914ae6679c6ec4509f0a",
+  "localExecutionId": "local-governante-codex-20261015-v1",
+  "createdAt": "2026-10-16T02:48:08.874Z",
+  "maxCodexInvocations": 1,
+  "apiKeyAllowed": false,
+  "productionAuthorized": false,
+  "stages": {
+    "select": "pending",
+    "execute": "pending",
+    "certify": "pending",
+    "publish": "pending"
+  },
+  "sharedActionsJournalModified": false,
+  "localModeAuthorizedByUser": true
+}
