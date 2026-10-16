@@ -102,3 +102,7 @@ Las pruebas de componentes tienen [CI aprobada](https://github.com/mikevazquez/D
 ## Condición para declarar cierre
 
 Ninguna fila con condición pendiente; evidencia exacta y recuperable por SHA/entorno/caso; integración operativa observada, responsables y aceptación registrados. Si se cierra un alcance revisado, guardar decisión explícita y trasladar pendientes sin convertirlos en PASS. Cerrar un bloque no concede promoción.
+
+## Lectores — continuación del 16 octubre 2026
+
+[Propuesta de permisos y evidencias](evidence/governance-readers-20261016/README.md): seis pruebas PostgreSQL aisladas PASS, contrato/TLS/runtime del SHA b9e1291b SUCCESS. El preflight productivo detectó dos tablas net accesibles por PUBLIC; NOINHERIT no elimina esa herencia. La propuesta conserva accesos explícitos de los roles conocidos y crea lectores NOLOGIN; no se aplicó. Falta autorización específica para el cambio productivo y administrador para credenciales seguras. El hito sigue pendiente: **9/24 terminados, falta 62,5%; fase 1 falta 62,5%**.

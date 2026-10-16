@@ -169,12 +169,14 @@
         "https://app.notion.com/p/3f8d78f7146381cca513d8c31ea40086",
         "https://github.com/mikevazquez/Demeter/actions/runs/38523279395",
         "https://github.com/mikevazquez/Demeter/pull/308",
-        "https://github.com/mikevazquez/Demeter/actions/runs/38857703808"
+        "https://github.com/mikevazquez/Demeter/actions/runs/38857703808",
+        "docs/automation/evidence/governance-readers-20261016/README.md"
       ],
-      "nextAction": "Revisar PR #308; preparar lectores mínimos mediante administración autorizada y secretos seguros; después captura protegida autenticada, negativo real por drift y conciliación Candidate. Session IPv4/TLS desde runner ya PASS; no repetir endpoints ni diagnóstico resuelto.",
+      "nextAction": "Decisión específica sobre propuesta b9e1291b: retirar USAGE net/PUBLIC preservando roles conocidos y alta NOLOGIN; no aplicada. Después credenciales seguras por administrador, captura autenticada, negativo por drift y conciliación Candidate.",
       "closureCondition": "Atestación ligada a candidato/manifiesto exactos y denegación real ante diferencias; no usar postgres amplio como sustituto.",
       "sourceObservation": "Endpoints de ambos proyectos confirmados por capturas: [aws-0-us-east-1.pooler.supabase.com:5432](http://aws-0-us-east-1.pooler.supabase.com:5432). Prueba DNS local falló antes de conectar; falta validación en runner, adaptación y lectores mínimos. Preparado, no UAT aprobado.",
-      "observedIntegration": "PR #308 Draft; 9 tests contrato + TLS real GitHub PASS; 8 regresiones locales PASS; lector ausente en ambas bases por SELECT-only. No captura autenticada ni UAT aprobado."
+      "observedIntegration": "PR #308 Draft; 9 tests contrato + TLS real GitHub PASS; 8 regresiones locales PASS; lector ausente en ambas bases por SELECT-only. No captura autenticada ni UAT aprobado.",
+      "latestReaderAclFinding": "PUBLIC en producción permite acceso a dos tablas net; NOINHERIT no lo elimina. Seis pruebas aisladas PASS y CI contrato/TLS/runtime de b9e1291b SUCCESS. No se cambió ninguna ACL remota ni se creó lector. Candidate sin relaciones/definers PUBLIC accesibles en el preflight."
     },
     {
       "id": "OPS-UAT-01",
@@ -877,5 +879,18 @@
     },
     "realSchemaCaptureCompleted": false,
     "formalUatApproved": false
+  },
+  "readerPermissionsProposal": {
+    "status": "proposal-tested-not-applied-awaiting-specific-production-authorization",
+    "proposalSha": "b9e1291b66d0ee3866c112de199b7633c65853a4",
+    "proposalPr": "https://github.com/mikevazquez/Demeter/pull/308",
+    "isolatedTestsPassed": 6,
+    "contractRun": "https://github.com/mikevazquez/Demeter/actions/runs/38859805792",
+    "contractResult": "success",
+    "productionPublicRelationsAccessible": 2,
+    "candidatePublicRelationsAccessible": 0,
+    "readerExistsInEitherProject": false,
+    "milestoneCompleted": false,
+    "evidence": "docs/automation/evidence/governance-readers-20261016/README.md"
   }
 }

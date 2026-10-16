@@ -1,0 +1,210 @@
+{
+  "checkedDateUtc": "2026-10-16",
+  "productionRef": "qfhojvgvhrbautvczffq",
+  "candidateRef": "sdmxtlgjkodidjtvikng",
+  "queryScope": "SELECT-only ACL/catalog and cron execution metadata; no business rows, HTTP payloads, cron command text, vault or credentials",
+  "productionPreflight": [
+    {
+      "reader_preflight": {
+        "database": "postgres",
+        "reader_exists": false,
+        "public_relation_access": 2,
+        "public_definer_access": 0,
+        "public_schema_create": [],
+        "public_database_privileges": [
+          "CONNECT",
+          "TEMPORARY"
+        ]
+      }
+    }
+  ],
+  "candidatePreflight": [
+    {
+      "reader_preflight": {
+        "database": "postgres",
+        "reader_exists": false,
+        "public_relation_access": 0,
+        "public_definer_access": 0,
+        "public_schema_create": [],
+        "public_database_privileges": [
+          "CONNECT",
+          "TEMPORARY"
+        ]
+      }
+    }
+  ],
+  "productionPublicRelations": [
+    {
+      "schema": "net",
+      "relname": "_http_response",
+      "relkind": "r",
+      "public_privileges": [
+        "DELETE",
+        "INSERT",
+        "MAINTAIN",
+        "REFERENCES",
+        "SELECT",
+        "TRIGGER",
+        "TRUNCATE",
+        "UPDATE"
+      ]
+    },
+    {
+      "schema": "net",
+      "relname": "http_request_queue",
+      "relkind": "r",
+      "public_privileges": [
+        "DELETE",
+        "INSERT",
+        "MAINTAIN",
+        "REFERENCES",
+        "SELECT",
+        "TRIGGER",
+        "TRUNCATE",
+        "UPDATE"
+      ]
+    }
+  ],
+  "dependencyInventory": [
+    {
+      "net_dependency_inventory": {
+        "net_schema_owner": "supabase_admin",
+        "public_net_functions": [
+          "_await_response",
+          "_encode_url_with_params_array",
+          "_http_collect_response",
+          "_urlencode_string",
+          "check_worker_is_up",
+          "http_collect_response",
+          "http_delete",
+          "http_get",
+          "http_post",
+          "wait_until_running",
+          "wake",
+          "worker_restart"
+        ],
+        "catalog_callers": [
+          {
+            "schema": "extensions",
+            "name": "grant_pg_net_access",
+            "owner": "supabase_admin",
+            "security_definer": false
+          },
+          {
+            "schema": "private",
+            "name": "dispatch_booking_cancelled_event_id",
+            "owner": "postgres",
+            "security_definer": true
+          },
+          {
+            "schema": "private",
+            "name": "dispatch_booking_created_event_id",
+            "owner": "postgres",
+            "security_definer": true
+          },
+          {
+            "schema": "private",
+            "name": "dispatch_class_reminder_event_id",
+            "owner": "postgres",
+            "security_definer": true
+          },
+          {
+            "schema": "private",
+            "name": "dispatch_session_minimum_cancelled_event_id",
+            "owner": "postgres",
+            "security_definer": true
+          },
+          {
+            "schema": "private",
+            "name": "dispatch_waitlist_promoted_event_id",
+            "owner": "postgres",
+            "security_definer": true
+          }
+        ]
+      }
+    }
+  ],
+  "executionInventory": [
+    {
+      "net_execution_inventory": {
+        "extension_version": "0.20.4",
+        "net_schema_grants": [
+          {
+            "role": "supabase_admin",
+            "privilege": "USAGE"
+          },
+          {
+            "role": "supabase_admin",
+            "privilege": "CREATE"
+          },
+          {
+            "role": "PUBLIC",
+            "privilege": "USAGE"
+          },
+          {
+            "role": "supabase_functions_admin",
+            "privilege": "USAGE"
+          },
+          {
+            "role": "postgres",
+            "privilege": "USAGE"
+          },
+          {
+            "role": "anon",
+            "privilege": "USAGE"
+          },
+          {
+            "role": "authenticated",
+            "privilege": "USAGE"
+          },
+          {
+            "role": "service_role",
+            "privilege": "USAGE"
+          }
+        ],
+        "direct_net_cron_callers": [
+          {
+            "jobid": 10,
+            "username": "postgres",
+            "database": "postgres",
+            "active": true
+          },
+          {
+            "jobid": 11,
+            "username": "postgres",
+            "database": "postgres",
+            "active": true
+          },
+          {
+            "jobid": 18,
+            "username": "postgres",
+            "database": "postgres",
+            "active": true
+          },
+          {
+            "jobid": 19,
+            "username": "postgres",
+            "database": "postgres",
+            "active": true
+          }
+        ]
+      }
+    }
+  ],
+  "eventTriggerInventory": [
+    {
+      "evtname": "issue_pg_net_access",
+      "evtevent": "ddl_command_end",
+      "evtenabled": "O",
+      "evttags": [
+        "CREATE EXTENSION"
+      ],
+      "function_schema": "extensions",
+      "function_name": "grant_pg_net_access"
+    }
+  ],
+  "remoteWritesPerformed": false,
+  "productionRoleCreationAuthorized": false,
+  "proposalSha": "b9e1291b66d0ee3866c112de199b7633c65853a4",
+  "proposalPr": "https://github.com/mikevazquez/Demeter/pull/308"
+}

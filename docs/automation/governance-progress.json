@@ -1,7 +1,7 @@
 {
   "version": 1,
   "baselineDateUtc": "2026-10-16",
-  "updatedAtUtc": "2026-10-16T05:59:08.383701+00:00",
+  "updatedAtUtc": "2026-10-16T06:14:00.150813+00:00",
   "basis": "24 fixed, equally weighted technical milestones; a reporting breakdown of existing scope, not new tasks or replacement UAT criteria.",
   "countingRule": "Count done only with evidence of the named milestone; Draft implementation milestones do not imply merged/activated/accepted UAT. Keep the same 24 items across reports. Any scope change must be explicit and preserve historical baseline.",
   "percentMeaning": "Count of milestones, not estimated effort, cost, time or formal UAT approval.",
@@ -254,5 +254,18 @@
         }
       ]
     }
-  ]
+  ],
+  "latestReaderPreparation": {
+    "status": "proposal-tested-not-applied-awaiting-specific-production-authorization",
+    "proposalSha": "b9e1291b66d0ee3866c112de199b7633c65853a4",
+    "proposalPr": "https://github.com/mikevazquez/Demeter/pull/308",
+    "isolatedTestsPassed": 6,
+    "contractRun": "https://github.com/mikevazquez/Demeter/actions/runs/38859805792",
+    "contractResult": "success",
+    "productionPublicRelationsAccessible": 2,
+    "candidatePublicRelationsAccessible": 0,
+    "readerExistsInEitherProject": false,
+    "milestoneCompleted": false,
+    "evidence": "docs/automation/evidence/governance-readers-20261016/README.md"
+  }
 }
