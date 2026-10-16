@@ -77,32 +77,6 @@ async function pilotRecipientAllowed(input: {
   return { allowed: true as const, errorCode: null };
 }
 
-// Fail closed until the exact approved Meta dynamic URL prefix is verified.
-function activationButtonSuffix(activationLink: string) {
-  const prefix = Deno.env.get("META_STUDENT_ACTIVATION_BUTTON_BASE_URL")?.trim();
-  if (!prefix || !prefix.startsWith("https://") || !activationLink.startsWith(prefix)) {
-    return null;
-  }
-  // Prevent an arbitrary HTTPS origin or lookalike path from being accepted.
-  try {
-    const base = new URL(prefix);
-    const link = new URL(activationLink);
-    if (base.origin !== link.origin || link.pathname !== "/login/student/activar") {
-      return null;
-    }
-    if (base.hash || base.username || base.password || link.hash) return null;
-    if (base.search || base.pathname !== "/login/student/activar") return null;
-    if (!link.searchParams.has("token_hash") || link.searchParams.get("type") !== "recovery") {
-      return null;
-    }
-  } catch {
-    return null;
-  }
-  const suffix = activationLink.slice(prefix.length);
-  if (!suffix || suffix.length > 2048 || /\s|#/.test(suffix)) return null;
-  return suffix;
-}
-
 async function sendActivationWhatsApp(input: {
   adminClient: Parameters<typeof sendMetaWhatsAppTemplate>[0]["adminClient"];
   studioId: string;
@@ -121,17 +95,13 @@ async function sendActivationWhatsApp(input: {
     return { status: "skipped" as const, errorCode: pilotGate.errorCode };
   }
 
-  const suffix = activationButtonSuffix(input.activationLink);
-  if (!suffix) {
-    return { status: "skipped" as const, errorCode: "activation_button_configuration_unverified" };
-  }
   return await sendMetaWhatsAppTemplate({
     adminClient: input.adminClient,
     studioId: input.studioId,
     template: "student_welcome",
     eventId: `student_welcome:${input.studentId}:${input.userId}:${crypto.randomUUID()}`,
     recipient: input.phone,
-    variables: { recipient_name: input.name, activation_button_suffix: suffix },
+    variables: { recipient_name: input.name, activation_url: input.activationLink },
   });
 }
 
