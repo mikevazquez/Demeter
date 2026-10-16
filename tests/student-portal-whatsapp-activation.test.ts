@@ -23,6 +23,7 @@ describe("student portal activation via Meta WhatsApp", () => {
 
   it("passes the activation URL through the approved welcome body parameter", () => {
     expect(provision).toContain("activation_url: input.activationLink");
+    expect(provision).toContain('metaTemplateNameOverride: "bienvenida_alumna_portal"');
     expect(template).toContain('student_welcome: ["nombre", "activation_url"]');
     expect(template).not.toContain("activation_button_suffix");
   });
