@@ -92,15 +92,24 @@ async function pilotRecipientAllowed(input: {
 // Fail closed until the exact approved Meta dynamic URL prefix is verified.
 function activationButtonSuffix(activationLink: string) {
   const prefix = Deno.env.get("META_STUDENT_ACTIVATION_BUTTON_BASE_URL")?.trim();
-  if (!prefix || !prefix.startsWith("https://") || !activationLink.startsWith(prefix)) return null;
+  if (!prefix || !prefix.startsWith("https://") || !activationLink.startsWith(prefix)) {
+    return null;
+  }
   // Prevent an arbitrary HTTPS origin or lookalike path from being accepted.
   try {
     const base = new URL(prefix);
     const link = new URL(activationLink);
-    if (base.origin !== link.origin || link.pathname !== "/login/student/activar") return null;
+    if (base.origin !== link.origin || link.pathname !== "/login/student/activar") {
+      return null;
+    }
     if (base.hash || base.username || base.password || link.hash) return null;
     if (base.search || base.pathname !== "/login/student/activar") return null;
-    if (!link.searchParams.has("token_hash") || link.searchParams.get("type") !== "recovery") return null;
+    if (
+      !link.searchParams.has("token_hash") ||
+      link.searchParams.get("type") !== "recovery"
+    ) {
+      return null;
+    }
   } catch {
     return null;
   }
