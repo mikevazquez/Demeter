@@ -1,0 +1,14 @@
+{
+  "request_id": "f4c8e712-2c46-48d1-b1a9-cf0ef476ca31",
+  "branch": "refs/heads/evidence/sf-gov-broker-reservation-rehearsal/f4c8e712-2c46-48d1-b1a9-cf0ef476ca31",
+  "reservation_commit": "fb5772bf01eebeff0543dc00f59462a7d6b0694c",
+  "initial_granted": true,
+  "independent_process_replay_granted": false,
+  "transport": "Existing connected GitHub app via JSON-line bridge to the actual reservation module; no credential in Node process",
+  "rehearsal": true,
+  "real_oidc_token_used": false,
+  "capture_calls": 0,
+  "protected_namespace_verified": false,
+  "atomic_concurrency_test": "Local adapter tests; remote create-ref bridge was sequential, not a hosted race",
+  "scope": "One persistent rehearsal reservation; no queue task or production capture"
+}

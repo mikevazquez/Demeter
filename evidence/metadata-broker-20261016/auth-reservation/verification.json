@@ -1,0 +1,23 @@
+{
+  "recorded_at": "2026-10-16T18:40:20.251153+00:00",
+  "base_sha": "23888ddf0de5aa1fe3af870d4f21993483fc5611",
+  "node_version": "v24.19.0",
+  "test_exit": 0,
+  "expected_tests": 86,
+  "source_sha256": {
+    "scripts/metadata-broker-identity.mjs": "e6df652db1ae4ce32bdd5ebff5cec0151afaef756ff2c4d1bae5fcbf6754b88a",
+    "scripts/metadata-broker-reservation.mjs": "c879c17dfc13e5528f4ec402b65855e13b91cca5e5b2f692693f5d2970c8f1e1",
+    "scripts/metadata-broker-reservation-rehearsal.mjs": "c7c41e5fd343a47042cdd795868f7f380733c754d1caec13958f09f2020b8c5a",
+    "scripts/metadata-broker-authenticated.mjs": "c5ac3009eb8231b7ebb00cae14f7c06848096c47b571a3258296ff5878a67de0",
+    "scripts/metadata-broker-identity.test.mjs": "fa024feee4e0baac1dc112f378a0a3ca12eb8cc556e5dd0ee1bec6f0b9be9e13",
+    "scripts/metadata-broker-authenticated.test.mjs": "37ba8178a1024aaef5b0c4483363cac4846c68e7e239d4a010c36a6c01a0aeba",
+    "scripts/metadata-broker-reservation.test.mjs": "b009c32c99f4d91c1a113118d4ede44c47dc4ec9df575708a73a7961a70851cb"
+  },
+  "identity_evidence": "RSA-signed synthetic identities; no real Actions bearer token obtained or saved",
+  "reservation_evidence": "Actual module run in two separate Node processes using connected GitHub app bridge; one reservation granted, independent replay denied",
+  "remote_concurrency_race_verified": false,
+  "production_capture_activated": false,
+  "production_changed": false,
+  "queue_tasks_executed": 0,
+  "additional_paid_services": false
+}

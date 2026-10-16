@@ -1,5 +1,9 @@
 # INV-UAT-01 — prototipo de frontera para captura de metadatos
 
+> Continuación: [identidad y reserva durable implementadas](metadata-broker-auth-reservation.md).
+> Las limitaciones históricas de este primer prototipo se conservan abajo;
+> la integración de Actions y el transporte productivo siguen sin activarse.
+
 ## Resultado de este bloque
 
 Prototipo local implementado en `scripts/metadata-broker-prototype.mjs`, separado
