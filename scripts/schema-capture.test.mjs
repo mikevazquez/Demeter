@@ -153,6 +153,7 @@ test("release preflight requires captured parity, passing UAT and the exact cand
     case_id: "GOV-UAT-01",
     result: "passed",
     evidence_url: "https://github.com/mikevazquez/Demeter/actions/runs/1",
+    candidate_sha: config.candidateSha,
   };
   assert.equal(
     captureReleaseGate(manifest, config, () => response()).candidate_sha,

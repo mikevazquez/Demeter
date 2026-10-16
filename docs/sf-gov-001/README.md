@@ -102,3 +102,17 @@ persona que modifica la rama.
   autorización explícita para cada promoción.
 
 [Especificación y matriz UAT en Notion](https://app.notion.com/p/3f8d78f7146381e49f16cc31a235f575).
+
+### Identidad de evidencia UAT aprobada
+
+Cada caso ordinario con `result: "passed"` requiere `evidence_url` permitido y
+`candidate_sha` completo de 40 caracteres hexadecimales, idéntico al del
+manifiesto. Se rechazan evidencias sin SHA o de otro candidato tanto en Sandbox
+como en preparación de producción y cierre. Cada caso se comprueba por separado.
+Los casos PIL/DOC de GOV-COM-02 conservan el vínculo de SHA en ambas etapas;
+no necesitan un SHA superior redundante. Los borradores Sandbox pueden seguir
+pendientes.
+
+Esta comprobación valida la declaración del manifiesto. No autentica el
+contenido remoto del enlace, no aprueba UAT y no autoriza una promoción. La
+validación de artefactos, destino y aprobación protegida sigue siendo necesaria.

@@ -95,6 +95,9 @@ export function validateReleaseManifest(
       if (item.phases && !phasedCase(item)) {
         errors.push("Two-stage UAT is limited to SF-GOV-001 PIL-UAT-01 and DOC-UAT-01");
       }
+      if (item.result === "passed" && !phasedCase(item) && !validPhaseProof(item)) {
+        errors.push(item.case_id + " passed UAT evidence must match manifest candidate_sha");
+      }
       if (phasedCase(item) && item.result === "passed") {
         if (
           !validPhaseProof(item.phases?.predeployment) ||

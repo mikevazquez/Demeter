@@ -1,0 +1,17 @@
+{
+  "recorded_at": "2026-10-16T11:54:23.277601+00:00",
+  "base_sha": "27e90f1d8ec1ec75725aa6a533e45b267d4ae7ce",
+  "execution": "local isolated worktree; existing installed dependencies; no network database or model API calls",
+  "node_version": "v24.19.0",
+  "original_validator_new_regression_exit": 1,
+  "fixed_validator_suite_exit": 0,
+  "source_sha256": {
+    "scripts/validate-release-manifest.mjs": "48e87486194528c5d6ac46cf216a6be5f9467b577e8d254fb858c7c357484d47",
+    "scripts/governance-policy-checks.mjs": "8e2ee0085dd413fcc4d21f89f77a16510ba9559cf8b9a726a3a37529bf8e3a9a",
+    "scripts/schema-capture.test.mjs": "1d1232e922049a9a123df7d29a5cd8348bca8aa7d5784daeb4b7031b36007d94"
+  },
+  "production_modified": false,
+  "queue_tasks_executed": 0,
+  "deployment_performed": false,
+  "additional_paid_services_used": false
+}

@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { spawnSync } from "node:child_process";
 
 import { validateReleaseManifest } from "./validate-release-manifest.mjs";
 import {
@@ -93,6 +97,7 @@ test("validates a complete candidate without granting release approval", () => {
     {
       case_id: "GOV-UAT-01",
       result: "passed",
+      candidate_sha: candidate,
       evidence_url: m.references.pr,
     },
   ];
@@ -121,6 +126,7 @@ test("rejects untrusted evidence URLs", () => {
     {
       case_id: "GOV-UAT-01",
       result: "passed",
+      candidate_sha: candidate,
       evidence_url: "https://example.com/fake",
     },
   ];
@@ -153,7 +159,14 @@ test("blocks production staging without protected schema attestation", () => {
   const m = draft();
   m.target = "production-staged";
   m.sandbox_candidate_run = "candidate #45";
-  m.uat_evidence = [{ case_id: "GOV-UAT-01", result: "passed", evidence_url: m.references.pr }];
+  m.uat_evidence = [
+    {
+      case_id: "GOV-UAT-01",
+      result: "passed",
+      evidence_url: m.references.pr,
+      candidate_sha: candidate,
+    },
+  ];
   assert.match(
     validateReleaseManifest(m, { checkedOutSha: candidate }).join("; "),
     /schema_attestation/,
@@ -164,7 +177,14 @@ test("blocks production staging with tampered signed schema evidence", () => {
   const m = draft();
   m.target = "production-staged";
   m.sandbox_candidate_run = "candidate #45";
-  m.uat_evidence = [{ case_id: "GOV-UAT-01", result: "passed", evidence_url: m.references.pr }];
+  m.uat_evidence = [
+    {
+      case_id: "GOV-UAT-01",
+      result: "passed",
+      evidence_url: m.references.pr,
+      candidate_sha: candidate,
+    },
+  ];
   const forged = attestation();
   forged.candidate[0].fingerprint = "f".repeat(32);
   assert.match(
@@ -184,7 +204,12 @@ function twoStageManifest() {
   m.sandbox_candidate_run = "synthetic-candidate-run";
   m.uat_case_ids = ["GOV-UAT-01", "PIL-UAT-01", "DOC-UAT-01"];
   m.uat_evidence = [
-    { case_id: "GOV-UAT-01", result: "passed", evidence_url: m.references.pr },
+    {
+      case_id: "GOV-UAT-01",
+      result: "passed",
+      evidence_url: m.references.pr,
+      candidate_sha: candidate,
+    },
     ...["PIL-UAT-01", "DOC-UAT-01"].map((case_id) => ({
       case_id,
       result: "pending",
@@ -296,4 +321,77 @@ test("malformed UAT evidence is rejected without crashing the gate", () => {
   assert.ok(validateReleaseManifest(m, schemaOptions()).length > 0);
   m.uat_evidence = {};
   assert.ok(validateReleaseManifest(m, schemaOptions()).length > 0);
+});
+
+test("passed ordinary UAT refuses missing, malformed and stale candidate SHA in both phases", () => {
+  for (const candidate_sha of [undefined, null, "main", "1".repeat(39), "f".repeat(40)]) {
+    for (const target of ["sandbox-candidate", "production-staged"]) {
+      for (const uatPhase of ["predeployment", "closure"]) {
+        const m = draft();
+        m.target = target;
+        m.sandbox_candidate_run = "synthetic-candidate-run";
+        m.uat_evidence = [
+          { case_id: "GOV-UAT-01", result: "passed", evidence_url: m.references.pr, candidate_sha },
+        ];
+        assert.match(
+          validateReleaseManifest(m, { ...schemaOptions(), uatPhase }).join(";"),
+          /GOV-UAT-01 passed UAT evidence must match manifest candidate_sha/,
+        );
+      }
+    }
+  }
+});
+
+test("every ordinary passed case must bind its own evidence to the candidate", () => {
+  const m = twoStageManifest();
+  m.uat_case_ids.push("REL-UAT-02");
+  m.uat_evidence.push({
+    case_id: "REL-UAT-02",
+    result: "passed",
+    evidence_url: m.references.pr,
+    candidate_sha: baseline,
+  });
+  assert.match(
+    validateReleaseManifest(m, schemaOptions()).join(";"),
+    /REL-UAT-02 passed UAT evidence/,
+  );
+  m.uat_evidence.at(-1).candidate_sha = candidate;
+  assert.deepEqual(validateReleaseManifest(m, schemaOptions()), []);
+});
+
+test("evidence SHA comparison accepts hex case without weakening immutable SHA validation", () => {
+  const m = draft();
+  m.candidate_sha = "a".repeat(40);
+  m.uat_evidence = [
+    {
+      case_id: "GOV-UAT-01",
+      result: "passed",
+      evidence_url: m.references.pr,
+      candidate_sha: "A".repeat(40),
+    },
+  ];
+  assert.deepEqual(validateReleaseManifest(m, { checkedOutSha: m.candidate_sha }), []);
+});
+
+test("CLI fails stale or absent evidence SHA and accepts a matching Sandbox declaration", () => {
+  const dir = mkdtempSync(join(tmpdir(), "sf-gov-evidence-"));
+  try {
+    const file = join(dir, "manifest.json");
+    const m = draft();
+    m.uat_evidence = [{ case_id: "GOV-UAT-01", result: "passed", evidence_url: m.references.pr }];
+    for (const candidate_sha of [undefined, baseline, candidate]) {
+      m.uat_evidence[0].candidate_sha = candidate_sha;
+      writeFileSync(file, JSON.stringify(m));
+      const result = spawnSync(
+        process.execPath,
+        [new URL("./validate-release-manifest.mjs", import.meta.url).pathname, file, candidate],
+        { encoding: "utf8", env: {} },
+      );
+      assert.equal(result.status, candidate_sha === candidate ? 0 : 1);
+      if (candidate_sha === candidate) assert.match(result.stdout, /release approval not implied/);
+      else assert.match(result.stderr, /passed UAT evidence must match manifest candidate_sha/);
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

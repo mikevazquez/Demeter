@@ -1,0 +1,98 @@
+✔ accepts pending UAT for a Sandbox draft (2.800846ms)
+✔ rejects missing UAT cases and rollback plan (0.276357ms)
+✔ rejects duplicate UAT cases (0.217929ms)
+✔ blocks production staging with pending UAT (0.434ms)
+✔ blocks wrong candidate commit (1.27316ms)
+✔ validates a complete candidate without granting release approval (1.861008ms)
+✔ rejects secret property names (0.203076ms)
+✔ rejects untrusted evidence URLs (0.268207ms)
+✔ requires migration checksums (0.404615ms)
+✔ rejects nonimmutable commit references (0.371402ms)
+✔ rejects evidence for unlisted cases (0.344667ms)
+✔ rejects missing manifest (0.533905ms)
+✔ blocks production staging without protected schema attestation (0.227725ms)
+✔ blocks production staging with tampered signed schema evidence (0.445926ms)
+✔ GOV-COM-02 permits only prevalidated PIL/DOC to await closure without marking passed (0.85034ms)
+✔ GOV-COM-02 refuses missing, failed, blocked, stale-SHA or unlinked predeployment proof (2.103611ms)
+✔ GOV-COM-02 does not exempt other cases or projects (0.627409ms)
+✔ GOV-COM-02 refuses failed or blocked postdeployment and premature global approval (2.684912ms)
+✔ GOV-COM-02 closure accepts both complete stages and refuses wrong postdeployment SHA (0.949252ms)
+✔ GOV-COM-02 preserves schema attestation and SHA gates (0.386944ms)
+✔ malformed UAT evidence is rejected without crashing the gate (0.468865ms)
+✖ passed ordinary UAT refuses missing, malformed and stale candidate SHA in both phases (2.063255ms)
+✖ every ordinary passed case must bind its own evidence to the candidate (1.600622ms)
+✔ evidence SHA comparison accepts hex case without weakening immutable SHA validation (0.991308ms)
+✖ CLI fails stale or absent evidence SHA and accepts a matching Sandbox declaration (61.054444ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 22
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 189.956028
+
+✖ failing tests:
+
+test at scripts/governance-policy-checks.mjs:326:1
+✖ passed ordinary UAT refuses missing, malformed and stale candidate SHA in both phases (2.063255ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /GOV-UAT-01 passed UAT evidence must match manifest candidate_sha/. Input:
+  
+  ''
+  
+      at TestContext.<anonymous> (file:///workspace/work/studio-flow-uat-evidence-sha/scripts/governance-policy-checks.mjs:336:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: /GOV-UAT-01 passed UAT evidence must match manifest candidate_sha/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/governance-policy-checks.mjs:345:1
+✖ every ordinary passed case must bind its own evidence to the candidate (1.600622ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /REL-UAT-02 passed UAT evidence/. Input:
+  
+  ''
+  
+      at TestContext.<anonymous> (file:///workspace/work/studio-flow-uat-evidence-sha/scripts/governance-policy-checks.mjs:354:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: /REL-UAT-02 passed UAT evidence/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/governance-policy-checks.mjs:376:1
+✖ CLI fails stale or absent evidence SHA and accepts a matching Sandbox declaration (61.054444ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///workspace/work/studio-flow-uat-evidence-sha/scripts/governance-policy-checks.mjs:390:14)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
