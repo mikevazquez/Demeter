@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "sequence": 5,
+  "parent": "a05a31ffcab50806b650cc059ed06d3049b4c811a148a28ed3258ece5f911bed",
+  "signature": "3139dad939b909ff0a97c698040ef72496ecd30d9a7492f91ce94b5286370656",
+  "state": {
+    "version": 1,
+    "repository": "mikevazquez/Demeter",
+    "controlBranch": "chore/governance-autonomous-coordinator-20261015",
+    "events": [
+      {
+        "id": "b7a0ffebe4a2fb71df8f62bfc0906792128159eacd90e3e40bc0aa5b7c47742a",
+        "type": "cycle",
+        "at": "2026-10-15T17:32:03.432Z",
+        "data": {
+          "inputHash": "aa2b694a73756fb9df6a901203b6c7bca661a994b667b81061410144ab346ffc",
+          "controlSha": "bfe712aa5a72ffa1718dab47b7df461a1a27028b",
+          "queueBlobSha": "23157dc329061e8a2d4b8d5eaeb5412aaf206868",
+          "policyVersion": "2026-10-15T07:49:26.240Z",
+          "findings": [
+            {
+              "rule": "G02",
+              "status": "verified",
+              "versionMatches": true
+            },
+            {
+              "rule": "G06",
+              "status": "verified"
+            }
+          ],
+          "delivered": [
+            "acceptance-1-v1",
+            "acceptance-2-v1",
+            "acceptance-isolation-v1"
+          ],
+          "gapObserved": false,
+          "outcome": "idle"
+        }
+      },
+      {
+        "id": "910f0fd1b1cb631e54eac9ce0e463d06d029135e02ea4d8051b5731068ed9230",
+        "type": "execution_lease",
+        "at": "2026-10-15T22:04:07.181Z",
+        "data": {
+          "taskId": "acceptance-lease-live-20261015-v1",
+          "contractHash": "a25054a6168f8543697a44a7a6d2bf0f1f2e8f4de4a1f813606d53c0e5e9db76",
+          "sourceSha": "3857c0b075d964fd0a0baaa22bf555902c248bb9",
+          "runId": 38814466479,
+          "runAttempt": 1,
+          "maximumStages": 2
+        }
+      },
+      {
+        "id": "27221176343536e6fd887f36ef97273f38a59ec824c450b5158c3663120376f3",
+        "type": "execution_outcome",
+        "at": "2026-10-15T22:07:37.074Z",
+        "data": {
+          "taskId": "acceptance-lease-live-20261015-v1",
+          "stage": 1,
+          "phase": "execute",
+          "sourceSha": "3857c0b075d964fd0a0baaa22bf555902c248bb9",
+          "runId": 38814466479,
+          "runAttempt": 1,
+          "jobId": 116695760841,
+          "result": "success",
+          "modelStep": "success",
+          "cause": "not-established-by-job-status",
+          "automaticRerun": false
+        }
+      },
+      {
+        "id": "ffb5690961e1e514aed7f906f6a5f248e56474a730ae22c2ed4198698175d618",
+        "type": "execution_outcome",
+        "at": "2026-10-15T22:07:37.074Z",
+        "data": {
+          "taskId": "acceptance-lease-live-20261015-v1",
+          "stage": 2,
+          "phase": "repair",
+          "sourceSha": "3857c0b075d964fd0a0baaa22bf555902c248bb9",
+          "runId": 38814466479,
+          "runAttempt": 1,
+          "jobId": 116696266178,
+          "result": "success",
+          "modelStep": "success",
+          "cause": "not-established-by-job-status",
+          "automaticRerun": false
+        }
+      },
+      {
+        "id": "e1d9950caa3e6d9fa2edcb118c327568d5748e29359dc09dd0a43e5f1080ad96",
+        "type": "cycle",
+        "at": "2026-10-15T22:07:55.225Z",
+        "data": {
+          "inputHash": "49fbef29a74b3ad477f49d8ed9e80d13a917d0ac840468cde29d9bb8d8f6f024",
+          "controlSha": "3857c0b075d964fd0a0baaa22bf555902c248bb9",
+          "queueBlobSha": "d327cf84abb0c2a222e5c21bf5d67e59fa53bd1b",
+          "policyVersion": "2026-10-15T07:49:26.240Z",
+          "findings": [
+            {
+              "rule": "G02",
+              "status": "verified",
+              "versionMatches": true
+            },
+            {
+              "rule": "G06",
+              "status": "verified"
+            }
+          ],
+          "delivered": [
+            "acceptance-1-v1",
+            "acceptance-2-v1",
+            "acceptance-isolation-v1",
+            "acceptance-lease-live-20261015-v1"
+          ],
+          "gapObserved": false,
+          "outcome": "idle"
+        }
+      },
+      {
+        "id": "a58bb08485d9fcdb7ada5c4b2a404c4bd1c89f8df52ca5278730b0a761ae7fc9",
+        "type": "execution_reconciliation",
+        "at": "2026-10-15T22:34:23.183Z",
+        "data": {
+          "taskId": "acceptance-lease-live-20261015-v1",
+          "contractHash": "a25054a6168f8543697a44a7a6d2bf0f1f2e8f4de4a1f813606d53c0e5e9db76",
+          "sourceSha": "3857c0b075d964fd0a0baaa22bf555902c248bb9",
+          "runId": 38814466479,
+          "runAttempt": 1,
+          "runStatus": "completed",
+          "runConclusion": "success",
+          "observedJobIds": [
+            116695760841,
+            116696266178
+          ],
+          "observedStages": [
+            1,
+            2
+          ],
+          "disposition": "stage-results-recorded",
+          "budgetReleased": false,
+          "automaticRerun": false
+        }
+      }
+    ]
+  },
+  "sha256": "83aa1aa5a2cde355e214df8d26ef0fdc15cb809a76388a12c1dc0d28b891cee5"
+}

@@ -1,0 +1,26 @@
+{
+  "positiveAudit": "passed",
+  "negativeCases": [
+    {
+      "case": "altered journal digest",
+      "result": "rejected"
+    },
+    {
+      "case": "different recovered revision",
+      "result": "rejected"
+    },
+    {
+      "case": "source mismatch",
+      "result": "rejected"
+    },
+    {
+      "case": "incomplete runs listing",
+      "result": "rejected"
+    },
+    {
+      "case": "unexpected execution",
+      "result": "rejected"
+    }
+  ],
+  "negativePassed": 5
+}

@@ -568,9 +568,13 @@
       "acceptanceOwner": "Mike: aceptación de alcance operativo; sin revisión de código rutinaria",
       "componentEvidence": "https://github.com/mikevazquez/Demeter/actions/runs/38818217574",
       "observedIntegration": "Recuperación de rama huérfana implementada y probada con transportes de prueba.",
-      "evidence": ["https://github.com/mikevazquez/Demeter/pull/294"],
+      "evidence": [
+        "https://github.com/mikevazquez/Demeter/pull/294",
+        "docs/automation/evidence/governance-continuity-20261015/README.md"
+      ],
       "nextAction": "Ejercicio controlado de interrupción/recuperación del publicador con un único PR y sin force push.",
-      "closureCondition": "Ejercicio controlado de interrupción/recuperación del publicador con un único PR y sin force push."
+      "closureCondition": "Ejercicio controlado de interrupción/recuperación del publicador con un único PR y sin force push.",
+      "latestEvidenceReview": "Artefactos recuperados y auditados: recuperación read-only e idle histórico confirmados, misma revisión/secuencia. No acredita tres ciclos programados ni aceptación operativa completa."
     },
     {
       "id": "GOV-13",
@@ -619,9 +623,13 @@
       "acceptanceOwner": "Mike: aceptación de alcance operativo; sin revisión de código rutinaria",
       "componentEvidence": "https://github.com/mikevazquez/Demeter/actions/runs/38818217574",
       "observedIntegration": "Claims/artefactos de aviso deduplicados; no hay consumidor completo con recibo acreditado.",
-      "evidence": ["https://github.com/mikevazquez/Demeter/pull/294"],
+      "evidence": [
+        "https://github.com/mikevazquez/Demeter/pull/294",
+        "docs/automation/evidence/governance-continuity-20261015/README.md"
+      ],
       "nextAction": "Definir canal permitido y demostrar entrega/recuperación sin duplicado; un artefacto no acredita recepción.",
-      "closureCondition": "Definir canal permitido y demostrar entrega/recuperación sin duplicado; un artefacto no acredita recepción."
+      "closureCondition": "Definir canal permitido y demostrar entrega/recuperación sin duplicado; un artefacto no acredita recepción.",
+      "latestEvidenceReview": "Artefactos recuperados y auditados: recuperación read-only e idle histórico confirmados, misma revisión/secuencia. No acredita tres ciclos programados ni aceptación operativa completa."
     },
     {
       "id": "GOV-16",
@@ -655,9 +663,13 @@
       "acceptanceOwner": "Mike: aceptación de alcance operativo; sin revisión de código rutinaria",
       "componentEvidence": "https://github.com/mikevazquez/Demeter/actions/runs/38818217574",
       "observedIntegration": "Controlador alojado habilitado cada seis horas; última marca no demuestra tres ciclos.",
-      "evidence": ["https://github.com/mikevazquez/Demeter/pull/294"],
+      "evidence": [
+        "https://github.com/mikevazquez/Demeter/pull/294",
+        "docs/automation/evidence/governance-continuity-20261015/README.md"
+      ],
       "nextAction": "Tres despertares programados consecutivos con evidencia, no-ops válidos y recuperación/huecos registrados; no fabricar fallos ni pushes.",
-      "closureCondition": "Tres despertares programados consecutivos con evidencia, no-ops válidos y recuperación/huecos registrados; no fabricar fallos ni pushes."
+      "closureCondition": "Tres despertares programados consecutivos con evidencia, no-ops válidos y recuperación/huecos registrados; no fabricar fallos ni pushes.",
+      "latestEvidenceReview": "Artefactos recuperados y auditados: recuperación read-only e idle histórico confirmados, misma revisión/secuencia. No acredita tres ciclos programados ni aceptación operativa completa."
     },
     {
       "id": "GOV-18",
@@ -712,7 +724,7 @@
     }
   ],
   "progressReporting": {
-    "instruction": "Cerrar cada reporte con estos mismos cuatro frentes; indicar frente activo, avance comprobado, pendientes y bloqueo. No usar porcentajes sin evidencia. No inventar un plazo.",
+    "instruction": "Cerrar cada reporte con los mismos cuatro frentes y porcentajes calculados sobre los 24 hitos fijos de governance-progress.json. Mostrar terminados, pendientes, frente activo y bloqueo; no confundir hitos técnicos con aceptación UAT ni con tiempo/esfuerzo.",
     "activePhase": 1,
     "activeCase": "INV-UAT-01",
     "phases": [
@@ -740,7 +752,12 @@
           "Capturar esquema autenticado, probar rechazo real por drift y conciliar diferencias Candidate.",
           "Completar contención outbound/Admin Auth/cleanup y ejecutar B03 con dos tenants sintéticos y E2E críticos."
         ],
-        "closeWhen": "Equivalencia, aislamiento y UAT funcional aplicables acreditados y aceptados por SHA; no basta CI de componentes."
+        "closeWhen": "Equivalencia, aislamiento y UAT funcional aplicables acreditados y aceptados por SHA; no basta CI de componentes.",
+        "total": 8,
+        "done": 3,
+        "pending": 5,
+        "completedPercent": 37.5,
+        "remainingPercent": 62.5
       },
       {
         "number": 2,
@@ -779,7 +796,12 @@
           "Reconciliar los 20 GOV por evidencia operativa.",
           "Acreditar tres ciclos programados consecutivos, no-op correcto, persistencia, recuperación y avisos sin duplicados."
         ],
-        "closeWhen": "El ciclo autónomo completo opera de forma repetible bajo límites; el piloto supervisado no acredita delegación automática."
+        "closeWhen": "El ciclo autónomo completo opera de forma repetible bajo límites; el piloto supervisado no acredita delegación automática.",
+        "total": 7,
+        "done": 4,
+        "pending": 3,
+        "completedPercent": 57.1,
+        "remainingPercent": 42.9
       },
       {
         "number": 3,
@@ -803,7 +825,12 @@
           "Ensayar rollback/restauración aislados sin recrear Mirror ni sumar costos.",
           "Completar manifiesto del delta y artefacto exactos, trazabilidad y aceptación previa DOC/PIL conforme GOV-COM-02."
         ],
-        "closeWhen": "Liberación preparada y aceptada por SHA/manifiesto; aún sin permiso de promover."
+        "closeWhen": "Liberación preparada y aceptada por SHA/manifiesto; aún sin permiso de promover.",
+        "total": 6,
+        "done": 2,
+        "pending": 4,
+        "completedPercent": 33.3,
+        "remainingPercent": 66.7
       },
       {
         "number": 4,
@@ -816,11 +843,22 @@
           "Promover solo el SHA/artefacto aprobado.",
           "Verificar SHA servido, smoke, observación de efectos y documentación final de PIL/DOC."
         ],
-        "closeWhen": "Producción comprobada y aceptación final registrada; no se puede simular ni declarar cerrada antes de la promoción autorizada."
+        "closeWhen": "Producción comprobada y aceptación final registrada; no se puede simular ni declarar cerrada antes de la promoción autorizada.",
+        "total": 3,
+        "done": 0,
+        "pending": 3,
+        "completedPercent": 0.0,
+        "remainingPercent": 100.0
       }
     ],
     "fullyClosedPhases": 0,
-    "interpretation": "La implementación y la CI tienen avances comprobados. Aún faltan validación operativa, gates de liberación y producción autorizada; no es solo un trámite de despliegue."
+    "interpretation": "La implementación y la CI tienen avances comprobados. Aún faltan validación operativa, gates de liberación y producción autorizada; no es solo un trámite de despliegue.",
+    "measurementFile": "docs/automation/governance-progress.json",
+    "totalMilestones": 24,
+    "completedMilestones": 9,
+    "remainingMilestones": 15,
+    "completedPercent": 37.5,
+    "remainingPercent": 62.5
   },
   "sessionPoolerPreparation": {
     "pr": "https://github.com/mikevazquez/Demeter/pull/308",

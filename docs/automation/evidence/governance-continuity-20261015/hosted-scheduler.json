@@ -1,0 +1,9 @@
+{
+  "title": "Coordinar autonomía Studio Flow",
+  "is_enabled": true,
+  "schedule": "BEGIN:VEVENT\nDTSTART:20261015T230907Z\nRRULE:FREQ=HOURLY;INTERVAL=6\nEND:VEVENT",
+  "last_run_time": "2026-10-16T05:03:04.258491+00:00",
+  "next_run_time": null,
+  "timing_mode": "condition_watch",
+  "note": "Last run metadata is not proof of successful scheduled cycles. No forced runs or schedule changes."
+}

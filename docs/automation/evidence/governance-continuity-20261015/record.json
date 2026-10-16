@@ -1,0 +1,51 @@
+{
+  "mode": "record",
+  "sourceSha": "d3e113fb65d778f106c1ce574296123668567861",
+  "runId": 38818217563,
+  "attempt": 1,
+  "policyMode": "hosted-dated-snapshot",
+  "allowed": true,
+  "revision": "83aa1aa5a2cde355e214df8d26ef0fdc15cb809a76388a12c1dc0d28b891cee5",
+  "sequence": 5,
+  "journalHead": "d3e113fb65d778f106c1ce574296123668567861",
+  "changed": false,
+  "eligibleTaskIds": [],
+  "delivered": [
+    "acceptance-1-v1",
+    "acceptance-2-v1",
+    "acceptance-isolation-v1",
+    "acceptance-lease-live-20261015-v1"
+  ],
+  "findings": [
+    {
+      "rule": "G02",
+      "status": "verified",
+      "versionMatches": true
+    },
+    {
+      "rule": "G06",
+      "status": "verified"
+    }
+  ],
+  "notices": [],
+  "noticesSent": false,
+  "runtimeUat": false,
+  "productionAuthorized": false,
+  "readRecovery": {
+    "version": 1,
+    "objectId": "governance/observation",
+    "sourceVersion": "ce75526cf8b1bb2d7077d915c6fef1b90477637504e04fa1402bb8d38e960884",
+    "runId": 38818217563,
+    "attempt": 1,
+    "failureKey": "c570df92138f6480bee829238aa57cdeab648c902ccfd71a77edde77f477c0ad",
+    "retryExecuted": false,
+    "recovered": false,
+    "notices": [],
+    "noticesSent": false,
+    "revision": "83aa1aa5a2cde355e214df8d26ef0fdc15cb809a76388a12c1dc0d28b891cee5",
+    "sequence": 5,
+    "reason": "read-success"
+  },
+  "outcomes": [],
+  "diagnosis": "not-inferred-from-status"
+}

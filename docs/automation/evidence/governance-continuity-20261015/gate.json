@@ -1,0 +1,34 @@
+{
+  "mode": "gate",
+  "sourceSha": "d3e113fb65d778f106c1ce574296123668567861",
+  "runId": 38818217563,
+  "attempt": 1,
+  "policyMode": "hosted-dated-snapshot",
+  "allowed": true,
+  "revision": "83aa1aa5a2cde355e214df8d26ef0fdc15cb809a76388a12c1dc0d28b891cee5",
+  "sequence": 5,
+  "journalHead": "d3e113fb65d778f106c1ce574296123668567861",
+  "changed": false,
+  "eligibleTaskIds": [],
+  "delivered": [
+    "acceptance-1-v1",
+    "acceptance-2-v1",
+    "acceptance-isolation-v1",
+    "acceptance-lease-live-20261015-v1"
+  ],
+  "findings": [
+    {
+      "rule": "G02",
+      "status": "verified",
+      "versionMatches": true
+    },
+    {
+      "rule": "G06",
+      "status": "verified"
+    }
+  ],
+  "notices": [],
+  "noticesSent": false,
+  "runtimeUat": false,
+  "productionAuthorized": false
+}

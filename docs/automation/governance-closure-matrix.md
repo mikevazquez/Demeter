@@ -8,7 +8,7 @@ No reabrir B02 (#287) ni repetir el piloto supervisado #306/#307. Ningún verde 
 
 ## Panorama estable de cuatro frentes
 
-Estos frentes agrupan los criterios originales; no crean tareas ni sustituyen su aceptación. **Ningún frente está cerrado por completo.** Hay avances de implementación y CI; faltan pruebas operativas, liberación preparada y producción autorizada. No hay un porcentaje ni plazo verificable.
+Estos frentes agrupan los criterios originales; no crean tareas ni sustituyen su aceptación. **Ningún frente está cerrado por completo.** Hay avances de implementación y CI; faltan pruebas operativas, liberación preparada y producción autorizada. El avance por conteo fijo de hitos está en [el tablero porcentual](governance-progress.md): 9/24 terminados (37,5%); 15/24 pendientes (62,5%). No equivale a tiempo/esfuerzo ni aprobación UAT; no hay un plazo verificado.
 
 | Frente                                                   | Estado                      | Qué falta para cerrarlo                                                                                                                    |
 | -------------------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -90,7 +90,7 @@ Las pruebas de componentes tienen [CI aprobada](https://github.com/mikevazquez/D
 1. Continuar el frente 1 según sus dependencias: INV-UAT-01 y #288. La reparación de CI de #278 ya está completada.
 2. Avanzar en paralelo lógico los frentes 2 y 3 solo en los puntos independientes; conservar una tarea de cola por piloto y el scheduler existente. No crear tareas artificiales ni llamadas pagadas para producir actividad.
 3. Reunir aceptación previa GOV-COM-02 antes de solicitar promoción. El frente 4 depende de los tres anteriores y de «Autorizo promoción» específica.
-4. Cerrar cada reporte con el panorama de estos mismos cuatro frentes y el pendiente concreto del frente activo. El cierre de subpasos no aprueba todo el UAT.
+4. Cerrar cada reporte con estos mismos cuatro frentes, sus porcentajes calculados sobre los 24 hitos fijos y el pendiente concreto del frente activo. El cierre de subpasos no aprueba todo el UAT.
 
 ## Controles ya observados que no deben solicitarse otra vez
 

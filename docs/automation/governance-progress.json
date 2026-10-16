@@ -1,0 +1,258 @@
+{
+  "version": 1,
+  "baselineDateUtc": "2026-10-16",
+  "updatedAtUtc": "2026-10-16T05:59:08.383701+00:00",
+  "basis": "24 fixed, equally weighted technical milestones; a reporting breakdown of existing scope, not new tasks or replacement UAT criteria.",
+  "countingRule": "Count done only with evidence of the named milestone; Draft implementation milestones do not imply merged/activated/accepted UAT. Keep the same 24 items across reports. Any scope change must be explicit and preserve historical baseline.",
+  "percentMeaning": "Count of milestones, not estimated effort, cost, time or formal UAT approval.",
+  "formalAcceptance": "38 original criteria remain in the canonical closure matrix; none is approved automatically by this checklist.",
+  "baselineNotNewWork": "The initial 9 completed milestones include prior work; not 9 milestones completed in this block.",
+  "total": 24,
+  "done": 9,
+  "pending": 15,
+  "completedPercent": 37.5,
+  "remainingPercent": 62.5,
+  "phases": [
+    {
+      "number": 1,
+      "name": "Candidate confiable y UAT seguro",
+      "total": 8,
+      "done": 3,
+      "pending": 5,
+      "completedPercent": 37.5,
+      "remainingPercent": 62.5,
+      "milestones": [
+        {
+          "milestone": "CI de #278 aprobada en su SHA vigente",
+          "status": "done",
+          "evidence": ["https://github.com/mikevazquez/Demeter/actions/runs/38855648728"],
+          "relatedCriteria": ["QA-UAT-01"]
+        },
+        {
+          "milestone": "Preflight de fixtures B03 implementado y probado con denegación segura",
+          "status": "done",
+          "evidence": ["https://github.com/mikevazquez/Demeter/actions/runs/38855648728"],
+          "relatedCriteria": ["ENV-UAT-03"]
+        },
+        {
+          "milestone": "Captura Session pooler preparada y red/TLS del runner comprobados",
+          "status": "done",
+          "evidence": [
+            "https://github.com/mikevazquez/Demeter/pull/308",
+            "https://github.com/mikevazquez/Demeter/actions/runs/38857703808",
+            "https://github.com/mikevazquez/Demeter/actions/runs/38857703823"
+          ],
+          "relatedCriteria": ["INV-UAT-01"]
+        },
+        {
+          "milestone": "Lectores mínimos y secretos seguros disponibles, con ACL auditadas",
+          "status": "pending",
+          "evidence": [],
+          "relatedCriteria": ["INV-UAT-01"]
+        },
+        {
+          "milestone": "Captura autenticada protegida y rechazo real ante divergencias",
+          "status": "pending",
+          "evidence": [],
+          "relatedCriteria": ["INV-UAT-01"]
+        },
+        {
+          "milestone": "Esquema Candidate conciliado y equivalencia certificada",
+          "status": "pending",
+          "evidence": [],
+          "relatedCriteria": ["INV-UAT-01"]
+        },
+        {
+          "milestone": "Aislamiento runtime, outbound, roles/tenants, fixtures y cleanup verificados",
+          "status": "pending",
+          "evidence": [],
+          "relatedCriteria": ["ENV-UAT-01", "ENV-UAT-02", "ENV-UAT-03"]
+        },
+        {
+          "milestone": "E2E críticos y fallo bloqueante del candidato aceptados",
+          "status": "pending",
+          "evidence": [],
+          "relatedCriteria": ["QA-UAT-01", "QA-UAT-02", "QA-UAT-03"]
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "name": "Governance automático y continuidad",
+      "total": 7,
+      "done": 4,
+      "pending": 3,
+      "completedPercent": 57.1,
+      "remainingPercent": 42.9,
+      "milestones": [
+        {
+          "milestone": "Núcleo de decisiones y pruebas automatizadas GOV implementados",
+          "status": "done",
+          "evidence": ["https://github.com/mikevazquez/Demeter/actions/runs/38818217574"],
+          "relatedCriteria": [
+            "GOV-01",
+            "GOV-02",
+            "GOV-03",
+            "GOV-04",
+            "GOV-05",
+            "GOV-06",
+            "GOV-07",
+            "GOV-08",
+            "GOV-09",
+            "GOV-10",
+            "GOV-11",
+            "GOV-12",
+            "GOV-13",
+            "GOV-14",
+            "GOV-15",
+            "GOV-16",
+            "GOV-17",
+            "GOV-18",
+            "GOV-19",
+            "GOV-20"
+          ]
+        },
+        {
+          "milestone": "Puente y selección aislada de un solo ID probados",
+          "status": "done",
+          "evidence": [
+            "https://github.com/mikevazquez/Demeter/pull/304",
+            "https://github.com/mikevazquez/Demeter/actions/runs/38835220556"
+          ],
+          "relatedCriteria": ["GOV-UAT-01", "GOV-08", "GOV-20"]
+        },
+        {
+          "milestone": "Piloto supervisado con certificación independiente y publicación Draft cerrado",
+          "status": "done",
+          "evidence": [
+            "https://github.com/mikevazquez/Demeter/pull/307",
+            "https://github.com/mikevazquez/Demeter/issues/306"
+          ],
+          "relatedCriteria": ["PIL-UAT-01 (evidencia parcial de preparación)"]
+        },
+        {
+          "milestone": "Journal durable y recuperación desde runner independiente comprobados",
+          "status": "done",
+          "evidence": ["https://github.com/mikevazquez/Demeter/actions/runs/38818217563"],
+          "relatedCriteria": ["GOV-12", "GOV-15", "GOV-17"]
+        },
+        {
+          "milestone": "Ejecutor incluido autenticado y puente automático operando en entorno autorizado",
+          "status": "pending",
+          "evidence": [],
+          "relatedCriteria": ["GOV-UAT-01", "GOV-10", "GOV-12", "GOV-20"]
+        },
+        {
+          "milestone": "Tres despertares programados con evidencia por ciclo y recuperación acreditados",
+          "status": "pending",
+          "evidence": [],
+          "relatedCriteria": ["GOV-17", "GOV-19"]
+        },
+        {
+          "milestone": "Aceptación operativa GOV-01…20, recuperación de errores y avisos cerrada",
+          "status": "pending",
+          "evidence": [],
+          "relatedCriteria": [
+            "OPS-UAT-01",
+            "GOV-01",
+            "GOV-02",
+            "GOV-03",
+            "GOV-04",
+            "GOV-05",
+            "GOV-06",
+            "GOV-07",
+            "GOV-08",
+            "GOV-09",
+            "GOV-10",
+            "GOV-11",
+            "GOV-12",
+            "GOV-13",
+            "GOV-14",
+            "GOV-15",
+            "GOV-16",
+            "GOV-17",
+            "GOV-18",
+            "GOV-19",
+            "GOV-20"
+          ]
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "name": "Protección y preparación de liberación",
+      "total": 6,
+      "done": 2,
+      "pending": 4,
+      "completedPercent": 33.3,
+      "remainingPercent": 66.7,
+      "milestones": [
+        {
+          "milestone": "Reglas de main y quality obligatorio configurados y consultados",
+          "status": "done",
+          "evidence": ["https://github.com/mikevazquez/Demeter/rules/24974628"],
+          "relatedCriteria": ["SEC-UAT-01", "SEC-UAT-02"]
+        },
+        {
+          "milestone": "Environment de captura restringido y rechazo de rama PR comprobados",
+          "status": "done",
+          "evidence": ["https://github.com/mikevazquez/Demeter/actions/runs/38855648717"],
+          "relatedCriteria": ["SEC-UAT-03"]
+        },
+        {
+          "milestone": "Gates efectivos de todos los canales y accesos aplicables acreditados",
+          "status": "pending",
+          "evidence": ["https://github.com/mikevazquez/Demeter/issues/289"],
+          "relatedCriteria": ["SEC-UAT-01", "SEC-UAT-02", "SEC-UAT-03"]
+        },
+        {
+          "milestone": "Delta, manifiesto, artefacto y destino exactos verificados",
+          "status": "pending",
+          "evidence": [],
+          "relatedCriteria": ["REL-UAT-01", "REL-UAT-02"]
+        },
+        {
+          "milestone": "Restauración y rollback ensayados en aislamiento sin perder históricos",
+          "status": "pending",
+          "evidence": [],
+          "relatedCriteria": ["ENV-UAT-04", "REL-UAT-03"]
+        },
+        {
+          "milestone": "Trazabilidad y aceptación previa completa de DOC/PIL y UAT aplicables",
+          "status": "pending",
+          "evidence": [],
+          "relatedCriteria": ["DOC-UAT-01 (previa)", "PIL-UAT-01 (previa)"]
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "name": "Promoción autorizada y verificación de producción",
+      "total": 3,
+      "done": 0,
+      "pending": 3,
+      "completedPercent": 0.0,
+      "remainingPercent": 100.0,
+      "milestones": [
+        {
+          "milestone": "Autorización específica «Autorizo promoción» para SHA/artefacto aceptados",
+          "status": "pending",
+          "evidence": [],
+          "relatedCriteria": ["SEC-UAT-03", "PIL-UAT-01"]
+        },
+        {
+          "milestone": "Promoción del artefacto autorizado e identidad servida comprobada",
+          "status": "pending",
+          "evidence": [],
+          "relatedCriteria": ["REL-UAT-02", "PIL-UAT-01 (posterior)"]
+        },
+        {
+          "milestone": "Smoke, observación productiva y cierre documental/aceptación posterior",
+          "status": "pending",
+          "evidence": [],
+          "relatedCriteria": ["DOC-UAT-01 (posterior)", "PIL-UAT-01 (posterior)"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "sf-gov-schema-capture",
+  "deployment_branch_policy": {
+    "custom_branch_policies": true,
+    "protected_branches": false
+  },
+  "required_reviewers": [
+    "mikevazquez"
+  ]
+}

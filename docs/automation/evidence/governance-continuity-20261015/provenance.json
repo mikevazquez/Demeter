@@ -1,0 +1,32 @@
+{
+  "reviewDateUtc": "2026-10-16",
+  "sourceRun": 38818217563,
+  "sourceSha": "d3e113fb65d778f106c1ce574296123668567861",
+  "retrieval": "GitHub connector, bounded local ZIP/JSON reads",
+  "artifacts": [
+    {
+      "artifactId": 12012076505,
+      "file": "record.json",
+      "fileSha256": "f17a4a0e94d19c7b8c09cd2347613a8158f43c004780b388727f09af2aad8d5f",
+      "zipSha256": "4d3236cc194e88d6ef8d6b16f73a0456f4a31f01ce678f46c06614a8ad41b71f"
+    },
+    {
+      "artifactId": 12012170989,
+      "file": "gate.json",
+      "fileSha256": "4f9b118a2e94815d13e9e5bac72c87bd599a7f4d75537f3e063127fb70a1693b",
+      "zipSha256": "16b082112c84312f55364f47689df5a931820f4aad4b4b69dd2996859543bb72"
+    },
+    {
+      "artifactId": 12011991706,
+      "file": "recover.json",
+      "fileSha256": "53111c2e20686e78311723e1b4419526e02cbe09e115d18acc8709000de83f2e",
+      "zipSha256": "8fc3eaa2a44c97ce6a72a146075ce74f43ed83376605c390fd6f9713abd7e86b"
+    },
+    {
+      "artifactId": 12011926738,
+      "file": "report.json",
+      "fileSha256": "1bfdddce1a23f839c9c1d89de83bb749ecc1cc309e0463b90c19e49840d918fc",
+      "zipSha256": "94612707888f8054b178b6613b79b87e47a7145cb60b24ea83791d37992f93f6"
+    }
+  ]
+}

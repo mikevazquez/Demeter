@@ -1,0 +1,83 @@
+{
+  "sourceSha": "d3e113fb65d778f106c1ce574296123668567861",
+  "runId": "38818217563",
+  "jobs": {
+    "select": {
+      "result": "success",
+      "outputs": {
+        "tasks": "[]",
+        "has_tasks": "false",
+        "control_sha": "d3e113fb65d778f106c1ce574296123668567861"
+      }
+    },
+    "reserve-operations": {
+      "result": "success",
+      "outputs": {
+        "tasks": "[]",
+        "has_tasks": "false"
+      }
+    },
+    "execute": {
+      "result": "skipped",
+      "outputs": {}
+    },
+    "repair": {
+      "result": "skipped",
+      "outputs": {}
+    },
+    "certify": {
+      "result": "skipped",
+      "outputs": {}
+    },
+    "publish": {
+      "result": "skipped",
+      "outputs": {}
+    }
+  },
+  "notion": {
+    "mode": "dated-snapshot",
+    "pageId": "3fad78f7146381e9a97fc3c454e6516a",
+    "url": "https://app.notion.com/p/3fad78f7146381e9a97fc3c454e6516a?pvs=204",
+    "lastEditedAt": "2026-10-15T07:49:26.240Z",
+    "capturedAt": "2026-10-15T13:57:23.000Z",
+    "expiresAt": "2026-10-17T13:57:23.000Z",
+    "snapshotPath": ".github/codex-coordinator/notion-policy.txt",
+    "sha256": "b6eeb95a8a92893d64db82551949335a7223628315894bc1fe90d54bbe60f980"
+  },
+  "tasks": [
+    {
+      "id": "acceptance-1-v1",
+      "issue": 292,
+      "owner": "codex-1",
+      "state": "already published",
+      "pr": "https://github.com/mikevazquez/Demeter/pull/296"
+    },
+    {
+      "id": "acceptance-2-v1",
+      "issue": 293,
+      "owner": "codex-1",
+      "state": "already published",
+      "pr": "https://github.com/mikevazquez/Demeter/pull/297"
+    },
+    {
+      "id": "acceptance-isolation-v1",
+      "issue": 295,
+      "owner": "codex-1",
+      "state": "already published",
+      "pr": "https://github.com/mikevazquez/Demeter/pull/298"
+    },
+    {
+      "id": "acceptance-lease-live-20261015-v1",
+      "issue": 300,
+      "owner": "codex-1",
+      "state": "already published",
+      "pr": "https://github.com/mikevazquez/Demeter/pull/301"
+    }
+  ],
+  "operations": {
+    "state": "checked",
+    "revision": "83aa1aa5a2cde355e214df8d26ef0fdc15cb809a76388a12c1dc0d28b891cee5",
+    "blocked": [],
+    "noticesSent": false
+  }
+}

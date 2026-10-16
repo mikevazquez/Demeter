@@ -1,0 +1,9 @@
+{
+  "mode": "recover",
+  "allowed": false,
+  "changed": false,
+  "recovered": true,
+  "revision": "83aa1aa5a2cde355e214df8d26ef0fdc15cb809a76388a12c1dc0d28b891cee5",
+  "sequence": 5,
+  "journalHead": "d3e113fb65d778f106c1ce574296123668567861"
+}

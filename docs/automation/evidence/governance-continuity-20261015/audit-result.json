@@ -1,0 +1,19 @@
+{
+  "sourceRun": 38818217563,
+  "sourceEvent": "push",
+  "sourceSha": "d3e113fb65d778f106c1ce574296123668567861",
+  "journalRevision": "83aa1aa5a2cde355e214df8d26ef0fdc15cb809a76388a12c1dc0d28b891cee5",
+  "sequence": 5,
+  "historicalReadOnlyRecoveryVerified": true,
+  "historicalIdleVerified": true,
+  "historicalExecutedTasks": 0,
+  "storedJournalCycleEvents": 2,
+  "githubScheduleRunsObserved": 0,
+  "hostedSchedulerEnabled": true,
+  "hostedLastRunObserved": "2026-10-16T05:03:04.258491+00:00",
+  "verifiedConsecutiveHostedScheduledCycles": 0,
+  "requiredConsecutiveHostedScheduledCycles": 3,
+  "hostedScheduledCycleEvidence": "unknown; no per-wakeup receipts available in these sources",
+  "operationalContinuityAccepted": false,
+  "note": "The historical push/no-op and journal recovery are verified. They do not prove hosted scheduled wakeups. Zero verified is not a claim of zero actual wakeups. Availability/recovery after a real interruption remains unverified."
+}
