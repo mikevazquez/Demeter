@@ -34,6 +34,8 @@ export function WorkshopEditorForm({
   const initial = context.draft;
   const [state, action, pending] = useActionState(saveWorkshop, { error: null });
   const [title, setTitle] = useState(initial?.title ?? "");
+  const [step, setStep] = useState(0);
+  const stages = ["Información", "Fechas", "Precios", "Pagos", "Revisión"];
   const [fullPrice, setFullPrice] = useState(initial ? String(initial.fullPriceMinor / 100) : "");
   const [allowIndividual, setAllowIndividual] = useState(initial?.allowIndividualSessions ?? false);
   const [enrollment, setEnrollment] = useState(
@@ -111,6 +113,23 @@ export function WorkshopEditorForm({
       <input type="hidden" name="offer_id" value={offerId ?? ""} />
       <input type="hidden" name="request_id" value={requestId} />
       <input type="hidden" name="revision" value={context.revision ?? ""} />
+      <p aria-live="polite"><strong>Paso {step + 1} de 5 · {stages[step]}</strong></p>
+      <nav aria-label="Pasos del taller" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+        {stages.map((stage, index) => (
+          <button key={stage} type="button" onClick={() => setStep(index)} aria-current={step === index ? "step" : undefined} style={{ borderRadius: 18, padding: "8px 12px", border: step === index ? "2px solid #159e78" : "1px solid #bbb", fontWeight: step === index ? 700 : 400 }}>
+            {index + 1}. {stage}
+          </button>
+        ))}
+      </nav>
+      {context.locked ? (
+        <p role="status">
+          Por su historial o sus fechas, este taller solo permite cambiar el nombre. Las compras,
+          pagos y reservas se conservan.
+        </p>
+      ) : null}
+      {step === 0 ? (
+        <section className="workshop-purchase-fields" aria-label="Información">
+          <h2>Información general</h2>
       <label className="activities-field">
         <span>Nombre del taller</span>
         <input
@@ -121,112 +140,15 @@ export function WorkshopEditorForm({
           disabled={pending}
         />
       </label>
-      {context.locked ? (
-        <p role="status">
-          Por su historial o sus fechas, este taller solo permite cambiar el nombre. Las compras,
-          pagos y reservas se conservan.
-        </p>
+
+          <p>Define el nombre del taller. Los horarios y precios se configuran en los siguientes pasos.</p>
+        </section>
       ) : null}
-      <fieldset className="workshop-purchase-fields" disabled={pending || context.locked}>
-        <legend>Precios, anticipos y requisitos</legend>
-        <p>
-          Precios en {context.currency}. Horarios del estudio: {context.timeZone}.
-        </p>
-        <div className="activities-form-grid">
-          <label className="activities-field">
-            <span>Precio completo</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              min="0.01"
-              step="0.01"
-              required
-              value={fullPrice}
-              onChange={(event) => setFullPrice(event.target.value)}
-            />
-          </label>
-          <label className="activities-field">
-            <span>¿Requiere inscripción al estudio?</span>
-            <select value={enrollment} onChange={(event) => setEnrollment(event.target.value)}>
-              <option value="inherit">
-                Usar configuración del estudio (
-                {context.studioPolicy.requiresEnrollment ? "obligatoria" : "no obligatoria"})
-              </option>
-              <option value="required">Obligatoria</option>
-              <option value="not_required">No. El taller se puede comprar sin inscripción al estudio</option>
-            </select>
-          </label>
-          <label className="activities-field">
-            <span>Forma de pago</span>
-            <select
-              value={depositMode}
-              onChange={(event) => {
-                setDepositMode(event.target.value as WorkshopDraft["depositMode"]);
-                setDeposit("50");
-              }}
-            >
-              <option value="full">Pago completo</option>
-              <option value="fixed">Anticipo fijo</option>
-              <option value="percent">Anticipo porcentual</option>
-            </select>
-          </label>
-          {depositMode !== "full" ? (
-            <>
-              <label className="activities-field">
-                <span>{depositMode === "fixed" ? "Anticipo fijo" : "Porcentaje de anticipo"}</span>
-                <input
-                  type="number"
-                  min="0.01"
-                  max={depositMode === "percent" ? 100 : undefined}
-                  step="0.01"
-                  required
-                  value={deposit}
-                  onChange={(event) => setDeposit(event.target.value)}
-                />
-              </label>
-              <label className="activities-field">
-                <span>Fecha límite para pagar el saldo (obligatoria para anticipos)</span>
-                <input
-                  type="datetime-local"
-                  required
-                  value={due}
-                  onChange={(event) => setDue(event.target.value)}
-                />
-              </label>
-            </>
-          ) : null}
-          <label className="activities-field">
-            <span>Si vence el saldo</span>
-            <select value={overdue} onChange={(event) => setOverdue(event.target.value)}>
-              <option value="inherit">Usar configuración del estudio</option>
-              <option value="keep_and_notify">Conservar reservas y avisar</option>
-              <option value="release_after_grace">Liberar después de la gracia</option>
-            </select>
-          </label>
-          {overdue === "release_after_grace" ? (
-            <label className="activities-field">
-              <span>Minutos de gracia</span>
-              <input
-                type="number"
-                min="0"
-                max="525600"
-                step="1"
-                required
-                value={grace}
-                onChange={(event) => setGrace(event.target.value)}
-              />
-            </label>
-          ) : null}
-        </div>
-        <label>
-          <input
-            type="checkbox"
-            checked={allowIndividual}
-            onChange={(event) => setAllowIndividual(event.target.checked)}
-          />{" "}
-          Permitir compra de fechas individuales
-        </label>
-        <h2>Fechas del taller</h2>
+      {step === 1 ? (
+        <section className="workshop-purchase-fields" aria-label="Fechas">
+          <h2>¿Es de una fecha o de varias?</h2>
+          <p>Agrega cada fecha aquí mismo, con su horario, disciplina y cupo.</p>
+        <h2>Configura las fechas del taller</h2>
         {rows.map((row, index) => (
           <fieldset key={row.key} className="workshop-editor-date">
             <legend>Fecha {index + 1}</legend>
@@ -351,22 +273,154 @@ export function WorkshopEditorForm({
         >
           Agregar fecha
         </button>
+
         {!context.disciplines.length ? (
           <p role="alert">Necesitas una disciplina activa para crear las fechas.</p>
         ) : null}
-      </fieldset>
+
+        </section>
+      ) : null}
+      {step === 2 ? (
+        <section className="workshop-purchase-fields" aria-label="Precios">
+          <h2>Precios del taller</h2>
+          <div className="activities-form-grid">
+          <label className="activities-field">
+            <span>Precio completo</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0.01"
+              step="0.01"
+              required
+              value={fullPrice}
+              onChange={(event) => setFullPrice(event.target.value)}
+            />
+          </label>
+
+          </div>
+        <label>
+          <input
+            type="checkbox"
+            checked={allowIndividual}
+            onChange={(event) => setAllowIndividual(event.target.checked)}
+          />{" "}
+          Permitir compra de fechas individuales
+        </label>
+
+          {allowIndividual ? <p>Asigna el precio de cada fecha en el paso anterior. Puedes volver sin perder datos.</p> : null}
+                    <label className="activities-field">
+            <span>¿Requiere inscripción al estudio?</span>
+            <select value={enrollment} onChange={(event) => setEnrollment(event.target.value)}>
+              <option value="inherit">
+                Usar configuración del estudio (
+                {context.studioPolicy.requiresEnrollment ? "obligatoria" : "no obligatoria"})
+              </option>
+              <option value="required">Obligatoria</option>
+              <option value="not_required">No. El taller se puede comprar sin inscripción al estudio</option>
+            </select>
+          </label>
+
+        </section>
+      ) : null}
+      {step === 3 ? (
+        <section className="workshop-purchase-fields" aria-label="Pagos">
+          <h2>Anticipos y saldo</h2>
+          <p>Elige si el taller requiere pago completo o acepta un anticipo. Para aceptar un pago parcial se necesita fecha límite del saldo.</p>
+          <div className="activities-form-grid">
+          <label className="activities-field">
+            <span>Forma de pago</span>
+            <select
+              value={depositMode}
+              onChange={(event) => {
+                setDepositMode(event.target.value as WorkshopDraft["depositMode"]);
+                setDeposit("50");
+              }}
+            >
+              <option value="full">Pago completo</option>
+              <option value="fixed">Anticipo fijo</option>
+              <option value="percent">Anticipo porcentual</option>
+            </select>
+          </label>
+          {depositMode !== "full" ? (
+            <>
+              <label className="activities-field">
+                <span>{depositMode === "fixed" ? "Anticipo fijo" : "Porcentaje de anticipo"}</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  max={depositMode === "percent" ? 100 : undefined}
+                  step="0.01"
+                  required
+                  value={deposit}
+                  onChange={(event) => setDeposit(event.target.value)}
+                />
+              </label>
+              <label className="activities-field">
+                <span>Fecha límite para pagar el saldo (obligatoria para anticipos)</span>
+                <input
+                  type="datetime-local"
+                  required
+                  value={due}
+                  onChange={(event) => setDue(event.target.value)}
+                />
+              </label>
+            </>
+          ) : null}
+          <label className="activities-field">
+            <span>Si vence el saldo</span>
+            <select value={overdue} onChange={(event) => setOverdue(event.target.value)}>
+              <option value="inherit">Usar configuración del estudio</option>
+              <option value="keep_and_notify">Conservar reservas y avisar</option>
+              <option value="release_after_grace">Liberar después de la gracia</option>
+            </select>
+          </label>
+          {overdue === "release_after_grace" ? (
+            <label className="activities-field">
+              <span>Minutos de gracia</span>
+              <input
+                type="number"
+                min="0"
+                max="525600"
+                step="1"
+                required
+                value={grace}
+                onChange={(event) => setGrace(event.target.value)}
+              />
+            </label>
+          ) : null}
+
+          </div>
+        </section>
+      ) : null}
+      {step === 4 ? (
+        <section className="workshop-purchase-fields" aria-label="Revisión">
+          <h2>Revisar y guardar</h2>
+          <p><strong>${title || 'Sin nombre'}</strong></p>
+          <p>${rows.length} fecha(s) · ${fullPrice || '—'} ${context.currency}</p>
+          <p>${depositMode === 'full' ? 'Pago completo' : depositMode === 'fixed' ? 'Anticipo fijo: ' + deposit : 'Anticipo porcentual: ' + deposit + '%'}</p>
+          <p>${allowIndividual ? 'Permite comprar fechas individuales' : 'Solo compra completa'}</p>
+          <p>Confirma que las fechas, precios y condiciones sean correctos antes de guardar.</p>
+        </section>
+      ) : null}
       {state.error ? (
         <p className="activities-inline-error" role="alert">
           {state.error}
         </p>
       ) : null}
+      <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
+        {step > 0 ? <button type="button" onClick={() => setStep((current) => current - 1)}>Anterior</button> : null}
+        {step < 4 ? (
+          <button className="activities-next-button" type="button" onClick={() => setStep((current) => current + 1)}>Siguiente</button>
+        ) : (
       <button
         className="activities-next-button"
         type="submit"
-        disabled={pending || (!context.locked && !context.disciplines.length)}
+        disabled={pending || !title.trim() || (!context.locked && (!context.disciplines.length || !receivedAmountMinor(fullPrice) || rows.some((row) => !row.date || !row.time || !row.disciplineId || (allowIndividual && !receivedAmountMinor(row.price))) || (depositMode !== "full" && (!due || (depositMode === "fixed" ? !receivedAmountMinor(deposit) : !(Number(deposit) > 0 && Number(deposit) <= 100)))))}
       >
         {pending ? "Guardando…" : "Guardar taller"}
       </button>
+        )}
+      </div>
     </form>
   );
 }
