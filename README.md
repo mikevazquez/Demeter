@@ -21,6 +21,8 @@ los despliegues Git para este árbol. No fusionar esta rama completa en main.
    proyectos: `aws-0-us-east-1.pooler.supabase.com:5432`, base `postgres`, usuario
    `sf_gov_schema_reader.<project-ref>`. El usuario SQL verificado sigue siendo
    `sf_gov_schema_reader`. TLS sigue siendo `verify-full`, sin parámetros de URL.
+   El pooler usa la CA pública oficial versionada en `scripts/certs`; el endpoint
+   directo conserva los certificados del sistema. No se descarga CA en runtime.
    No se admite el pooler transaccional 6543, otro host/región ni usuario postgres.
    Validar red/TLS desde el runner no sustituye la captura autenticada de catálogo.
    No contratar runner, IPv4 ni recursos nuevos sin autorización de costo.

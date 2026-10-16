@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { certifySchemaParity } from "./certify-schema-parity.mjs";
 import {
@@ -76,7 +76,11 @@ export function connectionEnvironment(connection, projectRef) {
     PGUSER: url.username,
     PGPASSWORD: decodeURIComponent(url.password),
     PGSSLMODE: "verify-full",
-    PGSSLROOTCERT: "system",
+    PGSSLROOTCERT: session
+      ? fileURLToPath(
+          new URL("./certs/supabase-prod-ca-2021.crt", import.meta.url),
+        )
+      : "system",
     PGCONNECT_TIMEOUT: "10",
     PGOPTIONS: "-c default_transaction_read_only=on -c search_path=pg_catalog",
     LC_ALL: "C",

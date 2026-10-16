@@ -1,6 +1,7 @@
 """Verify the fixed Session endpoint's TLS without authentication or SQL."""
 import datetime
 import json
+from pathlib import Path
 import socket
 import ssl
 import struct
@@ -23,7 +24,8 @@ try:
         connection.sendall(struct.pack("!II", 8, 80877103))  # PostgreSQL SSLRequest
         if connection.recv(1) != b"S":
             raise RuntimeError("TLS not offered")
-        with ssl.create_default_context().wrap_socket(connection, server_hostname=host) as tls:
+        context = ssl.create_default_context(cafile=str(Path(__file__).parent / "certs" / "supabase-prod-ca-2021.crt"))
+        with context.wrap_socket(connection, server_hostname=host) as tls:
             result["tls_hostname_verified"] = True
             result["tls_version"] = tls.version()
     result["passed"] = True
