@@ -17,17 +17,17 @@ No ejecutar envío real hasta confirmar que la plantilla Meta configurada para `
 
 ## Casos
 
-| ID | Tipo | Escenario | Esperado |
-| --- | --- | --- | --- |
-| ACT-01 | Automatizado | Contrato de código | `provision-student-access` usa Meta y no Asistian |
-| ACT-02 | Automatizado | Config faltante | El envío falla cerrado sin mandar URL incorrecta |
-| ACT-03 | Manual/Integración | Alta nueva | Llega WhatsApp con botón de activación |
-| ACT-04 | Manual/Integración | Abrir botón | Abre `/login/student/activar` con token válido |
-| ACT-05 | Manual/Integración | Crear contraseña | La alumna completa activación y entra al portal |
-| ACT-06 | Manual/Integración | Reenvío | Llega un nuevo enlace válido al mismo teléfono |
-| ACT-07 | Negativo | Plantilla incompatible | No marcar como enviado; error rastreable |
-| ACT-08 | Seguridad | Entorno | Ningún envío ni cambio en producción |
-| ACT-09 | Regresión | student_welcome | No rompe otros usos de Meta WhatsApp |
+| ID     | Tipo               | Escenario              | Esperado                                          |
+| ------ | ------------------ | ---------------------- | ------------------------------------------------- |
+| ACT-01 | Automatizado       | Contrato de código     | `provision-student-access` usa Meta y no Asistian |
+| ACT-02 | Automatizado       | Config faltante        | El envío falla cerrado sin mandar URL incorrecta  |
+| ACT-03 | Manual/Integración | Alta nueva             | Llega WhatsApp con botón de activación            |
+| ACT-04 | Manual/Integración | Abrir botón            | Abre `/login/student/activar` con token válido    |
+| ACT-05 | Manual/Integración | Crear contraseña       | La alumna completa activación y entra al portal   |
+| ACT-06 | Manual/Integración | Reenvío                | Llega un nuevo enlace válido al mismo teléfono    |
+| ACT-07 | Negativo           | Plantilla incompatible | No marcar como enviado; error rastreable          |
+| ACT-08 | Seguridad          | Entorno                | Ningún envío ni cambio en producción              |
+| ACT-09 | Regresión          | student_welcome        | No rompe otros usos de Meta WhatsApp              |
 
 ## Definition of Done
 
