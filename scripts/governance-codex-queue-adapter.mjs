@@ -26,6 +26,7 @@ export function buildReviewedIntake(request, policy, evidence, existing = []) {
         fingerprint: staged.fingerprint,
       }],
     },
+    reviewInstructions: "Independent reviewer must verify GitHub issue and policy, then explicitly promote the pending manifest and append the exact task to the queue.",
     enqueuePerformed: false,
     dispatchPerformed: false,
     productionAuthorized: false,
