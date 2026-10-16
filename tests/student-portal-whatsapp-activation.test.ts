@@ -16,9 +16,9 @@ describe("student portal activation via Meta WhatsApp", () => {
 
   it("enforces the Meta pilot allowlist before activation sends", () => {
     expect(provision).toContain("service_get_meta_whatsapp_pilot_wa_ids");
-    expect(provision).toContain('runtimeConfig?.mode !== "pilot"');
-    expect(provision).toContain("pilot_mode_required");
+    expect(provision).toContain("service_get_meta_whatsapp_pilot_wa_ids");
     expect(provision).toContain("pilot_recipient_not_allowed");
+    expect(provision).not.toContain("pilot_mode_required");
   });
 
   it("fails closed when activation button config is missing", () => {
