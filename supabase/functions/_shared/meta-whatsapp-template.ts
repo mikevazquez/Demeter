@@ -172,7 +172,6 @@ export function buildMetaWhatsAppTemplatePayload(input: {
     });
   }
 
-
   return {
     messaging_product: "whatsapp",
     recipient_type: "individual",
