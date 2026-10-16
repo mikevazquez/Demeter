@@ -1,0 +1,41 @@
+{
+  "recorded_at": "2026-10-16T20:09:03.811188+00:00",
+  "ruleset_id": 25272082,
+  "operator_configuration_completed": true,
+  "full_policy_verified_in_session": true,
+  "full_policy_verified_from_actions": false,
+  "local_targeted_tests_passed": 58,
+  "capture_activated": false,
+  "sql_executed": false,
+  "reservations_created": 0,
+  "production_changed": false,
+  "administrative_credential_requested": false,
+  "source_sha256": {
+    "scripts/metadata-broker-protection-preflight.mjs": "4ac47cb306d9623c95825e6e506bf25e8a50f09d6c7ab88525426aa249136bf1",
+    "scripts/metadata-broker-protection-preflight.test.mjs": "d8a55ae43ba80c908ea995a3670366d66d952411d0ae2ae4ab74718245b67d88",
+    ".github/workflows/metadata-broker-oidc-rehearsal.yml": "d57fc697a5461a6d4c13dff5a5b1d4147020367cefbd384cc5fc4d7b6c573504",
+    "scripts/metadata-broker-rules.mjs": "10393660a3ac78546c2393191bc5ebdbc756ff95d62685eb33627b05a80262c2"
+  },
+  "ruleset_snapshot_sha256": "aa6842d1eb7b136d0592d374f81e244fe1609e3ef972499d47305a3a3ff74898",
+  "actions_attempts": [
+    {
+      "id": 38959095297,
+      "sha": "7acbe46ab10a054153bd992ba1593d28707d3dd2",
+      "conclusion": "failure",
+      "unit_tests_passed": 55
+    },
+    {
+      "id": 38959362037,
+      "sha": "f780e4057538a95b5070946bad239476d38a75cd",
+      "conclusion": "failure",
+      "unit_tests_passed": 56
+    },
+    {
+      "id": 38959685958,
+      "sha": "0bd4595a26416f9866df06ab5fe76cf89808eefc",
+      "conclusion": "failure",
+      "unit_tests_passed": 58
+    }
+  ],
+  "blocker": "GitHub hides bypass_actors unless the reader has ruleset-write access; missing data remains denied."
+}

@@ -1,8 +1,15 @@
-# Única acción administrativa pendiente: proteger el registro de reservas
+# Registro de reservas: configuración administrativa verificada
+
+**Completado por el propietario y verificado en GitHub:** regla 25272082 activa,
+patrón correcto y sin bypass. No necesitas repetir estos pasos.
+La limitación de lectura del runner está documentada en
+[evidencia actual](evidence/metadata-broker-20261016/protected-registry/README.md).
+
+Las instrucciones siguientes quedan como referencia de la configuración.
 
 La conexión GitHub disponible permite publicar ramas y PR, pero no administrar
 rulesets. La auditoría encuentra reglas para main y para el controlador, ninguna
-para el registro de reservas. No se debe desactivar ni ampliar esas reglas.
+para el registro de reservas en la auditoría anterior; la regla ya existe ahora. No se debe desactivar ni ampliar esas reglas.
 
 Este cambio protege solamente nuevas ramas de evidencia. No concede captura,
 credenciales, despliegues ni promoción. No activa un servicio de pago.

@@ -49,14 +49,9 @@ export async function fetchReservationProtection(
       }
       return JSON.parse(Buffer.concat(chunks).toString("utf8"));
     };
-    let rule = await read(token);
-    let publicFallback = false;
-    // A hidden bypass list is not an empty list. Read the same public resource
-    // once without a credential; require the full list in that response too.
-    if (token && !Array.isArray(rule.bypass_actors)) {
-      rule = await read(undefined);
-      publicFallback = true;
-    }
+    const rule = await read(token);
+    // GitHub hides bypass_actors without ruleset-write access. Missing data
+    // must fail closed; anonymous retries cannot establish the full policy.
     stage = "identity";
     if (
       rule.id !== VERIFIED_RULESET_ID ||
@@ -67,10 +62,9 @@ export async function fetchReservationProtection(
     verifyReservationRuleset(rule);
     return {
       version: 1,
-      source: "github-public-ruleset-preflight",
+      source: "github-ruleset-preflight",
       ruleset_id: VERIFIED_RULESET_ID,
       protection_verified: true,
-      public_fallback_used: publicFallback,
       pattern: RESERVATION_PATTERN,
       bypass_actors: [],
       restrictions: ["update", "deletion", "non_fast_forward"],
