@@ -32,10 +32,15 @@ const base = {
 test("reviewed intake matches existing coordinator queue validation", () => {
   const staged = buildReviewedIntake(request, policy, evidence);
   assert.equal(staged.state, "review-required");
+  assert.equal(staged.manifest.tasks[0].state, "pending-review");
+  assert.equal(staged.manifest.tasks[0].task.status, "pending-review");
   assert.equal(staged.enqueuePerformed, false);
   assert.equal(staged.dispatchPerformed, false);
-  const task = staged.manifest.tasks[0].task;
-  assert.equal(validateConfig({ ...base, tasks: [task], intake: staged.manifest }, now).tasks[0].id, request.id);
+  const task = { ...staged.manifest.tasks[0].task, status: "ready" };
+  const approved = structuredClone(staged.manifest);
+  approved.tasks[0].state = "approved-for-queue";
+  approved.tasks[0].task = task;
+  assert.equal(validateConfig({ ...base, tasks: [task], intake: approved }, now).tasks[0].id, request.id);
 });
 
 test("coordinator rejects manifest missing matching queue task", () => {
@@ -45,11 +50,14 @@ test("coordinator rejects manifest missing matching queue task", () => {
 
 test("coordinator rejects unapproved intake and changed issue digest", () => {
   const staged = buildReviewedIntake(request, policy, evidence);
-  const task = staged.manifest.tasks[0].task;
+  const task = { ...staged.manifest.tasks[0].task, status: "ready" };
   const rejected = structuredClone(staged.manifest);
   rejected.tasks[0].state = "pending";
   assert.throws(() => validateConfig({ ...base, tasks: [task], intake: rejected }, now), /Unapproved/);
+  const approved = structuredClone(staged.manifest);
+  approved.tasks[0].state = "approved-for-queue";
+  approved.tasks[0].task = task;
   assert.throws(() => validateConfig({
-    ...base, tasks: [{ ...task, issueBodySha256: "b".repeat(64) }], intake: staged.manifest,
+    ...base, tasks: [{ ...task, issueBodySha256: "b".repeat(64) }], intake: approved,
   }, now), /not bound/);
 });
