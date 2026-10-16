@@ -25,6 +25,8 @@ type RosterItem = {
   checkedInAt?: string | null;
   attendanceProvenance?: string | null;
   paymentDueOnAttendance?: boolean;
+  workshopSaleId?: string;
+  workshopBalanceMinor?: number;
   pendingPackageSaleId?: string;
   pendingPackageAmountMinor?: number;
   individualPriceMinor?: number | null;
@@ -300,6 +302,16 @@ export function SessionOperations({
                           ) : null}
                           {item.paymentDueOnAttendance ? (
                             <span className="today-payment-pending-tag">Pago pendiente</span>
+                          ) : null}
+                          {item.workshopBalanceMinor !== undefined ? (
+                            <span className={item.workshopBalanceMinor > 0 ? "today-payment-pending-tag" : "today-evaluation-tag"}>
+                              {item.workshopBalanceMinor > 0
+                                ? `Saldo taller · ${new Intl.NumberFormat("es-MX", { style: "currency", currency: item.currency ?? "MXN" }).format(item.workshopBalanceMinor / 100)}`
+                                : "Taller liquidado"}
+                            </span>
+                          ) : null}
+                          {item.workshopSaleId && (item.workshopBalanceMinor ?? 0) > 0 ? (
+                            <a className="today-payment-pending-tag" href={`/admin/ventas/${item.workshopSaleId}`}>Registrar abono →</a>
                           ) : null}
                           {item.pendingPackageSaleId ? (
                             <a
