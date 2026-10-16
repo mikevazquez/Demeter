@@ -25,6 +25,7 @@ export function WorkshopPurchaseForm({
   const [mode, setMode] = useState<"full" | "sessions">("full");
   const [selected, setSelected] = useState<string[]>([]);
   const [amount, setAmount] = useState("");
+  const [paymentChoice, setPaymentChoice] = useState<"deposit" | "full">("deposit");
   const [studentId, setStudentId] = useState("");
   const [method, setMethod] = useState(context.paymentMethods[0] ?? "");
   const [reference, setReference] = useState("");
@@ -55,13 +56,16 @@ export function WorkshopPurchaseForm({
     }
   }
   const received = receivedAmountMinor(amount);
+  const effectiveReceived = amount === "" && quote.ok && minimum != null
+    ? (paymentChoice === "deposit" ? minimum : quote.totalMinor)
+    : received;
   const amountValid =
     quote.ok &&
     minimum != null &&
-    received != null &&
-    received >= minimum &&
-    received <= quote.totalMinor &&
-    (received === quote.totalMinor || offer.dueAt != null);
+    effectiveReceived != null &&
+    effectiveReceived >= minimum &&
+    effectiveReceived <= quote.totalMinor &&
+    (effectiveReceived === quote.totalMinor || offer.dueAt != null);
   const money = (minor: number) =>
     new Intl.NumberFormat(locale, { style: "currency", currency }).format(minor / 100);
   const date = (value: string) =>
@@ -227,6 +231,13 @@ export function WorkshopPurchaseForm({
         ) : (
           <p role="status">Elige fechas con cupo y precio disponible para calcular la compra.</p>
         )}
+        {quote.ok && minimum != null && minimum < quote.totalMinor ? (
+          <fieldset className="activities-choice">
+            <legend>¿Cuánto pagó la alumna?</legend>
+            <label><input type="radio" name="payment_choice" checked={paymentChoice === "deposit"} onChange={() => { setPaymentChoice("deposit"); setAmount(""); }} /> Solo anticipo · {money(minimum)}</label>
+            <label><input type="radio" name="payment_choice" checked={paymentChoice === "full"} onChange={() => { setPaymentChoice("full"); setAmount(""); }} /> Pago completo · {money(quote.totalMinor)}</label>
+          </fieldset>
+        ) : null}
         <div className="activities-form-grid">
           <label className="activities-field">
             <span>Importe recibido (MXN)</span>
@@ -237,7 +248,7 @@ export function WorkshopPurchaseForm({
               step="0.01"
               name="received_amount"
               required
-              value={amount}
+              value={amount === "" && effectiveReceived != null ? String(effectiveReceived / 100) : amount}
               onChange={(event) => setAmount(event.target.value)}
             />
           </label>
