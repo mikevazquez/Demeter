@@ -102,6 +102,7 @@ async function sendActivationWhatsApp(input: {
     eventId: `student_welcome:${input.studentId}:${input.userId}:${crypto.randomUUID()}`,
     recipient: input.phone,
     variables: { recipient_name: input.name, activation_url: input.activationLink },
+    metaTemplateNameOverride: "bienvenida_alumna_portal",
   });
 }
 
