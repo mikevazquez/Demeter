@@ -1,0 +1,154 @@
+{
+  "version": 1,
+  "repository": "mikevazquez/Demeter",
+  "controlBranch": "chore/governance-autonomous-coordinator-20261015",
+  "maxTasksPerRun": 1,
+  "source": {
+    "pageId": "3fad78f7146381e9a97fc3c454e6516a",
+    "url": "https://app.notion.com/p/3fad78f7146381e9a97fc3c454e6516a?pvs=204",
+    "lastEditedAt": "2026-10-15T07:49:26.240Z",
+    "capturedAt": "2026-10-15T13:57:23.000Z",
+    "expiresAt": "2026-10-17T13:57:23.000Z",
+    "snapshotPath": ".github/codex-coordinator/notion-policy.txt",
+    "sha256": "b6eeb95a8a92893d64db82551949335a7223628315894bc1fe90d54bbe60f980"
+  },
+  "tasks": [
+    {
+      "id": "acceptance-1-v1",
+      "issueNumber": 292,
+      "issueBodySha256": "a39390d9e6838044676d1fc9de385b86bb2cc97d2f16f08b6fc34e8cad9b8d93",
+      "issueUpdatedAt": "2026-10-15T09:32:25Z",
+      "owner": "codex-1",
+      "status": "ready",
+      "kind": "documentation",
+      "allowedPaths": [
+        "docs/automation/executor-boundaries.md"
+      ],
+      "requiredText": [
+        "AUTONOMY-EXECUTOR-V1"
+      ],
+      "checks": []
+    },
+    {
+      "id": "acceptance-2-v1",
+      "issueNumber": 293,
+      "issueBodySha256": "8ca4a3b3a6d43889171da7941cfe2ecc54eb24b75924c44bac84c6e341390770",
+      "issueUpdatedAt": "2026-10-15T09:32:25Z",
+      "owner": "codex-1",
+      "status": "ready",
+      "kind": "documentation",
+      "allowedPaths": [
+        "docs/automation/executor-recovery.md"
+      ],
+      "requiredText": [
+        "AUTONOMY-RECOVERY-V1"
+      ],
+      "checks": []
+    },
+    {
+      "id": "acceptance-isolation-v1",
+      "issueNumber": 295,
+      "issueBodySha256": "1925468e9f092333952a5fba468e117bb5be4fd0e2c844bce013e7314de72cf5",
+      "issueUpdatedAt": "2026-10-15T13:26:20Z",
+      "owner": "codex-1",
+      "status": "ready",
+      "kind": "code",
+      "allowedPaths": [
+        "tests/automation/executor-isolation-proof.mjs"
+      ],
+      "requiredText": [
+        "AUTONOMY-ISOLATION-V1"
+      ],
+      "checks": [
+        [
+          "node",
+          "-e",
+          "const fs=require('node:fs'),assert=require('node:assert/strict');\nassert.deepEqual(Object.keys(process.env).sort(),['PATH','PWD']);\nassert.equal(fs.existsSync('/home/runner/.codex/config.toml'),false);\nassert.equal(fs.readFileSync('/proc/net/route','utf8').trim().split('\\n').length,1);\nassert.throws(()=>fs.writeFileSync('.git/automation-isolation-probe','blocked'),e=>e.code==='EROFS');\nimport('./tests/automation/executor-isolation-proof.mjs').then(({executionBoundary:b})=>{assert.equal(b.network,'denied');assert.equal(b.publicationCredentials,'absent');assert.equal(Object.isFrozen(b),true);console.log('ISOLATION_CHECKS_PASS: no credentials, no route, hidden Codex home, read-only Git, code fixture valid');});"
+        ]
+      ],
+      "acceptanceRetryProbe": true
+    },
+    {
+      "id": "acceptance-lease-live-20261015-v1",
+      "issueNumber": 300,
+      "issueBodySha256": "5a1a3d47482746bfe20cc33493b37b40fc4f56951453aa83e330c49639f552e7",
+      "issueUpdatedAt": "2026-10-15T22:01:44Z",
+      "owner": "codex-1",
+      "status": "ready",
+      "kind": "code",
+      "allowedPaths": [
+        "tests/automation/lease-live-proof.mjs"
+      ],
+      "requiredText": [
+        "AUTONOMY-LEASE-LIVE-V1"
+      ],
+      "checks": [
+        [
+          "node",
+          "-e",
+          "const fs=require('node:fs'),assert=require('node:assert/strict');\nassert.deepEqual(Object.keys(process.env).sort(),['PATH','PWD']);\nassert.equal(fs.existsSync('/home/runner/.codex/config.toml'),false);\nassert.equal(fs.readFileSync('/proc/net/route','utf8').trim().split('\\n').length,1);\nassert.throws(()=>fs.writeFileSync('.git/automation-lease-probe','blocked'),e=>e.code==='EROFS');\nimport('./tests/automation/lease-live-proof.mjs').then((m)=>{assert.deepEqual(Object.keys(m),['leasedExecutionProof']);assert.deepEqual(m.leasedExecutionProof,{marker:'AUTONOMY-LEASE-LIVE-V1',taskId:'acceptance-lease-live-20261015-v1',maxGenerationStages:2,productionAuthorized:false});assert.equal(Object.isFrozen(m.leasedExecutionProof),true);console.log('LEASE_ISOLATION_CHECKS_PASS: no credentials, no route, hidden Codex home, read-only Git, synthetic fixture verified');}).catch(e=>{console.error(e.message);process.exitCode=1;});"
+        ]
+      ],
+      "acceptanceRetryProbe": true
+    },
+    {
+      "id": "governante-codex-local-20261015-v1",
+      "owner": "codex-1",
+      "status": "ready",
+      "kind": "code",
+      "allowedPaths": [
+        "tests/automation/fixtures/governante-codex-local-proof.mjs"
+      ],
+      "checks": [
+        [
+          "node",
+          "--check",
+          "tests/automation/fixtures/governante-codex-local-proof.mjs"
+        ]
+      ],
+      "issueNumber": 306,
+      "issueBodySha256": "5c258b1cf5ef8b4eebfd03706a09a0e32e4675971d4538535fdd48f08c67613b",
+      "issueUpdatedAt": "2026-10-16T03:59:43Z",
+      "requiredText": [
+        "GOVERNANTE-CODEX-LOCAL-V1"
+      ]
+    }
+  ],
+  "hostedController": {
+    "mode": "chatgpt-hosted",
+    "name": "Coordinar autonomía Studio Flow",
+    "notionCheckedAt": "2026-10-15T13:57:23.000Z",
+    "notionLastEditedAt": "2026-10-15T07:49:26.240Z"
+  },
+  "intake": {
+    "mode": "reviewed",
+    "tasks": [
+      {
+        "state": "approved-for-queue",
+        "task": {
+          "id": "governante-codex-local-20261015-v1",
+          "owner": "codex-1",
+          "status": "ready",
+          "kind": "code",
+          "allowedPaths": [
+            "tests/automation/fixtures/governante-codex-local-proof.mjs"
+          ],
+          "checks": [
+            [
+              "node",
+              "--check",
+              "tests/automation/fixtures/governante-codex-local-proof.mjs"
+            ]
+          ],
+          "issueNumber": 306,
+          "issueBodySha256": "5c258b1cf5ef8b4eebfd03706a09a0e32e4675971d4538535fdd48f08c67613b",
+          "issueUpdatedAt": "2026-10-16T03:59:43Z",
+          "requiredText": [
+            "GOVERNANTE-CODEX-LOCAL-V1"
+          ]
+        },
+        "fingerprint": "f1041a098755ec6ac7024645b5d494eac27836cd1fbd914ae6679c6ec4509f0a"
+      }
+    ]
+  }
+}

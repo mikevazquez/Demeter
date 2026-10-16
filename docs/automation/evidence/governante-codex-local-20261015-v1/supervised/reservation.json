@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "localExecutionId": "supervised-governante-codex-20261015-v1",
+  "taskId": "governante-codex-local-20261015-v1",
+  "mode": "current-codex-session-supervised",
+  "sourceSha": "2af9188523c5e18bed2d647092c3395c6f428cd9",
+  "contractSha256": "5596565edc161ac2ab0dcb028a6c701d9d10d1f2f7542e2e2a6357b577f171af",
+  "requestFingerprint": "f1041a098755ec6ac7024645b5d494eac27836cd1fbd914ae6679c6ec4509f0a",
+  "issueUpdatedAt": "2026-10-16T03:59:43Z",
+  "userAuthorization": "Hagámoslo así en lo que resuelvo el inicio de sesion",
+  "priorAttempt": {
+    "evidenceCommit": "90910a7ad460597df914ef304717dc16b05fbaa6",
+    "cliInvocations": 1,
+    "state": "failed-authentication",
+    "reservationReset": false
+  },
+  "additionalCliInvocationsAllowed": 0,
+  "maxSupervisedResults": 1,
+  "productionAuthorized": false,
+  "createdAt": "2026-10-16T04:00:13.847Z"
+}

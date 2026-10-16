@@ -1,0 +1,168 @@
+{
+  "task": {
+    "id": "governante-codex-local-20261015-v1",
+    "owner": "codex-1",
+    "status": "ready",
+    "kind": "code",
+    "allowedPaths": [
+      "tests/automation/fixtures/governante-codex-local-proof.mjs"
+    ],
+    "checks": [
+      [
+        "node",
+        "--check",
+        "tests/automation/fixtures/governante-codex-local-proof.mjs"
+      ]
+    ],
+    "issueNumber": 306,
+    "issueBodySha256": "5c258b1cf5ef8b4eebfd03706a09a0e32e4675971d4538535fdd48f08c67613b",
+    "issueUpdatedAt": "2026-10-16T03:59:43Z",
+    "requiredText": [
+      "GOVERNANTE-CODEX-LOCAL-V1"
+    ]
+  },
+  "source": {
+    "mode": "dated-snapshot",
+    "pageId": "3fad78f7146381e9a97fc3c454e6516a",
+    "url": "https://app.notion.com/p/3fad78f7146381e9a97fc3c454e6516a?pvs=204",
+    "lastEditedAt": "2026-10-15T07:49:26.240Z",
+    "capturedAt": "2026-10-15T13:57:23.000Z",
+    "expiresAt": "2026-10-17T13:57:23.000Z",
+    "snapshotPath": ".github/codex-coordinator/notion-policy.txt",
+    "sha256": "b6eeb95a8a92893d64db82551949335a7223628315894bc1fe90d54bbe60f980"
+  },
+  "issue": {
+    "url": "https://api.github.com/repos/mikevazquez/Demeter/issues/306",
+    "repository_url": "https://api.github.com/repos/mikevazquez/Demeter",
+    "labels_url": "https://api.github.com/repos/mikevazquez/Demeter/issues/306/labels{/name}",
+    "comments_url": "https://api.github.com/repos/mikevazquez/Demeter/issues/306/comments",
+    "events_url": "https://api.github.com/repos/mikevazquez/Demeter/issues/306/events",
+    "html_url": "https://github.com/mikevazquez/Demeter/issues/306",
+    "id": 5877408141,
+    "node_id": "I_kwDOUbAUQc8AAAABXlIhjQ",
+    "number": 306,
+    "title": "GOV piloto local: governante-codex-local-20261015-v1",
+    "user": {
+      "login": "mikevazquez",
+      "id": 55609925,
+      "node_id": "MDQ6VXNlcjU1NjA5OTI1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/55609925?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/mikevazquez",
+      "html_url": "https://github.com/mikevazquez",
+      "followers_url": "https://api.github.com/users/mikevazquez/followers",
+      "following_url": "https://api.github.com/users/mikevazquez/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mikevazquez/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/mikevazquez/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mikevazquez/subscriptions",
+      "organizations_url": "https://api.github.com/users/mikevazquez/orgs",
+      "repos_url": "https://api.github.com/users/mikevazquez/repos",
+      "events_url": "https://api.github.com/users/mikevazquez/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/mikevazquez/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "labels": [],
+    "state": "open",
+    "locked": false,
+    "assignees": [],
+    "milestone": null,
+    "comments": 3,
+    "created_at": "2026-10-16T02:47:13Z",
+    "updated_at": "2026-10-16T03:59:43Z",
+    "closed_at": null,
+    "assignee": null,
+    "author_association": "OWNER",
+    "active_lock_reason": null,
+    "sub_issues_summary": {
+      "total": 0,
+      "completed": 0,
+      "percent_completed": 0
+    },
+    "issue_dependencies_summary": {
+      "blocked_by": 0,
+      "total_blocked_by": 0,
+      "blocking": 0,
+      "total_blocking": 0
+    },
+    "body": "## Piloto Gobernante → Codex local autorizado\n\nEl propietario autorizó en esta conversación la ejecución local con la sesión incluida de Codex, certificación en checkout separado y publicación Draft con evidencias GitHub. No se atribuirán jobs de Actions a estas etapas.\n\nID único: `governante-codex-local-20261015-v1`.\nProducto: Studio Flow. Responsable: codex-1.\nFuente de implementación: PR #304, SHA `2af9188523c5e18bed2d647092c3395c6f428cd9`.\nUn único archivo permitido: `tests/automation/fixtures/governante-codex-local-proof.mjs`.\n\nCrear un módulo ESM de texto, sin imports, llamadas a servicios, acceso a entorno, I/O ni otros efectos. Exportar únicamente la constante `pilotProof`, congelada con `Object.freeze`, con exactamente estos campos:\n- marker: `GOVERNANTE-CODEX-LOCAL-V1`\n- taskId: `governante-codex-local-20261015-v1`\n- selectionLimit: 1\n- execution: `local-chatgpt`\n- productionAuthorized: false\n\nIncluir un comentario que identifique el archivo como fixture sintético: el objeto por sí mismo no acredita ejecución de Codex, selección ni certificación. La evidencia será el registro real de las etapas y sus hashes.\n\nDefinition of Done:\n1. Admitir el contrato mediante el adaptador existente de #304 y verificar issue/hash/updated_at.\n2. Conservar las cuatro tareas originales en el manifiesto aislado; fijar `CODEX_PILOT_TASK_ID` al ID de arriba y `maxTasksPerRun=1`. La cola de control no cambia.\n3. Registrar el contrato y una reserva local persistente en GitHub antes de la generación; máximo una invocación de Codex para esta tarea. No reutilizar el ID para una nueva generación.\n4. Generación real con la sesión ChatGPT existente, sin API keys, compras ni transferencia de credenciales. Solicitar salida JSON de texto, sin herramientas del modelo ni escrituras del modelo al repositorio.\n5. Validar y materializar solo la ruta admitida. Certificar exactamente esos bytes en un clon nuevo del SHA fuente, con pruebas sin red, sin credenciales y sin acceso al home de Codex.\n6. Publicar un único Draft contra la rama de integración de #304, nunca contra main. La diferencia del Draft será únicamente el fixture certificado.\n7. Repetir la selección y comprobar cero tareas nuevas; conservar evidencia del SHA, issue, contrato, selección, proceso de Codex, pruebas, certificación, publicación y límites de esta modalidad local.\n\nExclusiones: no producción, app, datos, Supabase, Vercel, secretos, cambios de permisos, main, rama de control, merges, despliegues, cobros, nuevas suscripciones o mensajes a terceros. No contar evidencia histórica de #300/#301 ni declarar jobs de Actions exitosos. El publicador corre separado del modelo y no ejecuta código generado.\n",
+    "closed_by": null,
+    "reactions": {
+      "url": "https://api.github.com/repos/mikevazquez/Demeter/issues/306/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "timeline_url": "https://api.github.com/repos/mikevazquez/Demeter/issues/306/timeline",
+    "performed_via_github_app": {
+      "id": 1144995,
+      "client_id": "Iv23liVemv8A9if9v0F2",
+      "slug": "chatgpt-codex-connector",
+      "node_id": "A_kwHOAOQ6Gs4AEXij",
+      "owner": {
+        "login": "openai",
+        "id": 14957082,
+        "node_id": "MDEyOk9yZ2FuaXphdGlvbjE0OTU3MDgy",
+        "avatar_url": "https://avatars.githubusercontent.com/u/14957082?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/openai",
+        "html_url": "https://github.com/openai",
+        "followers_url": "https://api.github.com/users/openai/followers",
+        "following_url": "https://api.github.com/users/openai/following{/other_user}",
+        "gists_url": "https://api.github.com/users/openai/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/openai/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/openai/subscriptions",
+        "organizations_url": "https://api.github.com/users/openai/orgs",
+        "repos_url": "https://api.github.com/users/openai/repos",
+        "events_url": "https://api.github.com/users/openai/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/openai/received_events",
+        "type": "Organization",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "name": "ChatGPT Codex Connector",
+      "description": "Bring ChatGPT and Codex to your GitHub repositories.",
+      "external_url": "https://www.chatgpt.com",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "created_at": "2025-02-14T01:37:05Z",
+      "updated_at": "2026-09-23T18:52:59Z",
+      "permissions": {
+        "actions": "write",
+        "checks": "read",
+        "contents": "write",
+        "emails": "read",
+        "issues": "write",
+        "metadata": "read",
+        "pull_requests": "write",
+        "statuses": "read",
+        "workflows": "write"
+      },
+      "events": [
+        "check_run",
+        "check_suite",
+        "commit_comment",
+        "issues",
+        "issue_comment",
+        "pull_request",
+        "pull_request_review",
+        "pull_request_review_comment",
+        "pull_request_review_thread",
+        "repository",
+        "status",
+        "sub_issues"
+      ]
+    },
+    "state_reason": null,
+    "pinned_comment": null
+  },
+  "sourceSha": "2af9188523c5e18bed2d647092c3395c6f428cd9",
+  "runId": "supervised-governante-codex-20261015-v1",
+  "contractHash": "5596565edc161ac2ab0dcb028a6c701d9d10d1f2f7542e2e2a6357b577f171af"
+}

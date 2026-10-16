@@ -1,0 +1,21 @@
+{
+  "source": {
+    "mode": "dated-snapshot",
+    "pageId": "3fad78f7146381e9a97fc3c454e6516a",
+    "url": "https://app.notion.com/p/3fad78f7146381e9a97fc3c454e6516a?pvs=204",
+    "lastEditedAt": "2026-10-15T07:49:26.240Z",
+    "capturedAt": "2026-10-15T13:57:23.000Z",
+    "expiresAt": "2026-10-17T13:57:23.000Z",
+    "snapshotPath": ".github/codex-coordinator/notion-policy.txt",
+    "sha256": "b6eeb95a8a92893d64db82551949335a7223628315894bc1fe90d54bbe60f980"
+  },
+  "selected": [
+    {
+      "id": "governante-codex-local-20261015-v1",
+      "recovery": false
+    }
+  ],
+  "skipped": [],
+  "sourceSha": "2af9188523c5e18bed2d647092c3395c6f428cd9",
+  "runId": "supervised-governante-codex-20261015-v1"
+}
