@@ -8,6 +8,14 @@ BEGIN
   IF EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='sf_gov_schema_reader') THEN
     RAISE EXCEPTION 'Reader already exists; re-audit before changing shared ACL';
   END IF;
+  -- An explicit USAGE grant is not ownership. A non-owner REVOKE may warn and
+  -- leave another grantor's PUBLIC grant intact; reject before attempting it.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_namespace n
+    WHERE n.nspname='net' AND pg_catalog.pg_has_role(current_user,n.nspowner,'USAGE')
+  ) THEN
+    RAISE EXCEPTION 'Net schema owner authority unavailable; no ACL change attempted';
+  END IF;
   IF current_database() <> 'postgres' OR
      NOT EXISTS (SELECT 1 FROM pg_catalog.pg_extension WHERE extname='pg_net' AND extversion='0.20.4') THEN
     RAISE EXCEPTION 'Unexpected production database/extension; re-audit';

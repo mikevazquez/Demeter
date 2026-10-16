@@ -1,7 +1,39 @@
-# INV-UAT-01 — lectores mínimos: propuesta pendiente de autorización
+# INV-UAT-01 — lectores autorizados: Candidate preparado, producción bloqueada
 
-Estado: **PREPARADO PARA REVISIÓN; NO APLICADO**. El PR sigue Draft. No se ha
-ejecutado DDL, creado un lector, cambiado una ACL remota ni leído filas de negocio.
+Estado actual: **AUTORIZADO; APLICACIÓN PARCIAL VERIFICADA**. El PR sigue Draft.
+El propietario autorizó el alcance concreto en el chat mediante «Autorizo».
+Candidate ya tiene lector NOLOGIN, verificado sin privilegios de negocio.
+Producción sigue sin lector y conserva su ACL anterior: el intento transaccional
+falló en el preflight del lector y no dejó una migración aplicada.
+
+## Bloqueo administrativo comprobado después de la autorización
+
+El conector ejecuta como postgres: no es superuser, no es miembro del propietario
+de net (supabase_admin) y no tiene USAGE WITH GRANT OPTION. El REVOKE no retiró el
+grant de PUBLIC; el guard posterior detuvo el alta. Se releyeron ACL, rol e
+historial de migración: producción conserva PUBLIC USAGE/acceso a dos tablas,
+no existe el lector ni una entrada de la migración fallida. No se reintentó con
+credenciales alternativas ni se cambiaron propietarios o membresías.
+
+La propuesta ahora comprueba autoridad del propietario antes del REVOKE; una
+séptima prueba aislada cubre el caso de USAGE explícito sin ownership. La
+autorización del usuario sigue vigente para el alcance acordado; lo que falta es
+capacidad administrativa real sobre el esquema gestionado por Supabase.
+
+Intervención mínima: un operador de Supabase con autoridad del propietario debe
+aplicar únicamente `REVOKE USAGE ON SCHEMA net FROM PUBLIC` en
+`qfhojvgvhrbautvczffq`, conservando los grants explícitos observados. El SQL Editor
+normal también usa postgres: abrir otra sesión allí no concede ownership.
+Solicitar esa operación al administrador/soporte de Supabase mediante el canal
+existente; no contratar planes ni delegar superuser a la aplicación. No se ha
+enviado una solicitud a terceros desde esta sesión.
+
+Después se releerá el preflight y se aplicará solo el alta NOLOGIN productiva ya
+autorizada, no el cambio de ACL otra vez. Candidate no debe reprovisionarse.
+La habilitación de LOGIN y contraseñas sigue fuera de este alcance; requiere
+administrador por canal seguro. El hito de lectores continúa pendiente.
+
+La sección siguiente conserva el alcance de la propuesta revisada originalmente.
 
 ## Hallazgo comprobado por SELECT-only
 
@@ -11,8 +43,9 @@ heredaría aunque use NOINHERIT y no reciba grants propios. La propuesta de lect
 ahora debe rechazar ese estado; no basta crear el usuario y llamarlo read-only.
 
 Candidate (`sdmxtlgjkodidjtvikng`) no muestra relaciones ni SECURITY DEFINER
-accesibles por PUBLIC en la auditoría consultada. En ambas bases falta
-`sf_gov_schema_reader`. Ambas conceden CONNECT/TEMPORARY a PUBLIC.
+accesibles por PUBLIC en la auditoría consultada. En la lectura previa faltaba
+`sf_gov_schema_reader` en ambas bases; después de la autorización ya existe
+NOLOGIN en Candidate. Ambas conceden CONNECT/TEMPORARY a PUBLIC.
 
 Se consultaron únicamente ACL, nombres de objetos/roles, versión de extensión y
 metadatos de ejecución. No se consultaron colas/respuestas HTTP, comandos cron,
@@ -83,7 +116,7 @@ divergencia, conciliación Candidate y aceptación correspondiente.
 
 ## Pruebas realizadas
 
-Seis pruebas en PostgreSQL WASM aislado, sin red ni pg_net nativo:
+Siete pruebas en PostgreSQL WASM aislado, sin red ni pg_net nativo:
 
 - PUBLIC net bloquea el alta y no deja un rol creado.
 - NOINHERIT y REVOKE individual no eliminan los permisos de PUBLIC.
@@ -92,6 +125,7 @@ Seis pruebas en PostgreSQL WASM aislado, sin red ni pg_net nativo:
 - Un lector existente no se adopta ni modifica.
 - La propuesta productiva rechaza un entorno sin la versión exacta de pg_net.
 - Si reaparecen grants de PUBLIC, la captura vuelve a detectar el acceso.
+- Una sesión con USAGE explícito pero sin ownership se rechaza antes del REVOKE.
 
 El positivo ensaya la instrucción de ACL y el alta, **no** carga pg_net, envía HTTP
 ni certifica dependencias productivas. El guard productivo completo solo tiene
@@ -107,8 +141,9 @@ node --test --test-concurrency=1 /ruta/al/controlador/scripts/controller-reader-
 
 El siguiente cambio que exige decisión del propietario es el ajuste específico de
 USAGE de net en producción y el alta NOLOGIN de los lectores en los dos proyectos.
-No hay autorización vigente para modificar producción. Esta autorización de ACL
-no concede promoción; «Autorizo promoción» sigue siendo requisito independiente.
+El propietario ya autorizó ese alcance específico; falta autoridad real del
+propietario del esquema gestionado para aplicarlo. La autorización de ACL no
+concede promoción; «Autorizo promoción» sigue siendo requisito independiente.
 
 El hito de lectores continúa pendiente hasta contar con ACL auditadas, identidad
 utilizable y secretos seguros. La base de 24 hitos no cambia: 9/24 terminados

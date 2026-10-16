@@ -77,12 +77,13 @@ de contrato carece de permisos, environment y secretos; no produce atestaciones.
 La captura protegida ejecutará estos tests antes del paso que recibe secretos.
 No se ha creado `controller/request.json`, fusionado ni activado el controlador.
 
-Comprobación SELECT-only de catálogo del 16 octubre 2026 UTC: el rol
-`sf_gov_schema_reader` no existe en ninguna de las dos bases. No se cambió ningún
-rol ni dato. La siguiente dependencia humana es que el administrador prepare los
-lectores mínimos y sus credenciales por el canal seguro del environment. Crear
-un rol en producción cambia producción y requiere autorización separada; esta
-preparación no la concede. No usar postgres/service_role como alternativa.
+Actualización del 16 octubre 2026 UTC: el propietario autorizó el ajuste específico
+de ACL y alta NOLOGIN. El lector Candidate ya existe y fue verificado sin
+membresías ni accesos de negocio; migración `20261016061746`. Producción sigue sin
+lector: la transacción abortó y su ACL no cambió. El conector postgres carece de
+ownership sobre net, cuyo propietario es supabase_admin. Hace falta que un
+operador de Supabase aplique el ajuste ya autorizado. Credenciales y habilitación
+de LOGIN siguen pendientes de administrador por canal seguro.
 
 Después faltan: auditoría de privilegios efectivos, red/TLS desde el ejecutor,
 captura protegida con negativo real por divergencia y conciliación del esquema
@@ -93,5 +94,6 @@ https://supabase.com/docs/guides/database/connecting-to-postgres
 
 La continuación de lectores está en [la propuesta de permisos](reader-permissions-proposal.md).
 La auditoría actual detectó permisos heredados de PUBLIC sobre dos tablas net en
-producción; el alta debe denegarse hasta resolverlos con autorización específica.
-Los SQL de propuesta no se ejecutan desde workflows ni se aplicaron remotamente.
+producción; el alta se deniega hasta resolverlos con autoridad del propietario.
+Los SQL no se ejecutan desde workflows. El alta NOLOGIN Candidate sí se aplicó;
+el intento productivo no dejó cambios persistentes ni migración aplicada.

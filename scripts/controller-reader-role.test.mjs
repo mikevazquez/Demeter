@@ -208,3 +208,34 @@ test("PUBLIC access regression is detected again after the reader was prepared",
     await db.close();
   }
 });
+
+test("explicit net USAGE without schema ownership is rejected before ACL changes", async () => {
+  const db = await fixture();
+  try {
+    await db.exec("SET ROLE anon");
+    assert.equal(
+      (
+        await db.query(
+          "SELECT has_schema_privilege(current_user,'net','USAGE') AS allowed",
+        )
+      ).rows[0].allowed,
+      true,
+    );
+    await assert.rejects(
+      db.exec(productionProposal),
+      /Net schema owner authority unavailable/,
+    );
+    await db.exec("ROLLBACK");
+    assert.equal(await publicCount(db), 2);
+    assert.equal(
+      (
+        await db.query(
+          "SELECT 1 FROM pg_roles WHERE rolname='sf_gov_schema_reader'",
+        )
+      ).rows.length,
+      0,
+    );
+  } finally {
+    await db.close();
+  }
+});
