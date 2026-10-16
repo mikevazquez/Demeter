@@ -23,7 +23,7 @@ export async function registerWorkshopAbono(data: FormData) {
   if (!ctx.can(CAPABILITIES.SCHEDULE_READ)) fail("workshop_payment_forbidden");
   const { data: link } = await ctx.supabase.from("workshop_purchase_sessions")
     .select("purchase_id,session_id").eq("reservation_id", reservationId).eq("session_id", sessionId).maybeSingle();
-  if (!link) fail("workshop_payment_not_linked");
+  if (!link) return fail("workshop_payment_not_linked");
   const { data: purchase } = await ctx.supabase.from("workshop_purchases")
     .select("id,sale_id,status").eq("id", link.purchase_id).eq("studio_id", ctx.studio.id).eq("sale_id", saleId).maybeSingle();
   if (!purchase || purchase.status !== "active") fail("workshop_payment_not_linked");
