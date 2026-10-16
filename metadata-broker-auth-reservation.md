@@ -3,6 +3,10 @@
 Este incremento continúa #311. Conserva el prototipo diagnóstico y el rechazo de
 su fuente como atestación de liberación. No modifica workflows ni secretos.
 
+> Actualización: [ensayo OIDC real aprobado y protección pendiente](evidence/metadata-broker-20261016/live-oidc/README.md).
+> Firma real de GitHub verificada y acceso productivo denegado; aún falta la
+> identidad positiva del controlador y activar las protecciones del registro.
+
 ## Anfitrión elegido para la siguiente integración
 
 Se propone reutilizar el job del controlador protegido de GitHub Actions y el
@@ -40,8 +44,9 @@ La respuesta continúa siendo diagnóstica, sin firma de liberación y con
 `release_eligible: false`.
 
 Las pruebas usan claves RSA generadas localmente y claims sintéticos. Se verificó
-el discovery público oficial y que anuncia RS256 y los claims requeridos; **no se
-obtuvo ni verificó un token real de Actions**. No hay tokens en evidencia o logs.
+el discovery público oficial y que anuncia RS256 y los claims requeridos; **en ese bloque no se
+obtuvo ni verificó un token real de Actions; el ensayo posterior ya verificó
+una firma real en la rama aislada, conservando la denegación productiva**. No hay tokens en evidencia o logs.
 
 ## Reserva durable implementada
 

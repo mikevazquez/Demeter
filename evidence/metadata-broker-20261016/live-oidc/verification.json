@@ -1,20 +1,31 @@
 {
-  "recorded_at": "2026-10-16T18:49:07.648961+00:00",
+  "recorded_at": "2026-10-16T18:54:03.894006+00:00",
   "base_sha": "d81b65a7a8f7d557caa15fab97169d8acae5fce7",
   "local_test_exit": 0,
-  "local_expected_test_count": 103,
+  "local_expected_test_count": 105,
   "source_sha256": {
-    "scripts/metadata-broker-identity.mjs": "ee0a06934c6f68ed749ebace4cb6d4af687cfc84b7e04e3319ea603d61ede3f2",
-    "scripts/metadata-broker-oidc-rehearsal.mjs": "e8c1fb0d77e050ee945bdd18f26d3adda5006c24b78275dddfcb0deea26450ac",
-    "scripts/metadata-broker-oidc-rehearsal.test.mjs": "6d6336fa8b1e3e1fad210d594aa12112a841d141c4f2f2099ad5810eb1b18dec",
+    "scripts/metadata-broker-identity.mjs": "34cd64bbf71bbeb641411825f2d4e03da808e7ada6b0daeba339ab8f5c921631",
+    "scripts/metadata-broker-oidc-rehearsal.mjs": "644c5644e9e62b1af1998193256926d8d277633f934b9971e7164eeb0e554583",
+    "scripts/metadata-broker-oidc-rehearsal.test.mjs": "a864fa1933090ea9677264633fb4d0f82255209503b54e469ca26a84f5d81b3d",
     "scripts/metadata-broker-rules.mjs": "10393660a3ac78546c2393191bc5ebdbc756ff95d62685eb33627b05a80262c2",
     "scripts/metadata-broker-rules.test.mjs": "26a9aa04a4b2804046051d665671cabbf0575e5d9f53f6939c6deb4924d1f5f5",
     "scripts/metadata-broker-reservation.mjs": "729d9e5c755d2a52920bee196ef6c90decdc5d533449f13fe0ab944840e79003",
     ".github/workflows/metadata-broker-oidc-rehearsal.yml": "be3195322d6dc30a532be48f8eda5ec1637f51965114b72ff0fe7cf66efeaccb",
     "controller/broker-reservations.ruleset.proposal.json": "79c9334a7b9a3c90a666d4c4dd5f6faf8783faa0360c36518bed682a5b430966",
-    "controller/oidc-rehearsal-request.json": "a08ef93abef9ac9df72e8516e1a05e96558c2a1ac86e42159853595e6cc906e9"
+    "controller/oidc-rehearsal-request.json": "49caa7cd4a93f659e744a704ef5d9134daa223eeb8c351af61bc5c561584630f"
   },
-  "actions_status": "pending-at-publication",
+  "actions_status": "completed-success",
   "production_environment_requested": false,
-  "database_access": false
+  "database_access": false,
+  "actions_source_sha": "8bef3243b3d873898f65d837c3fa9b9f2cb9859b",
+  "actions_run_id": 38950798442,
+  "actions_url": "https://github.com/mikevazquez/Demeter/actions/runs/38950798442",
+  "actions_runner_tests_passed": 50,
+  "artifact_digest_verified": true,
+  "artifact_zip_sha256": "8885e857d76a9244ddf397060e06c09f8a90c1b2eb6dd925f2ce784806624a05",
+  "actions_report_sha256": "9cdc34100cb52c538b6bab27236490ecfde25b382ba869fafd8567220c5ba3a7",
+  "real_oidc_signature_verified": true,
+  "production_identity_positive_verified": false,
+  "required_namespace_protection_available": false,
+  "actions_report_format": "JSON normalized with Prettier; semantic equality with downloaded artifact verified"
 }

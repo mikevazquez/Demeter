@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "source": "github-actions-live-oidc-rehearsal",
+  "signature_verified": true,
+  "jwt_header_fields": ["alg", "kid", "typ", "x5t"],
+  "production_identity_denied": true,
+  "tampered_token_denied": true,
+  "release_eligible": false,
+  "source_sha": "8bef3243b3d873898f65d837c3fa9b9f2cb9859b",
+  "run_id": "38950798442",
+  "run_attempt": "1",
+  "ref": "refs/heads/feat/sf-gov-metadata-broker-prototype-20261016",
+  "workflow_ref": "mikevazquez/Demeter/.github/workflows/metadata-broker-oidc-rehearsal.yml@refs/heads/feat/sf-gov-metadata-broker-prototype-20261016",
+  "protected_environment_requested": false,
+  "sql_executed": false
+}

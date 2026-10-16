@@ -1,0 +1,58 @@
+{
+  "run_id": 38950798442,
+  "url": "https://github.com/mikevazquez/Demeter/actions/runs/38950798442",
+  "head_sha": "8bef3243b3d873898f65d837c3fa9b9f2cb9859b",
+  "conclusion": "success",
+  "event": "push",
+  "job_id": 117141373516,
+  "runner_tests_passed": 50,
+  "artifact_id": 12068941265,
+  "artifact_name": "broker-oidc-rehearsal-38950798442",
+  "artifact_zip_sha256": "8885e857d76a9244ddf397060e06c09f8a90c1b2eb6dd925f2ce784806624a05",
+  "jobs": [
+    {
+      "id": 117141373516,
+      "name": "identity",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Fetch pinned rehearsal source without checkout credentials",
+          "conclusion": "success"
+        },
+        {
+          "name": "Unit tests before requesting the ephemeral identity",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify live signature and deny production identity",
+          "conclusion": "success"
+        },
+        {
+          "name": "Retain token-free report",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "failed_attempts": [
+    {
+      "id": 38950339954,
+      "sha": "b24708073d67899d416f374b83cb78e5162bc08a",
+      "conclusion": "failure"
+    },
+    {
+      "id": 38950614099,
+      "sha": "57fe05d6a2d94603af20ae4daa47746843317a29",
+      "conclusion": "failure",
+      "allowlisted_diagnostic": "jwt_header"
+    }
+  ]
+}
