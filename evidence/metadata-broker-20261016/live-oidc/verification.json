@@ -1,0 +1,20 @@
+{
+  "recorded_at": "2026-10-16T18:49:07.648961+00:00",
+  "base_sha": "d81b65a7a8f7d557caa15fab97169d8acae5fce7",
+  "local_test_exit": 0,
+  "local_expected_test_count": 103,
+  "source_sha256": {
+    "scripts/metadata-broker-identity.mjs": "ee0a06934c6f68ed749ebace4cb6d4af687cfc84b7e04e3319ea603d61ede3f2",
+    "scripts/metadata-broker-oidc-rehearsal.mjs": "e8c1fb0d77e050ee945bdd18f26d3adda5006c24b78275dddfcb0deea26450ac",
+    "scripts/metadata-broker-oidc-rehearsal.test.mjs": "6d6336fa8b1e3e1fad210d594aa12112a841d141c4f2f2099ad5810eb1b18dec",
+    "scripts/metadata-broker-rules.mjs": "10393660a3ac78546c2393191bc5ebdbc756ff95d62685eb33627b05a80262c2",
+    "scripts/metadata-broker-rules.test.mjs": "26a9aa04a4b2804046051d665671cabbf0575e5d9f53f6939c6deb4924d1f5f5",
+    "scripts/metadata-broker-reservation.mjs": "729d9e5c755d2a52920bee196ef6c90decdc5d533449f13fe0ab944840e79003",
+    ".github/workflows/metadata-broker-oidc-rehearsal.yml": "be3195322d6dc30a532be48f8eda5ec1637f51965114b72ff0fe7cf66efeaccb",
+    "controller/broker-reservations.ruleset.proposal.json": "79c9334a7b9a3c90a666d4c4dd5f6faf8783faa0360c36518bed682a5b430966",
+    "controller/oidc-rehearsal-request.json": "a08ef93abef9ac9df72e8516e1a05e96558c2a1ac86e42159853595e6cc906e9"
+  },
+  "actions_status": "pending-at-publication",
+  "production_environment_requested": false,
+  "database_access": false
+}

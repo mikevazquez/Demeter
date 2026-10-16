@@ -1,0 +1,40 @@
+name: SF GOV broker live OIDC denial rehearsal
+on:
+  push:
+    branches: [feat/sf-gov-metadata-broker-prototype-20261016]
+    paths:
+      - controller/oidc-rehearsal-request.json
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: sf-gov-broker-oidc-rehearsal
+  cancel-in-progress: false
+jobs:
+  identity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Fetch pinned rehearsal source without checkout credentials
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git init .
+          git remote add origin https://github.com/mikevazquez/Demeter.git
+          git fetch --depth=1 origin "$SOURCE_SHA"
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+      - name: Unit tests before requesting the ephemeral identity
+        run: node --test scripts/metadata-broker-identity.test.mjs scripts/metadata-broker-oidc-rehearsal.test.mjs scripts/metadata-broker-rules.test.mjs
+      - name: Verify live signature and deny production identity
+        run: node scripts/metadata-broker-oidc-rehearsal.mjs "$RUNNER_TEMP/oidc-rehearsal.json"
+      - name: Retain token-free report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: broker-oidc-rehearsal-${{ github.run_id }}
+          path: ${{ runner.temp }}/oidc-rehearsal.json
+          if-no-files-found: error
+          retention-days: 7

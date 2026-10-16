@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "mode": "identity-only-denial",
+  "release_eligible": false,
+  "database_access": false
+}

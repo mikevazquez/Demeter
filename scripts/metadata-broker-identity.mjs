@@ -15,15 +15,9 @@ function decode(part) {
   return bytes;
 }
 
-export function authenticateController(token, jwks, policy, now = new Date()) {
+export function verifyGitHubOidcSignature(token, jwks, now = new Date()) {
   try {
-    if (
-      typeof token !== "string" ||
-      token.length > 16384 ||
-      typeof policy?.controller_sha !== "string" ||
-      !SHA.test(policy.controller_sha)
-    )
-      deny();
+    if (typeof token !== "string" || token.length > 16384) deny();
     const parts = token.split(".");
     if (parts.length !== 3) deny();
     const header = JSON.parse(decode(parts[0]));
@@ -70,6 +64,21 @@ export function authenticateController(token, jwks, policy, now = new Date()) {
       c.nbf > c.iat
     )
       deny();
+    if (c.iss !== OIDC_ISSUER || c.aud !== OIDC_AUDIENCE) deny();
+    return c;
+  } catch {
+    deny();
+  }
+}
+
+export function authenticateController(token, jwks, policy, now = new Date()) {
+  try {
+    if (
+      typeof policy?.controller_sha !== "string" ||
+      !SHA.test(policy.controller_sha)
+    )
+      deny();
+    const c = verifyGitHubOidcSignature(token, jwks, now);
     const expected = {
       iss: OIDC_ISSUER,
       aud: OIDC_AUDIENCE,

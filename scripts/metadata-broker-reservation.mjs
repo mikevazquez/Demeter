@@ -1,6 +1,7 @@
 // Host-owned GitHub REST transport holds the credential; this module never loads
 // one. Each UUID is an atomic create-only ref. Protect the namespace against
 // update/deletion before activation. No deletion, force update or retry exists.
+import { verifyReservationRuleset } from "./metadata-broker-rules.mjs";
 const REPO = "/repos/mikevazquez/Demeter";
 export const RESERVATION_PREFIX = "evidence/sf-gov-broker-reservations/";
 export const REHEARSAL_PREFIX = "evidence/sf-gov-broker-reservation-rehearsal/";
@@ -16,9 +17,11 @@ export function githubReservationStore({
   controllerSha,
   baseTreeSha,
   rehearsal = false,
+  rulesetId,
 }) {
   if (
     typeof api !== "function" ||
+    (!rehearsal && (!Number.isSafeInteger(rulesetId) || rulesetId <= 0)) ||
     !SHA.test(controllerSha ?? "") ||
     !SHA.test(baseTreeSha ?? "")
   )
@@ -33,6 +36,11 @@ export function githubReservationStore({
         !HASH.test(binding)
       )
         deny();
+      if (!rehearsal) {
+        const protection = await api("GET", REPO + "/rulesets/" + rulesetId);
+        if (protection.status !== 200) deny();
+        verifyReservationRuleset(protection.body);
+      }
       const branch = prefix + requestId;
       const current = await api("GET", REPO + "/git/ref/heads/" + branch);
       if (current.status === 200) return false;
