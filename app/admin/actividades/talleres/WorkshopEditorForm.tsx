@@ -38,7 +38,7 @@ export function WorkshopEditorForm({
   const [allowIndividual, setAllowIndividual] = useState(initial?.allowIndividualSessions ?? false);
   const [enrollment, setEnrollment] = useState(
     initial?.requiresEnrollment == null
-      ? "inherit"
+      ? "not_required"
       : initial.requiresEnrollment
         ? "required"
         : "not_required",
@@ -128,7 +128,7 @@ export function WorkshopEditorForm({
         </p>
       ) : null}
       <fieldset className="workshop-purchase-fields" disabled={pending || context.locked}>
-        <legend>Precios y políticas</legend>
+        <legend>Precios, anticipos y requisitos</legend>
         <p>
           Precios en {context.currency}. Horarios del estudio: {context.timeZone}.
         </p>
@@ -146,14 +146,14 @@ export function WorkshopEditorForm({
             />
           </label>
           <label className="activities-field">
-            <span>Inscripción</span>
+            <span>¿Requiere inscripción al estudio?</span>
             <select value={enrollment} onChange={(event) => setEnrollment(event.target.value)}>
               <option value="inherit">
                 Usar configuración del estudio (
                 {context.studioPolicy.requiresEnrollment ? "obligatoria" : "no obligatoria"})
               </option>
               <option value="required">Obligatoria</option>
-              <option value="not_required">No obligatoria</option>
+              <option value="not_required">No. El taller se puede comprar sin inscripción al estudio</option>
             </select>
           </label>
           <label className="activities-field">
@@ -185,7 +185,7 @@ export function WorkshopEditorForm({
                 />
               </label>
               <label className="activities-field">
-                <span>Vencimiento del saldo</span>
+                <span>Fecha límite para pagar el saldo (obligatoria para anticipos)</span>
                 <input
                   type="datetime-local"
                   required
