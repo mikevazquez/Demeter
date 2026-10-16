@@ -26,7 +26,7 @@ export async function registerWorkshopAbono(data: FormData) {
   if (!link) return fail("workshop_payment_not_linked");
   const { data: purchase } = await ctx.supabase.from("workshop_purchases")
     .select("id,sale_id,student_id,status").eq("id", link.purchase_id).eq("studio_id", ctx.studio.id).eq("sale_id", saleId).maybeSingle();
-  if (!purchase || purchase.status !== "active") fail("workshop_payment_not_linked");
+  if (!purchase || purchase.status !== "reserved") fail("workshop_payment_not_linked");
   const { data: sale } = await ctx.supabase.from("sales")
     .select("id,status,student_id").eq("id", saleId).eq("studio_id", ctx.studio.id).maybeSingle();
   if (!sale || sale.status !== "confirmed") fail("workshop_payment_not_linked");
