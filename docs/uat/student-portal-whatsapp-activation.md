@@ -21,17 +21,17 @@ El flujo UAT debe usar esta plantilla de forma aislada y solo puede enviar a la 
 
 ## Casos
 
-| ID     | Tipo               | Escenario              | Esperado                                          |
-| ------ | ------------------ | ---------------------- | ------------------------------------------------- |
-| ACT-01 | Automatizado       | Contrato de código     | `provision-student-access` usa Meta y no Asistian |
-| ACT-02 | Automatizado       | Config faltante        | El envío falla cerrado sin mandar URL incorrecta  |
-| ACT-03 | Manual/Integración | Alta nueva             | Llega WhatsApp con liga de activación            |
-| ACT-04 | Manual/Integración | Abrir liga            | Abre `/login/student/activar` con token válido    |
-| ACT-05 | Manual/Integración | Crear contraseña       | La alumna completa activación y entra al portal   |
-| ACT-06 | Manual/Integración | Reenvío                | Llega un nuevo enlace válido al mismo teléfono    |
-| ACT-07 | Negativo           | Plantilla incompatible | No marcar como enviado; error rastreable          |
-| ACT-08 | Seguridad          | Entorno                | Solo se permite el cambio UAT autorizado y envío al piloto              |
-| ACT-09 | Regresión          | student_welcome        | No rompe otros usos de Meta WhatsApp              |
+| ID     | Tipo               | Escenario              | Esperado                                                   |
+| ------ | ------------------ | ---------------------- | ---------------------------------------------------------- |
+| ACT-01 | Automatizado       | Contrato de código     | `provision-student-access` usa Meta y no Asistian          |
+| ACT-02 | Automatizado       | Config faltante        | El envío falla cerrado sin mandar URL incorrecta           |
+| ACT-03 | Manual/Integración | Alta nueva             | Llega WhatsApp con liga de activación                      |
+| ACT-04 | Manual/Integración | Abrir liga             | Abre `/login/student/activar` con token válido             |
+| ACT-05 | Manual/Integración | Crear contraseña       | La alumna completa activación y entra al portal            |
+| ACT-06 | Manual/Integración | Reenvío                | Llega un nuevo enlace válido al mismo teléfono             |
+| ACT-07 | Negativo           | Plantilla incompatible | No marcar como enviado; error rastreable                   |
+| ACT-08 | Seguridad          | Entorno                | Solo se permite el cambio UAT autorizado y envío al piloto |
+| ACT-09 | Regresión          | student_welcome        | No rompe otros usos de Meta WhatsApp                       |
 
 ## Definition of Done
 
