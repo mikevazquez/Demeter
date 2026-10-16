@@ -28,13 +28,17 @@ jobs:
           git checkout --detach FETCH_HEAD
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
       - name: Unit tests before requesting the ephemeral identity
-        run: node --test scripts/metadata-broker-identity.test.mjs scripts/metadata-broker-oidc-rehearsal.test.mjs scripts/metadata-broker-rules.test.mjs
+        run: node --test scripts/metadata-broker-identity.test.mjs scripts/metadata-broker-oidc-rehearsal.test.mjs scripts/metadata-broker-rules.test.mjs scripts/metadata-broker-protection-preflight.test.mjs
+      - name: Verify live create-only reservation rules without credentials
+        run: node scripts/metadata-broker-protection-preflight.mjs "$RUNNER_TEMP/reservation-protection.json"
       - name: Verify live signature and deny production identity
         run: node scripts/metadata-broker-oidc-rehearsal.mjs "$RUNNER_TEMP/oidc-rehearsal.json"
       - name: Retain token-free report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: broker-oidc-rehearsal-${{ github.run_id }}
-          path: ${{ runner.temp }}/oidc-rehearsal.json
+          path: |
+            ${{ runner.temp }}/oidc-rehearsal.json
+            ${{ runner.temp }}/reservation-protection.json
           if-no-files-found: error
           retention-days: 7

@@ -1,0 +1,38 @@
+{
+  "id": 25272082,
+  "name": "evidence/sf-gov-broker-reservations/*",
+  "target": "branch",
+  "source_type": "Repository",
+  "source": "mikevazquez/Demeter",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "exclude": [],
+      "include": ["refs/heads/evidence/sf-gov-broker-reservations/*"]
+    }
+  },
+  "rules": [
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "update"
+    }
+  ],
+  "node_id": "RRS_lACqUmVwb3NpdG9yec5RsBRBzgGBnxI",
+  "created_at": "2026-10-16T13:55:41.054-06:00",
+  "updated_at": "2026-10-16T13:58:13.694-06:00",
+  "bypass_actors": [],
+  "current_user_can_bypass": "never",
+  "_links": {
+    "self": {
+      "href": "https://api.github.com/repos/mikevazquez/Demeter/rulesets/25272082"
+    },
+    "html": {
+      "href": "https://github.com/mikevazquez/Demeter/rules/25272082"
+    }
+  }
+}
