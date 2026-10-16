@@ -36,13 +36,23 @@ reconocía las dos dependencias nuevas; se añadieron al cargador y las seis
 pruebas de comprobantes volvieron a pasar, sin cambiar sus aserciones.
 TypeScript y lint de los archivos modificados aprobados.
 
-El preview `demeterbueno-er1j53f2f-demeter3.vercel.app`, commit
-`029de029f5cd2e009051480a80e1870441e666c1`, quedó READY en Vercel. El endpoint
+El preview `demeterbueno-smyyzeb5s-demeter3.vercel.app`, commit
+`66bb81ef528b6ac75324450650221038bad634c6`, quedó READY en Vercel. El endpoint
 responde `400 invalid_studio` sin identificador de estudio, como corresponde.
 Esto no acredita el flujo autenticado ni una conversación real de WhatsApp.
-El acceso al panel UAT protegido quedó pendiente de autorización explícita
-después de que la revisión automática lo rechazó por posible exposición de
-datos operativos privados.
+El acceso autorizado al panel UAT redirige al inicio de sesión del estudio; no
+se dispone de una sesión de aplicación para realizar la prueba conversacional.
 
-No se enviaron mensajes de prueba a personas ni se modificó la base de datos.
-Falta completar el UAT autorizado y promover el cambio a producción.
+La validación SQL `tests/demi-whatsapp-reply-order-uat.sql` se ejecutó en Studio
+Flow Sandbox con el rol `service_role`: nueve aserciones aprobadas. Verifica
+el texto preparado más reciente, la exclusión de medios, de eventos todavía
+sin turno y de otras conversaciones/estudios, y el rechazo de una adquisición
+que usa un número de intento antiguo. Los registros sintéticos se crearon en
+una transacción con rollback. Una consulta posterior confirmó cero eventos y
+cero conversaciones de prueba persistentes.
+
+CI del commit `66bb81ef528b6ac75324450650221038bad634c6`: formato, lint,
+TypeScript, comparación de la suite completa con main y build aprobados.
+No se enviaron mensajes de prueba a personas ni se modificó producción.
+Falta la prueba conversacional con sesión de estudio; la autorización de esta
+validación se limita a Sandbox y no incluye promoción a producción.
