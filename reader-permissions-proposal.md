@@ -1,12 +1,25 @@
 # INV-UAT-01 — lectores autorizados: Candidate preparado, producción bloqueada
 
+> **ACTUALIZACIÓN VIGENTE — 2026-10-16: ruta de REVOKE no soportada.**
+> Soporte de Supabase confirmó al propietario que no permite cambios por proyecto
+> en los grants de pg_net. La documentación oficial confirma que los grants de
+> PUBLIC alcanzan a cualquier rol nuevo, y NOINHERIT/default read-only no los
+> eliminan. Ya no se espera una intervención de soporte para ejecutar el REVOKE.
+> No volver a ejecutarlo ni crear/habilitar un lector productivo bajo este diseño.
+> Se preservan los SQL y la evidencia histórica, pero quedan como propuesta
+> descartada para producción alojada en Supabase, no como instrucciones vigentes.
+> Candidate permanece NOLOGIN; los guards de captura siguen exigiendo cero acceso.
+> Véase [decisión y alternativa por evaluar](support-platform-constraint.md).
+
+Estado histórico de aplicación: **no equivale a una activación autorizada**.
+
 Estado actual: **AUTORIZADO; APLICACIÓN PARCIAL VERIFICADA**. El PR sigue Draft.
 El propietario autorizó el alcance concreto en el chat mediante «Autorizo».
 Candidate ya tiene lector NOLOGIN, verificado sin privilegios de negocio.
 Producción sigue sin lector y conserva su ACL anterior: el intento transaccional
 falló en el preflight del lector y no dejó una migración aplicada.
 
-## Bloqueo administrativo comprobado después de la autorización
+## Historial: bloqueo administrativo comprobado después de la autorización
 
 El conector ejecuta como postgres: no es superuser, no es miembro del propietario
 de net (supabase_admin) y no tiene USAGE WITH GRANT OPTION. El REVOKE no retiró el
@@ -33,7 +46,7 @@ autorizada, no el cambio de ACL otra vez. Candidate no debe reprovisionarse.
 La habilitación de LOGIN y contraseñas sigue fuera de este alcance; requiere
 administrador por canal seguro. El hito de lectores continúa pendiente.
 
-La sección siguiente conserva el alcance de la propuesta revisada originalmente.
+Las secciones siguientes conservan el alcance histórico de la propuesta revisada originalmente. Las instrucciones de intervención y aplicación quedan sustituidas por la actualización vigente anterior.
 
 ## Hallazgo comprobado por SELECT-only
 
