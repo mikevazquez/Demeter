@@ -49,34 +49,6 @@ function normalizePilotPhone(value: string) {
   return /^[1-9][0-9]{7,14}$/.test(digits) ? digits : null;
 }
 
-async function pilotRecipientAllowed(input: {
-  adminClient: Parameters<typeof sendMetaWhatsAppTemplate>[0]["adminClient"];
-  studioId: string;
-  phone: string;
-}) {
-  // UAT-only release gate: activation sends are restricted to the configured
-  // Meta pilot allowlist even while Demi remains active for normal traffic.
-  const { data: pilotIds, error: pilotError } = await input.adminClient.rpc(
-    "service_get_meta_whatsapp_pilot_wa_ids",
-    { target_studio_id: input.studioId },
-  );
-
-  if (pilotError) {
-    return { allowed: false as const, errorCode: "pilot_allowlist_lookup_failed" };
-  }
-
-  const recipient = normalizePilotPhone(input.phone);
-  const allowlist = Array.isArray(pilotIds)
-    ? pilotIds.map((value) => String(value ?? "").replace(/\D/g, ""))
-    : [];
-
-  if (!recipient || !allowlist.includes(recipient)) {
-    return { allowed: false as const, errorCode: "pilot_recipient_not_allowed" };
-  }
-
-  return { allowed: true as const, errorCode: null };
-}
-
 async function sendActivationWhatsApp(input: {
   adminClient: Parameters<typeof sendMetaWhatsAppTemplate>[0]["adminClient"];
   studioId: string;
@@ -86,15 +58,6 @@ async function sendActivationWhatsApp(input: {
   name: string;
   activationLink: string;
 }) {
-  const pilotGate = await pilotRecipientAllowed({
-    adminClient: input.adminClient,
-    studioId: input.studioId,
-    phone: input.phone,
-  });
-  if (!pilotGate.allowed) {
-    return { status: "skipped" as const, errorCode: pilotGate.errorCode };
-  }
-
   return await sendMetaWhatsAppTemplate({
     adminClient: input.adminClient,
     studioId: input.studioId,
