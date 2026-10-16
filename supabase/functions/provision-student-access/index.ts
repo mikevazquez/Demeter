@@ -104,10 +104,7 @@ function activationButtonSuffix(activationLink: string) {
     }
     if (base.hash || base.username || base.password || link.hash) return null;
     if (base.search || base.pathname !== "/login/student/activar") return null;
-    if (
-      !link.searchParams.has("token_hash") ||
-      link.searchParams.get("type") !== "recovery"
-    ) {
+    if (!link.searchParams.has("token_hash") || link.searchParams.get("type") !== "recovery") {
       return null;
     }
   } catch {
