@@ -26,7 +26,10 @@ describe("B03 candidate fixture no-write preflight", () => {
     ["production", { targetUrl: "https://qfhojvgvhrbautvczffq.supabase.co/" }],
     ["sandbox", { targetUrl: "https://hedouonyhynuvwbckdlg.supabase.co/" }],
     ["target suffix", { targetUrl: "https://sdmxtlgjkodidjtvikng.supabase.co.attacker.invalid/" }],
-    ["URL with credentials", { targetUrl: "https://user:secret@sdmxtlgjkodidjtvikng.supabase.co/" }],
+    [
+      "URL with credentials",
+      { targetUrl: "https://user:secret@sdmxtlgjkodidjtvikng.supabase.co/" },
+    ],
     ["URL with path", { targetUrl: "https://sdmxtlgjkodidjtvikng.supabase.co/auth/v1/admin" }],
     ["wrong commit", { observedSha: "b".repeat(40) }],
     ["bad SHA", { expectedSha: "main" }],
