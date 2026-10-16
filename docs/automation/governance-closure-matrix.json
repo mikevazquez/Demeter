@@ -1,7 +1,7 @@
 {
   "version": 1,
   "project": "Studio Flow / SF-GOV-001",
-  "checkedAtUtc": "2026-10-16T05:30:10.795719+00:00",
+  "checkedAtUtc": "2026-10-16T05:50:20.087317+00:00",
   "purpose": "Índice consolidado de cierre; conserva los 18 registros oficiales de Notion y los 20 IDs de GOV, sin crear otra base ni aprobar casos por inferencia.",
   "overallStatus": "open",
   "canonicalUatDatabase": "https://app.notion.com/p/e2bb89f98a9d4d0881a76eedc6498209",
@@ -167,11 +167,14 @@
       "acceptanceOwner": "Mike: aceptación funcional o autorización productiva solo cuando aplique",
       "evidence": [
         "https://app.notion.com/p/3f8d78f7146381cca513d8c31ea40086",
-        "https://github.com/mikevazquez/Demeter/actions/runs/38523279395"
+        "https://github.com/mikevazquez/Demeter/actions/runs/38523279395",
+        "https://github.com/mikevazquez/Demeter/pull/308",
+        "https://github.com/mikevazquez/Demeter/actions/runs/38857703808"
       ],
-      "nextAction": "Validar Session pooler/TLS desde el ejecutor y lector mínimo, captura protegida y negativo por divergencia; hosts ya recibidos, no pedirlos otra vez.",
+      "nextAction": "Revisar PR #308; preparar lectores mínimos mediante administración autorizada y secretos seguros; después captura protegida autenticada, negativo real por drift y conciliación Candidate. Session IPv4/TLS desde runner ya PASS; no repetir endpoints ni diagnóstico resuelto.",
       "closureCondition": "Atestación ligada a candidato/manifiesto exactos y denegación real ante diferencias; no usar postgres amplio como sustituto.",
-      "sourceObservation": "Endpoints de ambos proyectos confirmados por capturas: [aws-0-us-east-1.pooler.supabase.com:5432](http://aws-0-us-east-1.pooler.supabase.com:5432). Prueba DNS local falló antes de conectar; falta validación en runner, adaptación y lectores mínimos. Preparado, no UAT aprobado."
+      "sourceObservation": "Endpoints de ambos proyectos confirmados por capturas: [aws-0-us-east-1.pooler.supabase.com:5432](http://aws-0-us-east-1.pooler.supabase.com:5432). Prueba DNS local falló antes de conectar; falta validación en runner, adaptación y lectores mínimos. Preparado, no UAT aprobado.",
+      "observedIntegration": "PR #308 Draft; 9 tests contrato + TLS real GitHub PASS; 8 regresiones locales PASS; lector ausente en ambas bases por SELECT-only. No captura autenticada ni UAT aprobado."
     },
     {
       "id": "OPS-UAT-01",
@@ -707,5 +710,134 @@
       "nextAction": "Matriz de efectos por caso, adaptadores/runners relevantes y cero cambios excluidos; no probar escrituras peligrosas en producción.",
       "closureCondition": "Matriz de efectos por caso, adaptadores/runners relevantes y cero cambios excluidos; no probar escrituras peligrosas en producción."
     }
-  ]
+  ],
+  "progressReporting": {
+    "instruction": "Cerrar cada reporte con estos mismos cuatro frentes; indicar frente activo, avance comprobado, pendientes y bloqueo. No usar porcentajes sin evidencia. No inventar un plazo.",
+    "activePhase": 1,
+    "activeCase": "INV-UAT-01",
+    "phases": [
+      {
+        "number": 1,
+        "name": "Candidate confiable y UAT seguro",
+        "status": "En curso; activo",
+        "criteria": [
+          "INV-UAT-01",
+          "ENV-UAT-01",
+          "ENV-UAT-02",
+          "ENV-UAT-03",
+          "QA-UAT-01",
+          "QA-UAT-02",
+          "QA-UAT-03"
+        ],
+        "completedEvidence": [
+          "CI #278 SHA 27e90f1d SUCCESS",
+          "PR #308: adaptación Session pooler preparada; 9 pruebas de contrato y 8 regresiones locales PASS",
+          "Runner GitHub: IPv4/TCP/TLS 1.3 con hostname verificado PASS"
+        ],
+        "remaining": [
+          "Revisar el cambio aislado del controlador, aún Draft/sin merge.",
+          "Preparar lectores mínimos y credenciales mediante administración autorizada; ambos roles aún ausentes.",
+          "Capturar esquema autenticado, probar rechazo real por drift y conciliar diferencias Candidate.",
+          "Completar contención outbound/Admin Auth/cleanup y ejecutar B03 con dos tenants sintéticos y E2E críticos."
+        ],
+        "closeWhen": "Equivalencia, aislamiento y UAT funcional aplicables acreditados y aceptados por SHA; no basta CI de componentes."
+      },
+      {
+        "number": 2,
+        "name": "Governance automático y continuidad",
+        "status": "Parcial; operación autónoma pendiente",
+        "criteria": [
+          "GOV-UAT-01",
+          "OPS-UAT-01",
+          "GOV-01",
+          "GOV-02",
+          "GOV-03",
+          "GOV-04",
+          "GOV-05",
+          "GOV-06",
+          "GOV-07",
+          "GOV-08",
+          "GOV-09",
+          "GOV-10",
+          "GOV-11",
+          "GOV-12",
+          "GOV-13",
+          "GOV-14",
+          "GOV-15",
+          "GOV-16",
+          "GOV-17",
+          "GOV-18",
+          "GOV-19",
+          "GOV-20"
+        ],
+        "completedEvidence": [
+          "33 pruebas de integración/coordinador aprobadas",
+          "Piloto supervisado #306/#307 cerrado bajo su alcance explícito"
+        ],
+        "remaining": [
+          "Ejecutor incluido autenticado y puente Gobernante→Codex integrado/activado en entorno autorizado.",
+          "Reconciliar los 20 GOV por evidencia operativa.",
+          "Acreditar tres ciclos programados consecutivos, no-op correcto, persistencia, recuperación y avisos sin duplicados."
+        ],
+        "closeWhen": "El ciclo autónomo completo opera de forma repetible bajo límites; el piloto supervisado no acredita delegación automática."
+      },
+      {
+        "number": 3,
+        "name": "Protección y preparación de liberación",
+        "status": "Parcial; gates y ensayo pendientes",
+        "criteria": [
+          "ENV-UAT-04",
+          "SEC-UAT-01",
+          "SEC-UAT-02",
+          "SEC-UAT-03",
+          "REL-UAT-01",
+          "REL-UAT-02",
+          "REL-UAT-03"
+        ],
+        "completedEvidence": [
+          "Main tiene reglas y quality obligatorio",
+          "Environment sf-gov-schema-capture restringido; rechazo de PR acreditado"
+        ],
+        "remaining": [
+          "Cerrar #289: guardas efectivas para todos los canales y accesos directos aplicables.",
+          "Ensayar rollback/restauración aislados sin recrear Mirror ni sumar costos.",
+          "Completar manifiesto del delta y artefacto exactos, trazabilidad y aceptación previa DOC/PIL conforme GOV-COM-02."
+        ],
+        "closeWhen": "Liberación preparada y aceptada por SHA/manifiesto; aún sin permiso de promover."
+      },
+      {
+        "number": 4,
+        "name": "Promoción autorizada y verificación de producción",
+        "status": "Sin iniciar; no autorizada",
+        "criteria": ["PIL-UAT-01 (etapa posterior)", "DOC-UAT-01 (etapa posterior)"],
+        "completedEvidence": [],
+        "remaining": [
+          "Recibir «Autorizo promoción» específica después de la aceptación previa.",
+          "Promover solo el SHA/artefacto aprobado.",
+          "Verificar SHA servido, smoke, observación de efectos y documentación final de PIL/DOC."
+        ],
+        "closeWhen": "Producción comprobada y aceptación final registrada; no se puede simular ni declarar cerrada antes de la promoción autorizada."
+      }
+    ],
+    "fullyClosedPhases": 0,
+    "interpretation": "La implementación y la CI tienen avances comprobados. Aún faltan validación operativa, gates de liberación y producción autorizada; no es solo un trámite de despliegue."
+  },
+  "sessionPoolerPreparation": {
+    "pr": "https://github.com/mikevazquez/Demeter/pull/308",
+    "headSha": "ea22378be7d76ba4a64c7fb8086d156ee97a6142",
+    "status": "draft-not-merged-not-activated",
+    "contractAndTlsRun": "https://github.com/mikevazquez/Demeter/actions/runs/38857703808",
+    "contractAndTlsResult": "success",
+    "testsPassed": 9,
+    "additionalLocalRegressionPassed": 8,
+    "runtimeRun": "https://github.com/mikevazquez/Demeter/actions/runs/38857703823",
+    "runtimeResult": "success",
+    "tls": "TLSv1.3; official pinned public CA; hostname verified; no DB authentication or SQL",
+    "dedicatedReaderExists": {
+      "qfhojvgvhrbautvczffq": false,
+      "sdmxtlgjkodidjtvikng": false
+    },
+    "realSchemaCaptureCompleted": false,
+    "formalUatApproved": false
+  }
 }

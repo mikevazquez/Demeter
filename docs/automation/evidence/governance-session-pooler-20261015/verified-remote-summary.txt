@@ -1,0 +1,4 @@
+contract	Verify request and capture contract without database or secrets	2026-10-16T05:48:33.6520819Z # tests 9
+contract	Verify request and capture contract without database or secrets	2026-10-16T05:48:33.6522598Z # pass 9
+contract	Verify request and capture contract without database or secrets	2026-10-16T05:48:33.6523242Z # fail 0
+contract	Verify fixed Session endpoint TLS without authentication or SQL	2026-10-16T05:48:33.9321075Z {"checked_at_utc": "2026-10-16T05:48:33.712233+00:00", "database_authentication_attempted": false, "dns_ok": true, "host": "aws-0-us-east-1.pooler.supabase.com", "ipv4_available": true, "passed": true, "port": 5432, "sql_executed": false, "tcp_ok": true, "tls_hostname_verified": true, "tls_version": "TLSv1.3"}

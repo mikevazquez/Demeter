@@ -1,0 +1,12 @@
+{
+  "observationDateUtc": "2026-10-16",
+  "transport": "connected Supabase execute_sql, SELECT-only catalog query; not protected reader capture",
+  "query": "SELECT rolname, rolsuper, rolcreatedb, rolcreaterole, rolreplication, rolbypassrls FROM pg_catalog.pg_roles WHERE rolname = 'sf_gov_schema_reader';",
+  "results": {
+    "qfhojvgvhrbautvczffq": [],
+    "sdmxtlgjkodidjtvikng": []
+  },
+  "rolesOrGrantsModified": false,
+  "businessRowsRead": false,
+  "credentialsCollected": false
+}
