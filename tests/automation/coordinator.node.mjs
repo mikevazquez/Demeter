@@ -182,6 +182,30 @@ test("selection detects an orphan publication for automatic recovery", async () 
   }
 });
 
+test("pilot selector admits exactly the named task and rejects unknown ids", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalPilot = process.env.CODEX_PILOT_TASK_ID;
+  const originalQueue = fs.readFileSync(configFile, "utf8");
+  try {
+    const second = { ...task, id: "test-v2", issueNumber: 2, allowedPaths: ["docs/automation/test-v2.md"] };
+    fs.writeFileSync(configFile, JSON.stringify({ ...config, tasks: [task, second] }));
+    globalThis.fetch = async (url) => new Response(
+      JSON.stringify(String(url).includes("/pulls?") ? [] : String(url).includes("/issues/") ? issue() : { object: { sha: "b".repeat(40) } }),
+      { status: 200 },
+    );
+    process.env.CODEX_PILOT_TASK_ID = "test-v2";
+    await main("select");
+    assert.deepEqual(JSON.parse(fs.readFileSync("/tmp/coordinator-selection.json")).selected, [{ id: "test-v2", recovery: true }]);
+    process.env.CODEX_PILOT_TASK_ID = "not-in-queue";
+    await assert.rejects(main("select"), /Pilot task not admitted/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    fs.writeFileSync(configFile, originalQueue);
+    if (originalPilot === undefined) delete process.env.CODEX_PILOT_TASK_ID;
+    else process.env.CODEX_PILOT_TASK_ID = originalPilot;
+  }
+});
+
 test("live Notion change stops selection rather than silently using stale context", async () => {
   const original = globalThis.fetch;
   process.env.CODEX_NOTION_TOKEN = "fixture-only";
