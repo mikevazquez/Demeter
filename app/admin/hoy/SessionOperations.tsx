@@ -10,6 +10,7 @@ import {
 import { startScheduledEvaluationAction } from "../alumnas/[studentId]/evaluation-actions";
 import { ExistingStudentAddForm } from "./ExistingStudentAddForm";
 import { PendingClassPaymentDialog } from "./PendingClassPaymentDialog";
+import { registerWorkshopAbono } from "./workshop-abono-actions";
 
 type RosterItem = {
   id: string;
@@ -91,6 +92,7 @@ export function SessionOperations({
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [newWalkin, setNewWalkin] = useState(false);
   const [paymentItem, setPaymentItem] = useState<RosterItem | null>(null);
+  const [workshopPaymentItem, setWorkshopPaymentItem] = useState<RosterItem | null>(null);
   const [cancelItem, setCancelItem] = useState<RosterItem | null>(null);
   const [feedback, setFeedback] = useState<{
     kind: "success" | "error";
@@ -311,7 +313,7 @@ export function SessionOperations({
                             </span>
                           ) : null}
                           {item.workshopSaleId && (item.workshopBalanceMinor ?? 0) > 0 ? (
-                            <a className="today-payment-pending-tag" href={`/admin/ventas/${item.workshopSaleId}`}>Registrar abono →</a>
+                            <button type="button" className="today-payment-pending-tag" onClick={() => setWorkshopPaymentItem(item)}>Registrar abono →</button>
                           ) : null}
                           {item.pendingPackageSaleId ? (
                             <a
@@ -560,6 +562,24 @@ export function SessionOperations({
                   Confirmar cancelación
                 </button>
               </div>
+            </form>
+          </section>
+        </div>
+      ) : null}
+
+      {workshopPaymentItem?.workshopSaleId && workshopPaymentItem.workshopBalanceMinor ? (
+        <div className="today-payment-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) setWorkshopPaymentItem(null); }}>
+          <section className="today-payment-dialog" role="dialog" aria-modal="true" aria-labelledby="workshop-abono-title">
+            <header><div><span className="today-payment-eyebrow">ABONO DE TALLER</span><h3 id="workshop-abono-title">{workshopPaymentItem.studentName}</h3><p>Saldo pendiente: {new Intl.NumberFormat(locale, {style:"currency",currency:workshopPaymentItem.currency ?? "MXN"}).format(workshopPaymentItem.workshopBalanceMinor / 100)}</p></div><button type="button" className="today-payment-close" onClick={() => setWorkshopPaymentItem(null)} aria-label="Cerrar">×</button></header>
+            <form action={registerWorkshopAbono}>
+              <input type="hidden" name="sale_id" value={workshopPaymentItem.workshopSaleId} />
+              <input type="hidden" name="reservation_id" value={workshopPaymentItem.id} />
+              <input type="hidden" name="session_id" value={sessionId} />
+              <input type="hidden" name="return_to" value={returnTo || `/admin/agenda/${sessionId}`} />
+              <label className="today-payment-field"><span>Importe recibido (MXN)</span><input name="payment_amount" type="number" min="0.01" max={(workshopPaymentItem.workshopBalanceMinor / 100).toFixed(2)} step="0.01" defaultValue={(workshopPaymentItem.workshopBalanceMinor / 100).toFixed(2)} required /></label>
+              <label className="today-payment-field"><span>Método</span><select name="payment_method" defaultValue="efectivo" required><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta_manual">Tarjeta · registro manual</option></select></label>
+              <label className="today-payment-field"><span>Referencia única del pago</span><input name="payment_reference" required maxLength={200} placeholder="Folio o referencia" /></label>
+              <div className="today-payment-actions"><button type="button" className="today-payment-cancel" onClick={() => setWorkshopPaymentItem(null)}>Volver</button><button type="submit" className="today-payment-confirm">Registrar abono</button></div>
             </form>
           </section>
         </div>
