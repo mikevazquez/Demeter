@@ -1,4 +1,4 @@
-import test from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
@@ -8,7 +8,7 @@ import { reserve, certify, publicationPlan, complete } from "../../scripts/studi
 
 function setup(t, checks = [[process.execPath, "--check", "change.mjs"]]) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "sf-minimal-test-"));
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  t.onTestFinished(() => fs.rmSync(root, { recursive: true, force: true }));
   const repo = path.join(root, "repo");
   const registry = path.join(root, "registry");
   fs.mkdirSync(repo);
@@ -127,7 +127,7 @@ test("checks cannot change certified bytes", (t) => {
 test("check process receives no inherited credential variable", (t) => {
   const prior = process.env.SF_TEST_SECRET;
   process.env.SF_TEST_SECRET = "test-only-sentinel";
-  t.after(() => {
+  t.onTestFinished(() => {
     if (prior === undefined) delete process.env.SF_TEST_SECRET;
     else process.env.SF_TEST_SECRET = prior;
   });
