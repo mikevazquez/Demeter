@@ -16,8 +16,13 @@ los despliegues Git para este árbol. No fusionar esta rama completa en main.
    Conservar reviewer mikevazquez y bypass administrativo desactivado. No añadir
    ramas de candidato, comodines ni refs de PR. Verificar mediante otro intento
    negativo desde PR y un intento permitido desde controlador sin credenciales.
-3. Confirmar Node >=22, `/usr/bin/psql` >=17, certificados del sistema y conectividad
-   IPv6 directa a Supabase en el runner. El workflow falla cerrado si faltan.
+3. Confirmar Node >=22, `/usr/bin/psql` >=17 y certificados del sistema. Se admite
+   endpoint directo IPv6 o el Shared Session pooler IPv4 ya confirmado para ambos
+   proyectos: `aws-0-us-east-1.pooler.supabase.com:5432`, base `postgres`, usuario
+   `sf_gov_schema_reader.<project-ref>`. El usuario SQL verificado sigue siendo
+   `sf_gov_schema_reader`. TLS sigue siendo `verify-full`, sin parámetros de URL.
+   No se admite el pooler transaccional 6543, otro host/región ni usuario postgres.
+   Validar red/TLS desde el runner no sustituye la captura autenticada de catálogo.
    No contratar runner, IPv4 ni recursos nuevos sin autorización de costo.
 4. Resolver lectores dedicados y ACL conforme al documento de captura del PR278.
    No existe autorización aquí para cambiar roles/permisos productivos. No usar
@@ -42,7 +47,7 @@ JSON inválido, límite 256 KiB, destino y SHA incorrectos. No ejecutan SQL remo
 No se instalan dependencias ni se ejecuta código candidato en el job con secretos.
 Los secretos solo se suministran al paso de captura. El artefacto de éxito contiene
 metadatos agregados y firma, nunca credenciales ni filas de negocio; retención siete
- días. Exportar su referencia y checksum a Notion antes de caducar. Un fallo no
+días. Exportar su referencia y checksum a Notion antes de caducar. Un fallo no
 produce certificación y el artefacto no se publica. El HMAC requiere custodiar
 la clave en este mismo límite de confianza; no entregarla a jobs de candidato.
 
@@ -51,3 +56,35 @@ esperado sirve de evidencia negativa, no prueba equivalencia. El workflow no
 promueve nada. Toda promoción exige autorización expresa separada para su SHA.
 
 INV-UAT-01 permanece Preparado. El controlador no ha realizado captura remota.
+
+## Continuación INV-UAT-01 — Session pooler preparado
+
+La protección de rama/environment y PostgreSQL 17 ya tienen evidencia histórica;
+no hay que repetir su configuración. El diagnóstico anterior del runner mostró
+endpoint directo IPv6 sin ruta. La alternativa Session pooler utiliza capacidades
+existentes; no exige contratar IPv4 ni otro runner.
+
+El contrato se prueba sin dependencias, secretos ni bases remotas:
+
+```sh
+node --test scripts/controller-request.test.mjs scripts/controller-capture.test.mjs
+```
+
+Los positivos simulados no certifican conectividad ni paridad. El nuevo workflow
+de contrato carece de permisos, environment y secretos; no produce atestaciones.
+La captura protegida ejecutará estos tests antes del paso que recibe secretos.
+No se ha creado `controller/request.json`, fusionado ni activado el controlador.
+
+Comprobación SELECT-only de catálogo del 16 octubre 2026 UTC: el rol
+`sf_gov_schema_reader` no existe en ninguna de las dos bases. No se cambió ningún
+rol ni dato. La siguiente dependencia humana es que el administrador prepare los
+lectores mínimos y sus credenciales por el canal seguro del environment. Crear
+un rol en producción cambia producción y requiere autorización separada; esta
+preparación no la concede. No usar postgres/service_role como alternativa.
+
+Después faltan: auditoría de privilegios efectivos, red/TLS desde el ejecutor,
+captura protegida con negativo real por divergencia y conciliación del esquema
+Candidate. Un rechazo por drift no es paridad aprobada ni autorización de release.
+
+Referencia oficial de conexión Session pooler:
+https://supabase.com/docs/guides/database/connecting-to-postgres

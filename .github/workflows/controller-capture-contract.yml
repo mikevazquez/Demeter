@@ -1,0 +1,29 @@
+name: SF GOV controller capture contract
+on:
+  pull_request:
+    branches: [governance/sf-gov-001-controller]
+    paths:
+      - scripts/**
+      - .github/workflows/controller-capture-contract.yml
+permissions: {}
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Fetch immutable PR source without credentials
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git init .
+          git remote add origin https://github.com/mikevazquez/Demeter.git
+          git fetch --depth=1 origin "$SOURCE_SHA"
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+      - name: Verify request and capture contract without database or secrets
+        run: node --test scripts/controller-request.test.mjs scripts/controller-capture.test.mjs
+      - name: Verify fixed Session endpoint TLS without authentication or SQL
+        run: python3 scripts/controller-session-network.py

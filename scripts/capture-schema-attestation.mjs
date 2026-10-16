@@ -11,7 +11,10 @@ import {
 
 // This file and its SQL must run from a reviewed, immutable controller checkout.
 // Never run candidate code in a job holding database or signing credentials.
-const fingerprint = readFileSync(new URL("./sql/schema-fingerprint.sql", import.meta.url), "utf8")
+const fingerprint = readFileSync(
+  new URL("./sql/schema-fingerprint.sql", import.meta.url),
+  "utf8",
+)
   .trim()
   .replace(/;$/, "");
 export const CAPTURE_SQL = `BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;
@@ -43,24 +46,34 @@ export function connectionEnvironment(connection, projectRef) {
   } catch {
     throw new Error("Invalid capture connection configuration");
   }
+  // The shared Session pooler routes by the project-qualified username. Keep
+  // this host fixed to the endpoints already confirmed for these two projects.
+  // Transaction pooling (6543) and arbitrary pooler regions are not permitted.
+  const direct =
+    url.hostname === `db.${projectRef}.supabase.co` &&
+    url.username === "sf_gov_schema_reader";
+  const session =
+    url.hostname === "aws-0-us-east-1.pooler.supabase.com" &&
+    url.username === `sf_gov_schema_reader.${projectRef}`;
   if (
     ![SCHEMA_PRODUCTION_REF, SCHEMA_CANDIDATE_REF].includes(projectRef) ||
     url.protocol !== "postgresql:" ||
-    url.hostname !== `db.${projectRef}.supabase.co` ||
+    !(direct || session) ||
     (url.port && url.port !== "5432") ||
     url.pathname !== "/postgres" ||
-    url.username !== "sf_gov_schema_reader" ||
     !url.password ||
     url.search ||
     url.hash
   ) {
-    throw new Error("Capture requires the exact direct project endpoint and dedicated reader");
+    throw new Error(
+      "Capture requires an approved project endpoint and dedicated reader",
+    );
   }
   return {
     PGHOST: url.hostname,
     PGPORT: "5432",
     PGDATABASE: "postgres",
-    PGUSER: "sf_gov_schema_reader",
+    PGUSER: url.username,
     PGPASSWORD: decodeURIComponent(url.password),
     PGSSLMODE: "verify-full",
     PGSSLROOTCERT: "system",
@@ -72,15 +85,20 @@ export function connectionEnvironment(connection, projectRef) {
 
 export function captureProject(connection, ref, run = spawnSync) {
   const env = connectionEnvironment(connection, ref);
-  const result = run("/usr/bin/psql", ["-X", "-w", "-q", "-A", "-t", "-v", "ON_ERROR_STOP=1"], {
-    env,
-    input: CAPTURE_SQL,
-    encoding: "utf8",
-    timeout: 30000,
-    maxBuffer: 1024 * 1024,
-  });
+  const result = run(
+    "/usr/bin/psql",
+    ["-X", "-w", "-q", "-A", "-t", "-v", "ON_ERROR_STOP=1"],
+    {
+      env,
+      input: CAPTURE_SQL,
+      encoding: "utf8",
+      timeout: 30000,
+      maxBuffer: 1024 * 1024,
+    },
+  );
   // Raw stderr/error may contain credentials or server information. Never forward it.
-  if (result.error || result.status !== 0) throw new Error("Read-only schema capture failed");
+  if (result.error || result.status !== 0)
+    throw new Error("Read-only schema capture failed");
   let role;
   let rows;
   try {
@@ -114,10 +132,19 @@ export function captureAttestation(config, run = spawnSync) {
   connectionEnvironment(config.candidateConnection, SCHEMA_CANDIDATE_REF);
   signSchemaPayload({}, config.key);
   const capturedAt = new Date().toISOString();
-  const baseline = captureProject(config.productionConnection, SCHEMA_PRODUCTION_REF, run);
-  const candidate = captureProject(config.candidateConnection, SCHEMA_CANDIDATE_REF, run);
+  const baseline = captureProject(
+    config.productionConnection,
+    SCHEMA_PRODUCTION_REF,
+    run,
+  );
+  const candidate = captureProject(
+    config.candidateConnection,
+    SCHEMA_CANDIDATE_REF,
+    run,
+  );
   const parity = certifySchemaParity(baseline, candidate);
-  if (!parity.certified) throw new Error("Schema parity denied; no attestation issued");
+  if (!parity.certified)
+    throw new Error("Schema parity denied; no attestation issued");
   const payload = {
     version: 1,
     source: "supabase-readonly",
@@ -131,9 +158,13 @@ export function captureAttestation(config, run = spawnSync) {
   return { ...payload, signature: signSchemaPayload(payload, config.key) };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   try {
-    if (process.argv.length !== 4) throw new Error("Expected candidate SHA and new output path");
+    if (process.argv.length !== 4)
+      throw new Error("Expected candidate SHA and new output path");
     const evidence = captureAttestation({
       candidateSha: process.argv[2],
       productionConnection: process.env.SF_GOV_PRODUCTION_READER_URL,

@@ -46,7 +46,7 @@ jobs:
           node -e 'if (Number(process.versions.node.split(".")[0]) < 22) process.exit(1)'
           /usr/bin/psql --version
           /usr/bin/psql --version | awk '{split($3,v,"."); if (v[1] < 17) exit 1}'
-          node --test scripts/controller-request.test.mjs
+          node --test scripts/controller-request.test.mjs scripts/controller-capture.test.mjs
       - name: Read immutable manifest as data
         id: request
         shell: bash
