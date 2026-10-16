@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "taskId": "governante-codex-local-20261015-v1",
+  "mode": "current-codex-session-supervised",
+  "publishedAt": "2026-10-16T04:03:16.032969+00:00",
+  "sha": "784dbfae6ac8fe71289878192aa9f70a2b125b7a",
+  "sourceSha": "2af9188523c5e18bed2d647092c3395c6f428cd9",
+  "pr": "https://github.com/mikevazquez/Demeter/pull/307",
+  "prNumber": 307,
+  "draft": true,
+  "base": "feat/governance-codex-queue-integration-20261015",
+  "evidenceCommitBeforePublication": "4f8cc9dc007ae6366e38062ce12f09d56d3eed1b",
+  "certified": true,
+  "mergePerformed": false,
+  "deploymentRequested": false
+}
