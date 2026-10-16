@@ -24,7 +24,7 @@ export function WorkshopPurchaseForm({
   const [state, action, pending] = useActionState(purchaseWorkshop, { error: null });
   const [mode, setMode] = useState<"full" | "sessions">("full");
   const [selected, setSelected] = useState<string[]>([]);
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState<string | null>(null);
   const [paymentChoice, setPaymentChoice] = useState<"deposit" | "full">("deposit");
   const [studentId, setStudentId] = useState("");
   const [method, setMethod] = useState(context.paymentMethods[0] ?? "");
@@ -55,10 +55,13 @@ export function WorkshopPurchaseForm({
       /* Invalid configuration keeps checkout disabled. */
     }
   }
-  const received = receivedAmountMinor(amount);
-  const effectiveReceived = amount === "" && quote.ok && minimum != null
+  const suggestedReceived = quote.ok && minimum != null
     ? (paymentChoice === "deposit" ? minimum : quote.totalMinor)
-    : received;
+    : null;
+  const displayAmount = amount === null && suggestedReceived != null
+    ? String(suggestedReceived / 100)
+    : (amount ?? "");
+  const effectiveReceived = receivedAmountMinor(displayAmount);
   const amountValid =
     quote.ok &&
     minimum != null &&
@@ -234,7 +237,7 @@ export function WorkshopPurchaseForm({
         {quote.ok && minimum != null && minimum < quote.totalMinor ? (
           <fieldset className="activities-choice">
             <legend>¿Cuánto pagó la alumna?</legend>
-            <label><input type="radio" name="payment_choice" checked={paymentChoice === "deposit"} onChange={() => { setPaymentChoice("deposit"); setAmount(""); }} /> Solo anticipo · {money(minimum)}</label>
+            <label><input type="radio" name="payment_choice" checked={paymentChoice === "deposit"} onChange={() => { setPaymentChoice("deposit"); setAmount(null); }} /> Solo anticipo · {money(minimum)}</label>
             <label><input type="radio" name="payment_choice" checked={paymentChoice === "full"} onChange={() => { setPaymentChoice("full"); setAmount(""); }} /> Pago completo · {money(quote.totalMinor)}</label>
           </fieldset>
         ) : null}
@@ -248,7 +251,7 @@ export function WorkshopPurchaseForm({
               step="0.01"
               name="received_amount"
               required
-              value={amount === "" && effectiveReceived != null ? String(effectiveReceived / 100) : amount}
+              value={displayAmount}
               onChange={(event) => setAmount(event.target.value)}
             />
           </label>
@@ -286,8 +289,13 @@ export function WorkshopPurchaseForm({
         ) : null}
         {quote.ok && !amountValid ? (
           <p role="status">
-            El importe debe cubrir el anticipo sin superar el total. Para dejar saldo, el taller
-            necesita un vencimiento.
+            {effectiveReceived == null
+              ? "Ingresa un importe válido."
+              : effectiveReceived < (minimum ?? 0)
+                ? "El importe es menor al anticipo mínimo."
+                : effectiveReceived > quote.totalMinor
+                  ? "El importe supera el total del taller."
+                  : "Para registrar un pago parcial, configura primero el vencimiento del saldo en el taller."}
           </p>
         ) : null}
         <label>
