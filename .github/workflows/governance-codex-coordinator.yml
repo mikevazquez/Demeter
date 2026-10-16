@@ -59,6 +59,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           CODEX_NOTION_TOKEN: ${{ secrets.CODEX_NOTION_TOKEN }}
           CONTROL_SHA: ${{ github.sha }}
+          CODEX_PILOT_TASK_ID: ${{ vars.CODEX_PILOT_TASK_ID }}
         run: node scripts/codex-coordinator.mjs select
       - name: Intersect selection with the shared Governance gate
         id: admit
