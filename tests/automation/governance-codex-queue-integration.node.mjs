@@ -45,7 +45,7 @@ test("reviewed intake matches existing coordinator queue validation", () => {
 
 test("coordinator rejects manifest missing matching queue task", () => {
   const staged = buildReviewedIntake(request, policy, evidence);
-  assert.throws(() => validateConfig({ ...base, tasks: [], intake: staged.manifest }, now), /not bound/);
+  assert.throws(() => validateConfig({ ...base, tasks: [], intake: staged.manifest }, now), /Unapproved/);
 });
 
 test("coordinator rejects unapproved intake and changed issue digest", () => {
