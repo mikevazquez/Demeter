@@ -128,6 +128,25 @@ export default async function StudentProfilePage({
         </StudentNoticeDialog>
       ) : null}
 
+      <Link
+        href="/student/perfil/figuras"
+        data-profile-block="pole-figures"
+        className="flex items-center justify-between gap-4 rounded-3xl border border-fuchsia-500/25 bg-[linear-gradient(135deg,#250919_0%,#140813_42%,#090d13_100%)] p-5 transition hover:border-fuchsia-500/40"
+      >
+        <span className="min-w-0">
+          <span className="block text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
+            Mis figuras
+          </span>
+          <span className="mt-1 block text-lg font-semibold text-white">Figuras de Pole</span>
+          <span className="mt-0.5 block text-sm text-zinc-400">
+            Tu progreso, tus siguientes figuras y las fotos de tus logros.
+          </span>
+        </span>
+        <span aria-hidden="true" className="text-xl text-fuchsia-300">
+          ›
+        </span>
+      </Link>
+
       <section
         data-profile-block="identity"
         className="overflow-hidden rounded-3xl border border-fuchsia-500/15 bg-[radial-gradient(circle_at_18%_0%,rgba(236,72,153,0.15),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015))]"
