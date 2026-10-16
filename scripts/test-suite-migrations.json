@@ -1,5 +1,5 @@
 {
-  "reason": "User approved replacing pre-V2 Intelligence source-text contracts with executable tests of the approved V2 product (b62b2d0). Database/RLS/action contracts are retained. Other listed renames reflect reviewed route/template/history changes. The user-approved Intelligence update replaces five-view navigation contracts with six views and validates real conversation sources while keeping unmeasured qualification explicit. The user-approved student portal visual update keeps available-place counts in the agenda, occupancy in detail/confirmation, and routes payment to existing class-detail checkout; the two corresponding contract names are updated without removing their assertions.",
+  "reason": "User approved replacing pre-V2 Intelligence source-text contracts with executable tests of the approved V2 product (b62b2d0). Database/RLS/action contracts are retained. Other listed renames reflect reviewed route/template/history changes. The user-approved Intelligence update replaces five-view navigation contracts with six views and validates real conversation sources while keeping unmeasured qualification explicit. The user-approved student portal visual update keeps available-place counts in the agenda, occupancy in detail/confirmation, and routes payment to existing class-detail checkout; the two corresponding contract names are updated without removing their assertions. DEMI-DUP-20261015 replaces the contract that required unsafe inline 5xx retries with the opposite safety assertion and retains the timeout/network assertion under the renamed suite. Twenty-four executable sender regressions and seven signed-webhook replay regressions additionally verify the corrected behavior; no test is skipped and the ratchet still requires each replacement to pass.",
   "replacementFile": "tests/inteligencia-v2-runtime.test.tsx",
   "retiredTests": [
     "tests/inteligencia-02-conversion-events.test.ts :: INTEL-02 conversion event intelligence builds conversion intelligence from immutable domain events",
@@ -121,6 +121,14 @@
     {
       "from": "tests/student-single-class-eligibility-fix.test.ts :: student single-class eligibility and checkout catalog sync offers drop-in checkout for all package coverage failures",
       "to": "tests/student-single-class-eligibility-fix.test.ts :: student single-class eligibility and checkout catalog sync routes package coverage failures to existing drop-in checkout in detail"
+    },
+    {
+      "from": "tests/demi-meta-whatsapp-delivery-retry-contract.test.ts :: Demi Meta WhatsApp transient send retry retries explicit Meta 5xx/429 responses inline before failing the webhook",
+      "to": "tests/demi-meta-whatsapp-delivery-retry-contract.test.ts :: Demi Meta WhatsApp safe send retry bounds rate-limit retries without replaying ambiguous server errors"
+    },
+    {
+      "from": "tests/demi-meta-whatsapp-delivery-retry-contract.test.ts :: Demi Meta WhatsApp transient send retry does not retry ambiguous timeout/network failures inline",
+      "to": "tests/demi-meta-whatsapp-delivery-retry-contract.test.ts :: Demi Meta WhatsApp safe send retry does not retry ambiguous timeout/network failures inline"
     }
   ]
 }

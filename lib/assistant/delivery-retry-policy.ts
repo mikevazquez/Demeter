@@ -4,12 +4,15 @@ export function demiDeliveryRetryPolicy(input: {
   attempt: number;
   limit: number;
 }) {
+  // Retry only an explicit rejection, never a response that may follow successful delivery.
   const definiteFailure =
-    /^(?:demi_uat_injected_delivery_failure|meta_(?:whatsapp|inbox)_retry_exhausted|meta_(?:whatsapp|inbox)_http_(?:425|429|5\d\d))$/.test(
+    /^(?:demi_uat_injected_delivery_failure|meta_(?:whatsapp|inbox)_http_(?:425|429))$/.test(
       input.errorCode,
     );
   const unknown =
-    /timeout|network_error|message_id_missing|persist_failed_after_send/.test(input.errorCode) ||
+    /timeout|network_error|message_id_missing|persist_failed_after_send|retry_exhausted|_http_(?:408|5\d\d)$/.test(
+      input.errorCode,
+    ) ||
     (input.retryable && !definiteFailure);
   const limit =
     Number.isInteger(input.limit) && input.limit >= 1 && input.limit <= 5 ? input.limit : 3;
