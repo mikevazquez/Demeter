@@ -208,7 +208,11 @@ function harness(httpStatus = 200, failOutboundPersistence = false) {
     }),
   );
   vi.spyOn(console, "info").mockImplementation(() => {});
-  const request = (id = "wamid.synthetic-inbound", signatureValid = true, text = "Location?") => {
+  const request = (
+    id = "wamid.synthetic-inbound",
+    signatureValid = true,
+    text = "Location?",
+  ) => {
     const body = JSON.stringify({
       entry: [
         {
@@ -272,7 +276,8 @@ describe("Demi signed webhook replay with simulated persistence and real sender"
     expect(h.rows.assistant_whatsapp_events[0].processing_result).toMatchObject({
       outcome: "superseded_by_newer_message",
     });
-    const history = (h.model.mock.calls[0]?.[0] as { history?: Array<{ content: string }> })?.history ?? [];
+    const history =
+      (h.model.mock.calls[0]?.[0] as { history?: Array<{ content: string }> })?.history ?? [];
     expect(history.map((turn) => turn.content)).toEqual(expect.arrayContaining(["Hola", "¿Cómo estás?"]));
   });
 
