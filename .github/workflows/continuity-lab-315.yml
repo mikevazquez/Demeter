@@ -1,0 +1,40 @@
+name: Continuity lab 315
+
+on:
+  workflow_dispatch:
+    inputs:
+      trigger:
+        description: "Start or resume the isolated continuity experiment"
+        required: true
+        type: choice
+        options:
+          - start
+          - resume
+  schedule:
+    - cron: "19 8 * * *"
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: continuity-lab-315
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    if: github.repository == 'mikevazquez/Demeter'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Advance isolated state
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CONTINUITY_TRIGGER: ${{ github.event_name == 'schedule' && 'resume' || inputs.trigger }}
+        run: node scripts/automation/continuity-lab.mjs
