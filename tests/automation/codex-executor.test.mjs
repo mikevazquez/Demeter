@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { createHash } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
@@ -152,6 +153,37 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
       reserveContinued(s.repo, s.registry, { ...s.task, id: "different-task" }, evidence()),
     ).toThrow("bind");
     expect(() => reserveContinued(s.repo, s.registry, s.task, evidence())).toThrow("consumed");
+  });
+  it("binds the separately authorized launcher task to the original continuity without recycling its ID", () => {
+    const s = setup();
+    const registry = path.join(s.root, "launcher-registry");
+    const task = { ...s.task, id: "vianelis-launcher-318-v1" };
+    expect(() =>
+      reserveContinued(
+        s.repo,
+        registry,
+        { ...task, authorization: "https://example.invalid" },
+        evidence(),
+      ),
+    ).toThrow("bind");
+    expect(() => reserveContinued(s.repo, registry, task, { ...evidence(), comments: [] })).toThrow(
+      "two",
+    );
+    reserveContinued(s.repo, registry, task, evidence());
+    const stored = JSON.parse(fs.readFileSync(path.join(registry, task.id, "reservation.json")));
+    expect(stored.task.continuity.taskId).toBe(ID);
+    expect(stored.task.id).not.toBe(ID);
+    expect(() => reserveContinued(s.repo, registry, task, evidence())).toThrow("consumed");
+    const binary = fakeCli(s.root, success);
+    const result = executeOnce(s.repo, registry, task.id, { binary });
+    expect(result.status).toBe("candidate-ready");
+    expect(executionStatus(s.repo, registry, task.id)).toEqual(result);
+    expect(executeOnce(s.repo, registry, task.id, { binary: "/must/not/run" })).toEqual(result);
+    const reservationPath = path.join(registry, task.id, "reservation.json");
+    stored.task.continuity.taskId = task.id;
+    stored.contractSha256 = createHash("sha256").update(JSON.stringify(stored.task)).digest("hex");
+    fs.writeFileSync(reservationPath, JSON.stringify(stored));
+    expect(() => executionStatus(s.repo, registry, task.id)).toThrow("continuity");
   });
   it("excludes publication and application credentials from the child environment", () => {
     expect(
