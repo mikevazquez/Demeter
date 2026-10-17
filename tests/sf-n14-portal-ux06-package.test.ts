@@ -40,7 +40,7 @@ describe("SF-N14 PORTAL UX-06 Mi paquete", () => {
     expect(page).toContain("snapshot.enrollment");
   });
 
-  it("keeps the real eligible online catalog and Mercado Pago checkout contract", () => {
+  it("keeps the real online catalog and Mercado Pago checkout contract", () => {
     const eligibility = source(
       "supabase/migrations/20261017184233_starter_product_eligibility_foundation.sql",
     );
