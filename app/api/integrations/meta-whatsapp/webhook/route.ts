@@ -127,7 +127,7 @@ async function markBurstSuperseded(input: {
   eventId: string;
   providerMessageId: string;
   newerProviderMessageId: string | null;
-  phase: "debounce" | "post_assistant";
+  phase: "debounce" | "before_action" | "post_assistant";
 }) {
   const batchId = sha256Hex(
     `${input.studioId}:${input.providerMessageId}:${input.newerProviderMessageId ?? "newer"}`,
@@ -1981,8 +1981,38 @@ export async function POST(request: Request) {
         serviceMode: true,
         history,
         stickerImages,
+        isTurnCurrent: async () =>
+          !(await findNewerConversationEvent({
+            supabase,
+            studioId,
+            eventId: event.id,
+            eventCreatedAt: String(event.created_at ?? ""),
+            fromWaId: message.fromWaId,
+          })),
       });
     } catch (error) {
+      if (error instanceof Error && error.message === "assistant_turn_superseded") {
+        const newerEvent = await findNewerConversationEvent({
+          supabase,
+          studioId,
+          eventId: event.id,
+          eventCreatedAt: String(event.created_at ?? ""),
+          fromWaId: message.fromWaId,
+        });
+        await markBurstSuperseded({
+          supabase,
+          studioId,
+          eventId: event.id,
+          providerMessageId: message.providerMessageId,
+          newerProviderMessageId: String(newerEvent?.provider_event_id ?? "") || null,
+          phase: "before_action",
+        });
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "superseded_before_action",
+        });
+        continue;
+      }
       retryableFailure = true;
       await markEvent(supabase, studioId, event.id, {
         processing_status: "error",
