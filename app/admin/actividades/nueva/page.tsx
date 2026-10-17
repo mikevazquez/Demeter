@@ -67,10 +67,7 @@ export default async function NewActivityPage({
           propios.
         </p>
         <p>
-          <Link
-            className="activities-next-button"
-            href="/admin/actividades/talleres/nuevo"
-          >
+          <Link className="activities-next-button" href="/admin/actividades/talleres/nuevo">
             Taller / curso
           </Link>{" "}
           <Link
