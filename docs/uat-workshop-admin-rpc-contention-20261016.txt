@@ -1,0 +1,53 @@
+Studio Flow - Workshop administrative RPC contention UAT
+Date: 2026-10-16 Mexico / 2026-10-17 UTC
+Environment: Supabase Sandbox hedouonyhynuvwbckdlg only
+Branch: design/workshop-payment-contract-20261016
+PR: #317 Draft
+
+Purpose:
+Validate two independently submitted administrative provisional-hold RPC
+requests for the last workshop seat, using simulated authorized staff JWT
+context in SQL. Calls dispatched using Promise.allSettled from separate
+Supabase connector requests. This is NOT a signed HTTP PostgREST staff
+token UAT, nor proof of overlapping PostgreSQL transaction lock waits.
+
+Fixture:
+Studio f76a76cb-d623-47eb-8bc1-9e74a2e7cdc7
+Offer ce031122-3892-4e63-8b7b-78394f7a6094
+Session ea9f5e96-080c-42cb-9b78-1d0f848fa1c9
+Future scheduled session, capacity 1
+Distinct students A 03bbb1d8-17d0-45a5-a123-81eac4737058
+and B 1dced5c9-aa0e-4ce4-a662-c1f4a251d840
+Simulated active staff membership admin
+56b980cc-ecd7-4ef8-9e33-dc84ba009443
+
+Round 1:
+- Student A: admin_create_workshop_provisional_hold returned
+  reserved_provisionally, hold f88d325e-f2aa-48f0-8d1e-fb382104c554.
+- Student B: SQL P0001 session_full from workshop_checkout_preflight.
+- Hold A rejected using public.admin_reject_workshop_provisional_hold;
+  result state rejected.
+
+Round 2 (reversed submission order):
+- Student B: returned reserved_provisionally,
+  hold 56569010-d45a-470d-b63d-6e64668527ad.
+- Student A: SQL P0001 session_full.
+- Hold B rejected via public.admin_reject_workshop_provisional_hold;
+  result state rejected.
+
+Final read:
+- 0 active provisional holds.
+- 0 seats occupied on the one-seat session.
+- Both test holds rejected.
+- No sale/payment operations attempted in these rounds.
+
+Result: PASS for independently submitted administrative RPC capacity
+contention, one winner and one capacity rejection per round.
+Not equivalent to two real JWT-authenticated HTTP clients with proven
+overlapping DB transactions; that stricter test remains outstanding.
+
+PR overlap note:
+PR #284 and PR #317 share many changed files including the workshop UI,
+migrations and .github/workflows/ci.yml. The draft #317 must be reconciled
+with #284 before any merge, to avoid duplicate/conflicting promotions.
+No PR merged, no production touched.

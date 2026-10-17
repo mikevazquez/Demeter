@@ -1,0 +1,36 @@
+name: Format isolated workshop contract branch
+
+on:
+  push:
+    branches:
+      - design/workshop-payment-contract-20261016
+    paths:
+      - .github/workflows/workshop-contract-format.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: design/workshop-payment-contract-20261016
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Format files reported by CI
+        run: npx prettier --write "app/admin/actividades/page.tsx" "app/admin/actividades/talleres/[offerId]/page.tsx" "app/admin/actividades/talleres/[offerId]/WorkshopPurchaseForm.tsx" "app/admin/actividades/talleres/[offerId]/WorkshopTransferReview.tsx" "app/admin/actividades/talleres/transfer-review-actions.ts" "app/admin/actividades/talleres/WorkshopEditorForm.tsx" "app/admin/agenda/[sessionId]/page.tsx" "app/admin/hoy/SessionOperations.tsx" "app/admin/hoy/workshop-abono-actions.ts" "docs/talleres-contrato-aprobado-20261016.md" "docs/uat-talleres-abonos-agenda-ejecucion-20261016.md" "docs/uat-talleres-abonos-agenda-sandbox-20261016.md" "docs/uat-talleres-validacion-mike-20261016.md" "docs/uat-workshop-preview-build-20261016.md" "docs/uat-workshop-provisional-conversion-sandbox-20261016.md" "docs/uat-workshop-provisional-expiry-20261016.md" "docs/uat-workshop-provisional-rollback-results-20261016.md" "scripts/uat/workshop-provisional-concurrency-sandbox.mjs" "src/lib/workshops/first-session-policy.test.ts" "src/lib/workshops/first-session-policy.ts" "src/lib/workshops/provisional-capacity.test.ts" "src/lib/workshops/provisional-capacity.ts" "src/lib/workshops/provisional-checkout.test.ts" "src/lib/workshops/provisional-checkout.ts" "src/lib/workshops/provisional-transfer.test.ts" "src/lib/workshops/provisional-transfer.ts" "src/lib/workshops/transfer-review.test.ts" "src/lib/workshops/transfer-review.ts"
+      - name: Commit strictly scoped formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "app/admin/actividades/page.tsx" "app/admin/actividades/talleres/[offerId]/page.tsx" "app/admin/actividades/talleres/[offerId]/WorkshopPurchaseForm.tsx" "app/admin/actividades/talleres/[offerId]/WorkshopTransferReview.tsx" "app/admin/actividades/talleres/transfer-review-actions.ts" "app/admin/actividades/talleres/WorkshopEditorForm.tsx" "app/admin/agenda/[sessionId]/page.tsx" "app/admin/hoy/SessionOperations.tsx" "app/admin/hoy/workshop-abono-actions.ts" "docs/talleres-contrato-aprobado-20261016.md" "docs/uat-talleres-abonos-agenda-ejecucion-20261016.md" "docs/uat-talleres-abonos-agenda-sandbox-20261016.md" "docs/uat-talleres-validacion-mike-20261016.md" "docs/uat-workshop-preview-build-20261016.md" "docs/uat-workshop-provisional-conversion-sandbox-20261016.md" "docs/uat-workshop-provisional-expiry-20261016.md" "docs/uat-workshop-provisional-rollback-results-20261016.md" "scripts/uat/workshop-provisional-concurrency-sandbox.mjs" "src/lib/workshops/first-session-policy.test.ts" "src/lib/workshops/first-session-policy.ts" "src/lib/workshops/provisional-capacity.test.ts" "src/lib/workshops/provisional-capacity.ts" "src/lib/workshops/provisional-checkout.test.ts" "src/lib/workshops/provisional-checkout.ts" "src/lib/workshops/provisional-transfer.test.ts" "src/lib/workshops/provisional-transfer.ts" "src/lib/workshops/transfer-review.test.ts" "src/lib/workshops/transfer-review.ts"
+          if ! git diff --cached --quiet; then
+            git commit -m "style: format workshop contract changes with Prettier"
+            git push origin HEAD:design/workshop-payment-contract-20261016
+          fi

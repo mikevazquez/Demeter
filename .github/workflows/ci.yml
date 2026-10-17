@@ -52,3 +52,6 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Workshop payment gate (isolated PostgreSQL)
+        run: npm run test:workshops:db

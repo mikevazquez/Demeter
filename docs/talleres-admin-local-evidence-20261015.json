@@ -1,0 +1,91 @@
+{
+  "date": "2026-10-15",
+  "parentCommit": "2d0ec31",
+  "scope": "Local administrative purchase UI, server action and authenticated database wrappers",
+  "routes": ["/admin/actividades/talleres", "/admin/actividades/talleres/[offerId]"],
+  "migration": "supabase/migrations/20261015132728_workshop_admin_checkout.sql",
+  "migrationSha256": "0615112a44540b1578adcd8ec5492dd99472448cad0da6da3e5d1c8dcc60b38c",
+  "integration": {
+    "command": "npm run test:workshops:db",
+    "passed": 30,
+    "failed": 0,
+    "cases": [
+      "six historical migrations reconstruct the exact Sandbox workshop catalog",
+      "all seven module tables enable RLS and deny direct client writes",
+      "replacement preserves historical authorization, purchase and payment records",
+      "both public and private historical review entrypoints are retired for all client roles",
+      "historical request IDs and received-payment references cannot be spent again",
+      "review preserves schedule permissions and active account/studio restrictions",
+      "only authenticated staff with sales/schedule permissions in this studio can attest",
+      "pending/absent confirmation and unsupported currency/method are rejected",
+      "review records the real actor and database quote without reserving or selling",
+      "cross-studio students/offers, duplicate selection and required enrollment fail closed",
+      "both unsafe RPCs and direct evidence writes are inaccessible",
+      "authorized individual checkout persists one sale/payment and every reservation",
+      "review replays reordered sessions but rejects changed amount, mode, student or reference",
+      "checkout rejects missing evidence, another tenant and a changed checkout key",
+      "overpayment, inadequate deposit and a missing balance date are rejected",
+      "deposit checkout preserves balance/policy and replay survives subsequent payments",
+      "price/deposit changes after review cannot silently change the authorized purchase",
+      "a full session after review leaves authorization and all financial rows untouched",
+      "induced second-reservation failure rolls back sale, payment, reservations and consumption",
+      "evidence cannot be edited/deleted, including by its database owner",
+      "two independent connections consume the same authorization exactly once",
+      "two independent buyers of the last seat produce one sale and one unconsumed authorization",
+      "expired sessions and disabled payment methods cannot be attested",
+      "authenticated context scopes offers, students, prices and cupos to this studio",
+      "read context hides student identities without students.read and refuses writes",
+      "admin action RPC atomically buys selected individual dates with a deposit and stable replay",
+      "admin RPC denies service/anonymous callers and cross-studio or inactive students",
+      "booking/enrollment domain blockers roll back even the received-payment authorization",
+      "admin transaction requires explicit receipt attestation and rejects altered replay parameters",
+      "two authenticated administrative buyers serialize the last seat with no losing authorization"
+    ],
+    "database": "Isolated PostgreSQL 17; network disabled; no remote records or connection credentials"
+  },
+  "vitest": {
+    "passed": 1310,
+    "failed": 0
+  },
+  "browser": {
+    "scope": "Component browser smoke with action/Next Link doubles; not real authentication, Next server-action transport or UAT",
+    "checks": [
+      "Explicit selection of every individual date keeps the individual total of 450 vs full price 600",
+      "Rejected action preserves student, selected dates, amount, reference and receipt attestation",
+      "Retry keeps the exact checkout key/payload and a successful response replaces the form with a receipt",
+      "390px mobile viewport has no page-level horizontal overflow",
+      "Required enrollment and missing write permissions keep checkout disabled",
+      "No browser page errors"
+    ],
+    "errors": [],
+    "engine": "Chromium; Playwright 1.64.1",
+    "viewportChecks": ["1280x1000 desktop", "390x844 mobile"]
+  },
+  "security": {
+    "tenantFromAuthenticatedContext": true,
+    "clientTotalAndAuthorizationIgnored": true,
+    "serviceCredentialUsedByBrowserOrAction": false,
+    "staffPermissionsAndActiveAccountsRechecked": true,
+    "studentNamesRequireStudentsRead": true,
+    "attestationAndCheckoutAtomic": true,
+    "directClientTableGrantsAdded": false
+  },
+  "format": "passed",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 19
+  },
+  "typecheck": "passed",
+  "build": "passed with CI dummy public configuration",
+  "remoteWritesPerformed": false,
+  "remoteMigrationApplied": false,
+  "uatApproved": 0,
+  "uatTotal": 18,
+  "limitations": [
+    "External Auth/Agenda/sales host tables remain reduced fixtures, not the full Demeter schema.",
+    "Booking restrictions/enrollment engines are explicit contract doubles in database tests; their actual rules are not verified here.",
+    "Browser smoke replaces the action and Next Link; real login, Next server-action transport and PostgREST are not end-to-end verified.",
+    "This UI purchases existing offers; creating/editing offers and policies remains pending.",
+    "Offer-level required enrollment still fails closed; portal, Demi and automated provider verification remain pending."
+  ]
+}

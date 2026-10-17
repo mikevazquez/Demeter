@@ -1,0 +1,100 @@
+{
+  "date": "2026-10-15",
+  "scope": "Local replay of the workshop module and replacement payment gate over reduced external host tables",
+  "parentCommit": "8caca08",
+  "remoteAccess": "Read-only Sandbox migration history and schema metadata; no business records queried",
+  "sourceProject": "hedouonyhynuvwbckdlg",
+  "historyManifest": "supabase/tests/fixtures/workshop-migration-history-20261015.json",
+  "historicalMigrationsRecovered": 6,
+  "historicalVersions": [
+    "20261014045245",
+    "20261014050801",
+    "20261014054548",
+    "20261014054633",
+    "20261014064556",
+    "20261014143639"
+  ],
+  "localV2VersionCorrection": {
+    "from": "20261014064453",
+    "to": "20261014064556",
+    "sqlChanged": false,
+    "remoteHistoryChanged": false
+  },
+  "catalogComparison": {
+    "matchesSandboxSnapshot": true,
+    "tables": 6,
+    "indexes": 12,
+    "functions": 7,
+    "compared": [
+      "columns/types/defaults",
+      "constraints",
+      "indexes",
+      "RLS",
+      "policies",
+      "triggers",
+      "function signatures/body hashes/settings",
+      "anon/authenticated/service_role grants"
+    ]
+  },
+  "historicalAuthorizationDiscovered": "20261014143639_workshop_trusted_admin_payment",
+  "historicalUpgradeChecks": {
+    "authorizationAndPurchasePreserved": true,
+    "legacyPublicAndPrivateEntryPointsRevoked": true,
+    "historicalReferenceReplayRejected": true,
+    "scheduleAndActiveAccountRestrictionsPreserved": true
+  },
+  "pendingMigration": "supabase/migrations/20261015120000_workshop_verified_manual_payment.sql",
+  "pendingMigrationSha256": "094c24cd7a8734e7a4742acd82a70301d830641497148b4d412fa75f2686c21e",
+  "postgresImage": "postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+  "postgresNetwork": "none; no published ports",
+  "command": "npm run test:workshops:db",
+  "integrationScenarios": {
+    "passed": 23,
+    "failed": 0,
+    "cases": [
+      "six historical migrations reconstruct the exact Sandbox workshop catalog",
+      "all seven module tables enable RLS and deny direct client writes",
+      "replacement preserves historical authorization, purchase and payment records",
+      "both public and private historical review entrypoints are retired for all client roles",
+      "historical request IDs and received-payment references cannot be spent again",
+      "review preserves schedule permissions and active account/studio restrictions",
+      "only authenticated staff with sales/schedule permissions in this studio can attest",
+      "pending/absent confirmation and unsupported currency/method are rejected",
+      "review records the real actor and database quote without reserving or selling",
+      "cross-studio students/offers, duplicate selection and required enrollment fail closed",
+      "both unsafe RPCs and direct evidence writes are inaccessible",
+      "authorized individual checkout persists one sale/payment and every reservation",
+      "review replays reordered sessions but rejects changed amount, mode, student or reference",
+      "checkout rejects missing evidence, another tenant and a changed checkout key",
+      "overpayment, inadequate deposit and a missing balance date are rejected",
+      "deposit checkout preserves balance/policy and replay survives subsequent payments",
+      "price/deposit changes after review cannot silently change the authorized purchase",
+      "a full session after review leaves authorization and all financial rows untouched",
+      "induced second-reservation failure rolls back sale, payment, reservations and consumption",
+      "evidence cannot be edited/deleted, including by its database owner",
+      "two independent connections consume the same authorization exactly once",
+      "two independent buyers of the last seat produce one sale and one unconsumed authorization",
+      "expired sessions and disabled payment methods cannot be attested"
+    ]
+  },
+  "vitest": {
+    "passed": 1293,
+    "failed": 0,
+    "pending": 0
+  },
+  "format": "passed",
+  "typecheck": "passed",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 19
+  },
+  "remoteWritesPerformed": false,
+  "remoteMigrationApplied": false,
+  "uatApproved": 0,
+  "uatTotal": 18,
+  "limitations": [
+    "External host/Auth/Agenda/sales tables are reduced fixtures; not a full application migration replay.",
+    "Supabase JWT/PostgREST, SaaS entitlements and full financial triggers are not validated by this test.",
+    "Provider verification, UI integration and functional UAT remain pending."
+  ]
+}
