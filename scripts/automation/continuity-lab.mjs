@@ -54,10 +54,7 @@ export function parseState(body) {
 }
 
 export function isTrustedStateComment(comment) {
-  return (
-    comment?.user?.login === "github-actions[bot]" &&
-    comment.user.type === "Bot"
-  );
+  return comment?.user?.login === "github-actions[bot]" && comment.user.type === "Bot";
 }
 
 export function serializeState(state) {
