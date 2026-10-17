@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
@@ -12,8 +12,23 @@ const assert = (ok, message) => {
 };
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 const read = (filename) => JSON.parse(fs.readFileSync(filename, "utf8"));
-const write = (filename, value, flag = "w") =>
-  fs.writeFileSync(filename, JSON.stringify(value, null, 2) + "\n", { flag });
+// Publish complete JSON in one filesystem operation; a killed writer cannot truncate it.
+const write = (filename, value, flag = "w") => {
+  const temporary = `${filename}.${randomUUID()}.tmp`;
+  try {
+    const fd = fs.openSync(temporary, "wx", 0o600);
+    try {
+      fs.writeFileSync(fd, JSON.stringify(value, null, 2) + "\n");
+      fs.fsyncSync(fd);
+    } finally {
+      fs.closeSync(fd);
+    }
+    if (flag === "wx") fs.linkSync(temporary, filename);
+    else fs.renameSync(temporary, filename);
+  } finally {
+    fs.rmSync(temporary, { force: true });
+  }
+};
 const git = (repo, ...args) => {
   const r = spawnSync("git", ["-C", repo, ...args], { encoding: "utf8" });
   assert(r.status === 0, `git ${args[0]} failed: ${r.stderr}`);
@@ -23,9 +38,23 @@ function locations(registry, id) {
   assert(/^[a-z0-9][a-z0-9-]{2,79}$/.test(id ?? ""), "Invalid task ID");
   return { dir: path.join(registry, id), lock: path.join(registry, "active.json") };
 }
-function taskState(registry, id) {
+const validReceipt = (receipt, branch) =>
+  receipt?.draft === true &&
+  receipt.branch === branch &&
+  /^[a-f0-9]{40}$/.test(receipt.commitSha ?? "") &&
+  /^https:\/\/github\.com\/mikevazquez\/Demeter\/pull\/\d+$/.test(receipt.url ?? "");
+function reservation(registry, id) {
   const loc = locations(registry, id);
   const state = read(path.join(loc.dir, "reservation.json"));
+  assert(
+    state.task?.id === id && state.contractSha256 === hash(JSON.stringify(state.task)),
+    "Invalid reservation identity or contract hash; inspect registry and authorization issue",
+  );
+  return { task: state.task, contractSha256: state.contractSha256, ...loc };
+}
+function taskState(registry, id) {
+  const state = reservation(registry, id);
+  const loc = locations(registry, id);
   assert(read(loc.lock).id === id, "Another task owns the registry");
   assert(!fs.existsSync(path.join(loc.dir, "published.json")), "Task already published");
   return { ...loc, ...state };
@@ -79,6 +108,18 @@ export function reserve(repo, registry, task, selectedId) {
   assert(!fs.existsSync(loc.dir), "Task ID already consumed, including failed or published tasks");
   write(loc.lock, { id: task.id }, "wx");
   try {
+    // A lost active.json must not silently permit a second unfinished task.
+    for (const entry of fs.readdirSync(registry, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const prior = reservation(registry, entry.name);
+      const published = read(path.join(prior.dir, "published.json"));
+      assert(
+        published.id === entry.name &&
+          published.contractSha256 === prior.contractSha256 &&
+          validReceipt(published, `studio-flow/minimal/${entry.name}`),
+        "Unresolved registry entry; reconcile history before reserving another task",
+      );
+    }
     fs.mkdirSync(loc.dir);
     write(
       path.join(loc.dir, "reservation.json"),
@@ -123,6 +164,12 @@ function snapshot(repo, task) {
 }
 export function certify(repo, registry, id) {
   const state = taskState(registry, id);
+  assert(
+    !fs.existsSync(path.join(state.dir, "publication.json")),
+    "Publication pending; reconcile remotely before changing the candidate",
+  );
+  // Invalidate any previous success before executing checks that may be interrupted.
+  write(path.join(state.dir, "certificate.json"), { id, passed: false, status: "certifying" });
   const before = snapshot(repo, state.task);
   // Checks are reviewed supervisor inputs, never inferred from generated text.
   // Run this command in an offline sandbox for untrusted candidate code.
@@ -166,11 +213,24 @@ export function certify(repo, registry, id) {
   assert(certificate.passed, "Certification failed; inspect certificate.json");
   return certificate;
 }
-export function publicationPlan(repo, registry, id) {
+function certifiedPlan(repo, registry, id) {
   const state = taskState(registry, id);
   const certificate = read(path.join(state.dir, "certificate.json"));
   assert(
-    certificate.passed &&
+    certificate.passed === true &&
+      certificate.mode === "supervised-local" &&
+      typeof certificate.certifiedAt === "string" &&
+      Number.isFinite(Date.parse(certificate.certifiedAt)) &&
+      Array.isArray(certificate.checks) &&
+      certificate.checks.length === state.task.checks.length &&
+      certificate.checks.every(
+        (check, index) =>
+          check?.exitCode === 0 &&
+          check.signal === null &&
+          !check.error &&
+          JSON.stringify(check.argv) === JSON.stringify(state.task.checks[index]),
+      ) &&
+      certificate.baseSha === state.task.baseSha &&
       certificate.id === id &&
       certificate.contractSha256 === state.contractSha256,
     "Successful matching certificate required",
@@ -188,22 +248,77 @@ export function publicationPlan(repo, registry, id) {
     authorization: state.task.authorization,
   };
 }
+// The trusted supervisor obtains this snapshot through its existing GitHub connection.
+// It is reviewed input, not independent proof that a remote lookup actually happened.
+export function publicationPlan(repo, registry, id, remote) {
+  const plan = certifiedPlan(repo, registry, id);
+  const filename = path.join(locations(registry, id).dir, "publication.json");
+  const retry = fs.existsSync(filename);
+  if (retry) {
+    assert(
+      JSON.stringify(read(filename)) === JSON.stringify(plan),
+      "Inconsistent publication intent",
+    );
+  }
+  assert(remote, "Remote reconciliation required before planning or retrying publication");
+  let action = "create-draft";
+  let existing = null;
+  if (remote) {
+    assert(
+      remote.branch === plan.branch &&
+        remote.baseSha === plan.baseSha &&
+        (remote.headSha === null || /^[a-f0-9]{40}$/.test(remote.headSha ?? "")) &&
+        Array.isArray(remote.pullRequests),
+      "Matching remote branch, base and all-state PR lookup required",
+    );
+    assert(remote.pullRequests.length <= 1, "Multiple PRs found; supervisor intervention required");
+    if (remote.pullRequests.length) {
+      existing = remote.pullRequests[0];
+      assert(
+        existing.state === "OPEN" &&
+          existing.draft === true &&
+          existing.branch === plan.branch &&
+          existing.commitSha === remote.headSha &&
+          /^https:\/\/github\.com\/mikevazquez\/Demeter\/pull\/\d+$/.test(existing.url ?? ""),
+        "Existing PR must be the matching open Draft; never create a replacement",
+      );
+      action = "reuse-draft";
+    } else if (remote.headSha !== null) action = "verify-existing-branch";
+  }
+  if (!retry) write(filename, plan, "wx");
+  return { ...plan, action, existing };
+}
+const receiptMatches = (a, b) =>
+  ["branch", "commitSha", "draft", "url"].every((key) => a[key] === b[key]);
 export function complete(repo, registry, id, receipt) {
-  const plan = publicationPlan(repo, registry, id);
+  const state = reservation(registry, id);
+  const filename = path.join(state.dir, "published.json");
+  if (fs.existsSync(filename)) {
+    const published = read(filename);
+    assert(
+      published.id === id &&
+        published.contractSha256 === state.contractSha256 &&
+        validReceipt(published, `studio-flow/minimal/${id}`) &&
+        receiptMatches(published, receipt),
+      "Conflicting published receipt",
+    );
+    // A crash after persisting the receipt may have left the old task's lock.
+    // Never release another task's reservation during an idempotent retry.
+    if (fs.existsSync(state.lock) && read(state.lock).id === id) fs.unlinkSync(state.lock);
+    return { id, status: "published-draft", url: published.url };
+  }
+  const plan = certifiedPlan(repo, registry, id);
+  assert(validReceipt(receipt, plan.branch), "Supervisor-verified Draft receipt required");
   assert(
-    receipt.draft === true &&
-      receipt.branch === plan.branch &&
-      /^[a-f0-9]{40}$/.test(receipt.commitSha ?? "") &&
-      /^https:\/\/github\.com\/mikevazquez\/Demeter\/pull\/\d+$/.test(receipt.url ?? ""),
-    "Supervisor-verified Draft receipt required",
+    JSON.stringify(read(path.join(state.dir, "publication.json"))) === JSON.stringify(plan),
+    "Matching publication intent required",
   );
-  const loc = locations(registry, id);
   write(
-    path.join(loc.dir, "published.json"),
-    { ...receipt, id, recordedAt: new Date().toISOString() },
+    filename,
+    { ...receipt, id, contractSha256: state.contractSha256, recordedAt: new Date().toISOString() },
     "wx",
   );
-  fs.unlinkSync(loc.lock);
+  fs.unlinkSync(state.lock);
   return { id, status: "published-draft", url: receipt.url };
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -213,11 +328,12 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     if (command === "reserve")
       result = reserve(repo, registry, read(input), process.env.CODEX_PILOT_TASK_ID);
     else if (command === "certify") result = certify(repo, registry, input);
-    else if (command === "publish-plan") result = publicationPlan(repo, registry, input);
+    else if (command === "publish-plan")
+      result = publicationPlan(repo, registry, input, receipt ? read(receipt) : undefined);
     else if (command === "complete") result = complete(repo, registry, input, read(receipt));
     else
       throw new Error(
-        "Usage: reserve|certify|publish-plan|complete REPO REGISTRY TASK_FILE_OR_ID [RECEIPT]",
+        "Usage: reserve|certify|publish-plan|complete REPO REGISTRY TASK_FILE_OR_ID [REMOTE_SNAPSHOT_OR_RECEIPT]",
       );
     process.stdout.write(JSON.stringify(result, null, 2) + "\n");
   } catch (error) {

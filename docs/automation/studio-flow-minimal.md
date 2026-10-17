@@ -28,12 +28,30 @@ CODEX_PILOT_TASK_ID=una-tarea-v1 node /ruta/confiable/studio-flow-minimal.mjs re
 
 ```sh
 node /ruta/confiable/studio-flow-minimal.mjs certify /checkout-separado /registro una-tarea-v1
-node /ruta/confiable/studio-flow-minimal.mjs publish-plan /checkout-separado /registro una-tarea-v1
 ```
 
 Ejecutar la certificación de código no confiable en un entorno sin red ni credenciales, con límites de recursos; la herramienta no crea ese aislamiento. Los procesos de prueba reciben un entorno reducido y límite de dos minutos por comando, pero eso no sustituye un sandbox. El piloto de esta herramienta se comprueba con Bubblewrap sin red. La herramienta no evalúa que las pruebas elegidas sean suficientes: eso corresponde al supervisor.
 
-4. Publicar con la conexión GitHub ya disponible, separada del proceso que verifica el código. Antes de crear la rama, volver a comprobar el SHA remoto base y la ausencia de otro PR para el ID, incluido un PR cerrado. Usar los bytes, modos y eliminaciones exactos del plan certificado, con el commit base como padre. Crear **un solo Draft**, leer desde GitHub el commit, archivos y hashes y comprobar `draft: true`. Registrar evidencia en la issue y el PR. No fusionar ni desplegar.
+4. Publicar con la conexión GitHub ya disponible, separada del proceso que verifica el código. Antes de **cada** plan o reintento, leer el SHA remoto base, la rama determinista y todos los PR para ese ID/rama, incluidos los cerrados. Conservar la respuesta y preparar fuera del repo un snapshot revisado por el supervisor:
+
+```json
+{
+  "branch": "studio-flow/minimal/una-tarea-v1",
+  "baseSha": "COMMIT_BASE_AUTORIZADO_DE_40_CARACTERES",
+  "headSha": null,
+  "pullRequests": []
+}
+```
+
+`headSha: null` significa que la rama no existe. Si existe, usar su SHA real. Cada PR encontrado debe incluir `branch`, `commitSha`, `url`, `draft` y `state` (`OPEN`, `CLOSED` o `MERGED`). La consulta debe incluir todos los estados y paginar; un error de red, permisos o respuesta incompleta **no** equivale a una lista vacía. Buscar también el ID en issues y PR antes de la primera reserva, conforme al paso 1.
+
+```sh
+node /ruta/confiable/studio-flow-minimal.mjs publish-plan /checkout-separado /registro una-tarea-v1 /snapshot-remoto.json
+```
+
+El comando conserva `publication.json` antes de devolver un plan. Sin snapshot no autoriza ni el primer intento ni una repetición. Devuelve `action: create-draft` si no hay rama ni PR, `verify-existing-branch` si hay una rama sin PR, o `reuse-draft` si ya hay un único Draft abierto con el SHA de la rama. En `verify-existing-branch`, leer el commit, padre, rutas, modos y bytes remotos y compararlos con el certificado **antes** de usar esa rama; no sobrescribirla ni crear otra. En `reuse-draft`, verificar también los bytes y continuar el PR existente. Un PR cerrado, no Draft, incoherente o varios PR bloquean el plan; nunca crear un reemplazo. El snapshot es entrada confiable del supervisor: la herramienta valida su coherencia pero no consulta GitHub ni demuestra su frescura.
+
+Usar los bytes, modos y eliminaciones exactos del plan certificado, con el commit base como padre. Crear **un solo Draft**, leer desde GitHub el commit, archivos y hashes y comprobar `draft: true`. Registrar evidencia en la issue y el PR. No fusionar ni desplegar.
 
 Guardar fuera del repo un recibo verificado, con `branch` del plan, `commitSha`, `draft: true` y `url` real del PR:
 
@@ -43,14 +61,30 @@ node /ruta/confiable/studio-flow-minimal.mjs complete /checkout-separado /regist
 
 ## Fallos y límites
 
-Un fallo de pruebas conserva la reserva y permite corregir y recertificar **la misma tarea** antes de publicar. Otra tarea queda bloqueada por `active.json`; el ID consumido no se reutiliza. Ante caída del proceso, inspeccionar la issue, el registro y GitHub antes de cualquier recuperación manual. No borrar el historial para desbloquear una ejecución. No hay leases, recuperación automática ni protección frente a un operador que altere el registro de confianza.
+Un fallo de pruebas conserva la reserva y permite corregir y recertificar **la misma tarea** antes de iniciar publicación. Otra tarea queda bloqueada por `active.json`; el ID consumido no se reutiliza. Dos procesos que intenten reservar a la vez compiten por creación exclusiva del bloqueo. El hash del contrato y el ID se comprueban en cada lectura de la reserva. Si se pierde `active.json` pero quedan reservas sin recibo válido, no se permite reservar otra tarea.
 
-El publicador es el supervisor con el conector existente; `publish-plan` no hace llamadas GitHub ni publica automáticamente. Un recibo requiere lectura remota previa. Esta entrega proporciona un flujo supervisado reutilizable: no acredita un daemon, jobs de Actions, ejecución entre sesiones ni producción. La automatización desatendida queda diferida y requiere una entrega aparte.
+Los JSON se escriben completos en un temporal del mismo directorio y se publican atómicamente; se sincronizan los bytes antes de publicar. Esto protege frente a interrupción del proceso, sin prometer recuperación de pérdida de disco, corte eléctrico o corrupción del registro completo. Un temporal abandonado no prueba reserva ni publicación.
+
+| Punto de interrupción                                                  | Continuación supervisada                                                                                                                                                                                    |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Reserva completa, sin certificado                                      | Conservar ID, contrato, checkout y bloqueo; ejecutar `certify` sin reservar de nuevo.                                                                                                                       |
+| Durante las pruebas                                                    | Al comenzar cada certificación se invalida cualquier éxito previo. Repetir `certify` en un proceso nuevo; no publicar con el certificado pendiente.                                                         |
+| Después de obtener un plan o publicar remotamente, sin recibo local    | Leer GitHub de nuevo y repetir `publish-plan` con un snapshot actualizado. Reutilizar el Draft o verificar la rama existente según `action`; no crear otro PR por asumir que el intento anterior falló.     |
+| Recibo persistido, bloqueo aún presente                                | Leer y verificar el mismo PR remoto y repetir `complete` con el mismo recibo. Libera solamente el bloqueo de ese ID; un recibo distinto se rechaza y un bloqueo de otra tarea se conserva.                  |
+| JSON ausente, truncado, contrato alterado, bloqueo perdido/incoherente | Detener la publicación y reservas nuevas. Contrastar issue, respaldo confiable y GitHub; restaurar el registro de esa tarea bajo supervisión. No borrar historial ni inventar un nuevo ID para desbloquear. |
+
+Una vez que existe `publication.json`, la herramienta bloquea recertificaciones para no cambiar el candidato durante una publicación incierta. Cualquier corrección posterior requiere reconciliar primero el resultado remoto y el registro bajo supervisión. La operación idempotente de `complete` conserva el recibo existente sin depender de que el checkout siga sin commit. Los recibos antiguos sin hash del contrato se inspeccionan y reconcilian manualmente; no hay migración automática.
+
+El publicador sigue siendo el supervisor con la conexión existente; `publish-plan` no hace llamadas GitHub ni publica automáticamente. Un recibo y un snapshot requieren lectura remota previa; no protegen frente a un operador que falsifique o reutilice evidencia vieja. No hay exclusión distribuida entre máquinas con copias distintas del registro ni transacción atómica entre el registro local y GitHub. Usar un solo supervisor para publicar y conservar el mismo registro confiable. No hay leases ni recuperación automática de un registro incompleto.
+
+La recuperación demostrada usa procesos CLI distintos y el mismo disco: una prueba mata con `SIGKILL` el proceso de certificación, verifica que el certificado anterior dejó de habilitar publicación y recertifica el mismo ID en un proceso nuevo. Otra lanza dos reservas simultáneas y comprueba que solo una gana. Los casos de reconciliación remota usan fixtures explícitos; las lecturas reales de GitHub y el único PR se documentan como evidencia en #313/#314. Esto **no** demuestra que Codex pueda iniciar tareas entre sesiones: falta un ejecutor persistente que reabra la sesión y el registro con autorización. No se añadió daemon, scheduler, otro orquestador ni automatización desatendida.
 
 ## Verificación de la herramienta
 
 ```sh
-node --test tests/automation/studio-flow-minimal.test.mjs
+npm test -- tests/automation/studio-flow-minimal.test.mjs
 ```
+
+La suite se integra con Vitest, el runner de `npm test` y de GitHub Actions. Incluye regresiones de concurrencia, interrupción real y registros inconsistentes. La herramienta CLI mantiene cero dependencias externas.
 
 La primera tarea real del flujo es la entrega de esta herramienta, autorizada y reservada en [#313](https://github.com/mikevazquez/Demeter/issues/313). Su PR y los resultados verificables se registran allí. Ninguna tarea de las colas retiradas forma parte de esta ejecución.
