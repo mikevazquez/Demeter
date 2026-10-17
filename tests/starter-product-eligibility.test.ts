@@ -62,9 +62,7 @@ describe("starter product eligibility foundation", () => {
   });
 
   it("keeps promotional enrollment out of the charged regular amount", () => {
-    expect(promoAmountFix).toContain(
-      "(v_price->>'regular_amount_minor')::int+v_extra_price",
-    );
+    expect(promoAmountFix).toContain("(v_price->>'regular_amount_minor')::int+v_extra_price");
     expect(promoAmountFix).toContain("'regular_price_minor',v_enroll.price_minor");
   });
 
