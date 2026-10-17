@@ -84,19 +84,28 @@ const outcomes = await Promise.all([
 ]);
 const winners = outcomes.filter(x => !x.error && x.data?.state === "reserved_provisionally");
 const losers = outcomes.filter(x => x.error?.message?.includes("session_full") || x.error?.message?.includes("session_unavailable"));
-let cleanup = null;
-if (winners.length === 1) {
-  cleanup = await staffClient().rpc("admin_reject_workshop_provisional_hold", {
+// Always attempt cleanup, including an unexpected double-winner result.
+const cleanupResults = await Promise.all(
+  winners.map(winner => staffClient().rpc("admin_reject_workshop_provisional_hold", {
     p_studio_id:e.WORKSHOP_UAT_STUDIO_ID,
-    p_hold_id:winners[0].data.hold_id,
+    p_hold_id:winner.data.hold_id,
     p_reason:"Synthetic Sandbox concurrency UAT cleanup",
-  });
-}
+  }))
+);
+const cleanupPassed = cleanupResults.length === winners.length &&
+  cleanupResults.every(x => !x.error && x.data?.state === "rejected");
+const { count: finalActive, error: finalError } = await admin
+  .from("workshop_provisional_hold_sessions")
+  .select("hold_id,workshop_provisional_holds!inner(id)",{head:true,count:"exact"})
+  .eq("session_id",session.id)
+  .eq("workshop_provisional_holds.state","reserved_provisionally")
+  .gt("workshop_provisional_holds.expires_at",new Date().toISOString());
 const passed = winners.length === 1 && losers.length === 1 &&
-               cleanup && !cleanup.error && cleanup.data?.state === "rejected";
+  cleanupPassed && !finalError && finalActive === 0;
 console.log(JSON.stringify({
   passed, winners:winners.length, capacityRejections:losers.length,
-  cleanupState:cleanup?.data?.state ?? null,
+  cleanupPassed, finalActiveProvisionalHolds:finalActive,
   errors:outcomes.map(x=>x.error?.message??null),
+  cleanupErrors:cleanupResults.map(x=>x.error?.message??null),
 },null,2));
 if (!passed) process.exitCode=1;
