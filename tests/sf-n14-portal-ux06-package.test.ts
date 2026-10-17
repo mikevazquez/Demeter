@@ -40,10 +40,15 @@ describe("SF-N14 PORTAL UX-06 Mi paquete", () => {
     expect(page).toContain("snapshot.enrollment");
   });
 
-  it("keeps the real online catalog and Mercado Pago checkout contract", () => {
+  it("keeps the real eligible online catalog and Mercado Pago checkout contract", () => {
+    const eligibility = source(
+      "supabase/migrations/20261017184233_starter_product_eligibility_foundation.sql",
+    );
+
     expect(page).toContain('data-package-block="catalog"');
-    expect(page).toContain('.eq("online_purchasable", true)');
-    expect(page).toContain('.in("product_type", ["package", "membership"])');
+    expect(page).toContain('supabase.rpc("student_online_product_options")');
+    expect(eligibility).toContain("and pt.online_purchasable");
+    expect(eligibility).toContain("pt.product_type::text in ('package','membership')");
     expect(page).toContain("PurchasePackageButton");
     expect(button).toContain("createMercadoPagoOrderAction(productTemplateId, requestKey)");
     expect(actions).toContain('supabase.functions.invoke("create-mercadopago-order"');
