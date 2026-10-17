@@ -3,6 +3,7 @@
 Branch: `design/workshop-payment-contract-20261016`, PR #317 Draft. No production modifications.
 
 Changed `scripts/uat/workshop-provisional-concurrency-sandbox.mjs`:
+
 - Each test request carries a unique run identifier inside its transfer reference.
 - After the two concurrent HTTP RPC calls, the cleanup first queries holds belonging **only to those references**, including cases where Postgres may have committed but the network response was lost.
 - Every active hold from this test run is rejected using the staff-authorized RPC; unrelated holds are untouched.
