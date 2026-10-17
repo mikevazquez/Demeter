@@ -475,20 +475,19 @@ export function WorkshopEditorForm({
         <section className="workshop-purchase-fields" aria-label="Revisión">
           <h2>Revisar y guardar</h2>
           <p>
-            <strong>${title || "Sin nombre"}</strong>
+            <strong>{title || "Sin nombre"}</strong>
           </p>
           <p>
-            ${rows.length} fecha(s) · ${fullPrice || "—"} ${context.currency}
+            {rows.length} fecha(s) · {fullPrice || "—"} {context.currency}
           </p>
           <p>
-            $
             {depositMode === "full"
               ? "Pago completo"
               : depositMode === "fixed"
                 ? "Anticipo fijo: " + deposit
                 : "Anticipo porcentual: " + deposit + "%"}
           </p>
-          <p>${allowIndividual ? "Permite comprar fechas individuales" : "Solo compra completa"}</p>
+          <p>{allowIndividual ? "Permite comprar fechas individuales" : "Solo compra completa"}</p>
           <p>Confirma que las fechas, precios y condiciones sean correctos antes de guardar.</p>
           {invalidDraft ? (
             <p role="alert">
