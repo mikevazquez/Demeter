@@ -32,15 +32,9 @@ describe("continuity lab 315", () => {
   it("rejects malformed or inconsistent persisted records", () => {
     expect(() => nextState({ phase: "waiting" }, "start", 28)).toThrow();
     expect(() =>
-      nextState(
-        { phase: "waiting", startedBy: 22, completedBy: 23 },
-        "resume",
-        24,
-      ),
+      nextState({ phase: "waiting", startedBy: 22, completedBy: 23 }, "resume", 24),
     ).toThrow();
-    expect(() =>
-      parseState('<!-- continuity-lab-315:v1 -->\n{"phase":"waiting"}'),
-    ).toThrow();
+    expect(() => parseState('<!-- continuity-lab-315:v1 -->\n{"phase":"waiting"}')).toThrow();
   });
 
   it("round-trips the strict persistent marker", () => {
