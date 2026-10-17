@@ -408,9 +408,7 @@ export default async function StudentsPage({
     (item) => item.entry_mode === "introductory_package" && item.converted_to_regular_package,
   ).length;
   const introductoryConversionRate =
-    introductoryEntries > 0
-      ? Math.round((introductoryConversions / introductoryEntries) * 100)
-      : 0;
+    introductoryEntries > 0 ? Math.round((introductoryConversions / introductoryEntries) * 100) : 0;
 
   const communications = await contactConversations(
     supabase,
