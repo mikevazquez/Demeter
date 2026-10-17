@@ -69,7 +69,7 @@ describe("F15 Mercado Pago Orders API", () => {
     expect(edge).not.toContain('.from("credit_ledger")');
   });
 
-  it("exposes only explicitly purchasable and eligible packages in the student catalog", () => {
+  it("exposes only explicitly purchasable packages in the student catalog", () => {
     const page = source("app/student/paquete/page.tsx");
     const eligibility = source(
       "supabase/migrations/20261017184233_starter_product_eligibility_foundation.sql",
