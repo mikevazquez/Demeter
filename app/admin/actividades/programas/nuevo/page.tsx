@@ -30,13 +30,14 @@ export default async function NewProgram({
   const names = new Map(
     (persons ?? []).map((p) => [p.id, `${p.first_name} ${p.last_name ?? ""}`.trim()]),
   );
+  const isMasterclass = query.kind === "masterclass";
   const isEvent = query.kind === "event";
   return (
     <main className="activities-v2 activities-editor-page">
-      <Link className="activities-v2-back" href={isEvent ? "/admin/actividades?tipo=eventos" : "/admin/actividades?tipo=talleres"}>← Volver</Link>
+      <Link className="activities-v2-back" href={isMasterclass ? "/admin/actividades?tipo=masterclass" : isEvent ? "/admin/actividades?tipo=eventos" : "/admin/actividades?tipo=talleres"}>← Volver</Link>
       <header className="activities-v2-header">
         <div>
-          <h1>{isEvent ? "Nuevo evento" : "Nuevo programa"}</h1>
+          <h1>{isMasterclass ? "Nueva master class" : isEvent ? "Nuevo evento" : "Nuevo programa"}</h1>
           <p>Configura la información, fechas, cupos y precios. Las sesiones se incorporan a Agenda.</p>
         </div>
       </header>
@@ -47,7 +48,7 @@ export default async function NewProgram({
           name: names.get(i.person_id) ?? "Coach",
         }))}
         spaces={spaces ?? []}
-        kind={isEvent ? "event" : "workshop"}
+        kind={isMasterclass ? "masterclass" : isEvent ? "event" : "workshop"}
       />
     </main>
   );
