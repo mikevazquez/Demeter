@@ -133,19 +133,24 @@ const { data: ownHolds, error: ownHoldsError } = await admin
   .select("id,state,transfer_reference")
   .eq("studio_id", e.WORKSHOP_UAT_STUDIO_ID)
   .in("transfer_reference", references);
-const holdIds = ownHoldsError ? [] : (ownHolds ?? [])
-  .filter((hold) => hold.state === "reserved_provisionally")
-  .map((hold) => hold.id);
-const cleanupResults = await Promise.all(holdIds.map(async (holdId) => {
-  // Use staff-gated RPC; never modify holds directly with the service client.
-  const result = await staffClient().rpc("admin_reject_workshop_provisional_hold", {
-    p_studio_id: e.WORKSHOP_UAT_STUDIO_ID,
-    p_hold_id: holdId,
-    p_reason: "Synthetic Sandbox concurrency UAT cleanup",
-  });
-  return { holdId, ...result };
-}));
-const cleanupPassed = !ownHoldsError &&
+const holdIds = ownHoldsError
+  ? []
+  : (ownHolds ?? [])
+      .filter((hold) => hold.state === "reserved_provisionally")
+      .map((hold) => hold.id);
+const cleanupResults = await Promise.all(
+  holdIds.map(async (holdId) => {
+    // Use staff-gated RPC; never modify holds directly with the service client.
+    const result = await staffClient().rpc("admin_reject_workshop_provisional_hold", {
+      p_studio_id: e.WORKSHOP_UAT_STUDIO_ID,
+      p_hold_id: holdId,
+      p_reason: "Synthetic Sandbox concurrency UAT cleanup",
+    });
+    return { holdId, ...result };
+  }),
+);
+const cleanupPassed =
+  !ownHoldsError &&
   cleanupResults.length === holdIds.length &&
   cleanupResults.every((x) => !x.error && x.data?.state === "rejected");
 const { count: finalActive, error: finalError } = await admin
