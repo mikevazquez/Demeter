@@ -45,6 +45,9 @@ export default async function WorkshopPage({ params }: { params: Promise<{ offer
               <p>{context.sessions.length} fechas</p>
             </div>
           </header>
+          {review?.error && ctx.can("sales.write") && ctx.can("schedule.write") ? (
+            <p role="alert">No fue posible cargar los comprobantes pendientes. No apruebes pagos sin revisar el registro.</p>
+          ) : null}
           {reviewItems && ctx.can("sales.write") && ctx.can("schedule.write") ? (
             <WorkshopTransferReview items={reviewItems} />
           ) : null}
