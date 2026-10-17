@@ -14,20 +14,36 @@ describe("workshop bank-transfer review input", () => {
     if (!result.ok) expect(result.error).toContain("Verifica");
   });
   it("allows approval only after explicit attestation", () => {
-    expect(parseTransferReview(form({
-      hold_id: holdId, decision: "approve", payment_received: "on",
-    }))).toEqual({ ok: true, holdId, decision: "approve", received: true });
+    expect(
+      parseTransferReview(
+        form({
+          hold_id: holdId,
+          decision: "approve",
+          payment_received: "on",
+        }),
+      ),
+    ).toEqual({ ok: true, holdId, decision: "approve", received: true });
   });
   it("requires a nonempty rejection reason", () => {
-    expect(parseTransferReview(form({ hold_id: holdId, decision: "reject", reason: "  " })).ok).toBe(false);
+    expect(
+      parseTransferReview(form({ hold_id: holdId, decision: "reject", reason: "  " })).ok,
+    ).toBe(false);
   });
   it("does not require received funds to reject an invalid proof", () => {
-    expect(parseTransferReview(form({ hold_id: holdId, decision: "reject", reason: "Folio incorrecto" })))
-      .toEqual({ ok: true, holdId, decision: "reject", reason: "Folio incorrecto" });
+    expect(
+      parseTransferReview(
+        form({ hold_id: holdId, decision: "reject", reason: "Folio incorrecto" }),
+      ),
+    ).toEqual({ ok: true, holdId, decision: "reject", reason: "Folio incorrecto" });
   });
   it("rejects invalid hold IDs, unknown decisions and reasons over 500 characters", () => {
-    expect(parseTransferReview(form({ hold_id: "bad", decision: "approve", payment_received: "on" })).ok).toBe(false);
+    expect(
+      parseTransferReview(form({ hold_id: "bad", decision: "approve", payment_received: "on" })).ok,
+    ).toBe(false);
     expect(parseTransferReview(form({ hold_id: holdId, decision: "other" })).ok).toBe(false);
-    expect(parseTransferReview(form({ hold_id: holdId, decision: "reject", reason: "x".repeat(501) })).ok).toBe(false);
+    expect(
+      parseTransferReview(form({ hold_id: holdId, decision: "reject", reason: "x".repeat(501) }))
+        .ok,
+    ).toBe(false);
   });
 });

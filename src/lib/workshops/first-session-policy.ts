@@ -14,13 +14,21 @@ export function fullWorkshopPurchasePolicy(
   input: FullWorkshopPurchasePolicyInput,
 ): FullWorkshopPolicyResult {
   const { totalMinor, paidMinor, minimumDepositMinor, sessionStartsAt } = input;
-  if (![totalMinor, paidMinor, minimumDepositMinor].every(Number.isSafeInteger) ||
-      totalMinor <= 0 || paidMinor < 0 || paidMinor > totalMinor ||
-      minimumDepositMinor <= 0 || minimumDepositMinor > totalMinor)
+  if (
+    ![totalMinor, paidMinor, minimumDepositMinor].every(Number.isSafeInteger) ||
+    totalMinor <= 0 ||
+    paidMinor < 0 ||
+    paidMinor > totalMinor ||
+    minimumDepositMinor <= 0 ||
+    minimumDepositMinor > totalMinor
+  )
     return { ok: false, reason: "invalid_amount" };
   const timestamps = sessionStartsAt.map((value) => Date.parse(value));
-  if (timestamps.length < 2 || timestamps.some((time) => !Number.isFinite(time)) ||
-      new Set(timestamps).size !== timestamps.length)
+  if (
+    timestamps.length < 2 ||
+    timestamps.some((time) => !Number.isFinite(time)) ||
+    new Set(timestamps).size !== timestamps.length
+  )
     return { ok: false, reason: "invalid_sessions" };
   const balanceMinor = totalMinor - paidMinor;
   return {

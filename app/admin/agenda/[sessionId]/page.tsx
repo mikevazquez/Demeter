@@ -276,23 +276,46 @@ export default async function SessionDetailPage({
   const cashDebtByAcquisition = new Map(cashDebts.map((debt) => [debt.acquisitionId, debt]));
   // Workshop reservations are linked to purchases explicitly, never by student name.
   const { data: workshopLinks } = reservationIds.length
-    ? await supabase.from("workshop_purchase_sessions").select("reservation_id,purchase_id").in("reservation_id", reservationIds)
+    ? await supabase
+        .from("workshop_purchase_sessions")
+        .select("reservation_id,purchase_id")
+        .in("reservation_id", reservationIds)
     : { data: [] as { reservation_id: string | null; purchase_id: string }[] };
   const workshopPurchaseIds = [...new Set((workshopLinks ?? []).map((link) => link.purchase_id))];
   const { data: workshopPurchases } = workshopPurchaseIds.length
-    ? await supabase.from("workshop_purchases").select("id,studio_id,sale_id,status").eq("studio_id", studio.id).in("id", workshopPurchaseIds)
+    ? await supabase
+        .from("workshop_purchases")
+        .select("id,studio_id,sale_id,status")
+        .eq("studio_id", studio.id)
+        .in("id", workshopPurchaseIds)
     : { data: [] as { id: string; studio_id: string; sale_id: string; status: string }[] };
-  const workshopSaleIds = [...new Set((workshopPurchases ?? []).map((purchase) => purchase.sale_id))];
+  const workshopSaleIds = [
+    ...new Set((workshopPurchases ?? []).map((purchase) => purchase.sale_id)),
+  ];
   const [{ data: workshopSales }, { data: workshopPayments }] = await Promise.all([
     workshopSaleIds.length
-      ? supabase.from("sales").select("id,total_minor,status").eq("studio_id", studio.id).in("id", workshopSaleIds)
+      ? supabase
+          .from("sales")
+          .select("id,total_minor,status")
+          .eq("studio_id", studio.id)
+          .in("id", workshopSaleIds)
       : Promise.resolve({ data: [] as { id: string; total_minor: number; status: string }[] }),
     workshopSaleIds.length
-      ? supabase.from("payments").select("sale_id,kind,amount_minor").eq("studio_id", studio.id).in("sale_id", workshopSaleIds)
+      ? supabase
+          .from("payments")
+          .select("sale_id,kind,amount_minor")
+          .eq("studio_id", studio.id)
+          .in("sale_id", workshopSaleIds)
       : Promise.resolve({ data: [] as { sale_id: string; kind: string; amount_minor: number }[] }),
   ]);
-  const workshopPurchaseById = new Map((workshopPurchases ?? []).map((purchase) => [purchase.id, purchase]));
-  const workshopPurchaseByReservation = new Map((workshopLinks ?? []).filter((link) => link.reservation_id).map((link) => [link.reservation_id!, workshopPurchaseById.get(link.purchase_id)]));
+  const workshopPurchaseById = new Map(
+    (workshopPurchases ?? []).map((purchase) => [purchase.id, purchase]),
+  );
+  const workshopPurchaseByReservation = new Map(
+    (workshopLinks ?? [])
+      .filter((link) => link.reservation_id)
+      .map((link) => [link.reservation_id!, workshopPurchaseById.get(link.purchase_id)]),
+  );
   const workshopSaleById = new Map((workshopSales ?? []).map((sale) => [sale.id, sale]));
   const workshopPaidBySale = new Map<string, number>();
   for (const payment of workshopPayments ?? []) {
@@ -312,7 +335,10 @@ export default async function SessionDetailPage({
       id: reservation.id,
       workshopSaleId: (() => {
         const purchase = workshopPurchaseByReservation.get(reservation.id);
-        return purchase?.status === "active" && workshopSaleById.get(purchase.sale_id)?.status === "confirmed" ? purchase.sale_id : undefined;
+        return purchase?.status === "active" &&
+          workshopSaleById.get(purchase.sale_id)?.status === "confirmed"
+          ? purchase.sale_id
+          : undefined;
       })(),
       workshopBalanceMinor: (() => {
         const purchase = workshopPurchaseByReservation.get(reservation.id);
@@ -383,7 +409,8 @@ export default async function SessionDetailPage({
     workshop_payment_forbidden: "No tienes permiso para registrar este abono.",
     workshop_payment_not_linked: "No se encontró una compra de taller válida para esta reserva.",
     workshop_payment_exceeds_balance: "El abono supera el saldo disponible. Actualiza la sesión.",
-    workshop_payment_failed: "No se pudo registrar el abono. Revisa el historial antes de reintentar.",
+    workshop_payment_failed:
+      "No se pudo registrar el abono. Revisa el historial antes de reintentar.",
     resource_space_assigned:
       "No puedes cambiar el espacio mientras existan reservas con recursos asignados. Reasigna o cancela esas reservas primero.",
     booking: "No se pudo crear la reserva.",

@@ -18,15 +18,15 @@ export default async function WorkshopPage({ params }: { params: Promise<{ offer
     : { data: null, error: { message: "forbidden" } };
   if (error?.message.includes("offer_not_found")) notFound();
   const context = data as WorkshopAdminContext | null;
-  const review = context && ctx.can("sales.read")
-    ? await ctx.supabase.rpc("admin_workshop_provisional_review_queue", {
-        p_studio_id: ctx.studio.id,
-        p_offer_id: offerId,
-      })
-    : null;
-  const reviewItems = !review?.error && Array.isArray(review?.data)
-    ? (review.data as ProvisionalReviewItem[])
-    : null;
+  const review =
+    context && ctx.can("sales.read")
+      ? await ctx.supabase.rpc("admin_workshop_provisional_review_queue", {
+          p_studio_id: ctx.studio.id,
+          p_offer_id: offerId,
+        })
+      : null;
+  const reviewItems =
+    !review?.error && Array.isArray(review?.data) ? (review.data as ProvisionalReviewItem[]) : null;
   return (
     <main className="activities-v2 activities-editor-page program-detail-page">
       <Link className="activities-v2-back" href="/admin/actividades/talleres">
@@ -46,7 +46,10 @@ export default async function WorkshopPage({ params }: { params: Promise<{ offer
             </div>
           </header>
           {review?.error && ctx.can("sales.write") && ctx.can("schedule.write") ? (
-            <p role="alert">No fue posible cargar los comprobantes pendientes. No apruebes pagos sin revisar el registro.</p>
+            <p role="alert">
+              No fue posible cargar los comprobantes pendientes. No apruebes pagos sin revisar el
+              registro.
+            </p>
           ) : null}
           {reviewItems && ctx.can("sales.write") && ctx.can("schedule.write") ? (
             <WorkshopTransferReview items={reviewItems} />

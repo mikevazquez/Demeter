@@ -55,12 +55,10 @@ export function WorkshopPurchaseForm({
       /* Invalid configuration keeps checkout disabled. */
     }
   }
-  const suggestedReceived = quote.ok && minimum != null
-    ? (paymentChoice === "full" ? quote.totalMinor : minimum)
-    : null;
-  const displayAmount = amount === null && suggestedReceived != null
-    ? String(suggestedReceived / 100)
-    : (amount ?? "");
+  const suggestedReceived =
+    quote.ok && minimum != null ? (paymentChoice === "full" ? quote.totalMinor : minimum) : null;
+  const displayAmount =
+    amount === null && suggestedReceived != null ? String(suggestedReceived / 100) : (amount ?? "");
   const effectiveReceived = receivedAmountMinor(displayAmount);
   const amountValid =
     quote.ok &&
@@ -237,9 +235,42 @@ export function WorkshopPurchaseForm({
         {quote.ok && minimum != null && minimum < quote.totalMinor ? (
           <fieldset className="activities-choice">
             <legend>¿Cuánto pagó la alumna?</legend>
-            <label><input type="radio" name="payment_choice" checked={paymentChoice === "deposit"} onChange={() => { setPaymentChoice("deposit"); setAmount(null); }} /> Anticipo mínimo · {money(minimum)}</label>
-            <label><input type="radio" name="payment_choice" checked={paymentChoice === "custom"} onChange={() => { setPaymentChoice("custom"); setAmount(null); }} /> Otro importe (entre {money(minimum)} y {money(quote.totalMinor)})</label>
-            <label><input type="radio" name="payment_choice" checked={paymentChoice === "full"} onChange={() => { setPaymentChoice("full"); setAmount(null); }} /> Pago completo · {money(quote.totalMinor)}</label>
+            <label>
+              <input
+                type="radio"
+                name="payment_choice"
+                checked={paymentChoice === "deposit"}
+                onChange={() => {
+                  setPaymentChoice("deposit");
+                  setAmount(null);
+                }}
+              />{" "}
+              Anticipo mínimo · {money(minimum)}
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="payment_choice"
+                checked={paymentChoice === "custom"}
+                onChange={() => {
+                  setPaymentChoice("custom");
+                  setAmount(null);
+                }}
+              />{" "}
+              Otro importe (entre {money(minimum)} y {money(quote.totalMinor)})
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="payment_choice"
+                checked={paymentChoice === "full"}
+                onChange={() => {
+                  setPaymentChoice("full");
+                  setAmount(null);
+                }}
+              />{" "}
+              Pago completo · {money(quote.totalMinor)}
+            </label>
           </fieldset>
         ) : null}
         <div className="activities-form-grid">
@@ -253,7 +284,10 @@ export function WorkshopPurchaseForm({
               name="received_amount"
               required
               value={displayAmount}
-              onChange={(event) => { setAmount(event.target.value); if (paymentChoice !== "custom") setPaymentChoice("custom"); }}
+              onChange={(event) => {
+                setAmount(event.target.value);
+                if (paymentChoice !== "custom") setPaymentChoice("custom");
+              }}
             />
           </label>
           <label className="activities-field">

@@ -1,4 +1,5 @@
-export const provisionalHoldIdPattern = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i;
+export const provisionalHoldIdPattern =
+  /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i;
 
 export type TransferReviewDecision =
   | { ok: true; holdId: string; decision: "approve"; received: true }
@@ -18,7 +19,10 @@ export function parseTransferReview(data: FormData): TransferReviewDecision {
   }
   if (decision === "approve") {
     if (data.get("payment_received") !== "on") {
-      return { ok: false, error: "Verifica el ingreso en el banco antes de aprobar la transferencia." };
+      return {
+        ok: false,
+        error: "Verifica el ingreso en el banco antes de aprobar la transferencia.",
+      };
     }
     return { ok: true, holdId, decision, received: true };
   }

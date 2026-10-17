@@ -1,4 +1,7 @@
-import { transitionProvisionalTransfer, type ProvisionalTransferState } from "./provisional-transfer";
+import {
+  transitionProvisionalTransfer,
+  type ProvisionalTransferState,
+} from "./provisional-transfer";
 
 export interface ProvisionalCheckoutRequest {
   studioId: string;
@@ -39,15 +42,21 @@ export async function requestProvisionalCheckout(
   request: ProvisionalCheckoutRequest,
   store: ProvisionalCheckoutStore,
 ): Promise<ProvisionalCheckoutResult> {
-  if (!request.studioId || !request.offerId || !request.studentId ||
-      !request.requestId || !request.transferReference.trim() ||
-      !Number.isSafeInteger(request.amountMinor) ||
-      !Number.isSafeInteger(request.minimumDepositMinor) ||
-      request.minimumDepositMinor <= 0 || request.amountMinor <= 0 ||
-      !Number.isFinite(Date.parse(request.expiresAt)) ||
-      request.sessionIds.length === 0 ||
-      new Set(request.sessionIds).size !== request.sessionIds.length ||
-      request.sessionIds.some((id) => !id))
+  if (
+    !request.studioId ||
+    !request.offerId ||
+    !request.studentId ||
+    !request.requestId ||
+    !request.transferReference.trim() ||
+    !Number.isSafeInteger(request.amountMinor) ||
+    !Number.isSafeInteger(request.minimumDepositMinor) ||
+    request.minimumDepositMinor <= 0 ||
+    request.amountMinor <= 0 ||
+    !Number.isFinite(Date.parse(request.expiresAt)) ||
+    request.sessionIds.length === 0 ||
+    new Set(request.sessionIds).size !== request.sessionIds.length ||
+    request.sessionIds.some((id) => !id)
+  )
     return { ok: false, reason: "invalid_request" };
   if (request.amountMinor < request.minimumDepositMinor)
     return { ok: false, reason: "insufficient_deposit" };
