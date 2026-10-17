@@ -51,7 +51,20 @@ function ProgramIcon() {
   );
 }
 
-export default async function ActivitiesPage() {
+type ActivityCategory = "actividades" | "talleres" | "eventos" | "masterclass";
+
+export default async function ActivitiesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tipo?: string }>;
+}) {
+  const params = await searchParams;
+  const category: ActivityCategory =
+    params.tipo === "talleres" ||
+    params.tipo === "eventos" ||
+    params.tipo === "masterclass"
+      ? params.tipo
+      : "actividades";
   const { supabase, studio, can } = await getAdminContext(CAPABILITIES.SCHEDULE_READ);
   const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
 
@@ -119,6 +132,37 @@ export default async function ActivitiesPage() {
   const isUatOffer = (title: string) => /^UAT(?:[\s_-]|$)/i.test(title.trim());
   const operationalWorkshopOffers = workshopOffers.filter((offer) => !isUatOffer(offer.title));
   const uatWorkshopOffers = workshopOffers.filter((offer) => isUatOffer(offer.title));
+  const visiblePrograms = (programs ?? []).filter(
+    (program) =>
+      !isUatOffer(program.name) &&
+      (category === "eventos" ? program.kind === "event" : program.kind !== "event"),
+  );
+  const categories: { id: ActivityCategory; label: string }[] = [
+    { id: "actividades", label: "Actividades" },
+    { id: "talleres", label: "Talleres" },
+    { id: "eventos", label: "Eventos" },
+    { id: "masterclass", label: "Master class" },
+  ];
+  const createHref =
+    category === "actividades"
+      ? "/admin/actividades/nueva"
+      : category === "talleres"
+        ? "/admin/actividades/talleres/nuevo"
+        : "/admin/actividades/programas/nuevo?kind=event";
+  const canCreate =
+    category === "actividades" || category === "eventos"
+      ? canEdit
+      : category === "talleres"
+        ? can("products.write") && can("schedule.write")
+        : false;
+  const heading =
+    category === "actividades"
+      ? "Actividades"
+      : category === "talleres"
+        ? "Talleres"
+        : category === "eventos"
+          ? "Eventos"
+          : "Master class";
 
   const renderWorkshopOffer = (offer: (typeof workshopOffers)[number]) => (
     <Link
@@ -211,38 +255,55 @@ export default async function ActivitiesPage() {
     <main className="activities-v2 activities-page">
       <header className="activities-v2-header">
         <div>
-          <h1>Actividades</h1>
-          <p>Define qué clases, cursos o sesiones ofrece el estudio y cuándo suceden.</p>
+          <h1>{heading}</h1>
+          <p>Configura las opciones y horarios disponibles en el estudio.</p>
         </div>
-        {canEdit ? (
-          <Link className="activities-v2-primary" href="/admin/actividades/nueva">
-            <span aria-hidden="true">＋</span> Nueva actividad
+        {canCreate ? (
+          <Link className="activities-v2-primary" href={createHref}>
+            <span aria-hidden="true">＋</span> Crear {category === "actividades" ? "actividad" : category === "talleres" ? "taller" : "evento"}
           </Link>
         ) : null}
       </header>
 
-      <section className="activities-v2-section">
-        <div className="activities-v2-section-heading">
-          <div>
-            <h2>Actividades especiales</h2>
-            <p>Configura talleres, eventos y master class desde esta pantalla.</p>
-          </div>
+      <nav
+        aria-label="Tipo de actividad"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gap: 8,
+          marginBottom: 24,
+        }}
+      >
+        {categories.map((item) => (
+          <Link
+            key={item.id}
+            href={item.id === "actividades" ? "/admin/actividades" : `/admin/actividades?tipo=${item.id}`}
+            aria-current={category === item.id ? "page" : undefined}
+            style={{
+              display: "block",
+              textAlign: "center",
+              padding: "14px 8px",
+              borderRadius: 14,
+              border: category === item.id ? "2px solid #139c79" : "1px solid #cbd5e1",
+              background: category === item.id ? "#e5f6ef" : "#fff",
+              color: "#183047",
+              fontWeight: category === item.id ? 750 : 600,
+              textDecoration: "none",
+            }}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
 
-        </div>
-        <nav aria-label="Crear actividad especial" className="activities-v2-schedule-row">
-          {can("products.write") && can("schedule.write") ? (
-            <Link href="/admin/actividades/talleres/nuevo">＋ Taller</Link>
-          ) : null}
-          {canEdit ? (
-            <Link href="/admin/actividades/programas/nuevo?kind=event">＋ Evento</Link>
-          ) : null}
-          <span aria-disabled="true" title="Pendiente de implementación">Master class · Próximamente</span>
-        </nav>
+      {category === "talleres" || category === "eventos" ? (
+        <section className="activities-v2-section">
+          <div className="activities-v2-section-heading">
+            <h2>{heading}</h2>
+          </div>
         <div className="activities-v2-list">
-          {operationalWorkshopOffers.map(renderWorkshopOffer)}
-          {(programs ?? [])
-            .filter((program) => !isUatOffer(program.name))
-            .map((program) => (
+          {category === "talleres" ? operationalWorkshopOffers.map(renderWorkshopOffer) : null}
+          {visiblePrograms.map((program) => (
             <Link
               className={`activities-v2-card${program.active ? "" : " is-inactive"}`}
               href={`/admin/actividades/programas/${program.id}`}
@@ -275,7 +336,7 @@ export default async function ActivitiesPage() {
             </Link>
           ))}
         </div>
-        {uatWorkshopOffers.length > 0 ? (
+        {category === "talleres" && uatWorkshopOffers.length > 0 ? (
           <details className="activities-v2-inactive">
             <summary>Datos de prueba UAT ({uatWorkshopOffers.length})</summary>
             <div className="activities-v2-list">
@@ -283,7 +344,15 @@ export default async function ActivitiesPage() {
             </div>
           </details>
         ) : null}
-      </section>
+        </section>
+      ) : null}
+      {category === "masterclass" ? (
+        <section className="activities-v2-empty">
+          <strong>Master class</strong>
+          <p>La configuración de Master class estará disponible cuando termine su implementación y UAT.</p>
+        </section>
+      ) : null}
+      {category === "actividades" ? (
       <section className="activities-v2-section">
         <div className="activities-v2-section-heading">
           <div>
@@ -302,8 +371,9 @@ export default async function ActivitiesPage() {
           </div>
         )}
       </section>
+      ) : null}
 
-      {inactiveActivities.length ? (
+      {category === "actividades" && inactiveActivities.length ? (
         <details className="activities-v2-inactive">
           <summary>
             <span>Inactivas</span>
