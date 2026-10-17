@@ -276,10 +276,8 @@ export function publicationPlan(repo, registry, id, remote) {
       existing = remote.pullRequests[0];
       assert(
         existing.state === "OPEN" &&
-          existing.draft === true &&
-          existing.branch === plan.branch &&
-          existing.commitSha === remote.headSha &&
-          /^https:\/\/github\.com\/mikevazquez\/Demeter\/pull\/\d+$/.test(existing.url ?? ""),
+          validReceipt(existing, plan.branch) &&
+          existing.commitSha === remote.headSha,
         "Existing PR must be the matching open Draft; never create a replacement",
       );
       action = "reuse-draft";

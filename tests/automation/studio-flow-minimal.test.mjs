@@ -234,6 +234,15 @@ test("publication retry requires remote reconciliation and reuses the existing D
     () => publicationPlan(repo, registry, task.id, { ...remote, headSha: "b".repeat(40) }),
     /Existing PR/,
   );
+  assert.throws(
+    () =>
+      publicationPlan(repo, registry, task.id, {
+        ...remote,
+        headSha: null,
+        pullRequests: [{ ...remote.pullRequests[0], commitSha: null }],
+      }),
+    /Existing PR/,
+  );
   assert.equal(
     publicationPlan(repo, registry, task.id, { ...remote, pullRequests: [] }).action,
     "verify-existing-branch",
