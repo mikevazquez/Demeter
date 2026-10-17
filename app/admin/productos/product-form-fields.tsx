@@ -24,6 +24,9 @@ type ProductFormFieldsProps = {
   initialValidityDays?: number | null;
   initialCreditLimit?: number | null;
   initialUnlimited?: boolean;
+  initialPurchaseEligibility?: "all" | "new_customer";
+  initialPurchaseLimitPerStudent?: number | null;
+  initialEnrollmentIncluded?: boolean;
   selectedDisciplineIds?: string[];
   selectedScheduleIds?: string[];
   currency: string;
@@ -74,6 +77,9 @@ export function ProductFormFields({
   initialValidityDays = 30,
   initialCreditLimit = 8,
   initialUnlimited = false,
+  initialPurchaseEligibility = "all",
+  initialPurchaseLimitPerStudent = null,
+  initialEnrollmentIncluded = false,
   selectedDisciplineIds = [],
   selectedScheduleIds = [],
   schedules = [],
@@ -291,7 +297,50 @@ export function ProductFormFields({
           </fieldset>
 
           {isPackageLike ? (
-            <fieldset className="rounded-2xl border border-white/10 bg-black/10 p-4">
+            <>
+              <fieldset className="rounded-2xl border border-white/10 bg-black/10 p-4">
+                <legend className="px-1 text-sm font-medium text-white">Elegibilidad comercial</legend>
+                <div className="mt-3 grid gap-4 md:grid-cols-2">
+                  <label className="text-sm text-zinc-300">
+                    Quién puede comprarlo
+                    <select
+                      name="purchase_eligibility"
+                      defaultValue={initialPurchaseEligibility}
+                      className="mt-2 w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-2.5 text-white"
+                    >
+                      <option value="all">Todas las alumnas elegibles</option>
+                      <option value="new_customer">Solo personas nuevas</option>
+                    </select>
+                  </label>
+                  <label className="text-sm text-zinc-300">
+                    Máximo de compras por persona
+                    <input
+                      name="purchase_limit_per_student"
+                      type="number"
+                      min="1"
+                      defaultValue={initialPurchaseLimitPerStudent ?? ""}
+                      placeholder="Sin límite"
+                      className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
+                    />
+                  </label>
+                </div>
+                <label className="mt-4 flex items-start gap-3 rounded-xl border border-white/10 p-3 text-sm text-zinc-300">
+                  <input
+                    name="enrollment_included"
+                    type="checkbox"
+                    defaultChecked={initialEnrollmentIncluded}
+                    className="mt-0.5 h-4 w-4"
+                  />
+                  <span>
+                    <strong className="block text-white">Incluir inscripción sin costo</strong>
+                    <small className="mt-1 block text-xs leading-5 text-zinc-500">
+                      La inscripción se registra como promoción y conserva su renovación normal.
+                    </small>
+                  </span>
+                </label>
+              </fieldset>
+
+              <fieldset className="rounded-2xl border border-white/10 bg-black/10 p-4">
               <legend className="px-1 text-sm font-medium text-white">Horarios permitidos</legend>
               <p className="mt-1 text-xs text-zinc-500">
                 Limita este paquete a clases recurrentes concretas. Si no activas la restricción,
@@ -382,7 +431,8 @@ export function ProductFormFields({
                     ))}
                 </div>
               ) : null}
-            </fieldset>
+              </fieldset>
+            </>
           ) : null}
         </>
       ) : null}
