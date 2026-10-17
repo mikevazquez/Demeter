@@ -394,7 +394,9 @@ export function ProductFormFields({
                   <div className="mt-4 grid gap-3 lg:grid-cols-2">
                     {Object.keys(weekdayLabels)
                       .map(Number)
-                      .filter((weekday) => schedules.some((schedule) => schedule.weekday === weekday))
+                      .filter((weekday) =>
+                        schedules.some((schedule) => schedule.weekday === weekday),
+                      )
                       .sort((left, right) => (left === 0 ? 7 : left) - (right === 0 ? 7 : right))
                       .map((weekday) => (
                         <div
