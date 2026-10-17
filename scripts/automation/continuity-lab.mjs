@@ -60,18 +60,18 @@ export function serializeState(state) {
 }
 
 async function github(path, options = {}) {
-  const url = "https://api.github.com" + path;
+  const url = `https://api.github.com${path}`;
   const response = await fetch(url, {
     ...options,
     headers: {
       Accept: "application/vnd.github+json",
-      Authorization: "Bearer " + process.env.GITHUB_TOKEN,
+      Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
       "X-GitHub-Api-Version": "2022-11-28",
       ...(options.body ? { "Content-Type": "application/json" } : {}),
     },
   });
   if (!response.ok) {
-    throw new Error("GitHub " + response.status + " on " + path);
+    throw new Error(`GitHub ${response.status} on ${path}`);
   }
   return response.json();
 }
@@ -79,15 +79,9 @@ async function github(path, options = {}) {
 async function latestState(repository) {
   let latest = null;
   let lastCommentId = -1;
+  const commentsPath = `/repos/${repository}/issues/${ISSUE_NUMBER}/comments`;
   for (let page = 1; page <= 100; page++) {
-    const comments = await github(
-      "/repos/" +
-        repository +
-        "/issues/" +
-        ISSUE_NUMBER +
-        "/comments?per_page=100&page=" +
-        page,
-    );
+    const comments = await github(`${commentsPath}?per_page=100&page=${page}`);
     for (const comment of comments) {
       const state = parseState(comment.body);
       if (state !== null && comment.id > lastCommentId) {
@@ -117,7 +111,8 @@ export async function run() {
     console.log("No transition needed:", previous?.phase || "not started");
     return;
   }
-  await github("/repos/" + repository + "/issues/" + ISSUE_NUMBER + "/comments", {
+  const commentsPath = `/repos/${repository}/issues/${ISSUE_NUMBER}/comments`;
+  await github(commentsPath, {
     method: "POST",
     body: JSON.stringify({ body: serializeState(next) }),
   });
