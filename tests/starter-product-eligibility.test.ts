@@ -9,7 +9,9 @@ function source(path: string) {
 
 describe("starter product eligibility foundation", () => {
   const packageAction = source("app/admin/productos/por-clases/actions.ts");
-  const packageForm = source("app/admin/productos/por-clases/CreateClassPackageForm.tsx");
+  const packageForm = source(
+    "app/admin/productos/por-clases/CreateClassPackageForm.tsx",
+  );
   const portal = source("app/student/paquete/page.tsx");
   const checkout = source("supabase/functions/create-mercadopago-order/index.ts");
   const demiRead = source("lib/assistant/read-tools.ts");
@@ -32,7 +34,9 @@ describe("starter product eligibility foundation", () => {
   it("filters the student portal through server-side eligibility", () => {
     expect(portal).toContain('supabase.rpc("student_online_product_options")');
     expect(foundation).toContain("private.product_purchase_eligibility");
-    expect(foundation).toContain("prior_pt.product_type::text in ('package','membership')");
+    expect(foundation).toContain(
+      "prior_pt.product_type::text in ('package','membership')",
+    );
     expect(foundation).toContain("purchase_limit_reached");
   });
 
