@@ -224,19 +224,25 @@ export default async function ActivitiesPage() {
       <section className="activities-v2-section">
         <div className="activities-v2-section-heading">
           <div>
-            <h2>Talleres y eventos</h2>
-            <p>Gestiona talleres configurables y eventos especiales.</p>
+            <h2>Actividades especiales</h2>
+            <p>Configura talleres, eventos y master class desde esta pantalla.</p>
           </div>
-          <Link href="/admin/actividades/talleres">Ver talleres →</Link>
+
         </div>
-        {can("products.write") && can("schedule.write") ? (
-          <p>
-            <Link href="/admin/actividades/talleres/nuevo">＋ Nuevo taller</Link>
-          </p>
-        ) : null}
+        <nav aria-label="Crear actividad especial" className="activities-v2-schedule-row">
+          {can("products.write") && can("schedule.write") ? (
+            <Link href="/admin/actividades/talleres/nuevo">＋ Taller</Link>
+          ) : null}
+          {canEdit ? (
+            <Link href="/admin/actividades/programas/nuevo?kind=event">＋ Evento</Link>
+          ) : null}
+          <span aria-disabled="true" title="Pendiente de implementación">Master class · Próximamente</span>
+        </nav>
         <div className="activities-v2-list">
           {operationalWorkshopOffers.map(renderWorkshopOffer)}
-          {(programs ?? []).filter((program) => !isUatOffer(program.name)).map((program) => (
+          {(programs ?? [])
+            .filter((program) => !isUatOffer(program.name))
+            .map((program) => (
             <Link
               className={`activities-v2-card${program.active ? "" : " is-inactive"}`}
               href={`/admin/actividades/programas/${program.id}`}
