@@ -14,6 +14,7 @@ describe("starter product eligibility foundation", () => {
   const checkout = source("supabase/functions/create-mercadopago-order/index.ts");
   const demiRead = source("lib/assistant/read-tools.ts");
   const demiGuidance = source("lib/assistant/conversation-guidance.ts");
+  const demiActions = source("lib/assistant/action-tools.ts");
   const foundation = source(
     "supabase/migrations/20261017184233_starter_product_eligibility_foundation.sql",
   );
@@ -73,6 +74,11 @@ describe("starter product eligibility foundation", () => {
     expect(transferEnrollment).toContain("'promotion','100%'");
     expect(transferEnrollment).toContain("resolution_type='promotion'");
     expect(transferEnrollment).toContain("set status='cancelled'");
+  });
+
+  it("fails fast instead of promising cash for an included-enrollment product", () => {
+    expect(demiActions).toContain("introductory_package_cash_not_supported");
+    expect(demiActions).toContain('supported_payment_methods: ["app_mercado_pago", "bank_transfer"]');
   });
 
   it("does not re-run eligibility after an accredited payment", () => {
