@@ -8,7 +8,7 @@ Los archivos `scripts/studio-flow-minimal.mjs`, `tests/automation/studio-flow-mi
 
 ## Contrato y operación
 
-El supervisor revisa un contrato con los campos de #314: ID, objetivo, autorización, SHA base, rutas exactas y comandos de prueba. El único ID admitido por el enlace es `continuity-315-38989415241`; la autorización es #318. El vínculo conserva IDs de runs, SHA y comentarios dentro del **mismo** `reservation.json` protegido por el hash del contrato. La evidencia no sustituye la autorización del objetivo y archivos.
+El supervisor revisa un contrato con los campos de #314: ID, objetivo, autorización, SHA base, rutas exactas y comandos de prueba. Los únicos IDs admitidos son `continuity-315-38989415241` y `vianelis-launcher-318-v1`; la autorización es #318. El segundo es una tarea nueva autorizada por Mike tras la sonda AVAILABLE, no un reintento del ID consumido. Ambos conservan `continuity.taskId=continuity-315-38989415241` como procedencia verificada, separada de la identidad de trabajo. No se aceptan IDs arbitrarios ni sufijos nuevos por inferencia. El vínculo conserva IDs de runs, SHA y comentarios dentro del **mismo** `reservation.json` protegido por el hash del contrato. La evidencia no sustituye la autorización del objetivo y archivos.
 
 ```sh
 node /supervisor/scripts/automation/codex-executor.mjs verify-continuity
@@ -49,3 +49,11 @@ Tras inspección, copiar únicamente los archivos permitidos a un checkout de ve
 - Las pruebas del adaptador usan ejecutables falsos explícitos. Verifican procesos, persistencia, SIGKILL, timeout, recuperación, rechazo de evidencia y reutilización de un recibo remoto **simulado**. No acreditan generación real del modelo ni publicación autónoma.
 
 Pendiente: observar segundo schedule auténtico y volver a verificar; restablecer una sesión Codex válida mediante el mecanismo autorizado del entorno; ejecutar una tarea inocua real, certificarla y reconciliar su Draft. Aún falta un disparador autorizado que inicie este adaptador en un entorno con registro durable y acceso válido a Codex. No se añaden cron de generación, credenciales, permisos privilegiados ni servicios permanentes. El PR de esta entrega contiene la implementación supervisada y su CI; no es evidencia de un PR creado autónomamente por el adaptador.
+
+## Lanzamiento programado acotado — segundo bloque
+
+La sonda de capacidades publicada en #318 con marcador `vianelis-launcher-capability-probe-v1` acreditó acceso del turno programado al checkout y recibo reales. No llamó al modelo. Mike autorizó después ampliar adaptador, pruebas y documentación para una tarea nueva y un único Draft.
+
+El contrato `vianelis-launcher-318-v1` usa el mismo registro externo, reserva exclusiva, intento único, recuperación y certificación de #314. El disparador es una única automatización alojada, sin instalar servicios ni runners. Su tarea de modelo se limita al documento `docs/automation/launcher-scheduled-result.md` con bytes exactos revisados. Un segundo proceso consulta el estado y el replay debe devolver el resultado existente sin nueva generación. Un fallo incierto requiere inspección y no se reintenta.
+
+La certificación del documento se realiza en otro checkout offline y sin credenciales. Los cambios del adaptador se revisan y prueban antes de preparar el SHA base fijo; se entregan junto con el documento en un único Draft dependiente de #319. No se modifica la rama de #319 ni la de #314. No se declara éxito programado antes de observar eventos reales y recibo, ni se promete supervivencia del host tras reinicio. Esta ampliación no habilita código arbitrario, una cola general o ejecución permanente.
