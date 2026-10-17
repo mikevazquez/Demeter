@@ -1,4 +1,6 @@
 import { demiDeliveryRetryPolicy } from "@/lib/assistant/delivery-retry-policy";
+import { isWhatsAppTextTurnSuperseded } from "@/lib/assistant/whatsapp-turn-order";
+import { assistantReadToolNames } from "@/lib/assistant/tool-contracts";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
@@ -1258,6 +1260,7 @@ export async function POST(request: Request) {
       })
       .eq("studio_id", studioId)
       .eq("id", event.id)
+      .eq("attempt_count", Number(event.attempt_count ?? 0))
       .in("processing_status", ["captured", "error"])
       .select("id")
       .maybeSingle();
@@ -1735,6 +1738,42 @@ export async function POST(request: Request) {
       continue;
     }
 
+    const superseded = async () => {
+      if (
+        !(await isWhatsAppTextTurnSuperseded({
+          supabase,
+          studioId,
+          conversationId,
+          eventId: event.id,
+          messageType: message.messageType,
+        }))
+      )
+        return false;
+      await markEvent(supabase, studioId, event.id, {
+        processing_status: "ignored",
+        processing_result: { outcome: "superseded_by_newer_text" },
+        processed_at: new Date().toISOString(),
+      });
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "superseded_by_newer_text",
+      });
+      return true;
+    };
+
+    try {
+      // A parallel request may already have prepared the next user message.
+      // Only that request should answer the shared, most recent history.
+      if (await superseded()) continue;
+    } catch {
+      retryableFailure = true;
+      await markEvent(supabase, studioId, event.id, {
+        processing_status: "error",
+        last_error_code: "whatsapp_turn_order_unavailable",
+      });
+      continue;
+    }
+
     const { data: recentTurns, error: historyError } = await supabase
       .from("assistant_turns")
       .select("role,content,created_at")
@@ -1887,6 +1926,26 @@ export async function POST(request: Request) {
       outcomes.push({
         provider_message_id: message.providerMessageId,
         outcome: "shadow_completed",
+      });
+      continue;
+    }
+
+    try {
+      // A new text can arrive while the model is running. Discard the stale
+      // informational answer before contacting Meta. Action results still need
+      // their own confirmation: the newer model may not have seen that action.
+      const hasActionResult = assistantResult.trace.toolCalls.some(
+        (call) => call.status !== "blocked" && !assistantReadToolNames.has(call.name),
+      );
+      if (!hasActionResult && (await superseded())) continue;
+    } catch {
+      // The model may already have executed a booking or another action.
+      // Keep its reply for delivery-only recovery rather than running it again.
+      retryableFailure = true;
+      await markEvent(supabase, studioId, event.id, {
+        processing_status: "error",
+        processing_result: { cached_reply: assistantResult.reply },
+        last_error_code: "whatsapp_turn_order_unavailable",
       });
       continue;
     }
