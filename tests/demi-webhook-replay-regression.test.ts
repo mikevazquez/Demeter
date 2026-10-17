@@ -278,7 +278,9 @@ describe("Demi signed webhook replay with simulated persistence and real sender"
     });
     const history =
       (h.model.mock.calls[0]?.[0] as { history?: Array<{ content: string }> })?.history ?? [];
-    expect(history.map((turn) => turn.content)).toEqual(expect.arrayContaining(["Hola", "¿Cómo estás?"]));
+    expect(history.map((turn) => turn.content)).toEqual(
+      expect.arrayContaining(["Hola", "¿Cómo estás?"]),
+    );
   });
 
   it.each([500, 503])(
