@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  nextState,
-  parseState,
-  serializeState,
-} from "../../scripts/automation/continuity-lab.mjs";
+import { nextState, parseState, serializeState } from "../../scripts/automation/continuity-lab.mjs";
 
 describe("continuity lab 315", () => {
   it("starts only with explicit start", () => {
