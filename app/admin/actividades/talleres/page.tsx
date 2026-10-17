@@ -8,7 +8,9 @@ export default async function WorkshopsPage() {
     ? await ctx.supabase.rpc("admin_workshop_context", { p_studio_id: ctx.studio.id })
     : { data: null, error: { message: "forbidden" } };
   const offers = (data?.offers ?? []) as WorkshopSummary[];
-  const operationalOffers = offers.filter((offer) => !/^UAT(?:[\s_-]|$)/i.test(offer.title.trim()));
+  const operationalOffers = offers.filter(
+    (offer) => !/^UAT(?:[\s_-]|$)/i.test(offer.title.trim()),
+  );
   const uatOffers = offers.filter((offer) => /^UAT(?:[\s_-]|$)/i.test(offer.title.trim()));
   const money = (minor: number) =>
     new Intl.NumberFormat(ctx.studio.locale, {
@@ -45,21 +47,91 @@ export default async function WorkshopsPage() {
 
   return (
     <main className="activities-v2 activities-page">
-      <Link className="activities-v2-back" href="/admin/actividades">← Actividades</Link>
+      <Link className="activities-v2-back" href="/admin/actividades">
+        ← Actividades
+      </Link>
       <header style={{ marginBlock: 24 }}>
         <h1>Configuración de actividades especiales</h1>
-        <p>Define fechas, precios, cupos y condiciones. Las reservas y pagos se reflejan en los módulos existentes.</p>
+        <p>
+          Define fechas, precios, cupos y condiciones. Las reservas y pagos se reflejan en los
+          módulos existentes.
+        </p>
       </header>
-      <nav aria-label="Tipo de actividad especial" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginBottom: 24 }}>
-        <span aria-current="page" style={{ padding: "12px 4px", textAlign: "center", borderRadius: 12, border: "2px solid #159e78", fontWeight: 700 }}>Talleres</span>
-        <Link href="/admin/actividades/programas/nuevo?kind=event" style={{ padding: "12px 4px", textAlign: "center", borderRadius: 12, border: "1px solid #aaa", color: "inherit" }}>Eventos</Link>
-        <span aria-disabled="true" title="Pendiente de implementación y UAT" style={{ padding: "12px 4px", textAlign: "center", borderRadius: 12, border: "1px solid #aaa", opacity: 0.55 }}>Master class</span>
+      <nav
+        aria-label="Tipo de actividad especial"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+          gap: 8,
+          marginBottom: 24,
+        }}
+      >
+        <span
+          aria-current="page"
+          style={{
+            padding: "12px 4px",
+            textAlign: "center",
+            borderRadius: 12,
+            border: "2px solid #159e78",
+            fontWeight: 700,
+          }}
+        >
+          Talleres
+        </span>
+        <Link
+          href="/admin/actividades/programas/nuevo?kind=event"
+          style={{
+            padding: "12px 4px",
+            textAlign: "center",
+            borderRadius: 12,
+            border: "1px solid #aaa",
+            color: "inherit",
+          }}
+        >
+          Eventos
+        </Link>
+        <span
+          aria-disabled="true"
+          title="Pendiente de implementación y UAT"
+          style={{
+            padding: "12px 4px",
+            textAlign: "center",
+            borderRadius: 12,
+            border: "1px solid #aaa",
+            opacity: 0.55,
+          }}
+        >
+          Master class
+        </span>
       </nav>
       <section aria-labelledby="workshops-heading">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
-          <h2 id="workshops-heading" style={{ margin: 0 }}>Talleres</h2>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 12,
+            marginBottom: 16,
+          }}
+        >
+          <h2 id="workshops-heading" style={{ margin: 0 }}>
+            Talleres
+          </h2>
           {ctx.can("products.write") && ctx.can("schedule.write") ? (
-            <Link href="/admin/actividades/talleres/nuevo" style={{ display: "inline-block", padding: "10px 16px", borderRadius: 12, border: "1px solid currentColor", color: "inherit", fontWeight: 600 }}>+ Crear taller</Link>
+            <Link
+              href="/admin/actividades/talleres/nuevo"
+              style={{
+                display: "inline-block",
+                padding: "10px 16px",
+                borderRadius: 12,
+                border: "1px solid currentColor",
+                color: "inherit",
+                fontWeight: 600,
+              }}
+            >
+              + Crear taller
+            </Link>
           ) : null}
         </div>
         {error ? (
@@ -70,8 +142,12 @@ export default async function WorkshopsPage() {
             {operationalOffers.length === 0 ? <p>Aún no hay talleres operativos.</p> : null}
             {uatOffers.length > 0 ? (
               <details style={{ marginTop: 20 }}>
-                <summary style={{ cursor: "pointer", fontWeight: 600 }}>Registros de prueba UAT ({uatOffers.length})</summary>
-                <div style={{ display: "grid", gap: 12, marginTop: 12 }}>{uatOffers.map(offerCard)}</div>
+                <summary style={{ cursor: "pointer", fontWeight: 600 }}>
+                  Registros de prueba UAT ({uatOffers.length})
+                </summary>
+                <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+                  {uatOffers.map(offerCard)}
+                </div>
               </details>
             ) : null}
           </div>
