@@ -20,6 +20,9 @@ describe("starter product eligibility foundation", () => {
   const fulfillmentGuard = source(
     "supabase/migrations/20261017184524_starter_checkout_post_payment_fulfillment_guard.sql",
   );
+  const promoAmountFix = source(
+    "supabase/migrations/20261017222343_starter_checkout_promo_enrollment_amount_fix.sql",
+  );
 
   it("stores generic eligibility, purchase limit and enrollment inclusion", () => {
     expect(packageAction).toContain("purchase_eligibility");
@@ -53,6 +56,13 @@ describe("starter product eligibility foundation", () => {
     expect(checkout).toContain('message.includes("new_customer_only")');
     expect(checkout).toContain('message.includes("purchase_limit_reached")');
     expect(checkout).toContain('message.includes("product_purchase_in_progress")');
+  });
+
+  it("keeps promotional enrollment out of the charged regular amount", () => {
+    expect(promoAmountFix).toContain(
+      "(v_price->>'regular_amount_minor')::int+v_extra_price",
+    );
+    expect(promoAmountFix).toContain("'regular_price_minor',v_enroll.price_minor");
   });
 
   it("does not re-run eligibility after an accredited payment", () => {
