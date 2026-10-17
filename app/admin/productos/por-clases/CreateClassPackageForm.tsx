@@ -195,7 +195,40 @@ export function CreateClassPackageForm({
           <span>Opciones adicionales</span>
           <span aria-hidden="true">⌄</span>
         </summary>
-        <div>
+        <div className="package-form-grid">
+          <label>
+            Quién puede comprarlo
+            <select name="purchase_eligibility" defaultValue="all">
+              <option value="all">Todas las alumnas elegibles</option>
+              <option value="new_customer">Solo personas nuevas</option>
+            </select>
+            <span className="package-scope-note">
+              “Personas nuevas” permite una clase suelta previa, pero bloquea a quien ya compró un
+              paquete o membresía.
+            </span>
+          </label>
+
+          <label>
+            Máximo de compras por persona
+            <input
+              name="purchase_limit_per_student"
+              type="number"
+              min="1"
+              inputMode="numeric"
+              placeholder="Sin límite"
+            />
+          </label>
+
+          <label>
+            <span>
+              <input name="enrollment_included" type="checkbox" /> Incluir inscripción sin costo
+            </span>
+            <span className="package-scope-note">
+              Activa la inscripción vigente como promoción. Su renovación anual conserva el precio
+              normal configurado por el estudio.
+            </span>
+          </label>
+
           <label>
             Descripción opcional
             <textarea
