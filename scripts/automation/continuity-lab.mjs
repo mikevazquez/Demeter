@@ -9,9 +9,7 @@ export function nextState(previous, trigger, runId) {
     throw new Error("Unsupported trigger");
   }
   if (previous === null) {
-    return trigger === "start"
-      ? { phase: "waiting", startedBy: runId, completedBy: null }
-      : null;
+    return trigger === "start" ? { phase: "waiting", startedBy: runId, completedBy: null } : null;
   }
   if (
     !previous ||
@@ -99,10 +97,7 @@ export async function run() {
   const token = process.env.GITHUB_TOKEN;
   const runId = Number(process.env.GITHUB_RUN_ID);
   const trigger = process.env.CONTINUITY_TRIGGER;
-  if (
-    !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository || "") ||
-    !token
-  ) {
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository || "") || !token) {
     throw new Error("Missing or invalid GitHub environment");
   }
   const previous = await latestState(repository);
