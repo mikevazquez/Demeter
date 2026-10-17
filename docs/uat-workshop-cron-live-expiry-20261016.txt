@@ -1,0 +1,43 @@
+Studio Flow workshops - Sandbox automatic expiry UAT
+Date: 2026-10-16 local / 2026-10-17 UTC
+Environment: Supabase Sandbox hedouonyhynuvwbckdlg ONLY
+PR: #317 Draft, branch design/workshop-payment-contract-20261016
+
+Purpose:
+Verify that the active pg_cron job automatically expires a short-lived
+synthetic workshop hold, freeing the sole session seat, without an operator
+manually invoking the expiry function.
+
+Fixture:
+- Offer ce031122-3892-4e63-8b7b-78394f7a6094
+- Session ea9f5e96-080c-42cb-9b78-1d0f848fa1c9 (capacity 1)
+- Synthetic hold 71b65a78-d56e-46de-946f-b075428ce40a
+- Transfer reference prefixed UAT-CRON-20261016
+- Hold created with expires_at = now() + 15 seconds
+- Cron job 34, studio_flow_workshop_provisional_expiry_sandbox,
+  scheduled every minute as postgres
+
+Verified observations:
+1. Immediately after creation: hold state reserved_provisionally;
+   expiration due = false.
+2. After expiration time passed, before cron tick:
+   hold state reserved_provisionally; expiration due = true.
+3. After the next cron tick: hold state expired.
+4. No provisional holds remained active in Sandbox.
+5. cron.job_run_details reported 5 successful job runs.
+6. Session capacity = 1 and private.workshop_capacity_seats_taken = 0:
+   the place was freed.
+7. SQL privileges previously verified: anon, authenticated and service_role
+   have no EXECUTE on the dedicated cron worker.
+
+Result: PASS - actual automatic expiry and seat release verified in Sandbox.
+No manual expiry call was used to transition this synthetic hold.
+
+Other work:
+- The temporary branch-writing Prettier GitHub Actions job was removed
+  from .github/workflows/workshop-sandbox-validation.yml (commit e8bd39e).
+- A new official CI run for that change is in progress at the time of writing.
+- Independent two-client HTTP concurrency and browser UAT are still NOT RUN.
+- Demi integration and formal 18-case UAT remain pending.
+
+Safety: Production untouched; no merge or promotion authorized.
