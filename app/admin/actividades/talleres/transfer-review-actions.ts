@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { workshopPurchaseError, workshopUuid } from "@/src/lib/workshops/admin";
+import { parseTransferReview } from "@/src/lib/workshops/transfer-review";
 
 export interface WorkshopTransferReviewState {
   error: string | null;
@@ -17,17 +18,9 @@ export async function reviewWorkshopTransfer(
   _previous: WorkshopTransferReviewState,
   data: FormData,
 ): Promise<WorkshopTransferReviewState> {
-  const holdId = String(data.get("hold_id") ?? "");
-  const decision = String(data.get("decision") ?? "");
-  const reason = String(data.get("reason") ?? "").trim();
-  if (!workshopUuid.test(holdId))
-    return { error: "Selecciona un comprobante válido." };
-  if (decision !== "approve" && decision !== "reject")
-    return { error: "Selecciona aprobar o rechazar." };
-  if (decision === "approve" && data.get("payment_received") !== "on")
-    return { error: "Verifica el ingreso en el banco antes de aprobar la transferencia." };
-  if (decision === "reject" && (reason.length < 1 || reason.length > 500))
-    return { error: "Indica el motivo del rechazo (máximo 500 caracteres)." };
+  const review = parseTransferReview(data);
+  if (!review.ok) return { error: review.error };
+  const { holdId, decision } = review;
 
   const ctx = await getAdminContext("sales.write");
   if (!ctx.can("schedule.write"))
@@ -42,7 +35,7 @@ export async function reviewWorkshopTransfer(
     : await ctx.supabase.rpc("admin_reject_workshop_provisional_hold", {
         p_studio_id: ctx.studio.id,
         p_hold_id: holdId,
-        p_reason: reason,
+        p_reason: review.decision === "reject" ? review.reason : "",
       });
   if (response.error) {
     const message = response.error.message ?? "";
