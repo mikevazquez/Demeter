@@ -53,6 +53,13 @@ export function parseState(body) {
   return state;
 }
 
+export function isTrustedStateComment(comment) {
+  return (
+    comment?.user?.login === "github-actions[bot]" &&
+    comment.user.type === "Bot"
+  );
+}
+
 export function serializeState(state) {
   return MARKER + "\n" + JSON.stringify(state);
 }
@@ -81,6 +88,7 @@ async function latestState(repository) {
   for (let page = 1; page <= 100; page++) {
     const comments = await github(`${commentsPath}?per_page=100&page=${page}`);
     for (const comment of comments) {
+      if (!isTrustedStateComment(comment)) continue;
       const state = parseState(comment.body);
       if (state !== null && comment.id > lastCommentId) {
         lastCommentId = comment.id;
