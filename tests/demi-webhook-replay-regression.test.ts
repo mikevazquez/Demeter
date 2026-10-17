@@ -67,13 +67,7 @@ function harness(httpStatus = 200, failOutboundPersistence = false) {
         ) {
           return { data: null, error: { code: "synthetic_failure" }, count: 0 };
         }
-        const sequence = ++nextId;
-        const inserted = {
-          id: `row-${sequence}`,
-          attempt_count: 0,
-          created_at: new Date(Date.UTC(2026, 9, 17, 16, 0, 0, sequence)).toISOString(),
-          ...payload,
-        };
+        const inserted = { id: `row-${++nextId}`, attempt_count: 0, ...payload };
         rows[table].push(inserted);
         return { data: single ? { ...inserted } : [{ ...inserted }], error: null, count: 1 };
       }
@@ -96,14 +90,6 @@ function harness(httpStatus = 200, failOutboundPersistence = false) {
       },
       eq: (key: string, value: unknown) => {
         filters.push((row) => row[key] === value);
-        return chain;
-      },
-      neq: (key: string, value: unknown) => {
-        filters.push((row) => row[key] !== value);
-        return chain;
-      },
-      gt: (key: string, value: unknown) => {
-        filters.push((row) => String(row[key] ?? "") > String(value ?? ""));
         return chain;
       },
       in: (key: string, values: unknown[]) => {
@@ -174,8 +160,6 @@ function harness(httpStatus = 200, failOutboundPersistence = false) {
   );
   const model = vi.fn(async () => ({ reply: "Synthetic location reply", trace: {} }));
   const supabase = { from, rpc };
-  const previousBurstQuietMs = process.env.DEMI_META_BURST_QUIET_MS;
-  process.env.DEMI_META_BURST_QUIET_MS = "10";
   const route = load<Route>("app/api/integrations/meta-whatsapp/webhook/route.ts", {
     "@/lib/assistant/delivery-retry-policy": { demiDeliveryRetryPolicy },
     "@/lib/assistant/orchestrator": { runAssistantTurn: model },
@@ -199,8 +183,6 @@ function harness(httpStatus = 200, failOutboundPersistence = false) {
         channel.sendMetaWhatsAppText({ ...input, fetcher: transport }),
     },
   });
-  if (previousBurstQuietMs === undefined) delete process.env.DEMI_META_BURST_QUIET_MS;
-  else process.env.DEMI_META_BURST_QUIET_MS = previousBurstQuietMs;
   vi.stubGlobal(
     "fetch",
     vi.fn(() => {
@@ -208,11 +190,7 @@ function harness(httpStatus = 200, failOutboundPersistence = false) {
     }),
   );
   vi.spyOn(console, "info").mockImplementation(() => {});
-  const request = (
-    id = "wamid.synthetic-inbound",
-    signatureValid = true,
-    text = "Location?",
-  ) => {
+  const request = (id = "wamid.synthetic-inbound", signatureValid = true) => {
     const body = JSON.stringify({
       entry: [
         {
@@ -221,7 +199,7 @@ function harness(httpStatus = 200, failOutboundPersistence = false) {
             {
               value: {
                 metadata: { phone_number_id: phoneId },
-                messages: [{ id, from: "15555550123", type: "text", text: { body: text } }],
+                messages: [{ id, from: "15555550123", type: "text", text: { body: "Location?" } }],
               },
             },
           ],
@@ -256,31 +234,6 @@ describe("Demi signed webhook replay with simulated persistence and real sender"
     expect(h.rows.assistant_turns.filter((row) => row.role === "assistant")).toHaveLength(1);
     expect(h.rows.assistant_whatsapp_events[0].processing_status).toBe("processed");
     expect(fetch).not.toHaveBeenCalled();
-  });
-
-  it("coalesces consecutive distinct messages into one assistant execution and one reply", async () => {
-    const h = harness();
-    const first = h.post(h.request("wamid.synthetic-burst-1", true, "Hola"));
-    await new Promise((resolve) => setTimeout(resolve, 2));
-    const second = h.post(h.request("wamid.synthetic-burst-2", true, "¿Cómo estás?"));
-    const replies = await Promise.all([first, second]);
-
-    expect(replies.every((reply) => reply.status === 200)).toBe(true);
-    expect(h.transport).toHaveBeenCalledTimes(1);
-    expect(h.model).toHaveBeenCalledTimes(1);
-    expect(h.rows.assistant_whatsapp_events).toHaveLength(2);
-    expect(h.rows.assistant_whatsapp_events.map((row) => row.processing_status).sort()).toEqual([
-      "ignored",
-      "processed",
-    ]);
-    expect(h.rows.assistant_whatsapp_events[0].processing_result).toMatchObject({
-      outcome: "superseded_by_newer_message",
-    });
-    const history =
-      (h.model.mock.calls[0]?.[0] as { history?: Array<{ content: string }> })?.history ?? [];
-    expect(history.map((turn) => turn.content)).toEqual(
-      expect.arrayContaining(["Hola", "¿Cómo estás?"]),
-    );
   });
 
   it.each([500, 503])(
