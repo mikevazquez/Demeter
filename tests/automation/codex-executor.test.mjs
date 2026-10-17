@@ -231,10 +231,19 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
   });
   it("fails closed after a crash before intent persistence", () => {
     const s = setup();
+    expect(() => executionStatus(s.repo, s.registry, ID)).toThrow();
     fs.mkdirSync(path.join(s.registry, ID, "executor"));
-    expect(executeOnce(s.repo, s.registry, ID, { binary: "/must/not/run" }).status).toBe(
-      "uncertain",
+    const uncertain = { id: ID, status: "uncertain", action: "inspect-existing-candidate" };
+    expect(executionStatus(s.repo, s.registry, ID)).toEqual(uncertain);
+    expect(executeOnce(s.repo, s.registry, ID, { binary: "/must/not/run" })).toEqual(uncertain);
+    const status = spawnSync(
+      process.execPath,
+      ["scripts/automation/codex-executor.mjs", "status", s.repo, s.registry, ID],
+      { encoding: "utf8" },
     );
+    expect(status.status).toBe(0);
+    expect(status.stderr).toBe("");
+    expect(JSON.parse(status.stdout)).toEqual(uncertain);
   });
   it("rejects reservation tampering before launching", () => {
     const s = setup();

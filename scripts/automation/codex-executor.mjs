@@ -146,7 +146,12 @@ function atomicWrite(filename, value) {
 
 export function executionStatus(repo, registry, id) {
   const state = context(repo, registry, id);
-  const intent = read(path.join(state.dir, "executor", "intent.json"));
+  const executionDir = path.join(state.dir, "executor");
+  assert(fs.statSync(executionDir).isDirectory(), "Execution directory required");
+  const intentPath = path.join(executionDir, "intent.json");
+  if (!fs.existsSync(intentPath))
+    return { id, status: "uncertain", action: "inspect-existing-candidate" };
+  const intent = read(intentPath);
   assert(
     intent.id === id && intent.contractSha256 === state.contractSha256,
     "Execution identity changed",
@@ -184,8 +189,6 @@ export function executeOnce(repo, registry, id, { binary = "codex", timeout = 12
     fs.mkdirSync(executionDir);
   } catch (error) {
     if (error.code !== "EEXIST") throw error;
-    if (!fs.existsSync(path.join(executionDir, "intent.json")))
-      return { id, status: "uncertain", action: "inspect-existing-candidate" };
     return executionStatus(repo, registry, id);
   }
   const intent = {
