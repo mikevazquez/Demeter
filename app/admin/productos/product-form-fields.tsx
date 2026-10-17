@@ -299,7 +299,9 @@ export function ProductFormFields({
           {isPackageLike ? (
             <>
               <fieldset className="rounded-2xl border border-white/10 bg-black/10 p-4">
-                <legend className="px-1 text-sm font-medium text-white">Elegibilidad comercial</legend>
+                <legend className="px-1 text-sm font-medium text-white">
+                  Elegibilidad comercial
+                </legend>
                 <div className="mt-3 grid gap-4 md:grid-cols-2">
                   <label className="text-sm text-zinc-300">
                     Quién puede comprarlo
@@ -341,14 +343,14 @@ export function ProductFormFields({
               </fieldset>
 
               <fieldset className="rounded-2xl border border-white/10 bg-black/10 p-4">
-              <legend className="px-1 text-sm font-medium text-white">Horarios permitidos</legend>
-              <p className="mt-1 text-xs text-zinc-500">
+                <legend className="px-1 text-sm font-medium text-white">Horarios permitidos</legend>
+                <p className="mt-1 text-xs text-zinc-500">
                 Limita este paquete a clases recurrentes concretas. Si no activas la restricción,
-                seguirá funcionando en todos los horarios de las disciplinas seleccionadas.
-              </p>
-              <input type="hidden" name="schedule_scope" value={scheduleScope} />
+                  seguirá funcionando en todos los horarios de las disciplinas seleccionadas.
+                </p>
+                <input type="hidden" name="schedule_scope" value={scheduleScope} />
 
-              <div className="mt-4 grid gap-2">
+                <div className="mt-4 grid gap-2">
                 <label className="flex items-start gap-3 rounded-xl border border-white/10 px-3 py-3 text-sm text-zinc-300">
                   <input
                     type="radio"
