@@ -81,7 +81,9 @@ describe("starter product eligibility foundation", () => {
 
   it("fails fast instead of promising cash for an included-enrollment product", () => {
     expect(demiActions).toContain("introductory_package_cash_not_supported");
-    expect(demiActions).toContain('supported_payment_methods: ["app_mercado_pago", "bank_transfer"]');
+    expect(demiActions).toContain(
+      'supported_payment_methods: ["app_mercado_pago", "bank_transfer"]',
+    );
   });
 
   it("does not re-run eligibility after an accredited payment", () => {
