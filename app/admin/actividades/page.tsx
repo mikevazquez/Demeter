@@ -135,7 +135,11 @@ export default async function ActivitiesPage({
   const visiblePrograms = (programs ?? []).filter(
     (program) =>
       !isUatOffer(program.name) &&
-      (category === "eventos" ? program.kind === "event" : program.kind !== "event"),
+      (category === "eventos"
+        ? program.kind === "event"
+        : category === "masterclass"
+          ? program.kind === "masterclass"
+          : program.kind === "workshop"),
   );
   const categories: { id: ActivityCategory; label: string }[] = [
     { id: "actividades", label: "Actividades" },
@@ -148,9 +152,11 @@ export default async function ActivitiesPage({
       ? "/admin/actividades/nueva"
       : category === "talleres"
         ? "/admin/actividades/talleres/nuevo"
-        : "/admin/actividades/programas/nuevo?kind=event";
+        : category === "masterclass"
+          ? "/admin/actividades/programas/nuevo?kind=masterclass"
+          : "/admin/actividades/programas/nuevo?kind=event";
   const canCreate =
-    category === "actividades" || category === "eventos"
+    category === "actividades" || category === "eventos" || category === "masterclass"
       ? canEdit
       : category === "talleres"
         ? can("products.write") && can("schedule.write")
@@ -260,7 +266,7 @@ export default async function ActivitiesPage({
         </div>
         {canCreate ? (
           <Link className="activities-v2-primary" href={createHref}>
-            <span aria-hidden="true">＋</span> Crear {category === "actividades" ? "actividad" : category === "talleres" ? "taller" : "evento"}
+            <span aria-hidden="true">＋</span> Crear {category === "actividades" ? "actividad" : category === "talleres" ? "taller" : category === "masterclass" ? "master class" : "evento"}
           </Link>
         ) : null}
       </header>
@@ -296,7 +302,7 @@ export default async function ActivitiesPage({
         ))}
       </nav>
 
-      {category === "talleres" || category === "eventos" ? (
+      {category === "talleres" || category === "eventos" || category === "masterclass" ? (
         <section className="activities-v2-section">
           <div className="activities-v2-section-heading">
             <h2>{heading}</h2>
@@ -326,7 +332,7 @@ export default async function ActivitiesPage({
                   <span>{sessionCountByProgram.get(program.id) ?? 0} fechas programadas</span>
                 </span>
                 <span className="activities-v2-card-meta">
-                  <span>{program.kind === "event" ? "Evento especial" : "Taller / curso"}</span>
+                  <span>{program.kind === "event" ? "Evento especial" : program.kind === "masterclass" ? "Master class" : "Taller / curso"}</span>
                   <span>Ver fechas, cupos y precios</span>
                 </span>
               </span>
@@ -344,12 +350,6 @@ export default async function ActivitiesPage({
             </div>
           </details>
         ) : null}
-        </section>
-      ) : null}
-      {category === "masterclass" ? (
-        <section className="activities-v2-empty">
-          <strong>Master class</strong>
-          <p>La configuración de Master class estará disponible cuando termine su implementación y UAT.</p>
         </section>
       ) : null}
       {category === "actividades" ? (
