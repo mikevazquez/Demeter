@@ -212,7 +212,7 @@ export default async function ActivitiesPage() {
       <section className="activities-v2-section">
         <div className="activities-v2-section-heading">
           <div><h2>Talleres y eventos</h2><p>Gestiona talleres configurables y eventos especiales.</p></div>
-          <Link href="/admin/actividades/talleres" className="activities-v2-primary">Ver talleres</Link>
+          <Link href="/admin/actividades/talleres">Ver talleres →</Link>
         </div>
         {can("products.write") && can("schedule.write") ? (
           <p><Link href="/admin/actividades/talleres/nuevo">＋ Nuevo taller</Link></p>
