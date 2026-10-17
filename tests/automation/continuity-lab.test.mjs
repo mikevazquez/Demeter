@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { nextState, parseState, serializeState } from "../../scripts/automation/continuity-lab.mjs";
+import {
+  isTrustedStateComment,
+  nextState,
+  parseState,
+  serializeState,
+} from "../../scripts/automation/continuity-lab.mjs";
 
 describe("continuity lab 315", () => {
   it("starts only with explicit start", () => {
@@ -46,6 +51,25 @@ describe("continuity lab 315", () => {
         '<!-- continuity-lab-315:v1 -->\n{"phase":"waiting","startedBy":22,"completedBy":null,"admin":true}',
       ),
     ).toThrow("Unexpected");
+  });
+
+  it("ignores forged state comments from ordinary users", () => {
+    expect(
+      isTrustedStateComment({
+        user: { login: "github-actions[bot]", type: "Bot" },
+      }),
+    ).toBe(true);
+    expect(
+      isTrustedStateComment({
+        user: { login: "external-user", type: "User" },
+      }),
+    ).toBe(false);
+    expect(
+      isTrustedStateComment({
+        user: { login: "github-actions[bot]", type: "User" },
+      }),
+    ).toBe(false);
+    expect(isTrustedStateComment(null)).toBe(false);
   });
 
   it("rejects invalid run IDs and triggers", () => {
