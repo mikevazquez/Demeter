@@ -400,9 +400,7 @@ export default async function StudentsPage({
     ),
   ).length;
   const entryFacts = entryConversionResult.data ?? [];
-  const singleClassEntries = entryFacts.filter(
-    (item) => item.entry_mode === "single_class",
-  ).length;
+  const singleClassEntries = entryFacts.filter((item) => item.entry_mode === "single_class").length;
   const introductoryEntries = entryFacts.filter(
     (item) => item.entry_mode === "introductory_package",
   ).length;
