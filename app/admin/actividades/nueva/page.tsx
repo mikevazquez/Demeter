@@ -69,7 +69,7 @@ export default async function NewActivityPage({
         <p>
           <Link
             className="activities-next-button"
-            href="/admin/actividades/programas/nuevo?kind=workshop"
+            href="/admin/actividades/talleres/nuevo"
           >
             Taller / curso
           </Link>{" "}
