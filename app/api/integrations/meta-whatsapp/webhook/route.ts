@@ -91,7 +91,7 @@ async function findNewerConversationEvent(input: {
   eventCreatedAt: string;
   fromWaId: string;
 }) {
-  if (!input.eventCreatedAt) throw new Error("meta_event_created_at_missing");
+  if (!input.eventCreatedAt) return null;
   const { data, error } = await input.supabase
     .from("assistant_whatsapp_events")
     .select("id,provider_event_id,created_at")
