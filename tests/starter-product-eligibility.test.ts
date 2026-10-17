@@ -23,6 +23,9 @@ describe("starter product eligibility foundation", () => {
   const promoAmountFix = source(
     "supabase/migrations/20261017222343_starter_checkout_promo_enrollment_amount_fix.sql",
   );
+  const transferEnrollment = source(
+    "supabase/migrations/20261017222546_starter_transfer_promotional_enrollment.sql",
+  );
 
   it("stores generic eligibility, purchase limit and enrollment inclusion", () => {
     expect(packageAction).toContain("purchase_eligibility");
@@ -63,6 +66,15 @@ describe("starter product eligibility foundation", () => {
       "(v_price->>'regular_amount_minor')::int+v_extra_price",
     );
     expect(promoAmountFix).toContain("'regular_price_minor',v_enroll.price_minor");
+  });
+
+  it("supports promotional enrollment through Demi bank transfer", () => {
+    expect(transferEnrollment).not.toContain(
+      "included_enrollment_requires_online_or_staff_checkout",
+    );
+    expect(transferEnrollment).toContain("'promotion','100%'");
+    expect(transferEnrollment).toContain("resolution_type='promotion'");
+    expect(transferEnrollment).toContain("set status='cancelled'");
   });
 
   it("does not re-run eligibility after an accredited payment", () => {
