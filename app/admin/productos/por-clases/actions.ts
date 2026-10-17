@@ -39,11 +39,21 @@ export async function createClassPackage(
   const creditLimit = positiveInteger(formData.get("credit_limit"));
   const packageTermRaw = String(formData.get("package_term") ?? "");
   const validityInput = positiveInteger(formData.get("validity_days"));
+  const purchaseEligibility = String(formData.get("purchase_eligibility") ?? "all");
+  const purchaseLimitRaw = String(formData.get("purchase_limit_per_student") ?? "").trim();
+  const purchaseLimit = purchaseLimitRaw ? positiveInteger(purchaseLimitRaw) : null;
+  const enrollmentIncluded = formData.get("enrollment_included") === "on";
 
   if (!name) return { error: "Escribe un nombre para el paquete." };
   if (!Number.isFinite(price) || price < 0) return { error: "Escribe un precio válido." };
   if (!creditLimit) return { error: "La cantidad de clases debe ser mayor a cero." };
   if (!isPackageTerm(packageTermRaw)) return { error: "Selecciona una vigencia válida." };
+  if (!["all", "new_customer"].includes(purchaseEligibility)) {
+    return { error: "Selecciona una elegibilidad válida." };
+  }
+  if (purchaseLimitRaw && !purchaseLimit) {
+    return { error: "El límite de compra debe ser un número entero mayor a cero." };
+  }
 
   const packageTerm: PackageTerm = packageTermRaw;
   const validityDays = packageTerm === "custom" ? validityInput : PACKAGE_TERM_DAYS[packageTerm];
@@ -81,6 +91,9 @@ export async function createClassPackage(
       validity_days: validityDays,
       unlimited: false,
       active: true,
+      purchase_eligibility: purchaseEligibility,
+      purchase_limit_per_student: purchaseLimit,
+      enrollment_included: enrollmentIncluded,
     })
     .select("id")
     .single();
