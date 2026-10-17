@@ -8,8 +8,8 @@ export default async function WorkshopsPage() {
     ? await ctx.supabase.rpc("admin_workshop_context", { p_studio_id: ctx.studio.id })
     : { data: null, error: { message: "forbidden" } };
   const offers = (data?.offers ?? []) as WorkshopSummary[];
-  const operationalOffers = offers.filter((offer) => !/^UAT(?:[\\s_-]|$)/i.test(offer.title.trim()));
-  const uatOffers = offers.filter((offer) => /^UAT(?:[\\s_-]|$)/i.test(offer.title.trim()));
+  const operationalOffers = offers.filter((offer) => !/^UAT(?:[\s_-]|$)/i.test(offer.title.trim()));
+  const uatOffers = offers.filter((offer) => /^UAT(?:[\s_-]|$)/i.test(offer.title.trim()));
   const money = (minor: number) =>
     new Intl.NumberFormat(ctx.studio.locale, {
       style: "currency",
