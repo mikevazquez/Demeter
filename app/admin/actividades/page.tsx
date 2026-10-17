@@ -115,6 +115,24 @@ export default async function ActivitiesPage() {
   const activeActivities = (activities ?? []).filter((item) => item.active);
   const inactiveActivities = (activities ?? []).filter((item) => !item.active);
 
+  // Synthetic UAT offers remain available for QA, but do not mix with operational workshops.
+  const isUatOffer = (title: string) => /^UAT(?:[\\s_-]|$)/i.test(title.trim());
+  const operationalWorkshopOffers = workshopOffers.filter((offer) => !isUatOffer(offer.title));
+  const uatWorkshopOffers = workshopOffers.filter((offer) => isUatOffer(offer.title));
+
+  const renderWorkshopOffer = (offer: (typeof workshopOffers)[number]) => (
+    <Link className="activities-v2-card" href={`/admin/actividades/talleres/${offer.id}`} key={offer.id}>
+      <span className="activities-v2-card-icon program-card-icon is-workshop"><ProgramIcon /></span>
+      <span className="activities-v2-card-main">
+        <span className="activities-v2-card-title"><strong>{offer.title}</strong><small>Taller</small></span>
+        <span className="activities-v2-card-description">
+          {offer.sessionCount} fechas · {formatMoney(offer.fullPriceMinor, studio.locale, studio.currency)} completo
+        </span>
+      </span>
+      <span className="activities-v2-chevron" aria-hidden="true">›</span>
+    </Link>
+  );
+
   const renderActivity = (activity: (typeof activeActivities)[number]) => {
     const activitySchedules = schedulesByActivity.get(activity.id) ?? [];
     const firstSchedules = activitySchedules.slice(0, 3);
@@ -192,32 +210,15 @@ export default async function ActivitiesPage() {
       </header>
 
       <section className="activities-v2-section">
-        <h2>Talleres y eventos</h2>
+        <div className="activities-v2-section-heading">
+          <div><h2>Talleres y eventos</h2><p>Gestiona talleres configurables y eventos especiales.</p></div>
+          <Link href="/admin/actividades/talleres" className="activities-v2-primary">Ver talleres</Link>
+        </div>
+        {can("products.write") && can("schedule.write") ? (
+          <p><Link href="/admin/actividades/talleres/nuevo">＋ Nuevo taller</Link></p>
+        ) : null}
         <div className="activities-v2-list">
-          {workshopOffers.map((offer) => (
-            <Link
-              className="activities-v2-card"
-              href={`/admin/actividades/talleres/${offer.id}`}
-              key={offer.id}
-            >
-              <span className="activities-v2-card-icon program-card-icon is-workshop">
-                <ProgramIcon />
-              </span>
-              <span className="activities-v2-card-main">
-                <span className="activities-v2-card-title">
-                  <strong>{offer.title}</strong>
-                  <small>Taller</small>
-                </span>
-                <span className="activities-v2-card-description">
-                  {offer.sessionCount} fechas ·{" "}
-                  {formatMoney(offer.fullPriceMinor, studio.locale, studio.currency)} completo
-                </span>
-              </span>
-              <span className="activities-v2-chevron" aria-hidden="true">
-                ›
-              </span>
-            </Link>
-          ))}
+          {operationalWorkshopOffers.map(renderWorkshopOffer)}
           {(programs ?? []).map((program) => (
             <Link
               className={`activities-v2-card${program.active ? "" : " is-inactive"}`}
@@ -251,6 +252,12 @@ export default async function ActivitiesPage() {
             </Link>
           ))}
         </div>
+        {uatWorkshopOffers.length > 0 ? (
+          <details className="activities-v2-inactive">
+            <summary>Datos de prueba UAT ({uatWorkshopOffers.length})</summary>
+            <div className="activities-v2-list">{uatWorkshopOffers.map(renderWorkshopOffer)}</div>
+          </details>
+        ) : null}
       </section>
       <section className="activities-v2-section">
         <div className="activities-v2-section-heading">
