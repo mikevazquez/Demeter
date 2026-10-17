@@ -99,8 +99,12 @@ const [{ count: reserved, error: re }, { count: holds, error: he }] = await Prom
 if (re || he || reserved !== 0 || holds !== 0)
   throw new Error("Fixture must have no active reservations or provisional holds");
 const expiresAt = new Date(Date.now() + 15 * 60_000).toISOString();
+const runId = randomUUID();
+const references = [];
 const attempt = async (studentId) => {
   const requestId = randomUUID();
+  const reference = `UAT-HOLD-${runId}-${requestId}`;
+  references.push(reference);
   return staffClient().rpc("admin_create_workshop_provisional_hold", {
     p_studio_id: e.WORKSHOP_UAT_STUDIO_ID,
     p_offer_id: offer.id,
@@ -108,7 +112,7 @@ const attempt = async (studentId) => {
     p_session_ids: [session.id],
     p_selection_mode: "full",
     p_request_id: requestId,
-    p_transfer_reference: `UAT-HOLD-${requestId}`,
+    p_transfer_reference: reference,
     p_amount_minor: offer.full_price_minor,
     p_expires_at: expiresAt,
   });
@@ -122,18 +126,27 @@ const losers = outcomes.filter(
   (x) =>
     x.error?.message?.includes("session_full") || x.error?.message?.includes("session_unavailable"),
 );
-// Always attempt cleanup, including an unexpected double-winner result.
-const cleanupResults = await Promise.all(
-  winners.map((winner) =>
-    staffClient().rpc("admin_reject_workshop_provisional_hold", {
-      p_studio_id: e.WORKSHOP_UAT_STUDIO_ID,
-      p_hold_id: winner.data.hold_id,
-      p_reason: "Synthetic Sandbox concurrency UAT cleanup",
-    }),
-  ),
-);
-const cleanupPassed =
-  cleanupResults.length === winners.length &&
+// Resolve all this run's holds from the database, even if the HTTP RPC
+// response failed after a successful commit. Never touch another test's holds.
+const { data: ownHolds, error: ownHoldsError } = await admin
+  .from("workshop_provisional_holds")
+  .select("id,state,transfer_reference")
+  .eq("studio_id", e.WORKSHOP_UAT_STUDIO_ID)
+  .in("transfer_reference", references);
+const holdIds = ownHoldsError ? [] : (ownHolds ?? [])
+  .filter((hold) => hold.state === "reserved_provisionally")
+  .map((hold) => hold.id);
+const cleanupResults = await Promise.all(holdIds.map(async (holdId) => {
+  // Use staff-gated RPC; never modify holds directly with the service client.
+  const result = await staffClient().rpc("admin_reject_workshop_provisional_hold", {
+    p_studio_id: e.WORKSHOP_UAT_STUDIO_ID,
+    p_hold_id: holdId,
+    p_reason: "Synthetic Sandbox concurrency UAT cleanup",
+  });
+  return { holdId, ...result };
+}));
+const cleanupPassed = !ownHoldsError &&
+  cleanupResults.length === holdIds.length &&
   cleanupResults.every((x) => !x.error && x.data?.state === "rejected");
 const { count: finalActive, error: finalError } = await admin
   .from("workshop_provisional_hold_sessions")
@@ -150,6 +163,8 @@ console.log(
       winners: winners.length,
       capacityRejections: losers.length,
       cleanupPassed,
+      ownHoldsError: ownHoldsError?.message ?? null,
+      ownHoldCount: ownHolds?.length ?? null,
       finalActiveProvisionalHolds: finalActive,
       errors: outcomes.map((x) => x.error?.message ?? null),
       cleanupErrors: cleanupResults.map((x) => x.error?.message ?? null),
