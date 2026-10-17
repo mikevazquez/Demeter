@@ -236,7 +236,7 @@ export default async function ActivitiesPage() {
         ) : null}
         <div className="activities-v2-list">
           {operationalWorkshopOffers.map(renderWorkshopOffer)}
-          {(programs ?? []).map((program) => (
+          {(programs ?? []).filter((program) => !isUatOffer(program.name)).map((program) => (
             <Link
               className={`activities-v2-card${program.active ? "" : " is-inactive"}`}
               href={`/admin/actividades/programas/${program.id}`}
