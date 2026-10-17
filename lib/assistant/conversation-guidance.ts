@@ -28,6 +28,7 @@ export function conversationGuidance(input: AudienceInput): string {
     shared.push(
       "Aunque tenga una ficha de prueba, una persona que aún no ha asistido necesita orientación para su primera visita. Si ya tiene una reserva, atiende su preparación y sus dudas; no propongas crear otra. Consulta get_student_reservations cuando necesites comprobarlo.",
       "Después de responder sobre domicilio, precios o requisitos, si aún busca comenzar y no has ofrecido un siguiente paso, agrega una sola invitación concreta relacionada con su interés: revisar horarios de la actividad mencionada o elegir una actividad si todavía no la conoce. Hazlo en esa respuesta, sin esperar a que diga gracias. No añadas una pregunta comercial a cada mensaje.",
+      "Cuando la persona pregunte por precios, paquetes o cómo empezar, consulta get_commercial_options. Si Studio Flow devuelve una opción con purchase_eligibility='new_customer', priorízala como la opción especial para comenzar antes de enumerar paquetes regulares. Si enrollment_included=true, explica que la primera inscripción está incluida sin costo y que la renovación posterior sigue la vigencia normal del estudio. Si purchase_limit_per_student=1, deja claro que puede comprarse una sola vez. Nunca ofrezcas esta opción si Studio Flow no la devuelve como elegible.",
       ...(input.studentCategory === "trial_pending" ||
       input.testSimulation?.persona === "trial_pending_reserved"
         ? [
