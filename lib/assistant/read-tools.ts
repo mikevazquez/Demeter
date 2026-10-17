@@ -346,7 +346,7 @@ export async function getCommercialOptions(
   const { data, error } = await ctx.supabase
     .from("product_templates")
     .select(
-      "id,name,description,product_type,price_minor,currency,credit_limit,validity_days,unlimited,package_term,online_purchasable,reward_credit_wallet,assistant_visible",
+      "id,name,description,product_type,price_minor,currency,credit_limit,validity_days,unlimited,package_term,online_purchasable,reward_credit_wallet,assistant_visible,purchase_eligibility,purchase_limit_per_student,enrollment_included",
     )
     .eq("studio_id", ctx.studio.id)
     .eq("active", true)
@@ -358,6 +358,31 @@ export async function getCommercialOptions(
   let products = (data ?? []).filter(
     (item) => !item.reward_credit_wallet && item.assistant_visible !== false,
   );
+
+  if (ctx.studentId && products.length) {
+    const eligibilityResults = await Promise.all(
+      products.map(async (item) => {
+        if (!["package", "membership"].includes(item.product_type)) {
+          return { item, eligible: true };
+        }
+        const { data: eligibility, error: eligibilityError } = await ctx.supabase.rpc(
+          "service_product_purchase_eligibility",
+          {
+            p_studio_id: ctx.studio.id,
+            p_student_id: ctx.studentId,
+            p_product_template_id: item.id,
+          },
+        );
+        if (eligibilityError) return { item, eligible: false, failed: true };
+        return { item, eligible: eligibility?.eligible === true };
+      }),
+    );
+
+    if (eligibilityResults.some((result) => result.failed)) {
+      return { ok: false, error: "commercial_eligibility_unavailable" };
+    }
+    products = eligibilityResults.filter((result) => result.eligible).map((result) => result.item);
+  }
 
   if (sessionScope && products.length) {
     const productIds = products.map((item) => item.id);
@@ -484,6 +509,9 @@ export async function getCommercialOptions(
       unlimited: item.unlimited,
       package_term: item.package_term,
       online_purchasable: item.online_purchasable,
+      purchase_eligibility: item.purchase_eligibility,
+      purchase_limit_per_student: item.purchase_limit_per_student,
+      enrollment_included: item.enrollment_included === true,
     })),
   };
 }
