@@ -69,11 +69,16 @@ describe("F15 Mercado Pago Orders API", () => {
     expect(edge).not.toContain('.from("credit_ledger")');
   });
 
-  it("exposes only explicitly purchasable packages in the student catalog", () => {
+  it("exposes only explicitly purchasable and eligible packages in the student catalog", () => {
     const page = source("app/student/paquete/page.tsx");
+    const eligibility = source(
+      "supabase/migrations/20261017184233_starter_product_eligibility_foundation.sql",
+    );
 
-    expect(page).toContain('.eq("online_purchasable", true)');
-    expect(page).toContain('.in("product_type", ["package", "membership"])');
+    expect(page).toContain('supabase.rpc("student_online_product_options")');
+    expect(eligibility).toContain("and pt.online_purchasable");
+    expect(eligibility).toContain("pt.product_type::text in ('package','membership')");
+    expect(eligibility).toContain("private.product_purchase_eligibility");
     expect(page).toContain("Mensual");
     expect(page).toContain("Trimestral");
     expect(page).toContain("Semestral");
