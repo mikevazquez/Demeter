@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { workshopUuid, type WorkshopAdminContext } from "@/src/lib/workshops/admin";
 import { WorkshopPurchaseForm } from "./WorkshopPurchaseForm";
+import { WorkshopTransferReview, type ProvisionalReviewItem } from "./WorkshopTransferReview";
 
 export default async function WorkshopPage({ params }: { params: Promise<{ offerId: string }> }) {
   const { offerId } = await params;
@@ -17,6 +18,15 @@ export default async function WorkshopPage({ params }: { params: Promise<{ offer
     : { data: null, error: { message: "forbidden" } };
   if (error?.message.includes("offer_not_found")) notFound();
   const context = data as WorkshopAdminContext | null;
+  const review = context && ctx.can("sales.read")
+    ? await ctx.supabase.rpc("admin_workshop_provisional_review_queue", {
+        p_studio_id: ctx.studio.id,
+        p_offer_id: offerId,
+      })
+    : null;
+  const reviewItems = !review?.error && Array.isArray(review?.data)
+    ? (review.data as ProvisionalReviewItem[])
+    : null;
   return (
     <main className="activities-v2 activities-editor-page program-detail-page">
       <Link className="activities-v2-back" href="/admin/actividades/talleres">
@@ -35,6 +45,9 @@ export default async function WorkshopPage({ params }: { params: Promise<{ offer
               <p>{context.sessions.length} fechas</p>
             </div>
           </header>
+          {reviewItems && ctx.can("sales.write") && ctx.can("schedule.write") ? (
+            <WorkshopTransferReview items={reviewItems} />
+          ) : null}
           <WorkshopPurchaseForm
             context={context}
             locale={ctx.studio.locale}
