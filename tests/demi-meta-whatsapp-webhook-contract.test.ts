@@ -70,6 +70,15 @@ describe("Demi Meta WhatsApp inbound contract", () => {
     expect(migration).toContain("'waba_id', v_payload->>'waba_id'");
   });
 
+  it("debounces bursts and guards actions when a newer message exists", () => {
+    const orchestrator = source("lib/assistant/orchestrator.ts");
+    expect(route).toContain("META_WHATSAPP_BURST_QUIET_MS");
+    expect(route).toContain("superseded_by_newer_message");
+    expect(route).toContain("isTurnCurrent: async () =>");
+    expect(orchestrator).toContain("assertActionTurnCurrent");
+    expect(orchestrator).toContain("assistant_turn_superseded");
+  });
+
   it("does not persist real inbound content while Demi is demo/off", () => {
     const modeGuard = route.indexOf("if (!runAssistant)");
     const capture = route.indexOf("await captureEvent");
