@@ -30,10 +30,16 @@ export default async function NewProgram({
   const names = new Map(
     (persons ?? []).map((p) => [p.id, `${p.first_name} ${p.last_name ?? ""}`.trim()]),
   );
+  const isEvent = query.kind === "event";
   return (
     <main className="activities-v2 activities-editor-page">
-      <Link href="/admin/actividades">← Actividades</Link>
-      <h1>Nuevo taller o evento</h1>
+      <Link className="activities-v2-back" href={isEvent ? "/admin/actividades?tipo=eventos" : "/admin/actividades?tipo=talleres"}>← Volver</Link>
+      <header className="activities-v2-header">
+        <div>
+          <h1>{isEvent ? "Nuevo evento" : "Nuevo programa"}</h1>
+          <p>Configura la información, fechas, cupos y precios. Las sesiones se incorporan a Agenda.</p>
+        </div>
+      </header>
       <ProgramForm
         disciplines={disciplines ?? []}
         instructors={(instructors ?? []).map((i) => ({
@@ -41,7 +47,7 @@ export default async function NewProgram({
           name: names.get(i.person_id) ?? "Coach",
         }))}
         spaces={spaces ?? []}
-        kind={query.kind === "event" ? "event" : "workshop"}
+        kind={isEvent ? "event" : "workshop"}
       />
     </main>
   );
