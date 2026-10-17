@@ -1,0 +1,24 @@
+name: Starter format preview
+
+on:
+  push:
+    branches:
+      - feat/starter-product-eligibility-20261017
+
+permissions:
+  contents: read
+
+jobs:
+  prettier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Show Prettier diff
+        run: |
+          npx prettier --write app/admin/alumnas/page.tsx app/admin/productos/product-form-fields.tsx
+          git diff -- app/admin/alumnas/page.tsx app/admin/productos/product-form-fields.tsx
