@@ -27,6 +27,9 @@ describe("starter product eligibility foundation", () => {
   const transferEnrollment = source(
     "supabase/migrations/20261017222546_starter_transfer_promotional_enrollment.sql",
   );
+  const conversionDayFix = source(
+    "supabase/migrations/20261017223524_starter_conversion_metric_local_day_fix.sql",
+  );
 
   it("stores generic eligibility, purchase limit and enrollment inclusion", () => {
     expect(packageAction).toContain("purchase_eligibility");
@@ -93,6 +96,12 @@ describe("starter product eligibility foundation", () => {
     expect(demiRead).toContain("purchase_eligibility");
     expect(demiRead).toContain("enrollment_included");
     expect(demiGuidance).toContain("purchase_eligibility='new_customer'");
+  });
+
+  it("counts conversion days using the studio local calendar", () => {
+    expect(conversionDayFix).toContain("studio.timezone");
+    expect(conversionDayFix).toContain("at time zone");
+    expect(conversionDayFix).toContain("days_to_regular_package");
   });
 
   it("creates a derived entry-to-regular-package conversion model", () => {
