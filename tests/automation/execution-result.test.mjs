@@ -7,6 +7,7 @@ import {
   writeExecutionResult,
   readExecutionResult,
   restoreExecution,
+  verifyResultCertificate,
 } from "../../scripts/automation/execution-result.mjs";
 import { executeOnce, publishDraftOnce } from "../../scripts/automation/codex-executor.mjs";
 const fixtures = [];
@@ -199,6 +200,30 @@ describe("sealed results and recovery (explicit remote/model fixtures)", () => {
     expect(() =>
       restoreExecution(target.repo, target.registry, s.task.id, s.identity, { request: s.request }),
     ).toThrow("cannot become operational");
+  });
+  it("requires certification of exactly the immutable result rather than a later rewrite", () => {
+    const s = setup();
+    s.seal();
+    const recovered = readExecutionResult(s.task.id, s.identity, { request: s.request });
+    const certificate = {
+      passed: true,
+      baseSha: s.task.baseSha,
+      contractSha256: s.identity.contractSha256,
+      files: recovered.bundle.files.map((f) => ({ path: f.path, mode: f.mode, sha256: f.sha256 })),
+    };
+    expect(verifyResultCertificate(certificate, recovered)).toBe(true);
+    expect(() =>
+      verifyResultCertificate(
+        { ...certificate, files: certificate.files.map((f) => ({ ...f, sha256: "0".repeat(64) })) },
+        recovered,
+      ),
+    ).toThrow("immutable result");
+    expect(() => verifyResultCertificate({ ...certificate, files: [] }, recovered)).toThrow(
+      "immutable result",
+    );
+    expect(() =>
+      verifyResultCertificate({ ...certificate, contractSha256: "0".repeat(64) }, recovered),
+    ).toThrow("Matching");
   });
   it("rejects blocked results and oversized candidate files before remote writes", () => {
     const s = setup();

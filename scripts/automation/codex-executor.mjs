@@ -16,6 +16,8 @@ import {
   captureExecutionResult,
   writeExecutionResult,
   restoreExecution,
+  readExecutionResult,
+  verifyResultCertificate,
 } from "./execution-result.mjs";
 import { isTrustedStateComment, parseState } from "./continuity-lab.mjs";
 
@@ -460,6 +462,12 @@ export function publishDraftOnce(
         certificate.baseSha === task.baseSha,
       "Matching publication certificate required",
     );
+    if (
+      id === RESULT_RECOVERY_TASK ||
+      fs.existsSync(path.join(dir, "executor", "model-result.json"))
+    ) {
+      verifyResultCertificate(certificate, readExecutionResult(id, task, { request }));
+    }
     const commit = request("GET", `${api}/git/commits/${remote.headSha}`);
     assert(
       commit?.sha === remote.headSha &&

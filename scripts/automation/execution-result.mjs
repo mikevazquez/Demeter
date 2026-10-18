@@ -503,3 +503,28 @@ export function restoreExecution(
     files: bundle.files.length,
   };
 }
+
+// Certification after recovery must cover exactly the immutable candidate, never a later rewrite.
+export function verifyResultCertificate(certificate, recovered) {
+  const { bundle } = recovered;
+  assert(
+    certificate?.passed === true &&
+      certificate.baseSha === bundle.baseSha &&
+      certificate.contractSha256 === bundle.contractSha256 &&
+      Array.isArray(certificate.files),
+    "Matching sealed-result certificate required",
+  );
+  const project = (files) =>
+    files
+      .map((f) =>
+        f.deleted
+          ? { path: f.path, deleted: true }
+          : { path: f.path, mode: f.mode, sha256: f.sha256 },
+      )
+      .sort((a, b) => a.path.localeCompare(b.path));
+  assert(
+    JSON.stringify(project(certificate.files)) === JSON.stringify(project(bundle.files)),
+    "Certificate differs from immutable result bytes",
+  );
+  return true;
+}
