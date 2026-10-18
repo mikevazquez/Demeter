@@ -89,3 +89,100 @@ export function claimExecution(task, { request = githubRequest, nonce = randomUU
   );
   return { status: "acquired", ...record, ref, objectSha: tag.sha };
 }
+
+export function verifyExecutionOwner(task, owner, { request = githubRequest } = {}) {
+  assert(/^[a-z0-9][a-z0-9-]{2,79}$/.test(task?.id ?? ""), "Invalid owner task ID");
+  assert(/^[a-f0-9]{40}$/.test(task.baseSha ?? ""), "Invalid owner base");
+  assert(/^[a-f0-9]{64}$/.test(task.contractSha256 ?? ""), "Invalid owner contract");
+  assert(
+    task.authorization === `https://github.com/${REPOSITORY}/issues/318`,
+    "Invalid owner authorization",
+  );
+  const name = `tags/vianelis/execution-claims/${task.id}`;
+  assert(
+    owner?.status === "acquired" &&
+      owner.ref === `refs/${name}` &&
+      /^[a-f0-9]{40}$/.test(owner.objectSha ?? ""),
+    "Acquired execution owner required",
+  );
+  const ref = request("GET", `${PREFIX}/ref/${name}`);
+  assert(
+    ref?.ref === owner.ref && ref.object?.type === "tag" && ref.object.sha === owner.objectSha,
+    "Execution owner reference changed",
+  );
+  const tag = request("GET", `${PREFIX}/tags/${owner.objectSha}`);
+  assert(
+    tag?.sha === owner.objectSha &&
+      tag.object?.type === "commit" &&
+      tag.object.sha === task.baseSha,
+    "Execution owner base changed",
+  );
+  const record = JSON.parse(tag.message);
+  assert(
+    record.schema === "vianelis-execution-claim-v1" &&
+      /^[a-zA-Z0-9-]{3,80}$/.test(record.ownerNonce ?? ""),
+    "Invalid execution owner record",
+  );
+  for (const key of ["id", "baseSha", "contractSha256", "authorization", "ownerNonce"])
+    assert(
+      record[key] === (key === "ownerNonce" ? owner[key] : task[key]) && record[key] === owner[key],
+      "Execution owner or contract mismatch",
+    );
+  return record;
+}
+
+// A publication attempt is never transferred or retried; recovery may only reuse a real PR.
+export function claimPublication(
+  task,
+  owner,
+  publicationSha256,
+  { request = githubRequest, nonce = randomUUID() } = {},
+) {
+  assert(/^[a-f0-9]{64}$/.test(publicationSha256 ?? ""), "Publication digest required");
+  assert(/^[a-zA-Z0-9-]{3,80}$/.test(nonce), "Invalid publication owner nonce");
+  verifyExecutionOwner(task, owner, { request });
+  const name = `tags/vianelis/publication-claims/${task.id}`;
+  const ref = `refs/${name}`;
+  try {
+    const prior = request("GET", `${PREFIX}/ref/${name}`);
+    assert(
+      prior?.ref === ref && /^[a-f0-9]{40}$/.test(prior.object?.sha ?? ""),
+      "Invalid existing publication claim",
+    );
+    return { status: "consumed", id: task.id, ref, objectSha: prior.object.sha };
+  } catch (error) {
+    if (error.httpStatus !== 404) throw error;
+  }
+  const record = {
+    schema: "vianelis-publication-claim-v1",
+    id: task.id,
+    baseSha: task.baseSha,
+    contractSha256: task.contractSha256,
+    authorization: task.authorization,
+    executionObjectSha: owner.objectSha,
+    executionOwnerNonce: owner.ownerNonce,
+    publicationSha256,
+    ownerNonce: nonce,
+  };
+  const tag = request("POST", `${PREFIX}/tags`, {
+    tag: `vianelis-publication-${task.id}`,
+    message: JSON.stringify(record),
+    object: task.baseSha,
+    type: "commit",
+  });
+  assert(/^[a-f0-9]{40}$/.test(tag?.sha ?? ""), "Invalid publication claim object");
+  try {
+    const created = request("POST", `${PREFIX}/refs`, { ref, sha: tag.sha });
+    assert(
+      created?.ref === ref && created.object?.sha === tag.sha,
+      "Unacknowledged publication claim",
+    );
+  } catch (error) {
+    throw new Error("Publication claim not acknowledged; reconcile, never repeat creation", {
+      cause: error,
+    });
+  }
+  const observed = request("GET", `${PREFIX}/ref/${name}`);
+  assert(observed?.ref === ref && observed.object?.sha === tag.sha, "Publication claim changed");
+  return { status: "acquired", ...record, ref, objectSha: tag.sha };
+}
