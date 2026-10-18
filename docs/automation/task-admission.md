@@ -136,7 +136,9 @@ make no real model call and no canonical reservation. CI checks the aggregate co
 and the earlier published pilot independently; that is not a new admitted-task E2E.
 
 Block 1 supplies executable admission and rejection controls. Block 2 implements
-cross-host registry coordination as described in `registry-authority.md`;
-activation still requires the reviewed migration and external genesis pin. Block 3 will test a separately authorized new
-task end-to-end. Block 4 still requires review/integration; no merge or deployment
-is authorized here. The empty example catalog is deliberately not a live queue.
+shared registry coordination as described in `registry-authority.md`; its reviewed
+migration and external genesis pin were used by the block 3 admitted-task E2E.
+That real one-call task is #334, with separate integration/runner evidence in #331.
+See `governance2-operation.md` for the acceptance ledger, runbook and block 4
+integration gate. No merge, deployment or next model task is authorized by this
+document. The empty example catalog is deliberately not a live queue.

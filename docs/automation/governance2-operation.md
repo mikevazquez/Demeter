@@ -7,18 +7,28 @@ Notion's methodology master records decisions; issue #318 records technical evid
 
 ## Current release state
 
-The result-recovery implementation is under Draft review in #331. The completed
-model task has exactly one Draft, #332. Its execution and publication IDs remain
-consumed. A new CI run may certify a verification-only copy of that task; it may
-not reopen its operational reservation or generate again.
+The implementation is consolidated for review in [#331](https://github.com/mikevazquez/Demeter/pull/331),
+targeting main. It includes admission, shared authority, checkpoints, sealed
+results, isolated certification and the existing single-Draft publisher. Its
+earlier stacked implementation PRs are historical review/evidence checkpoints,
+not a list of PRs to merge separately. Their branches and original receipts must
+remain intact. No release, merge or deployment has been performed by this work.
+
+The two completed result-recovery model tasks have one Draft each: #332 and #334.
+Their execution and publication IDs remain consumed. The combined admitted-task
+E2E is #334; #331 is the aggregate implementation review, not a second publication
+of that task. A new CI run may certify verification-only copies; it may not
+reopen their operational reservations or generate again.
 
 The adapter preserves consumed legacy pilots and adds the approved-catalog path
 specified in [task admission](task-admission.md). A trusted external digest, exact
 work entry, immutable base/checks and hard execution limits are required; arbitrary
 task objects remain unauthorized. The checked-in example has no live entries.
-Review/integration, cross-host coordination and a new admitted-task E2E remain
-release requirements. No indefinite host lifetime or cold-start executor
-has been established by these tests.
+Shared coordination and the admitted-task E2E have been exercised; see the
+acceptance ledger below. Repository integration and activation remain distinct
+release gates. A bounded protocol that stops on uncertainty does not promise
+indefinite host lifetime, unattended infrastructure or completion of an unsealed
+generation after loss of its only copy.
 
 ## Authorization and contract
 
@@ -56,10 +66,11 @@ checkpoint binds the original contract, base and owner before Codex starts.
 
 A second observer can inspect the same attempt. It cannot become a new owner,
 reset the task, delete the executor directory or restart generation. A local
-filesystem mutex coordinates registry mutations; it is not a distributed lock
-between independent registries. The existing authority protects consumption per
-ID, not a general distributed queue or semantic deduplication of different IDs.
-These limitations must be resolved before enabling broad concurrent admission.
+filesystem mutex coordinates mutations within one local registry. For admitted
+tasks, the pinned shared authority also enforces one active task across separate
+registries and consumes stable work identities and exact contract fingerprints.
+It is not semantic deduplication of different goals, a general queue or a
+multi-task scheduler. Legacy low-level APIs must not bypass this admission path.
 
 After successful completion, validate exact paths, file types, sizes, modes and
 hashes. Apply only separately reviewed preparation before freezing the candidate.
@@ -133,25 +144,75 @@ credential, or an uncertain/conflicting state that cannot be reconciled safely.
 Describe the exact block and retained evidence. Do not ask for a second approval
 for steps already authorized, and do not treat silence as approval for new scope.
 
-## Remaining acceptance for future operation
+## Acceptance ledger and integration gate (block 4)
 
-- Review/integrate the prepared implementation through the repository's approved
-  release process. This conversation does not authorize merge or deployment.
-- Populate/review a bounded catalog under the user's authorization before enabling
-  new work. Executable validation is implemented in block 1; the empty example
-  enables nothing, and no automatic successor policy is enabled.
-- Use the block 2 shared authority with its reviewed idle canonical migration
-  and externally pinned genesis (`registry-authority.md`). The initial imported
-  history is ready; new catalog admission requires that pin. No task/catalog
-  entry or worker is activated by its initialization. Review/integration must
-  ensure every writer uses the reviewed supervisor.
-- Review the combined admitted-task evidence in issue #318 and Draft #334.
-  receipt-agreement-318-v1 completed one authentic CLI invocation, sealed recovery
-  with the original path absent, 85 independent acceptance cases, 60 candidate
-  tests and one Draft via the existing publisher. Its shared slot is closed and
-  the ID stays consumed. Runner verification is configured in combined-e2e-318.json;
-  consult the actual CI run before asserting success. This bounded acceptance
-  does not authorize another task or establish permanent hosting.
+| Requirement                   | Evidence and release meaning                                                                                                                                                                                                                                                                                        |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Reviewed admission            | Block 1 pins external catalog, stable work identity, immutable base, exact paths/checkers, deadline and one-call limits. The empty example authorizes no task.                                                                                                                                                      |
+| Shared exclusive authority    | Block 2 exercised real GitHub non-forced competing updates and lost-acknowledgement reconciliation. The operational genesis is `0e77480cdf0921fe62bbe0a74f1cb563e92e9778`; the proof namespace is never operational.                                                                                                |
+| Genuine combined task         | [Block 3 evidence](https://github.com/mikevazquez/Demeter/issues/318#issuecomment-6256293835): one actual CLI invocation for receipt-agreement-318-v1, source path absent, remote sealed recovery, 85 independent cases and 60 candidate tests, sole Draft #334.                                                    |
+| No duplicate work/publication | Replay preserved model events; local and global repeated reservations were rejected. The publisher made one PR-creation POST; another process recovered the same receipt with no remote writes. Shared authority closed with no active task.                                                                        |
+| Independent host verification | [CI 39174718116](https://github.com/mikevazquez/Demeter/actions/runs/39174718116) passed on #331 head `7c52471178fa7631d8b2717156d50452be5a37e1`. Existing runner recovered/certified #334 with 38 GETs, zero writes/model calls and the exact closed receipt. The three-file artifact was downloaded and verified. |
+| Repository quality            | That pre-closure integration passed 1,562 tests, types, lint, format and build. Later closure commits require their own fresh CI; a stacked task with zero runs is not independently green.                                                                                                                         |
+| Integration/release           | Pending explicit authorization and deployment-impact review. #331 is the aggregate review target; do not merge historical stacked PRs, move immutable task bases or replace original task commits.                                                                                                                  |
+| Future operation              | Each new work item needs its reviewed external catalog and the same pinned authority. No next task, recurring launcher, service or paid provider is activated by this closure review.                                                                                                                               |
+
+The implementation review covers contract provenance and protected paths,
+exclusive reservation and remote owner guards, pre-spawn checks, sealed bytes,
+recovery decisions, independent certification and receipt reconciliation. Unit
+failure/concurrency fixtures remain explicit doubles; the cited model, remote
+transport and runner checks are separate real evidence. This is a technical
+self-review and automated acceptance, not an independent human PR approval.
+
+The canonical registry is `/workspace/work/evidence-318/registry`. At completion
+of the combined E2E, remote head `3ff186ab3975c15a0cdf7a524114be3c47d8294a`
+retained nine imported consumed tasks plus one new closed task, with `active:null`.
+Original 72 evidence files were unchanged and no local active.json remained.
+Do not reset that head, copy a proof registry into its place or reactivate a
+historical archive. A fresh read is required before any later operation.
+
+Before integration, verify the exact proposed #331 head against the latest main,
+fresh CI, the preserved #332/#334 task heads, immutable bases and original receipt
+hashes. Preserve unrelated work that reaches main concurrently. The main branch
+has Vercel deployment statuses and `vercel.json` does not disable main deployment;
+this is not proof of its current production settings. A merge cannot be treated
+as deployment-free. Do not change Vercel configuration or merge under the standing
+no-production/no-merge instruction. Authorization for code review does not waive
+that release gate.
+
+After an expressly authorized integration, record the resulting main commit and
+actual checks before calling the implementation integrated. Production deployment
+is a separate scope decision. Do not close #318 or declare all of Governance 2.0
+finished while the integration gate remains pending.
+
+## Operating a later authorized task
+
+1. Read the existing task/claim/receipt history and fresh shared authority before
+   selecting work. With uncertain or conflicting state, reconcile the original;
+   do not reserve, rename or replace it.
+2. Prepare the bounded contract, independently reviewed acceptance and external
+   catalog pin outside the candidate, tied to the authorized goal. Use the
+   admitted-task API described in `task-admission.md`; legacy CLI examples are
+   historical pilot commands, not general catalog entrypoints.
+3. Use a clean exact-base checkout without ignored dependencies for generation,
+   the canonical registry and pinned shared authority. `reserveApproved` and
+   `executeOnce` perform the one authorized invocation; observers only inspect it.
+4. Freeze/seal only permitted bytes. If needed, reconstruct the same sealed result
+   in a clean base checkout without generation. Independently certify offline,
+   without host credentials and outside the operational registry; validate the
+   certificate against contract argv and exact sealed paths/modes/hashes before
+   trusting it. Missing original logs or metadata are not fabricated.
+5. Commit/push only certified paths, with the exact parent and no force, then use
+   `publishDraftOnce` for one Draft. Reconcile its receipt in another process and
+   confirm the shared slot closed. Uncertain creation never permits another POST.
+6. Record the actual task, result, certificate, remote receipt, CI SHA/base and
+   limitations in #318 and the master. Retain immutable refs and evidence beyond
+   the Actions artifact's 30-day retention as required by the approved workflow.
+
+These steps are a runbook, not permission to start another model ID. The latest
+combined task remains consumed; a future approved task must have its own bounded
+contract. A human need only intervene for the existing authorization/release gates,
+required account renewal or an unresolved state the protocol deliberately blocks.
 
 Product discovery, experience design and UAT apply to the specific product work
 that Vianelis chooses. They do not turn a technical recovery demonstration into

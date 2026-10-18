@@ -1,10 +1,18 @@
-# Vianelis: adaptador de ejecución supervisada (#318)
+# Governance 2.0: adaptador de ejecución y evidencia histórica (#318)
+
+Vianelis es la empresa; Governance 2.0 es su metodología autónoma. El estado actual,
+la aceptación combinada #334 y la puerta de integración del PR agregado #331 están
+en [la política operativa](governance2-operation.md). Los apartados siguientes
+conservan los cortes históricos de #319 y las ampliaciones posteriores: sus
+pendientes, IDs y comandos no son una autorización para repetir pilotos consumidos.
+El uso futuro pasa por catálogo externo revisado y autoridad compartida, mediante
+las API exportadas de [admisión](task-admission.md), no por el CLI de reserva legado.
 
 Este incremento integra el laboratorio #315 con **la misma reserva, certificación e intención de publicación de #314**. No introduce otra cola, daemon, scheduler, base de datos ni publicador. Demeter aloja únicamente este piloto técnico; no se modifican funciones de Studio Flow.
 
 ## Dependencia reutilizada
 
-Los archivos `scripts/studio-flow-minimal.mjs`, `tests/automation/studio-flow-minimal.test.mjs` y `docs/automation/studio-flow-minimal.md` son copias **sin cambios** del SHA `3b48f1cb1abb2a2fb7c8776e0af1a2fac70661b5` de #314, que sigue abierto Draft. Se incluyen como dependencia explícita porque todavía no están en main; no se modifica su rama ni se crea otro mecanismo equivalente. Revisar esta dependencia al integrar cualquiera de los dos PR. El adaptador se ejecuta desde la copia confiable del supervisor, fuera del checkout editable.
+En la entrega original #319, los archivos `scripts/studio-flow-minimal.mjs`, `tests/automation/studio-flow-minimal.test.mjs` y `docs/automation/studio-flow-minimal.md` se copiaron del SHA `3b48f1cb1abb2a2fb7c8776e0af1a2fac70661b5` de #314. La integración #331 conserva ese mismo supervisor con ampliaciones revisables de mutex, cierre terminal y recibos; ya no afirma identidad byte a byte con #314. Su rama original no se modifica y no se crea otro publicador. El adaptador se ejecuta desde la copia confiable del supervisor, fuera del checkout editable.
 
 ## Contrato y operación
 
@@ -39,7 +47,7 @@ Ante `uncertain` o `blocked`, el supervisor puede inspeccionar y certificar el c
 
 Tras inspección, copiar únicamente los archivos permitidos a un checkout de verificación limpio del mismo SHA y usar `certify`, `publish-plan` y `complete` del piloto #314. Las pruebas no confiables deben ejecutarse sin red ni credenciales. La publicación continúa a cargo del supervisor, con lectura remota fresca de rama, commit y PR en todos los estados, antes de cada intento. La reserva y publicación de #314 siguen siendo locales: no usar dos publicadores con registros distintos. El consumo remoto de ejecución descrito abajo impide una segunda generación por ID entre supervisores actualizados, pero no convierte las copias locales en un registro operativo compartido ni resuelve el fencing de publicación.
 
-## Estado realmente observado en esta entrega
+## Corte histórico de la entrega original #319
 
 - Main: `19fabb01d5d40c0b6aa75a3e9eb4be1eb60cde54`; CI de main `38989239587`, success.
 - #314: Draft abierto, HEAD `3b48f1cb1abb2a2fb7c8776e0af1a2fac70661b5`; CI `38985119218`, success. #294 está retirado/cerrado; sus PR #296–#301 son históricos y no se reactivan. #317 y demás PR funcionales quedan separados.
@@ -98,7 +106,7 @@ Las pruebas unitarias usan GitHub explícitamente simulado y certificación loca
 
 Aplica a procesos que usan esta revisión y una autoridad remota cuyas refs no se alteran fuera del protocolo. No bloquea un publicador antiguo o un usuario que invoque GitHub directamente, no cambia protecciones y no ofrece una operación transaccional entre ref y PR. Un cambio externo entre verificaciones obliga a inspección. No implementa transferencia automática de propietario ni restauración operativa general. La E2E de código real con el control nuevo sigue siendo el siguiente paso; esta prueba de publicación no declara terminado Governance 2.0.
 
-## E2E de código: EN VALIDACIÓN
+## Corte histórico: E2E de código en validación antes de #326
 
 Vianelis es la empresa; Governance 2.0 es su metodología autónoma. El contrato autorizado en https://github.com/mikevazquez/Demeter/issues/318 admite explícitamente `governance2-owned-code-318-v1`, con base `8ae371ec3f8884a1353aae6dd2ec9a0055d4cdfa`. Es una identidad de trabajo nueva, sin reciclar las anteriores ni admitir variantes por sufijo. Conserva la procedencia original `continuity-315-38989415241`: `startedBy=38989415241`, `completedBy=39031527323`, SHA de origen y recuperación `19fabb01d5d40c0b6aa75a3e9eb4be1eb60cde54` y comentarios `6227744429`, `6233729702`. Estos valores del contrato no sustituyen la verificación de evidencia del supervisor; el apartado de estado observado anterior describe el corte histórico de aquella entrega.
 

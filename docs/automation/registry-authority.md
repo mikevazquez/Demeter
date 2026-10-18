@@ -123,6 +123,8 @@ GET-only wrapper and read-only repository permissions. It reports the authority
 head and zero writes/model calls; it never restores an operational registry or
 acquires work. The report is retained with the existing recovery artifact.
 
-Block 3 remains a separately delimited authentic new-task E2E. Block 4 remains
-review/integration/release. No merge, deployment, paid API or new model task is
-part of this block.
+Block 3 completed its separately delimited authentic admitted-task E2E in #334;
+the canonical slot closed without recycling its ID. The existing runner then
+verified that exact closed receipt with GET-only access. See the acceptance ledger
+and remaining integration gate in `governance2-operation.md`. The block 4 review
+does not merge, deploy, activate a worker or authorize another model task.
