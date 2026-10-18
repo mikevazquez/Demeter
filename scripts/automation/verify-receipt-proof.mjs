@@ -98,9 +98,9 @@ export async function verifyReceiptModule(url = new URL("./receipt-proof.mjs", i
     !/\bimport\s*(?:\(|["'{*])|\b(?:require|fetch|eval)\s*\(|\bprocess\s*[.\[]/.test(source),
     "Receipt proof must be pure and have no imports/process/network",
   );
-  const module = await import(url.href);
-  assert.deepEqual(Object.keys(module), ["normalizeReceiptSet"]);
-  return verifyReceiptFunction(module.normalizeReceiptSet);
+  const loaded = await import(url.href);
+  assert.deepEqual(Object.keys(loaded), ["normalizeReceiptSet"]);
+  return verifyReceiptFunction(loaded.normalizeReceiptSet);
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url))
   console.log(JSON.stringify(await verifyReceiptModule()));
