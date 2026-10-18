@@ -232,6 +232,20 @@
   color: #302a43;
   min-height: 36px;
 }
+.sendero-agenda
+  .agenda-session-editor
+  .agenda-editor-field
+  input:not([type="checkbox"]):not([type="radio"]),
+.sendero-agenda .agenda-session-editor .agenda-editor-field select,
+.sendero-agenda .agenda-session-editor .agenda-editor-notes textarea {
+  background: transparent;
+  color: #302a43;
+  box-shadow: none;
+}
+.sendero-agenda .agenda-session-editor option {
+  background: #f7f3fb;
+  color: #302a43;
+}
 .sendero-agenda .agenda-editor-minimum {
   border-color: #cfc2df;
   border-radius: 16px;
