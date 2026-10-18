@@ -147,6 +147,24 @@
   color: #302a43;
   font-weight: 600;
 }
+.sendero-agenda .agenda-session-block strong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  line-height: 1.2;
+}
+.sendero-agenda .agenda-session-block.is-compact {
+  gap: 1px;
+  padding-block: 4px;
+}
+.sendero-agenda .agenda-session-block.is-compact small {
+  display: none;
+}
+.sendero-agenda .agenda-session-block:is(:hover, :focus-visible) {
+  height: auto !important;
+  min-height: var(--agenda-session-height);
+  z-index: 5;
+}
 .sendero-agenda .agenda-session-time,
 .sendero-agenda .agenda-session-block small {
   color: #62546f;

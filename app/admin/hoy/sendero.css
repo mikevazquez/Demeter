@@ -73,11 +73,14 @@
   background: var(--accent-soft);
   color: var(--accent);
 }
+.admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .brand-mark {
+  flex-shrink: 0;
+}
 .admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .brand-mark,
 .admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .admin-user-button,
 .admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .sidebar-avatar {
   border-color: transparent;
-  background: #5f6b8d;
+  background-color: #5f6b8d;
   color: #f1eee6;
   box-shadow: none;
 }
