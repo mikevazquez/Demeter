@@ -59,7 +59,81 @@ function taskState(registry, id) {
   assert(!fs.existsSync(path.join(loc.dir, "published.json")), "Task already published");
   return { ...loc, ...state };
 }
+// Fail closed after a killed mutator; never steal or expire this mutex automatically.
+export function withRegistryMutation(registry, operation) {
+  for (let current = path.resolve(registry); ; current = path.dirname(current)) {
+    if (fs.existsSync(current))
+      assert(!fs.lstatSync(current).isSymbolicLink(), "Symlink registry rejected");
+    if (current === path.dirname(current)) break;
+  }
+  const created = !fs.existsSync(registry);
+  fs.mkdirSync(registry, { recursive: true });
+  const mutex = path.join(registry, ".mutation-lock");
+  fs.mkdirSync(mutex);
+  let removed = false;
+  try {
+    return operation();
+  } catch (error) {
+    if (created && fs.readdirSync(registry).length === 1) {
+      fs.rmdirSync(mutex);
+      removed = true;
+      fs.rmdirSync(registry);
+    }
+    throw error;
+  } finally {
+    if (!removed) fs.rmdirSync(mutex);
+  }
+}
+export function isClosedBlockedAttempt(registry, id) {
+  const state = reservation(registry, id);
+  const filename = path.join(state.dir, "terminal.json");
+  if (!fs.existsSync(filename)) return false;
+  const terminal = read(filename),
+    record = terminal.record;
+  const resultFile = path.join(state.dir, "executor", "result.json");
+  const result = read(resultFile);
+  assert(
+    record?.schema === "governance2-auth-terminal-v1" &&
+      record.id === id &&
+      record.baseSha === state.task.baseSha &&
+      record.contractSha256 === state.contractSha256 &&
+      record.reason === "authentication-required" &&
+      record.status === "blocked" &&
+      terminal.ref === `refs/tags/vianelis/terminal-attempts/${id}` &&
+      /^[a-f0-9]{40}$/.test(terminal.objectSha ?? "") &&
+      [record.ownerObjectSha, record.checkpointObjectSha].every((v) =>
+        /^[a-f0-9]{40}$/.test(v ?? ""),
+      ) &&
+      record.resultSha256 === hash(fs.readFileSync(resultFile)) &&
+      record.eventSha256 === result.eventSha256 &&
+      record.eventSha256 ===
+        hash(fs.readFileSync(path.join(state.dir, "executor", "events.jsonl"))) &&
+      result.id === id &&
+      result.contractSha256 === state.contractSha256 &&
+      result.sessionId === record.sessionId &&
+      result.status === "blocked" &&
+      result.exitCode === 1 &&
+      result.signal === null &&
+      result.errorCode === null,
+    "Invalid terminal authentication evidence",
+  );
+  for (const name of [
+    "published.json",
+    "publication.json",
+    "certificate.json",
+    "executor/model-result.json",
+    "executor/artifact-intent.json",
+  ])
+    assert(
+      !fs.existsSync(path.join(state.dir, name)),
+      "Terminal attempt has candidate or publication evidence",
+    );
+  return true;
+}
 export function reserve(repo, registry, task, selectedId) {
+  return withRegistryMutation(registry, () => reserveUnlocked(repo, registry, task, selectedId));
+}
+function reserveUnlocked(repo, registry, task, selectedId) {
   assert(selectedId === task.id, "CODEX_PILOT_TASK_ID must exactly match the one task");
   const loc = locations(registry, task.id);
   assert(
@@ -110,7 +184,8 @@ export function reserve(repo, registry, task, selectedId) {
   try {
     // A lost active.json must not silently permit a second unfinished task.
     for (const entry of fs.readdirSync(registry, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
+      if (!entry.isDirectory() || entry.name === ".mutation-lock") continue;
+      if (isClosedBlockedAttempt(registry, entry.name)) continue;
       const prior = reservation(registry, entry.name);
       const published = read(path.join(prior.dir, "published.json"));
       assert(
@@ -289,6 +364,9 @@ export function publicationPlan(repo, registry, id, remote) {
 const receiptMatches = (a, b) =>
   ["branch", "commitSha", "draft", "url"].every((key) => a[key] === b[key]);
 export function complete(repo, registry, id, receipt) {
+  return withRegistryMutation(registry, () => completeUnlocked(repo, registry, id, receipt));
+}
+function completeUnlocked(repo, registry, id, receipt) {
   const state = reservation(registry, id);
   const filename = path.join(state.dir, "published.json");
   if (fs.existsSync(filename)) {

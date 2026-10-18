@@ -5,6 +5,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { githubRequest, verifyExecutionOwner } from "./execution-claim.mjs";
 import { readExecutionCheckpoint } from "./execution-checkpoint.mjs";
+import { withRegistryMutation, isClosedBlockedAttempt } from "../studio-flow-minimal.mjs";
 const API = "repos/mikevazquez/Demeter";
 const SCHEMA = "governance2-execution-result-v1";
 const MAX = 512 * 1024;
@@ -416,92 +417,95 @@ export function restoreExecution(
   assert(Array.isArray(prs) && prs.length <= 1, "Ambiguous recovery PR history");
   if (prs.length && !verificationOnly)
     return { id, status: "reconcile-published-only", registryRestored: false };
-  noLinks(registry);
-  assert(
-    verificationOnly || !fs.existsSync(path.join(registry, "verification-only.json")),
-    "Verification copy cannot become operational",
-  );
-  const lock = path.join(registry, "active.json");
-  noLinks(lock);
-  if (fs.existsSync(lock)) assert(json(lock).id === id, "Another task owns recovery registry");
-  if (fs.existsSync(registry)) {
-    for (const entry of fs.readdirSync(registry, { withFileTypes: true })) {
-      if (!entry.isDirectory() || entry.name === id) continue;
-      const prior = json(path.join(registry, entry.name, "reservation.json"));
-      const published = json(path.join(registry, entry.name, "published.json"));
+  return withRegistryMutation(registry, () => {
+    noLinks(registry);
+    assert(
+      verificationOnly || !fs.existsSync(path.join(registry, "verification-only.json")),
+      "Verification copy cannot become operational",
+    );
+    const lock = path.join(registry, "active.json");
+    noLinks(lock);
+    if (fs.existsSync(lock)) assert(json(lock).id === id, "Another task owns recovery registry");
+    if (fs.existsSync(registry)) {
+      for (const entry of fs.readdirSync(registry, { withFileTypes: true })) {
+        if (!entry.isDirectory() || entry.name === id || entry.name === ".mutation-lock") continue;
+        if (isClosedBlockedAttempt(registry, entry.name)) continue;
+        const prior = json(path.join(registry, entry.name, "reservation.json"));
+        const published = json(path.join(registry, entry.name, "published.json"));
+        assert(
+          published.id === entry.name && prior.contractSha256 === published.contractSha256,
+          "Unresolved registry history blocks recovery",
+        );
+      }
+    }
+    const dir = path.join(registry, id);
+    noLinks(dir);
+    for (const name of [
+      "reservation.json",
+      "publication.json",
+      "certificate.json",
+      "published.json",
+      "executor/intent.json",
+      "executor/remote-claim.json",
+      "executor/result.json",
+      "executor/model-result.json",
+      "executor/artifact-intent.json",
+      "executor/checkpoint.json",
+    ])
+      noLinks(path.join(dir, name));
+    assert(
+      !fs.existsSync(path.join(dir, "publication.json")),
+      "Publication already started; reconcile only",
+    );
+    if (fs.existsSync(path.join(dir, "published.json")))
+      return { id, status: "reconcile-published-only", registryRestored: false };
+    if (fs.existsSync(path.join(dir, "reservation.json"))) {
+      const prior = json(path.join(dir, "reservation.json"));
       assert(
-        published.id === entry.name && prior.contractSha256 === published.contractSha256,
-        "Unresolved registry history blocks recovery",
+        JSON.stringify(prior) === JSON.stringify(bundle.reservation),
+        "Recovery reservation differs",
       );
     }
-  }
-  const dir = path.join(registry, id);
-  noLinks(dir);
-  for (const name of [
-    "reservation.json",
-    "publication.json",
-    "certificate.json",
-    "published.json",
-    "executor/intent.json",
-    "executor/remote-claim.json",
-    "executor/result.json",
-    "executor/model-result.json",
-    "executor/artifact-intent.json",
-    "executor/checkpoint.json",
-  ])
-    noLinks(path.join(dir, name));
-  assert(
-    !fs.existsSync(path.join(dir, "publication.json")),
-    "Publication already started; reconcile only",
-  );
-  if (fs.existsSync(path.join(dir, "published.json")))
-    return { id, status: "reconcile-published-only", registryRestored: false };
-  if (fs.existsSync(path.join(dir, "reservation.json"))) {
-    const prior = json(path.join(dir, "reservation.json"));
-    assert(
-      JSON.stringify(prior) === JSON.stringify(bundle.reservation),
-      "Recovery reservation differs",
-    );
-  }
-  const records = {
-    "reservation.json": bundle.reservation,
-    "executor/intent.json": bundle.intent,
-    "executor/remote-claim.json": checkpoint.checkpoint.owner,
-    "executor/checkpoint.json": {
-      status: "recorded",
-      ref: `refs/tags/vianelis/execution-checkpoints/${id}`,
-      objectSha: checkpoint.objectSha,
-    },
-    "executor/model-result.json": bundle.result,
-    "executor/artifact-intent.json": bundle,
-    "executor/result.json": { ...bundle.result, durableResult },
-    "recovery.json": { id, ...durableResult, generationAllowed: false },
-  };
-  for (const [name, value] of Object.entries(records)) {
-    const filename = path.join(dir, name);
-    noLinks(filename);
-    if (fs.existsSync(filename))
-      assert(
-        JSON.stringify(json(filename)) === JSON.stringify(value),
-        "Existing recovery metadata conflicts",
-      );
-  }
-  // Candidate and local state are never overwritten if they conflict with sealed evidence.
-  materializeCandidate(repo, recovered);
-  fs.mkdirSync(dir, { recursive: true });
-  for (const [name, value] of Object.entries(records)) installJSON(path.join(dir, name), value);
-  if (verificationOnly)
-    installJSON(path.join(registry, "verification-only.json"), { id, verificationOnly: true });
-  installJSON(lock, { id });
-  return {
-    id,
-    status: "candidate-ready",
-    registryRestored: true,
-    generationAllowed: false,
-    verificationOnly,
-    durableResult,
-    files: bundle.files.length,
-  };
+    const records = {
+      "reservation.json": bundle.reservation,
+      "executor/intent.json": bundle.intent,
+      "executor/remote-claim.json": checkpoint.checkpoint.owner,
+      "executor/checkpoint.json": {
+        status: "recorded",
+        ref: `refs/tags/vianelis/execution-checkpoints/${id}`,
+        objectSha: checkpoint.objectSha,
+      },
+      "executor/model-result.json": bundle.result,
+      "executor/artifact-intent.json": bundle,
+      "executor/result.json": { ...bundle.result, durableResult },
+      "recovery.json": { id, ...durableResult, generationAllowed: false },
+    };
+    for (const [name, value] of Object.entries(records)) {
+      const filename = path.join(dir, name);
+      noLinks(filename);
+      if (fs.existsSync(filename))
+        assert(
+          JSON.stringify(json(filename)) === JSON.stringify(value),
+          "Existing recovery metadata conflicts",
+        );
+    }
+    // Candidate and local state are never overwritten if they conflict with sealed evidence.
+    materializeCandidate(repo, recovered);
+    fs.mkdirSync(dir, { recursive: true });
+    for (const [name, value] of Object.entries(records)) installJSON(path.join(dir, name), value);
+    if (verificationOnly)
+      installJSON(path.join(registry, "verification-only.json"), { id, verificationOnly: true });
+    installJSON(lock, { id });
+    return {
+      id,
+      status: "candidate-ready",
+      registryRestored: true,
+      generationAllowed: false,
+      verificationOnly,
+      durableResult,
+      files: bundle.files.length,
+    };
+  });
 }
 
 // Certification after recovery must cover exactly the immutable candidate, never a later rewrite.

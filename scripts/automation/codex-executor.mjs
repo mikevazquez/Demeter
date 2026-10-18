@@ -30,7 +30,10 @@ const FIRST_RUN = 38989415241;
 const REPOSITORY = "mikevazquez/Demeter";
 const LAUNCHER_TASK = "vianelis-launcher-318-v1";
 const OWNED_CODE_TASK = "governance2-owned-code-318-v1";
-const RESULT_RECOVERY_TASK = "governance2-result-recovery-318-v1";
+const RESULT_RECOVERY_TASKS = [
+  "governance2-result-recovery-318-v1",
+  "governance2-result-recovery-318-v2",
+];
 
 // Inputs are complete REST responses obtained by the trusted supervisor, not agent output.
 export function verifyContinuity(comments, runs) {
@@ -88,7 +91,7 @@ export function reserveContinued(repo, registry, task, evidence) {
     (task.id === continuity.taskId ||
       task.id === LAUNCHER_TASK ||
       task.id === OWNED_CODE_TASK ||
-      task.id === RESULT_RECOVERY_TASK) &&
+      RESULT_RECOVERY_TASKS.includes(task.id)) &&
       task.authorization === `https://github.com/${REPOSITORY}/issues/318`,
     "Task must bind #315 identity to #318 authorization",
   );
@@ -137,7 +140,7 @@ function context(repo, registry, id) {
     (id === `continuity-315-${FIRST_RUN}` ||
       id === LAUNCHER_TASK ||
       id === OWNED_CODE_TASK ||
-      id === RESULT_RECOVERY_TASK) &&
+      RESULT_RECOVERY_TASKS.includes(id)) &&
       reservation.task.authorization === `https://github.com/${REPOSITORY}/issues/318` &&
       reservation.task.continuity?.taskId === `continuity-315-${FIRST_RUN}`,
     "Verified continuity reservation required",
@@ -463,7 +466,7 @@ export function publishDraftOnce(
       "Matching publication certificate required",
     );
     if (
-      id === RESULT_RECOVERY_TASK ||
+      RESULT_RECOVERY_TASKS.includes(id) ||
       fs.existsSync(path.join(dir, "executor", "model-result.json"))
     ) {
       verifyResultCertificate(certificate, readExecutionResult(id, task, { request }));

@@ -363,6 +363,24 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
     fs.writeFileSync(reservationPath, JSON.stringify(stored));
     expect(() => executionStatus(s.repo, registry, task.id)).toThrow("continuity");
   });
+  it("permits only the explicitly authorized recovery v2 ID and preserves continuity provenance", () => {
+    const s = setup(),
+      registry = path.join(s.root, "recovery-v2-fixture");
+    const task = { ...s.task, id: "governance2-result-recovery-318-v2" };
+    expect(() =>
+      reserveContinued(
+        s.repo,
+        registry,
+        { ...task, id: "governance2-result-recovery-318-v3" },
+        evidence(),
+      ),
+    ).toThrow("bind");
+    reserveContinued(s.repo, registry, task, evidence());
+    const stored = JSON.parse(fs.readFileSync(path.join(registry, task.id, "reservation.json")));
+    expect(stored.task.continuity.taskId).toBe(ID);
+    expect(stored.task.id).toBe(task.id);
+    expect(() => reserveContinued(s.repo, registry, task, evidence())).toThrow("consumed");
+  });
   it("preserves original provenance for the owned code ID and reuses its single execution", () => {
     const s = setup();
     const registry = path.join(s.root, "owned-code-registry");
