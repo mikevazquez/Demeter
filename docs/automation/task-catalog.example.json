@@ -1,6 +1,0 @@
-{
-  "schema": "governance2-task-catalog-v1",
-  "repository": "mikevazquez/Demeter",
-  "authorization": "https://github.com/mikevazquez/Demeter/issues/318",
-  "tasks": []
-}
