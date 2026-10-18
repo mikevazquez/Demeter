@@ -684,7 +684,7 @@ async function prepareCashPackage(ctx: AssistantActionToolContext, args: Record<
     .maybeSingle();
   const { data: item } = await ctx.supabase
     .from("product_templates")
-    .select("id,name,price_minor,currency,product_type")
+    .select("id,name,price_minor,currency,product_type,enrollment_included")
     .eq("studio_id", ctx.studio.id)
     .eq("id", product)
     .eq("active", true)
@@ -707,6 +707,15 @@ async function prepareCashPackage(ctx: AssistantActionToolContext, args: Record<
     .eq("active", true)
     .maybeSingle();
   if (!method) return { ok: false, reason_code: "cash_payment_disabled" };
+  if (item.enrollment_included === true) {
+    return {
+      ok: false,
+      reason_code: "introductory_package_cash_not_supported",
+      reason_message:
+        "Este paquete incluye una inscripción promocional y debe pagarse desde la app con Mercado Pago o por transferencia.",
+      supported_payment_methods: ["app_mercado_pago", "bank_transfer"],
+    };
+  }
   const summary = {
     product_name: item.name,
     amount_minor: item.price_minor,

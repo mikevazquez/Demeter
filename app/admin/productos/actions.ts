@@ -30,10 +30,20 @@ function parseProductForm(formData: FormData) {
   const pricePesos = Number(formData.get("price") ?? 0);
   const packageTermRaw = String(formData.get("package_term") ?? "").trim();
   const validityRaw = String(formData.get("validity_days") ?? "").trim();
+  const purchaseEligibilityRaw = String(formData.get("purchase_eligibility") ?? "all").trim();
+  const purchaseLimitRaw = String(formData.get("purchase_limit_per_student") ?? "").trim();
+  const enrollmentIncluded = isPackageLike && formData.get("enrollment_included") === "on";
 
   if (!name) throw new Error("name_required");
   if (!TYPES.has(productType)) throw new Error("product_type_invalid");
   if (!Number.isFinite(pricePesos) || pricePesos < 0) throw new Error("price_invalid");
+  if (isPackageLike && !["all", "new_customer"].includes(purchaseEligibilityRaw)) {
+    throw new Error("purchase_eligibility_invalid");
+  }
+  const purchaseLimitPerStudent =
+    isPackageLike && purchaseLimitRaw
+      ? parsePositiveInt(purchaseLimitRaw, "purchase_limit_per_student")
+      : null;
 
   let packageTerm: string | null = null;
   let validityDays: number | null;
@@ -83,6 +93,9 @@ function parseProductForm(formData: FormData) {
     creditLimit,
     disciplineIds,
     scheduleIds,
+    purchaseEligibility: isPackageLike ? purchaseEligibilityRaw : "all",
+    purchaseLimitPerStudent,
+    enrollmentIncluded,
   };
 }
 
@@ -158,6 +171,9 @@ export async function createProduct(formData: FormData) {
       credit_limit: values.creditLimit,
       validity_days: values.validityDays,
       unlimited: values.unlimited,
+      purchase_eligibility: values.purchaseEligibility,
+      purchase_limit_per_student: values.purchaseLimitPerStudent,
+      enrollment_included: values.enrollmentIncluded,
     })
     .select("id")
     .single();
@@ -211,6 +227,9 @@ export async function updateProduct(formData: FormData) {
       credit_limit: values.creditLimit,
       validity_days: values.validityDays,
       unlimited: values.unlimited,
+      purchase_eligibility: values.purchaseEligibility,
+      purchase_limit_per_student: values.purchaseLimitPerStudent,
+      enrollment_included: values.enrollmentIncluded,
       updated_at: new Date().toISOString(),
     })
     .eq("id", productId)
@@ -268,7 +287,7 @@ export async function duplicateProduct(formData: FormData) {
   const { data: source } = await ctx.supabase
     .from("product_templates")
     .select(
-      "name,description,product_type,package_term,price_minor,currency,credit_limit,validity_days,unlimited,product_template_disciplines(discipline_id),product_template_schedules(recurring_schedule_id),product_template_activities(class_template_id)",
+      "name,description,product_type,package_term,price_minor,currency,credit_limit,validity_days,unlimited,purchase_eligibility,purchase_limit_per_student,enrollment_included,product_template_disciplines(discipline_id),product_template_schedules(recurring_schedule_id),product_template_activities(class_template_id)",
     )
     .eq("id", productId)
     .eq("studio_id", ctx.studio.id)
@@ -288,6 +307,9 @@ export async function duplicateProduct(formData: FormData) {
       credit_limit: source.credit_limit,
       validity_days: source.validity_days,
       unlimited: source.unlimited,
+      purchase_eligibility: source.purchase_eligibility,
+      purchase_limit_per_student: source.purchase_limit_per_student,
+      enrollment_included: source.enrollment_included,
       active: false,
     })
     .select("id")

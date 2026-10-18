@@ -132,6 +132,7 @@ export default async function StudentsPage({
     acquisitionResult,
     { data: duplicateStudent },
     enrollmentResult,
+    entryConversionResult,
   ] = await Promise.all([
     studentsQuery,
     needsAllStudentsQuery
@@ -175,6 +176,14 @@ export default async function StudentsPage({
       .select("student_id,status,starts_on,expires_on")
       .eq("studio_id", studio.id)
       .is("refunded_at", null),
+    canReadProducts
+      ? supabase
+          .from("student_entry_conversion_facts")
+          .select(
+            "entry_mode,acquisition_source,converted_to_regular_package,days_to_regular_package",
+          )
+          .eq("studio_id", studio.id)
+      : Promise.resolve({ data: [] }),
   ]);
   if (enrollmentResult.error) throw new Error("crm_enrollment_unavailable");
   const stageFor = (student: Parameters<typeof contactStage>[0] & { id: string }) =>
@@ -390,6 +399,17 @@ export default async function StudentsPage({
       sevenDaysFromToday,
     ),
   ).length;
+  const entryFacts = entryConversionResult.data ?? [];
+  const singleClassEntries = entryFacts.filter((item) => item.entry_mode === "single_class").length;
+  const introductoryEntries = entryFacts.filter(
+    (item) => item.entry_mode === "introductory_package",
+  ).length;
+  const introductoryConversions = entryFacts.filter(
+    (item) => item.entry_mode === "introductory_package" && item.converted_to_regular_package,
+  ).length;
+  const introductoryConversionRate =
+    introductoryEntries > 0 ? Math.round((introductoryConversions / introductoryEntries) * 100) : 0;
+
   const communications = await contactConversations(
     supabase,
     studio.id,
@@ -479,6 +499,23 @@ export default async function StudentsPage({
           <span className="role-pill">{membership.role}</span>
         )}
       </header>
+      {canReadProducts ? (
+        <section className="crm-summary" aria-label="Entrada comercial">
+          <div className="crm-stat">
+            <span>Entrada · clase suelta</span>
+            <b>{singleClassEntries}</b>
+          </div>
+          <div className="crm-stat">
+            <span>Entrada · introductorio</span>
+            <b>{introductoryEntries}</b>
+          </div>
+          <div className="crm-stat is-focus">
+            <span>Intro → paquete regular</span>
+            <b>{introductoryConversionRate}%</b>
+          </div>
+        </section>
+      ) : null}
+
       <section className="crm-summary" aria-label="Resumen de contactos">
         <Link className="crm-stat" href={filterHref("prospect", "")}>
           <span>Prospectos</span>

@@ -108,16 +108,7 @@ export default async function StudentPackagePage() {
     { data: disciplineRows },
   ] = await Promise.all([
     supabase.rpc("student_enrollment_purchase_option"),
-    supabase
-      .from("product_templates")
-      .select(
-        "id,name,product_type,package_term,price_minor,currency,validity_days,credit_limit,unlimited",
-      )
-      .eq("studio_id", membership.studio_id)
-      .eq("active", true)
-      .eq("online_purchasable", true)
-      .in("product_type", ["package", "membership"])
-      .order("price_minor", { ascending: true }),
+    supabase.rpc("student_online_product_options"),
     supabase
       .from("disciplines")
       .select("id,name")
