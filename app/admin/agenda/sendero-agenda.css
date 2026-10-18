@@ -246,6 +246,14 @@
   background: #f7f3fb;
   color: #302a43;
 }
+.sendero-agenda .agenda-session-editor input[type="number"] {
+  appearance: textfield;
+}
+.sendero-agenda .agenda-session-editor input[type="number"]::-webkit-inner-spin-button,
+.sendero-agenda .agenda-session-editor input[type="number"]::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
 .sendero-agenda .agenda-editor-minimum {
   border-color: #cfc2df;
   border-radius: 16px;
