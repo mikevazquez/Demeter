@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   reserveContinued,
   verifyContinuity,
-  executeOnce,
+  executeOnce as guardedExecuteOnce,
   executionStatus,
   executorEnvironment,
   collectContinuity,
@@ -15,6 +15,9 @@ import {
 import { certify, publicationPlan, complete } from "../../scripts/studio-flow-minimal.mjs";
 import { serializeState } from "../../scripts/automation/continuity-lab.mjs";
 
+// Trusted in-process claim double: these tests deliberately make no network/model calls.
+const executeOnce = (repo, registry, id, options = {}) =>
+  guardedExecuteOnce(repo, registry, id, { claim: () => ({ status: "acquired" }), ...options });
 const FIRST = 38989415241;
 const SECOND = 38999999999;
 const ID = `continuity-315-${FIRST}`;
@@ -111,6 +114,28 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
     const s = setup();
     fs.writeFileSync(path.join(s.repo, "proof.mjs"), "export const proof=true;");
     expect(() => executeOnce(s.repo, s.registry, ID, { binary: "/must/not/run" })).toThrow("clean");
+  });
+  it("never starts the model after a remote conflict or an unavailable authority", () => {
+    for (const claim of [
+      () => ({ status: "consumed" }),
+      () => {
+        throw new Error("authority unavailable");
+      },
+    ]) {
+      const s = setup();
+      const binary = fakeCli(s.root, success);
+      expect(() => executeOnce(s.repo, s.registry, ID, { binary, claim })).toThrow();
+      expect(fs.existsSync(path.join(s.repo, "proof.mjs"))).toBe(false);
+      expect(executionStatus(s.repo, s.registry, ID).status).toBe("uncertain");
+      expect(
+        executeOnce(s.repo, s.registry, ID, {
+          binary,
+          claim: () => {
+            throw new Error("must not claim twice");
+          },
+        }).status,
+      ).toBe("uncertain");
+    }
   });
   it("records timeout without allowing regeneration", () => {
     const s = setup();
@@ -231,7 +256,7 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
       `require('node:fs').appendFileSync(${JSON.stringify(count)}, 'launch\\n'); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,150); ${success}`,
     );
     const modulePath = path.resolve("scripts/automation/codex-executor.mjs");
-    const source = `import {executeOnce} from ${JSON.stringify(modulePath)}; executeOnce(${JSON.stringify(s.repo)},${JSON.stringify(s.registry)},${JSON.stringify(ID)},{binary:${JSON.stringify(binary)}});`;
+    const source = `import {executeOnce} from ${JSON.stringify(modulePath)}; executeOnce(${JSON.stringify(s.repo)},${JSON.stringify(s.registry)},${JSON.stringify(ID)},{binary:${JSON.stringify(binary)},claim:()=>({status:"acquired"})});`;
     const launch = () =>
       new Promise((resolve, reject) => {
         const child = spawn(process.execPath, ["--input-type=module", "-e", source], {
@@ -298,7 +323,7 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
       [
         "--input-type=module",
         "-e",
-        `import {executeOnce} from ${JSON.stringify(modulePath)}; executeOnce(${JSON.stringify(s.repo)},${JSON.stringify(s.registry)},${JSON.stringify(ID)},{binary:${JSON.stringify(binary)}});`,
+        `import {executeOnce} from ${JSON.stringify(modulePath)}; executeOnce(${JSON.stringify(s.repo)},${JSON.stringify(s.registry)},${JSON.stringify(ID)},{binary:${JSON.stringify(binary)},claim:()=>({status:"acquired"})});`,
       ],
       { stdio: "ignore" },
     );
