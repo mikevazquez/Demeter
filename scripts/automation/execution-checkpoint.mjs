@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { githubRequest, verifyExecutionOwner } from "./execution-claim.mjs";
 
+import { validateAdmissionProof } from "./task-admission.mjs";
 const API = "repos/mikevazquez/Demeter/git";
 const AUTHORIZATION = "https://github.com/mikevazquez/Demeter/issues/318";
 const SCHEMA = "governance2-execution-checkpoint-v1";
@@ -15,7 +16,17 @@ function validateTask(task, contractSha256) {
   assert(/^[a-f0-9]{64}$/.test(contractSha256 ?? ""), "Checkpoint contract hash required");
   assert(task.authorization === AUTHORIZATION, "Checkpoint authorization required");
   assert(hash(task) === contractSha256, "Checkpoint contract changed");
-  const keys = ["id", "goal", "authorization", "baseSha", "allowedPaths", "checks", "continuity"];
+  if (task.admission || task.id.startsWith("g2-")) validateAdmissionProof(task);
+  const keys = [
+    "id",
+    "goal",
+    "authorization",
+    "baseSha",
+    "allowedPaths",
+    "checks",
+    "continuity",
+    "admission",
+  ];
   assert(
     Object.keys(task).every((key) => keys.includes(key)),
     "Unexpected checkpoint task field",

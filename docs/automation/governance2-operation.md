@@ -12,10 +12,12 @@ model task has exactly one Draft, #332. Its execution and publication IDs remain
 consumed. A new CI run may certify a verification-only copy of that task; it may
 not reopen its operational reservation or generate again.
 
-The existing adapter admits only explicitly named pilot IDs. Future task admission
-is not generally enabled. Publishing this policy does not change that gate. Review
-and integration of the implementation and a separately bounded future-task policy
-remain release requirements. No indefinite host lifetime or cold-start executor
+The adapter preserves consumed legacy pilots and adds the approved-catalog path
+specified in [task admission](task-admission.md). A trusted external digest, exact
+work entry, immutable base/checks and hard execution limits are required; arbitrary
+task objects remain unauthorized. The checked-in example has no live entries.
+Review/integration, cross-host coordination and a new admitted-task E2E remain
+release requirements. No indefinite host lifetime or cold-start executor
 has been established by these tests.
 
 ## Authorization and contract
@@ -40,9 +42,10 @@ Before any generation, the trusted supervisor must establish:
    and no unresolved operational task. A GitHub connector or status label alone
    is not shell access. No stale lock may be expired or stolen automatically.
 
-The adapter's current exact-ID gate remains an additional requirement, even when
-this contract information exists. It must be deliberately reviewed before a
-future task is enabled; no wildcard policy is introduced here.
+The catalog entry and trusted supervisor pin are additional requirements. The
+adapter derives a stable ID from repository/workKey, revalidates authorization
+before spawning and retains the existing per-ID consumption authority. No
+wildcard policy or automatic successor is introduced.
 
 ## Reservation, identity and durable evidence
 
@@ -134,8 +137,9 @@ for steps already authorized, and do not treat silence as approval for new scope
 
 - Review/integrate the prepared implementation through the repository's approved
   release process. This conversation does not authorize merge or deployment.
-- Define a bounded catalog of future work and its authorization source, stable
-  work identities, successor rules and admission limits before enabling new IDs.
+- Populate/review a bounded catalog under the user's authorization before enabling
+  new work. Executable validation is implemented in block 1; the empty example
+  enables nothing, and no automatic successor policy is enabled.
 - Establish authoritative cross-host registry lifecycle and concurrency behavior;
   per-ID claims and a local mutex alone are not a general shared scheduler.
 - Validate a separately authorized future task through that admission path, with

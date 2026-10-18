@@ -130,8 +130,11 @@ export function isClosedBlockedAttempt(registry, id) {
     );
   return true;
 }
-export function reserve(repo, registry, task, selectedId) {
-  return withRegistryMutation(registry, () => reserveUnlocked(repo, registry, task, selectedId));
+export function reserve(repo, registry, task, selectedId, { beforeReserve } = {}) {
+  return withRegistryMutation(registry, () => {
+    beforeReserve?.();
+    return reserveUnlocked(repo, registry, task, selectedId);
+  });
 }
 function reserveUnlocked(repo, registry, task, selectedId) {
   assert(selectedId === task.id, "CODEX_PILOT_TASK_ID must exactly match the one task");

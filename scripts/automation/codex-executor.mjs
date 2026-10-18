@@ -19,6 +19,12 @@ import {
   readExecutionResult,
   verifyResultCertificate,
 } from "./execution-result.mjs";
+import {
+  admitTask,
+  verifyTaskAdmission,
+  validateAdmissionProof,
+  assertUnconsumedWork,
+} from "./task-admission.mjs";
 import { isTrustedStateComment, parseState } from "./continuity-lab.mjs";
 
 const assert = (value, message) => {
@@ -98,6 +104,14 @@ export function reserveContinued(repo, registry, task, evidence) {
   return reserve(repo, registry, { ...task, continuity }, task.id);
 }
 
+// Catalog and pin are trusted supervisor arguments, never candidate-generated authorization.
+export function reserveApproved(repo, registry, trustedCatalog, workKey) {
+  const task = admitTask(repo, trustedCatalog, workKey);
+  return reserve(repo, registry, task, task.id, {
+    beforeReserve: () => assertUnconsumedWork(registry, task),
+  });
+}
+
 // Allowlist deliberately excludes GitHub, Supabase and model API keys.
 export function executorEnvironment(source) {
   const permitted = [
@@ -136,13 +150,15 @@ function context(repo, registry, id) {
       reservation.contractSha256 === hash(JSON.stringify(reservation.task)),
     "Reservation identity or contract changed",
   );
+  if (reservation.task.admission) validateAdmissionProof(reservation.task);
   assert(
-    (id === `continuity-315-${FIRST_RUN}` ||
-      id === LAUNCHER_TASK ||
-      id === OWNED_CODE_TASK ||
-      RESULT_RECOVERY_TASKS.includes(id)) &&
-      reservation.task.authorization === `https://github.com/${REPOSITORY}/issues/318` &&
-      reservation.task.continuity?.taskId === `continuity-315-${FIRST_RUN}`,
+    reservation.task.admission ||
+      ((id === `continuity-315-${FIRST_RUN}` ||
+        id === LAUNCHER_TASK ||
+        id === OWNED_CODE_TASK ||
+        RESULT_RECOVERY_TASKS.includes(id)) &&
+        reservation.task.authorization === `https://github.com/${REPOSITORY}/issues/318` &&
+        reservation.task.continuity?.taskId === `continuity-315-${FIRST_RUN}`),
     "Verified continuity reservation required",
   );
   assert(read(path.join(registry, "active.json")).id === id, "Another task owns the registry");
@@ -198,13 +214,29 @@ export function executionStatus(repo, registry, id) {
   return result;
 }
 
+function requireChatGptLogin() {
+  const status = spawnSync("codex", ["login", "status"], {
+    encoding: "utf8",
+    timeout: 10000,
+    maxBuffer: 4096,
+    env: executorEnvironment(process.env),
+  });
+  // Never print or persist CLI authentication output, which may describe an API key.
+  assert(
+    status.status === 0 &&
+      /Logged in using ChatGPT/.test(`${status.stdout ?? ""} ${status.stderr ?? ""}`),
+    "Admitted tasks require an authenticated ChatGPT account; no API-key fallback",
+  );
+}
+
 export function executeOnce(
   repo,
   registry,
   id,
   {
     binary = "codex",
-    timeout = 120000,
+    timeout,
+    trustedCatalog,
     claim = claimExecution,
     checkpoint = writeExecutionCheckpoint,
     seal = writeExecutionResult,
@@ -213,7 +245,23 @@ export function executeOnce(
 ) {
   const state = context(repo, registry, id);
   const executionDir = path.join(state.dir, "executor");
+  const effectiveTimeout = timeout ?? state.task.admission?.limits.timeoutMs ?? 120000;
   if (!fs.existsSync(executionDir)) {
+    assert(
+      !fs.existsSync(path.join(registry, "verification-only.json")),
+      "Verification registry cannot start generation",
+    );
+    if (state.task.admission) {
+      const proof = verifyTaskAdmission(repo, state.task, trustedCatalog);
+      assert(binary === "codex", "Admitted tasks require the reviewed Codex CLI provider");
+      requireChatGptLogin();
+      assert(
+        Number.isSafeInteger(effectiveTimeout) &&
+          effectiveTimeout > 0 &&
+          effectiveTimeout <= proof.limits.timeoutMs,
+        "Admitted execution timeout exceeds policy",
+      );
+    }
     const clean = spawnSync("git", ["-C", repo, "status", "--porcelain", "--untracked-files=all"], {
       encoding: "utf8",
     });
@@ -259,6 +307,10 @@ export function executeOnce(
   const prompt = `Implement only this authorized task. Do not commit, publish, use services, read credentials or change tests outside scope.\n${JSON.stringify(state.task)}\nAllowed files are exact. Report the result; the supervisor certifies independently.`;
   let result;
   try {
+    if (state.task.admission) {
+      verifyTaskAdmission(repo, state.task, trustedCatalog);
+      requireChatGptLogin();
+    }
     result = spawnSync(
       binary,
       [
@@ -276,7 +328,7 @@ export function executeOnce(
         env: executorEnvironment(process.env),
         input: prompt,
         stdio: ["pipe", stdout, stderr],
-        timeout,
+        timeout: effectiveTimeout,
         killSignal: "SIGKILL",
       },
     );
@@ -407,6 +459,13 @@ export function publishDraftOnce(
       metadata.body.length <= 60000,
     "Reviewed publication title and body required",
   );
+  if (state.task.admission || id.startsWith("g2-")) {
+    const proof = validateAdmissionProof(state.task);
+    assert(
+      metadata.baseBranch === proof.baseBranch,
+      "Publication target differs from admitted contract",
+    );
+  }
   const task = {
     id,
     baseSha: state.task.baseSha,
@@ -466,6 +525,7 @@ export function publishDraftOnce(
       "Matching publication certificate required",
     );
     if (
+      state.task.admission ||
       RESULT_RECOVERY_TASKS.includes(id) ||
       fs.existsSync(path.join(dir, "executor", "model-result.json"))
     ) {

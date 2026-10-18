@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 import { githubRequest, verifyExecutionOwner } from "./execution-claim.mjs";
 import { readExecutionCheckpoint } from "./execution-checkpoint.mjs";
 import { withRegistryMutation, isClosedBlockedAttempt } from "../studio-flow-minimal.mjs";
+import { validateAdmissionOutput, assertAdmissionWorkspace } from "./task-admission.mjs";
 const API = "repos/mikevazquez/Demeter";
 const SCHEMA = "governance2-execution-result-v1";
 const MAX = 512 * 1024;
@@ -155,6 +156,7 @@ function validateBundle(bundle, checkpoint) {
       "Result file content hash mismatch",
     );
   }
+  validateAdmissionOutput(task, bundle.files);
   assert(bytes(bundle).length <= MAX, "Result bundle exceeds size limit");
 }
 function localMatches(repo, file) {
@@ -172,6 +174,7 @@ function localMatches(repo, file) {
 }
 
 export function captureExecutionResult(repo, state, intent, result) {
+  if (state.task.admission) assertAdmissionWorkspace(repo);
   assert(git(repo, "rev-parse", "HEAD").trim() === state.task.baseSha, "Candidate base changed");
   const files = changed(repo).map((p) => {
     assert(safePath(p) && state.task.allowedPaths.includes(p), "Out-of-scope candidate change");
@@ -191,6 +194,7 @@ export function captureExecutionResult(repo, state, intent, result) {
       contentBase64: content.toString("base64"),
     };
   });
+  validateAdmissionOutput(state.task, files);
   return {
     schema: SCHEMA,
     id: state.task.id,
