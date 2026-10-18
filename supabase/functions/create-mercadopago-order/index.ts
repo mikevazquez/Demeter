@@ -168,6 +168,15 @@ const handler = {
       if (message.includes("product_not_available_online")) {
         return jsonResponse({ error: "product_not_available_online" }, 409);
       }
+      if (message.includes("new_customer_only")) {
+        return jsonResponse({ error: "new_customer_only" }, 409);
+      }
+      if (message.includes("purchase_limit_reached")) {
+        return jsonResponse({ error: "purchase_limit_reached" }, 409);
+      }
+      if (message.includes("product_purchase_in_progress")) {
+        return jsonResponse({ error: "product_purchase_in_progress" }, 409);
+      }
       if (message.includes("single_class_product_not_available")) {
         return jsonResponse({ error: "single_class_product_not_available" }, 409);
       }
