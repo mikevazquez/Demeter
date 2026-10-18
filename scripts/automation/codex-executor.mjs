@@ -11,6 +11,7 @@ import {
   claimPublication,
   githubRequest,
 } from "./execution-claim.mjs";
+import { writeExecutionCheckpoint, readExecutionCheckpoint } from "./execution-checkpoint.mjs";
 import { isTrustedStateComment, parseState } from "./continuity-lab.mjs";
 
 const assert = (value, message) => {
@@ -184,7 +185,12 @@ export function executeOnce(
   repo,
   registry,
   id,
-  { binary = "codex", timeout = 120000, claim = claimExecution } = {},
+  {
+    binary = "codex",
+    timeout = 120000,
+    claim = claimExecution,
+    checkpoint = writeExecutionCheckpoint,
+  } = {},
 ) {
   const state = context(repo, registry, id);
   const executionDir = path.join(state.dir, "executor");
@@ -226,6 +232,9 @@ export function executeOnce(
   });
   assert(remoteClaim?.status === "acquired", "Task consumed remotely; inspect original execution");
   atomicWrite(path.join(executionDir, "remote-claim.json"), remoteClaim);
+  const recovery = checkpoint(state, remoteClaim, intent);
+  assert(recovery?.status === "recorded", "Durable checkpoint required before generation");
+  atomicWrite(path.join(executionDir, "checkpoint.json"), recovery);
   const stdout = fs.openSync(path.join(executionDir, "events.jsonl"), "wx", 0o600);
   const stderr = fs.openSync(path.join(executionDir, "stderr.log"), "wx", 0o600);
   const prompt = `Implement only this authorized task. Do not commit, publish, use services, read credentials or change tests outside scope.\n${JSON.stringify(state.task)}\nAllowed files are exact. Report the result; the supervisor certifies independently.`;
@@ -511,7 +520,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     if (command === "verify-continuity") {
       const evidence = collectContinuity();
       result = verifyContinuity(evidence.comments, evidence.runs);
-    } else if (command === "reserve")
+    } else if (command === "recover-remote")
+      result = readExecutionCheckpoint(repo, { baseSha: registry, contractSha256: input });
+    else if (command === "reserve")
       result = reserveContinued(repo, registry, read(input), collectContinuity());
     else if (command === "execute") result = executeOnce(repo, registry, input);
     else if (command === "status") result = executionStatus(repo, registry, input);
@@ -519,7 +530,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       result = publishDraftOnce(repo, registry, input, read(metadata));
     else
       throw new Error(
-        "Usage: verify-continuity | reserve|execute|status REPO REGISTRY TASK_FILE_OR_ID | publish-draft REPO REGISTRY ID METADATA_JSON",
+        "Usage: verify-continuity | recover-remote ID BASE_SHA CONTRACT_SHA256 | reserve|execute|status REPO REGISTRY TASK_FILE_OR_ID | publish-draft REPO REGISTRY ID METADATA_JSON",
       );
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {
