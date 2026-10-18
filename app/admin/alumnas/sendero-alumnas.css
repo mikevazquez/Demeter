@@ -1,0 +1,808 @@
+/* Sendero: the existing Alumnas routes, permissions and actions share one visual layer. */
+.sendero-alumnas {
+  min-width: 0;
+  width: 100%;
+  --crm-navy: #f1eee6;
+  --crm-muted: #a3a6b2;
+  --crm-line: #ffffff14;
+  --crm-purple: #8fe6c8;
+  --crm-lav: #8fe6c824;
+}
+.sendero-alumnas .dashboard-shell {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 30px 32px 54px;
+  color: #f1eee6;
+  background: transparent;
+}
+.sendero-alumnas .crm-page {
+  --students-v2-text: #f1eee6;
+  --students-v2-line: #ffffff14;
+  --students-v2-accent-soft: #8fe6c824;
+  --p360-text: #f1eee6;
+  --p360-muted: #b2b4bf;
+  --p360-line: #ffffff14;
+  --p360-surface: #292b33;
+  --p360-accent: #8fe6c8;
+  --p360-soft: #8fe6c824;
+  --crm-navy: #f1eee6;
+  --crm-muted: #a3a6b2;
+  --crm-line: #ffffff14;
+  --crm-purple: #8fe6c8;
+  --crm-lav: #8fe6c824;
+  font-size: 13px;
+}
+.sendero-alumnas h1 {
+  color: #f1eee6;
+  font-family: "Sendero Marcellus", Georgia, serif;
+  font-weight: 400;
+  font-size: 42px;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+.sendero-alumnas :is(h2, h3) {
+  color: #f1eee6;
+  font-weight: 600;
+}
+.sendero-alumnas .eyebrow {
+  color: #a3a6b2;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+}
+.sendero-alumnas .student-directory-header {
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.sendero-alumnas .student-directory-header p:not(.eyebrow) {
+  margin-top: 8px;
+  line-height: 1.6;
+}
+.sendero-alumnas :is(.crm-btn, .primary-button, .ghost-button, .profile360-edit-link) {
+  min-height: 44px;
+  border: 1px solid #ffffff1f;
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: #30323b;
+  color: #f1eee6;
+  box-shadow: none;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.sendero-alumnas :is(.crm-btn.is-primary, .primary-button),
+.sendero-alumnas .student-quick-create > summary {
+  border-color: transparent;
+  background: #8fe6c8;
+  color: #244e43;
+}
+.sendero-alumnas .crm-btn:hover,
+.sendero-alumnas .ghost-button:hover {
+  border-color: #8fe6c880;
+  color: #8fe6c8;
+}
+.sendero-alumnas .crm-btn.is-primary:hover {
+  background: #a6edd6;
+  color: #244e43;
+}
+.sendero-alumnas .student-quick-create > summary {
+  min-height: 44px;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 600;
+  font-size: 12px;
+}
+.sendero-alumnas .crm-summary {
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.sendero-alumnas .crm-stat {
+  border: 1px solid #ffffff14;
+  border-radius: 22px;
+  padding: 16px 18px;
+  background: #292b33;
+  color: #f1eee6;
+  box-shadow: none;
+}
+.sendero-alumnas .crm-stat span {
+  color: #b2b4bf;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.sendero-alumnas .crm-stat b {
+  font-size: 26px;
+  font-weight: 600;
+}
+.sendero-alumnas .crm-summary[aria-label="Entrada comercial"] .crm-stat {
+  padding-block: 12px;
+}
+.sendero-alumnas .crm-summary[aria-label="Entrada comercial"] b {
+  font-size: 18px;
+}
+.sendero-alumnas .crm-summary[aria-label="Resumen de contactos"] .crm-stat {
+  min-height: 108px;
+  align-items: flex-start;
+  flex-direction: column-reverse;
+  gap: 8px;
+  border-color: transparent;
+  color: #302a43;
+  background: #e5dcf1;
+}
+.sendero-alumnas .crm-summary[aria-label="Resumen de contactos"] .crm-stat:nth-child(2) {
+  background: #f4dfa1;
+}
+.sendero-alumnas .crm-summary[aria-label="Resumen de contactos"] .crm-stat:nth-child(3) {
+  background: #b7e9d7;
+}
+.sendero-alumnas .crm-summary[aria-label="Resumen de contactos"] .crm-stat:nth-child(4) {
+  background: #e9cfdc;
+}
+.sendero-alumnas .crm-summary[aria-label="Resumen de contactos"] .crm-stat span {
+  color: #534a64;
+}
+.sendero-alumnas .crm-stat[href]:hover {
+  outline: 2px solid #8fe6c8;
+  outline-offset: 2px;
+}
+.sendero-alumnas .student-directory-search {
+  gap: 10px;
+  margin-top: 24px;
+}
+.admin-shell .sendero-alumnas .student-directory-search input {
+  min-height: 48px;
+  border: 1px solid #ffffff1f;
+  border-radius: 999px;
+  padding: 12px 18px;
+  background: #292b33;
+  color: #f1eee6;
+  font-size: 12px;
+}
+.sendero-alumnas .student-directory-filters {
+  gap: 8px;
+  margin: 14px 0 24px;
+  padding: 3px 3px 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #66627b transparent;
+}
+.sendero-alumnas .student-filter-chip {
+  min-height: 44px;
+  border: 1px solid #ffffff14;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: #292b33;
+  color: #bfc1cb;
+  font-weight: 500;
+}
+.sendero-alumnas .student-filter-chip small {
+  color: inherit;
+  background: #ffffff0f;
+}
+.sendero-alumnas .student-filter-chip.is-active {
+  border-color: #8fe6c84d;
+  background: #8fe6c824;
+  color: #a4efd6;
+}
+.sendero-alumnas .student-directory-page > .panel {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.sendero-alumnas .crm-directory-heading {
+  display: flex;
+  margin-bottom: 16px;
+}
+.sendero-alumnas .student-directory-page > .panel .crm-directory-heading {
+  padding: 0 0 16px;
+  border-bottom-color: #ffffff14;
+}
+.sendero-alumnas .student-directory-page > .panel .count-badge {
+  background: #cdb8ec26;
+  border-color: transparent;
+  color: #decef3;
+}
+.sendero-alumnas .crm-directory-heading h2 {
+  margin: 3px 0 0;
+  font-size: 20px;
+}
+.sendero-alumnas .crm-list-labels {
+  padding: 0 18px 8px;
+  color: #a3a6b2;
+  font-size: 9px;
+  font-weight: 500;
+}
+.sendero-alumnas .crm-row {
+  gap: 16px;
+  margin: 0 0 10px;
+  border-color: #ffffff0f;
+  border-radius: 22px;
+  padding: 18px;
+  background: #292b33;
+  box-shadow: none;
+}
+.sendero-alumnas .crm-row:hover {
+  border-color: #cdb8ec80;
+  background: #30313b;
+}
+.sendero-alumnas .crm-avatar {
+  width: 44px;
+  height: 44px;
+  background: #cdb8ec26;
+  color: #dccbf2;
+  font-weight: 500;
+}
+.sendero-alumnas .student-directory-identity strong {
+  color: #f1eee6;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.sendero-alumnas :is(.crm-small, .crm-meta) {
+  color: #b2b4bf;
+  line-height: 1.65;
+}
+.sendero-alumnas .crm-channel {
+  color: #cdb8ec;
+  font-size: 10px;
+  font-weight: 500;
+}
+.sendero-alumnas .crm-message {
+  color: #d4d4dc;
+  line-height: 1.6;
+}
+.sendero-alumnas .crm-next-cell strong {
+  color: #8fe6c8;
+  font-weight: 500;
+}
+.sendero-alumnas .crm-pill {
+  border: 0;
+  background: #cdb8ec26;
+  color: #decef3;
+  font-size: 10px;
+  font-weight: 500;
+}
+.sendero-alumnas .crm-pill.is-student {
+  background: #8fe6c824;
+  color: #a4efd6;
+}
+.sendero-alumnas .crm-pill.is-trial {
+  background: #f6d67a24;
+  color: #f6d67a;
+}
+.sendero-alumnas .crm-pill.is-former {
+  background: #ffffff0f;
+  color: #c2becb;
+}
+.sendero-alumnas :is(.crm-back, .profile360-back) {
+  min-height: 44px;
+  align-items: center;
+  border-color: #ffffff1f;
+  border-radius: 999px;
+  background: #292b33;
+  color: #cdb8ec;
+  font-size: 11px;
+  font-weight: 500;
+}
+.sendero-alumnas .crm-contact-person {
+  border: 1px solid #ffffff33;
+  border-radius: 26px;
+  padding: 24px;
+  background: #e5dcf1;
+  color: #302a43;
+}
+.sendero-alumnas .crm-contact-person > .crm-avatar {
+  width: 64px;
+  height: 64px;
+  background: #c8b7dd;
+  color: #4c3b66;
+}
+.sendero-alumnas .crm-contact-person h1 {
+  color: #302a43;
+  font-size: 32px;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.sendero-alumnas .crm-contact-person :is(.profile360-approved-contact, .crm-meta) {
+  color: #62546f;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.sendero-alumnas .crm-contact-person .crm-pill {
+  background: #f7f3fb;
+  color: #54416f;
+}
+.sendero-alumnas .crm-contact-person .crm-pill.is-student {
+  background: #c0eadb;
+  color: #285343;
+}
+.sendero-alumnas .crm-contact-person .crm-btn {
+  border-color: #c8b7dd;
+  background: #f7f3fb;
+  color: #54416f;
+}
+.sendero-alumnas .crm-steps {
+  margin: 18px 0;
+  padding: 16px 12px;
+  border-color: #ffffff14;
+  border-radius: 22px;
+  background: #292b33;
+}
+.sendero-alumnas .crm-steps li {
+  color: #b2b4bf;
+  font-weight: 500;
+}
+.sendero-alumnas .crm-steps li::after {
+  background: #4a4b59;
+}
+.sendero-alumnas .crm-step-dot {
+  border-color: #737183;
+  background: #292b33;
+}
+.sendero-alumnas .crm-steps .is-current {
+  color: #a4efd6;
+}
+.sendero-alumnas .crm-steps .is-current .crm-step-dot {
+  border-color: #8fe6c8;
+  box-shadow: 0 0 0 4px #8fe6c824;
+}
+.sendero-alumnas .crm-tabs {
+  gap: 6px;
+  margin-bottom: 22px;
+  padding: 5px;
+  border: 1px solid #ffffff0f;
+  border-radius: 999px;
+  background: #292b33;
+  scrollbar-width: none;
+}
+.sendero-alumnas .crm-tabs a {
+  min-height: 44px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 999px;
+  color: #bfc1cb;
+  font-weight: 500;
+}
+.sendero-alumnas .crm-tabs a.is-active {
+  background: #8fe6c824;
+  color: #a4efd6;
+}
+.sendero-alumnas .crm-tabs a.is-active::after {
+  display: none;
+}
+.sendero-alumnas .crm-operation-tabs a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border-color: #ffffff14;
+  background: #292b33;
+  color: #bfc1cb;
+}
+.sendero-alumnas .crm-operation-tabs a[aria-current="page"] {
+  border-color: #cdb8ec80;
+  background: #cdb8ec26;
+  color: #decef3;
+}
+.sendero-alumnas .crm-stack {
+  gap: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.sendero-alumnas .crm-grid {
+  gap: 18px;
+}
+.sendero-alumnas :is(.panel, .crm-card, .profile360-view-panel, .profile360-detail) {
+  border-color: #ffffff14;
+  border-radius: 24px;
+  background: #292b33;
+  color: #f1eee6;
+  box-shadow: none;
+}
+.sendero-alumnas .crm-card {
+  padding: 22px;
+}
+.sendero-alumnas .crm-page .profile360-approved-indicators .crm-stat,
+.sendero-alumnas .crm-page .profile360-approved-indicators article {
+  border-color: #ffffff14;
+  border-radius: 20px;
+  background: #292b33;
+  color: #f1eee6;
+}
+.sendero-alumnas .crm-page .profile360-approved-indicators span {
+  color: #b2b4bf;
+}
+.sendero-alumnas .crm-page .profile360-approved-indicators strong {
+  color: #f1eee6;
+}
+.sendero-alumnas .crm-page .profile360-package-usage {
+  border-color: #ffffff14;
+  border-radius: 18px;
+  background: #ffffff05;
+}
+.sendero-alumnas .crm-page .profile360-package-usage-stats strong,
+.sendero-alumnas .crm-page .profile360-package-class-row strong {
+  color: #f1eee6;
+}
+.sendero-alumnas .crm-page .profile360-package-edit {
+  border-color: #8fe6c833;
+  background: #8fe6c824;
+}
+.sendero-alumnas .crm-page .profile360-package-edit > summary {
+  min-height: 44px;
+  color: #a4efd6;
+  font-weight: 500;
+}
+.sendero-alumnas
+  .crm-page
+  :is(.profile360-detail > summary, .profile360-package-chevron)
+  > span:last-child {
+  color: #68518a;
+}
+.sendero-alumnas .crm-page .profile360-detail > .panel {
+  border-color: #d5c8e2;
+  background: #f7f3fb;
+  color: #302a43;
+}
+.sendero-alumnas .crm-page .profile360-detail > summary strong {
+  color: #302a43;
+}
+.sendero-alumnas .crm-page .profile360-detail > summary small {
+  color: #6a5d7b;
+}
+.sendero-alumnas .crm-page .profile360-package-card-side .status-pill,
+.sendero-alumnas .crm-page .count-badge {
+  color: #decef3 !important;
+}
+.sendero-alumnas .crm-page .profile360-detail .count-badge {
+  background: #d5c8e2;
+  color: #54416f !important;
+}
+.sendero-alumnas .crm-page :is(.profile360-history-list article, .profile360-reward-list article) {
+  border-color: #ffffff14;
+  background: #ffffff08;
+  color: #f1eee6;
+}
+.sendero-alumnas .crm-info {
+  padding-block: 12px;
+  border-color: #ffffff14;
+}
+.sendero-alumnas .crm-info span {
+  color: #b2b4bf;
+}
+.sendero-alumnas .crm-statusline,
+.sendero-alumnas .crm-package {
+  border-color: #ffffff14;
+  border-radius: 16px;
+  background: #ffffff08;
+}
+.sendero-alumnas .crm-statusline strong {
+  color: #a4efd6;
+}
+.sendero-alumnas .crm-progress {
+  background: #ffffff14;
+}
+.sendero-alumnas .crm-progress span {
+  background: #8fe6c8;
+}
+.sendero-alumnas .crm-recommend {
+  background: #cdb8ec1a;
+  border-color: #cdb8ec4d;
+}
+.sendero-alumnas .crm-recommend .eyebrow {
+  color: #decef3;
+}
+.sendero-alumnas .crm-why {
+  border-color: #ffffff14;
+  background: #ffffff08;
+  color: #d4d4dc;
+  border-radius: 16px;
+}
+.sendero-alumnas .count-badge,
+.sendero-alumnas .status-pill {
+  background: #cdb8ec26;
+  border-color: transparent;
+  color: #decef3;
+}
+.sendero-alumnas .empty-state {
+  padding: 24px;
+  border-color: #ffffff26;
+  border-radius: 18px;
+  background: #ffffff05;
+  color: #b2b4bf;
+  line-height: 1.7;
+}
+.sendero-alumnas .crm-bubble {
+  border: 1px solid #ffffff0f;
+  border-radius: 18px 18px 18px 4px;
+  background: #373843;
+  color: #f1eee6;
+  padding: 14px 16px;
+  line-height: 1.7;
+}
+.sendero-alumnas .crm-bubble.is-mine {
+  border-color: #8fe6c833;
+  border-radius: 18px 18px 4px 18px;
+  background: #8fe6c824;
+}
+.sendero-alumnas .crm-bubble small {
+  color: #bfc1cb;
+}
+.sendero-alumnas :is(.profile360-package-card, .profile360-sale-row, .profile360-technical-levels) {
+  border-color: #ffffff14;
+  border-radius: 20px;
+  background: #292b33;
+  color: #f1eee6;
+}
+.sendero-alumnas .profile360-package-card.is-current {
+  border-color: #8fe6c84d;
+}
+.sendero-alumnas :is(.profile360-package-facts > div, .profile360-package-usage-stats > div) {
+  border-color: #ffffff14;
+  background: #ffffff08;
+  border-radius: 14px;
+}
+.sendero-alumnas :is(.profile360-package-facts strong, .profile360-package-card-side > strong) {
+  color: #a4efd6;
+}
+.sendero-alumnas :is(.profile360-package-card-summary h3, .profile360-sale-row strong) {
+  color: #f1eee6;
+}
+.sendero-alumnas
+  :is(
+    .profile360-package-facts span,
+    .profile360-package-card-summary > div > span,
+    .profile360-package-secondary,
+    .profile360-package-class-row small,
+    .profile360-history-list p,
+    .profile360-history-list span
+  ) {
+  color: #b2b4bf;
+}
+.sendero-alumnas .profile360-package-class-row {
+  border-color: #ffffff14;
+  background: #ffffff05;
+}
+/* Light editing surfaces keep controls integrated, including native date and select fields. */
+.sendero-alumnas
+  :is(
+    .student-quick-create-panel,
+    .profile360-data-view,
+    .profile360-detail,
+    .profile360-package-edit-body,
+    .crm-dialog
+  ) {
+  --text: #302a43;
+  --muted: #6a5d7b;
+  --line: #d5c8e2;
+  --line-strong: #b8a7cc;
+  --crm-navy: #302a43;
+  --crm-muted: #6a5d7b;
+  --crm-purple: #54416f;
+  color-scheme: light;
+  border: 1px solid #d5c8e2;
+  border-radius: 24px;
+  padding: 22px;
+  background: #e9e2f2;
+  color: #302a43;
+  box-shadow: none;
+}
+.sendero-alumnas
+  :is(
+    .student-quick-create-panel,
+    .profile360-data-view,
+    .profile360-detail,
+    .profile360-package-edit-body,
+    .crm-dialog
+  )
+  :is(h2, h3, strong, .text-white) {
+  color: #302a43;
+}
+.sendero-alumnas
+  :is(
+    .student-quick-create-panel,
+    .profile360-data-view,
+    .profile360-detail,
+    .profile360-package-edit-body,
+    .crm-dialog
+  )
+  :is(.eyebrow, .crm-meta, .text-zinc-300, .text-zinc-400, .text-zinc-500, .panel-heading p) {
+  color: #6a5d7b;
+}
+.sendero-alumnas .profile360-data-view :is(.panel, .profile360-detail) {
+  background: #f7f3fb;
+  border-color: #d5c8e2;
+  color: #302a43;
+}
+.sendero-alumnas
+  :is(
+    .student-quick-create-panel,
+    .profile360-data-view,
+    .profile360-detail,
+    .profile360-package-edit-body,
+    .crm-dialog
+  )
+  :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  min-height: 44px;
+  border: 1px solid #c6b7d8;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: #f7f3fb;
+  color: #302a43;
+  box-shadow: none;
+  color-scheme: light;
+}
+.sendero-alumnas .profile360-data-view input::placeholder,
+.sendero-alumnas .student-quick-create-panel input::placeholder {
+  color: #766783;
+}
+.sendero-alumnas .profile360-data-view :is(.primary-button, .ghost-button),
+.sendero-alumnas .profile360-package-edit-body .ghost-button {
+  border-color: #b8a7cc;
+  background: #8fe6c8;
+  color: #244e43;
+}
+.sendero-alumnas .profile360-data-view .empty-state,
+.sendero-alumnas .profile360-detail .empty-state {
+  border-color: #c6b7d8;
+  background: transparent;
+  color: #6a5d7b;
+}
+.sendero-alumnas .crm-dialog .crm-btn {
+  border-color: #c6b7d8;
+  background: #f7f3fb;
+  color: #54416f;
+}
+.sendero-alumnas .crm-dialog .crm-btn.is-primary {
+  background: #8fe6c8;
+  color: #244e43;
+}
+.sendero-alumnas .crm-dialog :is(.crm-why, .crm-preview, .crm-preview-bubble) {
+  border-color: #d5c8e2;
+  background: #f7f3fb;
+  color: #54416f;
+}
+.sendero-alumnas :is(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid #f6d67a;
+  outline-offset: 3px;
+}
+.sendero-alumnas
+  :is(
+    .student-quick-create-panel,
+    .profile360-data-view,
+    .profile360-detail,
+    .profile360-package-edit-body,
+    .crm-dialog
+  )
+  :is(a, button, input, select, textarea, summary):focus-visible {
+  outline-color: #68518a;
+}
+@media (max-width: 850px) {
+  .sendero-alumnas .crm-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 0.8fr);
+  }
+}
+@media (max-width: 760px) {
+  .sendero-alumnas .dashboard-shell {
+    padding: 22px 18px calc(110px + env(safe-area-inset-bottom));
+  }
+  .sendero-alumnas h1 {
+    font-size: 34px;
+  }
+  .sendero-alumnas .student-directory-header {
+    gap: 12px;
+  }
+  .sendero-alumnas .student-directory-header .eyebrow {
+    font-size: 9px;
+  }
+  .sendero-alumnas .crm-summary {
+    gap: 9px;
+  }
+  .sendero-alumnas .crm-stat {
+    padding: 14px;
+    border-radius: 20px;
+  }
+  .sendero-alumnas .student-directory-search input,
+  .sendero-alumnas
+    :is(
+      .student-quick-create-panel,
+      .profile360-data-view,
+      .profile360-detail,
+      .profile360-package-edit-body,
+      .crm-dialog
+    )
+    :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+    font-size: 16px;
+  }
+  .sendero-alumnas .crm-contact-person {
+    padding: 18px;
+  }
+  .sendero-alumnas .crm-contact-person h1 {
+    font-size: 28px;
+  }
+}
+@media (max-width: 620px) {
+  .sendero-alumnas .crm-summary[aria-label="Entrada comercial"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .sendero-alumnas .crm-summary[aria-label="Entrada comercial"] .crm-stat {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+  }
+  .sendero-alumnas .crm-summary[aria-label="Entrada comercial"] span {
+    font-size: 9px;
+  }
+  .sendero-alumnas .student-quick-create > summary {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+  .sendero-alumnas .crm-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 18px;
+  }
+  .sendero-alumnas .crm-row :is(.crm-person, .crm-message-cell, .crm-state-cell, .crm-next-cell) {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .sendero-alumnas .crm-row .crm-state-cell {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+  }
+  .sendero-alumnas .crm-row .crm-message-cell {
+    border-top-color: #ffffff14;
+    padding-top: 10px;
+  }
+  .sendero-alumnas .crm-row .crm-next-cell {
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .sendero-alumnas .crm-next-cell .crm-small {
+    text-align: right;
+    margin: 0;
+  }
+  .sendero-alumnas .crm-contact-person {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .sendero-alumnas .crm-contact-person > .crm-avatar {
+    width: 48px;
+    height: 48px;
+  }
+  .sendero-alumnas .crm-contact-person h1 {
+    font-size: 26px;
+  }
+  .sendero-alumnas .crm-head-actions {
+    margin-top: 6px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .sendero-alumnas .crm-tabs a {
+    padding-inline: 14px;
+  }
+  .sendero-alumnas .crm-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sendero-alumnas .crm-card {
+    padding: 18px;
+  }
+  .sendero-alumnas .crm-recommend-head {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 360px) {
+  .sendero-alumnas .dashboard-shell {
+    padding-inline: 12px;
+  }
+}

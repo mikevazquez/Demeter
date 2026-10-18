@@ -444,7 +444,7 @@ export default async function StudentsPage({
       <header className="student-directory-header">
         <div>
           <p className="eyebrow">CRM DE ALUMNAS · {studio.name}</p>
-          <h1>Contactos</h1>
+          <h1>Alumnas</h1>
           <p>Conversaciones, etapas y seguimiento en un solo lugar.</p>
         </div>
         {canEdit ? (
@@ -465,18 +465,21 @@ export default async function StudentsPage({
                 <div className="form-split">
                   <input
                     name="first_name"
+                    aria-label="Nombre"
                     required
                     placeholder="Nombre"
                     autoComplete="given-name"
                   />
                   <input
                     name="last_name"
+                    aria-label="Apellido"
                     placeholder="Apellido opcional"
                     autoComplete="family-name"
                   />
                 </div>
                 <input
                   name="phone"
+                  aria-label="Teléfono"
                   type="tel"
                   inputMode="tel"
                   required
@@ -485,6 +488,7 @@ export default async function StudentsPage({
                 />
                 <input
                   name="email"
+                  aria-label="Correo"
                   type="email"
                   placeholder="Correo opcional"
                   autoComplete="email"
