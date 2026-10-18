@@ -9,10 +9,7 @@ import { handleDemiEnrollmentReceipt } from "@/lib/assistant/enrollment-payment"
 import { readTransferReceipt, rejectedTransferReceiptReply } from "@/lib/assistant/receipt-reader";
 import { trialReceiptConfirmation } from "@/lib/assistant/receipt-confirmation";
 import { provisionStudentAccessWithServiceClient } from "@/lib/assistant/student-access";
-import {
-  forwardSignedMetaWebhook,
-  pilotForwardTarget,
-} from "@/lib/assistant/pilot-forwarding";
+import { forwardSignedMetaWebhook, pilotForwardTarget } from "@/lib/assistant/pilot-forwarding";
 import {
   downloadMetaWhatsAppMedia,
   extractMetaInboundMessages,
