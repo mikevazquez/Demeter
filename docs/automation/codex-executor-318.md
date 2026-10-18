@@ -72,4 +72,28 @@ La sonda remota usa únicamente `vianelis-authority-probe-318-v1` para probar la
 
 ### Límites
 
-Esta protección aplica a supervisores que ejecuten esta revisión. Un ejecutable antiguo que ignore la autoridad, la eliminación/modificación manual de refs o una copia activa del publicador fuera del protocolo quedan fuera de la garantía. No se modifican protecciones de tags ni permisos. El registro histórico de solo lectura no se transforma automáticamente en uno operativo. Tampoco se ha probado ejecución real del modelo tras adquirir una referencia ni publicación concurrente cercada por propietario; siguen siendo siguientes pasos. No declarar autonomía general ni cierre de Governance a partir de una sonda de API.
+Esta protección aplica a supervisores que ejecuten esta revisión. Un ejecutable antiguo que ignore la autoridad, la eliminación/modificación manual de refs o una copia activa del publicador fuera del protocolo quedan fuera de la garantía. No se modifican protecciones de tags ni permisos. El registro histórico de solo lectura no se transforma automáticamente en uno operativo. La ejecución real del modelo tras adquirir una referencia sigue pendiente. La extensión del control a publicación y su prueba de concurrencia se describen en el apartado siguiente. No declarar autonomía general ni cierre de Governance a partir de una sonda de API.
+
+## Governance 2.0: publicación de un único Draft por propietario
+
+Vianelis es la empresa; Governance 2.0 es la metodología autónoma en construcción. Este incremento extiende el adaptador existente, reutilizando `publicationPlan` y `complete` de #314. La rama de #314 permanece intacta. No se crea otro scheduler, cola o servicio publicador.
+
+`verifyExecutionOwner` comprueba la ref y el tag anotado remotos contra el recibo local adquirido: ID, contrato, autorización #318, nonce, objeto y SHA base. Una copia con propietario incorrecto o ref movida no obtiene permiso de escritura. El nonce es un identificador público del propietario, no una credencial ni una protección frente a un actor autorizado que ignore el protocolo.
+
+`publishDraftOnce` exige el certificado de #314, una rama remota previamente subida, padre exactamente igual a la base reservada, target sin cambios, rutas modificadas exactas, modos y hashes de todos los blobs. Consulta todos los PR de la rama en todos los estados. No cambia el código, hace push, fusiona o despliega. El título, cuerpo y rama base son metadatos revisados por el supervisor.
+
+```sh
+node /supervisor/scripts/automation/codex-executor.mjs publish-draft /checkout-verificador /registro ID /metadatos-revisados.json
+```
+
+Los metadatos JSON contienen `baseBranch`, `title` y `body`. El checkout verificador debe permanecer sobre el SHA reservado con los cambios certificados; la rama remota de resultado debe estar ya en su commit final. El registro conserva `executor/remote-claim.json` del propietario. El conjunto de IDs autorizados de generación no se amplía.
+
+Antes del único POST de creación se consume atómicamente `refs/tags/vianelis/publication-claims/<id>`. El tag liga contrato, propietario de ejecución, digest de publicación (incluye commit/rutas/target) y propietario del intento de publicación. Dos procesos con copias locales, incluso con el mismo recibo de ejecución, no pueden adquirir ambos esa referencia. Solo el adquirente reconocido envía el POST. No se adoptan claims, borran refs, aplican TTL o reintentan creaciones inciertas.
+
+Si el Draft ya existe y coincide, se reutiliza y `complete` finaliza o repite el mismo recibo, liberando solo la reserva pertinente. Una creación aceptada cuya respuesta se perdió puede recuperarse consultando el PR, sin otro POST. Si el intento está consumido y no aparece un PR, se devuelve `blocked-publication`: necesita reconciliación del supervisor y no se crea un reemplazo. Una caída antes del POST puede dejar consumido un intento sin PR. La prioridad es evitar duplicación, no prometer progreso ante cualquier caída.
+
+Las pruebas unitarias usan GitHub explícitamente simulado y certificación local real. La prueba remota de entrega hace competir dos procesos con registros separados para publicar el único Draft de este incremento; no invoca al modelo ni simula resultados de Codex. La copia de prueba contiene solo esta reserva nueva; no activa el archivo histórico de los IDs anteriores. La recuperación contrasta el mismo Draft/recibo desde ambos registros y deja la copia de prueba sin reserva activa.
+
+### Límite de la garantía de publicación
+
+Aplica a procesos que usan esta revisión y una autoridad remota cuyas refs no se alteran fuera del protocolo. No bloquea un publicador antiguo o un usuario que invoque GitHub directamente, no cambia protecciones y no ofrece una operación transaccional entre ref y PR. Un cambio externo entre verificaciones obliga a inspección. No implementa transferencia automática de propietario ni restauración operativa general. La E2E de código real con el control nuevo sigue siendo el siguiente paso; esta prueba de publicación no declara terminado Governance 2.0.

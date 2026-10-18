@@ -4,8 +4,13 @@ import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { reserve } from "../studio-flow-minimal.mjs";
-import { claimExecution } from "./execution-claim.mjs";
+import { reserve, publicationPlan, complete } from "../studio-flow-minimal.mjs";
+import {
+  claimExecution,
+  verifyExecutionOwner,
+  claimPublication,
+  githubRequest,
+} from "./execution-claim.mjs";
 import { isTrustedStateComment, parseState } from "./continuity-lab.mjs";
 
 const assert = (value, message) => {
@@ -282,6 +287,193 @@ export function executeOnce(
   return record;
 }
 
+// Existing #314 owns local certification/intent/receipt; this adapter guards the remote write.
+export function publishDraftOnce(
+  repo,
+  registry,
+  id,
+  metadata,
+  { request = githubRequest, nonce = randomUUID() } = {},
+) {
+  assert(/^[a-z0-9][a-z0-9-]{2,79}$/.test(id ?? ""), "Invalid publication task ID");
+  const relative = path.relative(path.resolve(repo), path.resolve(registry));
+  assert(
+    relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative),
+    "Registry must be outside checkout",
+  );
+  const dir = path.join(registry, id);
+  const state = read(path.join(dir, "reservation.json"));
+  assert(
+    state.task.id === id && state.contractSha256 === hash(JSON.stringify(state.task)),
+    "Publication reservation changed",
+  );
+  assert(
+    typeof metadata?.baseBranch === "string" &&
+      /^[a-zA-Z0-9][a-zA-Z0-9_./-]{0,199}$/.test(metadata.baseBranch) &&
+      !metadata.baseBranch.split("/").some((x) => !x || x === "." || x === ".."),
+    "Reviewed publication base branch required",
+  );
+  assert(
+    typeof metadata.title === "string" &&
+      metadata.title.trim().length > 0 &&
+      metadata.title.length <= 256 &&
+      typeof metadata.body === "string" &&
+      metadata.body.length <= 60000,
+    "Reviewed publication title and body required",
+  );
+  const task = {
+    id,
+    baseSha: state.task.baseSha,
+    contractSha256: state.contractSha256,
+    authorization: state.task.authorization,
+  };
+  const owner = read(path.join(dir, "executor", "remote-claim.json"));
+  const options = { request };
+  verifyExecutionOwner(task, owner, options);
+  const branch = `studio-flow/minimal/${id}`;
+  const api = `repos/${REPOSITORY}`;
+  const snapshot = () => {
+    const base = request("GET", `${api}/git/ref/heads/${metadata.baseBranch}`);
+    assert(base?.object?.sha === task.baseSha, "Remote target changed from authorized base");
+    const head = request("GET", `${api}/git/ref/heads/${branch}`);
+    assert(
+      /^[a-f0-9]{40}$/.test(head?.object?.sha ?? ""),
+      "Existing remote candidate branch required",
+    );
+    const prs = [];
+    const filter = encodeURIComponent(`mikevazquez:${branch}`);
+    for (let page = 1; ; page++) {
+      assert(page <= 100, "Publication PR pagination limit exceeded");
+      const batch = request(
+        "GET",
+        `${api}/pulls?state=all&head=${filter}&per_page=100&page=${page}`,
+      );
+      assert(Array.isArray(batch), "Complete publication PR lookup required");
+      prs.push(...batch);
+      if (batch.length < 100) break;
+    }
+    assert(prs.length <= 1, "Multiple remote PRs; do not create another");
+    const pullRequests = prs.map((p) => {
+      assert(
+        p.head?.ref === branch &&
+          p.head?.repo?.full_name === REPOSITORY &&
+          p.base?.ref === metadata.baseBranch &&
+          p.base?.repo?.full_name === REPOSITORY,
+        "Unrelated remote PR",
+      );
+      return {
+        branch,
+        commitSha: p.head.sha,
+        draft: p.draft,
+        url: p.html_url,
+        state: p.state?.toUpperCase(),
+      };
+    });
+    return { branch, baseSha: task.baseSha, headSha: head.object.sha, pullRequests };
+  };
+  const verifyRemote = (remote) => {
+    const certificate = read(path.join(dir, "certificate.json"));
+    assert(
+      certificate.passed &&
+        certificate.contractSha256 === task.contractSha256 &&
+        certificate.baseSha === task.baseSha,
+      "Matching publication certificate required",
+    );
+    const commit = request("GET", `${api}/git/commits/${remote.headSha}`);
+    assert(
+      commit?.sha === remote.headSha &&
+        commit.parents?.length === 1 &&
+        commit.parents[0].sha === task.baseSha,
+      "Remote candidate parent mismatch",
+    );
+    const comparison = request("GET", `${api}/compare/${task.baseSha}...${remote.headSha}`);
+    assert(
+      Array.isArray(comparison?.files) &&
+        JSON.stringify(comparison.files.map((f) => f.filename).sort()) ===
+          JSON.stringify(certificate.files.map((f) => f.path).sort()),
+      "Remote changed paths differ from certificate",
+    );
+    const tree = request("GET", `${api}/git/trees/${commit.tree.sha}?recursive=1`);
+    assert(tree?.truncated === false && Array.isArray(tree.tree), "Complete remote tree required");
+    for (const file of certificate.files) {
+      const entry = tree.tree.find((e) => e.path === file.path);
+      if (file.deleted) {
+        assert(!entry, "Remote deletion mismatch");
+        continue;
+      }
+      assert(entry?.type === "blob" && entry.mode === file.mode, "Remote file mode mismatch");
+      const blob = request("GET", `${api}/git/blobs/${entry.sha}`);
+      assert(
+        blob?.encoding === "base64" &&
+          typeof blob.content === "string" &&
+          hash(Buffer.from(blob.content, "base64")) === file.sha256,
+        "Remote file bytes mismatch",
+      );
+    }
+  };
+  const finish = (remote) => {
+    assert(remote.pullRequests.length === 1, "Draft not observed; never repeat creation");
+    const receipt = remote.pullRequests[0];
+    assert(
+      receipt.state === "OPEN" && receipt.draft === true && receipt.commitSha === remote.headSha,
+      "Matching open Draft required",
+    );
+    return complete(repo, registry, id, receipt);
+  };
+  let remote = snapshot();
+  verifyRemote(remote);
+  if (fs.existsSync(path.join(dir, "published.json"))) return finish(remote);
+  const plan = publicationPlan(repo, registry, id, remote);
+  if (plan.action === "reuse-draft") return finish(remote);
+  const digest = hash(
+    JSON.stringify({
+      id,
+      baseSha: task.baseSha,
+      headSha: remote.headSha,
+      files: plan.files,
+      baseBranch: metadata.baseBranch,
+    }),
+  );
+  const claim = claimPublication(task, owner, digest, { request, nonce });
+  if (claim.status !== "acquired")
+    return { id, status: "blocked-publication", action: "reconcile-existing-attempt" };
+  atomicWrite(path.join(dir, "publication-claim.json"), claim);
+  // Fresh owner and state immediately before the only create call. No adoption/transfer.
+  verifyExecutionOwner(task, owner, options);
+  const current = snapshot();
+  assert(current.headSha === remote.headSha, "Remote candidate changed after publication claim");
+  if (current.pullRequests.length) {
+    publicationPlan(repo, registry, id, current);
+    return finish(current);
+  }
+  atomicWrite(path.join(dir, "publication-attempt.json"), {
+    id,
+    headSha: remote.headSha,
+    claimObjectSha: claim.objectSha,
+    metadataSha256: hash(JSON.stringify(metadata)),
+    startedAt: new Date().toISOString(),
+  });
+  try {
+    request("POST", `${api}/pulls`, {
+      base: metadata.baseBranch,
+      head: branch,
+      title: metadata.title,
+      body: metadata.body,
+      draft: true,
+    });
+  } catch (error) {
+    // Even a timeout after GitHub accepts the request must never cause another POST.
+    throw new Error("Draft creation uncertain; recover by remote reconciliation only", {
+      cause: error,
+    });
+  }
+  remote = snapshot();
+  assert(remote.headSha === current.headSha, "Remote candidate changed during creation");
+  verifyRemote(remote);
+  publicationPlan(repo, registry, id, remote);
+  return finish(remote);
+}
+
 // Remote reads stay in the supervisor; the child receives no publication token.
 export function collectContinuity(request) {
   const gh =
@@ -313,7 +505,7 @@ export function collectContinuity(request) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const [command, repo, registry, input] = process.argv.slice(2);
+    const [command, repo, registry, input, metadata] = process.argv.slice(2);
     let result;
     if (command === "verify-continuity") {
       const evidence = collectContinuity();
@@ -322,9 +514,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       result = reserveContinued(repo, registry, read(input), collectContinuity());
     else if (command === "execute") result = executeOnce(repo, registry, input);
     else if (command === "status") result = executionStatus(repo, registry, input);
+    else if (command === "publish-draft")
+      result = publishDraftOnce(repo, registry, input, read(metadata));
     else
       throw new Error(
-        "Usage: verify-continuity | reserve|execute|status REPO REGISTRY TASK_FILE_OR_ID",
+        "Usage: verify-continuity | reserve|execute|status REPO REGISTRY TASK_FILE_OR_ID | publish-draft REPO REGISTRY ID METADATA_JSON",
       );
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {
