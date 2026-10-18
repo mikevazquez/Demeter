@@ -760,3 +760,128 @@
   color: var(--accent);
   background: #373942;
 }
+/* Expanded rosters keep the lavender palette of their parent class card. */
+.hoy-sendero .today-class-card .today-session-operations {
+  background: transparent;
+}
+.hoy-sendero .today-class-card .today-session-drawer {
+  --text: #302a43;
+  --muted: #6a5d7b;
+  --line: #cfc2df;
+  --line-strong: #b8a7cc;
+  --v2-text: #302a43;
+  --v2-muted: #6a5d7b;
+  --v2-line: #cfc2df;
+  margin: 0 0 16px;
+  padding: 18px;
+  border: 1px solid #ffffff80;
+  border-radius: 22px;
+  background: #e9e2f2;
+  color: var(--text);
+}
+.hoy-sendero .today-session-drawer .today-student-card.compact,
+.hoy-sendero .today-session-drawer .today-add-panel {
+  border-color: #d5c8e2;
+  border-radius: 16px;
+  background: #f7f3fb;
+  color: #302a43;
+}
+.hoy-sendero .today-session-drawer .today-student-package-line,
+.hoy-sendero .today-session-drawer .today-student-identity > span,
+.hoy-sendero .today-session-drawer .today-attendance-origin,
+.hoy-sendero .today-session-drawer .today-student-more > summary {
+  color: #6a5d7b;
+}
+.hoy-sendero .today-session-drawer .today-student-avatar {
+  background: #d9ccea;
+  color: #54416f;
+}
+.hoy-sendero .today-session-drawer .today-attendance-state {
+  border-color: #d5c8e2;
+  background: #e9e0f3;
+  color: #54416f;
+}
+.hoy-sendero .today-session-drawer .today-add-student-button.is-labeled {
+  border-color: transparent;
+  background: #8fe6c8;
+  color: #244e43;
+}
+.hoy-sendero .today-session-drawer .today-drawer-empty {
+  border-color: #b8a7cc;
+  background: #f7f3fb;
+  color: #6a5d7b;
+}
+.hoy-sendero .today-session-drawer .today-add-form input,
+.hoy-sendero .today-session-drawer .today-add-form select,
+.hoy-sendero .today-session-drawer .today-add-form [role="listbox"] {
+  border-color: #b8a7cc !important;
+  background: #fff !important;
+  color: #302a43 !important;
+}
+.hoy-sendero .today-session-drawer .today-add-form [role="option"] {
+  background: #f7f3fb;
+  color: #302a43;
+}
+.hoy-sendero .today-session-drawer .today-add-mode {
+  background: #e9e0f3;
+  color: #54416f;
+}
+.hoy-sendero .today-class-state.is-full {
+  background: #f6d67a;
+  color: #473b20;
+}
+.hoy-sendero .today-class-state.is-waitlisted {
+  background: #eadfff;
+  color: #513e71;
+}
+.today-waitlist {
+  margin: 0 0 18px;
+  padding: 18px;
+  border: 1px solid #ffffff80;
+  border-radius: 22px;
+  background: #eee7f6;
+  color: #302a43;
+}
+.today-waitlist-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.today-waitlist-heading h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.today-waitlist-heading > span {
+  color: #6a5d7b;
+  font-size: 11px;
+}
+.today-waitlist ul {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.today-waitlist li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #faf7fd;
+  font-size: 12px;
+}
+.today-waitlist small {
+  flex-shrink: 0;
+  color: #6a5d7b;
+  font-size: 10px;
+}
+.today-waitlist-error {
+  padding: 12px 0;
+  color: #fff;
+  font-size: 12px;
+}

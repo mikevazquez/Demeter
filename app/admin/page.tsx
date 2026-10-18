@@ -269,49 +269,66 @@ export default async function AdminPage({
     ...new Set((selectedSessions ?? []).map((session) => session.space_id).filter(Boolean)),
   ] as string[];
 
-  const [{ data: reservations }, { data: templates }, { data: instructors }, { data: spaces }] =
-    await Promise.all([
-      sessionIds.length
-        ? supabase
-            .from("reservations")
-            .select(
-              "id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at,commercial_status",
-            )
-            .in("session_id", sessionIds)
-            .in("status", ["reserved", "attended", "no_show"])
-            .order("booked_at")
-        : Promise.resolve({
-            data: [] as {
-              id: string;
-              session_id: string;
-              student_id: string | null;
-              guest_person_id: string | null;
-              status: string;
-              acquisition_id: string | null;
-              booked_at: string;
-              commercial_status: string | null;
-            }[],
-          }),
-      templateIds.length
-        ? supabase
-            .from("class_templates")
-            .select("id,name,color_hex,drop_in_price_minor")
-            .in("id", templateIds)
-        : Promise.resolve({
-            data: [] as {
-              id: string;
-              name: string;
-              color_hex: string | null;
-              drop_in_price_minor: number | null;
-            }[],
-          }),
-      instructorIds.length
-        ? supabase.from("instructors").select("id,person_id").in("id", instructorIds)
-        : Promise.resolve({ data: [] as { id: string; person_id: string }[] }),
-      spaceIds.length
-        ? supabase.from("spaces").select("id,name").in("id", spaceIds)
-        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-    ]);
+  const [
+    { data: reservations },
+    { data: templates },
+    { data: instructors },
+    { data: spaces },
+    { data: waitlistEntries, error: waitlistError },
+  ] = await Promise.all([
+    sessionIds.length
+      ? supabase
+          .from("reservations")
+          .select(
+            "id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at,commercial_status",
+          )
+          .in("session_id", sessionIds)
+          .in("status", ["reserved", "attended", "no_show"])
+          .order("booked_at")
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            session_id: string;
+            student_id: string | null;
+            guest_person_id: string | null;
+            status: string;
+            acquisition_id: string | null;
+            booked_at: string;
+            commercial_status: string | null;
+          }[],
+        }),
+    templateIds.length
+      ? supabase
+          .from("class_templates")
+          .select("id,name,color_hex,drop_in_price_minor")
+          .in("id", templateIds)
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            name: string;
+            color_hex: string | null;
+            drop_in_price_minor: number | null;
+          }[],
+        }),
+    instructorIds.length
+      ? supabase.from("instructors").select("id,person_id").in("id", instructorIds)
+      : Promise.resolve({ data: [] as { id: string; person_id: string }[] }),
+    spaceIds.length
+      ? supabase.from("spaces").select("id,name").in("id", spaceIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    canWriteSchedule && sessionIds.length
+      ? supabase
+          .from("class_waitlist_entries")
+          .select("id,session_id,student_id,joined_at")
+          .eq("studio_id", studio.id)
+          .in("session_id", sessionIds)
+          .eq("status", "active")
+          .order("joined_at")
+      : Promise.resolve({
+          data: [] as { id: string; session_id: string; student_id: string; joined_at: string }[],
+          error: null,
+        }),
+  ]);
 
   const guestPersonIds = [
     ...new Set(
@@ -326,7 +343,10 @@ export default async function AdminPage({
   ];
 
   const reservationStudentIds = [
-    ...new Set((reservations ?? []).map((reservation) => reservation.student_id).filter(Boolean)),
+    ...new Set([
+      ...(reservations ?? []).map((reservation) => reservation.student_id).filter(Boolean),
+      ...(waitlistEntries ?? []).map((entry) => entry.student_id),
+    ]),
   ] as string[];
   const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
   const acquisitionIds = [
@@ -513,6 +533,13 @@ export default async function AdminPage({
       color: template?.color_hex ?? "#FF0A8A",
       sessionStatus: session.status,
       available: Math.max(session.capacity - occupied, 0),
+      waitlist: (waitlistEntries ?? [])
+        .filter((entry) => entry.session_id === session.id)
+        .map((entry) => ({
+          id: entry.id,
+          studentName: studentMap.get(entry.student_id) ?? "Alumna",
+        })),
+      waitlistUnavailable: Boolean(waitlistError),
       evaluationCount: sessionReservations.filter((reservation) =>
         evaluationByReservation.has(reservation.id),
       ).length,
