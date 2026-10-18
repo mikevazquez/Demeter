@@ -73,11 +73,14 @@
   background: var(--accent-soft);
   color: var(--accent);
 }
+.admin-shell:has(.hoy-sendero) .brand-mark {
+  flex-shrink: 0;
+}
 .admin-shell:has(.hoy-sendero) .brand-mark,
 .admin-shell:has(.hoy-sendero) .admin-user-button,
 .admin-shell:has(.hoy-sendero) .sidebar-avatar {
   border-color: transparent;
-  background: #5f6b8d;
+  background-color: #5f6b8d;
   color: #f1eee6;
   box-shadow: none;
 }
