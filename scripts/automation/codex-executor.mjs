@@ -12,6 +12,11 @@ import {
   githubRequest,
 } from "./execution-claim.mjs";
 import { writeExecutionCheckpoint, readExecutionCheckpoint } from "./execution-checkpoint.mjs";
+import {
+  captureExecutionResult,
+  writeExecutionResult,
+  restoreExecution,
+} from "./execution-result.mjs";
 import { isTrustedStateComment, parseState } from "./continuity-lab.mjs";
 
 const assert = (value, message) => {
@@ -23,6 +28,7 @@ const FIRST_RUN = 38989415241;
 const REPOSITORY = "mikevazquez/Demeter";
 const LAUNCHER_TASK = "vianelis-launcher-318-v1";
 const OWNED_CODE_TASK = "governance2-owned-code-318-v1";
+const RESULT_RECOVERY_TASK = "governance2-result-recovery-318-v1";
 
 // Inputs are complete REST responses obtained by the trusted supervisor, not agent output.
 export function verifyContinuity(comments, runs) {
@@ -77,7 +83,10 @@ export function verifyContinuity(comments, runs) {
 export function reserveContinued(repo, registry, task, evidence) {
   const continuity = verifyContinuity(evidence.comments, evidence.runs);
   assert(
-    (task.id === continuity.taskId || task.id === LAUNCHER_TASK || task.id === OWNED_CODE_TASK) &&
+    (task.id === continuity.taskId ||
+      task.id === LAUNCHER_TASK ||
+      task.id === OWNED_CODE_TASK ||
+      task.id === RESULT_RECOVERY_TASK) &&
       task.authorization === `https://github.com/${REPOSITORY}/issues/318`,
     "Task must bind #315 identity to #318 authorization",
   );
@@ -123,7 +132,10 @@ function context(repo, registry, id) {
     "Reservation identity or contract changed",
   );
   assert(
-    (id === `continuity-315-${FIRST_RUN}` || id === LAUNCHER_TASK || id === OWNED_CODE_TASK) &&
+    (id === `continuity-315-${FIRST_RUN}` ||
+      id === LAUNCHER_TASK ||
+      id === OWNED_CODE_TASK ||
+      id === RESULT_RECOVERY_TASK) &&
       reservation.task.authorization === `https://github.com/${REPOSITORY}/issues/318` &&
       reservation.task.continuity?.taskId === `continuity-315-${FIRST_RUN}`,
     "Verified continuity reservation required",
@@ -190,6 +202,8 @@ export function executeOnce(
     timeout = 120000,
     claim = claimExecution,
     checkpoint = writeExecutionCheckpoint,
+    seal = writeExecutionResult,
+    prepareCandidate,
   } = {},
 ) {
   const state = context(repo, registry, id);
@@ -293,7 +307,60 @@ export function executeOnce(
     action: "inspect-and-certify-existing-candidate",
     mode: "supervised-cli",
   };
-  atomicWrite(path.join(executionDir, "result.json"), record);
+  if (record.status !== "candidate-ready") {
+    atomicWrite(path.join(executionDir, "result.json"), record);
+    return record;
+  }
+  atomicWrite(path.join(executionDir, "model-result.json"), record);
+  return sealExistingResult(repo, registry, id, { seal, prepareCandidate });
+}
+
+// Retrying durability never invokes the model. The frozen artifact intent cannot drift.
+export function sealExistingResult(
+  repo,
+  registry,
+  id,
+  { seal = writeExecutionResult, prepareCandidate } = {},
+) {
+  const state = context(repo, registry, id),
+    dir = path.join(state.dir, "executor");
+  const model = read(path.join(dir, "model-result.json"));
+  assert(model.status === "candidate-ready", "Successful existing model result required");
+  const filename = path.join(dir, "artifact-intent.json");
+  if (!fs.existsSync(filename) && prepareCandidate) {
+    // Reject changes outside the contract before invoking any trusted preparation tool.
+    captureExecutionResult(repo, state, read(path.join(dir, "intent.json")), model);
+    prepareCandidate(repo, state.task);
+  }
+  const bundle = fs.existsSync(filename)
+    ? read(filename)
+    : captureExecutionResult(repo, state, read(path.join(dir, "intent.json")), model);
+  if (!fs.existsSync(filename)) atomicWrite(filename, bundle);
+  assert(
+    hash(fs.readFileSync(path.join(dir, "events.jsonl"))) === model.eventSha256,
+    "Original model event bytes changed; do not seal",
+  );
+  const current = captureExecutionResult(repo, state, read(path.join(dir, "intent.json")), model);
+  assert(
+    JSON.stringify(current) === JSON.stringify(bundle),
+    "Candidate changed after result intent; do not reseal",
+  );
+  let durableResult;
+  try {
+    durableResult = seal(bundle);
+    assert(durableResult?.status === "recorded", "Durable model result required");
+  } catch (error) {
+    const blocked = {
+      ...model,
+      status: "uncertain",
+      errorCode: "DURABILITY_PENDING",
+      action: "seal-existing-result-only",
+    };
+    atomicWrite(path.join(dir, "result.json"), blocked);
+    throw error;
+  }
+  const record = { ...model, durableResult };
+  atomicWrite(path.join(dir, "result.json"), record);
   return record;
 }
 
@@ -305,6 +372,10 @@ export function publishDraftOnce(
   metadata,
   { request = githubRequest, nonce = randomUUID() } = {},
 ) {
+  assert(
+    !fs.existsSync(path.join(registry, "verification-only.json")),
+    "Verification registry cannot publish",
+  );
   assert(/^[a-z0-9][a-z0-9-]{2,79}$/.test(id ?? ""), "Invalid publication task ID");
   const relative = path.relative(path.resolve(repo), path.resolve(registry));
   assert(
@@ -524,13 +595,16 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       result = readExecutionCheckpoint(repo, { baseSha: registry, contractSha256: input });
     else if (command === "reserve")
       result = reserveContinued(repo, registry, read(input), collectContinuity());
+    else if (command === "restore-result")
+      result = restoreExecution(repo, registry, input, read(metadata));
+    else if (command === "seal-result") result = sealExistingResult(repo, registry, input);
     else if (command === "execute") result = executeOnce(repo, registry, input);
     else if (command === "status") result = executionStatus(repo, registry, input);
     else if (command === "publish-draft")
       result = publishDraftOnce(repo, registry, input, read(metadata));
     else
       throw new Error(
-        "Usage: verify-continuity | recover-remote ID BASE_SHA CONTRACT_SHA256 | reserve|execute|status REPO REGISTRY TASK_FILE_OR_ID | publish-draft REPO REGISTRY ID METADATA_JSON",
+        "Usage: verify-continuity | restore-result REPO REGISTRY ID EXPECTED_JSON | seal-result REPO REGISTRY ID | recover-remote ID BASE_SHA CONTRACT_SHA256 | reserve|execute|status REPO REGISTRY TASK_FILE_OR_ID | publish-draft REPO REGISTRY ID METADATA_JSON",
       );
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {

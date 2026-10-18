@@ -9,6 +9,7 @@ import {
   verifyContinuity,
   executeOnce as guardedExecuteOnce,
   executionStatus,
+  sealExistingResult,
   executorEnvironment,
   collectContinuity,
 } from "../../scripts/automation/codex-executor.mjs";
@@ -20,6 +21,7 @@ const executeOnce = (repo, registry, id, options = {}) =>
   guardedExecuteOnce(repo, registry, id, {
     claim: () => ({ status: "acquired" }),
     checkpoint: () => ({ status: "recorded" }),
+    seal: () => ({ status: "recorded", objectSha: "a".repeat(40), payloadSha256: "b".repeat(64) }),
     ...options,
   });
 const FIRST = 38989415241;
@@ -147,6 +149,11 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
           binary,
           claim,
           checkpoint: () => ({ status: "recorded" }),
+          seal: () => ({
+            status: "recorded",
+            objectSha: "a".repeat(40),
+            payloadSha256: "b".repeat(64),
+          }),
         }),
       ).toThrow();
       expect(fs.existsSync(path.join(s.repo, "proof.mjs"))).toBe(false);
@@ -198,6 +205,90 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
     expect(
       JSON.parse(fs.readFileSync(path.join(s.registry, ID, "executor", "checkpoint.json"))).status,
     ).toBe("recorded");
+  });
+  it("retries sealing the frozen result without another generation", () => {
+    const s = setup(),
+      binary = fakeCli(s.root, success);
+    let seals = 0;
+    const seal = () => {
+      seals++;
+      throw new Error("result response lost");
+    };
+    expect(() => executeOnce(s.repo, s.registry, ID, { binary, seal })).toThrow("response lost");
+    expect(executionStatus(s.repo, s.registry, ID)).toMatchObject({
+      status: "uncertain",
+      errorCode: "DURABILITY_PENDING",
+    });
+    fs.unlinkSync(binary);
+    expect(executeOnce(s.repo, s.registry, ID, { binary, seal }).status).toBe("uncertain");
+    expect(seals).toBe(1);
+    expect(
+      sealExistingResult(s.repo, s.registry, ID, { seal: () => ({ status: "recorded" }) }).status,
+    ).toBe("candidate-ready");
+  });
+  it("prepares only once before freezing and never reruns preparation on a seal retry", () => {
+    const s = setup(),
+      binary = fakeCli(s.root, success);
+    let prepared = 0;
+    const prepareCandidate = (repo) => {
+      prepared++;
+      fs.writeFileSync(
+        path.join(repo, "proof.mjs"),
+        "// supervisor format\nexport const proof = true;\n",
+      );
+    };
+    expect(() =>
+      executeOnce(s.repo, s.registry, ID, {
+        binary,
+        prepareCandidate,
+        seal: () => {
+          throw new Error("lost");
+        },
+      }),
+    ).toThrow("lost");
+    fs.unlinkSync(binary);
+    const recovered = sealExistingResult(s.repo, s.registry, ID, {
+      prepareCandidate,
+      seal: (bundle) => {
+        expect(Buffer.from(bundle.files[0].contentBase64, "base64").toString()).toContain(
+          "supervisor format",
+        );
+        return { status: "recorded" };
+      },
+    });
+    expect(recovered.status).toBe("candidate-ready");
+    expect(prepared).toBe(1);
+  });
+  it("rejects out-of-scope output before invoking the supervisor preparation tool", () => {
+    const s = setup(),
+      binary = fakeCli(s.root, success + "fs.writeFileSync('outside.txt','unexpected');");
+    let prepared = 0;
+    expect(() =>
+      executeOnce(s.repo, s.registry, ID, {
+        binary,
+        prepareCandidate: () => {
+          prepared++;
+        },
+      }),
+    ).toThrow("Out-of-scope");
+    expect(prepared).toBe(0);
+    expect(executionStatus(s.repo, s.registry, ID).status).toBe("uncertain");
+  });
+  it("does not seal changed bytes after a durability failure", () => {
+    const s = setup(),
+      binary = fakeCli(s.root, success);
+    expect(() =>
+      executeOnce(s.repo, s.registry, ID, {
+        binary,
+        seal: () => {
+          throw new Error("lost");
+        },
+      }),
+    ).toThrow("lost");
+    fs.writeFileSync(path.join(s.repo, "proof.mjs"), "export const changed=true;\n");
+    expect(() =>
+      sealExistingResult(s.repo, s.registry, ID, { seal: () => ({ status: "recorded" }) }),
+    ).toThrow("changed after result intent");
   });
   it("records timeout without allowing regeneration", () => {
     const s = setup();
@@ -300,6 +391,11 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
       binary,
       claim,
       checkpoint: () => ({ status: "recorded" }),
+      seal: () => ({
+        status: "recorded",
+        objectSha: "a".repeat(40),
+        payloadSha256: "b".repeat(64),
+      }),
     });
     expect(result.status).toBe("candidate-ready");
     expect(claims).toEqual([
@@ -319,6 +415,11 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
         binary,
         claim,
         checkpoint: () => ({ status: "recorded" }),
+        seal: () => ({
+          status: "recorded",
+          objectSha: "a".repeat(40),
+          payloadSha256: "b".repeat(64),
+        }),
       }),
     ).toEqual(result);
     expect(claims).toHaveLength(1);
@@ -419,7 +520,7 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
       `require('node:fs').appendFileSync(${JSON.stringify(count)}, 'launch\\n'); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,150); ${success}`,
     );
     const modulePath = path.resolve("scripts/automation/codex-executor.mjs");
-    const source = `import {executeOnce} from ${JSON.stringify(modulePath)}; executeOnce(${JSON.stringify(s.repo)},${JSON.stringify(s.registry)},${JSON.stringify(ID)},{binary:${JSON.stringify(binary)},claim:()=>({status:"acquired"}),checkpoint:()=>({status:"recorded"})});`;
+    const source = `import {executeOnce} from ${JSON.stringify(modulePath)}; executeOnce(${JSON.stringify(s.repo)},${JSON.stringify(s.registry)},${JSON.stringify(ID)},{binary:${JSON.stringify(binary)},claim:()=>({status:"acquired"}),checkpoint:()=>({status:"recorded"}),seal:()=>({status:"recorded"})});`;
     const launch = () =>
       new Promise((resolve, reject) => {
         const child = spawn(process.execPath, ["--input-type=module", "-e", source], {
@@ -486,7 +587,7 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
       [
         "--input-type=module",
         "-e",
-        `import {executeOnce} from ${JSON.stringify(modulePath)}; executeOnce(${JSON.stringify(s.repo)},${JSON.stringify(s.registry)},${JSON.stringify(ID)},{binary:${JSON.stringify(binary)},claim:()=>({status:"acquired"}),checkpoint:()=>({status:"recorded"})});`,
+        `import {executeOnce} from ${JSON.stringify(modulePath)}; executeOnce(${JSON.stringify(s.repo)},${JSON.stringify(s.registry)},${JSON.stringify(ID)},{binary:${JSON.stringify(binary)},claim:()=>({status:"acquired"}),checkpoint:()=>({status:"recorded"}),seal:()=>({status:"recorded"})});`,
       ],
       { stdio: "ignore" },
     );
