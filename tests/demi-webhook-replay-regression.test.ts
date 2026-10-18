@@ -174,6 +174,10 @@ function harness(httpStatus = 200, failOutboundPersistence = false) {
     "@/lib/assistant/receipt-reader": {},
     "@/lib/assistant/receipt-confirmation": {},
     "@/lib/assistant/student-access": {},
+    "@/lib/assistant/pilot-forwarding": {
+      pilotForwardTarget: () => null,
+      forwardSignedMetaWebhook: vi.fn(),
+    },
     "@/lib/assistant/meta-delivery-status": { extractMetaDeliveryStatuses: () => [] },
     "@/lib/supabase/service": { createServiceClient: () => supabase },
     "@/lib/assistant/meta-whatsapp-channel": {

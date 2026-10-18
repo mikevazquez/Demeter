@@ -9,6 +9,7 @@ import { handleDemiEnrollmentReceipt } from "@/lib/assistant/enrollment-payment"
 import { readTransferReceipt, rejectedTransferReceiptReply } from "@/lib/assistant/receipt-reader";
 import { trialReceiptConfirmation } from "@/lib/assistant/receipt-confirmation";
 import { provisionStudentAccessWithServiceClient } from "@/lib/assistant/student-access";
+import { forwardSignedMetaWebhook, pilotForwardTarget } from "@/lib/assistant/pilot-forwarding";
 import {
   downloadMetaWhatsAppMedia,
   extractMetaInboundMessages,
@@ -1091,6 +1092,30 @@ export async function POST(request: Request) {
     return json({ error: "invalid_json" }, 400);
   }
 
+  const messages = extractMetaInboundMessages(body);
+  const pilotTarget = pilotForwardTarget({
+    messages,
+    targetUrl: process.env.DEMI_PILOT_FORWARD_URL,
+    allowWaIds: process.env.DEMI_PILOT_FORWARD_WA_IDS,
+    alreadyForwarded: request.headers.get("x-demi-pilot-forwarded") === "1",
+  });
+  if (pilotTarget) {
+    const forwarded = await forwardSignedMetaWebhook({
+      targetUrl: pilotTarget,
+      rawBody,
+      signature: request.headers.get("x-hub-signature-256"),
+    });
+    console.info("demi_meta_webhook", {
+      stage: "pilot_forward",
+      outcome: forwarded.ok ? "forwarded" : "forward_failed",
+      status: forwarded.status,
+    });
+    if (!forwarded.ok) {
+      return json({ error: "pilot_forward_failed" }, 503);
+    }
+    return json({ ok: true, accepted: true, forwarded: true, messages: messages.length });
+  }
+
   // Meta sends outbound delivery receipts separately from inbound messages.
   // Process signed receipts even when Demi is paused or in shadow mode.
   const deliveryStatuses = extractMetaDeliveryStatuses(body);
@@ -1114,7 +1139,6 @@ export async function POST(request: Request) {
     }
   }
 
-  const messages = extractMetaInboundMessages(body);
   if (!messages.length) {
     console.info("demi_meta_webhook", {
       stage: "parsed",

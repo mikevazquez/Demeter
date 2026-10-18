@@ -92,6 +92,10 @@ function harness(
     "@/lib/assistant/receipt-reader": { ...receiptReader.exports, readTransferReceipt: read },
     "@/lib/assistant/receipt-confirmation": { trialReceiptConfirmation },
     "@/lib/assistant/student-access": { provisionStudentAccessWithServiceClient: access },
+    "@/lib/assistant/pilot-forwarding": {
+      pilotForwardTarget: () => null,
+      forwardSignedMetaWebhook: vi.fn(),
+    },
     "@/lib/assistant/meta-whatsapp-channel": {
       downloadMetaWhatsAppMedia: async () => ({ bytes, mimeType: "image/png", fileSize: 4 }),
     },

@@ -302,7 +302,8 @@ export default async function AgendaPage({
     : 22 * 60;
   const calendarStartHour = Math.max(0, Math.min(7, Math.floor(earliestMinute / 60)));
   const calendarEndHour = Math.min(24, Math.max(22, Math.ceil(latestMinute / 60)));
-  const calendarHeight = (calendarEndHour - calendarStartHour) * 60;
+  const pixelsPerMinute = 1.5;
+  const calendarHeight = (calendarEndHour - calendarStartHour) * 60 * pixelsPerMinute;
   const hourLabels = Array.from(
     { length: calendarEndHour - calendarStartHour + 1 },
     (_, index) => calendarStartHour + index,
@@ -344,7 +345,7 @@ export default async function AgendaPage({
   };
 
   return (
-    <main className="dashboard-shell agenda-calendar-page">
+    <main className="dashboard-shell agenda-calendar-page sendero-agenda">
       <header className="agenda-product-header">
         <div className="agenda-product-wordmark" aria-label="Studio Flow">
           <span>
@@ -447,7 +448,7 @@ export default async function AgendaPage({
               {hourLabels.map((hour) => (
                 <span
                   key={hour}
-                  style={{ top: (hour - calendarStartHour) * 60 }}
+                  style={{ top: (hour - calendarStartHour) * 60 * pixelsPerMinute }}
                   className="agenda-time-label"
                 >
                   {formatHour(hour, locale)}
@@ -467,22 +468,28 @@ export default async function AgendaPage({
                   >
                     <div className="agenda-hour-lines" aria-hidden="true">
                       {hourLabels.slice(0, -1).map((hour) => (
-                        <i key={hour} style={{ top: (hour - calendarStartHour) * 60 }} />
+                        <i
+                          key={hour}
+                          style={{ top: (hour - calendarStartHour) * 60 * pixelsPerMinute }}
+                        />
                       ))}
                     </div>
                     {daySessions.map((session) => {
-                      const top = session.startMinute - calendarStartHour * 60;
-                      const height = Math.max(session.durationMinutes, 44);
+                      const top = (session.startMinute - calendarStartHour * 60) * pixelsPerMinute;
+                      const height = Math.max(session.durationMinutes * pixelsPerMinute, 44);
                       const isSelected = selectedSession?.id === session.id;
                       return (
                         <Link
                           key={session.id}
+                          aria-label={`${session.name}, ${formatTime(session.starts_at, timeZone, locale)}, ${statusLabel(session.status)}, ${session.occupied} de ${session.capacity} lugares`}
+                          title={`${session.name} · ${session.instructor} · ${session.space}`}
                           href={`/admin/agenda?date=${key}&session=${session.id}`}
-                          className={`agenda-session-block${isSelected ? " is-selected" : ""}${session.status === "cancelled" ? " is-cancelled" : ""}`}
+                          className={`agenda-session-block${height < 80 ? " is-compact" : ""}${isSelected ? " is-selected" : ""}${session.status === "cancelled" ? " is-cancelled" : ""}`}
                           style={
                             {
                               top,
                               height,
+                              "--agenda-session-height": `${height}px`,
                               "--agenda-session-color": session.color,
                             } as React.CSSProperties
                           }
