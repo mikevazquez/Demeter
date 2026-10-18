@@ -26,6 +26,7 @@ const protectedPaths = new Set([
   "scripts/automation/task-admission.mjs",
   "scripts/automation/registry-authority.mjs",
   "scripts/automation/verify-registry-authority-ci.mjs",
+  "scripts/automation/verify-receipt-proof.mjs",
   "scripts/automation/registry-migration.mjs",
   "docs/automation/registry-authority.md",
   "docs/automation/registry-authority-318.json",
