@@ -8,6 +8,7 @@ import {
   countBookedReservations,
   countSeatOccupyingReservations,
 } from "@/lib/reservations/capacity";
+import { individualPaymentSummary } from "@/lib/reservations/individual-payment-summary";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
 import QuickActions from "./hoy/QuickActions";
 
@@ -280,7 +281,7 @@ export default async function AdminPage({
       ? supabase
           .from("reservations")
           .select(
-            "id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at,commercial_status",
+            "id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at,commercial_status,class_kind,class_amount_minor",
           )
           .in("session_id", sessionIds)
           .in("status", ["reserved", "attended", "no_show"])
@@ -295,6 +296,8 @@ export default async function AdminPage({
             acquisition_id: string | null;
             booked_at: string;
             commercial_status: string | null;
+            class_kind: string | null;
+            class_amount_minor: number | null;
           }[],
         }),
     templateIds.length
@@ -556,6 +559,16 @@ export default async function AdminPage({
           ? balanceMap.get(reservation.acquisition_id)
           : null;
 
+        const individualPayment =
+          !acquisition && !isGuest
+            ? individualPaymentSummary({
+                commercialStatus: reservation.commercial_status,
+                classKind: reservation.class_kind,
+                amountMinor: reservation.class_amount_minor,
+                currency: studio.currency,
+                locale,
+              })
+            : null;
         const evaluationInvitation = evaluationByReservation.get(reservation.id);
         const attendanceCheckin = checkinByReservation.get(reservation.id);
 
@@ -571,14 +584,16 @@ export default async function AdminPage({
             ? "Invitación"
             : acquisition
               ? (productMap.get(acquisition.product_template_id) ?? "Producto activo")
-              : "Sin producto vinculado",
+              : individualPayment
+                ? "Clase individual"
+                : "Sin producto vinculado",
           creditsLabel: isGuest
             ? "Beneficio por nivel"
             : acquisition?.unlimited
               ? "Ilimitado"
               : acquisition
                 ? `${balance ?? 0} créditos`
-                : "—",
+                : (individualPayment ?? "—"),
           expiresLabel: isGuest
             ? "Misma clase"
             : formatExpiry(acquisition?.expires_on ?? null, locale),

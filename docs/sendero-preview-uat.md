@@ -18,3 +18,13 @@ The following examples exist on both **18 and 19 October 2026**, America/Mexico_
 | 21:00 | Heels · Demo llena                 | 6/6          | 0        | Scheduled |
 
 Verification: persisted counts were queried after insertion; 21 focused tests passed (including full/cancelled/partial/waitlist presentation); browser checks use the real home components with isolated data fixtures to verify expansion, light roster styling, active waitlist names, and responsive behavior. Authenticated staging review remains available through the Vercel preview with a sandbox account.
+
+## Commercial review cases
+
+Additional marker: `sendero-commercial-preview-20261018`.
+
+- **Demo · Irene Transferencia**: a $1,200 MXN package purchase with a linked sale, provisional active acquisition, and Demi transfer intent in `provisional_active`. It appears in today's pending-payment review. The conversation uses `internal_demo`. Its note explicitly identifies a simulated receipt; no real bank receipt is attached. The actual approve and reject RPC paths were verified inside transactions and rolled back, preserving the pending case for user review.
+- **Demo · Natalia Paquete**: a paid, active eight-class package valid 18 October–16 November 2026; one reservation in the 19:00 Flexibilidad demo on each of 18 and 19 October. The ledger grants eight credits and holds two, leaving six. Balance was verified under the sandbox owner's authorization context.
+- **Demo · Gabriela Clase150**: one normal individual-class reservation in the same 19:00 demo on each date, each linked to a $150 MXN sale and payment, with commercial status `paid`. The roster displays the saved amount as paid rather than using the current class price or treating a pending payment as settled.
+
+The class now has 7/8 reserved places on each date. New demo profiles have no telephone, email, or login. Verification includes five payment-summary tests, 24 total focused tests, TypeScript, browser checks of the paid-class label and package credit balance, and persisted payment/linkage queries. There are no production changes.
