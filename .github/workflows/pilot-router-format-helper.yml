@@ -1,0 +1,26 @@
+name: Pilot Router Format Helper
+
+on:
+  push:
+    branches:
+      - fix/demi-pilot-sandbox-router-20261017
+    paths:
+      - "app/api/integrations/meta-whatsapp/webhook/route.ts"
+      - "tests/demi-pilot-forwarding.test.ts"
+      - ".github/workflows/pilot-router-format-helper.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write app/api/integrations/meta-whatsapp/webhook/route.ts tests/demi-pilot-forwarding.test.ts
+      - run: git diff -- app/api/integrations/meta-whatsapp/webhook/route.ts tests/demi-pilot-forwarding.test.ts
