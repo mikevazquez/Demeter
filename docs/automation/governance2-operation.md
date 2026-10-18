@@ -180,6 +180,13 @@ as deployment-free. Do not change Vercel configuration or merge under the standi
 no-production/no-merge instruction. Authorization for code review does not waive
 that release gate.
 
+For pull-request quality checks, CI verifies that the automatic merge checkout's
+second parent is the event's proposed PR head and compares tests against its first
+parent. The event's cached base SHA can lag main; it must not silently substitute
+for the base actually checked out. Push checks keep the event's previous commit as
+their comparison base. Record these identities from the actual run, not just the
+PR metadata.
+
 After an expressly authorized integration, record the resulting main commit and
 actual checks before calling the implementation integrated. Production deployment
 is a separate scope decision. Do not close #318 or declare all of Governance 2.0

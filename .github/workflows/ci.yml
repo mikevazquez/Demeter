@@ -47,8 +47,15 @@ jobs:
 
       - name: Unit tests (compare with base)
         env:
-          TEST_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
-        run: node scripts/ci-test-ratchet.mjs "$TEST_BASE_SHA"
+          TEST_BASE_SHA: ${{ github.event.before }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            test "$(git rev-parse HEAD^2)" = "$PR_HEAD_SHA"
+            TEST_BASE_SHA="$(git rev-parse HEAD^1)"
+          fi
+          echo "Actual comparison base: $TEST_BASE_SHA"
+          node scripts/ci-test-ratchet.mjs "$TEST_BASE_SHA"
 
       - name: Build
         run: npm run build
