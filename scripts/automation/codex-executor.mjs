@@ -21,6 +21,7 @@ const hash = (value) => createHash("sha256").update(value).digest("hex");
 const FIRST_RUN = 38989415241;
 const REPOSITORY = "mikevazquez/Demeter";
 const LAUNCHER_TASK = "vianelis-launcher-318-v1";
+const OWNED_CODE_TASK = "governance2-owned-code-318-v1";
 
 // Inputs are complete REST responses obtained by the trusted supervisor, not agent output.
 export function verifyContinuity(comments, runs) {
@@ -75,7 +76,7 @@ export function verifyContinuity(comments, runs) {
 export function reserveContinued(repo, registry, task, evidence) {
   const continuity = verifyContinuity(evidence.comments, evidence.runs);
   assert(
-    (task.id === continuity.taskId || task.id === LAUNCHER_TASK) &&
+    (task.id === continuity.taskId || task.id === LAUNCHER_TASK || task.id === OWNED_CODE_TASK) &&
       task.authorization === `https://github.com/${REPOSITORY}/issues/318`,
     "Task must bind #315 identity to #318 authorization",
   );
@@ -121,7 +122,7 @@ function context(repo, registry, id) {
     "Reservation identity or contract changed",
   );
   assert(
-    (id === `continuity-315-${FIRST_RUN}` || id === LAUNCHER_TASK) &&
+    (id === `continuity-315-${FIRST_RUN}` || id === LAUNCHER_TASK || id === OWNED_CODE_TASK) &&
       reservation.task.authorization === `https://github.com/${REPOSITORY}/issues/318` &&
       reservation.task.continuity?.taskId === `continuity-315-${FIRST_RUN}`,
     "Verified continuity reservation required",

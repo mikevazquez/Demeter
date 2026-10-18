@@ -8,7 +8,7 @@ Los archivos `scripts/studio-flow-minimal.mjs`, `tests/automation/studio-flow-mi
 
 ## Contrato y operación
 
-El supervisor revisa un contrato con los campos de #314: ID, objetivo, autorización, SHA base, rutas exactas y comandos de prueba. Los únicos IDs admitidos son `continuity-315-38989415241` y `vianelis-launcher-318-v1`; la autorización es #318. El segundo es una tarea nueva autorizada por Mike tras la sonda AVAILABLE, no un reintento del ID consumido. Ambos conservan `continuity.taskId=continuity-315-38989415241` como procedencia verificada, separada de la identidad de trabajo. No se aceptan IDs arbitrarios ni sufijos nuevos por inferencia. El vínculo conserva IDs de runs, SHA y comentarios dentro del **mismo** `reservation.json` protegido por el hash del contrato. La evidencia no sustituye la autorización del objetivo y archivos.
+El supervisor revisa un contrato con los campos de #314: ID, objetivo, autorización, SHA base, rutas exactas y comandos de prueba. Los únicos IDs admitidos son `continuity-315-38989415241`, `vianelis-launcher-318-v1` y `governance2-owned-code-318-v1`; la autorización es #318. El segundo es una tarea nueva autorizada por Mike tras la sonda AVAILABLE, no un reintento del ID consumido. El tercero está explícitamente autorizado por el contrato acotado de código de #318 descrito abajo. Los tres conservan `continuity.taskId=continuity-315-38989415241` como procedencia verificada, separada de la identidad de trabajo. No se aceptan IDs arbitrarios ni sufijos nuevos por inferencia. El vínculo conserva IDs de runs, SHA y comentarios dentro del **mismo** `reservation.json` protegido por el hash del contrato. La evidencia no sustituye la autorización del objetivo y archivos.
 
 ```sh
 node /supervisor/scripts/automation/codex-executor.mjs verify-continuity
@@ -66,7 +66,7 @@ El supervisor comprueba `refs/tags/vianelis/execution-claims/<id>`. Solo un 404 
 
 Se prepara un objeto tag anotado con ID, SHA base, hash de contrato, autorización #318 y nonce del propietario. Crear ese objeto sin referencia no concede el intento. Se crea la referencia exacta mediante POST, nunca PATCH, force ni delete: dos peticiones concurrentes no pueden crearla ambas. El ganador verifica la lectura posterior y guarda su recibo de claim antes de invocar el modelo. El perdedor y cualquier error o respuesta perdida se bloquean; no adoptan una referencia existente, ni siquiera con el mismo nonce. Una caída entre adquirir y lanzar puede consumir un intento que nunca llamó al modelo: se elige evitar duplicación y requerir reconciliación.
 
-La referencia permanece consumida después de terminar; no tiene TTL, heartbeat, liberación ni reintento de generación. No es otra cola, scheduler o publicador. El conjunto de IDs autorizados del adaptador no se amplía. Un ID nuevo exige un contrato y autorización revisados; esta entrega no inicia una nueva tarea de modelo.
+La referencia permanece consumida después de terminar; no tiene TTL, heartbeat, liberación ni reintento de generación. No es otra cola, scheduler o publicador. El control remoto por sí solo no amplía los IDs autorizados del adaptador. Un ID nuevo exige un contrato y autorización revisados; la autorización acotada de código se detalla abajo.
 
 La sonda remota usa únicamente `vianelis-authority-probe-318-v1` para probar la creación atómica desde dos procesos. No es una tarea admitida por reserveContinued, no ejecuta Codex y no se registra como trabajo de desarrollo ni PR publicado. Su referencia queda como evidencia de consumo y no debe eliminarse para repetirla.
 
@@ -86,7 +86,7 @@ Vianelis es la empresa; Governance 2.0 es la metodología autónoma en construcc
 node /supervisor/scripts/automation/codex-executor.mjs publish-draft /checkout-verificador /registro ID /metadatos-revisados.json
 ```
 
-Los metadatos JSON contienen `baseBranch`, `title` y `body`. El checkout verificador debe permanecer sobre el SHA reservado con los cambios certificados; la rama remota de resultado debe estar ya en su commit final. El registro conserva `executor/remote-claim.json` del propietario. El conjunto de IDs autorizados de generación no se amplía.
+Los metadatos JSON contienen `baseBranch`, `title` y `body`. El checkout verificador debe permanecer sobre el SHA reservado con los cambios certificados; la rama remota de resultado debe estar ya en su commit final. El registro conserva `executor/remote-claim.json` del propietario. El control de publicación por sí solo no amplía los IDs autorizados de generación.
 
 Antes del único POST de creación se consume atómicamente `refs/tags/vianelis/publication-claims/<id>`. El tag liga contrato, propietario de ejecución, digest de publicación (incluye commit/rutas/target) y propietario del intento de publicación. Dos procesos con copias locales, incluso con el mismo recibo de ejecución, no pueden adquirir ambos esa referencia. Solo el adquirente reconocido envía el POST. No se adoptan claims, borran refs, aplican TTL o reintentan creaciones inciertas.
 
@@ -97,3 +97,17 @@ Las pruebas unitarias usan GitHub explícitamente simulado y certificación loca
 ### Límite de la garantía de publicación
 
 Aplica a procesos que usan esta revisión y una autoridad remota cuyas refs no se alteran fuera del protocolo. No bloquea un publicador antiguo o un usuario que invoque GitHub directamente, no cambia protecciones y no ofrece una operación transaccional entre ref y PR. Un cambio externo entre verificaciones obliga a inspección. No implementa transferencia automática de propietario ni restauración operativa general. La E2E de código real con el control nuevo sigue siendo el siguiente paso; esta prueba de publicación no declara terminado Governance 2.0.
+
+## E2E de código: EN VALIDACIÓN
+
+Vianelis es la empresa; Governance 2.0 es su metodología autónoma. El contrato autorizado en https://github.com/mikevazquez/Demeter/issues/318 admite explícitamente `governance2-owned-code-318-v1`, con base `8ae371ec3f8884a1353aae6dd2ec9a0055d4cdfa`. Es una identidad de trabajo nueva, sin reciclar las anteriores ni admitir variantes por sufijo. Conserva la procedencia original `continuity-315-38989415241`: `startedBy=38989415241`, `completedBy=39031527323`, SHA de origen y recuperación `19fabb01d5d40c0b6aa75a3e9eb4be1eb60cde54` y comentarios `6227744429`, `6233729702`. Estos valores del contrato no sustituyen la verificación de evidencia del supervisor; el apartado de estado observado anterior describe el corte histórico de aquella entrega.
+
+El alcance autorizado consta únicamente de estos cinco archivos:
+
+- `scripts/automation/codex-executor.mjs`: constante y dos disyunciones para admitir el ID exacto.
+- `tests/automation/codex-executor.test.mjs`: pruebas unitarias de identidad, procedencia, rechazos y ejecución única con CLI y claim explícitamente simulados.
+- `scripts/automation/governance2-e2e-proof.mjs`: única exportación pura `uniqueTaskIds(values)`, sin I/O, dependencias ni servicios. Exige un array de strings, recorta espacios, valida `/^[a-z0-9][a-z0-9-]{2,79}$/`, lanza `TypeError` ante tipos o IDs inválidos y devuelve IDs únicos ordenados lexicográficamente sin modificar la entrada.
+- `tests/automation/governance2-e2e-proof.test.mjs`: deduplicación, orden, recorte, vacío, inmutabilidad y rechazo de tipos e IDs inválidos.
+- `docs/automation/codex-executor-318.md`: autorización y estado de esta validación.
+
+El estado de la E2E de código es **EN VALIDACIÓN**. Esta implementación no acredita certificación ni publicación completadas. No se ejecutan pruebas en el sandbox anidado; el supervisor verificará los cinco archivos y ejecutará sus comprobaciones offline de forma independiente. No se autorizan commits, publicación, servicios, acceso a credenciales, llamadas de modelo/API, instalación de dependencias, worktrees ni cambios de aplicación. Se mantienen los límites de aislamiento, intento único, recuperación, autoridad y publicación descritos arriba; las pruebas con dobles no certifican autonomía general ni el cierre de Governance 2.0.

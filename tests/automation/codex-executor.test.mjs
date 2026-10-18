@@ -21,6 +21,7 @@ const executeOnce = (repo, registry, id, options = {}) =>
 const FIRST = 38989415241;
 const SECOND = 38999999999;
 const ID = `continuity-315-${FIRST}`;
+const OWNED_CODE_ID = "governance2-owned-code-318-v1";
 const roots = [];
 afterEach(() => {
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
@@ -75,6 +76,19 @@ function setup() {
   };
   reserveContinued(repo, registry, task, evidence());
   return { root, repo, registry, task };
+}
+function ownedCodeEvidence() {
+  const e = evidence();
+  e.comments[0].id = 6227744429;
+  e.comments[1].id = 6233729702;
+  e.comments[1].body = serializeState({
+    phase: "complete",
+    startedBy: FIRST,
+    completedBy: 39031527323,
+  });
+  e.runs[1].id = 39031527323;
+  for (const run of e.runs) run.head_sha = "19fabb01d5d40c0b6aa75a3e9eb4be1eb60cde54";
+  return e;
 }
 function fakeCli(root, source) {
   const filename = path.join(root, "fake-codex");
@@ -209,6 +223,97 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
     stored.contractSha256 = createHash("sha256").update(JSON.stringify(stored.task)).digest("hex");
     fs.writeFileSync(reservationPath, JSON.stringify(stored));
     expect(() => executionStatus(s.repo, registry, task.id)).toThrow("continuity");
+  });
+  it("preserves original provenance for the owned code ID and reuses its single execution", () => {
+    const s = setup();
+    const registry = path.join(s.root, "owned-code-registry");
+    const task = { ...s.task, id: OWNED_CODE_ID };
+    reserveContinued(s.repo, registry, task, ownedCodeEvidence());
+    const dir = path.join(registry, task.id);
+    const stored = JSON.parse(fs.readFileSync(path.join(dir, "reservation.json")));
+    const continuity = {
+      taskId: ID,
+      startedBy: FIRST,
+      completedBy: 39031527323,
+      startSha: "19fabb01d5d40c0b6aa75a3e9eb4be1eb60cde54",
+      recoverySha: "19fabb01d5d40c0b6aa75a3e9eb4be1eb60cde54",
+      commentIds: [6227744429, 6233729702],
+    };
+    expect(stored.task.id).toBe(OWNED_CODE_ID);
+    expect(stored.task.continuity).toEqual(continuity);
+    expect(() => reserveContinued(s.repo, registry, task, ownedCodeEvidence())).toThrow("consumed");
+    const binary = fakeCli(s.root, success);
+    const claims = [];
+    const claim = (request) => {
+      claims.push(request);
+      return { status: "acquired" };
+    };
+    const result = guardedExecuteOnce(s.repo, registry, task.id, { binary, claim });
+    expect(result.status).toBe("candidate-ready");
+    expect(claims).toEqual([
+      {
+        id: task.id,
+        baseSha: task.baseSha,
+        contractSha256: stored.contractSha256,
+        authorization: task.authorization,
+      },
+    ]);
+    const intent = JSON.parse(fs.readFileSync(path.join(dir, "executor", "intent.json")));
+    expect(intent.continuity).toEqual(continuity);
+    expect(executionStatus(s.repo, registry, task.id)).toEqual(result);
+    fs.unlinkSync(binary);
+    expect(guardedExecuteOnce(s.repo, registry, task.id, { binary, claim })).toEqual(result);
+    expect(claims).toHaveLength(1);
+  });
+  it("rejects unauthorized owned code reservations, invalid continuity and arbitrary IDs", () => {
+    const s = setup();
+    const registry = path.join(s.root, "owned-code-registry");
+    const task = { ...s.task, id: OWNED_CODE_ID };
+    expect(() =>
+      reserveContinued(
+        s.repo,
+        registry,
+        { ...task, authorization: "https://example.invalid" },
+        ownedCodeEvidence(),
+      ),
+    ).toThrow("bind");
+    expect(() =>
+      reserveContinued(s.repo, registry, task, { ...ownedCodeEvidence(), comments: [] }),
+    ).toThrow("two");
+    const manual = ownedCodeEvidence();
+    manual.runs[1].event = "workflow_dispatch";
+    expect(() => reserveContinued(s.repo, registry, task, manual)).toThrow("schedule");
+    expect(() =>
+      reserveContinued(
+        s.repo,
+        registry,
+        { ...task, id: `${OWNED_CODE_ID}-other` },
+        ownedCodeEvidence(),
+      ),
+    ).toThrow("bind");
+    expect(fs.existsSync(registry)).toBe(false);
+  });
+  it("rejects changed owned code authorization, continuity and arbitrary IDs in execution context", () => {
+    const s = setup();
+    const registry = path.join(s.root, "owned-code-registry");
+    const task = { ...s.task, id: OWNED_CODE_ID };
+    reserveContinued(s.repo, registry, task, ownedCodeEvidence());
+    const dir = path.join(registry, task.id);
+    const original = JSON.parse(fs.readFileSync(path.join(dir, "reservation.json")));
+    for (const change of [
+      { authorization: "https://example.invalid" },
+      { continuity: { ...original.task.continuity, taskId: OWNED_CODE_ID } },
+      { id: `${OWNED_CODE_ID}-other` },
+    ]) {
+      const stored = { ...original, task: { ...original.task, ...change } };
+      stored.contractSha256 = createHash("sha256")
+        .update(JSON.stringify(stored.task))
+        .digest("hex");
+      const changedDir = path.join(registry, stored.task.id);
+      fs.mkdirSync(changedDir, { recursive: true });
+      fs.writeFileSync(path.join(changedDir, "reservation.json"), JSON.stringify(stored));
+      expect(() => executionStatus(s.repo, registry, stored.task.id)).toThrow("continuity");
+    }
   });
   it("excludes publication and application credentials from the child environment", () => {
     expect(
