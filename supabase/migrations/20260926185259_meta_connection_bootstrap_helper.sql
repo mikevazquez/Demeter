@@ -1,3 +1,0 @@
--- Production bootstrap history marker.
--- Sensitive connection data is configured outside source control.
--- This migration intentionally performs no database mutation in fresh environments.

@@ -1,1 +1,0 @@
-select cron.schedule('studio_flow_activate_document_versions','*/5 * * * *','select private.activate_due_document_versions();');
