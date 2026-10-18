@@ -42,6 +42,8 @@ export type TodayClassItem = {
   sessionStatus: string;
   roster: TodayRosterItem[];
   available: number;
+  waitlist?: { id: string; studentName: string }[];
+  waitlistUnavailable?: boolean;
   evaluationCount: number;
   returnTo: string;
   minimumReservationsEnabled: boolean;
@@ -172,6 +174,14 @@ export function TodayClasses({
                 </small>
                 <span className="today-class-state-row">
                   <span className={`today-class-state is-${phase}`}>{phaseLabel}</span>
+                  {item.available === 0 && item.sessionStatus === "scheduled" ? (
+                    <span className="today-class-state is-full">Llena</span>
+                  ) : null}
+                  {item.waitlist?.length ? (
+                    <span className="today-class-state is-waitlisted">
+                      {item.waitlist.length} en espera
+                    </span>
+                  ) : null}
                   {phase === "live" ? (
                     <span className="today-class-countdown" aria-label="Tiempo restante">
                       ◷ {remainingLabel}
@@ -204,24 +214,48 @@ export function TodayClasses({
             </button>
 
             {isOpen ? (
-              <SessionOperations
-                sessionId={item.id}
-                returnDate={returnDate}
-                sessionStatus={item.sessionStatus}
-                startsAt={item.startsAt}
-                endsAt={item.endsAt}
-                roster={item.roster}
-                available={item.available}
-                canAttendance={canAttendance}
-                canBook={canBook}
-                canCreateStudent={canCreateStudent}
-                locale={locale}
-                timeZone={timeZone}
-                canCorrectCompleted={canCorrectCompleted}
-                returnTo={item.returnTo}
-                initiallyOpen
-                showToggle={false}
-              />
+              <>
+                <SessionOperations
+                  sessionId={item.id}
+                  returnDate={returnDate}
+                  sessionStatus={item.sessionStatus}
+                  startsAt={item.startsAt}
+                  endsAt={item.endsAt}
+                  roster={item.roster}
+                  available={item.available}
+                  canAttendance={canAttendance}
+                  canBook={canBook}
+                  canCreateStudent={canCreateStudent}
+                  locale={locale}
+                  timeZone={timeZone}
+                  canCorrectCompleted={canCorrectCompleted}
+                  returnTo={item.returnTo}
+                  initiallyOpen
+                  showToggle={false}
+                />
+                {item.waitlistUnavailable ? (
+                  <p className="today-waitlist-error" role="alert">
+                    No se pudo consultar la lista de espera.
+                  </p>
+                ) : item.waitlist?.length ? (
+                  <section className="today-waitlist" aria-labelledby={`waitlist-${item.id}`}>
+                    <div className="today-waitlist-heading">
+                      <h3 id={`waitlist-${item.id}`}>Lista de espera</h3>
+                      <span>
+                        {item.waitlist.length} {item.waitlist.length === 1 ? "alumna" : "alumnas"}
+                      </span>
+                    </div>
+                    <ul>
+                      {item.waitlist.map((entry) => (
+                        <li key={entry.id}>
+                          <span>{entry.studentName}</span>
+                          <small>En espera</small>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
+              </>
             ) : null}
           </article>
         );

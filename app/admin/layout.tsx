@@ -17,6 +17,7 @@ import "./agenda/session-detail-admin-ux-04.css";
 import "./admin-ux-04-secondary.css";
 import "./admin-ux-04-secondary-detail.css";
 import "./admin-v2-system.css";
+import "./hoy/sendero.css";
 
 type PwaBrand = {
   name: string;
