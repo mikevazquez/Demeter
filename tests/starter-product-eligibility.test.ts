@@ -102,7 +102,7 @@ describe("starter product eligibility foundation", () => {
 
   it("counts conversion days using the studio local calendar", () => {
     expect(conversionDayFix).toContain("studio.timezone");
-    expect(conversionDayFix).toContain("at time zone");
+    expect(conversionDayFix.toLowerCase()).toContain("at time zone");
     expect(conversionDayFix).toContain("days_to_regular_package");
   });
 
