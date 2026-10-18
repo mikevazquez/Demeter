@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { loadDemiCashDebts } from "@/lib/assistant/cash-debts";
 
@@ -153,7 +154,7 @@ export default async function AdminPage({
     { data: selectedSessions },
     { data: activeProductAcquisitions },
     { data: selectedPayments },
-    { data: pendingTransferIntents },
+    { data: pendingTransferIntents, error: pendingTransferError },
   ] = await Promise.all([
     supabase.rpc("current_server_time"),
     supabase
@@ -188,6 +189,7 @@ export default async function AdminPage({
           .eq("status", "provisional_active")
           .order("receipt_stored_at", { ascending: true, nullsFirst: false })
       : Promise.resolve({
+          error: null,
           data: [] as {
             id: string;
             student_id: string;
@@ -598,8 +600,20 @@ export default async function AdminPage({
     maximumFractionDigits: 0,
   }).format(salesTotalMinor / 100);
 
+  const localHour = Number(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour: "numeric",
+      hourCycle: "h23",
+    }).format(now),
+  );
+  const greeting =
+    localHour < 12 ? "Buenos días" : localHour < 19 ? "Buenas tardes" : "Buenas noches";
+  const pendingCount =
+    cashDebts.length + (selectedKey === todayKey ? pendingTransferReviews.length : 0);
+
   return (
-    <main className="dashboard-shell hoy-dashboard hoy-approved hoy-v2">
+    <main className="dashboard-shell hoy-dashboard hoy-approved hoy-v2 hoy-sendero">
       <header className="hoy-product-header">
         <div className="hoy-product-wordmark" aria-label="Studio Flow">
           <span>
@@ -624,8 +638,12 @@ export default async function AdminPage({
 
       <header className="hoy-title-block">
         <div>
-          <span className="hoy-eyebrow">{selectedKey === todayKey ? "Hoy" : "Agenda"}</span>
-          <h1>{selectedDayLabel(selectedDate, selectedKey === todayKey, locale)}</h1>
+          <span className="hoy-eyebrow">{studio.name} · Tu día, paso a paso</span>
+          <h1>
+            {new Intl.DateTimeFormat(locale, { month: "long", timeZone: "UTC" }).format(
+              selectedDate,
+            )}
+          </h1>
         </div>
       </header>
 
@@ -635,157 +653,229 @@ export default async function AdminPage({
         </div>
       ) : null}
 
-      <section className="hoy-week-card" aria-label="Calendario semanal">
-        <div className="hoy-week-heading">
-          <Link href={`/admin?date=${previousWeekKey}`} aria-label="Semana anterior">
-            ‹
-          </Link>
-          <strong>
-            {weekStart.getUTCDate()} {shortMonth(weekStart, locale)} — {weekEnd.getUTCDate()}{" "}
-            {shortMonth(weekEnd, locale)}
-          </strong>
-          <Link href={`/admin?date=${nextWeekKey}`} aria-label="Semana siguiente">
-            ›
-          </Link>
-        </div>
-
-        <nav className="mock-week-calendar">
-          {weekDays.map((day) => {
-            const key = utcDateKey(day);
-            const isSelected = key === selectedKey;
-            const isToday = key === todayKey;
-            return (
-              <Link
-                key={key}
-                href={`/admin?date=${key}`}
-                className={`mock-week-day${isSelected ? " is-selected" : ""}${isToday ? " is-today" : ""}`}
-                aria-current={isSelected ? "date" : undefined}
-              >
-                <span>{shortWeekday(day, locale)}</span>
-                <strong>{day.getUTCDate()}</strong>
+      <div className="sendero-columns">
+        <div className="sendero-day">
+          <section className="hoy-week-card" aria-label="Calendario semanal">
+            <div className="hoy-week-heading">
+              <Link href={`/admin?date=${previousWeekKey}`} aria-label="Semana anterior">
+                ‹
               </Link>
-            );
-          })}
-        </nav>
-      </section>
-
-      {cashDebtsUnavailable ? (
-        <p role="alert">
-          No se pudieron consultar los pagos en efectivo pendientes. Revisa el perfil de la alumna
-          antes de cobrar.
-        </p>
-      ) : null}
-      {cashDebts.length > 0 ? (
-        <section className="hoy-priority" aria-label="Efectivo pendiente de cobro">
-          <div className="hoy-priority-heading">
-            <div>
-              <span>Pendiente de cobro</span>
-              <strong>Efectivo por cobrar</strong>
-            </div>
-            <span className="hoy-priority-count">{cashDebts.length}</span>
-          </div>
-          <div className="hoy-priority-list">
-            {cashDebts.map((debt) => (
-              <Link
-                key={debt.saleId}
-                href={`/admin/ventas/${debt.saleId}`}
-                className="hoy-priority-item"
-              >
-                <span className="hoy-priority-icon" aria-hidden="true">
-                  $
-                </span>
-                <span className="hoy-priority-copy">
-                  <strong>{debt.studentName}</strong>
-                  <small>
-                    {new Intl.NumberFormat(locale, {
-                      style: "currency",
-                      currency: debt.currency,
-                    }).format(debt.amountMinor / 100)}{" "}
-                    pendientes
-                  </small>
-                  <em>{debt.dueOn ? `Fecha de pago: ${debt.dueOn}` : "Sin fecha de pago"}</em>
-                </span>
-                <b aria-hidden="true">›</b>
-              </Link>
-            ))}
-          </div>
-        </section>
-      ) : null}
-      {selectedKey === todayKey && pendingTransferReviews.length > 0 ? (
-        <section className="hoy-priority" aria-label="Pendientes importantes">
-          <div className="hoy-priority-heading">
-            <div>
-              <span>Pendiente importante</span>
               <strong>
-                {pendingTransferReviews.length === 1
-                  ? "1 pago por validar"
-                  : `${pendingTransferReviews.length} pagos por validar`}
+                {weekStart.getUTCDate()} {shortMonth(weekStart, locale)} — {weekEnd.getUTCDate()}{" "}
+                {shortMonth(weekEnd, locale)}
               </strong>
-            </div>
-            <span className="hoy-priority-count">{pendingTransferReviews.length}</span>
-          </div>
-
-          <div className="hoy-priority-list">
-            {pendingTransferReviews.map((item) => (
-              <Link
-                key={item.id}
-                href={`/admin/alumnas/${item.studentId}?view=packages#transferencias`}
-                className="hoy-priority-item"
-              >
-                <span className="hoy-priority-icon" aria-hidden="true">
-                  $
-                </span>
-                <span className="hoy-priority-copy">
-                  <strong>{item.studentName}</strong>
-                  <small>
-                    {item.packageName} · {item.amount}
-                  </small>
-                  <em>
-                    Comprobante recibido{" "}
-                    {new Intl.DateTimeFormat(locale, {
-                      timeZone,
-                      day: "numeric",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }).format(new Date(item.receivedAt))}
-                  </em>
-                </span>
-                <b aria-hidden="true">›</b>
+              <Link href={`/admin?date=${nextWeekKey}`} aria-label="Semana siguiente">
+                ›
               </Link>
-            ))}
-          </div>
-        </section>
-      ) : null}
+            </div>
 
-      <section className="hoy-glance" aria-label="Resumen rápido">
-        <Link href="/admin/alumnas">
-          <strong>{activeStudents}</strong>
-          <span>Alumnas activas</span>
-        </Link>
-        <Link href="/admin/ventas">
-          <strong>{salesTotal}</strong>
-          <span>Ventas hoy</span>
-        </Link>
-        <div>
-          <strong>{dailyReservationPercentage}%</strong>
-          <span>
-            Ocupación · {totalDailyReservations}/{totalDailyCapacity}
-          </span>
+            <nav className="mock-week-calendar" aria-label="Seleccionar día">
+              {weekDays.map((day) => {
+                const key = utcDateKey(day);
+                const isSelected = key === selectedKey;
+                const isToday = key === todayKey;
+                return (
+                  <Link
+                    key={key}
+                    href={`/admin?date=${key}`}
+                    className={`mock-week-day${isSelected ? " is-selected" : ""}${isToday ? " is-today" : ""}`}
+                    aria-current={isSelected ? "date" : undefined}
+                  >
+                    <span>{shortWeekday(day, locale)}</span>
+                    <strong>{day.getUTCDate()}</strong>
+                  </Link>
+                );
+              })}
+            </nav>
+          </section>
+
+          <section
+            className="sendero-schedule"
+            aria-labelledby="sendero-class-title"
+            style={{
+              borderTopLeftRadius: selectedKey === utcDateKey(weekDays[0]) ? 0 : 26,
+              borderTopRightRadius: selectedKey === utcDateKey(weekDays[6]) ? 0 : 26,
+            }}
+          >
+            <div className="sendero-section-heading">
+              <h2 id="sendero-class-title">
+                {selectedDayLabel(selectedDate, selectedKey === todayKey, locale)}
+              </h2>
+              <span>
+                {classes.length} {classes.length === 1 ? "clase" : "clases"}
+              </span>
+            </div>
+            <TodayClasses
+              classes={classes}
+              returnDate={selectedKey}
+              serverNow={String(serverNow ?? now.toISOString())}
+              canAttendance={canWriteAttendance}
+              canBook={canWriteSchedule}
+              canCreateStudent={canWriteStudents}
+              locale={locale}
+              timeZone={timeZone}
+              canCorrectCompleted
+            />
+            <Image
+              className="sendero-landscape"
+              src="/sendero/landscape.svg"
+              alt=""
+              width={360}
+              height={110}
+            />
+          </section>
+          <section className="sendero-welcome" aria-labelledby="sendero-greeting">
+            <Image src="/sendero/moon.svg" alt="" width={150} height={140} priority />
+            <h2 id="sendero-greeting">{greeting}</h2>
+            <p>
+              {headerName.split(/\s+/)[0]}, {selectedKey === todayKey ? "hoy" : "este día"} tenemos{" "}
+              {classes.length} {classes.length === 1 ? "clase" : "clases"} y{" "}
+              {totalDailyReservations} reservaciones.
+            </p>
+          </section>
         </div>
-      </section>
+        <div className="sendero-overview">
+          {canReadSales ? (
+            <div className="sendero-section-heading sendero-pending-heading">
+              <h2>Pendientes</h2>
+              <span>{pendingCount} por atender</span>
+            </div>
+          ) : null}
+          {pendingTransferError ? (
+            <p role="alert">
+              No se pudieron consultar las transferencias pendientes. Revisa Ventas antes de validar
+              un pago.
+            </p>
+          ) : null}
+          {cashDebtsUnavailable ? (
+            <p role="alert">
+              No se pudieron consultar los pagos en efectivo pendientes. Revisa el perfil de la
+              alumna antes de cobrar.
+            </p>
+          ) : null}
+          {cashDebts.length > 0 ? (
+            <section className="hoy-priority" aria-label="Efectivo pendiente de cobro">
+              <div className="hoy-priority-heading">
+                <div>
+                  <span>Pendiente de cobro</span>
+                  <strong>Efectivo por cobrar</strong>
+                </div>
+                <span className="hoy-priority-count">{cashDebts.length}</span>
+              </div>
+              <div className="hoy-priority-list">
+                {cashDebts.map((debt) => (
+                  <Link
+                    key={debt.saleId}
+                    href={`/admin/ventas/${debt.saleId}`}
+                    className="hoy-priority-item"
+                  >
+                    <span className="hoy-priority-icon" aria-hidden="true">
+                      $
+                    </span>
+                    <span className="hoy-priority-copy">
+                      <strong>{debt.studentName}</strong>
+                      <small>
+                        {new Intl.NumberFormat(locale, {
+                          style: "currency",
+                          currency: debt.currency,
+                        }).format(debt.amountMinor / 100)}{" "}
+                        pendientes
+                      </small>
+                      <em>{debt.dueOn ? `Fecha de pago: ${debt.dueOn}` : "Sin fecha de pago"}</em>
+                    </span>
+                    <b aria-hidden="true">›</b>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
+          {selectedKey === todayKey && pendingTransferReviews.length > 0 ? (
+            <section className="hoy-priority" aria-label="Pendientes importantes">
+              <div className="hoy-priority-heading">
+                <div>
+                  <span>Pendiente importante</span>
+                  <strong>
+                    {pendingTransferReviews.length === 1
+                      ? "1 pago por validar"
+                      : `${pendingTransferReviews.length} pagos por validar`}
+                  </strong>
+                </div>
+                <span className="hoy-priority-count">{pendingTransferReviews.length}</span>
+              </div>
 
-      <TodayClasses
-        classes={classes}
-        returnDate={selectedKey}
-        serverNow={String(serverNow ?? now.toISOString())}
-        canAttendance={canWriteAttendance}
-        canBook={canWriteSchedule}
-        canCreateStudent={canWriteStudents}
-        locale={locale}
-        timeZone={timeZone}
-        canCorrectCompleted
-      />
+              <div className="hoy-priority-list">
+                {pendingTransferReviews.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/admin/alumnas/${item.studentId}?view=packages#transferencias`}
+                    className="hoy-priority-item"
+                  >
+                    <span className="hoy-priority-icon" aria-hidden="true">
+                      $
+                    </span>
+                    <span className="hoy-priority-copy">
+                      <strong>{item.studentName}</strong>
+                      <small>
+                        {item.packageName} · {item.amount}
+                      </small>
+                      <em>
+                        Comprobante recibido{" "}
+                        {new Intl.DateTimeFormat(locale, {
+                          timeZone,
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }).format(new Date(item.receivedAt))}
+                      </em>
+                    </span>
+                    <b aria-hidden="true">›</b>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {canReadSales && !cashDebtsUnavailable && !pendingTransferError && pendingCount === 0 ? (
+            <div className="sendero-all-clear">
+              <strong>Todo al día</strong>
+              <p>
+                No hay pagos pendientes por atender
+                {selectedKey === todayKey ? "." : " para mostrar en esta vista."}
+              </p>
+            </div>
+          ) : null}
+          <section className="sendero-summary" aria-labelledby="sendero-summary-title">
+            <h2 id="sendero-summary-title">Tu estudio, en breve</h2>
+            <p>Cada movimiento cuenta.</p>
+            <div className="hoy-glance" aria-label="Resumen rápido">
+              <Link href="/admin/alumnas">
+                <strong>{activeStudents}</strong>
+                <span>Alumnas activas</span>
+              </Link>
+              {canReadSales ? (
+                <Link href="/admin/ventas">
+                  <strong>{salesTotal}</strong>
+                  <span>{selectedKey === todayKey ? "Ventas hoy" : "Ventas del día"}</span>
+                </Link>
+              ) : null}
+              <div>
+                <strong>{dailyReservationPercentage}%</strong>
+                <span>
+                  Ocupación · {totalDailyReservations}/{totalDailyCapacity}
+                </span>
+              </div>
+            </div>
+          </section>
+          {can(CAPABILITIES.REPORTS_READ) ? (
+            <Link className="sendero-intelligence" href="/admin/inteligencia">
+              <Image src="/sendero/intelligence.svg" alt="" width={360} height={200} />
+              <span>EXPLORA TU</span>
+              <strong>Inteligencia</strong>
+            </Link>
+          ) : null}
+        </div>
+      </div>
     </main>
   );
 }
