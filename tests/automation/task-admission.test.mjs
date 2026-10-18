@@ -17,6 +17,7 @@ vi.mock("node:child_process", async () => {
     },
   };
 });
+import { initializeRegistryAuthority } from "../../scripts/automation/registry-authority.mjs";
 import { fixture } from "./fixtures/result-authority.mjs";
 import {
   admitTask,
@@ -88,10 +89,25 @@ function setup() {
   s.trusted = s.pin();
   s.reg = path.join(s.root, "admission-registry");
   s.admit = () => admitTask(s.repo, s.trusted, s.entry.workKey);
-  s.reserve = () => reserveApproved(s.repo, s.reg, s.trusted, s.entry.workKey);
+  s.authority = initializeRegistryAuthority(
+    {
+      ref: "refs/heads/governance2/registry-318-v1",
+      baseSha: s.entry.baseSha,
+      history: [],
+      historySha256: hash(JSON.stringify([])),
+    },
+    { request: s.request },
+  );
+  s.reserve = () =>
+    reserveApproved(s.repo, s.reg, s.trusted, s.entry.workKey, {
+      authority: s.authority,
+      request: s.request,
+    });
   s.id = taskIdForWork(s.entry.workKey);
   s.executionOptions = {
     trustedCatalog: s.trusted,
+    authority: s.authority,
+    authorityRequest: s.request,
     claim: (identity) =>
       claimExecution(identity, { request: s.request, nonce: "admission-fixture-owner" }),
     checkpoint: (state, owner, intent) =>
@@ -477,5 +493,60 @@ it("preserves dirty candidates and rejects an independent checker changed after 
   fs.writeFileSync(path.join(s.repo, "keep.txt"), "keep\n");
   fs.writeFileSync(path.join(s.repo, "checks/verify.mjs"), "// changed checker\n");
   expect(s.reserve).toThrow("acceptance checkout changed");
+  expect(native.calls).toBe(0);
+});
+
+it("requires pinned global authority and rejects a second empty host registry", () => {
+  const s = setup();
+  expect(() => reserveApproved(s.repo, s.reg, s.trusted, s.entry.workKey)).toThrow(
+    "global registry authority",
+  );
+  expect(fs.existsSync(s.reg)).toBe(false);
+  s.reserve();
+  const before = s.calls.length;
+  expect(() =>
+    reserveApproved(s.repo, s.reg + "-other-host", s.trusted, s.entry.workKey, {
+      authority: s.authority,
+      request: s.request,
+    }),
+  ).toThrow("busy");
+  expect(fs.existsSync(s.reg + "-other-host")).toBe(false);
+  expect(s.calls.slice(before).every((c) => c.method === "GET")).toBe(true);
+  expect(native.calls).toBe(0);
+});
+it("global owner/config cannot change before first model invocation", () => {
+  const s = setup();
+  s.reserve();
+  s.mockProcess();
+  expect(() => s.start({ authority: { ...s.authority, genesisSha: "e".repeat(40) } })).toThrow(
+    "config differs",
+  );
+  const file = path.join(s.reg, s.id, "coordination.json");
+  const value = JSON.parse(fs.readFileSync(file));
+  value.owner.ownerNonce = "other-host";
+  fs.writeFileSync(file, JSON.stringify(value));
+  expect(() => s.start()).toThrow("Different registry owner");
+  expect(native.calls).toBe(0);
+  expect(fs.existsSync(path.join(s.reg, s.id, "executor"))).toBe(false);
+});
+it("rechecks global ownership after checkpoint and never retries a failed pre-spawn intent", () => {
+  const s = setup();
+  s.reserve();
+  s.mockProcess();
+  const checkpoint = s.executionOptions.checkpoint;
+  expect(() =>
+    s.start({
+      checkpoint: (...args) => {
+        const record = checkpoint(...args),
+          file = path.join(s.reg, s.id, "coordination.json");
+        const value = JSON.parse(fs.readFileSync(file));
+        value.owner.ownerNonce = "changed-after-checkpoint";
+        fs.writeFileSync(file, JSON.stringify(value));
+        return record;
+      },
+    }),
+  ).toThrow("Different registry owner");
+  expect(native.calls).toBe(0);
+  expect(s.start().status).toBe("uncertain");
   expect(native.calls).toBe(0);
 });

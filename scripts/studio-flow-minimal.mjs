@@ -130,13 +130,13 @@ export function isClosedBlockedAttempt(registry, id) {
     );
   return true;
 }
-export function reserve(repo, registry, task, selectedId, { beforeReserve } = {}) {
+export function reserve(repo, registry, task, selectedId, { beforeReserve, beforePersist } = {}) {
   return withRegistryMutation(registry, () => {
     beforeReserve?.();
-    return reserveUnlocked(repo, registry, task, selectedId);
+    return reserveUnlocked(repo, registry, task, selectedId, beforePersist);
   });
 }
-function reserveUnlocked(repo, registry, task, selectedId) {
+function reserveUnlocked(repo, registry, task, selectedId, beforePersist) {
   assert(selectedId === task.id, "CODEX_PILOT_TASK_ID must exactly match the one task");
   const loc = locations(registry, task.id);
   assert(
@@ -198,6 +198,7 @@ function reserveUnlocked(repo, registry, task, selectedId) {
         "Unresolved registry entry; reconcile history before reserving another task",
       );
     }
+    beforePersist?.();
     fs.mkdirSync(loc.dir);
     write(
       path.join(loc.dir, "reservation.json"),

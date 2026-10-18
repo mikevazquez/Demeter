@@ -25,6 +25,11 @@ import {
   validateAdmissionProof,
   assertUnconsumedWork,
 } from "./task-admission.mjs";
+import {
+  acquireRegistryTask,
+  verifyRegistryTask,
+  settleRegistryTask,
+} from "./registry-authority.mjs";
 import { isTrustedStateComment, parseState } from "./continuity-lab.mjs";
 
 const assert = (value, message) => {
@@ -105,11 +110,38 @@ export function reserveContinued(repo, registry, task, evidence) {
 }
 
 // Catalog and pin are trusted supervisor arguments, never candidate-generated authorization.
-export function reserveApproved(repo, registry, trustedCatalog, workKey) {
+export function reserveApproved(
+  repo,
+  registry,
+  trustedCatalog,
+  workKey,
+  { authority, request = githubRequest } = {},
+) {
   const task = admitTask(repo, trustedCatalog, workKey);
-  return reserve(repo, registry, task, task.id, {
+  assert(authority, "Pinned global registry authority required for admission");
+  assert(
+    !fs.existsSync(path.join(registry, "verification-only.json")),
+    "Verification registry cannot reserve work",
+  );
+  let owner;
+  const reserved = reserve(repo, registry, task, task.id, {
     beforeReserve: () => assertUnconsumedWork(registry, task),
+    beforePersist: () => {
+      owner = acquireRegistryTask(task, authority, { request });
+    },
   });
+  // A crash before this write leaves a consumed remote slot, never permission to regenerate.
+  atomicWrite(path.join(registry, task.id, "coordination.json"), { authority, owner });
+  return reserved;
+}
+function verifyCoordination(state, authority, request, allowClosed = false) {
+  assert(authority, "Pinned global registry authority required for admitted execution");
+  const local = read(path.join(state.dir, "coordination.json"));
+  assert(
+    JSON.stringify(local.authority) === JSON.stringify(authority),
+    "Global authority config differs from reservation",
+  );
+  return verifyRegistryTask(state.task, authority, { request, owner: local.owner, allowClosed });
 }
 
 // Allowlist deliberately excludes GitHub, Supabase and model API keys.
@@ -237,6 +269,8 @@ export function executeOnce(
     binary = "codex",
     timeout,
     trustedCatalog,
+    authority,
+    authorityRequest = githubRequest,
     claim = claimExecution,
     checkpoint = writeExecutionCheckpoint,
     seal = writeExecutionResult,
@@ -261,6 +295,7 @@ export function executeOnce(
           effectiveTimeout <= proof.limits.timeoutMs,
         "Admitted execution timeout exceeds policy",
       );
+      verifyCoordination(state, authority, authorityRequest);
     }
     const clean = spawnSync("git", ["-C", repo, "status", "--porcelain", "--untracked-files=all"], {
       encoding: "utf8",
@@ -308,6 +343,7 @@ export function executeOnce(
   let result;
   try {
     if (state.task.admission) {
+      verifyCoordination(state, authority, authorityRequest);
       verifyTaskAdmission(repo, state.task, trustedCatalog);
       requireChatGptLogin();
     }
@@ -427,7 +463,7 @@ export function publishDraftOnce(
   registry,
   id,
   metadata,
-  { request = githubRequest, nonce = randomUUID() } = {},
+  { request = githubRequest, nonce = randomUUID(), authority } = {},
 ) {
   assert(
     !fs.existsSync(path.join(registry, "verification-only.json")),
@@ -465,6 +501,7 @@ export function publishDraftOnce(
       metadata.baseBranch === proof.baseBranch,
       "Publication target differs from admitted contract",
     );
+    verifyRegistryTask(state.task, authority, { request, allowClosed: true });
   }
   const task = {
     id,
@@ -570,7 +607,21 @@ export function publishDraftOnce(
       receipt.state === "OPEN" && receipt.draft === true && receipt.commitSha === remote.headSha,
       "Matching open Draft required",
     );
-    return complete(repo, registry, id, receipt);
+    const result = complete(repo, registry, id, receipt);
+    if (state.task.admission)
+      settleRegistryTask(
+        state.task,
+        authority,
+        {
+          kind: "published",
+          url: receipt.url,
+          commitSha: receipt.commitSha,
+          branch: receipt.branch,
+          draft: receipt.draft,
+        },
+        { request },
+      );
+    return result;
   };
   let remote = snapshot();
   verifyRemote(remote);

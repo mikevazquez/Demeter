@@ -140,8 +140,11 @@ for steps already authorized, and do not treat silence as approval for new scope
 - Populate/review a bounded catalog under the user's authorization before enabling
   new work. Executable validation is implemented in block 1; the empty example
   enables nothing, and no automatic successor policy is enabled.
-- Establish authoritative cross-host registry lifecycle and concurrency behavior;
-  per-ID claims and a local mutex alone are not a general shared scheduler.
+- Use the block 2 shared authority with its reviewed idle canonical migration
+  and externally pinned genesis (`registry-authority.md`). The initial imported
+  history is ready; new catalog admission requires that pin. No task/catalog
+  entry or worker is activated by its initialization. Review/integration must
+  ensure every writer uses the reviewed supervisor.
 - Validate a separately authorized future task through that admission path, with
   independent acceptance, durable recovery and one Draft. Do not reuse pilot IDs.
 

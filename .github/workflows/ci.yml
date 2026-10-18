@@ -80,6 +80,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/automation/verify-result-recovery-ci.mjs docs/automation/result-recovery-318-v2.json
 
+      - name: Inspect shared registry from independent runner (GET only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/automation/verify-registry-authority-ci.mjs
+
       - name: Upload recovery certificate and evidence
         if: always()
         uses: actions/upload-artifact@v4

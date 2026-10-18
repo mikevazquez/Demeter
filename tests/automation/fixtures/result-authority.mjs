@@ -70,6 +70,8 @@ export function fixture() {
       ],
     ]),
     blobs = new Map(),
+    commits = new Map(),
+    trees = new Map(),
     calls = [];
   let counter = 1,
     prs = [];
@@ -80,6 +82,46 @@ export function fixture() {
     const prefix = "repos/mikevazquez/Demeter/git/";
     if (method === "GET" && endpoint.startsWith("repos/mikevazquez/Demeter/pulls?"))
       return structuredClone(prs);
+    if (method === "GET" && /^repos\/mikevazquez\/Demeter\/pulls\/\d+$/.test(endpoint)) {
+      const pr = prs.find(
+        (p) =>
+          p.html_url ===
+          `https://github.com/mikevazquez/Demeter/pull/${endpoint.split("/").at(-1)}`,
+      );
+      if (!pr) throw error(404);
+      return structuredClone(pr);
+    }
+    for (const [kind, objects] of [
+      ["commits", commits],
+      ["trees", trees],
+    ]) {
+      if (method === "GET" && endpoint.startsWith(prefix + kind + "/")) {
+        const object = objects.get(endpoint.split("/").at(-1).split("?")[0]);
+        if (!object) throw error(404);
+        return structuredClone(object);
+      }
+      if (method === "POST" && endpoint === prefix + kind) {
+        const sha = (++counter).toString(16).padStart(40, "0");
+        objects.set(
+          sha,
+          kind === "trees"
+            ? { sha, tree: body.tree, truncated: false }
+            : { sha, tree: { sha: body.tree }, parents: body.parents.map((sha) => ({ sha })) },
+        );
+        return { sha };
+      }
+    }
+    if (method === "PATCH" && endpoint.startsWith(prefix + "refs/")) {
+      const ref = "refs/" + endpoint.slice((prefix + "refs/").length);
+      if (
+        body.force !== false ||
+        commits.get(body.sha)?.parents[0].sha !== refs.get(ref)?.object.sha
+      )
+        throw error(422);
+      const result = { ref, object: { sha: body.sha, type: "commit" } };
+      refs.set(ref, result);
+      return structuredClone(result);
+    }
     if (method === "GET" && endpoint.startsWith(prefix + "ref/")) {
       const ref = refs.get("refs/" + endpoint.slice((prefix + "ref/").length));
       if (!ref) throw error(404);
@@ -111,7 +153,10 @@ export function fixture() {
     }
     if (method === "POST" && endpoint === prefix + "refs") {
       if (refs.has(body.ref)) throw error(422);
-      const ref = { ref: body.ref, object: { sha: body.sha, type: "tag" } };
+      const ref = {
+        ref: body.ref,
+        object: { sha: body.sha, type: commits.has(body.sha) ? "commit" : "tag" },
+      };
       refs.set(body.ref, ref);
       return structuredClone(ref);
     }
@@ -160,6 +205,8 @@ export function fixture() {
     refs,
     tags,
     blobs,
+    commits,
+    trees,
     calls,
     request,
     error,

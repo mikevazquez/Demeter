@@ -93,9 +93,12 @@ const trustedCatalog = {
   sha256: reviewedCatalogDigest,
 };
 const task = admitTask(repo, trustedCatalog, approvedWorkKey); // Read-only preflight.
-reserveApproved(repo, canonicalRegistry, trustedCatalog, approvedWorkKey);
-const result = executeOnce(repo, canonicalRegistry, task.id, { trustedCatalog });
+reserveApproved(repo, canonicalRegistry, trustedCatalog, approvedWorkKey, { authority });
+const result = executeOnce(repo, canonicalRegistry, task.id, { trustedCatalog, authority });
 ```
+
+The trusted supervisor also supplies the pinned shared authority described in
+`registry-authority.md`; a missing pin blocks new admission.
 
 The admitted task carries a proof bound to the catalog digest, workKey, exact task
 digest, target branch, limits, deadline and independent checks. The original
@@ -132,7 +135,8 @@ output budgets, branch binding and checkpoint/result/recovery provenance. They
 make no real model call and no canonical reservation. CI checks the aggregate code
 and the earlier published pilot independently; that is not a new admitted-task E2E.
 
-Block 1 supplies executable admission and rejection controls. Block 2 still owns
-cross-host registry coordination. Block 3 will test a separately authorized new
+Block 1 supplies executable admission and rejection controls. Block 2 implements
+cross-host registry coordination as described in `registry-authority.md`;
+activation still requires the reviewed migration and external genesis pin. Block 3 will test a separately authorized new
 task end-to-end. Block 4 still requires review/integration; no merge or deployment
 is authorized here. The empty example catalog is deliberately not a live queue.

@@ -1,0 +1,10 @@
+{
+  "schema": "governance2-registry-318-pin-v1",
+  "authority": {
+    "ref": "refs/heads/governance2/registry-318-v1",
+    "genesisSha": "0e77480cdf0921fe62bbe0a74f1cb563e92e9778"
+  },
+  "historySha256": "67e3d21a5db1f552587a02a9378ebb5988ceb4fd34eb3706cc5e42a19b1ea837",
+  "historyCount": 9,
+  "sourceBaseSha": "71e0a0310bd0867c76293731f700e3812a484d6b"
+}

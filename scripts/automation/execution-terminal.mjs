@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { withRegistryMutation, isClosedBlockedAttempt } from "../studio-flow-minimal.mjs";
 import { githubRequest } from "./execution-claim.mjs";
+import { verifyRegistryTask, settleRegistryTask } from "./registry-authority.mjs";
 import { readExecutionCheckpoint } from "./execution-checkpoint.mjs";
 const API = "repos/mikevazquez/Demeter";
 export const AUTH_REFRESH_ERROR =
@@ -97,10 +98,11 @@ function inspect(repo, registry, id) {
     intent: read(path.join(executor, "intent.json")),
   };
 }
-export function closeAuthBlocked(repo, registry, id, { request = githubRequest } = {}) {
+export function closeAuthBlocked(repo, registry, id, { request = githubRequest, authority } = {}) {
   return withRegistryMutation(registry, () => {
     const s = inspect(repo, registry, id),
       identity = { ...s.task, contractSha256: s.contractSha256 };
+    if (s.task.admission) verifyRegistryTask(s.task, authority, { request, allowClosed: true });
     const checked = readExecutionCheckpoint(id, identity, { request });
     assert(
       checked.objectSha === s.checkpoint.objectSha &&
@@ -197,6 +199,13 @@ export function closeAuthBlocked(repo, registry, id, { request = githubRequest }
       assert(JSON.stringify(read(filename)) === JSON.stringify(terminal), "Local terminal differs");
     else fs.writeFileSync(filename, JSON.stringify(terminal) + "\n", { flag: "wx", mode: 0o600 });
     assert(isClosedBlockedAttempt(registry, id), "Terminal local readback failed");
+    if (s.task.admission)
+      settleRegistryTask(
+        s.task,
+        authority,
+        { kind: "auth-blocked", objectSha: tag.sha, record },
+        { request },
+      );
     const lock = path.join(registry, "active.json");
     if (fs.existsSync(lock) && read(lock).id === id) fs.unlinkSync(lock);
     return {
