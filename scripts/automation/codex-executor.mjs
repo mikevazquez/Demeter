@@ -5,6 +5,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { reserve } from "../studio-flow-minimal.mjs";
+import { claimExecution } from "./execution-claim.mjs";
 import { isTrustedStateComment, parseState } from "./continuity-lab.mjs";
 
 const assert = (value, message) => {
@@ -173,7 +174,12 @@ export function executionStatus(repo, registry, id) {
   return result;
 }
 
-export function executeOnce(repo, registry, id, { binary = "codex", timeout = 120000 } = {}) {
+export function executeOnce(
+  repo,
+  registry,
+  id,
+  { binary = "codex", timeout = 120000, claim = claimExecution } = {},
+) {
   const state = context(repo, registry, id);
   const executionDir = path.join(state.dir, "executor");
   if (!fs.existsSync(executionDir)) {
@@ -206,6 +212,14 @@ export function executeOnce(repo, registry, id, { binary = "codex", timeout = 12
     mode: "supervised-cli",
   };
   atomicWrite(path.join(executionDir, "intent.json"), intent);
+  const remoteClaim = claim({
+    id,
+    baseSha: state.task.baseSha,
+    contractSha256: state.contractSha256,
+    authorization: state.task.authorization,
+  });
+  assert(remoteClaim?.status === "acquired", "Task consumed remotely; inspect original execution");
+  atomicWrite(path.join(executionDir, "remote-claim.json"), remoteClaim);
   const stdout = fs.openSync(path.join(executionDir, "events.jsonl"), "wx", 0o600);
   const stderr = fs.openSync(path.join(executionDir, "stderr.log"), "wx", 0o600);
   const prompt = `Implement only this authorized task. Do not commit, publish, use services, read credentials or change tests outside scope.\n${JSON.stringify(state.task)}\nAllowed files are exact. Report the result; the supervisor certifies independently.`;
