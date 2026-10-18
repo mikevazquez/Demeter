@@ -111,3 +111,17 @@ El alcance autorizado consta únicamente de estos cinco archivos:
 - `docs/automation/codex-executor-318.md`: autorización y estado de esta validación.
 
 El estado de la E2E de código es **EN VALIDACIÓN**. Esta implementación no acredita certificación ni publicación completadas. No se ejecutan pruebas en el sandbox anidado; el supervisor verificará los cinco archivos y ejecutará sus comprobaciones offline de forma independiente. No se autorizan commits, publicación, servicios, acceso a credenciales, llamadas de modelo/API, instalación de dependencias, worktrees ni cambios de aplicación. Se mantienen los límites de aislamiento, intento único, recuperación, autoridad y publicación descritos arriba; las pruebas con dobles no certifican autonomía general ni el cierre de Governance 2.0.
+
+## Checkpoint durable antes de generar
+
+El supervisor guarda un checkpoint remoto inmutable después de adquirir el claim de ejecución y antes de abrir el log o invocar Codex. Contiene exclusivamente el contrato revisado (con su hash), el propietario verificado y la intención, nunca credenciales, variables de proceso o eventos del modelo. La ref es `refs/tags/vianelis/execution-checkpoints/<id>` y apunta a un tag anotado cuyo objeto es la base autorizada. No se mueve, libera ni elimina. Una referencia existente debe coincidir exactamente; solo un 404 al consultar esa referencia establece ausencia. Si falla la escritura, hay conflicto, se pierde la respuesta o cambia el propietario, el intento local queda incierto y no genera.
+
+El comando de inspección no requiere registro local:
+
+```sh
+node /supervisor/scripts/automation/codex-executor.mjs recover-remote ID BASE_SHA CONTRACT_SHA256
+```
+
+Lee GitHub y vuelve a verificar contrato, base y propietario. Devuelve `reserved` si aún no se declaró intención, o `uncertain` si existe intención; siempre `generationAllowed:false`, `registryRestored:false` y `inspect-original-only`. La intención previa no demuestra que Codex llegó a arrancar ni terminar. No crea un registro, `active.json`, sesión o PR; no ejecuta los comandos del contrato ni importa archivos del candidato. No admite generar desde el checkpoint, transferir al propietario o regenerar un ID consumido. La allowlist de IDs de modelo permanece intacta.
+
+Este incremento hace durable el contexto previo al intento, incluso si desaparece el registro local. No guarda automáticamente el resultado/candidato después de una caída, no reanuda una generación ni habilita un registro operativo para tareas futuras. La recuperación de una tarea ya completada en otro entorno se acredita separadamente en #318. Vianelis es la empresa; Governance 2.0 sigue siendo la metodología autónoma en construcción.

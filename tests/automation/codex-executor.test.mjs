@@ -17,7 +17,11 @@ import { serializeState } from "../../scripts/automation/continuity-lab.mjs";
 
 // Trusted in-process claim double: these tests deliberately make no network/model calls.
 const executeOnce = (repo, registry, id, options = {}) =>
-  guardedExecuteOnce(repo, registry, id, { claim: () => ({ status: "acquired" }), ...options });
+  guardedExecuteOnce(repo, registry, id, {
+    claim: () => ({ status: "acquired" }),
+    checkpoint: () => ({ status: "recorded" }),
+    ...options,
+  });
 const FIRST = 38989415241;
 const SECOND = 38999999999;
 const ID = `continuity-315-${FIRST}`;
@@ -138,7 +142,13 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
     ]) {
       const s = setup();
       const binary = fakeCli(s.root, success);
-      expect(() => executeOnce(s.repo, s.registry, ID, { binary, claim })).toThrow();
+      expect(() =>
+        executeOnce(s.repo, s.registry, ID, {
+          binary,
+          claim,
+          checkpoint: () => ({ status: "recorded" }),
+        }),
+      ).toThrow();
       expect(fs.existsSync(path.join(s.repo, "proof.mjs"))).toBe(false);
       expect(executionStatus(s.repo, s.registry, ID).status).toBe("uncertain");
       expect(
@@ -150,6 +160,44 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
         }).status,
       ).toBe("uncertain");
     }
+  });
+  it("cannot spawn if durable checkpoint fails and cannot retry generation afterward", () => {
+    const s = setup();
+    const binary = fakeCli(s.root, success);
+    let checkpoints = 0;
+    const checkpoint = () => {
+      checkpoints++;
+      throw new Error("checkpoint response lost");
+    };
+    expect(() => executeOnce(s.repo, s.registry, ID, { binary, checkpoint })).toThrow(
+      "response lost",
+    );
+    expect(fs.existsSync(path.join(s.repo, "proof.mjs"))).toBe(false);
+    expect(fs.existsSync(path.join(s.registry, ID, "executor", "events.jsonl"))).toBe(false);
+    expect(executionStatus(s.repo, s.registry, ID).status).toBe("uncertain");
+    expect(executeOnce(s.repo, s.registry, ID, { binary, checkpoint }).status).toBe("uncertain");
+    expect(checkpoints).toBe(1);
+  });
+  it("confirms a checkpoint bound to the actual intent before spawning the explicit CLI double", () => {
+    const s = setup();
+    const binary = fakeCli(s.root, success);
+    let observed;
+    const checkpoint = (state, owner, intent) => {
+      expect(fs.existsSync(path.join(s.repo, "proof.mjs"))).toBe(false);
+      expect(fs.existsSync(path.join(s.registry, ID, "executor", "events.jsonl"))).toBe(false);
+      expect(intent.contractSha256).toBe(state.contractSha256);
+      expect(intent.id).toBe(ID);
+      expect(owner.status).toBe("acquired");
+      observed = intent;
+      return { status: "recorded", objectSha: "a".repeat(40) };
+    };
+    expect(executeOnce(s.repo, s.registry, ID, { binary, checkpoint }).status).toBe(
+      "candidate-ready",
+    );
+    expect(observed.mode).toBe("supervised-cli");
+    expect(
+      JSON.parse(fs.readFileSync(path.join(s.registry, ID, "executor", "checkpoint.json"))).status,
+    ).toBe("recorded");
   });
   it("records timeout without allowing regeneration", () => {
     const s = setup();
@@ -248,7 +296,11 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
       claims.push(request);
       return { status: "acquired" };
     };
-    const result = guardedExecuteOnce(s.repo, registry, task.id, { binary, claim });
+    const result = guardedExecuteOnce(s.repo, registry, task.id, {
+      binary,
+      claim,
+      checkpoint: () => ({ status: "recorded" }),
+    });
     expect(result.status).toBe("candidate-ready");
     expect(claims).toEqual([
       {
@@ -262,7 +314,13 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
     expect(intent.continuity).toEqual(continuity);
     expect(executionStatus(s.repo, registry, task.id)).toEqual(result);
     fs.unlinkSync(binary);
-    expect(guardedExecuteOnce(s.repo, registry, task.id, { binary, claim })).toEqual(result);
+    expect(
+      guardedExecuteOnce(s.repo, registry, task.id, {
+        binary,
+        claim,
+        checkpoint: () => ({ status: "recorded" }),
+      }),
+    ).toEqual(result);
     expect(claims).toHaveLength(1);
   });
   it("rejects unauthorized owned code reservations, invalid continuity and arbitrary IDs", () => {
@@ -361,7 +419,7 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
       `require('node:fs').appendFileSync(${JSON.stringify(count)}, 'launch\\n'); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,150); ${success}`,
     );
     const modulePath = path.resolve("scripts/automation/codex-executor.mjs");
-    const source = `import {executeOnce} from ${JSON.stringify(modulePath)}; executeOnce(${JSON.stringify(s.repo)},${JSON.stringify(s.registry)},${JSON.stringify(ID)},{binary:${JSON.stringify(binary)},claim:()=>({status:"acquired"})});`;
+    const source = `import {executeOnce} from ${JSON.stringify(modulePath)}; executeOnce(${JSON.stringify(s.repo)},${JSON.stringify(s.registry)},${JSON.stringify(ID)},{binary:${JSON.stringify(binary)},claim:()=>({status:"acquired"}),checkpoint:()=>({status:"recorded"})});`;
     const launch = () =>
       new Promise((resolve, reject) => {
         const child = spawn(process.execPath, ["--input-type=module", "-e", source], {
@@ -428,7 +486,7 @@ describe("Codex executor 318 (explicit CLI doubles, no model calls)", () => {
       [
         "--input-type=module",
         "-e",
-        `import {executeOnce} from ${JSON.stringify(modulePath)}; executeOnce(${JSON.stringify(s.repo)},${JSON.stringify(s.registry)},${JSON.stringify(ID)},{binary:${JSON.stringify(binary)},claim:()=>({status:"acquired"})});`,
+        `import {executeOnce} from ${JSON.stringify(modulePath)}; executeOnce(${JSON.stringify(s.repo)},${JSON.stringify(s.registry)},${JSON.stringify(ID)},{binary:${JSON.stringify(binary)},claim:()=>({status:"acquired"}),checkpoint:()=>({status:"recorded"})});`,
       ],
       { stdio: "ignore" },
     );
