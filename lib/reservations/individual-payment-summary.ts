@@ -7,7 +7,7 @@ export function individualPaymentSummary(input: {
 }): string | null {
   if (
     input.commercialStatus !== "paid" ||
-    input.classKind !== "drop_in" ||
+    (input.classKind != null && input.classKind !== "drop_in") ||
     input.amountMinor == null ||
     !Number.isFinite(input.amountMinor) ||
     input.amountMinor <= 0

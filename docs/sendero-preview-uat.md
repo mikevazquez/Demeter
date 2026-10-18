@@ -28,3 +28,7 @@ Additional marker: `sendero-commercial-preview-20261018`.
 - **Demo · Gabriela Clase150**: one normal individual-class reservation in the same 19:00 demo on each date, each linked to a $150 MXN sale and payment, with commercial status `paid`. The roster displays the saved amount as paid rather than using the current class price or treating a pending payment as settled.
 
 The class now has 7/8 reserved places on each date. New demo profiles have no telephone, email, or login. Verification includes five payment-summary tests, 24 total focused tests, TypeScript, browser checks of the paid-class label and package credit balance, and persisted payment/linkage queries. There are no production changes.
+
+## Production compatibility
+
+Pre-release inspection confirmed the production reservation schema has commercial status but not the optional class-kind/amount columns present in the sandbox. The roster reads available reservation metadata and obtains paid amounts from existing reservation-linked payments, net of refunds, only when the operator can read sales. Missing legacy metadata does not prevent class loading. A confirmed paid amount remains visible without requiring a schema migration; pending or unsupported payments are not labelled as paid.

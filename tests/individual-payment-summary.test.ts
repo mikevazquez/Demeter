@@ -13,6 +13,9 @@ describe("Individual class payment summary", () => {
   it("shows the saved $150 payment in pesos, not minor units", () => {
     expect(individualPaymentSummary(paidClass)).toBe("$150.00 pagados");
   });
+  it("supports a confirmed payment when legacy reservations have no class-kind column", () => {
+    expect(individualPaymentSummary({ ...paidClass, classKind: null })).toBe("$150.00 pagados");
+  });
   it("does not call a pending payment paid", () => {
     expect(
       individualPaymentSummary({ ...paidClass, commercialStatus: "payment_pending" }),

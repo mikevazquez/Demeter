@@ -280,9 +280,9 @@ export default async function AdminPage({
     sessionIds.length
       ? supabase
           .from("reservations")
-          .select(
-            "id,session_id,student_id,guest_person_id,status,acquisition_id,booked_at,commercial_status,class_kind,class_amount_minor",
-          )
+          // Optional class-payment metadata is not present in every deployed schema.
+          // Only the explicit roster fields below are sent to the client.
+          .select("*")
           .in("session_id", sessionIds)
           .in("status", ["reserved", "attended", "no_show"])
           .order("booked_at")
@@ -365,6 +365,7 @@ export default async function AdminPage({
     { data: evaluationInvitations },
     { data: resourceAssignments },
     { data: acquisitions },
+    { data: reservationPayments, error: reservationPaymentsError },
   ] = await Promise.all([
     personIds.length
       ? supabase
@@ -425,7 +426,27 @@ export default async function AdminPage({
             unlimited: boolean;
           }[],
         }),
+    canReadSales && reservationIds.length
+      ? supabase
+          .from("payments")
+          .select("reservation_id,amount_minor,kind")
+          .eq("studio_id", studio.id)
+          .in("reservation_id", reservationIds)
+      : Promise.resolve({
+          data: [] as { reservation_id: string | null; amount_minor: number; kind: string }[],
+          error: null,
+        }),
   ]);
+
+  const individualPaidByReservation = new Map<string, number>();
+  for (const payment of reservationPayments ?? []) {
+    if (!payment.reservation_id) continue;
+    const delta = payment.kind === "refund" ? -payment.amount_minor : payment.amount_minor;
+    individualPaidByReservation.set(
+      payment.reservation_id,
+      (individualPaidByReservation.get(payment.reservation_id) ?? 0) + delta,
+    );
+  }
 
   const checkinByReservation = new Map(
     (attendanceCheckins ?? []).map((item) => [item.reservation_id, item]),
@@ -560,11 +581,11 @@ export default async function AdminPage({
           : null;
 
         const individualPayment =
-          !acquisition && !isGuest
+          canReadSales && !reservationPaymentsError && !acquisition && !isGuest
             ? individualPaymentSummary({
                 commercialStatus: reservation.commercial_status,
-                classKind: reservation.class_kind,
-                amountMinor: reservation.class_amount_minor,
+                classKind: reservation.class_kind ?? null,
+                amountMinor: individualPaidByReservation.get(reservation.id) ?? null,
                 currency: studio.currency,
                 locale,
               })
