@@ -193,9 +193,21 @@ describe("sealed results and recovery (explicit remote/model fixtures)", () => {
       request: s.request,
       verificationOnly: true,
     });
+    expect(
+      JSON.parse(fs.readFileSync(path.join(target.registry, "verification-only.json"))),
+    ).toEqual({ id: s.task.id, verificationOnly: true });
+    const before = s.calls.length;
+    const replay = executeOnce(target.repo, target.registry, s.task.id, {
+      binary: "/must-not-spawn-from-published-verification",
+      claim: () => {
+        throw new Error("No claim in verification replay");
+      },
+    });
+    expect(replay).toMatchObject({ status: "candidate-ready", sessionId: s.result.sessionId });
     expect(() =>
       publishDraftOnce(target.repo, target.registry, s.task.id, {}, { request: s.request }),
     ).toThrow("Verification registry");
+    expect(s.calls).toHaveLength(before);
     s.setPrs([]);
     expect(() =>
       restoreExecution(target.repo, target.registry, s.task.id, s.identity, { request: s.request }),

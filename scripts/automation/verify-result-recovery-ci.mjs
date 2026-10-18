@@ -5,9 +5,13 @@ import os from "node:os";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { readExecutionResult, restoreExecution } from "./execution-result.mjs";
+import {
+  readExecutionResult,
+  restoreExecution,
+  verifyResultCertificate,
+} from "./execution-result.mjs";
 import { githubRequest } from "./execution-claim.mjs";
-import { executeOnce } from "./codex-executor.mjs";
+import { executeOnce, publishDraftOnce } from "./codex-executor.mjs";
 const config = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 assert(
   process.env.GITHUB_ACTIONS === "true" && process.env.GITHUB_RUN_ID,
@@ -55,8 +59,20 @@ const request = (method, endpoint, body) => {
 const recovered = readExecutionResult(config.id, config, { request });
 assert.equal(recovered.durableResult.objectSha, config.resultObjectSha);
 assert.equal(recovered.bundle.result.sessionId, config.sessionId);
-const restored = restoreExecution(repo, registry, config.id, config, { request });
-assert(restored.registryRestored && !restored.generationAllowed);
+// CI recertifies bytes even after a PR exists; it must never restore operational authority.
+const restored = restoreExecution(repo, registry, config.id, config, {
+  request,
+  verificationOnly: true,
+});
+assert(restored.registryRestored && !restored.generationAllowed && restored.verificationOnly);
+assert.deepEqual(JSON.parse(fs.readFileSync(path.join(registry, "verification-only.json"))), {
+  id: config.id,
+  verificationOnly: true,
+});
+assert.throws(
+  () => publishDraftOnce(repo, registry, config.id, {}, { request }),
+  /Verification registry/,
+);
 const replay = executeOnce(repo, registry, config.id, {
   binary: "/must-not-spawn",
   claim: () => {
@@ -140,7 +156,7 @@ try {
   run("docker", ["rm", "--force", container]);
 }
 const certificate = JSON.parse(fs.readFileSync(path.join(registry, config.id, "certificate.json")));
-assert(certificate.passed);
+verifyResultCertificate(certificate, recovered);
 assert.equal(certificate.contractSha256, config.contractSha256);
 for (const file of certificate.files) {
   const sealed = recovered.bundle.files.find((f) => f.path === file.path);
@@ -161,6 +177,8 @@ const report = {
   modelCalls: 0,
   originRegistryPresent: false,
   registryRestored: true,
+  verificationOnly: true,
+  publicationBlocked: true,
   replayCandidateReady: true,
   offlineCertificatePassed: true,
   files: certificate.files,
