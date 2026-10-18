@@ -13,7 +13,8 @@ describe("Demi pilot webhook forwarding", () => {
   });
 
   it("forwards only when every inbound message belongs to the explicit allowlist", () => {
-    const targetUrl = "https://demi-starter-uat.demeterfitness.com/api/integrations/meta-whatsapp/webhook?studio=9fe23cfa-fb47-4670-afeb-ed4a56433772";
+    const targetUrl =
+      "https://demi-starter-uat.demeterfitness.com/api/integrations/meta-whatsapp/webhook?studio=9fe23cfa-fb47-4670-afeb-ed4a56433772";
     expect(
       pilotForwardTarget({
         messages: [{ fromWaId: "5213323291878" }],
@@ -37,7 +38,8 @@ describe("Demi pilot webhook forwarding", () => {
     expect(
       pilotForwardTarget({
         messages: [{ fromWaId: "523323291878" }],
-        targetUrl: "https://demi-starter-uat.demeterfitness.com/api/integrations/meta-whatsapp/webhook",
+        targetUrl:
+          "https://demi-starter-uat.demeterfitness.com/api/integrations/meta-whatsapp/webhook",
         allowWaIds: "523323291878",
         alreadyForwarded: true,
       }),
@@ -74,7 +76,8 @@ describe("Demi pilot webhook forwarding", () => {
     });
 
     const result = await forwardSignedMetaWebhook({
-      targetUrl: "https://demi-starter-uat.demeterfitness.com/api/integrations/meta-whatsapp/webhook",
+      targetUrl:
+        "https://demi-starter-uat.demeterfitness.com/api/integrations/meta-whatsapp/webhook",
       rawBody: '{"entry":[]}',
       signature: "sha256=test",
       fetcher: fetcher as typeof fetch,
