@@ -10,6 +10,7 @@ import {
   restoreExecution,
   verifyResultCertificate,
 } from "./execution-result.mjs";
+import { verifyRegistryTask, verifyRegistryClosure } from "./registry-authority.mjs";
 import { githubRequest } from "./execution-claim.mjs";
 import { executeOnce, publishDraftOnce } from "./codex-executor.mjs";
 const config = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
@@ -25,9 +26,11 @@ assert(
 const root = fs.mkdtempSync(
   path.join(process.env.RUNNER_TEMP ?? os.tmpdir(), "governance2-recovery-"),
 );
+const evidenceName = config.evidenceName ?? "governance2-recovery-evidence";
+assert(/^governance2-[a-z0-9-]{3,100}$/.test(evidenceName), "Safe evidence name required");
 const repo = path.join(root, "candidate"),
   registry = path.join(root, "registry"),
-  out = path.join(process.env.RUNNER_TEMP, "governance2-recovery-evidence");
+  out = path.join(process.env.RUNNER_TEMP, evidenceName);
 fs.mkdirSync(out, { recursive: true });
 function run(binary, args, options = {}) {
   const result = spawnSync(binary, args, {
@@ -59,6 +62,29 @@ const request = (method, endpoint, body) => {
 const recovered = readExecutionResult(config.id, config, { request });
 assert.equal(recovered.durableResult.objectSha, config.resultObjectSha);
 assert.equal(recovered.bundle.result.sessionId, config.sessionId);
+let sharedAuthority = null;
+if (config.authority) {
+  const task = recovered.bundle.reservation.task;
+  const observed = verifyRegistryTask(task, config.authority, { request, allowClosed: true });
+  assert.deepEqual(
+    observed.entry.closure,
+    config.closedReceipt,
+    "Exact closed shared receipt required",
+  );
+  verifyRegistryClosure({ ...task, contractSha256: config.contractSha256 }, config.closedReceipt, {
+    request,
+  });
+  sharedAuthority = {
+    ref: config.authority.ref,
+    genesisSha: config.authority.genesisSha,
+    headSha: observed.headSha,
+    active: observed.state.active,
+    closedId: task.id,
+    closedReceipt: observed.entry.closure,
+    historyCount: observed.state.history.length,
+    entries: observed.state.entries.length,
+  };
+}
 // CI recertifies bytes even after a PR exists; it must never restore operational authority.
 const restored = restoreExecution(repo, registry, config.id, config, {
   request,
@@ -172,6 +198,7 @@ const report = {
   contractSha256: config.contractSha256,
   resultObjectSha: config.resultObjectSha,
   sessionId: config.sessionId,
+  sharedAuthority,
   remoteReads: reads,
   remoteWrites: 0,
   modelCalls: 0,

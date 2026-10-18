@@ -80,6 +80,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/automation/verify-result-recovery-ci.mjs docs/automation/result-recovery-318-v2.json
 
+      - name: Recover admitted task and verify shared closure offline
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/automation/verify-result-recovery-ci.mjs docs/automation/combined-e2e-318.json
+
+      - name: Upload admitted task evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: governance2-combined-e2e-318
+          path: ${{ runner.temp }}/governance2-combined-evidence-318
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Inspect shared registry from independent runner (GET only)
         env:
           GH_TOKEN: ${{ github.token }}

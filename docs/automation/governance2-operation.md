@@ -145,8 +145,13 @@ for steps already authorized, and do not treat silence as approval for new scope
   history is ready; new catalog admission requires that pin. No task/catalog
   entry or worker is activated by its initialization. Review/integration must
   ensure every writer uses the reviewed supervisor.
-- Validate a separately authorized future task through that admission path, with
-  independent acceptance, durable recovery and one Draft. Do not reuse pilot IDs.
+- Review the combined admitted-task evidence in issue #318 and Draft #334.
+  receipt-agreement-318-v1 completed one authentic CLI invocation, sealed recovery
+  with the original path absent, 85 independent acceptance cases, 60 candidate
+  tests and one Draft via the existing publisher. Its shared slot is closed and
+  the ID stays consumed. Runner verification is configured in combined-e2e-318.json;
+  consult the actual CI run before asserting success. This bounded acceptance
+  does not authorize another task or establish permanent hosting.
 
 Product discovery, experience design and UAT apply to the specific product work
 that Vianelis chooses. They do not turn a technical recovery demonstration into
