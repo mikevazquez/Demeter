@@ -344,7 +344,7 @@ export default async function AgendaPage({
   };
 
   return (
-    <main className="dashboard-shell agenda-calendar-page">
+    <main className="dashboard-shell agenda-calendar-page sendero-agenda">
       <header className="agenda-product-header">
         <div className="agenda-product-wordmark" aria-label="Studio Flow">
           <span>
@@ -477,6 +477,7 @@ export default async function AgendaPage({
                       return (
                         <Link
                           key={session.id}
+                          aria-label={`${session.name}, ${formatTime(session.starts_at, timeZone, locale)}, ${statusLabel(session.status)}, ${session.occupied} de ${session.capacity} lugares`}
                           href={`/admin/agenda?date=${key}&session=${session.id}`}
                           className={`agenda-session-block${isSelected ? " is-selected" : ""}${session.status === "cancelled" ? " is-cancelled" : ""}`}
                           style={

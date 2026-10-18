@@ -20,7 +20,7 @@
   font-weight: 400;
   font-display: swap;
 }
-.admin-shell:has(.hoy-sendero) {
+.admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) {
   color-scheme: dark;
   --bg: #1d1e23;
   --bg-soft: #26282e;
@@ -49,33 +49,33 @@
   color: var(--text);
   font-family: "Sendero Montserrat", system-ui, sans-serif;
 }
-.admin-shell:has(.hoy-sendero) .admin-content {
+.admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .admin-content {
   background: linear-gradient(180deg, #1d1e23, #22232a 60%, #2a2834);
 }
-.admin-shell:has(.hoy-sendero) .admin-sidebar,
-.admin-shell:has(.hoy-sendero) .admin-utility-bar {
+.admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .admin-sidebar,
+.admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .admin-utility-bar {
   border-color: var(--line);
   background: #222329;
   box-shadow: none;
 }
-.admin-shell:has(.hoy-sendero) .admin-global-search,
-.admin-shell:has(.hoy-sendero) .sidebar-signout {
+.admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .admin-global-search,
+.admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .sidebar-signout {
   background: #2a2c33;
   border-color: var(--line);
   color: var(--muted);
 }
-.admin-shell:has(.hoy-sendero) .admin-nav-item {
+.admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .admin-nav-item {
   color: var(--muted);
   border-radius: 18px;
 }
-.admin-shell:has(.hoy-sendero) .admin-nav-item:hover,
-.admin-shell:has(.hoy-sendero) .admin-nav-item.is-active {
+.admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .admin-nav-item:hover,
+.admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .admin-nav-item.is-active {
   background: var(--accent-soft);
   color: var(--accent);
 }
-.admin-shell:has(.hoy-sendero) .brand-mark,
-.admin-shell:has(.hoy-sendero) .admin-user-button,
-.admin-shell:has(.hoy-sendero) .sidebar-avatar {
+.admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .brand-mark,
+.admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .admin-user-button,
+.admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .sidebar-avatar {
   border-color: transparent;
   background: #5f6b8d;
   color: #f1eee6;
@@ -570,7 +570,7 @@
   }
 }
 @media (max-width: 760px) {
-  .admin-shell:has(.hoy-sendero) .admin-mobile-header {
+  .admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .admin-mobile-header {
     display: none;
   }
   .hoy-sendero.hoy-v2.hoy-approved {
@@ -600,7 +600,7 @@
   .hoy-sendero .hoy-glance strong {
     font-size: 20px;
   }
-  .admin-shell:has(.hoy-sendero) .admin-mobile-nav {
+  .admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .admin-mobile-nav {
     right: 16px;
     bottom: calc(12px + env(safe-area-inset-bottom));
     left: 16px;
@@ -612,12 +612,12 @@
     color: var(--muted);
     box-shadow: 0 12px 32px #00000055;
   }
-  .admin-shell:has(.hoy-sendero) .admin-mobile-nav a {
+  .admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .admin-mobile-nav a {
     min-height: 56px;
     border-radius: 20px;
     color: var(--muted);
   }
-  .admin-shell:has(.hoy-sendero) .admin-mobile-nav a.is-active {
+  .admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .admin-mobile-nav a.is-active {
     background: var(--accent-soft);
     color: var(--accent);
   }
@@ -647,7 +647,7 @@
   flex-direction: column;
   gap: 3px;
 }
-.admin-shell:has(.hoy-sendero) .admin-global-search input {
+.admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .admin-global-search input {
   width: 100%;
   border: 0;
   outline: 0;
@@ -710,8 +710,8 @@
 }
 @media (max-width: 760px) {
   /* Home owns the clearance for its floating navigation. */
-  .admin-shell:has(.hoy-sendero),
-  .admin-shell:has(.hoy-sendero) .admin-content {
+  .admin-shell:has(:is(.hoy-sendero, .sendero-agenda)),
+  .admin-shell:has(:is(.hoy-sendero, .sendero-agenda)) .admin-content {
     padding-bottom: 0;
   }
 }

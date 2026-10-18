@@ -1,0 +1,328 @@
+/* Sendero Agenda preview. Existing calendar and server actions are preserved. */
+.sendero-agenda.agenda-calendar-page {
+  --agenda-v2-bg: #1d1e23;
+  --agenda-v2-surface: #292b33;
+  --agenda-v2-line: #ffffff14;
+  --agenda-v2-text: #f1eee6;
+  --agenda-v2-muted: #a3a6b2;
+  --agenda-v2-accent: #8fe6c8;
+  --agenda-v2-accent-soft: #8fe6c824;
+  width: 100%;
+  max-width: 1520px;
+  margin: 0 auto;
+  padding: 30px 32px 48px;
+  gap: 22px;
+  background: transparent;
+  color: var(--agenda-v2-text);
+}
+.sendero-agenda .agenda-calendar-header {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+.sendero-agenda .agenda-calendar-header .eyebrow {
+  color: #a3a6b2;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+.sendero-agenda .agenda-calendar-header h1 {
+  color: #f1eee6;
+  font-family: "Sendero Marcellus", Georgia, serif;
+  font-size: 42px;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+}
+.sendero-agenda .agenda-calendar-header p {
+  color: #a3a6b2;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.sendero-agenda .agenda-icon-button,
+.sendero-agenda .agenda-today-button,
+.sendero-agenda .agenda-config-button,
+.sendero-agenda .agenda-week-range {
+  min-height: 44px;
+  border-color: #ffffff14;
+  border-radius: 999px;
+  background: #2a2c33;
+  color: #f1eee6;
+  box-shadow: none;
+}
+.sendero-agenda .agenda-icon-button {
+  min-width: 44px;
+}
+.sendero-agenda .agenda-today-button,
+.sendero-agenda .agenda-config-button {
+  color: #8fe6c8;
+}
+.sendero-agenda .agenda-week-range {
+  font-size: 11px;
+  font-weight: 500;
+}
+.sendero-agenda .agenda-week-strip {
+  border: 1px solid #ffffff0d;
+  border-radius: 26px;
+  background: #292b33;
+  box-shadow: none;
+  padding: 6px;
+  gap: 4px;
+}
+.sendero-agenda .agenda-week-day {
+  min-height: 74px;
+  border: 0;
+  border-radius: 20px;
+  color: #a3a6b2;
+}
+.sendero-agenda .agenda-week-day span {
+  color: inherit;
+  font-size: 10px;
+  font-weight: 500;
+}
+.sendero-agenda .agenda-week-day strong {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: #f1eee6;
+  font-size: 16px;
+  font-weight: 600;
+}
+.sendero-agenda .agenda-week-day.is-selected {
+  border: 0;
+  background: #5f6b8d;
+  color: #b9f2e0;
+  box-shadow: none;
+}
+.sendero-agenda .agenda-week-day.is-selected strong {
+  background: #f6d67a;
+  color: #302a43;
+}
+.sendero-agenda .agenda-week-day.is-today:not(.is-selected) strong {
+  color: #8fe6c8;
+  outline: 1px solid #8fe6c866;
+}
+.sendero-agenda .agenda-workspace {
+  gap: 20px;
+}
+.sendero-agenda .agenda-calendar-shell {
+  border-color: #ffffff14;
+  border-radius: 28px;
+  background: #292b33;
+  box-shadow: 0 16px 36px #00000020;
+}
+.sendero-agenda .agenda-time-axis {
+  border-color: #ffffff0d;
+  background: #25272e;
+}
+.sendero-agenda .agenda-time-label {
+  color: #a3a6b2;
+}
+.sendero-agenda .agenda-day-column {
+  border-color: #ffffff0d;
+}
+.sendero-agenda .agenda-day-column.is-selected-day {
+  background: #7a789f1f;
+}
+.sendero-agenda .agenda-hour-lines i {
+  border-color: #ffffff0f;
+}
+.sendero-agenda .agenda-session-block {
+  border: 1px solid #ffffff33;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--agenda-session-color) 12%, #e7dff2);
+  color: #302a43;
+  box-shadow: inset 4px 0 0 var(--agenda-session-color);
+}
+.sendero-agenda .agenda-session-block:hover,
+.sendero-agenda .agenda-session-block.is-selected {
+  border-color: #f6d67a;
+  outline: 2px solid #f6d67a66;
+  outline-offset: 1px;
+  box-shadow: inset 4px 0 0 var(--agenda-session-color);
+}
+.sendero-agenda .agenda-session-block strong,
+.sendero-agenda .agenda-session-block b {
+  color: #302a43;
+  font-weight: 600;
+}
+.sendero-agenda .agenda-session-time,
+.sendero-agenda .agenda-session-block small {
+  color: #62546f;
+}
+.sendero-agenda .agenda-session-block.is-cancelled {
+  background: #d3c3d3;
+  border-color: #f2a37c80;
+  opacity: 0.7;
+  filter: none;
+}
+.sendero-agenda .agenda-calendar-empty {
+  border-color: #ffffff14;
+  color: #a3a6b2;
+}
+.sendero-agenda .agenda-session-editor {
+  --text: #302a43;
+  --agenda-v2-line: #d5c8e2;
+  --agenda-v2-text: #302a43;
+  --agenda-v2-muted: #6a5d7b;
+  color-scheme: light;
+  border-color: #ffffff66;
+  border-radius: 26px;
+  background: #e9e2f2;
+  color: #302a43;
+  box-shadow: 0 18px 44px #00000026;
+}
+.sendero-agenda .agenda-editor-heading small,
+.sendero-agenda .agenda-editor-status strong,
+.sendero-agenda .agenda-editor-field > span,
+.sendero-agenda .agenda-editor-notes > span,
+.sendero-agenda .agenda-editor-scope legend,
+.sendero-agenda .agenda-editor-scope label,
+.sendero-agenda .agenda-editor-shortcuts span,
+.sendero-agenda .agenda-open-detail {
+  color: #62546f;
+}
+.sendero-agenda .agenda-editor-close {
+  top: 8px;
+  right: 8px;
+  width: 44px;
+  height: 44px;
+  color: #62546f;
+}
+.sendero-agenda .agenda-editor-heading {
+  padding-top: 24px;
+}
+.sendero-agenda .agenda-editor-status em {
+  border-color: #d5c8e2;
+  background: #f7f3fb;
+  color: #62546f;
+}
+.sendero-agenda .agenda-editor-field,
+.sendero-agenda .agenda-editor-notes,
+.sendero-agenda .agenda-editor-scope,
+.sendero-agenda .agenda-editor-shortcuts span,
+.sendero-agenda .agenda-editor-readonly {
+  border-color: #d5c8e2;
+  border-radius: 14px;
+  background: #f7f3fb;
+  color: #62546f;
+}
+.sendero-agenda .agenda-editor-field input,
+.sendero-agenda .agenda-editor-field select,
+.sendero-agenda .agenda-editor-notes textarea {
+  color: #302a43;
+  min-height: 36px;
+}
+.sendero-agenda .agenda-editor-minimum {
+  border-color: #cfc2df;
+  border-radius: 16px;
+  background: #f7f3fb;
+  color: #62546f;
+}
+.sendero-agenda .agenda-editor-minimum-status {
+  border-color: #d5c8e2;
+  background: #f7f3fb;
+}
+.sendero-agenda .agenda-editor-minimum legend,
+.sendero-agenda .agenda-editor-minimum-toggle,
+.sendero-agenda .agenda-editor-minimum small,
+.sendero-agenda .agenda-editor-minimum-status {
+  color: #6a5d7b;
+}
+.sendero-agenda .agenda-save-button {
+  min-height: 44px;
+  border-radius: 999px;
+  background: #8fe6c8;
+  color: #244e43;
+  box-shadow: none;
+}
+.sendero-agenda .agenda-cancel-button {
+  min-height: 44px;
+  border-color: #e3b9c2;
+  border-radius: 999px;
+  background: #f3dde2;
+  color: #963e51;
+}
+.sendero-agenda :is(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid #f6d67a;
+  outline-offset: 3px;
+}
+.sendero-agenda .agenda-session-editor :is(a, button, input, select, textarea):focus-visible {
+  outline-color: #68518a;
+}
+@media (max-width: 1100px) {
+  .sendero-agenda .agenda-config-button {
+    display: inline-flex;
+  }
+}
+@media (max-width: 760px) {
+  .sendero-agenda.agenda-calendar-page {
+    padding: 20px 18px calc(110px + env(safe-area-inset-bottom));
+    gap: 18px;
+  }
+  .sendero-agenda .agenda-product-wordmark > span {
+    color: #f1eee6;
+  }
+  .sendero-agenda .agenda-product-wordmark > span b {
+    color: #8fe6c8;
+  }
+  .sendero-agenda .agenda-product-wordmark small {
+    color: #a3a6b2;
+  }
+  .sendero-agenda .agenda-product-avatar {
+    border-color: #ffffff14;
+    background: #5f6b8d;
+    color: #f1eee6;
+  }
+  .sendero-agenda .agenda-calendar-header {
+    display: grid;
+  }
+  .sendero-agenda .agenda-calendar-header h1 {
+    font-size: 34px;
+  }
+  .sendero-agenda .agenda-header-actions {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    gap: 6px;
+  }
+  .sendero-agenda .agenda-today-button,
+  .sendero-agenda .agenda-config-button {
+    display: inline-flex;
+    grid-row: 2;
+  }
+  .sendero-agenda .agenda-today-button {
+    grid-column: 1 / 2;
+    padding: 0 6px;
+  }
+  .sendero-agenda .agenda-config-button {
+    grid-column: 2 / 4;
+  }
+  .sendero-agenda .agenda-week-strip {
+    gap: 2px;
+    border-radius: 24px;
+    padding: 4px;
+  }
+  .sendero-agenda .agenda-week-day {
+    min-height: 68px;
+    border-radius: 18px;
+  }
+  .sendero-agenda .agenda-week-day span {
+    font-size: 8px;
+  }
+  .sendero-agenda .agenda-mobile-day-summary {
+    border-color: #ffffff14;
+  }
+  .sendero-agenda .agenda-session-editor {
+    bottom: calc(94px + env(safe-area-inset-bottom));
+    border-radius: 26px;
+    max-height: 72dvh;
+  }
+  .sendero-agenda .agenda-editor-heading h2 {
+    font-size: 20px;
+  }
+}
+@media (max-width: 360px) {
+  .sendero-agenda.agenda-calendar-page {
+    padding-inline: 12px;
+  }
+}
