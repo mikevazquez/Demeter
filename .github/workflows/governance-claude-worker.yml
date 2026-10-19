@@ -1,0 +1,53 @@
+name: Governance Claude Worker
+
+on:
+  workflow_dispatch:
+    inputs:
+      task_id:
+        description: Governance task ID
+        required: true
+        type: string
+      task_contract_b64:
+        description: Base64 encoded Governance Task Contract JSON
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: governance-claude-${{ inputs.task_id }}
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    env:
+      CLAUDE_ROUTINE_FIRE_URL: ${{ secrets.CLAUDE_ROUTINE_FIRE_URL }}
+      CLAUDE_ROUTINE_FIRE_TOKEN: ${{ secrets.CLAUDE_ROUTINE_FIRE_TOKEN }}
+      GOVERNANCE_TASK_CONTRACT_B64: ${{ inputs.task_contract_b64 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          test -n "$CLAUDE_ROUTINE_FIRE_URL"
+          test -n "$CLAUDE_ROUTINE_FIRE_TOKEN"
+
+      - name: Verify task ID matches contract
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const encoded = process.env.GOVERNANCE_TASK_CONTRACT_B64;
+          const contract = JSON.parse(Buffer.from(encoded, "base64").toString("utf8"));
+          if (contract.task_id !== process.env.INPUT_TASK_ID) {
+            throw new Error("workflow task_id does not match contract.task_id");
+          }
+          NODE
+        env:
+          INPUT_TASK_ID: ${{ inputs.task_id }}
+
+      - name: Dispatch Claude Code routine
+        run: node scripts/automation/claude-routine-worker.mjs
