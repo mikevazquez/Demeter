@@ -18,6 +18,8 @@ Governance
   -> claude-routine-worker.mjs
   -> Anthropic Routine Fire API
   -> Claude Code web session
+  -> structured receipt in GitHub issue #341
+  -> Governance reconciliation
 ```
 
 ## Required repository secrets
@@ -55,7 +57,7 @@ The adapter:
 
 ## Important safety limit
 
-A successful fire proves that Claude Code accepted the task, not that the task completed.
+A successful fire proves that Claude Code accepted the task, not that the task completed. Completion is represented separately by a structured receipt and independent evidence reconciliation.
 
 Completion must still be verified from technical evidence such as:
 
@@ -65,7 +67,7 @@ Completion must still be verified from technical evidence such as:
 - checkpoint emitted by the worker;
 - Sandbox evidence where applicable.
 
-The next increment must add a durable completion callback or observable checkpoint so Governance can close the loop without relying on a human to inspect the Claude session.
+The completion loop is implemented with a structured worker receipt in GitHub issue #341. Governance matches the receipt by task_id and dispatch_fingerprint, then reconciles the claimed SHA/tests against GitHub and CI evidence.
 
 ## Production
 
