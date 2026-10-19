@@ -11,13 +11,7 @@ export function serializeWorkerReceipt(receipt) {
 
 export function validateWorkerReceipt(receipt) {
   assert(receipt && typeof receipt === "object" && !Array.isArray(receipt), "Receipt required");
-  for (const field of [
-    "task_id",
-    "worker_id",
-    "dispatch_fingerprint",
-    "status",
-    "base_sha",
-  ]) {
+  for (const field of ["task_id", "worker_id", "dispatch_fingerprint", "status", "base_sha"]) {
     assert(typeof receipt[field] === "string" && receipt[field].length > 0, `${field} required`);
   }
   assert(/^[a-f0-9]{64}$/.test(receipt.dispatch_fingerprint), "Invalid dispatch fingerprint");
