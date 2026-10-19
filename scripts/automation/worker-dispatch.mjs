@@ -139,6 +139,41 @@ export function dispatchTask(task, workers, options = {}) {
   };
 }
 
+
+export function redispatchAfterWorkerSignal(task, workers, signal, options = {}) {
+  validateTask(task);
+  assert(signal && typeof signal === "object", "Worker signal required");
+  assert(typeof signal.workerId === "string" && signal.workerId.length > 0, "signal.workerId required");
+  assert(WORKER_STATES.has(signal.state), "Worker signal must contain a valid state");
+
+  const updatedWorkers = workers.map((worker) =>
+    worker.workerId === signal.workerId
+      ? {
+          ...worker,
+          state: signal.state,
+          stateSource: signal.source ?? "worker_signal",
+          stateObservedAt: signal.observedAt ?? null,
+        }
+      : worker,
+  );
+
+  assert(
+    updatedWorkers.some((worker) => worker.workerId === signal.workerId),
+    `Unknown worker signal: ${signal.workerId}`,
+  );
+
+  const result = dispatchTask(task, updatedWorkers, options);
+  return {
+    ...result,
+    reassignment: {
+      fromWorker: signal.workerId,
+      signalState: signal.state,
+      signalSource: signal.source ?? "worker_signal",
+      preservedTaskId: result.taskId === task.taskId,
+    },
+  };
+}
+
 export function createWorkerRegistry(workers) {
   const profiles = workers.map((worker) => validateWorker({ ...worker }));
   const byId = new Map();
