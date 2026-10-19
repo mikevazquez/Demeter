@@ -1,0 +1,23 @@
+name: Workshop Bugfix Verify
+
+on:
+  push:
+    branches:
+      - fix/workshop-session-kind-student-balance
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      - run: npx vitest run tests/session-kind.test.ts tests/hoy-class-status.test.tsx tests/workshop-student-balance.test.ts
+      - run: npm run typecheck
