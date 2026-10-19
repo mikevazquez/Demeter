@@ -40,6 +40,7 @@ describe("Claude Code routine worker adapter", () => {
     expect(text).toContain('"task_id": "GOV-PILOT-02"');
     expect(text).toContain("Preserve task_id exactly");
     expect(text).toContain("Do not broaden scope");
+    expect(text).toContain(`Dispatch fingerprint: ${dispatchFingerprint(contract)}`);
   });
 
   it("maps subscription limit responses to no_capacity", () => {
