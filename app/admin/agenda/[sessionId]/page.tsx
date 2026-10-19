@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { loadDemiCashDebts } from "@/lib/assistant/cash-debts";
 import { redirect } from "next/navigation";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
@@ -8,17 +7,7 @@ import {
   countBookedReservations,
   countSeatOccupyingReservations,
 } from "@/lib/reservations/capacity";
-import { SessionOperations } from "../../hoy/SessionOperations";
 import { cancelSession, setMinimumOverride, updateSession } from "./actions";
-
-function formatExpiry(value: string | null) {
-  if (!value) return "Sin vencimiento";
-  return `Vence ${new Intl.DateTimeFormat("es-MX", {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  }).format(new Date(`${value}T12:00:00Z`))}`;
-}
 
 function validDateKey(value: string | undefined) {
   return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
@@ -68,8 +57,6 @@ export default async function SessionDetailPage({
   if (!session) redirect("/admin");
 
   const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
-  const canAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
-  const canCreateStudent = can(CAPABILITIES.STUDENTS_WRITE);
 
   const [{ data: template }, { data: spaces }, { data: instructors }, { data: reservations }] =
     await Promise.all([
@@ -91,88 +78,20 @@ export default async function SessionDetailPage({
         .eq("status", "active"),
       supabase
         .from("reservations")
-        .select("id,student_id,guest_person_id,status,acquisition_id,commercial_status")
+        .select("status")
         .eq("session_id", sessionId)
         .in("status", ["reserved", "attended", "no_show"])
         .order("booked_at"),
     ]);
 
-  const reservationStudentIds = [
-    ...new Set((reservations ?? []).map((reservation) => reservation.student_id).filter(Boolean)),
-  ] as string[];
-  const guestPersonIds = [
-    ...new Set(
-      (reservations ?? []).map((reservation) => reservation.guest_person_id).filter(Boolean),
-    ),
-  ] as string[];
-  const personIds = [
-    ...new Set([
-      ...(instructors ?? []).map((instructor) => instructor.person_id),
-      ...guestPersonIds,
-    ]),
-  ];
-  const reservationIds = (reservations ?? []).map((reservation) => reservation.id);
-  const acquisitionIds = [
-    ...new Set(
-      (reservations ?? []).map((reservation) => reservation.acquisition_id).filter(Boolean),
-    ),
-  ] as string[];
-
-  const [
-    { data: persons },
-    { data: reservationStudents },
-    { data: evaluationInvitations },
-    { data: resourceAssignments },
-    { data: acquisitions },
-  ] = await Promise.all([
-    personIds.length
-      ? supabase
-          .from("persons")
-          .select("id,first_name,last_name")
-          .eq("studio_id", studio.id)
-          .in("id", personIds)
-      : Promise.resolve({
-          data: [] as { id: string; first_name: string | null; last_name: string | null }[],
-        }),
-    reservationStudentIds.length
-      ? supabase
-          .from("students")
-          .select("id,full_name")
-          .eq("studio_id", studio.id)
-          .in("id", reservationStudentIds)
-      : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
-    reservationIds.length
-      ? supabase
-          .from("evaluation_invitations")
-          .select("id,reservation_id,status")
-          .in("reservation_id", reservationIds)
-          .in("status", ["scheduled", "in_progress"])
-      : Promise.resolve({
-          data: [] as { id: string; reservation_id: string | null; status: string }[],
-        }),
-    reservationIds.length
-      ? supabase
-          .from("reservation_resource_assignments")
-          .select("reservation_id,resource_id")
-          .in("reservation_id", reservationIds)
-          .is("released_at", null)
-      : Promise.resolve({
-          data: [] as { reservation_id: string; resource_id: string }[],
-        }),
-    acquisitionIds.length
-      ? supabase
-          .from("product_acquisitions")
-          .select("id,product_template_id,expires_on,unlimited")
-          .in("id", acquisitionIds)
-      : Promise.resolve({
-          data: [] as {
-            id: string;
-            product_template_id: string;
-            expires_on: string | null;
-            unlimited: boolean;
-          }[],
-        }),
-  ]);
+  const personIds = [...new Set((instructors ?? []).map((item) => item.person_id))];
+  const { data: persons } = personIds.length
+    ? await supabase
+        .from("persons")
+        .select("id,first_name,last_name")
+        .eq("studio_id", studio.id)
+        .in("id", personIds)
+    : { data: [] as { id: string; first_name: string | null; last_name: string | null }[] };
 
   const timeZone = studio.timezone ?? "America/Mexico_City";
   const personMap = new Map(
@@ -188,10 +107,6 @@ export default async function SessionDetailPage({
     ]),
   );
   const spaceMap = new Map((spaces ?? []).map((space) => [space.id, space.name]));
-  const studentMap = new Map(
-    (reservationStudents ?? []).map((student) => [student.id, student.full_name] as const),
-  );
-
   const dateLabel = new Intl.DateTimeFormat("es-MX", {
     timeZone,
     weekday: "long",
@@ -211,116 +126,6 @@ export default async function SessionDetailPage({
   })
     .format(new Date(session.starts_at))
     .replace(" ", "T");
-
-  const evaluationByReservation = new Map(
-    (evaluationInvitations ?? [])
-      .filter((item) => item.reservation_id)
-      .map((item) => [item.reservation_id!, item]),
-  );
-
-  const assignedResourceIds = [
-    ...new Set((resourceAssignments ?? []).map((item) => item.resource_id).filter(Boolean)),
-  ] as string[];
-  const { data: assignedResources } = assignedResourceIds.length
-    ? await supabase.from("resources").select("id,name,short_label").in("id", assignedResourceIds)
-    : {
-        data: [] as { id: string; name: string; short_label: string | null }[],
-      };
-  const resourceNameById = new Map(
-    (assignedResources ?? []).map((resource) => [
-      resource.id,
-      resource.short_label?.trim() || resource.name,
-    ]),
-  );
-  const resourceNameByReservation = new Map(
-    (resourceAssignments ?? []).map((assignment) => [
-      assignment.reservation_id,
-      resourceNameById.get(assignment.resource_id) ?? null,
-    ]),
-  );
-
-  const productIds = [...new Set((acquisitions ?? []).map((item) => item.product_template_id))];
-  const meteredAcquisitionIds = (acquisitions ?? [])
-    .filter((item) => !item.unlimited)
-    .map((item) => item.id);
-  const [{ data: products }, { data: balanceRows }] = await Promise.all([
-    productIds.length
-      ? supabase.from("product_templates").select("id,name").in("id", productIds)
-      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-    meteredAcquisitionIds.length
-      ? supabase.rpc("acquisition_credit_balances", {
-          target_acquisition_ids: meteredAcquisitionIds,
-        })
-      : Promise.resolve({
-          data: [] as { acquisition_id: string; balance: number }[],
-        }),
-  ]);
-
-  const balances = [
-    ...(acquisitions ?? [])
-      .filter((item) => item.unlimited)
-      .map((item) => [item.id, null] as const),
-    ...((balanceRows ?? []) as { acquisition_id: string; balance: number }[]).map(
-      (item) => [item.acquisition_id, item.balance] as const,
-    ),
-  ];
-
-  const acquisitionMap = new Map((acquisitions ?? []).map((item) => [item.id, item]));
-  const productMap = new Map((products ?? []).map((item) => [item.id, item.name]));
-  const balanceMap = new Map(balances);
-
-  let cashDebts: Awaited<ReturnType<typeof loadDemiCashDebts>> = [];
-  if (can(CAPABILITIES.SALES_READ) || can(CAPABILITIES.SALES_WRITE)) {
-    cashDebts = await loadDemiCashDebts(supabase, studio.id);
-  }
-  const cashDebtByAcquisition = new Map(cashDebts.map((debt) => [debt.acquisitionId, debt]));
-  const roster = (reservations ?? []).map((reservation) => {
-    const isGuest = Boolean(reservation.guest_person_id);
-    const evaluationInvitation = evaluationByReservation.get(reservation.id);
-    const acquisition = reservation.acquisition_id
-      ? acquisitionMap.get(reservation.acquisition_id)
-      : null;
-    const balance = reservation.acquisition_id ? balanceMap.get(reservation.acquisition_id) : null;
-
-    return {
-      id: reservation.id,
-      studentName: isGuest
-        ? (personMap.get(reservation.guest_person_id!) ?? "Invitado")
-        : reservation.student_id
-          ? (studentMap.get(reservation.student_id) ?? "Alumna")
-          : "Alumna",
-      status: reservation.status,
-      packageLabel: isGuest
-        ? "Invitación"
-        : acquisition
-          ? (productMap.get(acquisition.product_template_id) ?? "Producto activo")
-          : "Sin producto vinculado",
-      creditsLabel: isGuest
-        ? "Beneficio por nivel"
-        : acquisition?.unlimited
-          ? "Ilimitado"
-          : acquisition
-            ? `${balance ?? 0} créditos disponibles`
-            : "—",
-      expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null),
-      studentId: reservation.student_id,
-      evaluationInvitationId: evaluationInvitation?.id ?? null,
-      evaluationStatus: evaluationInvitation?.status ?? null,
-      paymentDueOnAttendance: reservation.commercial_status === "payment_pending",
-      pendingPackageSaleId: acquisition
-        ? cashDebtByAcquisition.get(acquisition.id)?.saleId
-        : undefined,
-      pendingPackageAmountMinor: acquisition
-        ? cashDebtByAcquisition.get(acquisition.id)?.amountMinor
-        : undefined,
-      individualPriceMinor: template?.drop_in_price_minor ?? null,
-      currency: studio.currency ?? "MXN",
-      resourceRequired: session.requires_resource,
-      resourceName: session.requires_resource
-        ? (resourceNameByReservation.get(reservation.id) ?? null)
-        : null,
-    };
-  });
 
   const reservationStatuses = (reservations ?? []).map((reservation) => reservation.status);
   const occupied = countSeatOccupyingReservations(reservationStatuses);
@@ -342,6 +147,12 @@ export default async function SessionDetailPage({
     space: "El espacio no admite ese cupo.",
     instructor: "Selecciona un instructor activo del estudio.",
     edit: "No se pudieron guardar los cambios.",
+    workshop_payment_invalid: "Revisa el importe, método y referencia del abono.",
+    workshop_payment_forbidden: "No tienes permiso para registrar este abono.",
+    workshop_payment_not_linked: "No se encontró una compra de taller válida para esta reserva.",
+    workshop_payment_exceeds_balance: "El abono supera el saldo disponible. Actualiza la sesión.",
+    workshop_payment_failed:
+      "No se pudo registrar el abono. Revisa el historial antes de reintentar.",
     resource_space_assigned:
       "No puedes cambiar el espacio mientras existan reservas con recursos asignados. Reasigna o cancela esas reservas primero.",
     booking: "No se pudo crear la reserva.",
@@ -563,24 +374,12 @@ export default async function SessionDetailPage({
         </section>
       ) : null}
 
-      <section className="panel admin-class-operations-panel">
-        <SessionOperations
-          sessionId={sessionId}
-          returnDate={from}
-          sessionStatus={session.status}
-          startsAt={session.starts_at}
-          endsAt={session.ends_at}
-          roster={roster}
-          available={available}
-          canAttendance={canAttendance && session.status !== "cancelled"}
-          canBook={canEdit && session.status === "scheduled"}
-          canCreateStudent={canCreateStudent && session.status === "scheduled"}
-          locale={studio.locale}
-          timeZone={studio.timezone}
-          returnTo={returnTo}
-          initiallyOpen
-          showToggle={false}
-        />
+      <section className="panel">
+        <h2>Operación de la sesión</h2>
+        <p>Registra asistencia, reservas y pagos desde Hoy.</p>
+        <Link href={`/admin?date=${localInput.slice(0, 10)}#session-${sessionId}`}>
+          Abrir esta sesión en Hoy
+        </Link>
       </section>
 
       {session.requires_resource ? (

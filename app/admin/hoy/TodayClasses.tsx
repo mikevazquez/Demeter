@@ -7,6 +7,8 @@ import { SessionOperations } from "./SessionOperations";
 
 export type TodayRosterItem = {
   id: string;
+  workshopSaleId?: string;
+  workshopBalanceMinor?: number;
   studentName: string;
   status: string;
   packageLabel: string;

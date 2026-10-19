@@ -21,8 +21,8 @@ describe("Admin session controls regression", () => {
     expect(today).toContain("reservationStudents");
     expect(today).toContain('.in("id", reservationStudentIds)');
     expect(today).toContain("(reservationStudents ?? []).map");
-    expect(sessionDetail).toContain("reservationStudentIds");
-    expect(sessionDetail).toContain("(reservationStudents ?? []).map");
+    expect(sessionDetail).not.toContain("reservationStudentIds");
+    expect(sessionDetail).toContain("Registra asistencia, reservas y pagos desde Hoy.");
   });
 
   it("keeps reserved student names visible on the light Today roster", () => {

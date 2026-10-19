@@ -12,7 +12,7 @@ export function ProgramForm({
   disciplines: Option[];
   instructors: Option[];
   spaces: Option[];
-  kind: "workshop" | "event";
+  kind: "workshop" | "event" | "masterclass";
 }) {
   const [draft, setDraft] = useState<ProgramDraft>({
     name: "",
@@ -42,18 +42,15 @@ export function ProgramForm({
   }
   return (
     <form action={action} className="activities-stage">
+      <h2>
+        {kind === "masterclass"
+          ? "Información de la master class"
+          : kind === "event"
+            ? "Información del evento"
+            : "Información del programa"}
+      </h2>
       <input type="hidden" name="payload" value={JSON.stringify(draft)} />
       <div className="activities-form-grid">
-        <label className="activities-field">
-          <span>Tipo</span>
-          <select
-            value={draft.kind}
-            onChange={(e) => setDraft({ ...draft, kind: e.target.value as ProgramDraft["kind"] })}
-          >
-            <option value="workshop">Taller / curso</option>
-            <option value="event">Evento especial</option>
-          </select>
-        </label>
         <label className="activities-field">
           <span>Nombre</span>
           <input
@@ -99,7 +96,7 @@ export function ProgramForm({
           <p>Una sola fecha: se vende el evento completo.</p>
         )}
       </div>
-      <h2>Programa por fecha</h2>
+      <h2>Fechas, horarios y cupos</h2>
       <p>
         Cada fecha genera una sesión en Agenda. Puedes repetir la disciplina o cambiarla en cada
         día.
@@ -239,8 +236,8 @@ export function ProgramForm({
         ＋ Agregar fecha (una semana después)
       </button>
       <p>
-        La compra completa reserva todas las fechas. La compra por día reserva únicamente la fecha
-        elegida, usando el mismo cupo.
+        La compra completa reserva todas las fechas. Si habilitas fechas individuales, cada reserva
+        utiliza el cupo de su sesión.
       </p>
       {state.error ? (
         <p role="alert" className="activities-inline-error">
@@ -248,7 +245,13 @@ export function ProgramForm({
         </p>
       ) : null}
       <button className="activities-next-button" disabled={pending} type="submit">
-        {pending ? "Creando…" : "Crear programa y sesiones"}
+        {pending
+          ? "Guardando…"
+          : kind === "masterclass"
+            ? "Crear master class"
+            : kind === "event"
+              ? "Crear evento"
+              : "Crear programa y sesiones"}
       </button>
     </form>
   );

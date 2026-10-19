@@ -1,0 +1,1 @@
+CI recheck after automated Prettier formatting of the sandbox-only workshop branch. Draft PR #317 remains unmerged. Production changes prohibited without explicit authorization.

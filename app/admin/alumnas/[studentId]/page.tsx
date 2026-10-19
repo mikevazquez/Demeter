@@ -7,6 +7,7 @@ import ContactConversation from "../ContactConversation";
 import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import StudentLifecycleActions from "./StudentLifecycleActions";
 import StudentLifecycleNoticeDialog from "./StudentLifecycleNoticeDialog";
+import { StudentWorkshops } from "./StudentWorkshops";
 import Profile360Overview from "./Profile360Overview";
 import StudentPackageCard from "./StudentPackageCard";
 import StudentPortalAccessSection from "./StudentPortalAccessSection";
@@ -2057,6 +2058,7 @@ export default async function StudentProfilePage({
       ) : null}
       {view === "history" ? (
         <div className="profile360-history-stack">
+          {canReadSales ? <StudentWorkshops studentId={student.id} /> : null}
           {canReadSales ? (
             <section className="profile360-view-panel profile360-sales-history">
               <div className="profile360-view-heading">

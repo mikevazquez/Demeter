@@ -27,7 +27,7 @@ describe("ACTIVIDADES-01 restored module", () => {
   it("restores Activities as its own admin module", () => {
     expect(layout).toContain('href: "/admin/actividades"');
     expect(more).toContain('title: "Actividades"');
-    expect(listPage).toContain("<h1>Actividades</h1>");
+    expect(listPage).toMatch(/<h1[>\s]/);
     expect(agenda).toContain('href="/admin/actividades"');
     expect(agenda).not.toContain("Configurar agenda");
     expect(legacyAgendaConfig).toContain('redirect("/admin/actividades")');

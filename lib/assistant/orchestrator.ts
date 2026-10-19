@@ -1,5 +1,6 @@
 import "server-only";
 
+import { workshopPaymentInstructions } from "./workshop-purchase";
 import { conversationGuidance, needsFirstVisitGuidance } from "./conversation-guidance";
 import { testPersonaLabel } from "./prompt-workbench";
 import { firstClassPaymentInstructions } from "./first-class-payment-instructions";
@@ -305,6 +306,7 @@ function confirmationReply(toolName: string, result: Record<string, unknown>) {
 
   if (toolName === "execute_booking" && result.status === "participant_data_required")
     return "Ya recibí tu comprobante y el pago sigue en revisión. Para continuar, envíame juntos tu nombre completo y celular mexicano de diez dígitos, sin lada. Todavía no he confirmado tu reserva.";
+  if (toolName === "confirm_workshop_purchase") return workshopPaymentInstructions(result);
   if (toolName === "confirm_cash_package_purchase")
     return (
       "Registré tu paquete con el efectivo pendiente de cobro." +
@@ -651,6 +653,7 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
     "waitlist.join": "execute_waitlist_join",
     "account.activate": "execute_student_access_activation",
     "commerce.cash_purchase": "confirm_cash_package_purchase",
+    "commerce.workshop_purchase": "confirm_workshop_purchase",
   };
   const toolName = executeToolByAction[String(pending.action_type ?? "")];
   if (!toolName) return null;
@@ -696,7 +699,8 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
   const auditResult =
     toolName === "execute_student_access_activation" ||
     toolName === "execute_booking" ||
-    toolName === "prepare_enrollment_payment"
+    toolName === "prepare_enrollment_payment" ||
+    toolName === "confirm_workshop_purchase"
       ? {
           ...resultObject,
           activation_url:
@@ -1074,6 +1078,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           "No uses Markdown ni dobles asteriscos en las respuestas. Escribe texto limpio de chat; si necesitas énfasis, hazlo con palabras, no con formato.",
           `La fecha local del estudio es ${localDateKey(input.studio.timezone)} y la zona horaria es ${input.studio.timezone}.`,
           "Studio Flow es la única fuente de verdad operativa.",
+          "Talleres: consulta get_workshop_options y usa prepare_workshop_purchase para cotizar las fechas exactas. Explica anticipo, saldo a primera fecha, falta sin reposición y apartado provisional sujeto a revisión; pide aceptación en un turno posterior con confirm_workshop_purchase. Nunca uses paquetes ordinarios ni la primera clase de prueba para estas fechas. Un comprobante no es ingreso confirmado. Demi no reprograma talleres. Para saldo o continuidad usa get_workshop_purchases. Solo después de una pregunta de continuidad entregada puedes usar record_workshop_continuation; para retirarse exige la frase explícita «me retiro del taller», nunca interpretes un «no» aislado como abandono. Conservar deuda y pagos; no repetir preguntas si ya hay respuesta o está liquidado.",
           "Regla vigente de pagos: Bancomer recibe transferencias y depósitos OXXO directos, con comprobante y revisión manual. Mercado Pago recibe ligas/checkout. Cuando Studio Flow devuelve automatic_verification=true y receipt_required=false, espera payment_verified=true, nunca solicites comprobante ni afirmes que el pago está en revisión manual. No ofrezcas OXXO dentro de Mercado Pago. Demi nunca ejecuta reembolsos: crea atención humana con las referencias y no promete devolución ni plazo.",
           "La atención humana funciona por lista permitida. Solo usa escalate_to_human cuando el caso corresponda claramente a un reason_code habilitado por Studio Flow. No escales solo porque una pregunta sea difícil, inusual o no tengas una respuesta inmediata: primero consulta las herramientas y trata de resolverla.",
           "Los motivos configurables son: refund_request para reembolsos; package_cancellation para cancelar o modificar excepcionalmente un paquete; payment_dispute para cargos disputados; receipt_validation_failed cuando un comprobante no puede validarse; human_requested cuando la persona pide explícitamente hablar con alguien; safety_incident para lesión/accidente/seguridad; serious_complaint para queja grave; policy_exception cuando se necesita autorizar una excepción; technical_block cuando una acción sigue bloqueada tras intentar el flujo normal. La herramienta rechazará motivos desactivados.",
@@ -1437,6 +1442,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
               supabase: input.supabase,
               studio: input.studio,
               studentId: input.studentId,
+              conversationId: input.conversationId,
             },
             toolName,
             args,

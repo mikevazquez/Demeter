@@ -11,7 +11,7 @@ export type ProgramDate = {
 export type ProgramDraft = {
   name: string;
   description: string;
-  kind: "workshop" | "event";
+  kind: "workshop" | "event" | "masterclass";
   fullPriceMinor: number;
   allowSingle: boolean;
   dates: ProgramDate[];
@@ -22,7 +22,7 @@ export function programError(program: ProgramDraft): string | null {
     typeof program.name !== "string" ||
     typeof program.description !== "string" ||
     !Array.isArray(program.dates) ||
-    !["workshop", "event"].includes(program.kind)
+    !["workshop", "event", "masterclass"].includes(program.kind)
   )
     return "Revisa los datos del programa.";
   if (!program.name.trim() || program.name.trim().length > 80)

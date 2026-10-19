@@ -25,6 +25,7 @@ export type AssistantToolContext = {
   supabase: SupabaseClient;
   studio: AssistantStudioContext;
   studentId?: string | null;
+  conversationId?: string;
 };
 
 function normalize(value: string) {
@@ -981,6 +982,25 @@ export async function executeAssistantReadTool(
   args: Record<string, unknown>,
 ) {
   switch (toolName) {
+    case "get_workshop_purchases": {
+      if (!ctx.conversationId || !ctx.studentId)
+        return { ok: false, reason_code: "verified_student_required" };
+      const response = await ctx.supabase.rpc("service_student_workshops", {
+        p_studio: ctx.studio.id,
+        p_conversation: ctx.conversationId,
+      });
+      return response.error
+        ? { ok: false, reason_code: "workshop_purchases_unavailable" }
+        : { ok: true, purchases: response.data };
+    }
+    case "get_workshop_options": {
+      const response = await ctx.supabase.rpc("service_demi_workshop_catalog", {
+        p_studio: ctx.studio.id,
+      });
+      return response.error
+        ? { ok: false, reason_code: "workshop_catalog_unavailable" }
+        : { ok: true, workshops: response.data };
+    }
     case "search_class_availability":
       return searchClassAvailability(ctx, args as SearchClassAvailabilityArgs);
     case "get_activity_catalog":

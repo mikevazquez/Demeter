@@ -10,6 +10,7 @@ import {
 import { startScheduledEvaluationAction } from "../alumnas/[studentId]/evaluation-actions";
 import { ExistingStudentAddForm } from "./ExistingStudentAddForm";
 import { PendingClassPaymentDialog } from "./PendingClassPaymentDialog";
+import { registerWorkshopAbono } from "./workshop-abono-actions";
 
 type RosterItem = {
   id: string;
@@ -25,6 +26,8 @@ type RosterItem = {
   checkedInAt?: string | null;
   attendanceProvenance?: string | null;
   paymentDueOnAttendance?: boolean;
+  workshopSaleId?: string;
+  workshopBalanceMinor?: number;
   pendingPackageSaleId?: string;
   pendingPackageAmountMinor?: number;
   individualPriceMinor?: number | null;
@@ -89,6 +92,7 @@ export function SessionOperations({
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [newWalkin, setNewWalkin] = useState(false);
   const [paymentItem, setPaymentItem] = useState<RosterItem | null>(null);
+  const [workshopPaymentItem, setWorkshopPaymentItem] = useState<RosterItem | null>(null);
   const [cancelItem, setCancelItem] = useState<RosterItem | null>(null);
   const [feedback, setFeedback] = useState<{
     kind: "success" | "error";
@@ -141,13 +145,15 @@ export function SessionOperations({
                     ? "Asistencia agregada después del cierre."
                     : created === "paid-attendance"
                       ? "Pago y asistencia registrados correctamente."
-                      : created === "walkin"
-                        ? "Walk-in registrada y agregada a la clase."
-                        : created === "walkin-existing"
-                          ? "Alumna agregada a la clase."
-                          : created === "cancel"
-                            ? "Reserva cancelada correctamente."
-                            : "Reserva creada correctamente.",
+                      : created === "workshop-payment"
+                        ? "Abono de taller registrado correctamente."
+                        : created === "walkin"
+                          ? "Walk-in registrada y agregada a la clase."
+                          : created === "walkin-existing"
+                            ? "Alumna agregada a la clase."
+                            : created === "cancel"
+                              ? "Reserva cancelada correctamente."
+                              : "Reserva creada correctamente.",
           });
         }
       } else if (error) {
@@ -156,29 +162,39 @@ export function SessionOperations({
           message:
             error === "cancel_reason_required"
               ? "Selecciona un motivo para cancelar la reserva."
-              : error === "correction_reason_required"
-                ? "La corrección requiere un motivo."
-                : error === "attendance_not_persisted"
-                  ? "La corrección no se guardó. Intenta nuevamente."
-                  : error === "attendance_payment_not_persisted"
-                    ? "El pago o la asistencia no se guardaron. Intenta nuevamente."
-                    : error === "asistian_payment_required"
-                      ? "Esta reserva tiene pago pendiente. Registra el cobro antes de marcar asistencia."
-                      : error === "class_price_required"
-                        ? "Esta actividad no tiene precio individual configurado. Ingresa el monto cobrado."
-                        : error === "payment_method_required"
-                          ? "Selecciona cómo se pagó la clase."
-                          : error === "payment_not_pending"
-                            ? "Esta reserva ya no tiene un pago pendiente."
-                            : error === "reservation_not_asistian"
-                              ? "Esta reserva no corresponde al flujo de pago pendiente."
-                              : error === "phone_exists"
-                                ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
-                                : error === "session_full"
-                                  ? "La clase ya está llena."
-                                  : error === "enrollment_required"
-                                    ? "La alumna necesita una inscripción vigente para reservar esta clase."
-                                    : "No se pudo completar la operación.",
+              : error === "workshop_payment_duplicate"
+                ? "Esta referencia ya se registró para el taller. Revisa el saldo antes de volver a cobrar."
+                : error === "workshop_payment_exceeds_balance"
+                  ? "El importe supera el saldo actual. Actualiza la sesión."
+                  : error === "workshop_payment_failed"
+                    ? "No se pudo registrar el abono. Consulta la venta antes de reintentar."
+                    : error === "workshop_payment_not_linked"
+                      ? "Esta reserva no tiene una compra de taller válida."
+                      : error === "workshop_payment_invalid"
+                        ? "Revisa el importe, método y referencia del abono."
+                        : error === "correction_reason_required"
+                          ? "La corrección requiere un motivo."
+                          : error === "attendance_not_persisted"
+                            ? "La corrección no se guardó. Intenta nuevamente."
+                            : error === "attendance_payment_not_persisted"
+                              ? "El pago o la asistencia no se guardaron. Intenta nuevamente."
+                              : error === "asistian_payment_required"
+                                ? "Esta reserva tiene pago pendiente. Registra el cobro antes de marcar asistencia."
+                                : error === "class_price_required"
+                                  ? "Esta actividad no tiene precio individual configurado. Ingresa el monto cobrado."
+                                  : error === "payment_method_required"
+                                    ? "Selecciona cómo se pagó la clase."
+                                    : error === "payment_not_pending"
+                                      ? "Esta reserva ya no tiene un pago pendiente."
+                                      : error === "reservation_not_asistian"
+                                        ? "Esta reserva no corresponde al flujo de pago pendiente."
+                                        : error === "phone_exists"
+                                          ? "Ese teléfono ya pertenece a una alumna. Agrégala como alumna existente."
+                                          : error === "session_full"
+                                            ? "La clase ya está llena."
+                                            : error === "enrollment_required"
+                                              ? "La alumna necesita una inscripción vigente para reservar esta clase."
+                                              : "No se pudo completar la operación.",
         });
       }
     });
@@ -300,6 +316,28 @@ export function SessionOperations({
                           ) : null}
                           {item.paymentDueOnAttendance ? (
                             <span className="today-payment-pending-tag">Pago pendiente</span>
+                          ) : null}
+                          {item.workshopBalanceMinor !== undefined ? (
+                            <span
+                              className={
+                                item.workshopBalanceMinor > 0
+                                  ? "today-payment-pending-tag"
+                                  : "today-evaluation-tag"
+                              }
+                            >
+                              {item.workshopBalanceMinor > 0
+                                ? `Saldo taller · ${new Intl.NumberFormat("es-MX", { style: "currency", currency: item.currency ?? "MXN" }).format(item.workshopBalanceMinor / 100)}`
+                                : "Taller liquidado"}
+                            </span>
+                          ) : null}
+                          {item.workshopSaleId && (item.workshopBalanceMinor ?? 0) > 0 ? (
+                            <button
+                              type="button"
+                              className="today-payment-pending-tag"
+                              onClick={() => setWorkshopPaymentItem(item)}
+                            >
+                              Registrar abono →
+                            </button>
                           ) : null}
                           {item.pendingPackageSaleId ? (
                             <a
@@ -546,6 +584,95 @@ export function SessionOperations({
                 </button>
                 <button type="submit" className="today-payment-confirm">
                   Confirmar cancelación
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      ) : null}
+
+      {workshopPaymentItem?.workshopSaleId && workshopPaymentItem.workshopBalanceMinor ? (
+        <div
+          className="today-payment-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) setWorkshopPaymentItem(null);
+          }}
+        >
+          <section
+            className="today-payment-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="workshop-abono-title"
+          >
+            <header>
+              <div>
+                <span className="today-payment-eyebrow">ABONO DE TALLER</span>
+                <h3 id="workshop-abono-title">{workshopPaymentItem.studentName}</h3>
+                <p>
+                  Saldo pendiente:{" "}
+                  {new Intl.NumberFormat(locale, {
+                    style: "currency",
+                    currency: workshopPaymentItem.currency ?? "MXN",
+                  }).format(workshopPaymentItem.workshopBalanceMinor / 100)}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="today-payment-close"
+                onClick={() => setWorkshopPaymentItem(null)}
+                aria-label="Cerrar"
+              >
+                ×
+              </button>
+            </header>
+            <form action={registerWorkshopAbono}>
+              <input type="hidden" name="sale_id" value={workshopPaymentItem.workshopSaleId} />
+              <input type="hidden" name="reservation_id" value={workshopPaymentItem.id} />
+              <input type="hidden" name="session_id" value={sessionId} />
+              <input
+                type="hidden"
+                name="return_to"
+                value={returnTo || `/admin/agenda/${sessionId}`}
+              />
+              <label className="today-payment-field">
+                <span>Importe recibido (MXN)</span>
+                <input
+                  name="payment_amount"
+                  type="number"
+                  min="0.01"
+                  max={(workshopPaymentItem.workshopBalanceMinor / 100).toFixed(2)}
+                  step="0.01"
+                  defaultValue={(workshopPaymentItem.workshopBalanceMinor / 100).toFixed(2)}
+                  required
+                />
+              </label>
+              <label className="today-payment-field">
+                <span>Método</span>
+                <select name="payment_method" defaultValue="cash" required>
+                  <option value="cash">Efectivo</option>
+                  <option value="bank_transfer">Transferencia</option>
+                </select>
+              </label>
+              <label className="today-payment-field">
+                <span>Referencia única del pago</span>
+                <input
+                  name="payment_reference"
+                  required
+                  maxLength={200}
+                  placeholder="Folio o referencia"
+                />
+              </label>
+              <div className="today-payment-actions">
+                <button
+                  type="button"
+                  className="today-payment-cancel"
+                  onClick={() => setWorkshopPaymentItem(null)}
+                >
+                  Volver
+                </button>
+                <button type="submit" className="today-payment-confirm">
+                  Registrar abono
                 </button>
               </div>
             </form>

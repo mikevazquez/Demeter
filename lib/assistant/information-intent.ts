@@ -30,6 +30,7 @@ export function shouldBlockPaymentForInformation(tool: string, message: string):
   return (
     [
       "prepare_first_class_payment",
+      "prepare_workshop_purchase",
       "prepare_group_booking",
       "prepare_booking",
       "prepare_bank_transfer_purchase",

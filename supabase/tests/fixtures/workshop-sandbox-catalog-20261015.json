@@ -1,0 +1,843 @@
+{
+  "tables": [
+    {
+      "rls": true,
+      "name": "workshop_payment_authorizations",
+      "grants": {
+        "anon": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        "service_role": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        "authenticated": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        }
+      },
+      "schema": "private",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "required": true
+        },
+        {
+          "name": "studio_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "offer_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "student_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "request_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "selection_mode",
+          "type": "text",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "session_ids",
+          "type": "uuid[]",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "amount_minor",
+          "type": "integer",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "currency",
+          "type": "text",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "method",
+          "type": "text",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "reference",
+          "type": "text",
+          "default": null,
+          "required": false
+        },
+        {
+          "name": "verified_by",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "verified_at",
+          "type": "timestamp with time zone",
+          "default": "clock_timestamp()",
+          "required": true
+        },
+        {
+          "name": "consumed_purchase_id",
+          "type": "uuid",
+          "default": null,
+          "required": false
+        }
+      ],
+      "constraints": [
+        {
+          "name": "workshop_payment_authorizations_amount_minor_check",
+          "definition": "CHECK ((amount_minor > 0))"
+        },
+        {
+          "name": "workshop_payment_authorizations_consumed_purchase_id_fkey",
+          "definition": "FOREIGN KEY (consumed_purchase_id) REFERENCES workshop_purchases(id)"
+        },
+        {
+          "name": "workshop_payment_authorizations_currency_check",
+          "definition": "CHECK ((currency = 'MXN'::text))"
+        },
+        {
+          "name": "workshop_payment_authorizations_method_check",
+          "definition": "CHECK ((method = ANY (ARRAY['cash'::text, 'transfer'::text])))"
+        },
+        {
+          "name": "workshop_payment_authorizations_offer_id_fkey",
+          "definition": "FOREIGN KEY (offer_id) REFERENCES workshop_offers(id)"
+        },
+        {
+          "name": "workshop_payment_authorizations_pkey",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "workshop_payment_authorizations_selection_mode_check",
+          "definition": "CHECK ((selection_mode = ANY (ARRAY['full'::text, 'sessions'::text])))"
+        },
+        {
+          "name": "workshop_payment_authorizations_student_id_fkey",
+          "definition": "FOREIGN KEY (student_id) REFERENCES students(id)"
+        },
+        {
+          "name": "workshop_payment_authorizations_studio_id_fkey",
+          "definition": "FOREIGN KEY (studio_id) REFERENCES studios(id)"
+        },
+        {
+          "name": "workshop_payment_authorizations_studio_id_request_id_key",
+          "definition": "UNIQUE (studio_id, request_id)"
+        },
+        {
+          "name": "workshop_payment_authorizations_verified_by_fkey",
+          "definition": "FOREIGN KEY (verified_by) REFERENCES auth.users(id)"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "name": "workshop_offer_sessions",
+      "grants": {
+        "anon": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        "service_role": {
+          "delete": true,
+          "insert": true,
+          "select": true,
+          "update": true
+        },
+        "authenticated": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        }
+      },
+      "schema": "public",
+      "columns": [
+        {
+          "name": "offer_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "session_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "individual_price_minor",
+          "type": "integer",
+          "default": null,
+          "required": false
+        }
+      ],
+      "constraints": [
+        {
+          "name": "workshop_offer_sessions_individual_price_minor_check",
+          "definition": "CHECK ((individual_price_minor >= 0))"
+        },
+        {
+          "name": "workshop_offer_sessions_offer_id_fkey",
+          "definition": "FOREIGN KEY (offer_id) REFERENCES workshop_offers(id)"
+        },
+        {
+          "name": "workshop_offer_sessions_pkey",
+          "definition": "PRIMARY KEY (offer_id, session_id)"
+        },
+        {
+          "name": "workshop_offer_sessions_session_id_fkey",
+          "definition": "FOREIGN KEY (session_id) REFERENCES class_sessions(id)"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "name": "workshop_offers",
+      "grants": {
+        "anon": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        "service_role": {
+          "delete": true,
+          "insert": true,
+          "select": true,
+          "update": true
+        },
+        "authenticated": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        }
+      },
+      "schema": "public",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "required": true
+        },
+        {
+          "name": "studio_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "discipline_id",
+          "type": "uuid",
+          "default": null,
+          "required": false
+        },
+        {
+          "name": "full_price_minor",
+          "type": "integer",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "allow_individual_sessions",
+          "type": "boolean",
+          "default": "false",
+          "required": true
+        },
+        {
+          "name": "requires_enrollment",
+          "type": "boolean",
+          "default": null,
+          "required": false
+        },
+        {
+          "name": "overdue_mode",
+          "type": "text",
+          "default": null,
+          "required": false
+        },
+        {
+          "name": "grace_minutes",
+          "type": "integer",
+          "default": null,
+          "required": false
+        },
+        {
+          "name": "deposit_mode",
+          "type": "text",
+          "default": "'full'::text",
+          "required": true
+        },
+        {
+          "name": "deposit_value",
+          "type": "numeric(12,2)",
+          "default": null,
+          "required": false
+        },
+        {
+          "name": "balance_due_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "required": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "required": true
+        }
+      ],
+      "constraints": [
+        {
+          "name": "workshop_offers_deposit_mode_check",
+          "definition": "CHECK ((deposit_mode = ANY (ARRAY['full'::text, 'fixed'::text, 'percent'::text])))"
+        },
+        {
+          "name": "workshop_offers_deposit_valid",
+          "definition": "CHECK ((((deposit_mode = 'full'::text) AND (deposit_value IS NULL)) OR ((deposit_mode = 'fixed'::text) AND (deposit_value IS NOT NULL) AND (deposit_value <= (full_price_minor)::numeric)) OR ((deposit_mode = 'percent'::text) AND (deposit_value IS NOT NULL) AND (deposit_value <= (100)::numeric))))"
+        },
+        {
+          "name": "workshop_offers_deposit_value_check",
+          "definition": "CHECK ((deposit_value >= (0)::numeric))"
+        },
+        {
+          "name": "workshop_offers_discipline_id_fkey",
+          "definition": "FOREIGN KEY (discipline_id) REFERENCES disciplines(id)"
+        },
+        {
+          "name": "workshop_offers_full_price_minor_check",
+          "definition": "CHECK ((full_price_minor >= 0))"
+        },
+        {
+          "name": "workshop_offers_grace_minutes_check",
+          "definition": "CHECK (((grace_minutes >= 0) AND (grace_minutes <= 525600)))"
+        },
+        {
+          "name": "workshop_offers_overdue_mode_check",
+          "definition": "CHECK ((overdue_mode = ANY (ARRAY['keep_and_notify'::text, 'release_after_grace'::text])))"
+        },
+        {
+          "name": "workshop_offers_pkey",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "workshop_offers_studio_id_fkey",
+          "definition": "FOREIGN KEY (studio_id) REFERENCES studios(id)"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "name": "workshop_purchase_sessions",
+      "grants": {
+        "anon": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        "service_role": {
+          "delete": true,
+          "insert": true,
+          "select": true,
+          "update": true
+        },
+        "authenticated": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        }
+      },
+      "schema": "public",
+      "columns": [
+        {
+          "name": "purchase_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "session_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "reservation_id",
+          "type": "uuid",
+          "default": null,
+          "required": false
+        }
+      ],
+      "constraints": [
+        {
+          "name": "workshop_purchase_sessions_pkey",
+          "definition": "PRIMARY KEY (purchase_id, session_id)"
+        },
+        {
+          "name": "workshop_purchase_sessions_purchase_id_fkey",
+          "definition": "FOREIGN KEY (purchase_id) REFERENCES workshop_purchases(id)"
+        },
+        {
+          "name": "workshop_purchase_sessions_reservation_id_fkey",
+          "definition": "FOREIGN KEY (reservation_id) REFERENCES reservations(id)"
+        },
+        {
+          "name": "workshop_purchase_sessions_reservation_unique",
+          "definition": "UNIQUE (reservation_id)"
+        },
+        {
+          "name": "workshop_purchase_sessions_session_id_fkey",
+          "definition": "FOREIGN KEY (session_id) REFERENCES class_sessions(id)"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "name": "workshop_purchases",
+      "grants": {
+        "anon": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        "service_role": {
+          "delete": true,
+          "insert": true,
+          "select": true,
+          "update": true
+        },
+        "authenticated": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        }
+      },
+      "schema": "public",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "required": true
+        },
+        {
+          "name": "studio_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "offer_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "student_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "sale_id",
+          "type": "uuid",
+          "default": null,
+          "required": false
+        },
+        {
+          "name": "total_minor",
+          "type": "integer",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "paid_minor",
+          "type": "integer",
+          "default": "0",
+          "required": true
+        },
+        {
+          "name": "balance_due_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "required": false
+        },
+        {
+          "name": "overdue_mode",
+          "type": "text",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "grace_minutes",
+          "type": "integer",
+          "default": "0",
+          "required": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'pending_payment'::text",
+          "required": true
+        },
+        {
+          "name": "released_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "required": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "required": true
+        },
+        {
+          "name": "idempotency_key",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "selection_mode",
+          "type": "text",
+          "default": null,
+          "required": false
+        }
+      ],
+      "constraints": [
+        {
+          "name": "workshop_purchases_due_for_balance",
+          "definition": "CHECK (((status <> 'reserved'::text) OR (paid_minor >= total_minor) OR (balance_due_at IS NOT NULL)))"
+        },
+        {
+          "name": "workshop_purchases_grace_minutes_check",
+          "definition": "CHECK (((grace_minutes >= 0) AND (grace_minutes <= 525600)))"
+        },
+        {
+          "name": "workshop_purchases_offer_id_fkey",
+          "definition": "FOREIGN KEY (offer_id) REFERENCES workshop_offers(id)"
+        },
+        {
+          "name": "workshop_purchases_overdue_mode_check",
+          "definition": "CHECK ((overdue_mode = ANY (ARRAY['keep_and_notify'::text, 'release_after_grace'::text])))"
+        },
+        {
+          "name": "workshop_purchases_paid_minor_check",
+          "definition": "CHECK ((paid_minor >= 0))"
+        },
+        {
+          "name": "workshop_purchases_paid_not_above_total",
+          "definition": "CHECK ((paid_minor <= total_minor))"
+        },
+        {
+          "name": "workshop_purchases_pkey",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "workshop_purchases_sale_id_fkey",
+          "definition": "FOREIGN KEY (sale_id) REFERENCES sales(id)"
+        },
+        {
+          "name": "workshop_purchases_selection_mode_check",
+          "definition": "CHECK ((selection_mode = ANY (ARRAY['full'::text, 'sessions'::text])))"
+        },
+        {
+          "name": "workshop_purchases_status_check",
+          "definition": "CHECK ((status = ANY (ARRAY['pending_payment'::text, 'reserved'::text, 'released'::text, 'cancelled'::text])))"
+        },
+        {
+          "name": "workshop_purchases_student_id_fkey",
+          "definition": "FOREIGN KEY (student_id) REFERENCES students(id)"
+        },
+        {
+          "name": "workshop_purchases_studio_id_fkey",
+          "definition": "FOREIGN KEY (studio_id) REFERENCES studios(id)"
+        },
+        {
+          "name": "workshop_purchases_studio_id_idempotency_key_key",
+          "definition": "UNIQUE (studio_id, idempotency_key)"
+        },
+        {
+          "name": "workshop_purchases_total_minor_check",
+          "definition": "CHECK ((total_minor >= 0))"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "name": "workshop_studio_policies",
+      "grants": {
+        "anon": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        "service_role": {
+          "delete": true,
+          "insert": true,
+          "select": true,
+          "update": true
+        },
+        "authenticated": {
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        }
+      },
+      "schema": "public",
+      "columns": [
+        {
+          "name": "studio_id",
+          "type": "uuid",
+          "default": null,
+          "required": true
+        },
+        {
+          "name": "requires_enrollment",
+          "type": "boolean",
+          "default": "false",
+          "required": true
+        },
+        {
+          "name": "overdue_mode",
+          "type": "text",
+          "default": "'keep_and_notify'::text",
+          "required": true
+        },
+        {
+          "name": "grace_minutes",
+          "type": "integer",
+          "default": "0",
+          "required": true
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "required": true
+        }
+      ],
+      "constraints": [
+        {
+          "name": "workshop_studio_policies_grace_minutes_check",
+          "definition": "CHECK (((grace_minutes >= 0) AND (grace_minutes <= 525600)))"
+        },
+        {
+          "name": "workshop_studio_policies_overdue_mode_check",
+          "definition": "CHECK ((overdue_mode = ANY (ARRAY['keep_and_notify'::text, 'release_after_grace'::text])))"
+        },
+        {
+          "name": "workshop_studio_policies_pkey",
+          "definition": "PRIMARY KEY (studio_id)"
+        },
+        {
+          "name": "workshop_studio_policies_studio_id_fkey",
+          "definition": "FOREIGN KEY (studio_id) REFERENCES studios(id)"
+        }
+      ]
+    }
+  ],
+  "indexes": [
+    {
+      "name": "workshop_payment_authorizations_pkey",
+      "schema": "private",
+      "definition": "CREATE UNIQUE INDEX workshop_payment_authorizations_pkey ON private.workshop_payment_authorizations USING btree (id)"
+    },
+    {
+      "name": "workshop_payment_authorizations_studio_id_request_id_key",
+      "schema": "private",
+      "definition": "CREATE UNIQUE INDEX workshop_payment_authorizations_studio_id_request_id_key ON private.workshop_payment_authorizations USING btree (studio_id, request_id)"
+    },
+    {
+      "name": "workshop_offer_sessions_pkey",
+      "schema": "public",
+      "definition": "CREATE UNIQUE INDEX workshop_offer_sessions_pkey ON public.workshop_offer_sessions USING btree (offer_id, session_id)"
+    },
+    {
+      "name": "workshop_offer_sessions_session_idx",
+      "schema": "public",
+      "definition": "CREATE INDEX workshop_offer_sessions_session_idx ON public.workshop_offer_sessions USING btree (session_id)"
+    },
+    {
+      "name": "workshop_offers_pkey",
+      "schema": "public",
+      "definition": "CREATE UNIQUE INDEX workshop_offers_pkey ON public.workshop_offers USING btree (id)"
+    },
+    {
+      "name": "workshop_purchase_sessions_pkey",
+      "schema": "public",
+      "definition": "CREATE UNIQUE INDEX workshop_purchase_sessions_pkey ON public.workshop_purchase_sessions USING btree (purchase_id, session_id)"
+    },
+    {
+      "name": "workshop_purchase_sessions_reservation_unique",
+      "schema": "public",
+      "definition": "CREATE UNIQUE INDEX workshop_purchase_sessions_reservation_unique ON public.workshop_purchase_sessions USING btree (reservation_id)"
+    },
+    {
+      "name": "workshop_purchase_sessions_session_idx",
+      "schema": "public",
+      "definition": "CREATE INDEX workshop_purchase_sessions_session_idx ON public.workshop_purchase_sessions USING btree (session_id)"
+    },
+    {
+      "name": "workshop_purchases_due_idx",
+      "schema": "public",
+      "definition": "CREATE INDEX workshop_purchases_due_idx ON public.workshop_purchases USING btree (balance_due_at) WHERE (status = 'reserved'::text)"
+    },
+    {
+      "name": "workshop_purchases_pkey",
+      "schema": "public",
+      "definition": "CREATE UNIQUE INDEX workshop_purchases_pkey ON public.workshop_purchases USING btree (id)"
+    },
+    {
+      "name": "workshop_purchases_studio_id_idempotency_key_key",
+      "schema": "public",
+      "definition": "CREATE UNIQUE INDEX workshop_purchases_studio_id_idempotency_key_key ON public.workshop_purchases USING btree (studio_id, idempotency_key)"
+    },
+    {
+      "name": "workshop_studio_policies_pkey",
+      "schema": "public",
+      "definition": "CREATE UNIQUE INDEX workshop_studio_policies_pkey ON public.workshop_studio_policies USING btree (studio_id)"
+    }
+  ],
+  "policies": [],
+  "triggers": [
+    "CREATE TRIGGER immutable_workshop_payment_authorization BEFORE DELETE OR UPDATE ON private.workshop_payment_authorizations FOR EACH ROW EXECUTE FUNCTION private.guard_workshop_payment_authorization()"
+  ],
+  "functions": [
+    {
+      "name": "admin_confirm_workshop_payment",
+      "grants": {
+        "anon": false,
+        "service_role": false,
+        "authenticated": true
+      },
+      "schema": "private",
+      "definer": true,
+      "body_md5": "15ad21d1fc0f5b689601ea1af37f0ae1",
+      "settings": ["search_path=\"\""],
+      "arguments": "p_offer_id uuid, p_student_id uuid, p_session_ids uuid[], p_purchase_mode text, p_request_id uuid, p_amount_minor integer, p_method text, p_reference text, p_verified boolean"
+    },
+    {
+      "name": "guard_workshop_payment_authorization",
+      "grants": {
+        "anon": false,
+        "service_role": false,
+        "authenticated": false
+      },
+      "schema": "private",
+      "definer": false,
+      "body_md5": "5ca4270fb6af7082e094a3e09111a779",
+      "settings": ["search_path=\"\""],
+      "arguments": ""
+    },
+    {
+      "name": "admin_confirm_workshop_payment",
+      "grants": {
+        "anon": false,
+        "service_role": false,
+        "authenticated": true
+      },
+      "schema": "public",
+      "definer": false,
+      "body_md5": "0ff1f21eb526a18cd3f96a6c3f098e70",
+      "settings": ["search_path=\"\""],
+      "arguments": "p_offer_id uuid, p_student_id uuid, p_session_ids uuid[], p_purchase_mode text, p_request_id uuid, p_amount_minor integer, p_method text, p_reference text, p_verified boolean"
+    },
+    {
+      "name": "workshop_checkout_confirm",
+      "grants": {
+        "anon": false,
+        "service_role": false,
+        "authenticated": false
+      },
+      "schema": "public",
+      "definer": false,
+      "body_md5": "8e3a56b4df34a315cd9fe712965a47f3",
+      "settings": ["search_path=\"\""],
+      "arguments": "p_studio_id uuid, p_offer_id uuid, p_student_id uuid, p_session_ids uuid[], p_idempotency_key uuid, p_confirmed_amount_minor integer, p_payment_method text, p_payment_reference text"
+    },
+    {
+      "name": "workshop_checkout_confirm_v2",
+      "grants": {
+        "anon": false,
+        "service_role": false,
+        "authenticated": false
+      },
+      "schema": "public",
+      "definer": false,
+      "body_md5": "85453f2201dccbca5f68358fc3e75c58",
+      "settings": ["search_path=\"\""],
+      "arguments": "p_studio_id uuid, p_offer_id uuid, p_student_id uuid, p_session_ids uuid[], p_purchase_mode text, p_idempotency_key uuid, p_confirmed_amount_minor integer, p_payment_method text, p_payment_reference text"
+    },
+    {
+      "name": "workshop_checkout_preflight",
+      "grants": {
+        "anon": false,
+        "service_role": true,
+        "authenticated": false
+      },
+      "schema": "public",
+      "definer": false,
+      "body_md5": "dfb35dbc6b475d00b40d4b235f946cc9",
+      "settings": ["search_path=\"\""],
+      "arguments": "p_studio_id uuid, p_offer_id uuid, p_student_id uuid, p_session_ids uuid[]"
+    },
+    {
+      "name": "workshop_checkout_preflight_v2",
+      "grants": {
+        "anon": false,
+        "service_role": true,
+        "authenticated": false
+      },
+      "schema": "public",
+      "definer": false,
+      "body_md5": "c2235f3fb279d1c1d1d5b4af59127860",
+      "settings": ["search_path=\"\""],
+      "arguments": "p_studio_id uuid, p_offer_id uuid, p_student_id uuid, p_session_ids uuid[], p_purchase_mode text"
+    }
+  ]
+}

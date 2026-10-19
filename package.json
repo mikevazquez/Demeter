@@ -15,6 +15,7 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:workshops:db": "node scripts/test-workshop-payment-gate.mjs",
     "ci": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build"
   },
   "dependencies": {

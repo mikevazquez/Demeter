@@ -169,6 +169,9 @@ function harness(httpStatus = 200, failOutboundPersistence = false) {
     "@/lib/assistant/read-tools": {},
     "@/lib/assistant/sticker-media": {},
     "@/lib/assistant/audio-transcription": {},
+    "@/lib/assistant/workshop-purchase": {
+      handleDemiWorkshopReceipt: vi.fn().mockResolvedValue({ handled: false }),
+    },
     "@/lib/assistant/group-booking": {},
     "@/lib/assistant/enrollment-payment": {},
     "@/lib/assistant/receipt-reader": {},
