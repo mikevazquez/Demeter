@@ -1139,6 +1139,10 @@ export default async function StudentProfilePage({
         error={query.lifecycle_error}
       />
 
+      {view === "summary" && canReadSales ? (
+        <StudentWorkshops studentId={student.id} showEmpty={false} />
+      ) : null}
+
       {query.error ? (
         <div className="notice error">
           {errorCopy[query.error] ?? "No se pudo guardar el cambio."}
