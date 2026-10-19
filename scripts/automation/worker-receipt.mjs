@@ -28,7 +28,7 @@ export function validateWorkerReceipt(receipt) {
   assert(["completed", "blocked", "failed"].includes(receipt.status), "Invalid receipt status");
   assert(Array.isArray(receipt.files_changed ?? []), "files_changed must be an array");
   assert(Array.isArray(receipt.commands_run ?? []), "commands_run must be an array");
-  assert(Array.isArray(receipt.tests_passed ?? []), "tests_passed must be an array");
+  assert(\n    Array.isArray(receipt.tests_passed ?? []) || typeof receipt.tests_passed === "boolean",\n    "tests_passed must be an array or boolean",\n  );
   assert(Array.isArray(receipt.blockers ?? []), "blockers must be an array");
   assert(Array.isArray(receipt.remaining_work ?? []), "remaining_work must be an array");
   return receipt;
@@ -39,13 +39,17 @@ export function parseWorkerReceipt(body) {
   const markerIndex = body.indexOf(MARKER);
   if (markerIndex === -1) return null;
   const after = body.slice(markerIndex + MARKER.length).trim();
-  const firstLine = after.split("\n")[0].trim();
-  if (!firstLine.startsWith("{")) return null;
+  const fenced = after.match(/^\`\`\`(?:json)?\\s*([\\s\\S]*?)\`\`\`/i);
+  const jsonText = (fenced?.[1] ?? after).trim();
+  if (!jsonText.startsWith("{")) return null;
   let parsed;
   try {
-    parsed = JSON.parse(firstLine);
+    parsed = JSON.parse(jsonText);
   } catch {
     return null;
+  }
+  if (typeof parsed.status === "string") {
+    parsed = { ...parsed, status: parsed.status.trim().toLowerCase() };
   }
   return validateWorkerReceipt(parsed);
 }
