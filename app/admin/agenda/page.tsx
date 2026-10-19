@@ -239,8 +239,24 @@ export default async function AgendaPage({
     .lt("starts_at", weekAfterUtc.toISOString())
     .order("starts_at", { ascending: true });
 
+  const sessionTemplateIds = [
+    ...new Set((sessions ?? []).map((session) => session.template_id).filter(Boolean)),
+  ] as string[];
+  const activeTemplateIds = new Set((templates ?? []).map((template) => template.id));
+  const missingTemplateIds = sessionTemplateIds.filter((id) => !activeTemplateIds.has(id));
+  const { data: sessionOnlyTemplates } = missingTemplateIds.length
+    ? await supabase
+        .from("class_templates")
+        .select(
+          "id,name,duration_minutes,capacity,discipline_id,credit_cost,drop_in_price_minor,color_hex,program_id,workshop_offer_id",
+        )
+        .eq("studio_id", studio.id)
+        .in("id", missingTemplateIds)
+    : { data: [] as NonNullable<typeof templates> };
+  const allTemplates = [...(templates ?? []), ...(sessionOnlyTemplates ?? [])];
+
   const programIds = [
-    ...new Set((templates ?? []).map((template) => template.program_id).filter(Boolean)),
+    ...new Set(allTemplates.map((template) => template.program_id).filter(Boolean)),
   ] as string[];
   const { data: activityPrograms } = programIds.length
     ? await supabase
@@ -260,7 +276,7 @@ export default async function AgendaPage({
     : { data: [] as { id: string; session_id: string; status: string }[] };
 
   const disciplineMap = new Map((disciplines ?? []).map((item) => [item.id, item.name]));
-  const templateMap = new Map((templates ?? []).map((item) => [item.id, item]));
+  const templateMap = new Map(allTemplates.map((item) => [item.id, item]));
   const programKindMap = new Map((activityPrograms ?? []).map((item) => [item.id, item.kind]));
   const spaceMap = new Map((spaces ?? []).map((item) => [item.id, item.name]));
   const personMap = new Map(
