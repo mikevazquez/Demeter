@@ -5,6 +5,7 @@ import {
   createWorkerRegistry,
   dispatchTask,
   evaluateWorker,
+  redispatchAfterWorkerSignal,
 } from "../../scripts/automation/worker-dispatch.mjs";
 
 const engineeringTask = {
@@ -82,6 +83,28 @@ describe("Governance worker dispatch", () => {
     expect(codexEvaluation.eligible).toBe(false);
     expect(codexEvaluation.reasons).toContain("state:no_capacity");
     expect(codexEvaluation.source).toBe("pilot-capacity-probe");
+  });
+
+  it("redispatches the same task after Codex reports no capacity", () => {
+    const first = dispatchTask(engineeringTask, [codex, cloud]);
+    expect(first.assignedWorker).toBe("codex");
+
+    const second = redispatchAfterWorkerSignal(
+      engineeringTask,
+      [codex, cloud],
+      {
+        workerId: "codex",
+        state: "no_capacity",
+        source: "executor_limit_signal",
+        observedAt: "2026-10-19T13:35:00-06:00",
+      },
+    );
+
+    expect(second.taskId).toBe(engineeringTask.taskId);
+    expect(second.reassignment.preservedTaskId).toBe(true);
+    expect(second.reassignment.fromWorker).toBe("codex");
+    expect(second.reassignment.signalState).toBe("no_capacity");
+    expect(second.assignedWorker).toBe("cloud");
   });
 
   it("blocks rather than lowering the quality floor", () => {
