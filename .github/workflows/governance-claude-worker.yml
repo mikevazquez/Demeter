@@ -11,17 +11,12 @@ on:
         description: Base64 encoded Governance Task Contract JSON
         required: true
         type: string
-  push:
-    branches:
-      - feat/governance-claude-routine-bridge
-    paths:
-      - ".governance/dispatch/*.json"
 
 permissions:
   contents: read
 
 concurrency:
-  group: governance-claude-${{ github.ref }}
+  group: governance-claude-${{ inputs.task_id }}
   cancel-in-progress: false
 
 jobs:
@@ -30,42 +25,17 @@ jobs:
     env:
       CLAUDE_ROUTINE_FIRE_URL: ${{ secrets.CLAUDE_ROUTINE_FIRE_URL }}
       CLAUDE_ROUTINE_FIRE_TOKEN: ${{ secrets.CLAUDE_ROUTINE_FIRE_TOKEN }}
+      GOVERNANCE_TASK_CONTRACT_B64: ${{ inputs.task_contract_b64 }}
+      INPUT_TASK_ID: ${{ inputs.task_id }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
 
       - name: Validate required secrets
         shell: bash
         run: |
           test -n "$CLAUDE_ROUTINE_FIRE_URL"
           test -n "$CLAUDE_ROUTINE_FIRE_TOKEN"
-
-      - name: Prepare workflow_dispatch contract
-        if: github.event_name == 'workflow_dispatch'
-        shell: bash
-        env:
-          INPUT_TASK_ID: ${{ inputs.task_id }}
-          INPUT_TASK_CONTRACT_B64: ${{ inputs.task_contract_b64 }}
-        run: |
-          echo "INPUT_TASK_ID=$INPUT_TASK_ID" >> "$GITHUB_ENV"
-          echo "GOVERNANCE_TASK_CONTRACT_B64=$INPUT_TASK_CONTRACT_B64" >> "$GITHUB_ENV"
-
-      - name: Prepare push contract
-        if: github.event_name == 'push'
-        shell: bash
-        run: |
-          mapfile -t files < <(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" -- '.governance/dispatch/*.json')
-          if [ "${#files[@]}" -ne 1 ]; then
-            echo "Expected exactly one dispatch contract file, found ${#files[@]}" >&2
-            exit 1
-          fi
-          file="${files[0]}"
-          task_id="$(node -e 'const fs=require("fs"); const x=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(x.task_id)' "$file")"
-          encoded="$(base64 -w0 "$file")"
-          echo "INPUT_TASK_ID=$task_id" >> "$GITHUB_ENV"
-          echo "GOVERNANCE_TASK_CONTRACT_B64=$encoded" >> "$GITHUB_ENV"
 
       - name: Verify task ID matches contract
         shell: bash
