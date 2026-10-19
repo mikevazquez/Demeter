@@ -11,6 +11,7 @@ const item: TodayClassItem = {
   startsAt: "2026-10-19T00:00:00Z",
   endsAt: "2026-10-19T01:00:00Z",
   name: "Pole Fitness",
+  kindLabel: "Clase",
   instructor: "Coach",
   space: "Principal",
   occupied: 8,
@@ -67,5 +68,10 @@ describe("Hoy class occupancy and waitlist states", () => {
   });
   it("does not display a waitlist badge for an empty list", () => {
     expect(render({ waitlist: [] })).not.toContain("en espera");
+  });
+  it("shows the special session type separately from the activity name", () => {
+    const html = render({ name: "Aro prueba", kindLabel: "Taller" });
+    expect(html).toContain("Taller");
+    expect(html).toContain("Aro prueba");
   });
 });
