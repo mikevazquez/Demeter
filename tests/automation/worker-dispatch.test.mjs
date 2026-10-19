@@ -89,16 +89,12 @@ describe("Governance worker dispatch", () => {
     const first = dispatchTask(engineeringTask, [codex, cloud]);
     expect(first.assignedWorker).toBe("codex");
 
-    const second = redispatchAfterWorkerSignal(
-      engineeringTask,
-      [codex, cloud],
-      {
-        workerId: "codex",
-        state: "no_capacity",
-        source: "executor_limit_signal",
-        observedAt: "2026-10-19T13:35:00-06:00",
-      },
-    );
+    const second = redispatchAfterWorkerSignal(engineeringTask, [codex, cloud], {
+      workerId: "codex",
+      state: "no_capacity",
+      source: "executor_limit_signal",
+      observedAt: "2026-10-19T13:35:00-06:00",
+    });
 
     expect(second.taskId).toBe(engineeringTask.taskId);
     expect(second.reassignment.preservedTaskId).toBe(true);
@@ -179,10 +175,7 @@ describe("Governance worker dispatch", () => {
     expect(registry.get("cloud").provider).toBe("external");
     expect(registry.list()).toHaveLength(2);
 
-    const evaluation = evaluateWorker(
-      engineeringTask,
-      applyCapacityGate(registry.get("cloud")),
-    );
+    const evaluation = evaluateWorker(engineeringTask, applyCapacityGate(registry.get("cloud")));
     expect(evaluation.eligible).toBe(true);
   });
 });

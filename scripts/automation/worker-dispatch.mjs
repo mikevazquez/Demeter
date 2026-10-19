@@ -1,10 +1,4 @@
-const WORKER_STATES = new Set([
-  "available",
-  "busy",
-  "degraded",
-  "no_capacity",
-  "disconnected",
-]);
+const WORKER_STATES = new Set(["available", "busy", "degraded", "no_capacity", "disconnected"]);
 
 const assert = (value, message) => {
   if (!value) throw new Error(message);
@@ -18,7 +12,10 @@ function validateWorker(worker) {
   assert(WORKER_STATES.has(worker.state), `Invalid worker state for ${worker.workerId}`);
   assert(Array.isArray(worker.capabilities), `capabilities required for ${worker.workerId}`);
   assert(Array.isArray(worker.permissions), `permissions required for ${worker.workerId}`);
-  assert(Number.isFinite(worker.quality?.default), `default quality required for ${worker.workerId}`);
+  assert(
+    Number.isFinite(worker.quality?.default),
+    `default quality required for ${worker.workerId}`,
+  );
   assert(Number.isFinite(worker.relativeCost), `relativeCost required for ${worker.workerId}`);
   return worker;
 }
@@ -29,7 +26,10 @@ function validateTask(task) {
   assert(Array.isArray(task.requiredCapabilities), "requiredCapabilities required");
   assert(Array.isArray(task.requiredPermissions), "requiredPermissions required");
   assert(Number.isFinite(task.qualityFloor), "qualityFloor required");
-  assert(Number.isInteger(task.riskTier) && task.riskTier >= 0 && task.riskTier <= 4, "riskTier must be 0-4");
+  assert(
+    Number.isInteger(task.riskTier) && task.riskTier >= 0 && task.riskTier <= 4,
+    "riskTier must be 0-4",
+  );
   return task;
 }
 
@@ -55,7 +55,10 @@ export function applyCapacityGate(worker, { capacityProbe } = {}) {
   }
 
   const observation = capacityProbe(worker);
-  assert(observation && WORKER_STATES.has(observation.state), "Capacity probe must return a valid state");
+  assert(
+    observation && WORKER_STATES.has(observation.state),
+    "Capacity probe must return a valid state",
+  );
 
   return {
     worker: { ...worker, state: observation.state },
@@ -139,11 +142,13 @@ export function dispatchTask(task, workers, options = {}) {
   };
 }
 
-
 export function redispatchAfterWorkerSignal(task, workers, signal, options = {}) {
   validateTask(task);
   assert(signal && typeof signal === "object", "Worker signal required");
-  assert(typeof signal.workerId === "string" && signal.workerId.length > 0, "signal.workerId required");
+  assert(
+    typeof signal.workerId === "string" && signal.workerId.length > 0,
+    "signal.workerId required",
+  );
   assert(WORKER_STATES.has(signal.state), "Worker signal must contain a valid state");
 
   const updatedWorkers = workers.map((worker) =>
