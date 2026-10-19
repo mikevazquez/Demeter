@@ -102,4 +102,44 @@ describe("Hoy birthday data boundary", () => {
     );
     expect(queries).toHaveLength(1);
   });
+  it("excludes former students, prospects and invalid dates alongside valid classmates", async () => {
+    const { db } = database([
+      row,
+      {
+        ...row,
+        id: "former",
+        student_enrollments: [
+          { status: "expired", starts_on: "2025-01-01", expires_on: "2025-12-31" },
+        ],
+      },
+      { ...row, id: "prospect", student_type: "prospect" },
+      { ...row, id: "invalid", person: { profile_field_values: [{ value: "2001-02-29" }] } },
+    ]);
+    expect(
+      (await loadBirthdayStudents(db, "studio-a", "2026-11-14")).map((item) => item.id),
+    ).toEqual(["ana"]);
+  });
+  it("does not label future packages or enrollment purchases as an active package", async () => {
+    const acquisition = row.product_acquisitions[0];
+    const { db } = database([
+      {
+        ...row,
+        product_acquisitions: [
+          acquisition,
+          {
+            ...acquisition,
+            product_templates: { name: "Futuro", product_type: "package" },
+            starts_on: "2026-12-01",
+          },
+          {
+            ...acquisition,
+            product_templates: { name: "Inscripción", product_type: "enrollment" },
+          },
+        ],
+      },
+    ]);
+    expect((await loadBirthdayStudents(db, "studio-a", "2026-11-14"))[0].packageLabel).toBe(
+      "Pole mensual",
+    );
+  });
 });

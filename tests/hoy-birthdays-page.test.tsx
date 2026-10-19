@@ -69,7 +69,7 @@ describe("Hoy birthday page integration and access", () => {
     expect(december).toContain("Cumpleaños de diciembre");
     expect(december).not.toContain("Ana García");
   });
-  it.each(["instructor", "student"])(
+  it.each(["coach", "instructor", "student"])(
     "does not load or render birthday data for %s",
     async (role) => {
       setup(role);
@@ -89,6 +89,13 @@ describe("Hoy birthday page integration and access", () => {
       expect(loadBirthdays).toHaveBeenCalledOnce();
     },
   );
+  it("reports an unavailable birth field without changing schema or claiming an empty month", async () => {
+    setup();
+    loadBirthdays.mockRejectedValue(new Error("birthday_field_unavailable"));
+    const html = renderToStaticMarkup(await AdminPage({ searchParams: Promise.resolve({}) }));
+    expect(html).toContain("No se pudieron consultar los cumpleaños.");
+    expect(html).not.toContain("Sin cumpleaños registrados");
+  });
   it("does not load birthdays without the existing read capability", async () => {
     setup("admin", false);
     await AdminPage({ searchParams: Promise.resolve({}) });
