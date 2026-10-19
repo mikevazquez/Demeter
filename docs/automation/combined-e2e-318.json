@@ -1,0 +1,20 @@
+{
+  "id": "g2-c8f609a14fb0d7b2ae2291973484528ffa539916",
+  "baseSha": "9725093daf4191bf95c177ba4b28e11af781d446",
+  "contractSha256": "f38106d90e1019f046ea756757393b497804c46695831a7d646b0433498f09d2",
+  "resultObjectSha": "54e45f0cbab3c6d705f64b8dcb6044764697366f",
+  "sessionId": "01a15136-eb5f-7763-b3ea-3e34ebbee6de",
+  "sourceHostname": "a4bc18d64206",
+  "evidenceName": "governance2-combined-evidence-318",
+  "authority": {
+    "ref": "refs/heads/governance2/registry-318-v1",
+    "genesisSha": "0e77480cdf0921fe62bbe0a74f1cb563e92e9778"
+  },
+  "closedReceipt": {
+    "kind": "published",
+    "url": "https://github.com/mikevazquez/Demeter/pull/334",
+    "commitSha": "78c501f41274274eb27f348eca53019bdb0e55e7",
+    "branch": "studio-flow/minimal/g2-c8f609a14fb0d7b2ae2291973484528ffa539916",
+    "draft": true
+  }
+}
