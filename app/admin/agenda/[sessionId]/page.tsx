@@ -8,6 +8,7 @@ import {
   countSeatOccupyingReservations,
 } from "@/lib/reservations/capacity";
 import { cancelSession, setMinimumOverride, updateSession } from "./actions";
+import { resolveSessionKind, sessionKindLabel } from "@/src/lib/sessions/session-kind";
 
 function validDateKey(value: string | undefined) {
   return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
@@ -62,7 +63,7 @@ export default async function SessionDetailPage({
     await Promise.all([
       supabase
         .from("class_templates")
-        .select("name,discipline_id,duration_minutes,credit_cost,color_hex,drop_in_price_minor")
+        .select("name,discipline_id,duration_minutes,credit_cost,color_hex,drop_in_price_minor,program_id,workshop_offer_id")
         .eq("id", session.template_id)
         .single(),
       supabase
@@ -83,6 +84,20 @@ export default async function SessionDetailPage({
         .in("status", ["reserved", "attended", "no_show"])
         .order("booked_at"),
     ]);
+
+  const { data: activityProgram } = template?.program_id
+    ? await supabase
+        .from("activity_programs")
+        .select("kind")
+        .eq("studio_id", studio.id)
+        .eq("id", template.program_id)
+        .maybeSingle()
+    : { data: null as { kind: string } | null };
+  const sessionKind = resolveSessionKind({
+    workshopOfferId: template?.workshop_offer_id,
+    programKind: activityProgram?.kind,
+  });
+  const sessionKindCopy = sessionKindLabel(sessionKind);
 
   const personIds = [...new Set((instructors ?? []).map((item) => item.person_id))];
   const { data: persons } = personIds.length
@@ -216,7 +231,7 @@ export default async function SessionDetailPage({
           <Link className="back-link compact" href={backHref}>
             ← Hoy
           </Link>
-          <p className="eyebrow">OPERACIÓN DE CLASE · {studio.name}</p>
+          <p className="eyebrow">OPERACIÓN DE {sessionKindCopy.toUpperCase()} · {studio.name}</p>
           <h1 className="dashboard-title">{template?.name ?? "Clase"}</h1>
           <p>
             {dateLabel} ·{" "}
