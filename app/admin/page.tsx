@@ -11,6 +11,10 @@ import {
 import { individualPaymentSummary } from "@/lib/reservations/individual-payment-summary";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
 import QuickActions from "./hoy/QuickActions";
+import { birthdaysInMonth, birthdaysOn, mexicoToday, type BirthdayStudent } from "./hoy/birthdays";
+import { loadBirthdayStudents } from "./hoy/load-birthdays";
+import { GiftIcon } from "./hoy/GiftIcon";
+import { MonthlyBirthdays } from "./hoy/MonthlyBirthdays";
 
 function formatExpiry(value: string | null, locale: string) {
   if (!value) return "Sin vencimiento";
@@ -27,17 +31,6 @@ function formatTime(value: string, timeZone: string, locale: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
-}
-
-function localDateKey(value: Date, timeZone: string) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(value);
-  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
-  return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
 function parseDateKey(value: string | undefined) {
@@ -99,7 +92,7 @@ export default async function AdminPage({
 }: {
   searchParams: Promise<{ error?: string; created?: string; date?: string }>;
 }) {
-  const { supabase, studio, can, user, profile } = await getAdminContext();
+  const { supabase, studio, can, user, profile, membership } = await getAdminContext();
   const params = await searchParams;
   const headerName = profile?.full_name?.trim() || user.email?.split("@")[0] || "Usuario";
   const headerInitials =
@@ -111,7 +104,7 @@ export default async function AdminPage({
   const timeZone = studio.timezone;
   const locale = studio.locale;
   const now = new Date();
-  const todayKey = localDateKey(now, timeZone);
+  const todayKey = mexicoToday(now);
   const selectedDate = parseDateKey(params.date) ?? parseDateKey(todayKey)!;
   const selectedKey = utcDateKey(selectedDate);
   const weekStart = weekStartMonday(selectedDate);
@@ -140,6 +133,13 @@ export default async function AdminPage({
   const canReadSales = can(CAPABILITIES.SALES_READ) || can(CAPABILITIES.SALES_WRITE);
   const canWriteSales = can(CAPABILITIES.SALES_WRITE);
   const canWriteAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
+  const canReadBirthdays =
+    ["owner", "admin", "reception"].includes(membership.role) && can(CAPABILITIES.STUDENTS_READ);
+  const birthdayResultPromise = canReadBirthdays
+    ? loadBirthdayStudents(supabase, studio.id, todayKey)
+        .then((students) => ({ students, unavailable: false }))
+        .catch(() => ({ students: [] as BirthdayStudent[], unavailable: true }))
+    : Promise.resolve({ students: [] as BirthdayStudent[], unavailable: false });
   let cashDebts: Awaited<ReturnType<typeof loadDemiCashDebts>> = [];
   let cashDebtsUnavailable = false;
   if (canReadSales) {
@@ -156,6 +156,7 @@ export default async function AdminPage({
     { data: activeProductAcquisitions },
     { data: selectedPayments },
     { data: pendingTransferIntents, error: pendingTransferError },
+    birthdayResult,
   ] = await Promise.all([
     supabase.rpc("current_server_time"),
     supabase
@@ -201,7 +202,14 @@ export default async function AdminPage({
             updated_at: string;
           }[],
         }),
+    birthdayResultPromise,
   ]);
+
+  const birthdayStudents = birthdayResult.students;
+  const birthdaysUnavailable = birthdayResult.unavailable;
+  const selectedBirthdays = birthdaysOn(birthdayStudents, selectedKey);
+  const birthdayStudentIds = new Set(selectedBirthdays.map((student) => student.studentId));
+  const monthlyBirthdays = birthdaysInMonth(birthdayStudents, selectedKey);
 
   const activeProductStudentIds = new Set(
     (activeProductAcquisitions ?? []).flatMap((acquisition) =>
@@ -595,6 +603,9 @@ export default async function AdminPage({
 
         return {
           id: reservation.id,
+          isBirthday: Boolean(
+            !isGuest && reservation.student_id && birthdayStudentIds.has(reservation.student_id),
+          ),
           studentName: isGuest
             ? (personMap.get(reservation.guest_person_id!) ?? "Invitado")
             : reservation.student_id
@@ -737,15 +748,20 @@ export default async function AdminPage({
                 const key = utcDateKey(day);
                 const isSelected = key === selectedKey;
                 const isToday = key === todayKey;
+                const dayBirthdays = birthdaysOn(birthdayStudents, key);
                 return (
                   <Link
                     key={key}
                     href={`/admin?date=${key}`}
                     className={`mock-week-day${isSelected ? " is-selected" : ""}${isToday ? " is-today" : ""}`}
                     aria-current={isSelected ? "date" : undefined}
+                    aria-label={`${new Intl.DateTimeFormat(locale, { timeZone: "UTC", dateStyle: "full" }).format(day)}${dayBirthdays.length ? `, cumpleaños de ${dayBirthdays.map((student) => student.name).join(" y ")}` : ""}`}
                   >
                     <span>{shortWeekday(day, locale)}</span>
                     <strong>{day.getUTCDate()}</strong>
+                    {dayBirthdays.length ? (
+                      <GiftIcon size={13} className="today-week-gift" />
+                    ) : null}
                   </Link>
                 );
               })}
@@ -768,7 +784,17 @@ export default async function AdminPage({
                 {classes.length} {classes.length === 1 ? "clase" : "clases"}
               </span>
             </div>
+            {selectedBirthdays.length ? (
+              <div className="today-birthday-notice">
+                <GiftIcon />
+                <span>
+                  {selectedKey === todayKey ? "Hoy cumple " : "Este día cumple "}
+                  <strong>{selectedBirthdays.map((student) => student.name).join(" y ")}</strong>
+                </span>
+              </div>
+            ) : null}
             <TodayClasses
+              key={selectedKey}
               classes={classes}
               returnDate={selectedKey}
               serverNow={String(serverNow ?? now.toISOString())}
@@ -787,6 +813,19 @@ export default async function AdminPage({
               height={110}
             />
           </section>
+          {canReadBirthdays ? (
+            birthdaysUnavailable ? (
+              <p role="alert">No se pudieron consultar los cumpleaños.</p>
+            ) : (
+              <MonthlyBirthdays
+                key={selectedKey.slice(0, 7)}
+                birthdays={monthlyBirthdays}
+                selectedDate={selectedKey}
+                today={todayKey}
+                locale={locale}
+              />
+            )
+          ) : null}
           <section className="sendero-welcome" aria-labelledby="sendero-greeting">
             <Image src="/sendero/moon.svg" alt="" width={150} height={140} priority />
             <h2 id="sendero-greeting">{greeting}</h2>
