@@ -24,14 +24,10 @@ describe("Claude Code routine worker adapter", () => {
       validateRoutineFireUrl(
         "https://api.anthropic.com/v1/claude_code/routines/trig_example123/fire",
       ),
-    ).toBe(
-      "https://api.anthropic.com/v1/claude_code/routines/trig_example123/fire",
-    );
+    ).toBe("https://api.anthropic.com/v1/claude_code/routines/trig_example123/fire");
 
     expect(() =>
-      validateRoutineFireUrl(
-        "https://evil.example/v1/claude_code/routines/trig_example123/fire",
-      ),
+      validateRoutineFireUrl("https://evil.example/v1/claude_code/routines/trig_example123/fire"),
     ).toThrow("api.anthropic.com");
   });
 
@@ -74,8 +70,7 @@ describe("Claude Code routine worker adapter", () => {
     };
 
     const result = await fireClaudeRoutine({
-      fireUrl:
-        "https://api.anthropic.com/v1/claude_code/routines/trig_example123/fire",
+      fireUrl: "https://api.anthropic.com/v1/claude_code/routines/trig_example123/fire",
       token: "secret-test-token",
       contract,
       fetchImpl,
@@ -109,8 +104,7 @@ describe("Claude Code routine worker adapter", () => {
     };
 
     const result = await fireClaudeRoutine({
-      fireUrl:
-        "https://api.anthropic.com/v1/claude_code/routines/trig_example123/fire",
+      fireUrl: "https://api.anthropic.com/v1/claude_code/routines/trig_example123/fire",
       token: "secret-test-token",
       contract,
       fetchImpl,
@@ -124,8 +118,7 @@ describe("Claude Code routine worker adapter", () => {
 
   it("marks network uncertainty and does not claim success", async () => {
     const result = await fireClaudeRoutine({
-      fireUrl:
-        "https://api.anthropic.com/v1/claude_code/routines/trig_example123/fire",
+      fireUrl: "https://api.anthropic.com/v1/claude_code/routines/trig_example123/fire",
       token: "secret-test-token",
       contract,
       fetchImpl: async () => {

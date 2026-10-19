@@ -73,7 +73,6 @@ The completion loop is implemented with a structured worker receipt in GitHub is
 
 This bridge does not authorize production. Selecting Claude Code as a worker does not grant deploy, merge, production database, payment, or secret access.
 
-
 ## Completion receipt
 
 The saved Claude Code Routine should post a non-sensitive completion receipt to GitHub issue #341:
