@@ -63,7 +63,9 @@ export default async function SessionDetailPage({
     await Promise.all([
       supabase
         .from("class_templates")
-        .select("name,discipline_id,duration_minutes,credit_cost,color_hex,drop_in_price_minor,program_id,workshop_offer_id")
+        .select(
+          "name,discipline_id,duration_minutes,credit_cost,color_hex,drop_in_price_minor,program_id,workshop_offer_id",
+        )
         .eq("id", session.template_id)
         .single(),
       supabase
@@ -231,7 +233,9 @@ export default async function SessionDetailPage({
           <Link className="back-link compact" href={backHref}>
             ← Hoy
           </Link>
-          <p className="eyebrow">OPERACIÓN DE {sessionKindCopy.toUpperCase()} · {studio.name}</p>
+          <p className="eyebrow">
+            OPERACIÓN DE {sessionKindCopy.toUpperCase()} · {studio.name}
+          </p>
           <h1 className="dashboard-title">{template?.name ?? "Clase"}</h1>
           <p>
             {dateLabel} ·{" "}

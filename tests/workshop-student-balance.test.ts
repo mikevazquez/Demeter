@@ -15,7 +15,7 @@ describe("workshop visibility and balance collection from student profile", () =
 
   it("surfaces workshop purchases in the default student summary when they exist", () => {
     expect(studentProfile).toContain(
-      '<StudentWorkshops studentId={student.id} showEmpty={false} />',
+      "<StudentWorkshops studentId={student.id} showEmpty={false} />",
     );
     expect(studentWorkshops).toContain("if (!purchases.length && !showEmpty) return null");
   });
