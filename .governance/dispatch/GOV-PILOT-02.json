@@ -1,0 +1,43 @@
+{
+  "task_id": "GOV-PILOT-02",
+  "objective": "Verify the prior worker-dispatch pilot branch in read-only mode and publish a completion receipt to Governance issue #341.",
+  "repo": "mikevazquez/Demeter",
+  "branch": "feat/governance-worker-dispatch-pilot",
+  "base_sha": "ce9ff71f8f90ba90ba33724489e27e2e549dd567",
+  "required_capabilities": [
+    "repo_read",
+    "git",
+    "github_issue_write"
+  ],
+  "required_permissions": [
+    "repo:read",
+    "issue:write"
+  ],
+  "risk_tier": 1,
+  "quality_floor": "verified-read-only",
+  "scope": [
+    "Verify the remote branch SHA exactly matches base_sha.",
+    "Read scripts/automation/worker-dispatch.mjs and tests/automation/worker-dispatch.test.mjs.",
+    "Do not modify files.",
+    "Post one GOVERNANCE_WORKER_RECEIPT_V1 receipt to issue #341."
+  ],
+  "forbidden": [
+    "modify repository files",
+    "commit",
+    "push code changes",
+    "merge",
+    "production deploy",
+    "production data access"
+  ],
+  "acceptance_criteria": [
+    "Remote branch matches base_sha.",
+    "Worker can read both target files.",
+    "Receipt is posted to issue #341 with status completed and current_sha equal to base_sha."
+  ],
+  "definition_of_done": [
+    "No repository files changed.",
+    "Receipt posted to issue #341.",
+    "Governance can reconcile receipt against GitHub."
+  ],
+  "checkpoint_policy": "single completion receipt"
+}
