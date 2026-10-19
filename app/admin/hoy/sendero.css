@@ -319,6 +319,18 @@
   font-weight: 600;
   line-height: 1.4;
 }
+.hoy-sendero .today-class-kind {
+  width: fit-content;
+  border-radius: 999px;
+  background: #ffffff26;
+  padding: 2px 7px;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
 .hoy-sendero .today-class-meta {
   color: #f1eef8 !important;
   font-size: 10px !important;

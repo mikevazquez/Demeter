@@ -35,6 +35,7 @@ export type TodayClassItem = {
   startsAt: string;
   endsAt: string;
   name: string;
+  kindLabel: string;
   instructor: string;
   space: string;
   occupied: number;
@@ -169,6 +170,7 @@ export function TodayClasses({
               <span className="today-class-accent" aria-hidden="true" />
               <span className="today-class-time">{item.time}</span>
               <span className="today-class-copy">
+                <small className="today-class-kind">{item.kindLabel}</small>
                 <strong>{item.name}</strong>
                 <small className="today-class-meta">
                   {item.instructor}

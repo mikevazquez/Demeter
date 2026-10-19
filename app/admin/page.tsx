@@ -11,6 +11,7 @@ import {
 import { individualPaymentSummary } from "@/lib/reservations/individual-payment-summary";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
 import QuickActions from "./hoy/QuickActions";
+import { resolveSessionKind, sessionKindLabel } from "@/src/lib/sessions/session-kind";
 
 function formatExpiry(value: string | null, locale: string) {
   if (!value) return "Sin vencimiento";
@@ -303,7 +304,7 @@ export default async function AdminPage({
     templateIds.length
       ? supabase
           .from("class_templates")
-          .select("id,name,color_hex,drop_in_price_minor")
+          .select("id,name,color_hex,drop_in_price_minor,program_id,workshop_offer_id")
           .in("id", templateIds)
       : Promise.resolve({
           data: [] as {
@@ -311,6 +312,8 @@ export default async function AdminPage({
             name: string;
             color_hex: string | null;
             drop_in_price_minor: number | null;
+            program_id: string | null;
+            workshop_offer_id: string | null;
           }[],
         }),
     instructorIds.length
@@ -504,6 +507,18 @@ export default async function AdminPage({
     ),
   ];
 
+  const programIds = [
+    ...new Set((templates ?? []).map((template) => template.program_id).filter(Boolean)),
+  ] as string[];
+  const { data: activityPrograms } = programIds.length
+    ? await supabase
+        .from("activity_programs")
+        .select("id,kind")
+        .eq("studio_id", studio.id)
+        .in("id", programIds)
+    : { data: [] as { id: string; kind: string }[] };
+  const programKindMap = new Map((activityPrograms ?? []).map((item) => [item.id, item.kind]));
+
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item]));
   const personMap = new Map(
     (persons ?? []).map((person) => [
@@ -558,6 +573,10 @@ export default async function AdminPage({
     const sessionReservations = reservationsBySession.get(session.id) ?? [];
     const template = templateMap.get(session.template_id);
     const reservationStatuses = sessionReservations.map((reservation) => reservation.status);
+    const sessionKind = resolveSessionKind({
+      workshopOfferId: template?.workshop_offer_id,
+      programKind: template?.program_id ? programKindMap.get(template.program_id) : null,
+    });
     const occupied = countSeatOccupyingReservations(reservationStatuses);
     const bookedReservations = countBookedReservations(reservationStatuses);
 
@@ -567,6 +586,7 @@ export default async function AdminPage({
       startsAt: session.starts_at,
       endsAt: session.ends_at,
       name: template?.name ?? "Clase",
+      kindLabel: sessionKindLabel(sessionKind),
       instructor: session.instructor_id
         ? (instructorMap.get(session.instructor_id) ?? "Instructor")
         : "Sin instructor",

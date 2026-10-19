@@ -31,7 +31,13 @@ const attendanceCopy: Record<string, string> = {
   cancelled_on_time: "Cancelada a tiempo",
   cancelled_late: "Cancelada fuera de plazo",
 };
-export async function StudentWorkshops({ studentId }: { studentId: string }) {
+export async function StudentWorkshops({
+  studentId,
+  showEmpty = true,
+}: {
+  studentId: string;
+  showEmpty?: boolean;
+}) {
   const ctx = await getAdminContext("students.read");
   if (!ctx.can("sales.read")) return null;
   const response = await ctx.supabase.rpc("admin_student_workshops", {
@@ -46,6 +52,7 @@ export async function StudentWorkshops({ studentId }: { studentId: string }) {
       </section>
     );
   const purchases = response.data as Purchase[];
+  if (!purchases.length && !showEmpty) return null;
   const money = (value: number) =>
     new Intl.NumberFormat(ctx.studio.locale, {
       style: "currency",
@@ -84,7 +91,9 @@ export async function StudentWorkshops({ studentId }: { studentId: string }) {
                 </li>
               ))}
             </ul>
-            <Link href={`/admin/ventas/${p.saleId}`}>Ver venta y pagos</Link>
+            <Link href={`/admin/ventas/${p.saleId}`}>
+              {p.balanceMinor > 0 ? "Abonar o liquidar saldo" : "Ver venta y pagos"}
+            </Link>
             {p.status === "reserved" && ctx.can("sales.write") && ctx.can("schedule.write") ? (
               <WorkshopWithdrawal purchaseId={p.id} requestId={randomUUID()} />
             ) : null}

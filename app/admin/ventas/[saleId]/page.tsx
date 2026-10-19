@@ -57,25 +57,32 @@ export default async function SaleDetailPage({
     .maybeSingle();
   if (!sale) notFound();
 
-  const [{ data: student }, { data: lines }, { data: payments }] = await Promise.all([
-    ctx.supabase
-      .from("students")
-      .select("id,full_name,phone")
-      .eq("id", sale.student_id)
-      .maybeSingle(),
-    ctx.supabase
-      .from("sale_lines")
-      .select(
-        "id,product_template_id,product_name,quantity,unit_price_minor,line_total_minor,refunded_at,refund_reason",
-      )
-      .eq("sale_id", sale.id)
-      .order("created_at"),
-    ctx.supabase
-      .from("payments")
-      .select("id,sale_line_id,kind,amount_minor,method,reference,notes,reason,created_at")
-      .eq("sale_id", sale.id)
-      .order("created_at"),
-  ]);
+  const [{ data: student }, { data: lines }, { data: payments }, { data: workshopPurchase }] =
+    await Promise.all([
+      ctx.supabase
+        .from("students")
+        .select("id,full_name,phone")
+        .eq("id", sale.student_id)
+        .maybeSingle(),
+      ctx.supabase
+        .from("sale_lines")
+        .select(
+          "id,product_template_id,product_name,quantity,unit_price_minor,line_total_minor,refunded_at,refund_reason",
+        )
+        .eq("sale_id", sale.id)
+        .order("created_at"),
+      ctx.supabase
+        .from("payments")
+        .select("id,sale_line_id,kind,amount_minor,method,reference,notes,reason,created_at")
+        .eq("sale_id", sale.id)
+        .order("created_at"),
+      ctx.supabase
+        .from("workshop_purchases")
+        .select("id,offer_id,total_minor,paid_minor,status")
+        .eq("studio_id", ctx.studio.id)
+        .eq("sale_id", sale.id)
+        .maybeSingle(),
+    ]);
 
   const lineIds = (lines ?? []).map((line) => line.id);
   const [{ data: acquisitions }, { data: enrollments }] = lineIds.length
@@ -138,10 +145,9 @@ export default async function SaleDetailPage({
   }
 
   const netCollected = grossPaid - refunded;
-  const collectibleTotal = (lines ?? []).reduce(
-    (sum, line) => sum + (line.refunded_at ? 0 : line.line_total_minor),
-    0,
-  );
+  const collectibleTotal =
+    workshopPurchase?.total_minor ??
+    (lines ?? []).reduce((sum, line) => sum + (line.refunded_at ? 0 : line.line_total_minor), 0);
   const balance = Math.max(collectibleTotal - netCollected, 0);
   const paymentState =
     sale.status === "voided"
@@ -150,7 +156,7 @@ export default async function SaleDetailPage({
         ? refunded >= grossPaid && grossPaid > 0
           ? "Reembolsada"
           : "Con reembolso"
-        : grossPaid >= sale.total_minor
+        : grossPaid >= collectibleTotal
           ? "Pagada"
           : grossPaid > 0
             ? "Parcial"
@@ -228,6 +234,15 @@ export default async function SaleDetailPage({
           Un producto puede generar una adquisición de clases o un estado de inscripción; nunca
           ambos.
         </p>
+        {workshopPurchase && !(lines ?? []).length ? (
+          <div className="mt-4 rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/[0.05] p-4">
+            <strong className="text-white">Taller / actividad especial</strong>
+            <p className="mt-1 text-sm text-zinc-400">
+              Esta venta pertenece a una compra de taller. Sus reservas y saldo se conservan en la
+              ficha de la alumna.
+            </p>
+          </div>
+        ) : null}
         <div className="mt-4 divide-y divide-white/10">
           {(lines ?? []).map((line) => {
             const acquisition = acquisitionMap.get(line.id);
