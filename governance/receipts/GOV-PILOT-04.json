@@ -1,0 +1,20 @@
+{
+  "task_id": "GOV-PILOT-04",
+  "worker_id": "claude-code-governance-worker",
+  "dispatch_fingerprint": "995453a146e28ff5cb448ddf3e41ed3bf5d75b55ef290ef445e3c9179639eb2a",
+  "status": "COMPLETED",
+  "base_sha": "ce9ff71f8f90ba90ba33724489e27e2e549dd567",
+  "current_sha": "ce9ff71f8f90ba90ba33724489e27e2e549dd567",
+  "files_changed": ["governance/receipts/GOV-PILOT-04.json (receipt only, on claude/clever-lamport-7uv52m; source branch untouched)"],
+  "commands_run": [
+    "git fetch origin feat/governance-worker-dispatch-pilot",
+    "git rev-parse origin/feat/governance-worker-dispatch-pilot",
+    "git show origin/feat/governance-worker-dispatch-pilot:scripts/automation/worker-dispatch.mjs | wc -l (195 lines)",
+    "git show origin/feat/governance-worker-dispatch-pilot:tests/automation/worker-dispatch.test.mjs | wc -l (181 lines)",
+    "node --test tests/automation/worker-dispatch.test.mjs (in detached worktree; vitest not installed)"
+  ],
+  "tests_passed": false,
+  "blockers": ["Optional test run not executed successfully: ERR_MODULE_NOT_FOUND 'vitest' (dependencies not installed, not a code failure). Not an acceptance criterion."],
+  "remaining_work": [],
+  "next_action": "Governance reconciles this receipt against source branch HEAD ce9ff71f and dispatch fingerprint."
+}
