@@ -1,0 +1,47 @@
+{
+  "task_id": "GOV-PILOT-04",
+  "objective": "Prove end-to-end automatic Claude-to-Governance return after repository write access was authorized for the Governance Worker routine.",
+  "repo": "mikevazquez/Demeter",
+  "branch": "feat/governance-worker-dispatch-pilot",
+  "base_sha": "ce9ff71f8f90ba90ba33724489e27e2e549dd567",
+  "required_capabilities": [
+    "repo_read",
+    "git",
+    "repo_write"
+  ],
+  "required_permissions": [
+    "repo:read",
+    "repo:write"
+  ],
+  "risk_tier": 1,
+  "quality_floor": "verified-receipt-return",
+  "scope": [
+    "Verify feat/governance-worker-dispatch-pilot still matches base_sha.",
+    "Read scripts/automation/worker-dispatch.mjs and tests/automation/worker-dispatch.test.mjs.",
+    "Do not modify the source branch.",
+    "Create a structured completion receipt for this task.",
+    "Push the receipt to a non-production branch only.",
+    "Use the Dispatch fingerprint supplied in the run context.",
+    "Receipt JSON must contain task_id, worker_id, dispatch_fingerprint, status, base_sha, current_sha, files_changed, commands_run, tests_passed, blockers, remaining_work, next_action."
+  ],
+  "forbidden": [
+    "modify feat/governance-worker-dispatch-pilot",
+    "modify main",
+    "merge",
+    "production deploy",
+    "production data access"
+  ],
+  "acceptance_criteria": [
+    "Source branch matches base_sha.",
+    "Both target files are readable.",
+    "A durable receipt for GOV-PILOT-04 is pushed to GitHub on a non-production branch.",
+    "Receipt current_sha equals base_sha.",
+    "Receipt dispatch_fingerprint equals the run context fingerprint."
+  ],
+  "definition_of_done": [
+    "No source files changed.",
+    "Receipt is visible in GitHub.",
+    "Governance can reconcile receipt against the source branch and dispatch evidence."
+  ],
+  "checkpoint_policy": "single durable receipt"
+}
