@@ -22,6 +22,7 @@ export function buildRoutineText(contract) {
   validateTaskContract(contract);
   return [
     "Governance 2.0 Task Contract",
+    `Dispatch fingerprint: ${dispatchFingerprint(contract)}`,
     "",
     "Preserve task_id exactly. Work only within the declared repository, branch, SHA, scope and gates.",
     "Do not broaden scope, merge to main, deploy production, access production data, or use secrets unless the contract explicitly authorizes it.",
