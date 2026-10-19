@@ -6,7 +6,7 @@ on:
       - fix/workshop-session-kind-student-balance
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
@@ -18,6 +18,18 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Normalize changed files with Prettier
+        run: |
+          npx prettier --write             'app/admin/agenda/[sessionId]/page.tsx'             'app/admin/ventas/[saleId]/page.tsx'             'tests/workshop-student-balance.test.ts'
+      - name: Commit formatting if needed
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add               'app/admin/agenda/[sessionId]/page.tsx'               'app/admin/ventas/[saleId]/page.tsx'               'tests/workshop-student-balance.test.ts'
+            git commit -m "style(workshops): apply Prettier to bugfix"
+            git push
+          fi
       - run: npm run format:check
       - run: npx vitest run tests/session-kind.test.ts tests/hoy-class-status.test.tsx tests/workshop-student-balance.test.ts
       - run: npm run typecheck
