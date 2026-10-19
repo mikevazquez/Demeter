@@ -65,40 +65,80 @@ export async function StudentWorkshops({
       timeZone: ctx.studio.timezone,
     }).format(new Date(value));
   return (
-    <section className="profile360-view-panel">
-      <h2>Talleres: compras, fechas y saldo</h2>
+    <section className="profile360-view-panel profile360-workshops">
+      <div className="profile360-workshops-heading">
+        <div>
+          <p className="eyebrow">TALLERES</p>
+          <h2>Compras y saldo</h2>
+          <p>Revisa fechas, pagos pendientes y acciones de cada taller.</p>
+        </div>
+        <span className="profile360-workshops-count">{purchases.length}</span>
+      </div>
       {!purchases.length ? (
-        <p>No hay compras de talleres registradas.</p>
+        <p className="profile360-workshops-empty">No hay compras de talleres registradas.</p>
       ) : (
-        purchases.map((p) => (
-          <article key={p.id} className="profile360-sale-history-item">
-            <h3>
-              <Link href={`/admin/actividades/talleres/${p.offerId}`}>{p.title}</Link>
-            </h3>
-            <p>
-              {p.selectionMode === "full" ? "Taller completo" : "Fechas individuales"} ·{" "}
-              {statusCopy[p.status] ?? p.status}
-            </p>
-            <p>
-              Total {money(p.totalMinor)} · Pagado {money(p.paidMinor)} · Saldo{" "}
-              {money(p.balanceMinor)}
-            </p>
-            {p.dueAt && p.balanceMinor > 0 ? <p>Vencimiento: {date(p.dueAt)}</p> : null}
-            <ul>
-              {p.sessions.map((s) => (
-                <li key={s.id}>
-                  {date(s.startsAt)} · {attendanceCopy[s.status] ?? s.status}
-                </li>
-              ))}
-            </ul>
-            <Link href={`/admin/ventas/${p.saleId}`}>
-              {p.balanceMinor > 0 ? "Abonar o liquidar saldo" : "Ver venta y pagos"}
-            </Link>
-            {p.status === "reserved" && ctx.can("sales.write") && ctx.can("schedule.write") ? (
-              <WorkshopWithdrawal purchaseId={p.id} requestId={randomUUID()} />
-            ) : null}
-          </article>
-        ))
+        <div className="profile360-workshops-list">
+          {purchases.map((p) => (
+            <article key={p.id} className="profile360-workshop-card">
+              <div className="profile360-workshop-title-row">
+                <div>
+                  <span className="profile360-workshop-type">
+                    {p.selectionMode === "full" ? "Taller completo" : "Fechas individuales"}
+                  </span>
+                  <h3>
+                    <Link href={`/admin/actividades/talleres/${p.offerId}`}>{p.title}</Link>
+                  </h3>
+                </div>
+                <span className={`profile360-workshop-status is-${p.status}`}>
+                  {statusCopy[p.status] ?? p.status}
+                </span>
+              </div>
+
+              <div className="profile360-workshop-money-grid">
+                <div>
+                  <span>Total</span>
+                  <strong>{money(p.totalMinor)}</strong>
+                </div>
+                <div>
+                  <span>Pagado</span>
+                  <strong>{money(p.paidMinor)}</strong>
+                </div>
+                <div className={p.balanceMinor > 0 ? "is-balance" : "is-paid"}>
+                  <span>Saldo</span>
+                  <strong>{money(p.balanceMinor)}</strong>
+                </div>
+              </div>
+
+              {p.dueAt && p.balanceMinor > 0 ? (
+                <div className="profile360-workshop-due">
+                  <span>Vencimiento</span>
+                  <strong>{date(p.dueAt)}</strong>
+                </div>
+              ) : null}
+
+              <div className="profile360-workshop-sessions">
+                <span className="profile360-workshop-section-label">Fechas reservadas</span>
+                <div>
+                  {p.sessions.map((s) => (
+                    <article key={s.id}>
+                      <span>{date(s.startsAt)}</span>
+                      <strong>{attendanceCopy[s.status] ?? s.status}</strong>
+                    </article>
+                  ))}
+                </div>
+              </div>
+
+              <div className="profile360-workshop-actions">
+                <Link className="profile360-workshop-payment" href={`/admin/ventas/${p.saleId}`}>
+                  {p.balanceMinor > 0 ? "Abonar o liquidar saldo" : "Ver venta y pagos"}
+                </Link>
+                {p.status === "reserved" && ctx.can("sales.write") && ctx.can("schedule.write") ? (
+                  <WorkshopWithdrawal purchaseId={p.id} requestId={randomUUID()} />
+                ) : null}
+              </div>
+            </article>
+          ))}
+        </div>
       )}
     </section>
   );
