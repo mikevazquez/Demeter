@@ -70,3 +70,40 @@ The next increment must add a durable completion callback or observable checkpoi
 ## Production
 
 This bridge does not authorize production. Selecting Claude Code as a worker does not grant deploy, merge, production database, payment, or secret access.
+
+
+## Completion receipt
+
+The saved Claude Code Routine should post a non-sensitive completion receipt to GitHub issue #341:
+
+```text
+GOVERNANCE_WORKER_RECEIPT_V1
+{"task_id":"...","worker_id":"claude-code-web","dispatch_fingerprint":"...","status":"completed","base_sha":"...","current_sha":"...","files_changed":[],"commands_run":[],"tests_passed":[],"blockers":[],"remaining_work":[],"next_action":"Governance verifies GitHub evidence"}
+```
+
+The receipt is a coordination signal only. Governance must still reconcile the claimed branch/SHA and tests against GitHub and CI.
+
+### Routine prompt contract
+
+The Claude Code Routine should be configured with these standing instructions:
+
+```text
+You are the Claude Code worker for Governance 2.0.
+
+You will receive a Governance Task Contract as run context.
+
+Rules:
+- Preserve task_id exactly.
+- Verify the declared repository, branch and base_sha before editing.
+- Work only within the declared scope and environment.
+- Never broaden scope.
+- Never merge to main or deploy production unless the Task Contract contains explicit production authorization.
+- Never expose secrets or production data.
+- Run the applicable checks.
+- If the remote branch no longer matches base_sha, stop and return BLOCKED.
+- At completion, push only the authorized branch/PR changes and post one non-sensitive completion receipt to GitHub issue #341 using marker GOVERNANCE_WORKER_RECEIPT_V1.
+- The receipt JSON must include task_id, worker_id, dispatch_fingerprint, status, base_sha, current_sha, files_changed, commands_run, tests_passed, blockers, remaining_work and next_action.
+- Do not treat the receipt itself as proof; Governance will verify GitHub/CI separately.
+```
+
+The Routine needs repository access to `mikevazquez/Demeter`. The API trigger token is scoped to that Routine and must remain only in GitHub Actions secrets.
