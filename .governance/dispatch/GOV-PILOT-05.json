@@ -1,0 +1,46 @@
+{
+  "task_id": "GOV-PILOT-05",
+  "objective": "Technically verify the Claude Routine bridge and real-receipt parser on a frozen non-production branch.",
+  "repo": "mikevazquez/Demeter",
+  "branch": "governance/claude-bridge-verify",
+  "base_sha": "56a81e37b732f509c2aa33b28a32ee2466d00f2f",
+  "required_capabilities": [
+    "repo_read",
+    "git",
+    "terminal",
+    "repo_write"
+  ],
+  "required_permissions": [
+    "repo:read",
+    "repo:write"
+  ],
+  "risk_tier": 1,
+  "quality_floor": "focused-tests-pass",
+  "scope": [
+    "Verify remote branch governance/claude-bridge-verify exactly matches base_sha.",
+    "Run npm ci.",
+    "Run npx vitest run tests/automation/worker-receipt.test.mjs tests/automation/claude-routine-worker.test.mjs.",
+    "Do not modify source files.",
+    "Publish a canonical Governance receipt with lowercase status and tests_passed as an array.",
+    "Push receipt only to a non-production Claude branch if needed."
+  ],
+  "forbidden": [
+    "modify governance/claude-bridge-verify",
+    "modify main",
+    "merge",
+    "production deploy",
+    "production data access"
+  ],
+  "acceptance_criteria": [
+    "Frozen branch matches base_sha.",
+    "Both focused test files execute.",
+    "All focused tests pass.",
+    "Receipt uses the exact dispatch fingerprint and canonical schema."
+  ],
+  "definition_of_done": [
+    "No source files changed.",
+    "Focused tests pass.",
+    "Canonical receipt is visible in GitHub and reconcilable."
+  ],
+  "checkpoint_policy": "single canonical receipt"
+}
