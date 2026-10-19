@@ -1,0 +1,47 @@
+{
+  "task_id": "GOV-RELEASE-01",
+  "objective": "Final non-production release verification of the cleaned Claude Routine bridge before any promotion to main.",
+  "repo": "mikevazquez/Demeter",
+  "branch": "governance/claude-bridge-release-verify",
+  "base_sha": "cd6d6598deb0d9af50a59a251bbb416c6f56881f",
+  "required_capabilities": [
+    "repo_read",
+    "git",
+    "terminal",
+    "repo_write"
+  ],
+  "required_permissions": [
+    "repo:read",
+    "repo:write"
+  ],
+  "risk_tier": 1,
+  "quality_floor": "release-preflight-pass",
+  "scope": [
+    "Verify the frozen branch exactly matches base_sha.",
+    "Run npm ci.",
+    "Run npm run format:check.",
+    "Run npx vitest run tests/automation/worker-receipt.test.mjs tests/automation/claude-routine-worker.test.mjs.",
+    "Do not modify source files.",
+    "Publish a canonical Governance receipt with lowercase status and tests_passed as an array.",
+    "Do not merge or deploy."
+  ],
+  "forbidden": [
+    "modify governance/claude-bridge-release-verify",
+    "modify main",
+    "merge",
+    "production deploy",
+    "production data access"
+  ],
+  "acceptance_criteria": [
+    "Frozen branch matches base_sha.",
+    "Format check passes.",
+    "Both focused test files pass.",
+    "Receipt uses the exact dispatch fingerprint and canonical schema."
+  ],
+  "definition_of_done": [
+    "No source files changed.",
+    "Format and focused tests pass.",
+    "Canonical receipt is visible in GitHub and reconcilable."
+  ],
+  "checkpoint_policy": "single canonical receipt"
+}
