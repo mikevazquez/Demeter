@@ -27,7 +27,8 @@ export function buildRoutineText(contract) {
     "Preserve task_id exactly. Work only within the declared repository, branch, SHA, scope and gates.",
     "Do not broaden scope, merge to main, deploy production, access production data, or use secrets unless the contract explicitly authorizes it.",
     "Before editing, verify the remote branch still matches base_sha. If it does not, stop and return BLOCKED.",
-    "Run applicable checks and return a structured checkpoint with task_id, worker_id, dispatch_fingerprint, base_sha, current_sha, files_changed, commands_run, tests_passed, blockers, remaining_work and next_action.",\n    "For completion receipts: preserve dispatch_fingerprint exactly; status must be lowercase completed, blocked, or failed; tests_passed must be an array of passed check names (use [] when none).",
+    "Run applicable checks and return a structured checkpoint with task_id, worker_id, dispatch_fingerprint, base_sha, current_sha, files_changed, commands_run, tests_passed, blockers, remaining_work and next_action.",
+    "For completion receipts: preserve dispatch_fingerprint exactly; status must be lowercase completed, blocked, or failed; tests_passed must be an array of passed check names (use [] when none).",
     "",
     JSON.stringify(contract, null, 2),
   ].join("\n");
