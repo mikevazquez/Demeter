@@ -7,7 +7,10 @@ const assert = (value, message) => {
 const ROUTINE_PATH = /^\/v1\/claude_code\/routines\/trig_[A-Za-z0-9_-]+\/fire$/;
 
 export function validateTaskContract(contract) {
-  assert(contract && typeof contract === "object" && !Array.isArray(contract), "Task contract required");
+  assert(
+    contract && typeof contract === "object" && !Array.isArray(contract),
+    "Task contract required",
+  );
   for (const field of ["task_id", "objective", "repo", "branch", "base_sha"]) {
     assert(typeof contract[field] === "string" && contract[field].length > 0, `${field} required`);
   }
@@ -39,7 +42,10 @@ export function validateRoutineFireUrl(value) {
   assert(url.protocol === "https:", "Routine fire URL must use HTTPS");
   assert(url.hostname === "api.anthropic.com", "Routine fire URL must use api.anthropic.com");
   assert(ROUTINE_PATH.test(url.pathname), "Unexpected Claude routine fire path");
-  assert(url.search === "" && url.hash === "", "Routine fire URL must not contain query or fragment");
+  assert(
+    url.search === "" && url.hash === "",
+    "Routine fire URL must not contain query or fragment",
+  );
   return url.toString();
 }
 
@@ -110,12 +116,14 @@ export async function fireClaudeRoutine({
 
   assert(payload?.type === "routine_fire", "Unexpected Claude routine response type");
   assert(
-    typeof payload.claude_code_session_id === "string" &&
-      payload.claude_code_session_id.length > 0,
+    typeof payload.claude_code_session_id === "string" && payload.claude_code_session_id.length > 0,
     "Claude routine response missing session ID",
   );
   const sessionUrl = new URL(payload.claude_code_session_url);
-  assert(sessionUrl.protocol === "https:" && sessionUrl.hostname === "claude.ai", "Invalid Claude session URL");
+  assert(
+    sessionUrl.protocol === "https:" && sessionUrl.hostname === "claude.ai",
+    "Invalid Claude session URL",
+  );
 
   return {
     task_id: contract.task_id,
