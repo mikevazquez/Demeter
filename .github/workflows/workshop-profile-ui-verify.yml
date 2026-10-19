@@ -6,7 +6,7 @@ on:
       - design/workshop-payment-contract-20261016
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
@@ -18,5 +18,17 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Format workshop profile UI
+        run: |
+          npx prettier --write             'app/admin/alumnas/[studentId]/WorkshopWithdrawal.tsx'             'app/admin/alumnas/profile-360-admin-ux-04.css'
+      - name: Commit formatting if needed
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add               'app/admin/alumnas/[studentId]/WorkshopWithdrawal.tsx'               'app/admin/alumnas/profile-360-admin-ux-04.css'
+            git commit -m "style(workshops): format profile workshop UI"
+            git push
+          fi
       - run: npx prettier --check 'app/admin/alumnas/[studentId]/StudentWorkshops.tsx' 'app/admin/alumnas/[studentId]/WorkshopWithdrawal.tsx' 'app/admin/alumnas/profile-360-admin-ux-04.css'
       - run: npm run typecheck
