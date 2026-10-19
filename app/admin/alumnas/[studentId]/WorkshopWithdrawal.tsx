@@ -34,8 +34,14 @@ export function WorkshopWithdrawal({
           <input type="checkbox" name="withdraw_confirmed" required />
           La alumna confirmó que no continuará y conoce las condiciones.
         </label>
-        {state.error ? <p className="profile360-workshop-withdrawal-error" role="alert">{state.error}</p> : null}
-        <button className="profile360-workshop-withdrawal-button" disabled={pending}>{pending ? "Registrando…" : "Confirmar baja del taller"}</button>
+        {state.error ? (
+          <p className="profile360-workshop-withdrawal-error" role="alert">
+            {state.error}
+          </p>
+        ) : null}
+        <button className="profile360-workshop-withdrawal-button" disabled={pending}>
+          {pending ? "Registrando…" : "Confirmar baja del taller"}
+        </button>
       </form>
     </details>
   );

@@ -1584,7 +1584,6 @@
   }
 }
 
-
 /* Workshops · Perfil 360 */
 .admin-ux04-profile360 .profile360-workshops {
   display: grid;
@@ -1631,8 +1630,7 @@
   border: 1px solid #dfe7ec;
   border-radius: 17px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(21, 155, 140, 0.08), transparent 36%),
-    #fbfcfd;
+    radial-gradient(circle at 100% 0%, rgba(21, 155, 140, 0.08), transparent 36%), #fbfcfd;
   box-shadow: 0 8px 22px rgba(24, 36, 54, 0.04);
 }
 .admin-ux04-profile360 .profile360-workshop-title-row {
