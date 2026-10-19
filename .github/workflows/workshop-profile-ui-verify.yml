@@ -1,0 +1,22 @@
+name: Workshop Profile UI Verify
+
+on:
+  push:
+    branches:
+      - design/workshop-payment-contract-20261016
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --check 'app/admin/alumnas/[studentId]/StudentWorkshops.tsx' 'app/admin/alumnas/[studentId]/WorkshopWithdrawal.tsx' 'app/admin/alumnas/profile-360-admin-ux-04.css'
+      - run: npm run typecheck
