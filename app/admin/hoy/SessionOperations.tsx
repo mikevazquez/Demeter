@@ -11,9 +11,11 @@ import { startScheduledEvaluationAction } from "../alumnas/[studentId]/evaluatio
 import { ExistingStudentAddForm } from "./ExistingStudentAddForm";
 import { PendingClassPaymentDialog } from "./PendingClassPaymentDialog";
 import { registerWorkshopAbono } from "./workshop-abono-actions";
+import { GiftIcon } from "./GiftIcon";
 
 type RosterItem = {
   id: string;
+  isBirthday?: boolean;
   studentName: string;
   status: string;
   packageLabel: string;
@@ -303,7 +305,10 @@ export function SessionOperations({
                   const isInvitation = item.packageLabel === "Invitación";
 
                   return (
-                    <article className="today-student-card compact" key={item.id}>
+                    <article
+                      className={`today-student-card compact${item.isBirthday ? " is-birthday" : ""}`}
+                      key={item.id}
+                    >
                       <div className="today-student-avatar" aria-hidden="true">
                         {initials(item.studentName)}
                       </div>
@@ -368,6 +373,12 @@ export function SessionOperations({
                             </span>
                           ) : null}
                         </div>
+                        {item.isBirthday ? (
+                          <span className="today-student-birthday-tag">
+                            <GiftIcon size={13} />
+                            Cumpleañera
+                          </span>
+                        ) : null}
                         <span>
                           {isInvitation
                             ? item.creditsLabel

@@ -6,7 +6,7 @@ Hoy y Agenda muestran Taller, Evento o Masterclass según la propiedad del talle
 
 ## Una sola autoridad de pagos
 
-Se conservó la implementación compartida del perfil y las etiquetas, recibida en `ce860b56949da2cd7e96b6e4b94dc4fcaba7ca22`, y se concilió con main `cdec53bbb1570edcae6afa2124ae13b71ddd4a4d` sin modificar esas referencias remotas.
+Se conservó la implementación compartida del perfil y las etiquetas, recibida en `ce860b56949da2cd7e96b6e4b94dc4fcaba7ca22`, y se concilió con main `60845d8c81e31084e1a5011ee85e7ee8fffb69cf` sin modificar esas referencias remotas.
 
 La RPC existente `admin_register_workshop_payment` ahora delega en el motor `admin_register_sale_payment`. Bloquea venta y después compra, en el mismo orden que Hoy y la evaluación de vencimientos. Una referencia repetida con el mismo importe y método recupera el resultado; una referencia alterada se rechaza. Los cobros simultáneos desde Hoy y el perfil no exceden el saldo. Se conserva el vencimiento original de la compra liquidada.
 
@@ -16,11 +16,11 @@ La migración local `20261020161915_workshop_profile_payment_replay.sql` se apli
 
 ## Verificación
 
-- 1.736 pruebas Vitest aprobadas; TypeScript y formato correctos. ESLint sin errores, con 20 advertencias heredadas.
+- 1.782 pruebas Vitest aprobadas; TypeScript y formato correctos. ESLint sin errores, con 20 advertencias heredadas.
 - 64 escenarios PostgreSQL sin red aprobados, incluyendo abono anticipado, replay, liquidación y carrera entre pagos desde perfil/Hoy.
 - La prueba `scripts/uat/workshop-completion-rollback-20261019.sql` pasó 11 comprobaciones con roles reales en Sandbox, usando la RPC del perfil. Los datos sintéticos y las asignaciones de prueba se revirtieron; no quedaron estudios de prueba ni se modificaron pagos del usuario.
 - El acceso anónimo a la RPC está revocado. Identidad, estudio activo y capacidades de ventas/alumnas se comprueban en el servidor.
-- Pruebas de renderizado confirman las tres etiquetas especiales y ausencia de etiqueta en las clases diarias.
+- Pruebas de renderizado confirman las tres etiquetas especiales y ausencia de etiqueta en las clases diarias. Se preservaron los cumpleaños de Hoy incorporados por main; una prueba combinada verifica cumpleaños y Taller en la misma sesión.
 
 Se preservaron las acciones de recuperación de acceso agregadas en la rama compartida. Se corrigió su formato y se actualizaron sus dos referencias de integridad tras revisar el diff; cuatro pruebas ejecutables verifican la recuperación sin llamadas a Auth ni envío de correo reales. Los demás hashes del límite de sesión/autenticación permanecen intactos.
 

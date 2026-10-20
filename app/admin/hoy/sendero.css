@@ -1,4 +1,186 @@
 /* Sendero applies only while the administration home is mounted. */
+.hoy-sendero .mock-week-day {
+  position: relative;
+}
+.hoy-sendero .today-week-gift {
+  position: absolute;
+  bottom: 2px;
+  color: #f6d67a;
+}
+.hoy-sendero .today-birthday-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 18px 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(246, 214, 122, 0.35);
+  border-radius: 18px;
+  background: rgba(29, 30, 35, 0.35);
+  color: #fff;
+  font-size: 12.5px;
+}
+.hoy-sendero .today-birthday-notice svg {
+  flex-shrink: 0;
+  color: #f6d67a;
+}
+.hoy-sendero .today-birthday-notice strong {
+  color: #f6d67a;
+}
+.hoy-sendero .today-class-title-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+.hoy-sendero .today-class-birthday-tag,
+.hoy-sendero .today-student-birthday-tag {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.hoy-sendero .today-class-birthday-tag {
+  background: rgba(29, 30, 35, 0.45);
+  color: #f6d67a;
+  font-size: 10.5px;
+}
+.hoy-sendero .today-session-drawer .today-student-card.compact.is-birthday {
+  background: #fbf4dc;
+  border: 1px solid #ecd486;
+}
+.hoy-sendero .today-student-card.is-birthday .today-student-name-line strong {
+  color: #29251d;
+}
+.hoy-sendero
+  .today-student-card.is-birthday
+  .today-student-identity
+  > span:not(.today-student-birthday-tag) {
+  color: #66615a;
+}
+.hoy-sendero .today-session-drawer .today-student-identity > .today-student-birthday-tag {
+  background: #f6d67a;
+  color: #7a5a00;
+  font-size: 11px;
+}
+.hoy-sendero .today-birthdays {
+  min-width: 0;
+  border-radius: 26px;
+  background: #25262c;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+.hoy-sendero .today-birthdays-heading {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+  padding: 18px;
+  border: 0;
+  background: transparent;
+  color: #f1eee6;
+  text-align: left;
+  cursor: pointer;
+}
+.hoy-sendero .today-birthdays-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: rgba(246, 214, 122, 0.14);
+  color: #f6d67a;
+}
+.hoy-sendero .today-birthdays-copy,
+.hoy-sendero .today-birthday-person {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+.hoy-sendero .today-birthdays-copy strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+.hoy-sendero .today-birthdays-copy > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #a3a6b2;
+}
+.hoy-sendero .today-birthdays-count,
+.hoy-sendero .today-birthday-today {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: rgba(246, 214, 122, 0.14);
+  color: #f6d67a;
+  font-size: 11px;
+}
+.hoy-sendero .today-birthdays-arrow {
+  flex-shrink: 0;
+  transition: transform 160ms ease;
+}
+.hoy-sendero .today-birthdays-arrow.is-open {
+  transform: rotate(90deg);
+}
+.hoy-sendero .today-birthdays-list {
+  max-height: 290px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 18px 12px;
+}
+.hoy-sendero .today-birthday-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  color: #f1eee6;
+  text-decoration: none;
+}
+.hoy-sendero .today-birthday-row.is-past {
+  opacity: 0.55;
+}
+.hoy-sendero .today-birthday-date {
+  display: flex;
+  flex-shrink: 0;
+  width: 40px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border-radius: 12px;
+  background: rgba(246, 214, 122, 0.1);
+  color: #f6d67a;
+}
+.hoy-sendero .today-birthday-date small {
+  font-size: 10px;
+}
+.hoy-sendero .today-birthday-person strong {
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+.hoy-sendero .today-birthday-person small,
+.hoy-sendero .today-birthdays-list p {
+  font-size: 12px;
+  color: #a3a6b2;
+}
+.hoy-sendero .today-birthdays-heading:focus-visible,
+.hoy-sendero .today-birthday-row:focus-visible {
+  outline: 2px solid #8fe6c8;
+  outline-offset: -3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hoy-sendero .today-birthdays-arrow {
+    transition: none;
+  }
+}
 @font-face {
   font-family: "Sendero Montserrat";
   src: url("/sendero/montserrat-400.ttf") format("truetype");
