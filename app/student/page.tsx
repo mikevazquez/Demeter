@@ -315,17 +315,17 @@ export default async function StudentHomePage({
     : "";
 
   return (
-    <main className="space-y-3 pb-4 sm:space-y-4">
+    <main className="space-y-4 pb-4 sm:space-y-5">
       {enrollmentExpiringSoon ? (
-        <section className="rounded-[26px] border border-amber-400/30 bg-amber-400/[0.06] p-4 sm:p-5">
-          <p className="text-xs font-semibold text-amber-200">Tu inscripción está por vencer</p>
+        <section className="sendero-surface p-4 sm:p-5">
+          <p className="sendero-eyebrow !text-[var(--sendero-moon)]">Tu inscripción está por vencer</p>
           <p className="mt-1 text-sm text-zinc-300">
             Vence en {enrollmentDaysRemaining} día{enrollmentDaysRemaining === 1 ? "" : "s"}.
             Renuévala para conservar tus reservas disponibles.
           </p>
           <Link
             href="/student/paquete"
-            className="mt-3 inline-flex rounded-xl border border-amber-400/30 px-3 py-2 text-xs font-semibold text-amber-100"
+            className="sendero-button sendero-button-moon mt-3 !min-h-10 !text-xs"
           >
             Ver inscripción
           </Link>
@@ -333,15 +333,15 @@ export default async function StudentHomePage({
       ) : null}
 
       {enrollmentMissing ? (
-        <section className="rounded-[26px] border border-rose-400/30 bg-rose-400/[0.06] p-4 sm:p-5">
-          <p className="text-sm font-semibold text-rose-200">No tienes una inscripción vigente</p>
+        <section className="sendero-surface p-4 sm:p-5">
+          <p className="text-sm font-semibold text-[var(--sendero-coral)]">No tienes una inscripción vigente</p>
           <p className="mt-1 text-xs leading-5 text-zinc-300">
             La inscripción es obligatoria para reservar. Puedes pagarla sola o incluirla con tu
             próximo paquete o clase suelta.
           </p>
           <Link
             href="/student/paquete"
-            className="mt-3 inline-flex rounded-xl bg-fuchsia-600 px-3 py-2 text-xs font-semibold text-white"
+            className="sendero-button sendero-button-primary mt-3 !min-h-10 !text-xs"
           >
             Pagar inscripción
           </Link>
@@ -496,7 +496,7 @@ export default async function StudentHomePage({
 
           <Link
             href={"/student/evaluaciones/resultado/" + latestPublishedEvaluation.id}
-            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+            className="sendero-button sendero-button-primary mt-4 w-full"
           >
             Ver resultado de tu evaluación
           </Link>
@@ -545,7 +545,7 @@ export default async function StudentHomePage({
                 ? "/student/evaluaciones/" + activeEvaluationInvitation.invitation_id
                 : "/student/evaluaciones/" + activeEvaluationInvitation.invitation_id + "/programar"
             }
-            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+            className="sendero-button sendero-button-primary mt-4 w-full"
           >
             {activeEvaluationInvitation.invitation_status === "offered"
               ? "Ver invitación"
@@ -557,7 +557,7 @@ export default async function StudentHomePage({
       <header
         data-home-block="identity-benefits-technical"
         data-level={levelKey}
-        className="relative overflow-hidden rounded-[28px] border p-4 transition-colors sm:p-5"
+        className="sendero-surface relative overflow-hidden p-4 transition-colors sm:p-5"
         style={{
           borderColor: levelVisual.border,
           boxShadow: `0 0 34px ${levelVisual.glow}, inset 0 0 0 1px rgba(255,255,255,0.025)`,
@@ -585,10 +585,10 @@ export default async function StudentHomePage({
               />
             </div>
 
-            <p className="mt-4 text-[9px] font-semibold uppercase tracking-[0.26em] text-zinc-500">
+            <p className="sendero-eyebrow mt-4">
               Mi perfil
             </p>
-            <h1 className="mt-1.5 text-xl font-semibold leading-tight tracking-tight text-white sm:text-2xl">
+            <h1 className="mt-1.5 text-2xl leading-tight tracking-tight text-[var(--sendero-ink)] sm:text-3xl">
               {fullName}
             </h1>
           </div>
@@ -665,7 +665,7 @@ export default async function StudentHomePage({
             {technicalLevels.length ? (
               <Link
                 href="/student/evaluaciones"
-                className="text-[10px] font-semibold text-fuchsia-300"
+                className="text-[10px] font-semibold text-[var(--sendero-mint)]"
               >
                 Ver evaluaciones →
               </Link>
@@ -677,10 +677,10 @@ export default async function StudentHomePage({
               {technicalLevels.map((item) => (
                 <span
                   key={item.disciplineName}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/40 bg-cyan-400/[0.06] px-3 py-1.5 text-[11px] font-semibold text-cyan-200"
+                  className="sendero-chip sendero-chip-mint"
                 >
                   <span>{item.disciplineName}</span>
-                  <span className="text-cyan-500">·</span>
+                  <span className="text-[var(--sendero-faint)]">·</span>
                   <strong>{item.levelTitle}</strong>
                 </span>
               ))}
@@ -696,18 +696,18 @@ export default async function StudentHomePage({
       {activePackage ? (
         <section
           data-home-block="package"
-          className="rounded-[24px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_100%_0%,rgba(236,72,153,0.09),transparent_36%),rgba(255,255,255,0.025)] p-4"
+          className="sendero-surface relative overflow-hidden p-4"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
+              <p className="sendero-eyebrow">
                 Mi paquete
               </p>
-              <h2 className="mt-2 truncate text-lg font-semibold text-white">
+              <h2 className="mt-2 truncate text-xl text-[var(--sendero-ink)]">
                 {activePackage.name}
               </h2>
             </div>
-            <Link href="/student/paquete" className="shrink-0 text-xs font-semibold text-white">
+            <Link href="/student/paquete" className="shrink-0 text-xs font-semibold text-[var(--sendero-mint)]">
               Ver detalles →
             </Link>
           </div>
@@ -744,7 +744,7 @@ export default async function StudentHomePage({
                 aria-valuenow={activePackage.used_credits}
               >
                 <div
-                  className="h-full rounded-full bg-fuchsia-500"
+                  className="h-full rounded-full bg-[var(--sendero-mint)]"
                   style={{ width: `${usedProgress}%` }}
                 />
               </div>
@@ -758,9 +758,9 @@ export default async function StudentHomePage({
       ) : (
         <section
           data-home-block="no-package"
-          className="rounded-[24px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_100%_0%,rgba(236,72,153,0.08),transparent_36%),rgba(255,255,255,0.025)] p-4"
+          className="sendero-surface p-4"
         >
-          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
+          <p className="sendero-eyebrow">
             Mi paquete
           </p>
           <div className="mt-5 text-center">
@@ -775,7 +775,7 @@ export default async function StudentHomePage({
             </p>
             <Link
               href="/student/paquete"
-              className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+              className="sendero-button sendero-button-primary mt-4 w-full"
             >
               Comprar paquete
             </Link>
@@ -786,18 +786,18 @@ export default async function StudentHomePage({
       {rewardCreditWallets.length ? (
         <section
           data-home-block="reward-credits"
-          className="rounded-[20px] border border-emerald-400/55 bg-[radial-gradient(circle_at_88%_12%,rgba(16,185,129,0.16),transparent_36%),rgba(5,20,15,0.72)] px-4 py-3 shadow-[0_0_26px_rgba(16,185,129,0.08)]"
+          className="sendero-surface px-4 py-3"
         >
           <div className="flex items-center gap-3">
             <div
               aria-hidden="true"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/40 bg-emerald-400/10 text-lg text-emerald-300"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[var(--sendero-mint-soft)] text-lg text-[var(--sendero-mint)]"
             >
               ◇
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-emerald-300">
+              <p className="sendero-eyebrow !text-[var(--sendero-mint)]">
                 Créditos extra
               </p>
               <strong className="mt-0.5 block text-base font-semibold text-white">
@@ -813,7 +813,7 @@ export default async function StudentHomePage({
             {rewardCreditsAvailable > 0 ? (
               <Link
                 href="/student/reservar?credit=reward"
-                className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-full border border-emerald-400/60 bg-emerald-400/[0.08] px-3 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-400/[0.14]"
+                className="sendero-button sendero-button-primary !min-h-10 shrink-0 !px-3 !text-xs"
               >
                 Usar créditos →
               </Link>
@@ -822,7 +822,7 @@ export default async function StudentHomePage({
             )}
           </div>
 
-          <p className="mt-2 border-t border-emerald-400/10 pt-2 text-[10px] text-zinc-500">
+          <p className="mt-2 border-t border-[var(--sendero-line)] pt-2 text-[10px] text-[var(--sendero-faint)]">
             Saldo independiente de tu paquete actual.
           </p>
         </section>
@@ -830,10 +830,10 @@ export default async function StudentHomePage({
 
       <section
         data-home-block="reserved-classes"
-        className="rounded-[24px] border border-fuchsia-500/25 bg-white/[0.025] p-4"
+        className="sendero-surface p-4"
       >
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
+          <p className="sendero-eyebrow">
             Tus próximas clases
           </p>
           {nextClass ? (
@@ -846,7 +846,7 @@ export default async function StudentHomePage({
         {nextClass ? (
           <Link
             href="/student/mis-clases"
-            className="mt-3 grid grid-cols-[68px_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:bg-white/[0.04]"
+            className="mt-3 grid grid-cols-[68px_1fr_auto] items-center gap-3 rounded-[22px] border border-[var(--sendero-line)] bg-black/15 p-3 transition hover:bg-white/[0.04]"
           >
             {disciplineImage(nextClass.activity, nextClass.discipline) ? (
               <Image
@@ -854,12 +854,12 @@ export default async function StudentHomePage({
                 alt=""
                 width={68}
                 height={76}
-                className="h-[76px] w-[68px] rounded-xl border border-fuchsia-500/25 object-cover"
+                className="h-[76px] w-[68px] rounded-[18px] border border-[var(--sendero-line)] object-cover"
               />
             ) : (
-              <div className="relative h-[76px] overflow-hidden rounded-xl border border-fuchsia-500/25 bg-[radial-gradient(circle_at_45%_25%,rgba(236,72,153,0.45),transparent_24%),linear-gradient(145deg,#2b0b22,#090c12_72%)]">
-                <span className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-fuchsia-300/45" />
-                <span className="absolute inset-0 grid place-items-center text-lg text-fuchsia-200">
+              <div className="relative h-[76px] overflow-hidden rounded-[18px] border border-[var(--sendero-line)] bg-[radial-gradient(circle_at_45%_25%,rgba(205,184,236,0.32),transparent_26%),linear-gradient(145deg,#34333f,#1d1e23_72%)]">
+                <span className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-[var(--sendero-lilac)]/45" />
+                <span className="absolute inset-0 grid place-items-center text-lg text-[var(--sendero-lilac)]">
                   ✦
                 </span>
               </div>
@@ -893,7 +893,7 @@ export default async function StudentHomePage({
             </span>
           </Link>
         ) : (
-          <div className="mt-3 rounded-2xl border border-white/10 bg-black/15 px-4 py-5 text-center">
+          <div className="mt-3 rounded-[22px] border border-[var(--sendero-line)] bg-black/15 px-4 py-5 text-center">
             <span aria-hidden="true" className="text-2xl text-zinc-500">
               ▣
             </span>
@@ -905,7 +905,7 @@ export default async function StudentHomePage({
             </p>
             <Link
               href="/student/reservar"
-              className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-fuchsia-500/70 px-4 text-sm font-semibold text-fuchsia-300 transition hover:bg-fuchsia-500/[0.08]"
+              className="sendero-button sendero-button-ghost mt-4 w-full !text-[var(--sendero-mint)]"
             >
               Reservar clase
             </Link>
