@@ -39,7 +39,12 @@ export default async function StudentPoleFigureDetailPage({
 
   if (!poleDiscipline) notFound();
 
-  const [{ data: profiles }, { data: elements }, { data: achievements }] = await Promise.all([
+  const [
+    { data: profiles },
+    { data: elements },
+    { data: achievements },
+    { data: authorizations },
+  ] = await Promise.all([
     supabase
       .from("pole_figure_profiles")
       .select("element_id,slug")
@@ -57,6 +62,12 @@ export default async function StudentPoleFigureDetailPage({
       .select("figure_element_id")
       .eq("studio_id", membership.studio_id)
       .eq("student_id", snapshot.profile.student_id),
+    supabase
+      .from("student_pole_authorizations")
+      .select("figure_element_id,revoked_at")
+      .eq("studio_id", membership.studio_id)
+      .eq("student_id", snapshot.profile.student_id)
+      .is("revoked_at", null),
   ]);
 
   const profileBySlug = new Map((profiles ?? []).map((item) => [item.slug, item]));
@@ -67,6 +78,11 @@ export default async function StudentPoleFigureDetailPage({
       .map((item) => slugByElementId.get(item.figure_element_id))
       .filter((item): item is string => Boolean(item)),
   );
+  const authorizedSlugs = new Set(
+    (authorizations ?? [])
+      .map((item) => slugByElementId.get(item.figure_element_id))
+      .filter((item): item is string => Boolean(item)),
+  );
 
   const name = (item: CatalogFigure) => {
     const elementId = profileBySlug.get(item.id)?.element_id;
@@ -74,6 +90,8 @@ export default async function StudentPoleFigureDetailPage({
   };
 
   const achieved = achievedSlugs.has(figure.id);
+  const authorized = authorizedSlugs.has(figure.id);
+  const isProfessional = figure.nivel === "Profesional";
   const missing = figure.prerrequisitos_sugeridos.filter((item) => !achievedSlugs.has(item));
   const children = figures.filter((item) => item.prerrequisitos_sugeridos.includes(figure.id));
 
@@ -110,7 +128,15 @@ export default async function StudentPoleFigureDetailPage({
                   : "rounded-full bg-[var(--sendero-moon-soft)] px-2.5 py-1 text-[10px] font-semibold text-[var(--sendero-moon)]"
             }
           >
-            {achieved ? "Lograda ✓" : missing.length ? "Bloqueada" : "Disponible"}
+            {achieved
+              ? "Lograda ✓"
+              : isProfessional
+                ? authorized
+                  ? "Autorizada"
+                  : "Requiere autorización"
+                : missing.length
+                  ? "Bloqueada"
+                  : "Disponible"}
           </span>
           <span className="rounded-full bg-white/[0.04] px-2.5 py-1 text-[10px] text-zinc-400">
             {figure.nivel}
@@ -125,7 +151,15 @@ export default async function StudentPoleFigureDetailPage({
         <p className="text-sm text-zinc-500">{figure.nombre}</p>
       </header>
 
-      {!achieved && missing.length ? (
+      {!achieved && isProfessional && !authorized ? (
+        <section className="sendero-surface border border-[var(--sendero-coral)]/20 p-5">
+          <p className="sendero-eyebrow text-[var(--sendero-coral)]">Profesional</p>
+          <p className="mt-2 text-sm leading-6 text-[var(--sendero-muted)]">
+            Esta figura es de alto riesgo. Solo se abre cuando tu instructora la autoriza
+            específicamente para ti.
+          </p>
+        </section>
+      ) : !achieved && missing.length ? (
         <section className="sendero-surface p-5">
           <p className="sendero-eyebrow">Antes de esta figura</p>
           <p className="mt-2 text-sm leading-6 text-[var(--sendero-muted)]">
