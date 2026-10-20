@@ -147,7 +147,7 @@ function creditLimit(activePackage: StudentAcquisition) {
 export default async function StudentHomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ cancelled?: string; error?: string; benefits?: string }>;
+  searchParams: Promise<{ cancelled?: string; error?: string; benefits?: string; birthday_demo?: string }>;
 }) {
   const [query, { snapshot, studio, supabase, membership }] = await Promise.all([
     searchParams,
@@ -209,10 +209,23 @@ export default async function StudentHomePage({
     (unreadEvaluationResult.data as EvaluationHomeHistoryItem | null) ?? null;
   const latestAppNotification =
     (appNotificationResult.data as AppNotificationHomeItem | null) ?? null;
-  const birthdayPass =
+  const liveBirthdayPass =
     birthdayPassResult.error
       ? null
       : ((birthdayPassResult.data as BirthdayPassSnapshot | null) ?? null);
+  const birthdayPreviewMode =
+    process.env.VERCEL_ENV === "preview" &&
+    (query.birthday_demo === "day" || query.birthday_demo === "month" || query.birthday_demo === "used");
+  const birthdayPass: BirthdayPassSnapshot | null = birthdayPreviewMode
+    ? {
+        eligible: true,
+        state: query.birthday_demo === "used" ? "used" : "available",
+        period_start: "2026-10-01",
+        expires_on: "2026-10-31",
+        recipient_kind: query.birthday_demo === "used" ? "self" : null,
+        is_birthday: query.birthday_demo === "day",
+      }
+    : liveBirthdayPass;
 
   const technicalLevelMap = new Map<string, { disciplineName: string; levelTitle: string }>();
   for (const evaluation of evaluationsSnapshot?.history ?? []) {
