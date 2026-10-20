@@ -450,3 +450,29 @@
     flex-direction: column;
   }
 }
+
+
+.professionalActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.professionalDone {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(143, 230, 200, 0.09);
+  color: #8fe6c8;
+  padding: 0 11px;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+@media (max-width: 760px) {
+  .professionalActions {
+    justify-content: flex-start;
+  }
+}
