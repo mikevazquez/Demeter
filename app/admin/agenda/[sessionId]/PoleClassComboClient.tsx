@@ -58,7 +58,8 @@ export default function PoleClassComboClient({
   groups: PoleClassGroup[];
   canWrite: boolean;
 }) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [generated, setGenerated] = useState(false);
+  const [showResults, setShowResults] = useState(false);
   const [optionIndex, setOptionIndex] = useState<Record<string, number>>({});
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState(false);
@@ -72,7 +73,6 @@ export default function PoleClassComboClient({
       ),
     ),
   );
-  const [authorizationPending, setAuthorizationPending] = useState<string | null>(null);
   const [professionalCompleted, setProfessionalCompleted] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
       groups.flatMap((group) =>
@@ -83,6 +83,7 @@ export default function PoleClassComboClient({
       ),
     ),
   );
+  const [authorizationPending, setAuthorizationPending] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const activeCombos = useMemo(
@@ -189,116 +190,42 @@ export default function PoleClassComboClient({
 
   return (
     <section className={styles.panel}>
-      <nav className={styles.stepper} aria-label="Progreso de la clase Pole">
-        {[
-          [1, "Abrir la clase"],
-          [2, "Combos por nivel"],
-          [3, "Validar al final"],
-        ].map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            aria-current={step === value ? "step" : undefined}
-            className={step > Number(value) ? styles.pastStep : undefined}
-            onClick={() => setStep(Number(value) as 1 | 2 | 3)}
-          >
-            <i />
-            <span>{label}</span>
-          </button>
-        ))}
-      </nav>
-
-      {step === 1 ? (
-        <div className={styles.stage}>
-          <div className={styles.explain}>
-            <p className={styles.eyebrow}>PASO 1 DE 3</p>
-            <h2>La instructora abre su clase</h2>
-            <p>
-              Studio Flow ya conoce el nivel de cada alumna y qué figuras domina por validaciones
-              anteriores.
-            </p>
-            <ul>
-              <li>Las alumnas se agrupan por su nivel actual.</li>
-              <li>Cada nivel recibirá su propio combo.</li>
-              <li>Profesional nunca entra al generador automático.</li>
-            </ul>
-            <button className={styles.primary} type="button" onClick={() => setStep(2)}>
-              Generar combos para esta clase
-            </button>
-          </div>
-
-          <div className={styles.card}>
-            <div className={styles.classHeader}>
-              <span>POLE FITNESS · CLASE ABIERTA</span>
-              <strong>{totalStudents} alumnas reservadas</strong>
-            </div>
-            <div className={styles.roster}>
-              {groups.flatMap((group) =>
-                group.members.map((student) => (
-                  <div className={styles.rosterRow} key={student.studentId}>
-                    <span className={styles.avatar}>{student.name.slice(0, 1).toUpperCase()}</span>
-                    <div>
-                      <strong>{student.name}</strong>
-                      <small>
-                        Ya domina {student.completedAtLevel} de {student.totalAtLevel} figuras de su
-                        nivel
-                      </small>
-                    </div>
-                    <b>{group.level}</b>
-                  </div>
-                )),
-              )}
-            </div>
-          </div>
+      <div className={styles.toolbar}>
+        <div>
+          <p>COMBO DE CLASE</p>
+          <h3>Pole por niveles</h3>
+          <span>
+            {totalStudents} {totalStudents === 1 ? "alumna" : "alumnas"} ·{" "}
+            {groups.length} {groups.length === 1 ? "nivel" : "niveles"}
+          </span>
         </div>
-      ) : null}
 
-      {step === 2 ? (
-        <div className={styles.stage}>
-          <div className={styles.explain}>
-            <p className={styles.eyebrow}>PASO 2 DE 3</p>
-            <h2>Studio Flow arma un combo por nivel</h2>
-            <p>
-              Cada grupo recibe figuras que todas ya dominan y una sola figura nueva para la que ya
-              cumplen los prerrequisitos.
-            </p>
-            <ul>
-              <li>Repaso para preparar el cuerpo y la técnica.</li>
-              <li>Una figura nueva destacada por grupo.</li>
-              <li>“Otra opción” cambia solo el combo de ese nivel.</li>
-            </ul>
-            <div className={styles.actions}>
-              <button type="button" onClick={() => setStep(1)}>
-                Atrás
-              </button>
-              <button className={styles.primary} type="button" onClick={() => setStep(3)}>
-                Dar la clase
-              </button>
-            </div>
-          </div>
+        {!generated ? (
+          <button className={styles.primary} type="button" onClick={() => setGenerated(true)}>
+            Generar combos
+          </button>
+        ) : (
+          <button
+            className={styles.secondary}
+            type="button"
+            onClick={() => setShowResults((value) => !value)}
+          >
+            {showResults ? "Ver combos" : "Registrar resultados"}
+          </button>
+        )}
+      </div>
 
-          <div className={styles.comboStack}>
-            {groups.map((group) => {
-              if (!group.recommendations.length) {
-                return (
-                  <article className={styles.card} key={group.level}>
-                    <div className={styles.groupHeader}>
-                      <div>
-                        <span>{group.label}</span>
-                        <strong>{group.members.map((student) => student.name).join(" · ")}</strong>
-                      </div>
-                    </div>
-                    <p className={styles.emptyMessage}>
-                      No hay todavía una figura nueva con todos los prerrequisitos cumplidos para
-                      este grupo.
-                    </p>
-                  </article>
-                );
-              }
-
-              const index = optionIndex[group.level] ?? 0;
-              const combo = group.recommendations[index % group.recommendations.length];
-
+      {!generated ? (
+        <div className={styles.readyState}>
+          <strong>Listo para generar</strong>
+          <span>
+            Studio Flow usará el nivel y las figuras logradas de las alumnas inscritas en esta clase.
+          </span>
+        </div>
+      ) : !showResults ? (
+        <div className={styles.comboStack}>
+          {groups.map((group) => {
+            if (!group.recommendations.length) {
               return (
                 <article className={styles.card} key={group.level}>
                   <div className={styles.groupHeader}>
@@ -306,194 +233,183 @@ export default function PoleClassComboClient({
                       <span>{group.label}</span>
                       <strong>{group.members.map((student) => student.name).join(" · ")}</strong>
                     </div>
-                    {group.recommendations.length > 1 ? (
-                      <button type="button" onClick={() => nextOption(group)}>
-                        Otra opción
-                      </button>
-                    ) : null}
                   </div>
-
-                  <div className={styles.sequence}>
-                    {combo.figures.map((figure, figureIndex) => (
-                      <div
-                        className={
-                          figure.status === "new" ? styles.sequenceNew : styles.sequenceRow
-                        }
-                        key={figure.elementId}
-                      >
-                        <span className={styles.position}>{figureIndex + 1}</span>
-                        <div>
-                          <strong>{figure.name}</strong>
-                          <small>
-                            {figure.originalName} · {figure.type}
-                          </small>
-                        </div>
-                        <b>{figure.status === "new" ? "Nueva" : "Ya la saben"}</b>
-                      </div>
-                    ))}
-                  </div>
-
-                  <p className={styles.why}>
-                    {group.members.map((student) => student.name).join(" y ")} ya cumplen los pasos
-                    previos de la figura nueva, así que hoy pueden intentarla.
+                  <p className={styles.emptyMessage}>
+                    No hay una figura nueva disponible que todas las alumnas de este nivel tengan
+                    preparada por prerrequisitos.
                   </p>
                 </article>
               );
-            })}
-          </div>
-        </div>
-      ) : null}
+            }
 
-      {step === 3 ? (
-        <div className={styles.stage}>
-          <div className={styles.explain}>
-            <p className={styles.eyebrow}>PASO 3 DE 3</p>
-            <h2>Al terminar, marca quién la logró</h2>
-            <p>
-              Solo valida a las alumnas que realmente consiguieron la figura nueva. Las demás se
-              quedan pendientes para otra clase.
-            </p>
-            <div className={styles.actions}>
-              <button type="button" onClick={() => setStep(2)}>
-                Atrás
-              </button>
-              {canWrite ? (
-                <button
-                  className={styles.primary}
-                  type="button"
-                  onClick={saveResults}
-                  disabled={isPending}
-                >
-                  {isPending ? "Guardando…" : "Guardar progreso"}
-                </button>
-              ) : null}
-            </div>
-          </div>
+            const index = optionIndex[group.level] ?? 0;
+            const combo = group.recommendations[index % group.recommendations.length];
 
-          <div className={styles.comboStack}>
-            {activeCombos.map(({ group, combo }) => {
-              const newFigure = combo.figures.find(
-                (figure) => figure.elementId === combo.newFigureElementId,
-              );
-              if (!newFigure) return null;
-
-              return (
-                <article className={styles.card} key={group.level}>
-                  <div className={styles.validationHeader}>
-                    <div>
-                      <span>{group.label}</span>
-                      <strong>{newFigure.name}</strong>
-                    </div>
-                    <b>Figura nueva</b>
-                  </div>
-
-                  <div className={styles.validationList}>
-                    {group.members.map((student) => {
-                      const key = `${group.level}|${student.studentId}`;
-                      return (
-                        <label className={styles.validationRow} key={student.studentId}>
-                          <div>
-                            <strong>{student.name}</strong>
-                            <small>
-                              intentó {newFigure.name} · {student.levelTitle}
-                            </small>
-                          </div>
-                          <span>
-                            <input
-                              type="checkbox"
-                              checked={checked[key] ?? false}
-                              onChange={(event) =>
-                                setChecked((current) => ({
-                                  ...current,
-                                  [key]: event.target.checked,
-                                }))
-                              }
-                              disabled={!canWrite || saved}
-                            />
-                            La logró
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </article>
-              );
-            })}
-
-            {groups.some((group) => group.professionalSuggestions.length) ? (
-              <article className={styles.card}>
-                <div className={styles.validationHeader}>
+            return (
+              <article className={styles.card} key={group.level}>
+                <div className={styles.groupHeader}>
                   <div>
-                    <span>SOLO INSTRUCTORA</span>
-                    <strong>Autorizar figuras Profesional</strong>
+                    <span>{group.label}</span>
+                    <strong>{group.members.map((student) => student.name).join(" · ")}</strong>
                   </div>
-                  <b className={styles.professionalBadge}>Alto riesgo</b>
+                  {group.recommendations.length > 1 ? (
+                    <button type="button" onClick={() => nextOption(group)}>
+                      Otra opción
+                    </button>
+                  ) : null}
                 </div>
-                <p className={styles.professionalNote}>
-                  Solo aparecen para alumnas Avanzadas. Se autorizan una por una y nunca entran en
-                  los combos automáticos.
-                </p>
-                <div className={styles.validationList}>
-                  {groups.flatMap((group) =>
-                    group.professionalSuggestions.map((suggestion) => {
-                      const key = `${suggestion.studentId}|${suggestion.elementId}`;
-                      const authorized = authorizationState[key] ?? suggestion.authorized;
-                      const completed = professionalCompleted[key] ?? suggestion.completed;
-                      return (
-                        <div className={styles.professionalRow} key={key}>
-                          <div>
-                            <strong>{suggestion.studentName}</strong>
-                            <small>
-                              {suggestion.name} · {suggestion.family}
-                            </small>
-                          </div>
-                          <div className={styles.professionalActions}>
-                            {completed ? (
-                              <span className={styles.professionalDone}>Lograda ✓</span>
-                            ) : authorized && canWrite ? (
-                              <button
-                                type="button"
-                                className={styles.authorizedButton}
-                                onClick={() => markProfessionalAchievement(suggestion)}
-                                disabled={authorizationPending === key}
-                              >
-                                {authorizationPending === key ? "Guardando…" : "La logró"}
-                              </button>
-                            ) : null}
-                            {canWrite && !completed ? (
-                              <button
-                                type="button"
-                                className={
-                                  authorized ? styles.authorizedButton : styles.authorizeButton
-                                }
-                                onClick={() => toggleProfessionalAuthorization(suggestion)}
-                                disabled={authorizationPending === key}
-                              >
-                                {authorizationPending === key
-                                  ? "Guardando…"
-                                  : authorized
-                                    ? "Revocar"
-                                    : "Autorizar"}
-                              </button>
-                            ) : null}
-                          </div>
-                        </div>
-                      );
-                    }),
-                  )}
+
+                <div className={styles.studentProgress}>
+                  {group.members.map((student) => (
+                    <span key={student.studentId}>
+                      {student.name}: {student.completedAtLevel}/{student.totalAtLevel}
+                    </span>
+                  ))}
+                </div>
+
+                <div className={styles.sequence}>
+                  {combo.figures.map((figure, figureIndex) => (
+                    <div
+                      className={figure.status === "new" ? styles.sequenceNew : styles.sequenceRow}
+                      key={figure.elementId}
+                    >
+                      <span className={styles.position}>{figureIndex + 1}</span>
+                      <div>
+                        <strong>{figure.name}</strong>
+                        <small>
+                          {figure.originalName} · {figure.type}
+                        </small>
+                      </div>
+                      <b>{figure.status === "new" ? "Nueva" : "Repaso"}</b>
+                    </div>
+                  ))}
                 </div>
               </article>
-            ) : null}
-
-            {saved ? (
-              <div className={styles.success} role="status">
-                Progreso guardado. Las figuras validadas ya aparecen como logradas en el perfil y
-                permiten que la alumna agregue su foto.
-              </div>
-            ) : null}
-          </div>
+            );
+          })}
         </div>
-      ) : null}
+      ) : (
+        <div className={styles.comboStack}>
+          {activeCombos.map(({ group, combo }) => {
+            const newFigure = combo.figures.find(
+              (figure) => figure.elementId === combo.newFigureElementId,
+            );
+            if (!newFigure) return null;
+
+            return (
+              <article className={styles.card} key={group.level}>
+                <div className={styles.validationHeader}>
+                  <div>
+                    <span>{group.label}</span>
+                    <strong>{newFigure.name}</strong>
+                  </div>
+                  <b>Figura nueva</b>
+                </div>
+
+                <div className={styles.validationList}>
+                  {group.members.map((student) => {
+                    const key = `${group.level}|${student.studentId}`;
+                    return (
+                      <label className={styles.validationRow} key={student.studentId}>
+                        <div>
+                          <strong>{student.name}</strong>
+                          <small>{student.levelTitle}</small>
+                        </div>
+                        <span>
+                          <input
+                            type="checkbox"
+                            checked={checked[key] ?? false}
+                            onChange={(event) =>
+                              setChecked((current) => ({
+                                ...current,
+                                [key]: event.target.checked,
+                              }))
+                            }
+                            disabled={!canWrite || saved}
+                          />
+                          La logró
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </article>
+            );
+          })}
+
+          {groups.some((group) => group.professionalSuggestions.length) ? (
+            <article className={styles.card}>
+              <div className={styles.validationHeader}>
+                <div>
+                  <span>PROFESIONAL</span>
+                  <strong>Autorizaciones individuales</strong>
+                </div>
+                <b className={styles.professionalBadge}>Alto riesgo</b>
+              </div>
+              <div className={styles.validationList}>
+                {groups.flatMap((group) =>
+                  group.professionalSuggestions.map((suggestion) => {
+                    const key = `${suggestion.studentId}|${suggestion.elementId}`;
+                    const authorized = authorizationState[key] ?? suggestion.authorized;
+                    const completed = professionalCompleted[key] ?? suggestion.completed;
+
+                    return (
+                      <div className={styles.professionalRow} key={key}>
+                        <div>
+                          <strong>{suggestion.studentName}</strong>
+                          <small>
+                            {suggestion.name} · {suggestion.family}
+                          </small>
+                        </div>
+                        <div className={styles.professionalActions}>
+                          {completed ? (
+                            <span className={styles.professionalDone}>Lograda ✓</span>
+                          ) : authorized && canWrite ? (
+                            <button
+                              type="button"
+                              className={styles.authorizedButton}
+                              onClick={() => markProfessionalAchievement(suggestion)}
+                              disabled={authorizationPending === key}
+                            >
+                              {authorizationPending === key ? "Guardando…" : "La logró"}
+                            </button>
+                          ) : null}
+                          {canWrite && !completed ? (
+                            <button
+                              type="button"
+                              className={authorized ? styles.authorizedButton : styles.authorizeButton}
+                              onClick={() => toggleProfessionalAuthorization(suggestion)}
+                              disabled={authorizationPending === key}
+                            >
+                              {authorizationPending === key
+                                ? "Guardando…"
+                                : authorized
+                                  ? "Revocar"
+                                  : "Autorizar"}
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  }),
+                )}
+              </div>
+            </article>
+          ) : null}
+
+          {canWrite ? (
+            <button className={styles.save} type="button" onClick={saveResults} disabled={isPending}>
+              {isPending ? "Guardando…" : "Guardar progreso"}
+            </button>
+          ) : null}
+
+          {saved ? (
+            <div className={styles.success} role="status">
+              Progreso guardado.
+            </div>
+          ) : null}
+        </div>
+      )}
     </section>
   );
 }
