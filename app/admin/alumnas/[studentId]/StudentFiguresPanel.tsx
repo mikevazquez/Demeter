@@ -20,8 +20,8 @@ export default async function StudentFiguresPanel({
       .eq("active", true)
       .not("pole_catalog_slug", "is", null),
     supabase
-      .from("student_technical_element_progress")
-      .select("element_id,status")
+      .from("student_pole_figure_achievements")
+      .select("figure_element_id")
       .eq("studio_id", studio.id)
       .eq("student_id", studentId),
   ]);
@@ -33,9 +33,7 @@ export default async function StudentFiguresPanel({
       elementId: item.id,
     }));
 
-  const completedElementIds = (progress ?? [])
-    .filter((item) => item.status === "completed")
-    .map((item) => item.element_id);
+  const completedElementIds = (progress ?? []).map((item) => item.figure_element_id);
 
   return (
     <StudentFiguresClient
