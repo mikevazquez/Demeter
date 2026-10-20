@@ -179,24 +179,24 @@ export default async function StudentPackagePage() {
   return (
     <main className="space-y-5 pb-4">
       <header>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
+        <p className="sendero-brand">
           Mi paquete
         </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+        <h1 className="mt-2 text-4xl tracking-tight text-[var(--sendero-ink)] sm:text-5xl">
           Tus clases y vigencia
         </h1>
-        <p className="mt-1.5 max-w-2xl text-sm text-zinc-400">
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sendero-muted)]">
           Revisa el estado de tu paquete, tus créditos y las opciones disponibles para continuar
           entrenando.
         </p>
       </header>
 
       {enrollmentMissing && enrollmentOption?.enabled ? (
-        <section className="rounded-3xl border border-amber-400/30 bg-amber-400/[0.06] p-5 sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">
+        <section className="sendero-surface p-5 sm:p-6">
+          <p className="sendero-eyebrow !text-[var(--sendero-moon)]">
             Inscripción requerida
           </p>
-          <h2 className="mt-2 text-xl font-semibold text-white">Tu inscripción no está vigente</h2>
+          <h2 className="mt-2 text-2xl text-[var(--sendero-ink)]">Tu inscripción no está vigente</h2>
           <p className="mt-2 text-sm leading-6 text-zinc-300">
             Necesitas una inscripción vigente para reservar. Puedes pagarla sola ahora o se agregará
             automáticamente cuando compres un paquete o una clase suelta.
@@ -227,28 +227,28 @@ export default async function StudentPackagePage() {
         <>
           <section
             data-package-block="active"
-            className="overflow-hidden rounded-3xl border border-fuchsia-500/20 bg-[radial-gradient(circle_at_14%_0%,rgba(255,10,138,0.20),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018))]"
+            className="sendero-surface overflow-hidden"
           >
             <div className="p-5 sm:p-6">
               <div className="flex items-start gap-4">
                 <div
                   aria-hidden="true"
-                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-fuchsia-400/30 bg-fuchsia-500/15 text-2xl text-fuchsia-300 shadow-[0_0_28px_rgba(255,10,138,0.15)]"
+                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] bg-[var(--sendero-lilac-soft)] text-2xl text-[var(--sendero-lilac)]"
                 >
                   ◈
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-300">
+                    <span className="sendero-chip sendero-chip-mint">
                       Activo
                     </span>
-                    <span className="rounded-full bg-white/[0.07] px-2.5 py-1 text-xs font-medium text-zinc-300">
+                    <span className="sendero-chip bg-white/[0.06] text-[var(--sendero-ink-2)]">
                       {activePackage.package_term
                         ? (termCopy[activePackage.package_term] ?? "Otra vigencia")
                         : "Otra vigencia"}
                     </span>
                   </div>
-                  <h2 className="mt-3 text-xl font-semibold text-white sm:text-2xl">
+                  <h2 className="mt-3 text-2xl text-[var(--sendero-ink)] sm:text-3xl">
                     {activePackage.name}
                   </h2>
                   <p className="mt-1 text-sm text-zinc-400">
@@ -324,7 +324,7 @@ export default async function StudentPackagePage() {
                       className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"
                     >
                       <div
-                        className="h-full rounded-full bg-fuchsia-500"
+                        className="h-full rounded-full bg-[var(--sendero-mint)]"
                         style={{ width: `${activeProgress}%` }}
                       />
                     </div>
@@ -339,7 +339,7 @@ export default async function StudentPackagePage() {
                         Este paquete no usa un límite de créditos por clase.
                       </p>
                     </div>
-                    <strong className="text-2xl text-fuchsia-300">∞</strong>
+                    <strong className="text-2xl text-[var(--sendero-mint)]">∞</strong>
                   </div>
                 )}
               </div>
@@ -347,13 +347,13 @@ export default async function StudentPackagePage() {
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
                 <Link
                   href="/student/reservar"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+                  className="sendero-button sendero-button-primary"
                 >
                   Reservar clase
                 </Link>
                 <Link
                   href="/student/movimientos"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-fuchsia-500/45 bg-fuchsia-500/[0.04] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500/[0.09]"
+                  className="sendero-button sendero-button-ghost"
                 >
                   Ver movimientos
                 </Link>
@@ -364,11 +364,11 @@ export default async function StudentPackagePage() {
       ) : (
         <section
           data-package-block="empty"
-          className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-7 text-center sm:p-9"
+          className="sendero-surface-soft border-dashed p-7 text-center sm:p-9"
         >
           <div
             aria-hidden="true"
-            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-fuchsia-500/10 text-2xl text-fuchsia-300"
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-[var(--sendero-lilac-soft)] text-2xl text-[var(--sendero-lilac)]"
           >
             ◈
           </div>
@@ -380,7 +380,7 @@ export default async function StudentPackagePage() {
           {purchasableProducts.length ? (
             <a
               href="#catalogo-paquetes"
-              className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+              className="sendero-button sendero-button-primary mt-5"
             >
               Ver paquetes disponibles
             </a>
@@ -391,11 +391,11 @@ export default async function StudentPackagePage() {
       {others.length ? (
         <details
           data-package-block="history"
-          className="group rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
+          className="sendero-surface group p-5 sm:p-6"
         >
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-white">Historial de paquetes</h2>
+              <h2 className="text-xl text-[var(--sendero-ink)]">Historial de paquetes</h2>
               <p className="mt-1 text-xs text-zinc-500">
                 {others.length} paquete{others.length === 1 ? "" : "s"} anterior
                 {others.length === 1 ? "" : "es"}
@@ -470,10 +470,10 @@ export default async function StudentPackagePage() {
           className="scroll-mt-6 space-y-4"
         >
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
+            <p className="sendero-eyebrow !text-[var(--sendero-mint)]">
               Compra online
             </p>
-            <h2 className="mt-1 text-xl font-semibold text-white">Adquirir o renovar paquete</h2>
+            <h2 className="mt-1 text-2xl text-[var(--sendero-ink)]">Adquirir o renovar paquete</h2>
             <p className="mt-1 text-sm text-zinc-400">
               Elige entre los productos habilitados por el estudio. El pago se completa de forma
               segura en Mercado Pago.
@@ -488,11 +488,11 @@ export default async function StudentPackagePage() {
               <details
                 key={group.key}
                 name="package-term-catalog"
-                className="group rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
+                className="sendero-surface group p-5 sm:p-6"
               >
                 <summary className="flex cursor-pointer list-none flex-wrap items-end justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
+                    <p className="sendero-eyebrow !text-[var(--sendero-mint)]">
                       {group.title}
                     </p>
                     <p className="mt-1 text-xs text-zinc-500">{group.description}</p>
@@ -514,7 +514,7 @@ export default async function StudentPackagePage() {
                   {products.map((product) => (
                     <article
                       key={product.id}
-                      className="flex min-h-44 flex-col rounded-2xl border border-white/10 bg-black/20 p-4"
+                      className="sendero-surface-soft flex min-h-44 flex-col p-4"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -523,7 +523,7 @@ export default async function StudentPackagePage() {
                               ? (termCopy[product.package_term] ?? "Otra vigencia")
                               : "Otra vigencia"}
                           </span>
-                          <h3 className="mt-3 text-base font-semibold text-white">
+                          <h3 className="mt-3 text-xl text-[var(--sendero-ink)]">
                             {product.name}
                           </h3>
                           <p className="mt-1 text-sm text-zinc-400">{productBenefit(product)}</p>
@@ -573,13 +573,13 @@ export default async function StudentPackagePage() {
       {snapshot.enrollment ? (
         <section
           data-package-block="enrollment"
-          className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
+          className="sendero-surface p-5 sm:p-6"
         >
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <div
                 aria-hidden="true"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-fuchsia-500/10 text-fuchsia-300"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--sendero-mint-soft)] text-[var(--sendero-mint)]"
               >
                 ✓
               </div>
