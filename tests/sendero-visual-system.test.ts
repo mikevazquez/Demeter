@@ -44,4 +44,20 @@ describe("Sendero visual system", () => {
     expect(home).toContain('supabase.rpc("student_reward_invitation_balance")');
     expect(home).toContain('supabase.rpc("student_classes_feed")');
   });
+
+  it("migrates Reservar to Sendero without changing booking semantics", () => {
+    const reserve = readFileSync(join(process.cwd(), "app/student/reservar/page.tsx"), "utf8");
+    const quickBook = readFileSync(
+      join(process.cwd(), "app/student/reservar/quick-book-button.tsx"),
+      "utf8",
+    );
+
+    expect(reserve).toContain('supabase.rpc("student_booking_restrictions_snapshot"');
+    expect(reserve).toContain('supabase.rpc("student_schedule_feed"');
+    expect(reserve).toContain('supabase.rpc("student_waitlist_feed"');
+    expect(reserve).toContain("sendero-surface");
+    expect(reserve).toContain("bg-[var(--sendero-mint)]");
+    expect(quickBook).toContain("bookStudentSessionInlineAction");
+    expect(quickBook).toContain("sendero-button-primary");
+  });
 });
