@@ -17,14 +17,14 @@ describe("Catálogo C1 · progreso de figuras por alumna", () => {
 
   it("requires evaluation write access before changing figure progress", () => {
     expect(action).toContain("CAPABILITIES.EVALUATIONS_WRITE");
-    expect(action).toContain("set_student_technical_element_progress");
+    expect(action).toContain("set_student_pole_figure_achievement");
     expect(action).toContain("revalidatePath");
   });
 
   it("loads mapped Pole elements and the student's persisted progress", () => {
     expect(panel).toContain('.from("technical_elements")');
     expect(panel).toContain("pole_catalog_slug");
-    expect(panel).toContain('.from("student_technical_element_progress")');
+    expect(panel).toContain('.from("student_pole_figure_achievements")');
     expect(panel).toContain('.eq("student_id", studentId)');
   });
 
