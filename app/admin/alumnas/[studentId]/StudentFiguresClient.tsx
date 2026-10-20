@@ -1,98 +1,66 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useFormStatus } from "react-dom";
 
-import catalog from "@/app/admin/catalogo/pole-catalog-data.json";
-
-import { setStudentFigureProgressAction } from "./figure-actions";
 import styles from "./student-figures.module.css";
 
-type FigureLevel = "Principiante" | "Intermedio" | "Avanzado" | "Profesional" | "Por revisar";
-
-type Figure = {
-  id: string;
-  nombre: string;
-  nombre_es: string;
-  nivel: FigureLevel;
-  tipo: string;
-  familia: string;
-  programa_base: boolean;
-};
-
-type ElementMapItem = {
-  slug: string;
+type FigureRow = {
   elementId: string;
+  slug: string;
+  name: string;
+  originalName: string;
+  catalogLevel: string;
+  type: string;
+  family: string;
+  inCoreProgram: boolean;
+  completed: boolean;
 };
 
 type Props = {
-  studentId: string;
-  canWrite: boolean;
-  elementMap: ElementMapItem[];
-  completedElementIds: string[];
+  currentLevelTitle: string;
+  figures: FigureRow[];
+  totalCatalogFigures: number;
 };
 
-const figures = catalog.figuras as Figure[];
-
-function ProgressButton({ completed }: { completed: boolean }) {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      className={completed ? styles.undoButton : styles.doneButton}
-      disabled={pending}
-    >
-      {pending ? "Guardando…" : completed ? "Mover a pendiente" : "Marcar hecha"}
-    </button>
-  );
-}
+const levelLabel: Record<string, string> = {
+  principiante: "Principiante",
+  intermedio: "Intermedio",
+  avanzado: "Avanzado",
+  profesional: "Profesional",
+  por_revisar: "Por revisar",
+};
 
 export default function StudentFiguresClient({
-  studentId,
-  canWrite,
-  elementMap,
-  completedElementIds,
+  currentLevelTitle,
+  figures,
+  totalCatalogFigures,
 }: Props) {
   const [status, setStatus] = useState<"all" | "completed" | "pending">("all");
   const [query, setQuery] = useState("");
-  const [level, setLevel] = useState("");
   const [baseOnly, setBaseOnly] = useState(false);
   const [limit, setLimit] = useState(120);
 
-  const elementIdBySlug = useMemo(
-    () => new Map(elementMap.map((item) => [item.slug, item.elementId])),
-    [elementMap],
-  );
-  const completed = useMemo(() => new Set(completedElementIds), [completedElementIds]);
+  const completedCount = figures.filter((figure) => figure.completed).length;
+  const pendingCount = figures.length - completedCount;
 
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase();
 
     return figures.filter((figure) => {
-      const elementId = elementIdBySlug.get(figure.id);
-      if (!elementId) return false;
-
-      const isCompleted = completed.has(elementId);
-      if (status === "completed" && !isCompleted) return false;
-      if (status === "pending" && isCompleted) return false;
-      if (level && figure.nivel !== level) return false;
-      if (baseOnly && !figure.programa_base) return false;
+      if (status === "completed" && !figure.completed) return false;
+      if (status === "pending" && figure.completed) return false;
+      if (baseOnly && !figure.inCoreProgram) return false;
       if (
         needle &&
-        !`${figure.nombre} ${figure.nombre_es} ${figure.tipo} ${figure.familia}`
+        !`${figure.name} ${figure.originalName} ${figure.type} ${figure.family}`
           .toLowerCase()
           .includes(needle)
       ) {
         return false;
       }
-
       return true;
     });
-  }, [baseOnly, completed, elementIdBySlug, level, query, status]);
-
-  const completedCount = completedElementIds.length;
-  const pendingCount = Math.max(elementMap.length - completedCount, 0);
+  }, [baseOnly, figures, query, status]);
 
   return (
     <section className={styles.panel}>
@@ -101,8 +69,8 @@ export default function StudentFiguresClient({
           <p className={styles.eyebrow}>CATÁLOGO TÉCNICO · POLE</p>
           <h2>Figuras de la alumna</h2>
           <p>
-            El progreso cambia únicamente cuando un instructor marca una figura como hecha o la
-            devuelve a pendiente.
+            Nivel actual: <strong>{currentLevelTitle}</strong>. Se muestran las figuras disponibles
+            hasta su nivel, separando las ya realizadas de las pendientes.
           </p>
         </div>
         <div className={styles.summary} aria-label="Resumen de progreso">
@@ -117,6 +85,13 @@ export default function StudentFiguresClient({
         </div>
       </header>
 
+      <div className={styles.levelNotice}>
+        <span>{currentLevelTitle}</span>
+        <p>
+          {figures.length} figuras visibles de {totalCatalogFigures} del catálogo Pole.
+        </p>
+      </div>
+
       <div className={styles.filters}>
         <input
           type="search"
@@ -128,21 +103,6 @@ export default function StudentFiguresClient({
           placeholder="Buscar figura…"
           aria-label="Buscar figura"
         />
-        <select
-          value={level}
-          onChange={(event) => {
-            setLevel(event.target.value);
-            setLimit(120);
-          }}
-          aria-label="Filtrar por nivel"
-        >
-          <option value="">Todos los niveles</option>
-          <option value="Principiante">Principiante</option>
-          <option value="Intermedio">Intermedio</option>
-          <option value="Avanzado">Avanzado</option>
-          <option value="Profesional">Profesional</option>
-          <option value="Por revisar">Por revisar</option>
-        </select>
         <label className={styles.baseToggle}>
           <input
             type="checkbox"
@@ -158,7 +118,7 @@ export default function StudentFiguresClient({
 
       <div className={styles.statusTabs} aria-label="Estado de figuras">
         {[
-          ["all", `Todas (${elementMap.length})`],
+          ["all", `Todas (${figures.length})`],
           ["completed", `Hechas (${completedCount})`],
           ["pending", `Pendientes (${pendingCount})`],
         ].map(([key, label]) => (
@@ -178,46 +138,37 @@ export default function StudentFiguresClient({
 
       <p className={styles.resultCount}>{rows.length} figuras</p>
 
-      <div className={styles.list}>
-        {rows.slice(0, limit).map((figure) => {
-          const elementId = elementIdBySlug.get(figure.id)!;
-          const isCompleted = completed.has(elementId);
-
-          return (
-            <article className={styles.row} key={figure.id}>
+      {rows.length ? (
+        <div className={styles.list}>
+          {rows.slice(0, limit).map((figure) => (
+            <article className={styles.row} key={figure.elementId}>
               <div className={styles.copy}>
                 <div className={styles.titleLine}>
-                  <strong>{figure.nombre_es || figure.nombre}</strong>
-                  {figure.nombre_es && figure.nombre_es !== figure.nombre ? (
-                    <span>{figure.nombre}</span>
-                  ) : null}
+                  <strong>{figure.name}</strong>
+                  {figure.originalName !== figure.name ? <span>{figure.originalName}</span> : null}
                 </div>
                 <div className={styles.meta}>
-                  <span>{figure.nivel}</span>
-                  <span>{figure.tipo}</span>
-                  {figure.programa_base ? (
+                  <span>{levelLabel[figure.catalogLevel] ?? figure.catalogLevel}</span>
+                  <span>{figure.type}</span>
+                  {figure.inCoreProgram ? (
                     <span className={styles.baseBadge}>Programa base</span>
                   ) : null}
                 </div>
               </div>
 
               <div className={styles.state}>
-                <span className={isCompleted ? styles.completedBadge : styles.pendingBadge}>
-                  {isCompleted ? "Hecha" : "Pendiente"}
+                <span className={figure.completed ? styles.completedBadge : styles.pendingBadge}>
+                  {figure.completed ? "Hecha" : "Pendiente"}
                 </span>
-                {canWrite ? (
-                  <form action={setStudentFigureProgressAction}>
-                    <input type="hidden" name="student_id" value={studentId} />
-                    <input type="hidden" name="element_id" value={elementId} />
-                    <input type="hidden" name="completed" value={isCompleted ? "false" : "true"} />
-                    <ProgressButton completed={isCompleted} />
-                  </form>
-                ) : null}
               </div>
             </article>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className={styles.empty}>
+          No hay figuras disponibles con estos filtros para el nivel actual.
+        </div>
+      )}
 
       {rows.length > limit ? (
         <button className={styles.more} type="button" onClick={() => setLimit(limit + 200)}>
