@@ -1,0 +1,284 @@
+.panel {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(143, 230, 200, 0.1), transparent 30%),
+    #2a2c33;
+  color: #f1eee6;
+}
+
+.heading,
+.comboHeader,
+.figureTop,
+.studentRow,
+.newSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.heading > div {
+  min-width: 0;
+}
+
+.heading p,
+.comboHeader span,
+.newSummary span {
+  margin: 0;
+  color: #8fe6c8;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.heading h2 {
+  margin: 4px 0 6px;
+  font-family: "Sendero Marcellus", Georgia, serif;
+  font-size: clamp(24px, 4vw, 34px);
+  font-weight: 400;
+}
+
+.heading > div > span {
+  display: block;
+  max-width: 62ch;
+  color: #a3a6b2;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.generate,
+.comboHeader button,
+.studentRow form button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 15px;
+  font-weight: 650;
+}
+
+.generate,
+.studentRow form button {
+  background: #8fe6c8;
+  color: #1d1e23;
+}
+
+.comboHeader button {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #34363e;
+  color: #cfd0d8;
+}
+
+.comboHeader {
+  padding: 12px 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.comboHeader > div {
+  display: grid;
+  gap: 3px;
+}
+
+.comboHeader strong {
+  font-size: 15px;
+}
+
+.sequence {
+  display: grid;
+  gap: 10px;
+}
+
+.reviewFigure,
+.newFigure {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  background: #25262c;
+}
+
+.newFigure {
+  border-color: rgba(143, 230, 200, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(143, 230, 200, 0.05);
+}
+
+.figureTop {
+  padding: 13px 14px;
+}
+
+.position {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #34363e;
+  color: #a3a6b2;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.newFigure .position {
+  background: rgba(143, 230, 200, 0.14);
+  color: #8fe6c8;
+}
+
+.figureTop > div {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+
+.figureTop strong {
+  font-size: 14px;
+}
+
+.figureTop small {
+  color: #a3a6b2;
+  font-size: 11px;
+}
+
+.figureTop b {
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: rgba(205, 184, 236, 0.12);
+  color: #cdb8ec;
+  font-size: 10px;
+}
+
+.newFigure .figureTop b {
+  background: rgba(143, 230, 200, 0.14);
+  color: #8fe6c8;
+}
+
+.students {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.studentRow {
+  min-height: 58px;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.studentRow:first-child {
+  border-top: 0;
+}
+
+.studentRow > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.studentRow strong {
+  font-size: 12px;
+}
+
+.studentRow span {
+  color: #6f7280;
+  font-size: 10px;
+}
+
+.studentRow em {
+  color: #8fe6c8;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 650;
+}
+
+.studentRow em.pending {
+  color: #f6d67a;
+}
+
+.studentRow form button:disabled {
+  opacity: 0.55;
+}
+
+.newSummary {
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: rgba(143, 230, 200, 0.08);
+}
+
+.newSummary > div {
+  display: grid;
+  gap: 3px;
+  min-width: 180px;
+}
+
+.newSummary strong {
+  font-size: 15px;
+}
+
+.newSummary p {
+  max-width: 54ch;
+  margin: 0;
+  color: #a3a6b2;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.placeholder {
+  min-height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  color: #a3a6b2;
+}
+
+.placeholder span {
+  color: #8fe6c8;
+  font-size: 24px;
+  font-weight: 650;
+}
+
+.placeholder p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.panel :is(button):focus-visible {
+  outline: 2px solid #f6d67a;
+  outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  .panel {
+    padding: 18px 14px;
+    border-radius: 24px;
+  }
+
+  .heading,
+  .newSummary {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .generate {
+    width: 100%;
+  }
+
+  .studentRow {
+    align-items: flex-start;
+  }
+
+  .studentRow form button {
+    min-height: 36px;
+    padding-inline: 11px;
+    font-size: 10px;
+  }
+
+  .newSummary > div {
+    min-width: 0;
+  }
+}
