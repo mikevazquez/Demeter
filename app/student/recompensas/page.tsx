@@ -190,32 +190,28 @@ export default async function StudentProgressPage() {
   return (
     <main className="space-y-5 pb-4">
       <header>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
-          Rewards
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+        <p className="sendero-brand">Rewards</p>
+        <h1 className="mt-2 text-4xl tracking-tight text-[var(--sendero-ink)] sm:text-5xl">
           Rewards
         </h1>
-        <p className="mt-1.5 text-sm text-zinc-400">
+        <p className="mt-2 text-sm leading-6 text-[var(--sendero-muted)]">
           Consulta tus programas de fidelidad, logros y recompensas.
         </p>
       </header>
 
       <Link
         href="/student/recompensas/medallero"
-        className="group block overflow-hidden rounded-3xl border border-fuchsia-500/25 bg-[radial-gradient(circle_at_88%_8%,rgba(236,72,153,0.16),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.045),rgba(255,255,255,0.015))] p-4 transition hover:border-fuchsia-400/40 sm:p-5"
+        className="sendero-surface group block overflow-hidden p-4 transition hover:bg-white/[0.04] sm:p-5"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
-              Medallas
-            </p>
-            <h2 className="mt-1 text-lg font-semibold text-white">Tu Medallero</h2>
+            <p className="sendero-eyebrow !text-[var(--sendero-lilac)]">Medallas</p>
+            <h2 className="mt-1 text-xl text-[var(--sendero-ink)]">Tu Medallero</h2>
             <p className="mt-1 text-xs leading-5 text-zinc-400">
               Consulta requisitos, recompensas y tu progreso hacia Bronce, Plata, Oro o Diamante.
             </p>
           </div>
-          <span aria-hidden="true" className="text-2xl text-fuchsia-300">
+          <span aria-hidden="true" className="text-2xl text-[var(--sendero-lilac)]">
             ✦
           </span>
         </div>
@@ -269,14 +265,12 @@ export default async function StudentProgressPage() {
           <SectionHeading eyebrow="Prioridad" title="Lo más cerca de conseguir" />
           <Link
             href={nearest.href}
-            className="group block overflow-hidden rounded-3xl border border-fuchsia-500/25 bg-[radial-gradient(circle_at_88%_8%,rgba(236,72,153,0.2),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(255,255,255,0.015))] p-5 transition hover:border-fuchsia-400/40"
+            className="sendero-surface group block overflow-hidden p-5 transition hover:bg-white/[0.04]"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
-                  {nearest.eyebrow}
-                </p>
-                <h2 className="mt-1 text-xl font-semibold text-white">{nearest.title}</h2>
+                <p className="sendero-eyebrow !text-[var(--sendero-lilac)]">{nearest.eyebrow}</p>
+                <h2 className="mt-1 text-2xl text-[var(--sendero-ink)]">{nearest.title}</h2>
               </div>
               <StateChip tone="magenta">{nearest.percent}%</StateChip>
             </div>
@@ -296,7 +290,7 @@ export default async function StudentProgressPage() {
             ) : null}
 
             {nearest.reward ? (
-              <div className="mt-4 rounded-2xl border border-fuchsia-500/15 bg-fuchsia-500/[0.06] px-3.5 py-3">
+              <div className="sendero-surface-soft mt-4 px-3.5 py-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
                   Al completar
                 </p>
@@ -325,7 +319,7 @@ export default async function StudentProgressPage() {
                 <Link
                   key={item.participation.id}
                   href={`/student/recompensas/programas/${item.participation.id}`}
-                  className="group rounded-3xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-fuchsia-500/25 hover:bg-white/[0.045]"
+                  className="sendero-surface group p-4 transition hover:bg-white/[0.04]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -376,7 +370,7 @@ export default async function StudentProgressPage() {
                 <Link
                   key={item.participation.id}
                   href={`/student/recompensas/retos/${item.participation.id}`}
-                  className="group block rounded-3xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-fuchsia-500/25 hover:bg-white/[0.045]"
+                  className="sendero-surface group block p-4 transition hover:bg-white/[0.04]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -418,7 +412,7 @@ export default async function StudentProgressPage() {
         <section>
           <SectionHeading title="Rachas" />
           <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-3xl border border-fuchsia-500/20 bg-fuchsia-500/[0.07] p-4">
+            <div className="sendero-surface p-4">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
                 Racha actual
               </p>
@@ -426,7 +420,7 @@ export default async function StudentProgressPage() {
                 {currentStreak} {plural(currentStreak, "semana", "semanas")}
               </strong>
             </div>
-            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
+            <div className="sendero-surface p-4">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
                 Récord
               </p>
@@ -451,11 +445,11 @@ export default async function StudentProgressPage() {
               <Link
                 key={achievement.id}
                 href="/student/recompensas/logros"
-                className="group grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25"
+                className="sendero-surface group grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-white/[0.04]"
               >
                 <span
                   aria-hidden="true"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-400/10 text-lg text-amber-300"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--sendero-moon-soft)] text-lg text-[var(--sendero-moon)]"
                 >
                   ★
                 </span>
@@ -485,12 +479,10 @@ export default async function StudentProgressPage() {
               <Link
                 key={reward.id}
                 href={`/student/recompensas/recompensa/${reward.id}`}
-                className="group flex items-center justify-between gap-3 rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.06] px-4 py-3 transition hover:bg-fuchsia-500/[0.1]"
+                className="sendero-surface group flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-white/[0.04]"
               >
                 <div className="min-w-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
-                    Disponible
-                  </p>
+                  <p className="sendero-eyebrow !text-[var(--sendero-mint)]">Disponible</p>
                   <strong className="mt-1 block truncate text-sm text-white">
                     {rewardBenefitLabel(reward)}
                   </strong>
@@ -510,7 +502,7 @@ export default async function StudentProgressPage() {
       {hasAnyContent ? (
         <Link
           href="/student/recompensas/trayectoria"
-          className="flex min-h-12 items-center justify-between rounded-2xl border border-white/10 bg-white/[0.025] px-4 text-sm font-semibold text-zinc-300 transition hover:border-fuchsia-500/25 hover:text-white"
+          className="sendero-surface flex min-h-12 items-center justify-between px-4 text-sm font-semibold text-[var(--sendero-ink-2)] transition hover:bg-white/[0.04] hover:text-white"
         >
           <span>Ver mi trayectoria</span>
           <span aria-hidden="true" className="text-fuchsia-300">

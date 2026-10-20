@@ -29,7 +29,7 @@ describe("SF-N14 PORTAL UX-06 Mi paquete", () => {
     expect(page).toContain("Acceso ilimitado");
     expect(page).toContain('role="progressbar"');
     expect(page).toContain("aria-valuenow={activeProgress}");
-    expect(page).toContain('className="text-2xl text-fuchsia-300">∞');
+    expect(page).toContain('className="text-2xl text-[var(--sendero-mint)]">∞');
   });
 
   it("preserves booking, movement, history and enrollment access", () => {
@@ -65,9 +65,9 @@ describe("SF-N14 PORTAL UX-06 Mi paquete", () => {
   });
 
   it("keeps the package screen on the approved dark-magenta visual language", () => {
-    expect(page).toContain("bg-fuchsia-600");
-    expect(page).toContain("border-fuchsia-500/20");
-    expect(page).toContain("text-fuchsia-300");
-    expect(page).toContain("bg-white/[0.03]");
+    expect(page).toContain("sendero-button-primary");
+    expect(page).toContain("sendero-surface");
+    expect(page).toContain("var(--sendero-mint)");
+    expect(page).toContain("sendero-surface-soft");
   });
 });

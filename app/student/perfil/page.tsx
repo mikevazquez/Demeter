@@ -77,13 +77,11 @@ export default async function StudentProfilePage({
   return (
     <main className="space-y-4 pb-4 sm:space-y-5">
       <header>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
-          Perfil
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+        <p className="sendero-brand">Perfil</p>
+        <h1 className="mt-2 text-4xl tracking-tight text-[var(--sendero-ink)] sm:text-5xl">
           Mi cuenta
         </h1>
-        <p className="mt-1.5 text-sm text-zinc-400">
+        <p className="mt-2 text-sm leading-6 text-[var(--sendero-muted)]">
           Consulta tu información y accede a los datos asociados a tu cuenta.
         </p>
       </header>
@@ -128,14 +126,11 @@ export default async function StudentProfilePage({
         </StudentNoticeDialog>
       ) : null}
 
-      <section
-        data-profile-block="identity"
-        className="overflow-hidden rounded-3xl border border-fuchsia-500/15 bg-[radial-gradient(circle_at_18%_0%,rgba(236,72,153,0.15),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015))]"
-      >
+      <section data-profile-block="identity" className="sendero-surface overflow-hidden">
         <div className="border-b border-white/10 p-5 sm:p-6">
           <div className="flex items-center gap-4">
             <div className="shrink-0">
-              <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-fuchsia-400/50 bg-gradient-to-br from-fuchsia-500/70 to-fuchsia-950 text-xl font-semibold text-white shadow-[0_0_28px_rgba(236,72,153,0.22)] sm:h-20 sm:w-20 sm:text-2xl">
+              <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-[rgba(205,184,236,0.45)] bg-[var(--sendero-lilac-soft)] text-xl font-semibold text-[var(--sendero-lilac)] sm:h-20 sm:w-20 sm:text-2xl">
                 {initials}
                 <Image
                   src="/student/perfil/avatar"
@@ -150,7 +145,9 @@ export default async function StudentProfilePage({
               </div>
             </div>
             <div className="min-w-0">
-              <h2 className="truncate text-xl font-semibold text-white sm:text-2xl">{fullName}</h2>
+              <h2 className="truncate text-2xl text-[var(--sendero-ink)] sm:text-3xl">
+                {fullName}
+              </h2>
               <p className="mt-1 text-sm text-zinc-400">Alumna · {studio.name}</p>
             </div>
           </div>
@@ -180,7 +177,7 @@ export default async function StudentProfilePage({
             {!editingProfile ? (
               <Link
                 href="/student/perfil?edit=1"
-                className="inline-flex min-h-9 w-fit items-center justify-center rounded-xl border border-fuchsia-500/40 bg-fuchsia-500/[0.08] px-3 py-2 text-xs font-semibold text-fuchsia-200 transition hover:bg-fuchsia-500/[0.14]"
+                className="sendero-button sendero-button-ghost !min-h-9 !px-3 !text-xs !text-[var(--sendero-mint)]"
               >
                 Editar perfil
               </Link>
@@ -198,7 +195,7 @@ export default async function StudentProfilePage({
         {editingProfile ? (
           <form
             action={updateStudentProfileAction}
-            className="border-t border-fuchsia-500/15 bg-black/20 p-5 sm:p-6"
+            className="border-t border-[var(--sendero-line)] bg-black/15 p-5 sm:p-6"
           >
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block min-w-0 text-sm text-zinc-300">
@@ -209,7 +206,7 @@ export default async function StudentProfilePage({
                   required
                   defaultValue={snapshot.profile.email ?? ""}
                   autoComplete="email"
-                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-fuchsia-500/60 focus:ring-2 focus:ring-fuchsia-500/15"
+                  className="mt-2 w-full rounded-[16px] border border-[var(--sendero-line)] bg-black/20 px-3 py-3 text-[var(--sendero-ink)] outline-none transition placeholder:text-[var(--sendero-faint)]"
                   placeholder="tu@correo.com"
                 />
               </label>
@@ -220,21 +217,18 @@ export default async function StudentProfilePage({
                   type="date"
                   required
                   defaultValue={birthDate}
-                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-white outline-none transition focus:border-fuchsia-500/60 focus:ring-2 focus:ring-fuchsia-500/15"
+                  className="mt-2 w-full rounded-[16px] border border-[var(--sendero-line)] bg-black/20 px-3 py-3 text-[var(--sendero-ink)] outline-none transition"
                 />
               </label>
             </div>
             <div className="mt-4 flex gap-2">
               <PendingActionButton
                 pendingLabel="Guardando…"
-                className="min-h-11 rounded-xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
+                className="sendero-button sendero-button-primary disabled:cursor-wait disabled:opacity-60"
               >
                 Guardar cambios
               </PendingActionButton>
-              <Link
-                href="/student/perfil"
-                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.05] hover:text-white"
-              >
+              <Link href="/student/perfil" className="sendero-button sendero-button-ghost">
                 Cancelar
               </Link>
             </div>
@@ -249,13 +243,11 @@ export default async function StudentProfilePage({
       <Link
         href="/student/paquete"
         data-profile-block="package"
-        className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
+        className="sendero-surface grid grid-cols-[1fr_auto] items-center gap-4 px-4 py-3 transition hover:bg-white/[0.04]"
       >
         <div className="min-w-0">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-            Paquete vigente
-          </p>
-          <p className="mt-1 truncate text-sm font-semibold text-white">
+          <p className="sendero-eyebrow">Paquete vigente</p>
+          <p className="mt-1 truncate text-base text-[var(--sendero-ink)]">
             {activePackage?.name ?? "Sin paquete activo"}
           </p>
           <p className="mt-0.5 text-xs text-zinc-400">
@@ -273,7 +265,7 @@ export default async function StudentProfilePage({
 
       <section data-profile-block="accesses">
         <div className="mb-2">
-          <h2 className="text-lg font-semibold text-white">Accesos rápidos</h2>
+          <h2 className="text-xl text-[var(--sendero-ink)]">Accesos rápidos</h2>
           <p className="mt-0.5 text-xs text-zinc-500">
             Todo lo relacionado con tu cuenta, en un solo lugar.
           </p>
@@ -282,16 +274,18 @@ export default async function StudentProfilePage({
         <div className="grid gap-2 sm:grid-cols-2">
           <Link
             href="/student/paquete"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
+            className="sendero-surface group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-white/[0.04]"
           >
             <span
               aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--sendero-lilac-soft)] text-lg text-[var(--sendero-lilac)]"
             >
               ◇
             </span>
             <span className="min-w-0">
-              <strong className="block text-sm font-semibold text-white">Mi paquete</strong>
+              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+                Mi paquete
+              </strong>
               <span className="mt-0.5 block truncate text-xs text-zinc-500">
                 {activePackage
                   ? activePackage.unlimited
@@ -310,16 +304,18 @@ export default async function StudentProfilePage({
 
           <Link
             href="/student/recompensas"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.055] px-4 py-3 transition hover:border-fuchsia-400/35 hover:bg-fuchsia-500/[0.08]"
+            className="sendero-surface group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-white/[0.04]"
           >
             <span
               aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--sendero-lilac-soft)] text-lg text-[var(--sendero-lilac)]"
             >
               ✦
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-white">Rewards</strong>
+              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+                Rewards
+              </strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
                 Medallas, beneficios y recompensas obtenidas
               </span>
@@ -334,16 +330,18 @@ export default async function StudentProfilePage({
 
           <Link
             href="/student/evaluaciones"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/[0.055] px-4 py-3 transition hover:border-fuchsia-400/35 hover:bg-fuchsia-500/[0.08]"
+            className="sendero-surface group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-white/[0.04]"
           >
             <span
               aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--sendero-lilac-soft)] text-lg text-[var(--sendero-lilac)]"
             >
               ◎
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-white">Evaluaciones</strong>
+              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+                Evaluaciones
+              </strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
                 Nivel técnico, próximas evaluaciones y resultados
               </span>
@@ -358,16 +356,18 @@ export default async function StudentProfilePage({
 
           <Link
             href="/student/mis-clases"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
+            className="sendero-surface group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-white/[0.04]"
           >
             <span
               aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--sendero-lilac-soft)] text-lg text-[var(--sendero-lilac)]"
             >
               ≡
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-white">Mis clases</strong>
+              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+                Mis clases
+              </strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
                 {snapshot.upcoming.length} próximas
               </span>
@@ -382,16 +382,18 @@ export default async function StudentProfilePage({
 
           <Link
             href="/student/movimientos"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
+            className="sendero-surface group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-white/[0.04]"
           >
             <span
               aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--sendero-lilac-soft)] text-lg text-[var(--sendero-lilac)]"
             >
               ↔
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-white">Movimientos</strong>
+              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+                Movimientos
+              </strong>
               <span className="mt-0.5 block text-xs text-zinc-500">Historial de créditos</span>
             </span>
             <span
@@ -404,16 +406,18 @@ export default async function StudentProfilePage({
 
           <Link
             href="/student/pagos"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
+            className="sendero-surface group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-white/[0.04]"
           >
             <span
               aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--sendero-lilac-soft)] text-lg text-[var(--sendero-lilac)]"
             >
               $
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-white">Pagos</strong>
+              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+                Pagos
+              </strong>
               <span className="mt-0.5 block text-xs text-zinc-500">Historial comercial</span>
             </span>
             <span
@@ -426,16 +430,18 @@ export default async function StudentProfilePage({
 
           <Link
             href="/student/perfil/notificaciones"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05]"
+            className="sendero-surface group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-white/[0.04]"
           >
             <span
               aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--sendero-lilac-soft)] text-lg text-[var(--sendero-lilac)]"
             >
               ◉
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-white">Notificaciones</strong>
+              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+                Notificaciones
+              </strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
                 Elige Push, WhatsApp y correo
               </span>
@@ -450,16 +456,18 @@ export default async function StudentProfilePage({
 
           <Link
             href="/student/documentos"
-            className="group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-fuchsia-500/25 hover:bg-white/[0.05] sm:col-span-2"
+            className="sendero-surface group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-white/[0.04] sm:col-span-2"
           >
             <span
               aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-500/10 text-lg text-fuchsia-300"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--sendero-lilac-soft)] text-lg text-[var(--sendero-lilac)]"
             >
               □
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-white">Documentos</strong>
+              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+                Documentos
+              </strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
                 Versiones y aceptación · próxima fase
               </span>
