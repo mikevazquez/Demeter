@@ -2,7 +2,10 @@
 
 import { useMemo, useState, useTransition } from "react";
 
-import { savePoleClassResultsAction } from "./pole-actions";
+import {
+  savePoleClassResultsAction,
+  setProfessionalPoleAuthorizationAction,
+} from "./pole-actions";
 import styles from "./pole-class-combo.module.css";
 
 type StudentState = {
@@ -30,11 +33,22 @@ export type PoleComboRecommendation = {
   newFigureSlug: string;
 };
 
+export type PoleProfessionalSuggestion = {
+  studentId: string;
+  studentName: string;
+  elementId: string;
+  slug: string;
+  name: string;
+  family: string;
+  authorized: boolean;
+};
+
 export type PoleClassGroup = {
   level: "Principiante" | "Intermedio" | "Avanzado";
   label: string;
   members: StudentState[];
   recommendations: PoleComboRecommendation[];
+  professionalSuggestions: PoleProfessionalSuggestion[];
 };
 
 export default function PoleClassComboClient({
@@ -50,6 +64,17 @@ export default function PoleClassComboClient({
   const [optionIndex, setOptionIndex] = useState<Record<string, number>>({});
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState(false);
+  const [authorizationState, setAuthorizationState] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(
+      groups.flatMap((group) =>
+        group.professionalSuggestions.map((suggestion) => [
+          `${suggestion.studentId}|${suggestion.elementId}`,
+          suggestion.authorized,
+        ]),
+      ),
+    ),
+  );
+  const [authorizationPending, setAuthorizationPending] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const activeCombos = useMemo(
@@ -100,6 +125,31 @@ export default function PoleClassComboClient({
     startTransition(async () => {
       const result = await savePoleClassResultsAction(sessionId, entries);
       if (result.ok) setSaved(true);
+    });
+  }
+
+  function toggleProfessionalAuthorization(suggestion: PoleProfessionalSuggestion) {
+    if (!canWrite) return;
+
+    const key = `${suggestion.studentId}|${suggestion.elementId}`;
+    const nextValue = !(authorizationState[key] ?? suggestion.authorized);
+    setAuthorizationPending(key);
+
+    startTransition(async () => {
+      try {
+        const result = await setProfessionalPoleAuthorizationAction(
+          sessionId,
+          suggestion.studentId,
+          suggestion.elementId,
+          nextValue,
+        );
+
+        if (result.ok) {
+          setAuthorizationState((current) => ({ ...current, [key]: nextValue }));
+        }
+      } finally {
+        setAuthorizationPending(null);
+      }
     });
   }
 
@@ -337,6 +387,55 @@ export default function PoleClassComboClient({
                 </article>
               );
             })}
+
+            {groups.some((group) => group.professionalSuggestions.length) ? (
+              <article className={styles.card}>
+                <div className={styles.validationHeader}>
+                  <div>
+                    <span>SOLO INSTRUCTORA</span>
+                    <strong>Autorizar figuras Profesional</strong>
+                  </div>
+                  <b className={styles.professionalBadge}>Alto riesgo</b>
+                </div>
+                <p className={styles.professionalNote}>
+                  Solo aparecen para alumnas Avanzadas. Se autorizan una por una y nunca entran en
+                  los combos automáticos.
+                </p>
+                <div className={styles.validationList}>
+                  {groups.flatMap((group) =>
+                    group.professionalSuggestions.map((suggestion) => {
+                      const key = `${suggestion.studentId}|${suggestion.elementId}`;
+                      const authorized =
+                        authorizationState[key] ?? suggestion.authorized;
+                      return (
+                        <div className={styles.professionalRow} key={key}>
+                          <div>
+                            <strong>{suggestion.studentName}</strong>
+                            <small>
+                              {suggestion.name} · {suggestion.family}
+                            </small>
+                          </div>
+                          {canWrite ? (
+                            <button
+                              type="button"
+                              className={authorized ? styles.authorizedButton : styles.authorizeButton}
+                              onClick={() => toggleProfessionalAuthorization(suggestion)}
+                              disabled={authorizationPending === key}
+                            >
+                              {authorizationPending === key
+                                ? "Guardando…"
+                                : authorized
+                                  ? "Autorizada ✓"
+                                  : "Autorizar"}
+                            </button>
+                          ) : null}
+                        </div>
+                      );
+                    }),
+                  )}
+                </div>
+              </article>
+            ) : null}
 
             {saved ? (
               <div className={styles.success} role="status">
