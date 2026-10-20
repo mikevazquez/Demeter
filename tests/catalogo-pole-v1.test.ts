@@ -28,12 +28,15 @@ describe("Catálogo de figuras Pole v1", () => {
   });
 
   it("preserves the approved level distribution", () => {
-    const counts = Object.groupBy(data.figuras, (figure) => figure.nivel);
-    expect(counts.Principiante).toHaveLength(129);
-    expect(counts.Intermedio).toHaveLength(289);
-    expect(counts.Avanzado).toHaveLength(501);
-    expect(counts.Profesional).toHaveLength(286);
-    expect(counts["Por revisar"]).toHaveLength(1);
+    const counts = data.figuras.reduce<Record<string, number>>((acc, figure) => {
+      acc[figure.nivel] = (acc[figure.nivel] ?? 0) + 1;
+      return acc;
+    }, {});
+    expect(counts.Principiante).toBe(129);
+    expect(counts.Intermedio).toBe(289);
+    expect(counts.Avanzado).toBe(501);
+    expect(counts.Profesional).toBe(286);
+    expect(counts["Por revisar"]).toBe(1);
   });
 
   it("keeps v1 read-only and behind evaluation read access", () => {
