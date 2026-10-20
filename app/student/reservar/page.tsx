@@ -226,14 +226,14 @@ export default async function StudentReservePage({
   );
 
   return (
-    <main className="space-y-4 pb-4">
+    <main className="space-y-5 pb-4">
       <BookingEligibilityRefresh />
       <header>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
+        <p className="sendero-brand">
           Portal alumna
         </p>
-        <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">Reservar clase</h1>
-        <p className="mt-1.5 text-xs leading-5 text-zinc-400">
+        <h1 className="mt-2 text-3xl leading-tight text-[var(--sendero-ink)] sm:text-4xl">Reservar clase</h1>
+        <p className="mt-1.5 max-w-xl text-xs leading-5 text-[var(--sendero-muted)]">
           Elige una fecha para consultar la agenda completa de ese día.
         </p>
       </header>
@@ -246,8 +246,8 @@ export default async function StudentReservePage({
       ) : null}
 
       {rewardMode ? (
-        <section className="rounded-2xl border border-emerald-400/35 bg-emerald-400/[0.07] px-4 py-3">
-          <p className="text-xs font-semibold text-emerald-200">Usando créditos extra</p>
+        <section className="sendero-surface px-4 py-3">
+          <p className="sendero-eyebrow !text-[var(--sendero-mint)]">Usando créditos extra</p>
           <p className="mt-1 text-[11px] leading-5 text-zinc-400">
             Las reservas que confirmes desde este flujo se cobrarán del saldo premio disponible.
           </p>
@@ -256,14 +256,14 @@ export default async function StudentReservePage({
 
       <section
         aria-label="Seleccionar fecha"
-        className="rounded-3xl border border-white/10 bg-white/[0.03] p-3 sm:p-4"
+        className="sendero-surface p-3 sm:p-4"
       >
         <div className="mb-3 flex items-center justify-between gap-3">
           {weekStart > currentWeekStart ? (
             <Link
               href={`/student/reservar?date=${previousWeekDate < today ? today : previousWeekDate}${rewardSuffix}`}
               aria-label="Semana anterior"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/20 text-lg text-white transition hover:bg-white/[0.06]"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--sendero-line)] bg-black/15 text-lg text-[var(--sendero-ink)] transition hover:bg-white/[0.06]"
             >
               ‹
             </Link>
@@ -276,14 +276,14 @@ export default async function StudentReservePage({
             </span>
           )}
 
-          <p className="text-center text-xs font-medium capitalize text-zinc-300">
+          <p className="text-center text-xs font-semibold capitalize text-[var(--sendero-ink-2)]">
             {shortDate(weekStart)} – {shortDate(weekEnd)}
           </p>
 
           <Link
             href={`/student/reservar?date=${nextWeekDate}${rewardSuffix}`}
             aria-label="Semana siguiente"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/20 text-lg text-white transition hover:bg-white/[0.06]"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--sendero-line)] bg-black/15 text-lg text-[var(--sendero-ink)] transition hover:bg-white/[0.06]"
           >
             ›
           </Link>
@@ -297,10 +297,10 @@ export default async function StudentReservePage({
             const holiday = holidayByDate.get(day);
             const className = `relative rounded-2xl px-1 py-2.5 text-center transition ${
               isSelected
-                ? "bg-fuchsia-600 text-white shadow-[0_0_24px_rgba(255,10,138,0.18)]"
+                ? "bg-[var(--sendero-mint)] text-[var(--sendero-night)] shadow-[0_0_24px_rgba(143,230,200,0.16)]"
                 : isPast
                   ? "border border-white/5 bg-black/10 text-zinc-700"
-                  : "border border-white/10 bg-black/20 text-zinc-400 hover:border-fuchsia-500/25 hover:text-white"
+                   : "border border-[var(--sendero-line)] bg-black/15 text-[var(--sendero-muted)] hover:border-[rgba(143,230,200,0.35)] hover:text-[var(--sendero-ink)]"
             }`;
             const holidayTheme = holiday ? getHolidayTheme(holiday.theme_key) : null;
             const holidayClosed = holiday?.operation_mode === "closed";
@@ -363,14 +363,14 @@ export default async function StudentReservePage({
       {selectedHoliday ? <HolidayNotice holiday={selectedHoliday} /> : null}
 
       {selectedHoliday?.operation_mode === "closed" ? null : query.error || error ? (
-        <section className="rounded-3xl border border-rose-500/25 bg-rose-500/[0.08] p-5 text-center">
+        <section className="sendero-surface p-5 text-center">
           <h2 className="text-base font-semibold text-white">No pudimos cargar las clases</h2>
-          <p className="mt-1.5 text-xs leading-5 text-zinc-400">
+          <p className="mt-1.5 max-w-xl text-xs leading-5 text-[var(--sendero-muted)]">
             Conservamos la fecha seleccionada. Intenta nuevamente.
           </p>
           <Link
             href={`/student/reservar?date=${selectedDate}${rewardSuffix}`}
-            className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-fuchsia-600 px-4 py-2 text-xs font-semibold text-white"
+            className="sendero-button sendero-button-primary mt-4 !min-h-10 !text-xs"
           >
             Intentar de nuevo
           </Link>
@@ -379,10 +379,10 @@ export default async function StudentReservePage({
         <section className="space-y-2.5">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+              <p className="sendero-eyebrow">
                 Clases del día
               </p>
-              <h2 className="mt-0.5 text-base font-semibold capitalize text-white">
+              <h2 className="mt-1 text-xl capitalize text-[var(--sendero-ink)]">
                 {longDate(selectedDate)}
               </h2>
             </div>
@@ -433,7 +433,7 @@ export default async function StudentReservePage({
                 <article
                   key={session.session_id}
                   data-density="compact"
-                  className={`relative grid items-stretch gap-1.5 overflow-hidden rounded-[18px] border py-[7px] pl-2.5 pr-[7px] transition ${cancelled ? "grid-cols-[minmax(0,1fr)_76px] sm:grid-cols-[minmax(0,1fr)_92px]" : "grid-cols-[minmax(0,1fr)_76px_76px] sm:grid-cols-[minmax(0,1fr)_92px_92px]"}`}
+                  className={`relative grid items-stretch gap-2 overflow-hidden rounded-[24px] border py-2 pl-3 pr-2 transition ${cancelled ? "grid-cols-[minmax(0,1fr)_76px] sm:grid-cols-[minmax(0,1fr)_92px]" : "grid-cols-[minmax(0,1fr)_76px_76px] sm:grid-cols-[minmax(0,1fr)_92px_92px]"}`}
                   style={classAuraStyle(activityColor, { muted: cancelled })}
                 >
                   <span
@@ -471,13 +471,13 @@ export default async function StudentReservePage({
                     <span className="min-w-0">
                       <span
                         title={session.activity}
-                        className="block truncate text-base font-bold leading-tight text-white"
+                        className="block truncate text-lg leading-tight text-[var(--sendero-ink)]"
                       >
                         {session.activity}
                       </span>
-                      <span className="block text-xs font-semibold text-zinc-200">{timeLabel}</span>
+                      <span className="block text-xs font-semibold text-[var(--sendero-ink-2)]">{timeLabel}</span>
                       {session.coach ? (
-                        <span className="block truncate text-[11px] text-zinc-400">
+                        <span className="block truncate text-[11px] text-[var(--sendero-muted)]">
                           {session.coach}
                         </span>
                       ) : null}
@@ -498,8 +498,8 @@ export default async function StudentReservePage({
                     <span
                       className={`relative flex min-h-16 min-w-0 flex-col items-center justify-center self-stretch rounded-[14px] border px-2 text-center ${
                         fewSpots
-                          ? "border-amber-300/50 bg-amber-400/[0.14]"
-                          : "border-emerald-300/45 bg-emerald-500/[0.14]"
+                          ? "border-[rgba(246,214,122,0.45)] bg-[var(--sendero-moon-soft)]"
+                           : "border-[rgba(143,230,200,0.42)] bg-[var(--sendero-mint-soft)]"
                       }`}
                     >
                       <strong
@@ -571,7 +571,7 @@ export default async function StudentReservePage({
                     <Link
                       href={detailHref}
                       aria-label={`${needsPayment ? "Pagar" : "Ver"} ${session.activity}: ${eligibilityCopy}`}
-                      className={`${tileClass} relative border border-fuchsia-500 bg-transparent text-fuchsia-300 hover:bg-fuchsia-500/10`}
+                      className={`${tileClass} relative border border-[rgba(143,230,200,0.45)] bg-[var(--sendero-mint-soft)] text-[var(--sendero-mint)] hover:bg-[rgba(143,230,200,0.2)]`}
                     >
                       {needsPayment ? "Pagar" : "Ver"}
                     </Link>
@@ -580,14 +580,14 @@ export default async function StudentReservePage({
               );
             })
           ) : (
-            <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] px-5 py-9 text-center">
+            <div className="sendero-surface-soft border-dashed px-5 py-9 text-center">
               <div
                 aria-hidden="true"
                 className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 text-xl text-zinc-500"
               >
                 ◫
               </div>
-              <h3 className="mt-3 text-base font-semibold text-white">
+              <h3 className="mt-3 text-lg text-[var(--sendero-ink)]">
                 No hay clases para esta fecha
               </h3>
               <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-zinc-400">
