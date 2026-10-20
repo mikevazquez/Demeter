@@ -88,7 +88,7 @@ export default async function StudentFiguresPage() {
   const [{ data: profiles }, { data: elements }, { data: achievements }] = await Promise.all([
     supabase
       .from("pole_figure_profiles")
-      .select("element_id,slug,original_name,photo_path")
+      .select("element_id,slug,original_name")
       .eq("studio_id", membership.studio_id)
       .eq("discipline_id", poleDiscipline.id),
     supabase
