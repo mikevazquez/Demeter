@@ -5,6 +5,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { setEvaluationDisciplineLevelActive } from "../../actions";
+import { seedPoleEvaluationTemplatesAction } from "../../pole-actions";
 import { createEvaluationV2TemplateAction, openEvaluationV2EditorAction } from "../../v2-actions";
 
 export default async function EvaluationDisciplinePage({
@@ -12,7 +13,7 @@ export default async function EvaluationDisciplinePage({
   searchParams,
 }: {
   params: Promise<{ disciplineId: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; seeded?: string }>;
 }) {
   const [{ disciplineId }, qs, ctx] = await Promise.all([
     params,
@@ -20,32 +21,38 @@ export default async function EvaluationDisciplinePage({
     getAdminContext(CAPABILITIES.EVALUATIONS_CONFIGURE),
   ]);
 
-  const [disciplineResult, linksResult, definitionsResult, templatesResult] = await Promise.all([
-    ctx.supabase
-      .from("disciplines")
-      .select("id,name,active")
-      .eq("id", disciplineId)
-      .eq("studio_id", ctx.studio.id)
-      .eq("active", true)
-      .maybeSingle(),
-    ctx.supabase
-      .from("discipline_technical_levels")
-      .select("id,technical_level_id,discipline_order,active")
-      .eq("studio_id", ctx.studio.id)
-      .eq("discipline_id", disciplineId)
-      .order("discipline_order"),
-    ctx.supabase
-      .from("technical_level_definitions")
-      .select("id,title,level_order,active")
-      .eq("studio_id", ctx.studio.id)
-      .order("level_order"),
-    ctx.supabase
-      .from("evaluation_templates")
-      .select("id,name,discipline_technical_level_id,updated_at,archived_at")
-      .eq("studio_id", ctx.studio.id)
-      .eq("discipline_id", disciplineId)
-      .order("updated_at", { ascending: false }),
-  ]);
+  const [disciplineResult, linksResult, definitionsResult, templatesResult, poleResult] =
+    await Promise.all([
+      ctx.supabase
+        .from("disciplines")
+        .select("id,name,active")
+        .eq("id", disciplineId)
+        .eq("studio_id", ctx.studio.id)
+        .eq("active", true)
+        .maybeSingle(),
+      ctx.supabase
+        .from("discipline_technical_levels")
+        .select("id,technical_level_id,discipline_order,active")
+        .eq("studio_id", ctx.studio.id)
+        .eq("discipline_id", disciplineId)
+        .order("discipline_order"),
+      ctx.supabase
+        .from("technical_level_definitions")
+        .select("id,title,level_order,active")
+        .eq("studio_id", ctx.studio.id)
+        .order("level_order"),
+      ctx.supabase
+        .from("evaluation_templates")
+        .select("id,name,discipline_technical_level_id,updated_at,archived_at")
+        .eq("studio_id", ctx.studio.id)
+        .eq("discipline_id", disciplineId)
+        .order("updated_at", { ascending: false }),
+      ctx.supabase
+        .from("pole_figure_profiles")
+        .select("element_id", { count: "exact", head: true })
+        .eq("studio_id", ctx.studio.id)
+        .eq("discipline_id", disciplineId),
+    ]);
   const discipline = disciplineResult.data;
   if (!discipline) notFound();
 
@@ -94,9 +101,20 @@ export default async function EvaluationDisciplinePage({
     (usedResult.data ?? []).map((evaluation) => evaluation.template_version_id),
   );
 
+  const hasPoleCatalog = (poleResult.count ?? 0) > 0;
+  const levelsWithoutTemplate = links.filter(
+    (link) =>
+      link.active &&
+      !templates.some((template) => template.discipline_technical_level_id === link.id),
+  );
+  const seeded = qs.seeded === undefined ? null : Number(qs.seeded);
+
   const errorCopy: Record<string, string> = {
     level: "No pudimos actualizar el nivel.",
     template: "No pudimos abrir la configuración del nivel.",
+    pole_catalog: "Primero carga el catálogo de figuras en Evaluaciones → Figuras de Pole.",
+    pole_seed:
+      "No pudimos crear las plantillas base. Revisa que tengas permiso de configurar evaluaciones.",
   };
 
   return (
@@ -115,6 +133,46 @@ export default async function EvaluationDisciplinePage({
         <div className="eval-notice">
           {errorCopy[qs.error] ?? "No pudimos completar la acción."}
         </div>
+      ) : null}
+
+      {seeded !== null && Number.isFinite(seeded) ? (
+        <div className="eval-notice success">
+          {seeded === 0
+            ? "Todos los niveles ya tenían plantilla. No se cambió nada."
+            : seeded === 1
+              ? "Se creó 1 plantilla base. Ya se usa en diagnósticos y evaluaciones."
+              : `Se crearon ${seeded} plantillas base. Ya se usan en diagnósticos y evaluaciones.`}
+        </div>
+      ) : null}
+
+      {hasPoleCatalog && levelsWithoutTemplate.length ? (
+        <section className="eval-panel eval-config-section eval-pole-seed">
+          <header>
+            <div>
+              <h2>Plantillas base de Pole</h2>
+              <p>
+                {levelsWithoutTemplate.length === 1
+                  ? "1 nivel no tiene evaluación."
+                  : `${levelsWithoutTemplate.length} niveles no tienen evaluación.`}{" "}
+                Crea una plantilla por nivel con 8 figuras del programa base y un apartado de
+                técnica y seguridad. Los niveles que ya tienen plantilla no se tocan.
+              </p>
+            </div>
+            <form action={seedPoleEvaluationTemplatesAction}>
+              <input type="hidden" name="discipline_id" value={discipline.id} />
+              <button className="eval-primary-button" type="submit">
+                Crear plantillas base
+              </button>
+            </form>
+          </header>
+          <ul className="eval-pole-seed-levels">
+            {levelsWithoutTemplate.map((link) => (
+              <li key={link.id}>
+                {definitionById.get(link.technical_level_id)?.title ?? "Nivel técnico"}
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       <section className="eval-panel eval-config-section">
