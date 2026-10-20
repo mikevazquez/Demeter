@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { WorkshopPaymentForm } from "./WorkshopPaymentForm";
 import { WorkshopWithdrawal } from "./WorkshopWithdrawal";
 type Purchase = {
   id: string;
@@ -129,9 +130,22 @@ export async function StudentWorkshops({
               </div>
 
               <div className="profile360-workshop-actions">
-                <Link className="profile360-workshop-payment" href={`/admin/ventas/${p.saleId}`}>
-                  {p.balanceMinor > 0 ? "Abonar o liquidar saldo" : "Ver venta y pagos"}
-                </Link>
+                {p.balanceMinor > 0 && ctx.can("sales.write") ? (
+                  <WorkshopPaymentForm
+                    purchaseId={p.id}
+                    studentId={studentId}
+                    balanceMinor={p.balanceMinor}
+                    currency={ctx.studio.currency}
+                    locale={ctx.studio.locale}
+                  />
+                ) : (
+                  <Link
+                    className="profile360-workshop-payment is-secondary"
+                    href={`/admin/ventas/${p.saleId}`}
+                  >
+                    Ver venta y pagos
+                  </Link>
+                )}
                 {p.status === "reserved" && ctx.can("sales.write") && ctx.can("schedule.write") ? (
                   <WorkshopWithdrawal purchaseId={p.id} requestId={randomUUID()} />
                 ) : null}
