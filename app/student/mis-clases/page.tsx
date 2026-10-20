@@ -63,24 +63,24 @@ function ClassRow({
   return (
     <article
       data-density="compact"
-      className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 transition hover:bg-white/[0.05]"
+      className="sendero-surface px-4 py-3 transition hover:bg-white/[0.04]"
     >
       <div className="grid grid-cols-[1fr_auto] items-center gap-3">
         <Link href={`/student/mis-clases/${item.reservation_id}`} className="min-w-0">
           <div className="flex min-w-0 items-center gap-2">
-            <p className="truncate text-sm font-semibold text-white">{item.activity}</p>
+            <p className="truncate text-base text-[var(--sendero-ink)]">{item.activity}</p>
             <span
               className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusClass(item.status)}`}
             >
               {statusCopy[item.status] ?? item.status}
             </span>
           </div>
-          <p className="mt-1 text-xs text-zinc-300">{formatDateTime(item.starts_at, timezone)}</p>
-          <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+          <p className="mt-1 text-xs text-[var(--sendero-ink-2)]">{formatDateTime(item.starts_at, timezone)}</p>
+          <p className="mt-0.5 truncate text-[11px] text-[var(--sendero-muted)]">
             {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
           </p>
           {item.resource_name ? (
-            <p className="mt-1 text-[11px] font-medium text-fuchsia-300">
+            <p className="mt-1 text-[11px] font-medium text-[var(--sendero-lilac)]">
               Recurso · {item.resource_name}
             </p>
           ) : null}
@@ -141,17 +141,17 @@ function WaitlistRow({
     levelTitle === "Oro" || levelTitle === "Diamante" ? `Prioridad ${levelTitle} aplicada` : null;
 
   return (
-    <article className="rounded-2xl border border-amber-400/25 bg-amber-400/[0.055] px-4 py-3">
+    <article className="sendero-surface px-4 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate text-sm font-semibold text-white">{item.activity}</p>
-            <span className="shrink-0 rounded-full border border-amber-400/30 bg-amber-400/[0.09] px-2 py-0.5 text-[10px] font-semibold text-amber-200">
+            <p className="truncate text-base text-[var(--sendero-ink)]">{item.activity}</p>
+            <span className="sendero-chip sendero-chip-moon !px-2 !py-0.5">
               En lista de espera
             </span>
           </div>
-          <p className="mt-1 text-xs text-zinc-300">{formatDateTime(item.starts_at, timezone)}</p>
-          <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+          <p className="mt-1 text-xs text-[var(--sendero-ink-2)]">{formatDateTime(item.starts_at, timezone)}</p>
+          <p className="mt-0.5 truncate text-[11px] text-[var(--sendero-muted)]">
             {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
           </p>
         </div>
@@ -201,7 +201,7 @@ export default async function StudentClassesPage({
   const followingClasses = upcoming.slice(1);
 
   return (
-    <main className="space-y-4 pb-4">
+    <main className="space-y-5 pb-4">
       {query.cancelled ? (
         <StudentNoticeDialog
           eyebrow="Reserva cancelada"
@@ -233,14 +233,14 @@ export default async function StudentClassesPage({
 
       <header className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
+          <p className="sendero-brand">
             Portal alumna
           </p>
-          <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">Mis clases</h1>
+          <h1 className="mt-2 text-3xl text-[var(--sendero-ink)] sm:text-4xl">Mis clases</h1>
         </div>
         <Link
           href="/student/reservar"
-          className="rounded-xl bg-fuchsia-600 px-3.5 py-2.5 text-xs font-semibold text-white transition hover:bg-fuchsia-500"
+          className="sendero-button sendero-button-primary !min-h-10 !px-4 !text-xs"
         >
           Reservar
         </Link>
@@ -248,15 +248,15 @@ export default async function StudentClassesPage({
 
       <nav
         aria-label="Vista de mis clases"
-        className="grid grid-cols-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1"
+        className="sendero-surface-soft grid grid-cols-2 p-1"
       >
         <Link
           href="/student/mis-clases"
           aria-current={activeView === "upcoming" ? "page" : undefined}
           className={`rounded-xl px-4 py-2.5 text-center text-xs font-semibold transition ${
             activeView === "upcoming"
-              ? "bg-fuchsia-600 text-white"
-              : "text-zinc-400 hover:text-white"
+              ? "bg-[var(--sendero-mint)] text-[var(--sendero-night)]"
+               : "text-[var(--sendero-muted)] hover:text-[var(--sendero-ink)]"
           }`}
         >
           Próximas{upcoming.length ? ` (${upcoming.length})` : ""}
@@ -266,8 +266,8 @@ export default async function StudentClassesPage({
           aria-current={activeView === "history" ? "page" : undefined}
           className={`rounded-xl px-4 py-2.5 text-center text-xs font-semibold transition ${
             activeView === "history"
-              ? "bg-fuchsia-600 text-white"
-              : "text-zinc-400 hover:text-white"
+              ? "bg-[var(--sendero-mint)] text-[var(--sendero-night)]"
+               : "text-[var(--sendero-muted)] hover:text-[var(--sendero-ink)]"
           }`}
         >
           Historial
@@ -275,14 +275,14 @@ export default async function StudentClassesPage({
       </nav>
 
       {error ? (
-        <section className="rounded-3xl border border-rose-500/20 bg-rose-500/[0.07] p-5 text-center">
-          <h2 className="text-base font-semibold text-white">No pudimos cargar tus clases</h2>
+        <section className="sendero-surface p-5 text-center">
+          <h2 className="text-lg text-[var(--sendero-ink)]">No pudimos cargar tus clases</h2>
           <p className="mt-1.5 text-xs leading-5 text-zinc-400">
             Intenta nuevamente. Tus reservas no se han modificado.
           </p>
           <Link
             href="/student/mis-clases"
-            className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-fuchsia-600 px-4 py-2 text-xs font-semibold text-white"
+            className="sendero-button sendero-button-primary mt-4 !min-h-10 !text-xs"
           >
             Reintentar
           </Link>
@@ -291,7 +291,7 @@ export default async function StudentClassesPage({
         <section className="space-y-3">
           {waitlistItems.length ? (
             <div>
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+              <p className="sendero-eyebrow mb-2">
                 Lista de espera
               </p>
               <div className="space-y-2">
@@ -310,7 +310,7 @@ export default async function StudentClassesPage({
           {nextClass ? (
             <>
               <div>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                <p className="sendero-eyebrow mb-2">
                   Tu próxima clase
                 </p>
                 {nextClass.status === "cancelled_by_studio" ? (
@@ -318,7 +318,7 @@ export default async function StudentClassesPage({
                 ) : (
                   <article
                     data-density="compact"
-                    className="rounded-3xl border border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-500/[0.1] via-white/[0.035] to-transparent px-4 py-4"
+                    className="sendero-surface relative overflow-hidden px-4 py-4"
                   >
                     <div className="grid grid-cols-[1fr_auto] items-center gap-3">
                       <Link
@@ -326,25 +326,25 @@ export default async function StudentClassesPage({
                         className="min-w-0"
                       >
                         <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="truncate text-base font-semibold text-white">
+                          <h2 className="truncate text-xl text-[var(--sendero-ink)]">
                             {nextClass.activity}
                           </h2>
-                          <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                          <span className="sendero-chip sendero-chip-mint !px-2 !py-0.5">
                             Confirmada
                           </span>
                         </div>
-                        <p className="mt-1 text-xs font-medium text-fuchsia-300">
+                        <p className="mt-1 text-xs font-medium text-[var(--sendero-lilac)]">
                           {nextClass.discipline}
                         </p>
                         <p className="mt-1.5 text-xs text-zinc-300">
                           {formatDateTime(nextClass.starts_at, studio.timezone)}
                         </p>
-                        <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                        <p className="mt-0.5 truncate text-[11px] text-[var(--sendero-muted)]">
                           {[nextClass.coach, nextClass.space].filter(Boolean).join(" · ") ||
                             "Ver detalles de la clase"}
                         </p>
                         {nextClass.resource_name ? (
-                          <p className="mt-1 text-[11px] font-medium text-fuchsia-300">
+                          <p className="mt-1 text-[11px] font-medium text-[var(--sendero-lilac)]">
                             Recurso · {nextClass.resource_name}
                           </p>
                         ) : null}
@@ -392,7 +392,7 @@ export default async function StudentClassesPage({
               ) : null}
             </>
           ) : waitlistItems.length ? null : (
-            <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] px-5 py-8 text-center">
+            <div className="sendero-surface-soft border-dashed px-5 py-8 text-center">
               <div
                 aria-hidden="true"
                 className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 text-lg text-zinc-500"
@@ -405,7 +405,7 @@ export default async function StudentClassesPage({
               </p>
               <Link
                 href="/student/reservar"
-                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-fuchsia-600 px-4 py-2 text-xs font-semibold text-white"
+                className="sendero-button sendero-button-primary mt-4 !min-h-10 !text-xs"
               >
                 Reservar clase
               </Link>
@@ -414,7 +414,7 @@ export default async function StudentClassesPage({
         </section>
       ) : (
         <section>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+          <p className="sendero-eyebrow mb-2">
             Clases anteriores
           </p>
           {history.length ? (
@@ -424,8 +424,8 @@ export default async function StudentClassesPage({
               ))}
             </div>
           ) : (
-            <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] px-5 py-8 text-center">
-              <h2 className="text-base font-semibold text-white">Todavía no tienes historial</h2>
+            <div className="sendero-surface-soft border-dashed px-5 py-8 text-center">
+              <h2 className="text-lg text-[var(--sendero-ink)]">Todavía no tienes historial</h2>
               <p className="mt-1.5 text-xs text-zinc-400">Tus clases anteriores aparecerán aquí.</p>
             </div>
           )}
