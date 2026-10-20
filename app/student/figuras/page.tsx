@@ -108,7 +108,9 @@ export default async function StudentFiguresPage() {
   const sourceFigures = catalog.figuras as CatalogFigure[];
   const sourceBySlug = new Map(sourceFigures.map((figure) => [figure.id, figure]));
   const profileBySlug = new Map((profiles ?? []).map((profile) => [profile.slug, profile]));
-  const slugByElementId = new Map((profiles ?? []).map((profile) => [profile.element_id, profile.slug]));
+  const slugByElementId = new Map(
+    (profiles ?? []).map((profile) => [profile.element_id, profile.slug]),
+  );
   const nameByElement = new Map((elements ?? []).map((item) => [item.id, item.name]));
   const achievementByElement = new Map(
     (achievements ?? []).map((item) => [item.figure_element_id, item]),
@@ -166,8 +168,7 @@ export default async function StudentFiguresPage() {
     const profile = profileBySlug.get(figure.id);
     if (!profile) return null;
     const achievement = achievementByElement.get(profile.element_id);
-    const photoUrl =
-      achievement?.photo_path && signedPhotoByPath.get(achievement.photo_path);
+    const photoUrl = achievement?.photo_path && signedPhotoByPath.get(achievement.photo_path);
     const missing = figure.prerrequisitos_sugeridos.filter((slug) => !achievedSlugs.has(slug));
 
     return (
@@ -281,7 +282,9 @@ export default async function StudentFiguresPage() {
         <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/[0.06]">
           <div
             className="h-full rounded-full bg-[var(--sendero-mint)]"
-            style={{ width: `${Math.round((done.length / Math.max(levelFigures.length, 1)) * 100)}%` }}
+            style={{
+              width: `${Math.round((done.length / Math.max(levelFigures.length, 1)) * 100)}%`,
+            }}
           />
         </div>
       </section>
@@ -305,9 +308,9 @@ export default async function StudentFiguresPage() {
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {[...ready, ...free].slice(0, 3).map((figure) =>
-              figureCard(figure, ready.includes(figure) ? "ready" : "free"),
-            )}
+            {[...ready, ...free]
+              .slice(0, 3)
+              .map((figure) => figureCard(figure, ready.includes(figure) ? "ready" : "free"))}
           </div>
         </section>
       ) : null}

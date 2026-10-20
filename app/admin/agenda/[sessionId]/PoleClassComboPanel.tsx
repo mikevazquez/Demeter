@@ -177,7 +177,8 @@ export default async function PoleClassComboPanel({
     if (!members.length) continue;
 
     const allKnow = (slug: string) => members.every((student) => student.achievedSlugs.has(slug));
-    const nobodyKnows = (slug: string) => members.every((student) => !student.achievedSlugs.has(slug));
+    const nobodyKnows = (slug: string) =>
+      members.every((student) => !student.achievedSlugs.has(slug));
 
     const candidates = sourceFigures
       .filter(
@@ -202,48 +203,54 @@ export default async function PoleClassComboPanel({
         allKnow(figure.id),
     );
 
-    const recommendations: PoleComboRecommendation[] = candidates.slice(0, 12).map((candidate, index) => {
-      const prerequisite =
-        candidate.prerrequisitos_sugeridos.find((slug) => known.some((figure) => figure.id === slug)) ??
-        null;
-      const sameType = known.filter(
-        (figure) => figure.id !== prerequisite && figure.tipo === candidate.tipo,
+    const recommendations: PoleComboRecommendation[] = candidates
+      .slice(0, 12)
+      .map((candidate, index) => {
+        const prerequisite =
+          candidate.prerrequisitos_sugeridos.find((slug) =>
+            known.some((figure) => figure.id === slug),
+          ) ?? null;
+        const sameType = known.filter(
+          (figure) => figure.id !== prerequisite && figure.tipo === candidate.tipo,
+        );
+        const otherKnown: CatalogFigure[] = [];
+
+        for (let offset = 0; offset < sameType.length && otherKnown.length < 2; offset += 1) {
+          const item = sameType[(offset + index * 2) % sameType.length];
+          if (item && !otherKnown.some((figure) => figure.id === item.id)) otherKnown.push(item);
+        }
+
+        const sequence = [
+          ...(prerequisite ? [sourceBySlug.get(prerequisite)] : []),
+          candidate,
+          ...otherKnown,
+        ].filter((figure): figure is CatalogFigure => Boolean(figure));
+
+        return {
+          id: `${level}-${candidate.id}-${index}`,
+          level,
+          newFigureElementId: profileBySlug.get(candidate.id)?.element_id ?? "",
+          newFigureSlug: candidate.id,
+          figures: sequence.flatMap((figure) => {
+            const profile = profileBySlug.get(figure.id);
+            if (!profile) return [];
+
+            return [
+              {
+                elementId: profile.element_id,
+                slug: figure.id,
+                name: nameByElement.get(profile.element_id) ?? figure.nombre_es ?? figure.nombre,
+                originalName: figure.nombre,
+                type: figure.tipo,
+                status: figure.id === candidate.id ? ("new" as const) : ("review" as const),
+              },
+            ];
+          }),
+        };
+      })
+      .filter(
+        (recommendation) => recommendation.newFigureElementId && recommendation.figures.length >= 2,
       );
-      const otherKnown: CatalogFigure[] = [];
-
-      for (let offset = 0; offset < sameType.length && otherKnown.length < 2; offset += 1) {
-        const item = sameType[(offset + index * 2) % sameType.length];
-        if (item && !otherKnown.some((figure) => figure.id === item.id)) otherKnown.push(item);
-      }
-
-      const sequence = [
-        ...(prerequisite ? [sourceBySlug.get(prerequisite)] : []),
-        candidate,
-        ...otherKnown,
-      ].filter((figure): figure is CatalogFigure => Boolean(figure));
-
-      return {
-        id: `${level}-${candidate.id}-${index}`,
-        level,
-        newFigureElementId: profileBySlug.get(candidate.id)?.element_id ?? "",
-        newFigureSlug: candidate.id,
-        figures: sequence.flatMap((figure) => {
-          const profile = profileBySlug.get(figure.id);
-          if (!profile) return [];
-
-          return [
-            {
-              elementId: profile.element_id,
-              slug: figure.id,
-              name: nameByElement.get(profile.element_id) ?? figure.nombre_es ?? figure.nombre,
-              originalName: figure.nombre,
-              type: figure.tipo,
-              status: figure.id === candidate.id ? ("new" as const) : ("review" as const),
-            },
-          ];
-        }),
-      };
-    }).filter((recommendation) => recommendation.newFigureElementId && recommendation.figures.length >= 2);
 
     groups.push({
       level,
@@ -259,11 +266,5 @@ export default async function PoleClassComboPanel({
     });
   }
 
-  return (
-    <PoleClassComboClient
-      sessionId={sessionId}
-      groups={groups}
-      canWrite={canWrite}
-    />
-  );
+  return <PoleClassComboClient sessionId={sessionId} groups={groups} canWrite={canWrite} />;
 }

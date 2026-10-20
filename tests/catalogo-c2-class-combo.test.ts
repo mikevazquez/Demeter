@@ -40,7 +40,7 @@ describe("Catálogo C2 · flujo de clase Pole por nivel", () => {
 
   it("never includes Professional in automatic class generation", () => {
     expect(panel).toContain('figure.nivel !== "Profesional"');
-    expect(panel).not.toContain('Profesional:');
+    expect(panel).not.toContain("Profesional:");
   });
 
   it("matches the prototype flow: open class, combos by level, validate at the end", () => {

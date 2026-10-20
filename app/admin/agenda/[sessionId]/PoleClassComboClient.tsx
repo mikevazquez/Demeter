@@ -79,8 +79,7 @@ export default function PoleClassComboClient({
   function nextOption(group: PoleClassGroup) {
     setOptionIndex((current) => ({
       ...current,
-      [group.level]:
-        ((current[group.level] ?? 0) + 1) % Math.max(group.recommendations.length, 1),
+      [group.level]: ((current[group.level] ?? 0) + 1) % Math.max(group.recommendations.length, 1),
     }));
     setChecked({});
     setSaved(false);
@@ -178,8 +177,8 @@ export default function PoleClassComboClient({
             <p className={styles.eyebrow}>PASO 2 DE 3</p>
             <h2>Studio Flow arma un combo por nivel</h2>
             <p>
-              Cada grupo recibe figuras que todas ya dominan y una sola figura nueva para la que
-              ya cumplen los prerrequisitos.
+              Cada grupo recibe figuras que todas ya dominan y una sola figura nueva para la que ya
+              cumplen los prerrequisitos.
             </p>
             <ul>
               <li>Repaso para preparar el cuerpo y la técnica.</li>
@@ -235,7 +234,9 @@ export default function PoleClassComboClient({
                   <div className={styles.sequence}>
                     {combo.figures.map((figure, figureIndex) => (
                       <div
-                        className={figure.status === "new" ? styles.sequenceNew : styles.sequenceRow}
+                        className={
+                          figure.status === "new" ? styles.sequenceNew : styles.sequenceRow
+                        }
                         key={figure.elementId}
                       >
                         <span className={styles.position}>{figureIndex + 1}</span>
