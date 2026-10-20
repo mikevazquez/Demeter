@@ -43,10 +43,12 @@ export default function PoleClassComboClient({
   sessionId,
   recommendations,
   studentCount,
+  canWrite,
 }: {
   sessionId: string;
   recommendations: PoleComboRecommendation[];
   studentCount: number;
+  canWrite: boolean;
 }) {
   const [visible, setVisible] = useState(false);
   const [index, setIndex] = useState(0);
