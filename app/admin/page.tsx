@@ -312,6 +312,7 @@ export default async function AdminPage({
             name: string;
             color_hex: string | null;
             drop_in_price_minor: number | null;
+            discipline_id: string | null;
           }[],
         }),
     instructorIds.length
