@@ -193,9 +193,7 @@ export function LoginCard({ mode, error, recovery }: LoginCardProps) {
           </div>
         ) : null}
         {recovery === "changed" ? (
-          <div className="notice success">
-            Contraseña actualizada. Ya puedes iniciar sesión.
-          </div>
+          <div className="notice success">Contraseña actualizada. Ya puedes iniciar sesión.</div>
         ) : null}
 
         <form action={signIn} className="auth-form auth-login-form">

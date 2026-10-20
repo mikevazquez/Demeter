@@ -170,7 +170,9 @@ export function TodayClasses({
               <span className="today-class-accent" aria-hidden="true" />
               <span className="today-class-time">{item.time}</span>
               <span className="today-class-copy">
-                <small className="today-class-kind">{item.kindLabel}</small>
+                {item.kindLabel !== "Clase" ? (
+                  <small className="today-class-kind">{item.kindLabel}</small>
+                ) : null}
                 <strong>{item.name}</strong>
                 <small className="today-class-meta">
                   {item.instructor}

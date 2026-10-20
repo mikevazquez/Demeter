@@ -20,10 +20,11 @@ export function WorkshopPaymentForm({
   locale,
 }: Props) {
   const [state, action, pending] = useActionState(registerWorkshopPayment, { error: null });
+  const currentBalance = state.balanceMinor ?? balanceMinor;
   const balance = new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
-  }).format(balanceMinor / 100);
+  }).format(currentBalance / 100);
 
   if (state.balanceMinor === 0) {
     return (
@@ -36,7 +37,7 @@ export function WorkshopPaymentForm({
   return (
     <details className="profile360-workshop-payment-form">
       <summary>Registrar abono o liquidación</summary>
-      <form action={action}>
+      <form action={action} key={currentBalance}>
         <input type="hidden" name="purchase_id" value={purchaseId} />
         <input type="hidden" name="student_id" value={studentId} />
 
@@ -51,7 +52,12 @@ export function WorkshopPaymentForm({
             name="payment_amount"
             required
             inputMode="decimal"
-            defaultValue={(balanceMinor / 100).toFixed(2)}
+            defaultValue={(currentBalance / 100).toFixed(2)}
+            type="number"
+            min="0.01"
+            step="0.01"
+            max={(currentBalance / 100).toFixed(2)}
+            disabled={pending}
             aria-label="Monto del abono"
           />
           <small>Edita el monto para un abono parcial o déjalo igual para liquidar.</small>
@@ -65,14 +71,18 @@ export function WorkshopPaymentForm({
             </option>
             <option value="efectivo">Efectivo</option>
             <option value="transferencia">Transferencia</option>
-            <option value="tarjeta">Tarjeta</option>
-            <option value="otro">Otro</option>
           </select>
         </label>
 
         <label>
           Referencia
-          <input name="payment_reference" placeholder="Opcional" />
+          <input
+            name="payment_reference"
+            minLength={3}
+            maxLength={200}
+            required
+            disabled={pending}
+          />
         </label>
 
         <label>
@@ -80,6 +90,11 @@ export function WorkshopPaymentForm({
           <input name="payment_notes" placeholder="Opcional" />
         </label>
 
+        <label>
+          <input type="checkbox" name="payment_received" required disabled={pending} />
+          Verifiqué que el dinero fue recibido.
+        </label>
+        <p>Puedes abonar o liquidar antes de la primera fecha del taller.</p>
         {state.error ? (
           <p className="profile360-workshop-payment-error" role="alert">
             {state.error}

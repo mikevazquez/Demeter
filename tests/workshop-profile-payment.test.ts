@@ -17,6 +17,7 @@ function form(amount = "300.00") {
   data.set("payment_method", "efectivo");
   data.set("payment_reference", "ABONO-01");
   data.set("payment_notes", "Segundo abono");
+  data.set("payment_received", "on");
   return data;
 }
 
@@ -65,5 +66,19 @@ describe("student workshop installment payment", () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: "payment_exceeds_balance" } });
     const result = await registerWorkshopPayment({ error: null }, form("400"));
     expect(result.error).toContain("mayor al saldo");
+  });
+  it("requires explicit received-funds attestation and a replay reference", async () => {
+    const data = form();
+    data.delete("payment_received");
+    expect((await registerWorkshopPayment({ error: null }, data)).error).toBeTruthy();
+    const noReference = form();
+    noReference.delete("payment_reference");
+    expect((await registerWorkshopPayment({ error: null }, noReference)).error).toBeTruthy();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it("does not retry an unknown outcome", async () => {
+    mocks.rpc.mockRejectedValue(new Error("connection lost"));
+    expect((await registerWorkshopPayment({ error: null }, form())).error).toContain("historial");
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
   });
 });

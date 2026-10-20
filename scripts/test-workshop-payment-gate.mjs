@@ -1937,6 +1937,67 @@ try {
     );
     assert.equal(cancelled, released);
   });
+
+  query(
+    `begin; ${source("supabase/migrations/20261020001500_workshop_installment_payment.sql")}; commit;`,
+  );
+  query(
+    `begin; ${source("supabase/migrations/20261020161915_workshop_profile_payment_replay.sql")}; commit;`,
+  );
+  function profileInstallment(p, amount, ref = randomUUID(), method = "efectivo") {
+    return `select public.admin_register_workshop_payment(${sqlString(studio)},${sqlString(p.purchase_id)},${amount},${sqlString(method)},${sqlString(ref)},'Synthetic profile payment')`;
+  }
+  await test("profile payments before the first date replay and settle through the existing ledger", () => {
+    const w = offer({ deposit: true }),
+      p = json(asRole("authenticated", admin, checkedSql(review(w, { amount: 30000 }), 1)));
+    const due = query(
+      `select balance_due_at from public.workshop_purchases where id=${sqlString(p.purchase_id)}`,
+    );
+    const ref = randomUUID(),
+      sql = profileInstallment(p, 10000, ref);
+    denied(asRole("authenticated", id(13), sql), "forbidden");
+    assert.equal(json(asRole("authenticated", admin, sql)).balance_minor, 20000);
+    assert.equal(json(asRole("authenticated", admin, sql)).replayed, true);
+    denied(
+      asRole("authenticated", admin, profileInstallment(p, 11000, ref)),
+      "idempotency_conflict",
+    );
+    assert.equal(
+      json(asRole("authenticated", admin, profileInstallment(p, 20000))).balance_minor,
+      0,
+    );
+    assert.equal(
+      query(`select count(*) from public.payments where sale_id=${sqlString(p.sale_id)}`),
+      "3",
+    );
+    assert.equal(
+      query(
+        `select balance_due_at from public.workshop_purchases where id=${sqlString(p.purchase_id)}`,
+      ),
+      due,
+    );
+    denied(
+      asRole("authenticated", admin, profileInstallment(p, 10000, "")),
+      "payment_reference_required",
+    );
+    denied(asRole("anon", null, sql), "permission denied");
+  });
+  await test("simultaneous Hoy and profile payments use the same lock order and cannot overcollect", async () => {
+    const w = offer({ deposit: true }),
+      p = json(asRole("authenticated", admin, checkedSql(review(w, { amount: 30000 }), 1)));
+    const results = await Promise.all([
+      concurrent(asRole("authenticated", admin, profileInstallment(p, 20000))),
+      concurrent(asRole("authenticated", admin, installment(p, w, 20000))),
+    ]);
+    assert.equal(results.filter((r) => r.status === 0).length, 1);
+    assert.ok(results.find((r) => r.status !== 0).stderr.includes("payment_exceeds_balance"));
+    assert.equal(
+      query(
+        `select paid_minor from public.workshop_purchases where id=${sqlString(p.purchase_id)}`,
+      ),
+      "50000",
+    );
+  });
   console.log(
     `${passed}/${passed} local PostgreSQL integration scenarios passed. No remote database used.`,
   );

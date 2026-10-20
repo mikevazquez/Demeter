@@ -432,7 +432,6 @@ export async function createInitialOwnerAccount(formData: FormData) {
   redirect("/setup?created=1");
 }
 
-
 export async function requestStudioPasswordReset(formData: FormData) {
   const email = String(formData.get("email") ?? "")
     .trim()

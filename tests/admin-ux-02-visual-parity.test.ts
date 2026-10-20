@@ -95,7 +95,7 @@ describe("ADMIN-UX-02 approved visual parity", () => {
   });
 
   it("keeps the dedicated class detail operational for agenda entry points", () => {
-    expect(classDetail).toContain("OPERACIÓN DE CLASE");
+    expect(classDetail).toContain("OPERACIÓN DE {sessionKindCopy.toUpperCase()}");
     expect(classDetail).not.toContain("<SessionOperations");
     expect(classDetail).toContain("Registra asistencia, reservas y pagos desde Hoy.");
     expect(classDetail).toContain("localInput.slice(0, 10)");

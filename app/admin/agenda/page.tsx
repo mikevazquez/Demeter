@@ -533,7 +533,9 @@ export default async function AgendaPage({
                             {formatTime(session.starts_at, timeZone, locale)} –{" "}
                             {formatTime(session.ends_at, timeZone, locale)}
                           </span>
-                          <em className="agenda-session-kind">{session.kindLabel}</em>
+                          {session.kindLabel !== "Clase" ? (
+                            <em className="agenda-session-kind">{session.kindLabel}</em>
+                          ) : null}
                           <strong>{session.name}</strong>
                           <small>
                             {session.instructor} · {session.space}

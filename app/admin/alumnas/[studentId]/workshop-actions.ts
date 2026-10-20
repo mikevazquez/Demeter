@@ -48,7 +48,6 @@ export async function recordWorkshopContinuation(
   return { error: null, releasedCount: response.data.released_count };
 }
 
-
 export interface WorkshopPaymentState {
   error: string | null;
   paidMinor?: number;
@@ -66,6 +65,9 @@ function moneyToMinor(value: string) {
 const workshopPaymentErrorCopy: Record<string, string> = {
   payment_invalid: "Escribe un monto válido.",
   payment_method_required: "Selecciona un método de pago.",
+  payment_reference_required: "Escribe una referencia para identificar el pago sin duplicarlo.",
+  payment_method_unavailable: "Ese método no está habilitado en el estudio.",
+  idempotency_conflict: "La referencia ya se usó con otro importe o método. Revisa el historial.",
   payment_exceeds_balance: "El abono no puede ser mayor al saldo pendiente.",
   sale_already_paid: "Este taller ya está liquidado.",
   sale_not_open: "Esta venta ya no acepta pagos.",
@@ -93,9 +95,12 @@ export async function registerWorkshopPayment(
     !workshopUuid.test(studentId) ||
     paymentMinor === null ||
     paymentMinor <= 0 ||
-    !paymentMethod
+    !["cash", "bank_transfer", "efectivo", "transferencia"].includes(paymentMethod) ||
+    paymentReference.length < 3 ||
+    paymentReference.length > 200 ||
+    data.get("payment_received") !== "on"
   ) {
-    return { error: "Revisa el monto y selecciona un método de pago." };
+    return { error: "Revisa el monto, método y referencia, y confirma el dinero recibido." };
   }
 
   const response = await (async () => {
@@ -123,6 +128,7 @@ export async function registerWorkshopPayment(
 
   const result = response.data as {
     purchase_id?: string;
+    sale_id?: string;
     paid_minor?: number;
     balance_minor?: number;
   } | null;
@@ -130,14 +136,19 @@ export async function registerWorkshopPayment(
   if (
     result?.purchase_id !== purchaseId ||
     !Number.isInteger(result?.paid_minor) ||
-    !Number.isInteger(result?.balance_minor)
+    !Number.isInteger(result?.balance_minor) ||
+    (result?.paid_minor ?? -1) < 0 ||
+    (result?.balance_minor ?? -1) < 0
   ) {
     return { error: "No pudimos verificar el pago. Actualiza antes de reintentar." };
   }
 
   revalidatePath(`/admin/alumnas/${studentId}`);
+  revalidatePath("/admin");
   revalidatePath("/admin/alumnas");
   revalidatePath("/admin/ventas");
+  if (workshopUuid.test(String(result.sale_id ?? "")))
+    revalidatePath(`/admin/ventas/${result.sale_id}`);
   return {
     error: null,
     paidMinor: result.paid_minor,

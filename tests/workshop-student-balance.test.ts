@@ -21,7 +21,10 @@ describe("workshop visibility and balance collection from student profile", () =
   });
 
   it("offers a balance action from each workshop purchase", () => {
-    expect(studentWorkshops).toContain("Abonar o liquidar saldo");
+    expect(studentWorkshops).toContain("<WorkshopPaymentForm");
+    expect(source("app/admin/alumnas/[studentId]/WorkshopPaymentForm.tsx")).toContain(
+      "Registrar abono o liquidación",
+    );
     expect(studentWorkshops).toContain("/admin/ventas/\${p.saleId}");
   });
 

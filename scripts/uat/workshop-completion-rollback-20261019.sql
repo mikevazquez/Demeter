@@ -74,9 +74,9 @@ begin
   select reservation_id into reservation from public.workshop_purchase_sessions where purchase_id=(purchase->>'purchase_id')::uuid and session_id=sessions[1];
   tested:=tested+1;
   execute 'set local role authenticated';
-  result:=public.admin_register_workshop_installment(st,(purchase->>'sale_id')::uuid,reservation,sessions[1],10000,'cash','synthetic-abono');
+  result:=public.admin_register_workshop_payment(st,(purchase->>'purchase_id')::uuid,10000,'efectivo','synthetic-abono',null);
   if result->>'balance_minor'<>'20000' then raise exception 'installment_balance_mismatch'; end if;
-  if public.admin_register_workshop_installment(st,(purchase->>'sale_id')::uuid,reservation,sessions[1],10000,'cash','synthetic-abono')->>'replayed'<>'true' then raise exception 'installment_replay_failed'; end if;
+  if public.admin_register_workshop_payment(st,(purchase->>'purchase_id')::uuid,10000,'efectivo','synthetic-abono',null)->>'replayed'<>'true' then raise exception 'installment_replay_failed'; end if;
   execute 'reset role'; tested:=tested+1;
   if (select count(*) from public.payments where studio_id=st)<>2 then raise exception 'duplicate_payment'; end if;
   tested:=tested+1;
