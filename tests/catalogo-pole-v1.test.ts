@@ -69,5 +69,8 @@ describe("Catálogo de figuras Pole v1", () => {
     expect(styles).toContain("--lv-p: #8fe6c8");
     expect(styles).toContain('font-family: "Sendero Marcellus"');
     expect(styles).toContain("@media (prefers-reduced-motion: reduce)");
+    expect(styles).toContain(".admin-mobile-header");
+    expect(styles).toContain(".admin-mobile-nav");
+    expect(styles).toContain("background: rgba(38, 40, 46, 0.96)");
   });
 });
