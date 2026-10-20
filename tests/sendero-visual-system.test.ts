@@ -124,4 +124,29 @@ describe("Sendero visual system", () => {
     expect(medals).toContain("sendero-chip-mint");
     expect(medals).toContain("sendero-chip-lilac");
   });
+
+  it("migrates Evaluaciones while preserving invitation, scheduling and result RPCs", () => {
+    const overview = readFileSync(join(process.cwd(), "app/student/evaluaciones/page.tsx"), "utf8");
+    const invitation = readFileSync(
+      join(process.cwd(), "app/student/evaluaciones/[invitationId]/page.tsx"),
+      "utf8",
+    );
+    const schedule = readFileSync(
+      join(process.cwd(), "app/student/evaluaciones/[invitationId]/programar/page.tsx"),
+      "utf8",
+    );
+    const result = readFileSync(
+      join(process.cwd(), "app/student/evaluaciones/resultado/[evaluationId]/page.tsx"),
+      "utf8",
+    );
+
+    expect(overview).toContain('supabase.rpc("student_evaluations_snapshot")');
+    expect(invitation).toContain('supabase.rpc("student_evaluation_invitation_detail"');
+    expect(schedule).toContain('supabase.rpc("student_schedule_feed"');
+    expect(schedule).toContain("scheduleEvaluationAction");
+    expect(result).toContain('supabase.rpc("student_evaluation_result_detail"');
+    expect(overview).toContain("sendero-surface");
+    expect(schedule).toContain("sendero-button-primary");
+    expect(result).toContain("sendero-surface");
+  });
 });
