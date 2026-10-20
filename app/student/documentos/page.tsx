@@ -37,11 +37,11 @@ export default async function StudentDocumentsPage({
   return (
     <main className="space-y-5 pb-6">
       <header>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
+        <p className="sendero-brand">
           Portal alumna · Documentos
         </p>
-        <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">Mis documentos</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
+        <h1 className="mt-2 text-4xl text-[var(--sendero-ink)] sm:text-5xl">Mis documentos</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sendero-muted)]">
           Revisa los documentos que tu estudio necesita y conserva el historial exacto de lo que ya
           completaste.
         </p>
@@ -57,7 +57,7 @@ export default async function StudentDocumentsPage({
       ) : null}
 
       {blockers.length ? (
-        <section className="rounded-3xl border border-fuchsia-500/30 bg-[radial-gradient(circle_at_90%_0%,rgba(217,70,239,.16),transparent_40%),#0d0f16] p-5 shadow-[0_0_30px_rgba(217,70,239,.08)]">
+        <section className="sendero-surface p-5">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-fuchsia-400/25 bg-fuchsia-400/[0.08] text-fuchsia-200">
               !
@@ -66,7 +66,7 @@ export default async function StudentDocumentsPage({
               <p className="text-xs font-semibold uppercase tracking-[0.15em] text-fuchsia-300">
                 Acción requerida
               </p>
-              <h2 className="mt-1 text-lg font-semibold text-white">
+              <h2 className="mt-1 text-xl text-[var(--sendero-ink)]">
                 Tienes {blockers.length} requisito{blockers.length === 1 ? "" : "s"} pendiente
                 {blockers.length === 1 ? "" : "s"}
               </h2>
@@ -78,7 +78,7 @@ export default async function StudentDocumentsPage({
           </div>
         </section>
       ) : (
-        <section className="rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.05] p-5">
+        <section className="sendero-surface p-5">
           <p className="text-sm font-semibold text-emerald-200">Tus documentos están al día.</p>
           <p className="mt-1 text-xs leading-5 text-emerald-100/65">
             No tienes requisitos documentales pendientes en este momento.
@@ -94,7 +94,7 @@ export default async function StudentDocumentsPage({
         ].map(([label, value]) => (
           <div
             key={String(label)}
-            className="rounded-3xl border border-white/10 bg-white/[0.03] p-4"
+            className="sendero-surface p-4"
           >
             <p className="text-2xl font-semibold text-white">{value}</p>
             <p className="mt-1 text-xs text-zinc-500">{label}</p>
@@ -105,10 +105,10 @@ export default async function StudentDocumentsPage({
       {pending.length ? (
         <section className="space-y-3">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+            <p className="sendero-eyebrow">
               Requieren tu atención
             </p>
-            <h2 className="mt-1 text-lg font-semibold text-white">Pendientes</h2>
+            <h2 className="mt-1 text-xl text-[var(--sendero-ink)]">Pendientes</h2>
           </div>
 
           {pending.map((item) => {
@@ -125,7 +125,7 @@ export default async function StudentDocumentsPage({
             return (
               <article
                 key={item.version_id}
-                className="rounded-3xl border border-fuchsia-500/20 bg-[#0d0f16] p-5"
+                className="sendero-surface p-5"
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
@@ -161,7 +161,7 @@ export default async function StudentDocumentsPage({
                     {studentPending ? (
                       <Link
                         href={`/student/documentos/${item.version_id}`}
-                        className="rounded-2xl bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white"
+                        className="sendero-button sendero-button-primary !min-h-10"
                       >
                         Revisar
                       </Link>
@@ -184,14 +184,14 @@ export default async function StudentDocumentsPage({
 
       <section className="space-y-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+          <p className="sendero-eyebrow">
             Historial
           </p>
-          <h2 className="mt-1 text-lg font-semibold text-white">Documentos completados</h2>
+          <h2 className="mt-1 text-xl text-[var(--sendero-ink)]">Documentos completados</h2>
         </div>
 
         {completed.length ? (
-          <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#0d0f16]">
+          <div className="sendero-surface overflow-hidden">
             <div className="divide-y divide-white/10">
               {completed.map((item) => (
                 <Link
@@ -214,7 +214,7 @@ export default async function StudentDocumentsPage({
             </div>
           </div>
         ) : (
-          <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-7 text-center text-sm text-zinc-500">
+          <div className="sendero-surface-soft border-dashed p-7 text-center text-sm text-[var(--sendero-muted)]">
             Tus documentos completados aparecerán aquí.
           </div>
         )}
