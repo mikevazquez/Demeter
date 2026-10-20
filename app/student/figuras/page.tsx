@@ -22,13 +22,13 @@ const levelLabel: Record<string, string> = {
 };
 
 export default async function StudentFiguresPage() {
-  const { snapshot, studio, supabase } = await getStudentPortalContext();
+  const { snapshot, studio, supabase, membership } = await getStudentPortalContext();
   const studentId = snapshot.profile.student_id;
 
   const { data: poleDiscipline } = await supabase
     .from("disciplines")
     .select("id,name")
-    .eq("studio_id", studio.id)
+    .eq("studio_id", membership.studio_id)
     .ilike("name", "Pole Fitness")
     .eq("active", true)
     .maybeSingle();
@@ -52,7 +52,7 @@ export default async function StudentFiguresPage() {
   const { data: studentLevel } = await supabase
     .from("student_discipline_levels")
     .select("discipline_technical_level_id")
-    .eq("studio_id", studio.id)
+    .eq("studio_id", membership.studio_id)
     .eq("student_id", studentId)
     .eq("discipline_id", poleDiscipline.id)
     .order("effective_from", { ascending: false })
@@ -66,7 +66,7 @@ export default async function StudentFiguresPage() {
     const { data: disciplineLevel } = await supabase
       .from("discipline_technical_levels")
       .select("technical_level_id,discipline_order")
-      .eq("studio_id", studio.id)
+      .eq("studio_id", membership.studio_id)
       .eq("id", studentLevel.discipline_technical_level_id)
       .maybeSingle();
 
@@ -74,7 +74,7 @@ export default async function StudentFiguresPage() {
       const { data: levelDefinition } = await supabase
         .from("technical_level_definitions")
         .select("title,level_order")
-        .eq("studio_id", studio.id)
+        .eq("studio_id", membership.studio_id)
         .eq("id", disciplineLevel.technical_level_id)
         .maybeSingle();
 
@@ -91,20 +91,20 @@ export default async function StudentFiguresPage() {
       .select(
         "element_id,slug,original_name,catalog_level,figure_type,family,in_core_program,sort_order",
       )
-      .eq("studio_id", studio.id)
+      .eq("studio_id", membership.studio_id)
       .eq("discipline_id", poleDiscipline.id)
       .order("sort_order"),
     supabase
       .from("technical_elements")
       .select("id,name")
-      .eq("studio_id", studio.id)
+      .eq("studio_id", membership.studio_id)
       .eq("discipline_id", poleDiscipline.id)
       .eq("active", true)
       .not("pole_catalog_slug", "is", null),
     supabase
       .from("student_pole_figure_achievements")
       .select("id,figure_element_id,photo_path,achieved_at")
-      .eq("studio_id", studio.id)
+      .eq("studio_id", membership.studio_id)
       .eq("student_id", studentId),
   ]);
 
