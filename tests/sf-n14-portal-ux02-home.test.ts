@@ -46,7 +46,7 @@ describe("SF-N14 PORTAL UX-02 home", () => {
     expect(home.indexOf('data-home-block="package"')).toBeLessThan(
       home.indexOf('data-home-block="reserved-classes"'),
     );
-    expect(home).toContain("rounded-[24px]");
+    expect(home).toContain("sendero-surface");
     expect(home).toContain("min-h-11");
   });
 
