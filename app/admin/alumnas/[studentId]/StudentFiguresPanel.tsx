@@ -15,13 +15,12 @@ type FigureRow = {
   completed: boolean;
 };
 
-const levelRank: Record<string, number> = {
-  principiante: 1,
-  intermedio: 2,
-  avanzado: 4,
-  profesional: 5,
-  por_revisar: 99,
-};
+function toCatalogLevel(title: string | null | undefined) {
+  const normalized = (title ?? "").toLowerCase();
+  if (normalized.includes("avanz")) return "avanzado";
+  if (normalized.includes("inter")) return "intermedio";
+  return "principiante";
+}
 
 export default async function StudentFiguresPanel({ studentId }: { studentId: string }) {
   const { supabase, studio } = await getAdminContext(CAPABILITIES.EVALUATIONS_READ);
@@ -53,7 +52,6 @@ export default async function StudentFiguresPanel({ studentId }: { studentId: st
     .maybeSingle();
 
   let currentLevelTitle = "Principiante";
-  let currentLevelOrder = 1;
 
   if (studentLevel?.discipline_technical_level_id) {
     const { data: disciplineLevel } = await supabase
@@ -66,14 +64,13 @@ export default async function StudentFiguresPanel({ studentId }: { studentId: st
     if (disciplineLevel?.technical_level_id) {
       const { data: levelDefinition } = await supabase
         .from("technical_level_definitions")
-        .select("title,level_order")
+        .select("title")
         .eq("studio_id", studio.id)
         .eq("id", disciplineLevel.technical_level_id)
         .maybeSingle();
 
-      if (levelDefinition) {
+      if (levelDefinition?.title) {
         currentLevelTitle = levelDefinition.title;
-        currentLevelOrder = levelDefinition.level_order ?? disciplineLevel.discipline_order ?? 1;
       }
     }
   }
@@ -104,11 +101,10 @@ export default async function StudentFiguresPanel({ studentId }: { studentId: st
   const nameByElement = new Map((elements ?? []).map((item) => [item.id, item.name]));
   const completed = new Set((achievements ?? []).map((item) => item.figure_element_id));
 
+  const currentCatalogLevel = toCatalogLevel(currentLevelTitle);
+
   const figures: FigureRow[] = (profiles ?? [])
-    .filter((profile) => {
-      const rank = levelRank[profile.catalog_level] ?? 99;
-      return rank <= currentLevelOrder;
-    })
+    .filter((profile) => profile.catalog_level === currentCatalogLevel)
     .map((profile) => ({
       elementId: profile.element_id,
       slug: profile.slug,
@@ -125,7 +121,9 @@ export default async function StudentFiguresPanel({ studentId }: { studentId: st
     <StudentFiguresClient
       currentLevelTitle={currentLevelTitle}
       figures={figures}
-      totalCatalogFigures={(profiles ?? []).length}
+      totalCatalogFigures={(profiles ?? []).filter(
+        (profile) => profile.catalog_level === currentCatalogLevel,
+      ).length}
     />
   );
 }
