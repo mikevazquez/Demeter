@@ -778,7 +778,7 @@ export default async function AdminPage({
                 node: (
                   <PoleClassComboPanel
                     sessionId={item.id}
-                    disciplineId={item.disciplineId}
+                    disciplineId={item.disciplineId ?? null}
                     roster={item.roster.flatMap((rosterItem) =>
                       rosterItem.studentId
                         ? [{ studentId: rosterItem.studentId, name: rosterItem.studentName }]
