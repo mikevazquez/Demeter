@@ -11,6 +11,7 @@ import {
 import { individualPaymentSummary } from "@/lib/reservations/individual-payment-summary";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
 import QuickActions from "./hoy/QuickActions";
+import PoleClassComboPanel from "./agenda/[sessionId]/PoleClassComboPanel";
 
 function formatExpiry(value: string | null, locale: string) {
   if (!value) return "Sin vencimiento";
@@ -303,7 +304,7 @@ export default async function AdminPage({
     templateIds.length
       ? supabase
           .from("class_templates")
-          .select("id,name,color_hex,drop_in_price_minor")
+          .select("id,name,color_hex,drop_in_price_minor,discipline_id")
           .in("id", templateIds)
       : Promise.resolve({
           data: [] as {
@@ -567,6 +568,7 @@ export default async function AdminPage({
       evaluationCount: sessionReservations.filter((reservation) =>
         evaluationByReservation.has(reservation.id),
       ).length,
+      disciplineId: template?.discipline_id ?? null,
       returnTo: `/admin?date=${selectedKey}#session-${session.id}`,
       minimumReservationsEnabled: session.minimum_reservations_enabled ?? false,
       minimumReservations: session.minimum_reservations ?? 2,
@@ -770,6 +772,21 @@ export default async function AdminPage({
             </div>
             <TodayClasses
               classes={classes}
+              poleFlows={classes.map((item) => ({
+                sessionId: item.id,
+                node: (
+                  <PoleClassComboPanel
+                    sessionId={item.id}
+                    disciplineId={item.disciplineId}
+                    roster={item.roster.flatMap((rosterItem) =>
+                      rosterItem.studentId
+                        ? [{ studentId: rosterItem.studentId, name: rosterItem.studentName }]
+                        : [],
+                    )}
+                    canWrite={can(CAPABILITIES.EVALUATIONS_WRITE)}
+                  />
+                ),
+              }))}
               returnDate={selectedKey}
               serverNow={String(serverNow ?? now.toISOString())}
               canAttendance={canWriteAttendance}
