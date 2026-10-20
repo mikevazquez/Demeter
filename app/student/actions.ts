@@ -729,7 +729,6 @@ export async function updateStudentProfileAction(formData: FormData) {
   redirect("/student/perfil?updated=1");
 }
 
-
 export async function finalizeStudentPoleFigurePhotoAction(
   figureElementId: string,
   photoPath: string,

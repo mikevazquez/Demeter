@@ -4,9 +4,7 @@
   padding: 22px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 28px;
-  background:
-    radial-gradient(circle at 88% 0%, rgba(143, 230, 200, 0.1), transparent 30%),
-    #2a2c33;
+  background: radial-gradient(circle at 88% 0%, rgba(143, 230, 200, 0.1), transparent 30%), #2a2c33;
   color: #f1eee6;
 }
 

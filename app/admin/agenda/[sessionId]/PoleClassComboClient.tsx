@@ -103,7 +103,9 @@ export default function PoleClassComboClient({
                   <span className={styles.position}>{figureIndex + 1}</span>
                   <div>
                     <strong>{figure.name}</strong>
-                    {figure.originalName !== figure.name ? <small>{figure.originalName}</small> : null}
+                    {figure.originalName !== figure.name ? (
+                      <small>{figure.originalName}</small>
+                    ) : null}
                   </div>
                   <b>{figure.status === "new" ? "Nueva" : "Repaso"}</b>
                 </div>

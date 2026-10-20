@@ -92,7 +92,10 @@ export default async function PoleClassComboPanel({
   const latestAssignmentByStudent = new Map<string, string>();
   for (const assignment of levelAssignments ?? []) {
     if (!latestAssignmentByStudent.has(assignment.student_id)) {
-      latestAssignmentByStudent.set(assignment.student_id, assignment.discipline_technical_level_id);
+      latestAssignmentByStudent.set(
+        assignment.student_id,
+        assignment.discipline_technical_level_id,
+      );
     }
   }
 
@@ -178,8 +181,7 @@ export default async function PoleClassComboPanel({
             studentId: student.studentId,
             name: student.name,
             levelTitle: student.levelTitle,
-            completed:
-              completedByStudent.get(student.studentId)?.has(figure.element_id) ?? false,
+            completed: completedByStudent.get(student.studentId)?.has(figure.element_id) ?? false,
           })),
         })),
       };
