@@ -14,6 +14,7 @@ describe("Catálogo C1 · progreso de figuras por alumna", () => {
   const overview = source("app/admin/alumnas/[studentId]/Profile360Overview.tsx");
   const styles = source("app/admin/alumnas/[studentId]/student-figures.module.css");
   const studentPortal = source("app/student/figuras/page.tsx");
+  const studentFigureDetail = source("app/student/figuras/[slug]/page.tsx");
   const photoPicker = source("app/student/figuras/PoleFigurePhotoPicker.tsx");
   const studentActions = source("app/student/actions.ts");
 
@@ -49,6 +50,12 @@ describe("Catálogo C1 · progreso de figuras por alumna", () => {
     expect(photoPicker).toContain('"pole-achievement-photos"');
     expect(studentActions).toContain("finalizeStudentPoleFigurePhotoAction");
     expect(studentActions).toContain("figure_not_achieved");
+    expect(studentPortal).toContain("Tus siguientes figuras");
+    expect(studentPortal).toContain("Bloqueadas");
+    expect(studentFigureDetail).toContain("Tu camino hacia esta figura");
+    expect(studentFigureDetail).toContain("Cuando la logres, se abren");
+    expect(studentPortal).not.toContain("Ya la logré");
+    expect(studentFigureDetail).not.toContain("Ya la logré");
   });
 
   it("uses Sendero visual tokens for the figures panel", () => {
