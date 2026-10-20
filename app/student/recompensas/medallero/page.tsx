@@ -134,24 +134,19 @@ export default async function StudentMedalsPage() {
     return (
       <main className="space-y-5 pb-5">
         <header>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
-            Medallas
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">Medallero</h1>
+          <p className="sendero-brand">Medallas</p>
+          <h1 className="mt-2 text-4xl tracking-tight text-[var(--sendero-ink)]">Medallero</h1>
         </header>
 
-        <section className="rounded-[28px] border border-fuchsia-500/25 bg-[radial-gradient(circle_at_80%_0%,rgba(236,72,153,0.16),transparent_36%),rgba(255,255,255,0.025)] p-5 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-fuchsia-400/40 bg-fuchsia-500/10 text-2xl text-fuchsia-300">
+        <section className="sendero-surface p-5 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--sendero-lilac-soft)] text-2xl text-[var(--sendero-lilac)]">
             ◇
           </div>
-          <h2 className="mt-4 text-xl font-semibold text-white">Activa tus Medallas</h2>
+          <h2 className="mt-4 text-2xl text-[var(--sendero-ink)]">Activa tus Medallas</h2>
           <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-400">
             Completa tu onboarding para entrar al programa mensual de Medallas.
           </p>
-          <Link
-            href="/student/recompensas"
-            className="mt-5 inline-flex min-h-11 items-center justify-center rounded-2xl bg-fuchsia-600 px-5 text-sm font-semibold text-white"
-          >
+          <Link href="/student/recompensas" className="sendero-button sendero-button-primary mt-5">
             Continuar activación
           </Link>
         </section>
@@ -162,29 +157,30 @@ export default async function StudentMedalsPage() {
   return (
     <main className="space-y-5 pb-5">
       <header>
-        <Link href="/student/recompensas" className="text-xs font-semibold text-fuchsia-300">
+        <Link
+          href="/student/recompensas"
+          className="text-xs font-semibold text-[var(--sendero-mint)]"
+        >
           ← Mi progreso
         </Link>
         <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
           Medallas
         </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">Medallero</h1>
-        <p className="mt-1.5 max-w-xl text-sm leading-5 text-zinc-400">
+        <h1 className="mt-2 text-4xl tracking-tight text-[var(--sendero-ink)]">Medallero</h1>
+        <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--sendero-muted)]">
           Tu Medalla se evalúa cada mes. No necesitas avanzar una por una: puedes obtener
           directamente cualquier Medalla cuyos requisitos cumplas.
         </p>
       </header>
 
-      <section className="rounded-3xl border border-white/10 bg-white/[0.025] p-4">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-          Tu Medalla actual
-        </p>
+      <section className="sendero-surface p-4">
+        <p className="sendero-eyebrow">Tu Medalla actual</p>
         <div className="mt-2 flex items-center justify-between gap-3">
-          <strong className="text-lg text-white">
+          <strong className="text-xl text-[var(--sendero-ink)]">
             {status.medal_title ? `Medalla ${status.medal_title}` : "Sin Medalla este ciclo"}
           </strong>
           {status.eligible_level_key ? (
-            <span className="rounded-full border border-fuchsia-500/25 bg-fuchsia-500/[0.08] px-2.5 py-1 text-[10px] font-semibold text-fuchsia-300">
+            <span className="sendero-chip sendero-chip-lilac">
               Proyección ·{" "}
               {levels.find((level) => level.level_key === status.eligible_level_key)?.title}
             </span>
@@ -204,7 +200,7 @@ export default async function StudentMedalsPage() {
           return (
             <section
               key={level.level_key}
-              className="overflow-hidden rounded-[26px] border p-4 sm:p-5"
+              className="sendero-surface overflow-hidden p-4 sm:p-5"
               style={{
                 borderColor: visual.border,
                 backgroundImage: `radial-gradient(circle at 88% 0%, ${visual.wash}, transparent 34%), linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012))`,
@@ -228,11 +224,11 @@ export default async function StudentMedalsPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-lg font-semibold text-white">Medalla {level.title}</h2>
                     {current ? (
-                      <span className="rounded-full border border-emerald-400/25 bg-emerald-400/[0.08] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-emerald-300">
+                      <span className="sendero-chip sendero-chip-mint !px-2 !py-0.5 !text-[9px]">
                         Actual
                       </span>
                     ) : progress.eligible ? (
-                      <span className="rounded-full border border-fuchsia-400/25 bg-fuchsia-500/[0.08] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-fuchsia-300">
+                      <span className="sendero-chip sendero-chip-lilac !px-2 !py-0.5 !text-[9px]">
                         Cumples hoy
                       </span>
                     ) : null}
@@ -242,7 +238,7 @@ export default async function StudentMedalsPage() {
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-2">
-                <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                <div className="sendero-surface-soft p-3">
                   <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
                     Días activos <MedalInfoDialog kind="activeDays" />
                   </div>
@@ -253,7 +249,7 @@ export default async function StudentMedalsPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                <div className="sendero-surface-soft p-3">
                   <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
                     No show <MedalInfoDialog kind="noShow" />
                   </div>
@@ -264,7 +260,7 @@ export default async function StudentMedalsPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                <div className="sendero-surface-soft p-3">
                   <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
                     Continuidad <MedalInfoDialog kind="continuity" />
                   </div>
@@ -275,7 +271,7 @@ export default async function StudentMedalsPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                <div className="sendero-surface-soft p-3">
                   <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
                     Renovación <MedalInfoDialog kind="renewal" />
                   </div>
@@ -294,7 +290,7 @@ export default async function StudentMedalsPage() {
                 <div className="mt-2 space-y-1.5">
                   {benefitLines(level).map((line) => (
                     <p key={line} className="text-xs text-zinc-300">
-                      <span className="mr-2 text-fuchsia-300">✓</span>
+                      <span className="mr-2 text-[var(--sendero-mint)]">✓</span>
                       {line}
                     </p>
                   ))}

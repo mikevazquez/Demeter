@@ -133,7 +133,7 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(waitlistControl).toContain("Unirme a lista de espera");
     expect(classesPage).toContain("En lista de espera");
     expect(classesPage).toContain("Te avisaremos si se libera un lugar.");
-    expect(classesPage).toContain("border-amber-400");
+    expect(classesPage).toContain("sendero-chip-moon");
   });
 
   it("integrates benefits and confirmed technical levels into Home while keeping Profile clean", () => {
@@ -154,7 +154,7 @@ describe("SF-255A monthly level and waitlist contracts", () => {
     expect(homePage).toContain("#D4AF37");
     expect(homePage).toContain("#5EDFFF");
     expect(homePage).toContain("h-28 w-28");
-    expect(homePage).toContain("rounded-[24px]");
+    expect(homePage).toContain("sendero-surface");
     expect(homePage).not.toContain("Movimiento que transforma");
     expect(profilePage).toContain('data-profile-block="package"');
     expect(profilePage).not.toContain("student_reward_status_snapshot");

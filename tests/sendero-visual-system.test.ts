@@ -1,0 +1,166 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+
+const globals = readFileSync(join(process.cwd(), "app/globals.css"), "utf8");
+const layout = readFileSync(join(process.cwd(), "app/student/layout.tsx"), "utf8");
+const nav = readFileSync(join(process.cwd(), "app/student/StudentNav.tsx"), "utf8");
+const home = readFileSync(join(process.cwd(), "app/student/page.tsx"), "utf8");
+
+describe("Sendero visual system", () => {
+  it("defines the approved Sendero foundations", () => {
+    expect(globals).toContain("--sendero-mint: #8fe6c8");
+    expect(globals).toContain("--sendero-moon: #f6d67a");
+    expect(globals).toContain("--sendero-lilac: #cdb8ec");
+    expect(globals).toContain("--sendero-coral: #f28a7a");
+    expect(globals).toContain(".sendero-surface");
+    expect(globals).toContain(".sendero-button-primary");
+  });
+
+  it("uses Marcellus and Montserrat only inside the student Sendero shell", () => {
+    expect(layout).toContain("Marcellus");
+    expect(layout).toContain("Montserrat");
+    expect(layout).toContain("className={\`sendero ");
+  });
+
+  it("migrates student navigation to Sendero without changing routes", () => {
+    expect(nav).toContain("sendero-desktop-nav");
+    expect(nav).toContain("sendero-mobile-nav");
+    expect(nav).toContain("studentNavigationItems");
+  });
+
+  it("migrates the home surfaces while preserving its data blocks", () => {
+    expect(home).toContain('data-home-block="identity-benefits-technical"');
+    expect(home).toContain('data-home-block="package"');
+    expect(home).toContain('data-home-block="reward-credits"');
+    expect(home).toContain('data-home-block="reserved-classes"');
+    expect(home).toContain("sendero-surface");
+    expect(home).toContain("sendero-button-primary");
+    expect(home).toContain("sendero-chip-mint");
+  });
+
+  it("keeps existing booking and rewards data sources intact", () => {
+    expect(home).toContain('supabase.rpc("student_reward_status_snapshot")');
+    expect(home).toContain('supabase.rpc("student_reward_invitation_balance")');
+    expect(home).toContain('supabase.rpc("student_classes_feed")');
+  });
+
+  it("migrates Reservar to Sendero without changing booking semantics", () => {
+    const reserve = readFileSync(join(process.cwd(), "app/student/reservar/page.tsx"), "utf8");
+    const quickBook = readFileSync(
+      join(process.cwd(), "app/student/reservar/quick-book-button.tsx"),
+      "utf8",
+    );
+
+    expect(reserve).toContain('supabase.rpc("student_booking_restrictions_snapshot"');
+    expect(reserve).toContain('supabase.rpc("student_schedule_feed"');
+    expect(reserve).toContain('supabase.rpc("student_waitlist_feed"');
+    expect(reserve).toContain("sendero-surface");
+    expect(reserve).toContain("bg-[var(--sendero-mint)]");
+    expect(quickBook).toContain("bookStudentSessionInlineAction");
+    expect(quickBook).toContain("sendero-button-primary");
+  });
+
+  it("migrates Mis clases while preserving history, waitlist and cancellation flows", () => {
+    const classes = readFileSync(join(process.cwd(), "app/student/mis-clases/page.tsx"), "utf8");
+
+    expect(classes).toContain('supabase.rpc("student_classes_feed")');
+    expect(classes).toContain('supabase.rpc("student_waitlist_feed")');
+    expect(classes).toContain("/cancelar");
+    expect(classes).toContain("view=history");
+    expect(classes).toContain("sendero-surface");
+    expect(classes).toContain("sendero-chip-mint");
+    expect(classes).toContain("sendero-chip-moon");
+  });
+
+  it("migrates package and credits without changing commerce data sources", () => {
+    const packagePage = readFileSync(join(process.cwd(), "app/student/paquete/page.tsx"), "utf8");
+
+    expect(packagePage).toContain('supabase.rpc("student_enrollment_purchase_option")');
+    expect(packagePage).toContain('supabase.rpc("student_online_product_options")');
+    expect(packagePage).toContain("PurchasePackageButton");
+    expect(packagePage).toContain("PurchaseEnrollmentButton");
+    expect(packagePage).toContain("sendero-surface");
+    expect(packagePage).toContain("sendero-button-primary");
+  });
+
+  it("migrates profile while preserving editable identity fields and account routes", () => {
+    const profile = readFileSync(join(process.cwd(), "app/student/perfil/page.tsx"), "utf8");
+
+    expect(profile).toContain("updateStudentProfileAction");
+    expect(profile).toContain('name="email"');
+    expect(profile).toContain('name="birth_date"');
+    expect(profile).toContain("/student/perfil/notificaciones");
+    expect(profile).toContain("/student/documentos");
+    expect(profile).toContain("sendero-surface");
+    expect(profile).toContain("sendero-button-primary");
+  });
+
+  it("recognizes Admin Hoy as an existing Sendero surface instead of duplicating it", () => {
+    const admin = readFileSync(join(process.cwd(), "app/admin/page.tsx"), "utf8");
+    const adminLayout = readFileSync(join(process.cwd(), "app/admin/layout.tsx"), "utf8");
+    const adminSendero = readFileSync(join(process.cwd(), "app/admin/hoy/sendero.css"), "utf8");
+
+    expect(admin).toContain("hoy-sendero");
+    expect(admin).toContain("sendero-columns");
+    expect(admin).toContain("sendero-schedule");
+    expect(adminLayout).toContain('import "./hoy/sendero.css"');
+    expect(adminSendero).toContain("--accent: #8fe6c8");
+    expect(adminSendero).toContain("--warning: #f6d67a");
+    expect(adminSendero).toContain("--danger: #f28a7a");
+  });
+
+  it("migrates Rewards and Medallero while preserving reward data sources", () => {
+    const rewards = readFileSync(join(process.cwd(), "app/student/recompensas/page.tsx"), "utf8");
+    const medals = readFileSync(
+      join(process.cwd(), "app/student/recompensas/medallero/page.tsx"),
+      "utf8",
+    );
+
+    expect(rewards).toContain("getStudentRewardsContext");
+    expect(rewards).toContain("sendero-surface");
+    expect(medals).toContain('supabase.rpc("student_reward_status_snapshot")');
+    expect(medals).toContain("reward_status_level_definitions");
+    expect(medals).toContain("sendero-chip-mint");
+    expect(medals).toContain("sendero-chip-lilac");
+  });
+
+  it("migrates Evaluaciones while preserving invitation, scheduling and result RPCs", () => {
+    const overview = readFileSync(join(process.cwd(), "app/student/evaluaciones/page.tsx"), "utf8");
+    const invitation = readFileSync(
+      join(process.cwd(), "app/student/evaluaciones/[invitationId]/page.tsx"),
+      "utf8",
+    );
+    const schedule = readFileSync(
+      join(process.cwd(), "app/student/evaluaciones/[invitationId]/programar/page.tsx"),
+      "utf8",
+    );
+    const result = readFileSync(
+      join(process.cwd(), "app/student/evaluaciones/resultado/[evaluationId]/page.tsx"),
+      "utf8",
+    );
+
+    expect(overview).toContain('supabase.rpc("student_evaluations_snapshot")');
+    expect(invitation).toContain('supabase.rpc("student_evaluation_invitation_detail"');
+    expect(schedule).toContain('supabase.rpc("student_schedule_feed"');
+    expect(schedule).toContain("scheduleEvaluationAction");
+    expect(result).toContain('supabase.rpc("student_evaluation_result_detail"');
+    expect(overview).toContain("sendero-surface");
+    expect(schedule).toContain("sendero-button-primary");
+    expect(result).toContain("sendero-surface");
+  });
+
+  it("migrates payments, movements and documents without changing their data contracts", () => {
+    const payments = readFileSync(join(process.cwd(), "app/student/pagos/page.tsx"), "utf8");
+    const movements = readFileSync(join(process.cwd(), "app/student/movimientos/page.tsx"), "utf8");
+    const documents = readFileSync(join(process.cwd(), "app/student/documentos/page.tsx"), "utf8");
+
+    expect(payments).toContain("snapshot.payments");
+    expect(movements).toContain("snapshot.movements");
+    expect(documents).toContain('supabase.rpc("student_document_center")');
+    expect(documents).toContain("locked_until_enrollment");
+    expect(payments).toContain("sendero-surface");
+    expect(movements).toContain("sendero-surface");
+    expect(documents).toContain("sendero-surface");
+  });
+});
