@@ -431,3 +431,46 @@
 .note {
   line-height: 1.6;
 }
+
+:global(.admin-shell:has(.sendero-catalog)) {
+  color-scheme: dark;
+  --bg: #1d1e23;
+  --surface: #2a2c33;
+  --text: #f1eee6;
+  --muted: #a3a6b2;
+  --line: rgba(255, 255, 255, 0.08);
+  --accent: #8fe6c8;
+  --accent-soft: rgba(143, 230, 200, 0.14);
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Sendero Montserrat", system-ui, sans-serif;
+}
+
+:global(.admin-shell:has(.sendero-catalog) .admin-content) {
+  background: linear-gradient(180deg, #1d1e23, #22232a 60%, #2a2834);
+}
+
+:global(.admin-shell:has(.sendero-catalog) .admin-sidebar),
+:global(.admin-shell:has(.sendero-catalog) .admin-utility-bar) {
+  border-color: var(--line);
+  background: #222329;
+  box-shadow: none;
+}
+
+:global(.admin-shell:has(.sendero-catalog) .admin-global-search),
+:global(.admin-shell:has(.sendero-catalog) .sidebar-signout) {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--muted);
+}
+
+:global(.admin-shell:has(.sendero-catalog) .admin-nav-item) {
+  border-radius: 18px;
+  color: var(--muted);
+}
+
+:global(.admin-shell:has(.sendero-catalog) .admin-nav-item:hover),
+:global(.admin-shell:has(.sendero-catalog) .admin-nav-item.is-active) {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
