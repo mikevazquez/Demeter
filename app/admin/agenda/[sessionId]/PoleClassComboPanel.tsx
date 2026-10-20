@@ -19,6 +19,7 @@ type CatalogFigure = {
   nombre_es: string;
   nivel: "Principiante" | "Intermedio" | "Avanzado" | "Profesional" | "Por revisar";
   tipo: string;
+  familia: string;
   prerrequisitos_sugeridos: string[];
 };
 
