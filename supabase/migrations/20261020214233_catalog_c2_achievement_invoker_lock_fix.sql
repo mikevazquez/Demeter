@@ -42,5 +42,5 @@ begin
   return p_completed;
 end;
 $function$;
-revoke all on function public.set_student_pole_figure_achievement(uuid,uuid,boolean,uuid) from public;
+revoke all on function public.set_student_pole_figure_achievement(uuid,uuid,boolean,uuid) from public, anon;
 grant execute on function public.set_student_pole_figure_achievement(uuid,uuid,boolean,uuid) to authenticated;
