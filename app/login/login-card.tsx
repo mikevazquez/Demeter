@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 
-import { signIn } from "@/app/auth/actions";
+import { requestStudioPasswordReset, signIn } from "@/app/auth/actions";
 
 type LoginCardProps = {
   mode: "studio" | "student";
@@ -246,7 +246,17 @@ export function LoginCard({ mode, error }: LoginCardProps) {
 
           <div className="auth-options">
             <span className="auth-remember">Sesión persistente en este dispositivo</span>
-            <span className="auth-recovery-link">¿Olvidaste tu contraseña?</span>
+            {isStudent ? (
+              <span className="auth-recovery-link">¿Olvidaste tu contraseña?</span>
+            ) : (
+              <button
+                className="auth-recovery-link"
+                type="submit"
+                formAction={requestStudioPasswordReset}
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            )}
           </div>
 
           <AuthSubmitButton />
