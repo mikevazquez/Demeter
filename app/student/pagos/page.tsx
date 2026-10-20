@@ -6,16 +6,16 @@ export default async function StudentPaymentsPage() {
   return (
     <main className="space-y-6">
       <header>
-        <p className="text-sm text-fuchsia-300">Pagos</p>
-        <h1 className="mt-1 text-3xl font-semibold text-white sm:text-4xl">
+        <p className="sendero-brand">Pagos</p>
+        <h1 className="mt-2 text-4xl text-[var(--sendero-ink)] sm:text-5xl">
           Tu historial de pagos
         </h1>
-        <p className="mt-2 text-sm text-zinc-400">
+        <p className="mt-2 text-sm leading-6 text-[var(--sendero-muted)]">
           Consulta pagos y reembolsos registrados en tus ventas del estudio.
         </p>
       </header>
 
-      <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+      <section className="sendero-surface p-5 sm:p-6">
         {snapshot.payments.length ? (
           <div className="divide-y divide-white/10">
             {snapshot.payments.map((payment) => {
@@ -54,9 +54,9 @@ export default async function StudentPaymentsPage() {
             })}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center">
-            <h2 className="font-semibold text-white">Todavía no hay pagos registrados</h2>
-            <p className="mt-2 text-sm text-zinc-400">
+          <div className="sendero-surface-soft border-dashed p-8 text-center">
+            <h2 className="text-lg text-[var(--sendero-ink)]">Todavía no hay pagos registrados</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--sendero-muted)]">
               Cuando el estudio registre un pago o reembolso aparecerá aquí.
             </p>
           </div>
