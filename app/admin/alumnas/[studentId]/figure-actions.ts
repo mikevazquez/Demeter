@@ -15,10 +15,11 @@ export async function setStudentFigureProgressAction(formData: FormData) {
   }
 
   const { supabase } = await getAdminContext(CAPABILITIES.EVALUATIONS_WRITE);
-  const { error } = await supabase.rpc("set_student_technical_element_progress", {
+  const { error } = await supabase.rpc("set_student_pole_figure_achievement", {
     p_student_id: studentId,
-    p_element_id: elementId,
+    p_figure_element_id: elementId,
     p_completed: completed,
+    p_class_session_id: null,
   });
 
   if (error) {
