@@ -11,6 +11,7 @@ import Profile360Overview from "./Profile360Overview";
 import StudentPackageCard from "./StudentPackageCard";
 import StudentPortalAccessSection from "./StudentPortalAccessSection";
 import StudentEvaluationsPanel from "./StudentEvaluationsPanel";
+import StudentFiguresPanel from "./StudentFiguresPanel";
 import StudentDocumentsPanel from "./StudentDocumentsPanel";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
@@ -173,6 +174,7 @@ export default async function StudentProfilePage({
       "packages",
       "rewards",
       "evaluations",
+      "figures",
       "documents",
       "followup",
       "history",
@@ -186,6 +188,7 @@ export default async function StudentProfilePage({
     | "packages"
     | "rewards"
     | "evaluations"
+    | "figures"
     | "documents"
     | "followup"
     | "history"
@@ -208,6 +211,7 @@ export default async function StudentProfilePage({
   const canReadRewards = can(CAPABILITIES.REWARDS_READ);
   const canManageRewards = can(CAPABILITIES.REWARDS_MANAGE);
   const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
+  const canWriteEvaluations = can(CAPABILITIES.EVALUATIONS_WRITE);
   const canReadDocuments = can(CAPABILITIES.DOCUMENTS_READ);
   const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
   const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
@@ -2020,6 +2024,10 @@ export default async function StudentProfilePage({
           locale={locale}
           error={query.evaluation_error}
         />
+      ) : null}
+
+      {view === "figures" && canReadEvaluations ? (
+        <StudentFiguresPanel studentId={student.id} canWrite={canWriteEvaluations} />
       ) : null}
 
       {view === "documents" && canReadDocuments ? (
