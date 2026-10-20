@@ -24,10 +24,12 @@ export default async function PoleClassComboPanel({
   sessionId,
   disciplineId,
   roster,
+  canWrite,
 }: {
   sessionId: string;
   disciplineId: string | null;
   roster: RosterStudent[];
+  canWrite: boolean;
 }) {
   if (!disciplineId || !roster.length) return null;
 
@@ -196,6 +198,7 @@ export default async function PoleClassComboPanel({
       sessionId={sessionId}
       recommendations={candidates}
       studentCount={rosterWithLevel.length}
+      canWrite={canWrite}
     />
   );
 }
