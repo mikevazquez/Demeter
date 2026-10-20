@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useFormStatus } from "react-dom";
+import { useMemo, useState, useTransition } from "react";
 
-import { markPoleFigureFromClassAction } from "./pole-actions";
+import { savePoleClassResultsAction } from "./pole-actions";
 import styles from "./pole-class-combo.module.css";
 
 type StudentState = {
   studentId: string;
   name: string;
   levelTitle: string;
-  completed: boolean;
+  completedAtLevel: number;
+  totalAtLevel: number;
 };
 
 type FigureState = {
@@ -18,8 +18,8 @@ type FigureState = {
   name: string;
   originalName: string;
   slug: string;
+  type: string;
   status: "review" | "new";
-  students: StudentState[];
 };
 
 export type PoleComboRecommendation = {
@@ -27,138 +27,325 @@ export type PoleComboRecommendation = {
   level: string;
   figures: FigureState[];
   newFigureElementId: string;
+  newFigureSlug: string;
 };
 
-function MarkButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <button type="submit" disabled={pending}>
-      {pending ? "Guardando…" : "Marcar hecha"}
-    </button>
-  );
-}
+export type PoleClassGroup = {
+  level: "Principiante" | "Intermedio" | "Avanzado";
+  label: string;
+  members: StudentState[];
+  recommendations: PoleComboRecommendation[];
+};
 
 export default function PoleClassComboClient({
   sessionId,
-  recommendations,
-  studentCount,
+  groups,
   canWrite,
 }: {
   sessionId: string;
-  recommendations: PoleComboRecommendation[];
-  studentCount: number;
+  groups: PoleClassGroup[];
   canWrite: boolean;
 }) {
-  const [visible, setVisible] = useState(false);
-  const [index, setIndex] = useState(0);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [optionIndex, setOptionIndex] = useState<Record<string, number>>({});
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [saved, setSaved] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  if (!recommendations.length || !studentCount) return null;
+  const activeCombos = useMemo(
+    () =>
+      groups
+        .map((group) => {
+          if (!group.recommendations.length) return null;
+          const index = optionIndex[group.level] ?? 0;
+          return {
+            group,
+            combo: group.recommendations[index % group.recommendations.length],
+          };
+        })
+        .filter(
+          (
+            item,
+          ): item is {
+            group: PoleClassGroup;
+            combo: PoleComboRecommendation;
+          } => Boolean(item),
+        ),
+    [groups, optionIndex],
+  );
 
-  const combo = recommendations[index % recommendations.length];
-  const newFigure = combo.figures.find((figure) => figure.elementId === combo.newFigureElementId);
+  const totalStudents = groups.reduce((sum, group) => sum + group.members.length, 0);
+
+  function nextOption(group: PoleClassGroup) {
+    setOptionIndex((current) => ({
+      ...current,
+      [group.level]:
+        ((current[group.level] ?? 0) + 1) % Math.max(group.recommendations.length, 1),
+    }));
+    setChecked({});
+    setSaved(false);
+  }
+
+  function saveResults() {
+    if (!canWrite) return;
+
+    const entries = activeCombos.flatMap(({ group, combo }) =>
+      group.members
+        .filter((student) => checked[`${group.level}|${student.studentId}`] === true)
+        .map((student) => ({
+          studentId: student.studentId,
+          elementId: combo.newFigureElementId,
+        })),
+    );
+
+    startTransition(async () => {
+      const result = await savePoleClassResultsAction(sessionId, entries);
+      if (result.ok) setSaved(true);
+    });
+  }
+
+  if (!groups.length) return null;
 
   return (
     <section className={styles.panel}>
-      <div className={styles.heading}>
-        <div>
-          <p>CATÁLOGO · COMBO DE CLASE</p>
-          <h2>Generador para las alumnas agendadas</h2>
-          <span>
-            El combo usa el nivel más bajo del grupo y prioriza figuras ya conocidas como apoyo,
-            dejando una figura nueva para trabajar hoy.
-          </span>
-        </div>
-        {!visible ? (
-          <button className={styles.generate} type="button" onClick={() => setVisible(true)}>
-            Generar combo
+      <nav className={styles.stepper} aria-label="Progreso de la clase Pole">
+        {[
+          [1, "Abrir la clase"],
+          [2, "Combos por nivel"],
+          [3, "Validar al final"],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            aria-current={step === value ? "step" : undefined}
+            className={step > Number(value) ? styles.pastStep : undefined}
+            onClick={() => setStep(Number(value) as 1 | 2 | 3)}
+          >
+            <i />
+            <span>{label}</span>
           </button>
-        ) : null}
-      </div>
+        ))}
+      </nav>
 
-      {visible ? (
-        <>
-          <div className={styles.comboHeader}>
-            <div>
-              <span>Combo sugerido</span>
-              <strong>{combo.level}</strong>
-            </div>
-            {recommendations.length > 1 ? (
-              <button
-                type="button"
-                onClick={() => setIndex((value) => (value + 1) % recommendations.length)}
-              >
-                Generar otro
-              </button>
-            ) : null}
+      {step === 1 ? (
+        <div className={styles.stage}>
+          <div className={styles.explain}>
+            <p className={styles.eyebrow}>PASO 1 DE 3</p>
+            <h2>La instructora abre su clase</h2>
+            <p>
+              Studio Flow ya conoce el nivel de cada alumna y qué figuras domina por validaciones
+              anteriores.
+            </p>
+            <ul>
+              <li>Las alumnas se agrupan por su nivel actual.</li>
+              <li>Cada nivel recibirá su propio combo.</li>
+              <li>Profesional nunca entra al generador automático.</li>
+            </ul>
+            <button className={styles.primary} type="button" onClick={() => setStep(2)}>
+              Generar combos para esta clase
+            </button>
           </div>
 
-          <div className={styles.sequence}>
-            {combo.figures.map((figure, figureIndex) => (
-              <article
-                key={figure.elementId}
-                className={figure.status === "new" ? styles.newFigure : styles.reviewFigure}
-              >
-                <div className={styles.figureTop}>
-                  <span className={styles.position}>{figureIndex + 1}</span>
-                  <div>
-                    <strong>{figure.name}</strong>
-                    {figure.originalName !== figure.name ? (
-                      <small>{figure.originalName}</small>
+          <div className={styles.card}>
+            <div className={styles.classHeader}>
+              <span>POLE FITNESS · CLASE ABIERTA</span>
+              <strong>{totalStudents} alumnas reservadas</strong>
+            </div>
+            <div className={styles.roster}>
+              {groups.flatMap((group) =>
+                group.members.map((student) => (
+                  <div className={styles.rosterRow} key={student.studentId}>
+                    <span className={styles.avatar}>{student.name.slice(0, 1).toUpperCase()}</span>
+                    <div>
+                      <strong>{student.name}</strong>
+                      <small>
+                        Ya domina {student.completedAtLevel} de {student.totalAtLevel} figuras de su
+                        nivel
+                      </small>
+                    </div>
+                    <b>{group.level}</b>
+                  </div>
+                )),
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {step === 2 ? (
+        <div className={styles.stage}>
+          <div className={styles.explain}>
+            <p className={styles.eyebrow}>PASO 2 DE 3</p>
+            <h2>Studio Flow arma un combo por nivel</h2>
+            <p>
+              Cada grupo recibe figuras que todas ya dominan y una sola figura nueva para la que
+              ya cumplen los prerrequisitos.
+            </p>
+            <ul>
+              <li>Repaso para preparar el cuerpo y la técnica.</li>
+              <li>Una figura nueva destacada por grupo.</li>
+              <li>“Otra opción” cambia solo el combo de ese nivel.</li>
+            </ul>
+            <div className={styles.actions}>
+              <button type="button" onClick={() => setStep(1)}>
+                Atrás
+              </button>
+              <button className={styles.primary} type="button" onClick={() => setStep(3)}>
+                Dar la clase
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.comboStack}>
+            {groups.map((group) => {
+              if (!group.recommendations.length) {
+                return (
+                  <article className={styles.card} key={group.level}>
+                    <div className={styles.groupHeader}>
+                      <div>
+                        <span>{group.label}</span>
+                        <strong>{group.members.map((student) => student.name).join(" · ")}</strong>
+                      </div>
+                    </div>
+                    <p className={styles.emptyMessage}>
+                      No hay todavía una figura nueva con todos los prerrequisitos cumplidos para
+                      este grupo.
+                    </p>
+                  </article>
+                );
+              }
+
+              const index = optionIndex[group.level] ?? 0;
+              const combo = group.recommendations[index % group.recommendations.length];
+
+              return (
+                <article className={styles.card} key={group.level}>
+                  <div className={styles.groupHeader}>
+                    <div>
+                      <span>{group.label}</span>
+                      <strong>{group.members.map((student) => student.name).join(" · ")}</strong>
+                    </div>
+                    {group.recommendations.length > 1 ? (
+                      <button type="button" onClick={() => nextOption(group)}>
+                        Otra opción
+                      </button>
                     ) : null}
                   </div>
-                  <b>{figure.status === "new" ? "Nueva" : "Repaso"}</b>
-                </div>
 
-                <div className={styles.students}>
-                  {figure.students.map((student) => (
-                    <div key={student.studentId} className={styles.studentRow}>
-                      <div>
-                        <strong>{student.name}</strong>
-                        <span>{student.levelTitle}</span>
+                  <div className={styles.sequence}>
+                    {combo.figures.map((figure, figureIndex) => (
+                      <div
+                        className={figure.status === "new" ? styles.sequenceNew : styles.sequenceRow}
+                        key={figure.elementId}
+                      >
+                        <span className={styles.position}>{figureIndex + 1}</span>
+                        <div>
+                          <strong>{figure.name}</strong>
+                          <small>
+                            {figure.originalName} · {figure.type}
+                          </small>
+                        </div>
+                        <b>{figure.status === "new" ? "Nueva" : "Ya la saben"}</b>
                       </div>
-                      {student.completed ? (
-                        <em>✓ Hecha</em>
-                      ) : figure.status === "new" ? (
-                        <form action={markPoleFigureFromClassAction}>
-                          <input type="hidden" name="session_id" value={sessionId} />
-                          <input type="hidden" name="student_id" value={student.studentId} />
-                          <input type="hidden" name="element_id" value={figure.elementId} />
-                          <MarkButton />
-                        </form>
-                      ) : (
-                        <em className={styles.pending}>Pendiente</em>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </article>
-            ))}
+                    ))}
+                  </div>
+
+                  <p className={styles.why}>
+                    {group.members.map((student) => student.name).join(" y ")} ya cumplen los pasos
+                    previos de la figura nueva, así que hoy pueden intentarla.
+                  </p>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      {step === 3 ? (
+        <div className={styles.stage}>
+          <div className={styles.explain}>
+            <p className={styles.eyebrow}>PASO 3 DE 3</p>
+            <h2>Al terminar, marca quién la logró</h2>
+            <p>
+              Solo valida a las alumnas que realmente consiguieron la figura nueva. Las demás se
+              quedan pendientes para otra clase.
+            </p>
+            <div className={styles.actions}>
+              <button type="button" onClick={() => setStep(2)}>
+                Atrás
+              </button>
+              {canWrite ? (
+                <button
+                  className={styles.primary}
+                  type="button"
+                  onClick={saveResults}
+                  disabled={isPending}
+                >
+                  {isPending ? "Guardando…" : "Guardar progreso"}
+                </button>
+              ) : null}
+            </div>
           </div>
 
-          {newFigure ? (
-            <div className={styles.newSummary}>
-              <div>
-                <span>Figura nueva de hoy</span>
-                <strong>{newFigure.name}</strong>
+          <div className={styles.comboStack}>
+            {activeCombos.map(({ group, combo }) => {
+              const newFigure = combo.figures.find(
+                (figure) => figure.elementId === combo.newFigureElementId,
+              );
+              if (!newFigure) return null;
+
+              return (
+                <article className={styles.card} key={group.level}>
+                  <div className={styles.validationHeader}>
+                    <div>
+                      <span>{group.label}</span>
+                      <strong>{newFigure.name}</strong>
+                    </div>
+                    <b>Figura nueva</b>
+                  </div>
+
+                  <div className={styles.validationList}>
+                    {group.members.map((student) => {
+                      const key = `${group.level}|${student.studentId}`;
+                      return (
+                        <label className={styles.validationRow} key={student.studentId}>
+                          <div>
+                            <strong>{student.name}</strong>
+                            <small>
+                              intentó {newFigure.name} · {student.levelTitle}
+                            </small>
+                          </div>
+                          <span>
+                            <input
+                              type="checkbox"
+                              checked={checked[key] ?? false}
+                              onChange={(event) =>
+                                setChecked((current) => ({
+                                  ...current,
+                                  [key]: event.target.checked,
+                                }))
+                              }
+                              disabled={!canWrite || saved}
+                            />
+                            La logró
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </article>
+              );
+            })}
+
+            {saved ? (
+              <div className={styles.success} role="status">
+                Progreso guardado. Las figuras validadas ya aparecen como logradas en el perfil y
+                permiten que la alumna agregue su foto.
               </div>
-              <p>
-                Al terminar la clase, marca como hecha únicamente a las alumnas que realmente la
-                lograron. Después se habilita la foto en su portal.
-              </p>
-            </div>
-          ) : null}
-        </>
-      ) : (
-        <div className={styles.placeholder}>
-          <span>{studentCount}</span>
-          <p>
-            {studentCount === 1
-              ? "1 alumna agendada lista para generar su combo."
-              : `${studentCount} alumnas agendadas listas para generar el combo del grupo.`}
-          </p>
+            ) : null}
+          </div>
         </div>
-      )}
+      ) : null}
     </section>
   );
 }
