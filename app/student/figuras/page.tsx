@@ -85,36 +85,32 @@ export default async function StudentFiguresPage() {
   }
 
   const currentCatalogLevel = toCatalogLevel(currentLevelTitle);
-  const [
-    { data: profiles },
-    { data: elements },
-    { data: achievements },
-    { data: authorizations },
-  ] = await Promise.all([
-    supabase
-      .from("pole_figure_profiles")
-      .select("element_id,slug,original_name")
-      .eq("studio_id", membership.studio_id)
-      .eq("discipline_id", poleDiscipline.id),
-    supabase
-      .from("technical_elements")
-      .select("id,name")
-      .eq("studio_id", membership.studio_id)
-      .eq("discipline_id", poleDiscipline.id)
-      .eq("active", true)
-      .not("pole_catalog_slug", "is", null),
-    supabase
-      .from("student_pole_figure_achievements")
-      .select("id,figure_element_id,photo_path,achieved_at")
-      .eq("studio_id", membership.studio_id)
-      .eq("student_id", studentId),
-    supabase
-      .from("student_pole_authorizations")
-      .select("figure_element_id,revoked_at")
-      .eq("studio_id", membership.studio_id)
-      .eq("student_id", studentId)
-      .is("revoked_at", null),
-  ]);
+  const [{ data: profiles }, { data: elements }, { data: achievements }, { data: authorizations }] =
+    await Promise.all([
+      supabase
+        .from("pole_figure_profiles")
+        .select("element_id,slug,original_name")
+        .eq("studio_id", membership.studio_id)
+        .eq("discipline_id", poleDiscipline.id),
+      supabase
+        .from("technical_elements")
+        .select("id,name")
+        .eq("studio_id", membership.studio_id)
+        .eq("discipline_id", poleDiscipline.id)
+        .eq("active", true)
+        .not("pole_catalog_slug", "is", null),
+      supabase
+        .from("student_pole_figure_achievements")
+        .select("id,figure_element_id,photo_path,achieved_at")
+        .eq("studio_id", membership.studio_id)
+        .eq("student_id", studentId),
+      supabase
+        .from("student_pole_authorizations")
+        .select("figure_element_id,revoked_at")
+        .eq("studio_id", membership.studio_id)
+        .eq("student_id", studentId)
+        .is("revoked_at", null),
+    ]);
 
   const sourceFigures = catalog.figuras as CatalogFigure[];
   const sourceBySlug = new Map(sourceFigures.map((figure) => [figure.id, figure]));
@@ -349,9 +345,7 @@ export default async function StudentFiguresPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               {authorizedProfessional.map((figure) => {
                 const profile = profileBySlug.get(figure.id);
-                const achieved = profile
-                  ? achievementByElement.has(profile.element_id)
-                  : false;
+                const achieved = profile ? achievementByElement.has(profile.element_id) : false;
                 return (
                   <Link
                     key={figure.id}

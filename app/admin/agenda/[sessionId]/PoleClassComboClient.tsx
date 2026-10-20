@@ -2,10 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 
-import {
-  savePoleClassResultsAction,
-  setProfessionalPoleAuthorizationAction,
-} from "./pole-actions";
+import { savePoleClassResultsAction, setProfessionalPoleAuthorizationAction } from "./pole-actions";
 import styles from "./pole-class-combo.module.css";
 
 type StudentState = {
@@ -440,10 +437,8 @@ export default function PoleClassComboClient({
                   {groups.flatMap((group) =>
                     group.professionalSuggestions.map((suggestion) => {
                       const key = `${suggestion.studentId}|${suggestion.elementId}`;
-                      const authorized =
-                        authorizationState[key] ?? suggestion.authorized;
-                      const completed =
-                        professionalCompleted[key] ?? suggestion.completed;
+                      const authorized = authorizationState[key] ?? suggestion.authorized;
+                      const completed = professionalCompleted[key] ?? suggestion.completed;
                       return (
                         <div className={styles.professionalRow} key={key}>
                           <div>
@@ -468,7 +463,9 @@ export default function PoleClassComboClient({
                             {canWrite && !completed ? (
                               <button
                                 type="button"
-                                className={authorized ? styles.authorizedButton : styles.authorizeButton}
+                                className={
+                                  authorized ? styles.authorizedButton : styles.authorizeButton
+                                }
                                 onClick={() => toggleProfessionalAuthorization(suggestion)}
                                 disabled={authorizationPending === key}
                               >

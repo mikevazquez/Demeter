@@ -55,7 +55,6 @@ export async function savePoleClassResultsAction(
   return { ok: true, saved: normalizedEntries.length };
 }
 
-
 export async function setProfessionalPoleAuthorizationAction(
   sessionId: string,
   studentId: string,

@@ -39,36 +39,32 @@ export default async function StudentPoleFigureDetailPage({
 
   if (!poleDiscipline) notFound();
 
-  const [
-    { data: profiles },
-    { data: elements },
-    { data: achievements },
-    { data: authorizations },
-  ] = await Promise.all([
-    supabase
-      .from("pole_figure_profiles")
-      .select("element_id,slug")
-      .eq("studio_id", membership.studio_id)
-      .eq("discipline_id", poleDiscipline.id),
-    supabase
-      .from("technical_elements")
-      .select("id,name")
-      .eq("studio_id", membership.studio_id)
-      .eq("discipline_id", poleDiscipline.id)
-      .eq("active", true)
-      .not("pole_catalog_slug", "is", null),
-    supabase
-      .from("student_pole_figure_achievements")
-      .select("figure_element_id")
-      .eq("studio_id", membership.studio_id)
-      .eq("student_id", snapshot.profile.student_id),
-    supabase
-      .from("student_pole_authorizations")
-      .select("figure_element_id,revoked_at")
-      .eq("studio_id", membership.studio_id)
-      .eq("student_id", snapshot.profile.student_id)
-      .is("revoked_at", null),
-  ]);
+  const [{ data: profiles }, { data: elements }, { data: achievements }, { data: authorizations }] =
+    await Promise.all([
+      supabase
+        .from("pole_figure_profiles")
+        .select("element_id,slug")
+        .eq("studio_id", membership.studio_id)
+        .eq("discipline_id", poleDiscipline.id),
+      supabase
+        .from("technical_elements")
+        .select("id,name")
+        .eq("studio_id", membership.studio_id)
+        .eq("discipline_id", poleDiscipline.id)
+        .eq("active", true)
+        .not("pole_catalog_slug", "is", null),
+      supabase
+        .from("student_pole_figure_achievements")
+        .select("figure_element_id")
+        .eq("studio_id", membership.studio_id)
+        .eq("student_id", snapshot.profile.student_id),
+      supabase
+        .from("student_pole_authorizations")
+        .select("figure_element_id,revoked_at")
+        .eq("studio_id", membership.studio_id)
+        .eq("student_id", snapshot.profile.student_id)
+        .is("revoked_at", null),
+    ]);
 
   const profileBySlug = new Map((profiles ?? []).map((item) => [item.slug, item]));
   const slugByElementId = new Map((profiles ?? []).map((item) => [item.element_id, item.slug]));

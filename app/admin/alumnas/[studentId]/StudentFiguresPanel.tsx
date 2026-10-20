@@ -121,9 +121,9 @@ export default async function StudentFiguresPanel({ studentId }: { studentId: st
     <StudentFiguresClient
       currentLevelTitle={currentLevelTitle}
       figures={figures}
-      totalCatalogFigures={(profiles ?? []).filter(
-        (profile) => profile.catalog_level === currentCatalogLevel,
-      ).length}
+      totalCatalogFigures={
+        (profiles ?? []).filter((profile) => profile.catalog_level === currentCatalogLevel).length
+      }
     />
   );
 }
