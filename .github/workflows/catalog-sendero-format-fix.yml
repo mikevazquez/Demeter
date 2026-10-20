@@ -1,0 +1,35 @@
+name: Catalog Sendero format fix
+
+on:
+  push:
+    branches:
+      - feat/catalogo-figuras-pole-v1
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/catalogo-figuras-pole-v1
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write app/admin/hoy/sendero.css
+      - name: Commit format-only changes
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/admin/hoy/sendero.css
+          git commit -m "chore: format Sendero catalog chrome"
+          git push origin HEAD:feat/catalogo-figuras-pole-v1
