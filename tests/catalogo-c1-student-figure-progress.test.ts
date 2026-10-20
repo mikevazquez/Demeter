@@ -54,6 +54,9 @@ describe("Catálogo C1 · progreso de figuras por alumna", () => {
     expect(studentPortal).toContain("Bloqueadas");
     expect(studentFigureDetail).toContain("Tu camino hacia esta figura");
     expect(studentFigureDetail).toContain("Cuando la logres, se abren");
+    expect(studentPortal).toContain("Profesional");
+    expect(studentPortal).toContain("Autorizada");
+    expect(studentFigureDetail).toContain("Requiere autorización");
     expect(studentPortal).not.toContain("Ya la logré");
     expect(studentFigureDetail).not.toContain("Ya la logré");
   });
