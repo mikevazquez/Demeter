@@ -60,4 +60,16 @@ describe("Sendero visual system", () => {
     expect(quickBook).toContain("bookStudentSessionInlineAction");
     expect(quickBook).toContain("sendero-button-primary");
   });
+
+  it("migrates Mis clases while preserving history, waitlist and cancellation flows", () => {
+    const classes = readFileSync(join(process.cwd(), "app/student/mis-clases/page.tsx"), "utf8");
+
+    expect(classes).toContain('supabase.rpc("student_classes_feed")');
+    expect(classes).toContain('supabase.rpc("student_waitlist_feed")');
+    expect(classes).toContain('/cancelar');
+    expect(classes).toContain('view=history');
+    expect(classes).toContain("sendero-surface");
+    expect(classes).toContain("sendero-chip-mint");
+    expect(classes).toContain("sendero-chip-moon");
+  });
 });
