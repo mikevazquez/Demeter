@@ -289,6 +289,8 @@ export default async function PoleClassComboPanel({
                   family: source.familia ?? "Profesional",
                   authorized:
                     authorizationByStudent.get(student.studentId)?.has(profile.element_id) ?? false,
+                  completed:
+                    completedByStudent.get(student.studentId)?.has(profile.element_id) ?? false,
                 },
               ];
             }),
