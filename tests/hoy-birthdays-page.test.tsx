@@ -6,6 +6,8 @@ vi.mock("@/lib/auth/admin-context", () => ({ getAdminContext: context }));
 vi.mock("@/app/admin/hoy/load-birthdays", () => ({ loadBirthdayStudents: loadBirthdays }));
 vi.mock("@/app/admin/hoy/QuickActions", () => ({ default: () => null }));
 vi.mock("@/app/admin/hoy/TodayClasses", () => ({ TodayClasses: () => null }));
+// This suite exercises birthdays; the Pole server component has its own data/actions boundary.
+vi.mock("@/app/admin/agenda/[sessionId]/PoleClassComboPanel", () => ({ default: () => null }));
 import AdminPage from "@/app/admin/page";
 
 function setup(role = "owner", canReadStudents = true) {
