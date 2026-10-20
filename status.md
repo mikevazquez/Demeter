@@ -2,9 +2,9 @@
 
 **Última consulta del supervisor:** No registrada
 **Última transición persistida:** No registrada
-**Vista generada:** 20/10/2026, 12&#58;36&#58;07 CDMX
+**Vista generada:** 20/10/2026, 12&#58;36&#58;13 CDMX
 **Registro actualizado:** No registrada
-**Secuencia:** 0 · **Asignación activa registrada:** No registrada
+**Secuencia:** 1 · **Asignación activa registrada:** No registrada
 
 La actividad del worker se comprueba por su propia señal. Umbral de antigüedad: 30 min.
 Un resultado entregado todavía requiere verificación; la aprobación de producción se registra por separado.
