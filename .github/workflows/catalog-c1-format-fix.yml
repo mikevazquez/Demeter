@@ -39,3 +39,5 @@ jobs:
           git add app/admin/alumnas tests/catalogo-c1-student-figure-progress.test.ts
           git commit -m "chore: format Catalog C1"
           git push origin HEAD:feat/catalogo-figuras-pole-v1
+
+# trigger formatter
