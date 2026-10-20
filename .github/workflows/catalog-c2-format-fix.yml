@@ -50,3 +50,5 @@ jobs:
           git add app tests
           git commit -m "chore: format Catalog C1 C2"
           git push origin HEAD:feat/catalogo-figuras-pole-v1
+
+# trigger formatter
