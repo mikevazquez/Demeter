@@ -1,0 +1,1 @@
+{"schema":"governance2-supervisor-event-v1","repository":"mikevazquez/Demeter","sequence":2,"previous":"5212d0ef380eba49bed347f0b4eed2f6e16a83ed","transition_nonce":"ce15964b-e42e-4ea9-b5a6-b2c200cbca60","state_sha256":"615ca82d96eebbfca417d5423adb07c3c0fea5a09647f66fa82cb1a177743f43","event":{"type":"isolated_cas_proof_verified","winners":1,"conflicts":1}}
