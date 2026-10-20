@@ -103,8 +103,8 @@ export function QuickBookButton({
           disabled={isPending}
           className={
             variant === "tile"
-              ? "min-h-16 w-full min-w-0 self-stretch rounded-[14px] border border-fuchsia-500/45 bg-fuchsia-500/[0.07] px-2 text-xs font-bold sm:text-sm text-fuchsia-100 transition hover:bg-fuchsia-500/[0.13] disabled:cursor-wait disabled:opacity-60"
-              : "min-h-11 rounded-2xl bg-fuchsia-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
+              ? "min-h-16 w-full min-w-0 self-stretch rounded-[18px] border border-[rgba(143,230,200,0.45)] bg-[var(--sendero-mint-soft)] px-2 text-xs font-bold text-[var(--sendero-mint)] transition hover:bg-[rgba(143,230,200,0.2)] disabled:cursor-wait disabled:opacity-60 sm:text-sm"
+              : "sendero-button sendero-button-primary px-5 disabled:cursor-wait disabled:opacity-60"
           }
         >
           {isPending ? (
@@ -134,7 +134,7 @@ export function QuickBookButton({
             role="dialog"
             aria-modal="true"
             aria-labelledby="quick-booking-title"
-            className="w-full max-w-md rounded-3xl border border-white/10 bg-zinc-950 p-6 shadow-2xl"
+            className="sendero-surface w-full max-w-md p-6 shadow-2xl"
           >
             {modal.type === "success" ? (
               <>
@@ -146,12 +146,12 @@ export function QuickBookButton({
                 </p>
                 <h2
                   id="quick-booking-title"
-                  className="mt-2 text-center text-2xl font-semibold text-white"
+                  className="mt-2 text-center text-3xl text-[var(--sendero-ink)]"
                 >
                   ¡Tu lugar está listo!
                 </h2>
                 <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+                  <p className="sendero-eyebrow !text-[var(--sendero-lilac)]">
                     {discipline}
                   </p>
                   <p className="mt-1 font-semibold text-white">{activity}</p>
@@ -181,7 +181,7 @@ export function QuickBookButton({
             <button
               type="button"
               onClick={closeModal}
-              className="mt-6 w-full rounded-2xl bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+              className="sendero-button sendero-button-ghost mt-6 w-full"
             >
               Cerrar
             </button>
