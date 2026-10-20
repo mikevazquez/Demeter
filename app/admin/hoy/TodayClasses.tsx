@@ -45,7 +45,7 @@ export type TodayClassItem = {
   waitlist?: { id: string; studentName: string }[];
   waitlistUnavailable?: boolean;
   evaluationCount: number;
-  disciplineId: string | null;
+  disciplineId?: string | null;
   returnTo: string;
   minimumReservationsEnabled: boolean;
   minimumReservations: number;
