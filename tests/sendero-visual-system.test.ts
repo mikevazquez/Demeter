@@ -149,4 +149,18 @@ describe("Sendero visual system", () => {
     expect(schedule).toContain("sendero-button-primary");
     expect(result).toContain("sendero-surface");
   });
+
+  it("migrates payments, movements and documents without changing their data contracts", () => {
+    const payments = readFileSync(join(process.cwd(), "app/student/pagos/page.tsx"), "utf8");
+    const movements = readFileSync(join(process.cwd(), "app/student/movimientos/page.tsx"), "utf8");
+    const documents = readFileSync(join(process.cwd(), "app/student/documentos/page.tsx"), "utf8");
+
+    expect(payments).toContain("snapshot.payments");
+    expect(movements).toContain("snapshot.movements");
+    expect(documents).toContain('supabase.rpc("student_document_center")');
+    expect(documents).toContain("locked_until_enrollment");
+    expect(payments).toContain("sendero-surface");
+    expect(movements).toContain("sendero-surface");
+    expect(documents).toContain("sendero-surface");
+  });
 });
