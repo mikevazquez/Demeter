@@ -83,4 +83,16 @@ describe("Sendero visual system", () => {
     expect(packagePage).toContain("sendero-surface");
     expect(packagePage).toContain("sendero-button-primary");
   });
+
+  it("migrates profile while preserving editable identity fields and account routes", () => {
+    const profile = readFileSync(join(process.cwd(), "app/student/perfil/page.tsx"), "utf8");
+
+    expect(profile).toContain("updateStudentProfileAction");
+    expect(profile).toContain('name="email"');
+    expect(profile).toContain('name="birth_date"');
+    expect(profile).toContain('/student/perfil/notificaciones');
+    expect(profile).toContain('/student/documentos');
+    expect(profile).toContain("sendero-surface");
+    expect(profile).toContain("sendero-button-primary");
+  });
 });
