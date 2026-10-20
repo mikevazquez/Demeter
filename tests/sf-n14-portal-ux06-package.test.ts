@@ -64,7 +64,7 @@ describe("SF-N14 PORTAL UX-06 Mi paquete", () => {
     expect(page).not.toContain("Paquete 8 clases");
   });
 
-  it("keeps the package screen on the approved Sendero visual language", () => {
+  it("keeps the package screen on the approved dark-magenta visual language", () => {
     expect(page).toContain("sendero-button-primary");
     expect(page).toContain("sendero-surface");
     expect(page).toContain("var(--sendero-mint)");
