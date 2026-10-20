@@ -1,231 +1,155 @@
 .panel {
   display: grid;
-  gap: 18px;
-  padding: 22px;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 16px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 28px;
-  background: radial-gradient(circle at 88% 0%, rgba(143, 230, 200, 0.1), transparent 30%), #2a2c33;
+  border-radius: 22px;
+  background: #2a2c33;
   color: #f1eee6;
 }
 
-.stepper {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.stepper button {
-  display: grid;
-  gap: 7px;
-  border: 0;
-  background: transparent;
-  color: #6f7280;
-  padding: 0;
-  text-align: left;
-  font-size: 11px;
-  font-weight: 650;
-}
-
-.stepper i {
-  display: block;
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.stepper button[aria-current="step"],
-.pastStep {
-  color: #f1eee6 !important;
-}
-
-.stepper button[aria-current="step"] i,
-.pastStep i {
-  background: #8fe6c8;
-}
-
-.stage {
-  display: grid;
-  grid-template-columns: minmax(240px, 0.7fr) minmax(0, 1.4fr);
-  gap: 22px;
-  align-items: start;
-}
-
-.explain {
-  display: grid;
+.toolbar,
+.groupHeader,
+.validationHeader,
+.validationRow,
+.professionalRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  position: sticky;
-  top: 20px;
 }
 
-.eyebrow,
-.classHeader span,
+.toolbar > div,
+.groupHeader > div,
+.validationHeader > div,
+.validationRow > div,
+.professionalRow > div {
+  min-width: 0;
+}
+
+.toolbar p,
 .groupHeader span,
 .validationHeader span {
   margin: 0;
   color: #8fe6c8;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.11em;
 }
 
-.explain h2 {
-  margin: 0;
+.toolbar h3 {
+  margin: 3px 0 2px;
   font-family: "Sendero Marcellus", Georgia, serif;
-  font-size: clamp(26px, 4vw, 36px);
+  font-size: 22px;
   font-weight: 400;
 }
 
-.explain > p:not(.eyebrow),
-.explain li,
-.why,
-.emptyMessage {
+.toolbar > div > span {
   color: #a3a6b2;
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 11px;
 }
 
-.explain ul {
-  display: grid;
-  gap: 6px;
-  margin: 0;
-  padding-left: 18px;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.explain button,
-.groupHeader button {
-  min-height: 42px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.primary,
+.secondary,
+.groupHeader button,
+.save,
+.authorizeButton,
+.authorizedButton {
+  min-height: 38px;
   border-radius: 999px;
-  background: #34363e;
-  color: #cfd0d8;
-  padding: 0 15px;
+  padding: 0 13px;
+  font-size: 11px;
   font-weight: 650;
 }
 
-.explain .primary {
+.primary,
+.save {
   border: 0;
   background: #8fe6c8;
   color: #1d1e23;
 }
 
-.explain button:disabled {
-  opacity: 0.55;
+.secondary,
+.groupHeader button {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #34363e;
+  color: #cfd0d8;
+}
+
+.readyState {
+  display: grid;
+  gap: 4px;
+  padding: 13px 14px;
+  border: 1px dashed rgba(143, 230, 200, 0.18);
+  border-radius: 18px;
+  background: rgba(143, 230, 200, 0.05);
+}
+
+.readyState strong {
+  color: #f1eee6;
+  font-size: 12px;
+}
+
+.readyState span,
+.emptyMessage {
+  color: #a3a6b2;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.comboStack {
+  display: grid;
+  gap: 10px;
 }
 
 .card {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
+  border-radius: 20px;
   background: #25262c;
 }
 
-.classHeader,
 .groupHeader,
 .validationHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
+  padding: 12px 14px;
 }
 
-.classHeader {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-.classHeader strong,
 .groupHeader strong,
 .validationHeader strong {
-  font-size: 13px;
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
 }
 
-.roster,
-.validationList {
-  display: grid;
-}
-
-.rosterRow,
-.validationRow {
-  min-height: 68px;
+.studentProgress {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 14px 11px;
 }
 
-.rosterRow:first-child,
-.validationRow:first-child {
-  border-top: 0;
-}
-
-.avatar {
-  width: 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: rgba(205, 184, 236, 0.14);
-  color: #cdb8ec;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.rosterRow > div,
-.validationRow > div,
-.groupHeader > div,
-.validationHeader > div {
-  min-width: 0;
-  flex: 1;
-  display: grid;
-  gap: 2px;
-}
-
-.rosterRow strong,
-.validationRow strong {
-  font-size: 12px;
-}
-
-.rosterRow small,
-.validationRow small {
-  color: #a3a6b2;
-  font-size: 10px;
-}
-
-.rosterRow > b {
+.studentProgress span {
   border-radius: 999px;
-  background: rgba(246, 214, 122, 0.1);
-  color: #f6d67a;
-  padding: 5px 9px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #a3a6b2;
+  padding: 5px 8px;
   font-size: 9px;
-}
-
-.comboStack {
-  display: grid;
-  gap: 12px;
 }
 
 .sequence {
   display: grid;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .sequenceRow,
 .sequenceNew {
-  min-height: 62px;
+  min-height: 56px;
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 10px 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 10px;
+  padding: 9px 13px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .sequenceRow:first-child,
@@ -238,8 +162,8 @@
 }
 
 .position {
-  width: 28px;
-  height: 28px;
+  width: 27px;
+  height: 27px;
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -260,7 +184,7 @@
   min-width: 0;
   flex: 1;
   display: grid;
-  gap: 2px;
+  gap: 1px;
 }
 
 .sequenceRow strong,
@@ -269,21 +193,23 @@
 }
 
 .sequenceRow small,
-.sequenceNew small {
+.sequenceNew small,
+.validationRow small,
+.professionalRow small {
   color: #a3a6b2;
-  font-size: 10px;
+  font-size: 9px;
 }
 
 .sequenceRow > b,
 .sequenceNew > b,
 .validationHeader > b {
   border-radius: 999px;
-  padding: 5px 8px;
+  padding: 4px 8px;
   font-size: 9px;
 }
 
 .sequenceRow > b {
-  background: rgba(205, 184, 236, 0.12);
+  background: rgba(205, 184, 236, 0.11);
   color: #cdb8ec;
 }
 
@@ -293,98 +219,50 @@
   color: #8fe6c8;
 }
 
-.why,
 .emptyMessage {
   margin: 0;
-  padding: 12px 15px 14px;
+  padding: 0 14px 14px;
 }
 
-.validationRow {
-  justify-content: space-between;
+.validationList {
+  display: grid;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.validationRow,
+.professionalRow {
+  min-height: 56px;
+  padding: 9px 13px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.validationRow:first-child,
+.professionalRow:first-child {
+  border-top: 0;
+}
+
+.validationRow strong,
+.professionalRow strong {
+  display: block;
+  font-size: 11px;
 }
 
 .validationRow > span {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  gap: 6px;
   border-radius: 999px;
-  padding: 8px 11px;
-  color: #cfd0d8;
-  font-size: 11px;
+  background: rgba(143, 230, 200, 0.08);
+  color: #8fe6c8;
+  padding: 6px 9px;
+  font-size: 10px;
   font-weight: 650;
 }
 
 .validationRow input {
-  width: 17px;
-  height: 17px;
+  width: 16px;
+  height: 16px;
   accent-color: #8fe6c8;
-}
-
-.success {
-  padding: 12px 14px;
-  border: 1px solid rgba(143, 230, 200, 0.2);
-  border-radius: 16px;
-  background: rgba(143, 230, 200, 0.08);
-  color: #8fe6c8;
-  font-size: 11px;
-  font-weight: 650;
-}
-
-.panel :is(button, input):focus-visible {
-  outline: 2px solid #f6d67a;
-  outline-offset: 3px;
-}
-
-@media (max-width: 760px) {
-  .panel {
-    padding: 18px 14px;
-    border-radius: 24px;
-  }
-
-  .stepper span {
-    font-size: 9px;
-  }
-
-  .stage {
-    grid-template-columns: 1fr;
-  }
-
-  .explain {
-    position: static;
-  }
-
-  .classHeader,
-  .groupHeader,
-  .validationHeader {
-    align-items: flex-start;
-  }
-
-  .rosterRow,
-  .validationRow {
-    align-items: flex-start;
-  }
-
-  .validationRow {
-    flex-direction: column;
-  }
-
-  .validationRow > span {
-    align-self: flex-start;
-  }
-
-  .actions > button,
-  .explain > .primary {
-    flex: 1;
-  }
-}
-
-.professionalNote {
-  margin: 0;
-  padding: 0 16px 12px;
-  color: #a3a6b2;
-  font-size: 11px;
-  line-height: 1.55;
 }
 
 .professionalBadge {
@@ -392,38 +270,11 @@
   color: #f28a7a !important;
 }
 
-.professionalRow {
-  min-height: 62px;
+.professionalActions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 11px 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.professionalRow > div {
-  min-width: 0;
-  display: grid;
-  gap: 2px;
-}
-
-.professionalRow strong {
-  font-size: 12px;
-}
-
-.professionalRow small {
-  color: #a3a6b2;
-  font-size: 10px;
-}
-
-.authorizeButton,
-.authorizedButton {
-  min-height: 36px;
-  border-radius: 999px;
-  padding: 0 12px;
-  font-size: 10px;
-  font-weight: 650;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
 }
 
 .authorizeButton {
@@ -438,25 +289,6 @@
   color: #8fe6c8;
 }
 
-.authorizeButton:disabled,
-.authorizedButton:disabled {
-  opacity: 0.55;
-}
-
-@media (max-width: 760px) {
-  .professionalRow {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-}
-
-.professionalActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: flex-end;
-}
-
 .professionalDone {
   display: inline-flex;
   min-height: 34px;
@@ -464,12 +296,56 @@
   border-radius: 999px;
   background: rgba(143, 230, 200, 0.09);
   color: #8fe6c8;
-  padding: 0 11px;
+  padding: 0 10px;
   font-size: 10px;
   font-weight: 650;
 }
 
+.success {
+  padding: 10px 12px;
+  border: 1px solid rgba(143, 230, 200, 0.2);
+  border-radius: 14px;
+  background: rgba(143, 230, 200, 0.08);
+  color: #8fe6c8;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.panel :is(button, input):focus-visible {
+  outline: 2px solid #f6d67a;
+  outline-offset: 3px;
+}
+
+.panel button:disabled {
+  opacity: 0.55;
+}
+
 @media (max-width: 760px) {
+  .panel {
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .toolbar,
+  .groupHeader,
+  .validationHeader {
+    align-items: flex-start;
+  }
+
+  .toolbar {
+    flex-direction: column;
+  }
+
+  .toolbar > button {
+    width: 100%;
+  }
+
+  .validationRow,
+  .professionalRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .professionalActions {
     justify-content: flex-start;
   }
