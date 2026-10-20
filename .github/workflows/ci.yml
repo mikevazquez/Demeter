@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -114,43 +114,3 @@ jobs:
           path: ${{ runner.temp }}/governance2-recovery-evidence
           if-no-files-found: error
           retention-days: 30
-
-
-  format-pole-prototype:
-    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'feat/catalogo-figuras-pole-v1' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout head branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-          persist-credentials: true
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - name: Install
-        run: npm ci
-      - name: Format Pole prototype
-        run: |
-          npx prettier --write \
-            'app/admin/alumnas/[studentId]/StudentFiguresPanel.tsx' \
-            'app/admin/agenda/[sessionId]/PoleClassComboPanel.tsx' \
-            'app/admin/agenda/[sessionId]/PoleClassComboClient.tsx' \
-            'app/admin/agenda/[sessionId]/pole-actions.ts' \
-            'app/admin/agenda/[sessionId]/pole-class-combo.module.css' \
-            'app/student/figuras/page.tsx' \
-            'app/student/figuras/[slug]/page.tsx' \
-            'tests/catalogo-c1-student-figure-progress.test.ts' \
-            'tests/catalogo-c2-class-combo.test.ts'
-      - name: Commit format changes
-        run: |
-          if git diff --quiet; then
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app tests
-          git commit -m "chore: format corrected Pole prototype flow"
-          git push origin HEAD:feat/catalogo-figuras-pole-v1
