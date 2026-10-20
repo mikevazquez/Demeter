@@ -474,3 +474,38 @@
   background: var(--accent-soft);
   color: var(--accent);
 }
+
+@media (max-width: 760px) {
+  :global(.admin-shell:has(.sendero-catalog) .admin-mobile-header) {
+    display: none;
+  }
+
+  :global(.admin-shell:has(.sendero-catalog) .admin-mobile-nav) {
+    right: 16px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    left: 16px;
+    width: auto;
+    min-height: 68px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 26px;
+    background: rgba(38, 40, 46, 0.96);
+    color: var(--catalog-muted);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.33);
+    backdrop-filter: blur(18px);
+  }
+
+  :global(.admin-shell:has(.sendero-catalog) .admin-mobile-nav a) {
+    min-height: 56px;
+    border-radius: 20px;
+    color: var(--catalog-muted);
+  }
+
+  :global(.admin-shell:has(.sendero-catalog) .admin-mobile-nav a.is-active) {
+    background: var(--catalog-accent-soft);
+    color: var(--catalog-accent);
+  }
+
+  .page {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom));
+  }
+}
