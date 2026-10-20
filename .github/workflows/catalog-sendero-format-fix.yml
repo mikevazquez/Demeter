@@ -33,3 +33,5 @@ jobs:
           git add app/admin/hoy/sendero.css
           git commit -m "chore: format Sendero catalog chrome"
           git push origin HEAD:feat/catalogo-figuras-pole-v1
+
+# trigger formatter
