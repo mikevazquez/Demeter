@@ -18,6 +18,7 @@ type Props = {
     | "packages"
     | "rewards"
     | "evaluations"
+    | "figures"
     | "documents"
     | "followup"
     | "history"
@@ -156,7 +157,7 @@ export default function Profile360Overview({
   const latest = messages[0];
   const money = (minor: number) =>
     new Intl.NumberFormat(locale, { style: "currency", currency }).format(minor / 100);
-  const operationViews = ["packages", "rewards", "evaluations", "documents", "profile"];
+  const operationViews = ["packages", "rewards", "evaluations", "figures", "documents", "profile"];
   const steps: ContactStage[] = ["prospect", "trial", "student", "former"];
   return (
     <>
@@ -257,12 +258,17 @@ export default function Profile360Overview({
             </Link>
           ) : null}
           {showEvaluations ? (
-            <Link
-              href={href("evaluations")}
-              aria-current={activeView === "evaluations" ? "page" : undefined}
-            >
-              Evaluaciones
-            </Link>
+            <>
+              <Link
+                href={href("evaluations")}
+                aria-current={activeView === "evaluations" ? "page" : undefined}
+              >
+                Evaluaciones
+              </Link>
+              <Link href={href("figures")} aria-current={activeView === "figures" ? "page" : undefined}>
+                Figuras
+              </Link>
+            </>
           ) : null}
           {showDocuments ? (
             <Link
