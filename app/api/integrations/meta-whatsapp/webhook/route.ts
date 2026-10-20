@@ -31,6 +31,12 @@ export const dynamic = "force-dynamic";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const META_MEDIA_MESSAGE_TYPES = new Set(["image", "document", "audio", "video", "sticker"]);
+const META_WHATSAPP_BURST_QUIET_MS = (() => {
+  const configured = Number(process.env.DEMI_META_BURST_QUIET_MS ?? "2500");
+  return Number.isFinite(configured) && configured >= 0 && configured <= 10_000
+    ? Math.round(configured)
+    : 2500;
+})();
 
 type JsonObject = Record<string, unknown>;
 
@@ -79,6 +85,74 @@ async function markEvent(
     .eq("studio_id", studioId);
 }
 
+async function findNewerConversationEvent(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  studioId: string;
+  eventId: string;
+  eventCreatedAt: string;
+  fromWaId: string;
+}) {
+  if (!input.eventCreatedAt) return null;
+  const { data, error } = await input.supabase
+    .from("assistant_whatsapp_events")
+    .select("id,provider_event_id,created_at")
+    .eq("studio_id", input.studioId)
+    .eq("provider", "meta_whatsapp")
+    .eq("contact_wa_id", input.fromWaId)
+    .neq("id", input.eventId)
+    .gt("created_at", input.eventCreatedAt)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error("meta_burst_lookup_failed");
+  return data;
+}
+
+async function waitForConversationBurst(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  studioId: string;
+  eventId: string;
+  eventCreatedAt: string;
+  fromWaId: string;
+}) {
+  if (META_WHATSAPP_BURST_QUIET_MS > 0) {
+    await new Promise<void>((resolve) => setTimeout(resolve, META_WHATSAPP_BURST_QUIET_MS));
+  }
+  return findNewerConversationEvent(input);
+}
+
+async function markBurstSuperseded(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  studioId: string;
+  eventId: string;
+  providerMessageId: string;
+  newerProviderMessageId: string | null;
+  phase: "debounce" | "before_action" | "post_assistant";
+}) {
+  const batchId = sha256Hex(
+    `${input.studioId}:${input.providerMessageId}:${input.newerProviderMessageId ?? "newer"}`,
+  ).slice(0, 20);
+  await markEvent(input.supabase, input.studioId, input.eventId, {
+    processing_status: "ignored",
+    processing_result: {
+      outcome: "superseded_by_newer_message",
+      batch_id: batchId,
+      newer_provider_message_id: input.newerProviderMessageId,
+      phase: input.phase,
+    },
+    last_error_code: null,
+    processed_at: new Date().toISOString(),
+  });
+  console.info("demi_meta_message_batch", {
+    outcome: "superseded_by_newer_message",
+    batch_id: batchId,
+    provider_message_id: input.providerMessageId,
+    newer_provider_message_id: input.newerProviderMessageId,
+    phase: input.phase,
+  });
+}
+
 async function captureEvent(input: {
   supabase: ReturnType<typeof createServiceClient>;
   studioId: string;
@@ -109,7 +183,7 @@ async function captureEvent(input: {
     .from("assistant_whatsapp_events")
     .insert(row)
     .select(
-      "id,processing_status,attempt_count,assistant_conversation_id,inbound_turn_id,outbound_turn_id,processing_result",
+      "id,processing_status,attempt_count,assistant_conversation_id,inbound_turn_id,outbound_turn_id,processing_result,created_at",
     )
     .single();
 
@@ -122,7 +196,7 @@ async function captureEvent(input: {
   const { data: existing, error: lookupError } = await input.supabase
     .from("assistant_whatsapp_events")
     .select(
-      "id,processing_status,attempt_count,assistant_conversation_id,inbound_turn_id,outbound_turn_id,processing_result",
+      "id,processing_status,attempt_count,assistant_conversation_id,inbound_turn_id,outbound_turn_id,processing_result,created_at",
     )
     .eq("studio_id", input.studioId)
     .eq("provider", "meta_whatsapp")
@@ -1443,6 +1517,51 @@ export async function POST(request: Request) {
       continue;
     }
 
+    let newerBurstEvent;
+    try {
+      newerBurstEvent = await waitForConversationBurst({
+        supabase,
+        studioId,
+        eventId: event.id,
+        eventCreatedAt: String(event.created_at ?? ""),
+        fromWaId: message.fromWaId,
+      });
+    } catch {
+      retryableFailure = true;
+      await markEvent(supabase, studioId, event.id, {
+        processing_status: "error",
+        processing_result: { outcome: "message_batch_lookup_failed" },
+        last_error_code: "message_batch_lookup_failed",
+      });
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "message_batch_lookup_failed",
+      });
+      continue;
+    }
+
+    if (newerBurstEvent) {
+      await markBurstSuperseded({
+        supabase,
+        studioId,
+        eventId: event.id,
+        providerMessageId: message.providerMessageId,
+        newerProviderMessageId: String(newerBurstEvent.provider_event_id ?? "") || null,
+        phase: "debounce",
+      });
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "superseded_by_newer_message",
+      });
+      continue;
+    }
+
+    console.info("demi_meta_message_batch", {
+      outcome: "quiet_window_elapsed",
+      provider_message_id: message.providerMessageId,
+      quiet_ms: META_WHATSAPP_BURST_QUIET_MS,
+    });
+
     if (message.messageType === "unsupported") {
       const isClickToWhatsApp =
         message.referralSourceType === "ad" || message.referralSourceType === "post";
@@ -1886,8 +2005,38 @@ export async function POST(request: Request) {
         serviceMode: true,
         history,
         stickerImages,
+        isTurnCurrent: async () =>
+          !(await findNewerConversationEvent({
+            supabase,
+            studioId,
+            eventId: event.id,
+            eventCreatedAt: String(event.created_at ?? ""),
+            fromWaId: message.fromWaId,
+          })),
       });
     } catch (error) {
+      if (error instanceof Error && error.message === "assistant_turn_superseded") {
+        const newerEvent = await findNewerConversationEvent({
+          supabase,
+          studioId,
+          eventId: event.id,
+          eventCreatedAt: String(event.created_at ?? ""),
+          fromWaId: message.fromWaId,
+        });
+        await markBurstSuperseded({
+          supabase,
+          studioId,
+          eventId: event.id,
+          providerMessageId: message.providerMessageId,
+          newerProviderMessageId: String(newerEvent?.provider_event_id ?? "") || null,
+          phase: "before_action",
+        });
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "superseded_before_action",
+        });
+        continue;
+      }
       retryableFailure = true;
       await markEvent(supabase, studioId, event.id, {
         processing_status: "error",
@@ -1895,6 +2044,41 @@ export async function POST(request: Request) {
           outcome: "assistant_failed",
         },
         last_error_code: error instanceof Error ? error.message : "assistant_failed",
+      });
+      continue;
+    }
+
+    let newerAfterAssistant;
+    try {
+      newerAfterAssistant = await findNewerConversationEvent({
+        supabase,
+        studioId,
+        eventId: event.id,
+        eventCreatedAt: String(event.created_at ?? ""),
+        fromWaId: message.fromWaId,
+      });
+    } catch {
+      retryableFailure = true;
+      await markEvent(supabase, studioId, event.id, {
+        processing_status: "error",
+        processing_result: { outcome: "message_batch_recheck_failed" },
+        last_error_code: "message_batch_recheck_failed",
+      });
+      continue;
+    }
+
+    if (newerAfterAssistant) {
+      await markBurstSuperseded({
+        supabase,
+        studioId,
+        eventId: event.id,
+        providerMessageId: message.providerMessageId,
+        newerProviderMessageId: String(newerAfterAssistant.provider_event_id ?? "") || null,
+        phase: "post_assistant",
+      });
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "superseded_after_assistant",
       });
       continue;
     }

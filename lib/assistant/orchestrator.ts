@@ -89,6 +89,7 @@ type OrchestratorInput = {
   stickerImages?: string[];
   testSimulation?: TestSimulation;
   improvePrompt?: boolean;
+  isTurnCurrent?: () => Promise<boolean>;
 };
 
 export type AssistantTrace = {
@@ -137,6 +138,11 @@ function replyClaimsHumanHandoff(reply: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("es-MX");
   return normalized.includes("atencion humana");
+}
+
+async function assertActionTurnCurrent(input: OrchestratorInput) {
+  if (!input.isTurnCurrent) return;
+  if (!(await input.isTurnCurrent())) throw new Error("assistant_turn_superseded");
 }
 
 async function ensureHumanHandoffForReply(
@@ -512,6 +518,7 @@ async function tryServerSideTransferPackageChoice(input: OrchestratorInput, trac
   let result: unknown;
   let toolStatus: "executed" | "blocked" | "error" = "executed";
   try {
+    await assertActionTurnCurrent(input);
     result = await executeAssistantActionTool(
       {
         supabase: input.supabase,
@@ -530,7 +537,8 @@ async function tryServerSideTransferPackageChoice(input: OrchestratorInput, trac
       args,
     );
     if (asObject(result)?.ok === false) toolStatus = "blocked";
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "assistant_turn_superseded") throw error;
     result = { ok: false, error: "tool_execution_failed" };
     toolStatus = "error";
   }
@@ -659,6 +667,7 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
   let result: unknown;
   let toolStatus: "executed" | "blocked" | "error" = "executed";
   try {
+    await assertActionTurnCurrent(input);
     result = await executeAssistantActionTool(
       {
         supabase: input.supabase,
@@ -677,7 +686,8 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
       {},
     );
     if (asObject(result)?.ok === false) toolStatus = "blocked";
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "assistant_turn_superseded") throw error;
     result = { ok: false, error: "tool_execution_failed" };
     toolStatus = "error";
   }
@@ -803,6 +813,7 @@ async function tryServerSidePostTrialEnrollmentMethod(
   let result: unknown;
   let toolStatus: "executed" | "blocked" | "error" = "executed";
   try {
+    await assertActionTurnCurrent(input);
     result = await executeAssistantActionTool(
       {
         supabase: input.supabase,
@@ -821,7 +832,8 @@ async function tryServerSidePostTrialEnrollmentMethod(
       { payment_method: method },
     );
     if (asObject(result)?.ok === false) toolStatus = "blocked";
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "assistant_turn_superseded") throw error;
     result = { ok: false, error: "tool_execution_failed" };
     toolStatus = "error";
   }
@@ -1444,7 +1456,9 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       } else {
         const currentUserMessage =
           [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
-        result = shouldBlockPaymentForInformation(toolName, currentUserMessage)
+        const paymentBlocked = shouldBlockPaymentForInformation(toolName, currentUserMessage);
+        if (!input.testSimulation && !paymentBlocked) await assertActionTurnCurrent(input);
+        result = paymentBlocked
           ? {
               ok: false,
               reason_code: "information_request_not_payment_authorization",
@@ -1486,7 +1500,8 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       if (resultObject?.ok === false) {
         toolStatus = "blocked";
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.message === "assistant_turn_superseded") throw error;
       result = { ok: false, error: "tool_execution_failed" };
       toolStatus = "error";
     }
