@@ -22,7 +22,8 @@ describe("Catálogo C1 · progreso de figuras por alumna", () => {
     expect(panel).toContain('.from("student_discipline_levels")');
     expect(panel).toContain('.from("technical_level_definitions")');
     expect(panel).toContain('.from("pole_figure_profiles")');
-    expect(panel).toContain("levelRank");
+    expect(panel).toContain("toCatalogLevel");
+    expect(panel).toContain("currentCatalogLevel");
     expect(panel).toContain('currentLevelTitle = "Principiante"');
   });
 
@@ -46,7 +47,7 @@ describe("Catálogo C1 · progreso de figuras por alumna", () => {
   it("lets students upload photos only for achieved Pole figures", () => {
     expect(studentPortal).toContain("student_pole_figure_achievements");
     expect(studentPortal).toContain("PoleFigurePhotoPicker");
-    expect(studentPortal).toContain("Cuando tu instructora la marque como hecha");
+    expect(studentPortal).toContain("Tu instructora debe validar esta figura en clase");
     expect(photoPicker).toContain('"pole-achievement-photos"');
     expect(studentActions).toContain("finalizeStudentPoleFigurePhotoAction");
     expect(studentActions).toContain("figure_not_achieved");
