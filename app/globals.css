@@ -2929,3 +2929,197 @@ a.admin-nav-item:hover .nav-dot {
     text-align: right;
   }
 }
+
+
+/* =========================================================
+   SENDERO · Studio Flow visual system
+   Scoped so screens can migrate progressively.
+   Source: approved Cumpleaños Demeter visual reference.
+   ========================================================= */
+.sendero {
+  --sendero-stage: #16161a;
+  --sendero-night: #1d1e23;
+  --sendero-night-2: #2a2834;
+  --sendero-card: #2a2c33;
+  --sendero-card-2: #34363e;
+  --sendero-ink: #f1eee6;
+  --sendero-ink-2: #cfd0d8;
+  --sendero-muted: #a3a6b2;
+  --sendero-faint: #6f7280;
+  --sendero-line: rgba(255, 255, 255, 0.08);
+  --sendero-mint: #8fe6c8;
+  --sendero-mint-soft: rgba(143, 230, 200, 0.14);
+  --sendero-moon: #f6d67a;
+  --sendero-moon-soft: rgba(246, 214, 122, 0.14);
+  --sendero-lilac: #cdb8ec;
+  --sendero-lilac-soft: rgba(205, 184, 236, 0.16);
+  --sendero-coral: #f28a7a;
+  --sendero-coral-soft: rgba(242, 138, 122, 0.14);
+  --sendero-shadow: 0 24px 64px rgba(0, 0, 0, 0.42);
+
+  min-height: 100vh;
+  color: var(--sendero-ink);
+  background:
+    radial-gradient(circle at 88% 0%, rgba(205, 184, 236, 0.08), transparent 28%),
+    linear-gradient(180deg, var(--sendero-night) 0%, #22232a 62%, var(--sendero-night-2) 100%);
+  font-family: var(--font-sendero-body), Montserrat, ui-sans-serif, system-ui, sans-serif;
+}
+
+.sendero h1,
+.sendero h2,
+.sendero h3,
+.sendero .sendero-display {
+  font-family: var(--font-sendero-display), Marcellus, Georgia, serif;
+  font-weight: 400;
+}
+
+.sendero :is(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--sendero-mint);
+  outline-offset: 2px;
+}
+
+.sendero-topbar {
+  border-bottom: 1px solid var(--sendero-line);
+  background: rgba(29, 30, 35, 0.88);
+  backdrop-filter: blur(18px);
+}
+
+.sendero-brand {
+  color: var(--sendero-mint);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.sendero-surface {
+  border: 1px solid var(--sendero-line);
+  border-radius: 26px;
+  background: var(--sendero-card);
+}
+
+.sendero-surface-soft {
+  border: 1px solid var(--sendero-line);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.sendero-eyebrow {
+  color: var(--sendero-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.sendero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sendero-chip-mint {
+  background: var(--sendero-mint-soft);
+  color: var(--sendero-mint);
+}
+
+.sendero-chip-moon {
+  background: var(--sendero-moon-soft);
+  color: var(--sendero-moon);
+}
+
+.sendero-chip-lilac {
+  background: var(--sendero-lilac-soft);
+  color: var(--sendero-lilac);
+}
+
+.sendero-chip-coral {
+  background: var(--sendero-coral-soft);
+  color: var(--sendero-coral);
+}
+
+.sendero-button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  transition:
+    transform 160ms ease,
+    filter 160ms ease,
+    background 160ms ease;
+}
+
+.sendero-button:hover {
+  filter: brightness(1.04);
+}
+
+.sendero-button:active {
+  transform: translateY(1px);
+}
+
+.sendero-button-primary {
+  background: linear-gradient(135deg, var(--sendero-mint), #6fd2b2);
+  color: var(--sendero-night);
+}
+
+.sendero-button-moon {
+  background: var(--sendero-moon);
+  color: var(--sendero-night);
+}
+
+.sendero-button-ghost {
+  border: 1px solid var(--sendero-line);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--sendero-ink);
+}
+
+.sendero-desktop-nav {
+  border: 1px solid var(--sendero-line);
+  border-radius: 28px;
+  background: rgba(38, 40, 46, 0.84);
+  box-shadow: var(--sendero-shadow);
+  backdrop-filter: blur(16px);
+}
+
+.sendero-nav-item {
+  color: #8b8e99;
+}
+
+.sendero-nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--sendero-ink);
+}
+
+.sendero-nav-item-active {
+  color: var(--sendero-mint);
+  background:
+    radial-gradient(70% 90% at 50% 50%, rgba(143, 230, 200, 0.18), transparent 100%);
+}
+
+.sendero-mobile-nav {
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 28px;
+  background: rgba(38, 40, 46, 0.94);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(18px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sendero *,
+  .sendero *::before,
+  .sendero *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
