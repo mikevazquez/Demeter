@@ -9,6 +9,7 @@ import { requestStudioPasswordReset, signIn } from "@/app/auth/actions";
 type LoginCardProps = {
   mode: "studio" | "student";
   error?: string;
+  recovery?: string;
 };
 
 const studioMessages: Record<string, string> = {
@@ -163,7 +164,7 @@ function portalCopy(mode: LoginCardProps["mode"]) {
   };
 }
 
-export function LoginCard({ mode, error }: LoginCardProps) {
+export function LoginCard({ mode, error, recovery }: LoginCardProps) {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const isStudent = mode === "student";
   const messages = isStudent ? studentMessages : studioMessages;
@@ -186,6 +187,16 @@ export function LoginCard({ mode, error }: LoginCardProps) {
         </div>
 
         {error && messages[error] ? <div className="notice error">{messages[error]}</div> : null}
+        {recovery === "sent" ? (
+          <div className="notice success">
+            Te enviamos un correo para restablecer tu contraseña.
+          </div>
+        ) : null}
+        {recovery === "changed" ? (
+          <div className="notice success">
+            Contraseña actualizada. Ya puedes iniciar sesión.
+          </div>
+        ) : null}
 
         <form action={signIn} className="auth-form auth-login-form">
           <input type="hidden" name="mode" value={mode} />
@@ -253,6 +264,7 @@ export function LoginCard({ mode, error }: LoginCardProps) {
                 className="auth-recovery-link"
                 type="submit"
                 formAction={requestStudioPasswordReset}
+                formNoValidate
               >
                 ¿Olvidaste tu contraseña?
               </button>
