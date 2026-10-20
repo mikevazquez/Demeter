@@ -88,7 +88,7 @@ describe("Studio Flow V2 visual + performance contract", () => {
     expect(setupLoading).toContain("Preparando configuración");
   });
 
-  it("keeps the student portal on the tenant-specific Sendero language while adding loading feedback", () => {
+  it("keeps the student portal on its tenant-specific dark language while adding loading feedback", () => {
     expect(studentLayout).toContain("sendero");
     expect(studentLoading).toContain("Cargando tu información");
     expect(studentLoading).toContain("animate-pulse");
