@@ -195,7 +195,9 @@ export default function StudentFiguresClient({
                 <div className={styles.meta}>
                   <span>{figure.nivel}</span>
                   <span>{figure.tipo}</span>
-                  {figure.programa_base ? <span className={styles.baseBadge}>Programa base</span> : null}
+                  {figure.programa_base ? (
+                    <span className={styles.baseBadge}>Programa base</span>
+                  ) : null}
                 </div>
               </div>
 

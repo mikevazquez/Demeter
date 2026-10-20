@@ -44,7 +44,7 @@ describe("Catálogo C1 · progreso de figuras por alumna", () => {
   });
 
   it("uses Sendero visual tokens for the figures panel", () => {
-    expect(styles).toContain('#8fe6c8');
+    expect(styles).toContain("#8fe6c8");
     expect(styles).toContain('"Sendero Marcellus"');
     expect(styles).toContain("#2a2c33");
     expect(styles).toContain("@media (max-width: 760px)");

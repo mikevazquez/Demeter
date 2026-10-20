@@ -5,8 +5,7 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 28px;
   background:
-    radial-gradient(circle at 90% 0%, rgba(205, 184, 236, 0.09), transparent 28%),
-    #2a2c33;
+    radial-gradient(circle at 90% 0%, rgba(205, 184, 236, 0.09), transparent 28%), #2a2c33;
   color: #f1eee6;
 }
 

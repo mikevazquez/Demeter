@@ -265,7 +265,10 @@ export default function Profile360Overview({
               >
                 Evaluaciones
               </Link>
-              <Link href={href("figures")} aria-current={activeView === "figures" ? "page" : undefined}>
+              <Link
+                href={href("figures")}
+                aria-current={activeView === "figures" ? "page" : undefined}
+              >
                 Figuras
               </Link>
             </>
