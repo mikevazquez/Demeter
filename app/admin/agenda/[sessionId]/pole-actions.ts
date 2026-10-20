@@ -127,6 +127,12 @@ export async function setProfessionalPoleAuthorizationAction(
     throw new Error("pole_professional_authorization_advanced_only");
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("pole_professional_authorization_actor_missing");
+
   const service = createServiceClient();
   const { data: existing } = await service
     .from("student_pole_authorizations")
@@ -143,7 +149,7 @@ export async function setProfessionalPoleAuthorizationAction(
       const { error } = await service
         .from("student_pole_authorizations")
         .update({
-          authorized_by: (await supabase.auth.getUser()).data.user?.id ?? null,
+          authorized_by: user.id,
           authorized_at: new Date().toISOString(),
           revoked_at: null,
         })
@@ -151,12 +157,6 @@ export async function setProfessionalPoleAuthorizationAction(
 
       if (error) throw new Error("pole_professional_authorization_update_failed");
     } else {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) throw new Error("pole_professional_authorization_actor_missing");
-
       const { error } = await service.from("student_pole_authorizations").insert({
         studio_id: studio.id,
         student_id: normalizedStudentId,
