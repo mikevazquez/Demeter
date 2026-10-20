@@ -236,7 +236,9 @@ export function TodayClasses({
                   initiallyOpen
                   showToggle={false}
                 />
-                {poleFlows.find((flow) => flow.sessionId === item.id)?.node ?? null}
+                {phase === "live"
+                  ? (poleFlows.find((flow) => flow.sessionId === item.id)?.node ?? null)
+                  : null}
                 {item.waitlistUnavailable ? (
                   <p className="today-waitlist-error" role="alert">
                     No se pudo consultar la lista de espera.
