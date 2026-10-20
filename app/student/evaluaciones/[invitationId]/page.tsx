@@ -67,9 +67,9 @@ export default async function EvaluationInvitationPage({
         ← Evaluaciones
       </Link>
 
-      <section className="overflow-hidden rounded-[28px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_80%_0%,rgba(236,72,153,0.22),transparent_34%),linear-gradient(150deg,#15101a,#0d1017)] shadow-[0_0_34px_rgba(236,72,153,0.08)]">
+      <section className="sendero-surface overflow-hidden">
         <div className="p-5 sm:p-6">
-          <span className="inline-flex rounded-full border border-fuchsia-500/35 bg-fuchsia-500/[0.1] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-fuchsia-300">
+          <span className="sendero-chip sendero-chip-lilac">
             {invitation.evaluation_purpose === "diagnostic"
               ? "Diagnóstico inicial"
               : invitation.invitation_kind === "first"
@@ -77,14 +77,14 @@ export default async function EvaluationInvitationPage({
                 : "Evaluación periódica"}
           </span>
 
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white">
+          <h1 className="mt-4 text-4xl tracking-tight text-[var(--sendero-ink)]">
             {invitation.discipline_name}
           </h1>
           <p className="mt-1 text-sm text-zinc-400">Tu próxima evaluación está lista.</p>
 
-          <div className="mt-5 grid gap-3 rounded-3xl border border-white/10 bg-black/15 p-4">
+          <div className="sendero-surface-soft mt-5 grid gap-3 p-4">
             <div className="grid grid-cols-[34px_1fr] gap-3">
-              <span className="text-xl text-fuchsia-300" aria-hidden="true">
+              <span className="text-xl text-[var(--sendero-lilac)]" aria-hidden="true">
                 ▥
               </span>
               <div>
@@ -102,7 +102,7 @@ export default async function EvaluationInvitationPage({
             </div>
 
             <div className="grid grid-cols-[34px_1fr] gap-3">
-              <span className="text-xl text-fuchsia-300" aria-hidden="true">
+              <span className="text-xl text-[var(--sendero-lilac)]" aria-hidden="true">
                 ◫
               </span>
               <div>
@@ -117,7 +117,7 @@ export default async function EvaluationInvitationPage({
             </div>
 
             <div className="grid grid-cols-[34px_1fr] gap-3">
-              <span className="text-xl text-fuchsia-300" aria-hidden="true">
+              <span className="text-xl text-[var(--sendero-lilac)]" aria-hidden="true">
                 ✦
               </span>
               <div>
@@ -133,7 +133,7 @@ export default async function EvaluationInvitationPage({
             </div>
 
             <div className="grid grid-cols-[34px_1fr] gap-3">
-              <span className="text-xl text-fuchsia-300" aria-hidden="true">
+              <span className="text-xl text-[var(--sendero-lilac)]" aria-hidden="true">
                 ◷
               </span>
               <div>
