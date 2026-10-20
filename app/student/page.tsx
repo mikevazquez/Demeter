@@ -14,7 +14,8 @@ import {
 import { getStudentHomePackageState } from "@/lib/student/home-package-state";
 import { disciplineImage } from "@/lib/student/discipline-style";
 
-import BirthdayGiftExperience, { type BirthdayPassSnapshot } from "./components/BirthdayGiftExperience";\nimport StudentNoticeDialog from "./components/StudentNoticeDialog";
+import BirthdayGiftExperience, { type BirthdayPassSnapshot } from "./components/BirthdayGiftExperience";
+import StudentNoticeDialog from "./components/StudentNoticeDialog";
 
 type RewardLevelView = {
   key?: string;
