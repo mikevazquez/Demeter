@@ -85,7 +85,12 @@ export default async function StudentFiguresPage() {
   }
 
   const currentCatalogLevel = toCatalogLevel(currentLevelTitle);
-  const [{ data: profiles }, { data: elements }, { data: achievements }] = await Promise.all([
+  const [
+    { data: profiles },
+    { data: elements },
+    { data: achievements },
+    { data: authorizations },
+  ] = await Promise.all([
     supabase
       .from("pole_figure_profiles")
       .select("element_id,slug,original_name")
@@ -103,6 +108,12 @@ export default async function StudentFiguresPage() {
       .select("id,figure_element_id,photo_path,achieved_at")
       .eq("studio_id", membership.studio_id)
       .eq("student_id", studentId),
+    supabase
+      .from("student_pole_authorizations")
+      .select("figure_element_id,revoked_at")
+      .eq("studio_id", membership.studio_id)
+      .eq("student_id", studentId)
+      .is("revoked_at", null),
   ]);
 
   const sourceFigures = catalog.figuras as CatalogFigure[];
@@ -120,6 +131,11 @@ export default async function StudentFiguresPage() {
       .map((item) => slugByElementId.get(item.figure_element_id))
       .filter((slug): slug is string => Boolean(slug)),
   );
+  const authorizedProfessionalSlugs = new Set(
+    (authorizations ?? [])
+      .map((item) => slugByElementId.get(item.figure_element_id))
+      .filter((slug): slug is string => Boolean(slug)),
+  );
 
   const levelFigures = sourceFigures.filter((figure) => figure.nivel === currentCatalogLevel);
   const done = levelFigures.filter((figure) => achievedSlugs.has(figure.id));
@@ -134,6 +150,10 @@ export default async function StudentFiguresPage() {
     (figure) =>
       figure.prerrequisitos_sugeridos.length > 0 &&
       !figure.prerrequisitos_sugeridos.every((slug) => achievedSlugs.has(slug)),
+  );
+  const professionalFigures = sourceFigures.filter((figure) => figure.nivel === "Profesional");
+  const authorizedProfessional = professionalFigures.filter((figure) =>
+    authorizedProfessionalSlugs.has(figure.id),
   );
 
   const signedPhotoByPath = new Map<string, string>();
@@ -312,6 +332,56 @@ export default async function StudentFiguresPage() {
               .slice(0, 3)
               .map((figure) => figureCard(figure, ready.includes(figure) ? "ready" : "free"))}
           </div>
+        </section>
+      ) : null}
+
+      {currentCatalogLevel === "Avanzado" ? (
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-xl text-[var(--sendero-ink)]">Profesional</h2>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              Figuras de alto riesgo. Solo aparecen abiertas cuando tu instructora te autoriza una
+              de forma individual.
+            </p>
+          </div>
+
+          {authorizedProfessional.length ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {authorizedProfessional.map((figure) => {
+                const profile = profileBySlug.get(figure.id);
+                const achieved = profile
+                  ? achievementByElement.has(profile.element_id)
+                  : false;
+                return (
+                  <Link
+                    key={figure.id}
+                    href={`/student/figuras/${figure.id}`}
+                    className="sendero-surface flex items-center justify-between gap-3 border border-[var(--sendero-coral)]/20 p-4"
+                  >
+                    <div>
+                      <strong className="block text-sm text-[var(--sendero-ink)]">
+                        {figureName(figure)}
+                      </strong>
+                      <span className="text-[11px] text-zinc-500">{figure.familia}</span>
+                    </div>
+                    <span
+                      className={
+                        achieved
+                          ? "rounded-full bg-[var(--sendero-mint-soft)] px-2.5 py-1 text-[10px] font-semibold text-[var(--sendero-mint)]"
+                          : "rounded-full bg-[var(--sendero-coral)]/10 px-2.5 py-1 text-[10px] font-semibold text-[var(--sendero-coral)]"
+                      }
+                    >
+                      {achieved ? "Lograda ✓" : "Autorizada"}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="sendero-surface border border-[var(--sendero-coral)]/20 p-5 text-sm text-zinc-500">
+              Todavía no tienes figuras Profesional autorizadas.
+            </div>
+          )}
         </section>
       ) : null}
 
