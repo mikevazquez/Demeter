@@ -109,4 +109,19 @@ describe("Sendero visual system", () => {
     expect(adminSendero).toContain("--warning: #f6d67a");
     expect(adminSendero).toContain("--danger: #f28a7a");
   });
+
+  it("migrates Rewards and Medallero while preserving reward data sources", () => {
+    const rewards = readFileSync(join(process.cwd(), "app/student/recompensas/page.tsx"), "utf8");
+    const medals = readFileSync(
+      join(process.cwd(), "app/student/recompensas/medallero/page.tsx"),
+      "utf8",
+    );
+
+    expect(rewards).toContain("getStudentRewardsContext");
+    expect(rewards).toContain("sendero-surface");
+    expect(medals).toContain('supabase.rpc("student_reward_status_snapshot")');
+    expect(medals).toContain("reward_status_level_definitions");
+    expect(medals).toContain("sendero-chip-mint");
+    expect(medals).toContain("sendero-chip-lilac");
+  });
 });
