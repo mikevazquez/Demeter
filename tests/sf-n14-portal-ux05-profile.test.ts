@@ -15,7 +15,7 @@ describe("SF-N14 PORTAL UX-05 Perfil", () => {
     expect(profile).toContain('data-profile-block="identity"');
     expect(profile).toContain('data-profile-block="accesses"');
     expect(profile).toContain("Mi cuenta");
-    expect(profile).toContain("bg-fuchsia-600");
+    expect(profile).toContain("sendero-button-primary");
     expect(profile).toContain("Editar perfil");
   });
 
