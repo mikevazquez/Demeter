@@ -5,6 +5,7 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import PoleClassComboClient, {
   type PoleClassGroup,
   type PoleComboRecommendation,
+  type PoleProfessionalSuggestion,
 } from "./PoleClassComboClient";
 
 type RosterStudent = {
@@ -66,6 +67,7 @@ export default async function PoleClassComboPanel({
     { data: profiles },
     { data: elements },
     { data: achievements },
+    { data: authorizations },
   ] = await Promise.all([
     supabase
       .from("student_discipline_levels")
@@ -102,6 +104,12 @@ export default async function PoleClassComboPanel({
       .select("student_id,figure_element_id")
       .eq("studio_id", studio.id)
       .in("student_id", studentIds),
+    supabase
+      .from("student_pole_authorizations")
+      .select("student_id,figure_element_id,revoked_at")
+      .eq("studio_id", studio.id)
+      .in("student_id", studentIds)
+      .is("revoked_at", null),
   ]);
 
   const latestAssignmentByStudent = new Map<string, string>();
@@ -135,6 +143,11 @@ export default async function PoleClassComboPanel({
   }
 
   const profileBySlug = new Map((profiles ?? []).map((item) => [item.slug, item]));
+  const authorizationByStudent = new Map<string, Set<string>>();
+  for (const student of roster) authorizationByStudent.set(student.studentId, new Set());
+  for (const authorization of authorizations ?? []) {
+    authorizationByStudent.get(authorization.student_id)?.add(authorization.figure_element_id);
+  }
   const slugByElementId = new Map((profiles ?? []).map((item) => [item.element_id, item.slug]));
   const nameByElement = new Map((elements ?? []).map((item) => [item.id, item.name]));
   const sourceFigures = catalog.figuras as CatalogFigure[];
@@ -171,6 +184,12 @@ export default async function PoleClassComboPanel({
   for (const student of students) grouped.get(student.catalogLevel)?.push(student);
 
   const groups: PoleClassGroup[] = [];
+  const professionalSuggestionSlugs = [
+    "elbow-grip-shoulder-mount",
+    "one-arm-straddle-shoulder-mount",
+    "reverse-ayesha",
+    "brass-monkey-back-oversplit",
+  ];
 
   for (const level of Object.keys(catalogLevelOrder) as Array<keyof typeof catalogLevelOrder>) {
     const members = grouped.get(level) ?? [];
@@ -252,6 +271,30 @@ export default async function PoleClassComboPanel({
         (recommendation) => recommendation.newFigureElementId && recommendation.figures.length >= 2,
       );
 
+    const professionalSuggestions: PoleProfessionalSuggestion[] =
+      level === "Avanzado"
+        ? members.flatMap((student) =>
+            professionalSuggestionSlugs.flatMap((slug) => {
+              const profile = profileBySlug.get(slug);
+              const source = sourceBySlug.get(slug);
+              if (!profile || !source) return [];
+
+              return [
+                {
+                  studentId: student.studentId,
+                  studentName: student.name,
+                  elementId: profile.element_id,
+                  slug,
+                  name: nameByElement.get(profile.element_id) ?? source.nombre_es ?? source.nombre,
+                  family: source.familia ?? "Profesional",
+                  authorized:
+                    authorizationByStudent.get(student.studentId)?.has(profile.element_id) ?? false,
+                },
+              ];
+            }),
+          )
+        : [];
+
     groups.push({
       level,
       label: members.length === 1 ? level : `${level}s`,
@@ -263,6 +306,7 @@ export default async function PoleClassComboPanel({
         totalAtLevel: student.totalAtLevel,
       })),
       recommendations,
+      professionalSuggestions,
     });
   }
 
