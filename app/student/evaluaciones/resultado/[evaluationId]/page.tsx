@@ -200,9 +200,7 @@ export default async function StudentEvaluationResultPage({
 
       {result.criteria.length ? (
         <section className="sendero-surface p-4">
-          <p className="sendero-eyebrow !text-[var(--sendero-mint)]">
-            Desglose de puntaje
-          </p>
+          <p className="sendero-eyebrow !text-[var(--sendero-mint)]">Desglose de puntaje</p>
           <h2 className="mt-1 text-lg font-semibold text-white">Tu evaluación</h2>
 
           <div className="mt-4 divide-y divide-white/[0.06]">

@@ -77,9 +77,7 @@ export default async function StudentProfilePage({
   return (
     <main className="space-y-4 pb-4 sm:space-y-5">
       <header>
-        <p className="sendero-brand">
-          Perfil
-        </p>
+        <p className="sendero-brand">Perfil</p>
         <h1 className="mt-2 text-4xl tracking-tight text-[var(--sendero-ink)] sm:text-5xl">
           Mi cuenta
         </h1>
@@ -128,10 +126,7 @@ export default async function StudentProfilePage({
         </StudentNoticeDialog>
       ) : null}
 
-      <section
-        data-profile-block="identity"
-        className="sendero-surface overflow-hidden"
-      >
+      <section data-profile-block="identity" className="sendero-surface overflow-hidden">
         <div className="border-b border-white/10 p-5 sm:p-6">
           <div className="flex items-center gap-4">
             <div className="shrink-0">
@@ -150,7 +145,9 @@ export default async function StudentProfilePage({
               </div>
             </div>
             <div className="min-w-0">
-              <h2 className="truncate text-2xl text-[var(--sendero-ink)] sm:text-3xl">{fullName}</h2>
+              <h2 className="truncate text-2xl text-[var(--sendero-ink)] sm:text-3xl">
+                {fullName}
+              </h2>
               <p className="mt-1 text-sm text-zinc-400">Alumna · {studio.name}</p>
             </div>
           </div>
@@ -231,10 +228,7 @@ export default async function StudentProfilePage({
               >
                 Guardar cambios
               </PendingActionButton>
-              <Link
-                href="/student/perfil"
-                className="sendero-button sendero-button-ghost"
-              >
+              <Link href="/student/perfil" className="sendero-button sendero-button-ghost">
                 Cancelar
               </Link>
             </div>
@@ -252,9 +246,7 @@ export default async function StudentProfilePage({
         className="sendero-surface grid grid-cols-[1fr_auto] items-center gap-4 px-4 py-3 transition hover:bg-white/[0.04]"
       >
         <div className="min-w-0">
-          <p className="sendero-eyebrow">
-            Paquete vigente
-          </p>
+          <p className="sendero-eyebrow">Paquete vigente</p>
           <p className="mt-1 truncate text-base text-[var(--sendero-ink)]">
             {activePackage?.name ?? "Sin paquete activo"}
           </p>
@@ -291,7 +283,9 @@ export default async function StudentProfilePage({
               ◇
             </span>
             <span className="min-w-0">
-              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">Mi paquete</strong>
+              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+                Mi paquete
+              </strong>
               <span className="mt-0.5 block truncate text-xs text-zinc-500">
                 {activePackage
                   ? activePackage.unlimited
@@ -319,7 +313,9 @@ export default async function StudentProfilePage({
               ✦
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">Rewards</strong>
+              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+                Rewards
+              </strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
                 Medallas, beneficios y recompensas obtenidas
               </span>
@@ -343,7 +339,9 @@ export default async function StudentProfilePage({
               ◎
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">Evaluaciones</strong>
+              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+                Evaluaciones
+              </strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
                 Nivel técnico, próximas evaluaciones y resultados
               </span>
@@ -367,7 +365,9 @@ export default async function StudentProfilePage({
               ≡
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">Mis clases</strong>
+              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+                Mis clases
+              </strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
                 {snapshot.upcoming.length} próximas
               </span>
@@ -391,7 +391,9 @@ export default async function StudentProfilePage({
               ↔
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">Movimientos</strong>
+              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+                Movimientos
+              </strong>
               <span className="mt-0.5 block text-xs text-zinc-500">Historial de créditos</span>
             </span>
             <span
@@ -413,7 +415,9 @@ export default async function StudentProfilePage({
               $
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">Pagos</strong>
+              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+                Pagos
+              </strong>
               <span className="mt-0.5 block text-xs text-zinc-500">Historial comercial</span>
             </span>
             <span
@@ -435,7 +439,9 @@ export default async function StudentProfilePage({
               ◉
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">Notificaciones</strong>
+              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+                Notificaciones
+              </strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
                 Elige Push, WhatsApp y correo
               </span>
@@ -459,7 +465,9 @@ export default async function StudentProfilePage({
               □
             </span>
             <span>
-              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">Documentos</strong>
+              <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+                Documentos
+              </strong>
               <span className="mt-0.5 block text-xs text-zinc-500">
                 Versiones y aceptación · próxima fase
               </span>

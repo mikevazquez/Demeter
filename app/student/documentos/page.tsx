@@ -37,9 +37,7 @@ export default async function StudentDocumentsPage({
   return (
     <main className="space-y-5 pb-6">
       <header>
-        <p className="sendero-brand">
-          Portal alumna · Documentos
-        </p>
+        <p className="sendero-brand">Portal alumna · Documentos</p>
         <h1 className="mt-2 text-4xl text-[var(--sendero-ink)] sm:text-5xl">Mis documentos</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sendero-muted)]">
           Revisa los documentos que tu estudio necesita y conserva el historial exacto de lo que ya
@@ -92,10 +90,7 @@ export default async function StudentDocumentsPage({
           ["Completados", completed.length],
           ["Total", items.length],
         ].map(([label, value]) => (
-          <div
-            key={String(label)}
-            className="sendero-surface p-4"
-          >
+          <div key={String(label)} className="sendero-surface p-4">
             <p className="text-2xl font-semibold text-white">{value}</p>
             <p className="mt-1 text-xs text-zinc-500">{label}</p>
           </div>
@@ -105,9 +100,7 @@ export default async function StudentDocumentsPage({
       {pending.length ? (
         <section className="space-y-3">
           <div>
-            <p className="sendero-eyebrow">
-              Requieren tu atención
-            </p>
+            <p className="sendero-eyebrow">Requieren tu atención</p>
             <h2 className="mt-1 text-xl text-[var(--sendero-ink)]">Pendientes</h2>
           </div>
 
@@ -123,10 +116,7 @@ export default async function StudentDocumentsPage({
               !item.student_completed;
 
             return (
-              <article
-                key={item.version_id}
-                className="sendero-surface p-5"
-              >
+              <article key={item.version_id} className="sendero-surface p-5">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -184,9 +174,7 @@ export default async function StudentDocumentsPage({
 
       <section className="space-y-3">
         <div>
-          <p className="sendero-eyebrow">
-            Historial
-          </p>
+          <p className="sendero-eyebrow">Historial</p>
           <h2 className="mt-1 text-xl text-[var(--sendero-ink)]">Documentos completados</h2>
         </div>
 

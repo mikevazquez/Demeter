@@ -318,7 +318,9 @@ export default async function StudentHomePage({
     <main className="space-y-4 pb-4 sm:space-y-5">
       {enrollmentExpiringSoon ? (
         <section className="sendero-surface p-4 sm:p-5">
-          <p className="sendero-eyebrow !text-[var(--sendero-moon)]">Tu inscripción está por vencer</p>
+          <p className="sendero-eyebrow !text-[var(--sendero-moon)]">
+            Tu inscripción está por vencer
+          </p>
           <p className="mt-1 text-sm text-zinc-300">
             Vence en {enrollmentDaysRemaining} día{enrollmentDaysRemaining === 1 ? "" : "s"}.
             Renuévala para conservar tus reservas disponibles.
@@ -334,7 +336,9 @@ export default async function StudentHomePage({
 
       {enrollmentMissing ? (
         <section className="sendero-surface p-4 sm:p-5">
-          <p className="text-sm font-semibold text-[var(--sendero-coral)]">No tienes una inscripción vigente</p>
+          <p className="text-sm font-semibold text-[var(--sendero-coral)]">
+            No tienes una inscripción vigente
+          </p>
           <p className="mt-1 text-xs leading-5 text-zinc-300">
             La inscripción es obligatoria para reservar. Puedes pagarla sola o incluirla con tu
             próximo paquete o clase suelta.
@@ -585,9 +589,7 @@ export default async function StudentHomePage({
               />
             </div>
 
-            <p className="sendero-eyebrow mt-4">
-              Mi perfil
-            </p>
+            <p className="sendero-eyebrow mt-4">Mi perfil</p>
             <h1 className="mt-1.5 text-2xl leading-tight tracking-tight text-[var(--sendero-ink)] sm:text-3xl">
               {fullName}
             </h1>
@@ -675,10 +677,7 @@ export default async function StudentHomePage({
           {technicalLevels.length ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {technicalLevels.map((item) => (
-                <span
-                  key={item.disciplineName}
-                  className="sendero-chip sendero-chip-mint"
-                >
+                <span key={item.disciplineName} className="sendero-chip sendero-chip-mint">
                   <span>{item.disciplineName}</span>
                   <span className="text-[var(--sendero-faint)]">·</span>
                   <strong>{item.levelTitle}</strong>
@@ -694,20 +693,18 @@ export default async function StudentHomePage({
       </header>
 
       {activePackage ? (
-        <section
-          data-home-block="package"
-          className="sendero-surface relative overflow-hidden p-4"
-        >
+        <section data-home-block="package" className="sendero-surface relative overflow-hidden p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="sendero-eyebrow">
-                Mi paquete
-              </p>
+              <p className="sendero-eyebrow">Mi paquete</p>
               <h2 className="mt-2 truncate text-xl text-[var(--sendero-ink)]">
                 {activePackage.name}
               </h2>
             </div>
-            <Link href="/student/paquete" className="shrink-0 text-xs font-semibold text-[var(--sendero-mint)]">
+            <Link
+              href="/student/paquete"
+              className="shrink-0 text-xs font-semibold text-[var(--sendero-mint)]"
+            >
               Ver detalles →
             </Link>
           </div>
@@ -756,13 +753,8 @@ export default async function StudentHomePage({
           ) : null}
         </section>
       ) : (
-        <section
-          data-home-block="no-package"
-          className="sendero-surface p-4"
-        >
-          <p className="sendero-eyebrow">
-            Mi paquete
-          </p>
+        <section data-home-block="no-package" className="sendero-surface p-4">
+          <p className="sendero-eyebrow">Mi paquete</p>
           <div className="mt-5 text-center">
             <span aria-hidden="true" className="text-3xl text-zinc-500">
               ◇
@@ -784,10 +776,7 @@ export default async function StudentHomePage({
       )}
 
       {rewardCreditWallets.length ? (
-        <section
-          data-home-block="reward-credits"
-          className="sendero-surface px-4 py-3"
-        >
+        <section data-home-block="reward-credits" className="sendero-surface px-4 py-3">
           <div className="flex items-center gap-3">
             <div
               aria-hidden="true"
@@ -797,9 +786,7 @@ export default async function StudentHomePage({
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="sendero-eyebrow !text-[var(--sendero-mint)]">
-                Créditos extra
-              </p>
+              <p className="sendero-eyebrow !text-[var(--sendero-mint)]">Créditos extra</p>
               <strong className="mt-0.5 block text-base font-semibold text-white">
                 {rewardCreditsAvailable} de {rewardCreditsTotal} disponibles
               </strong>
@@ -828,14 +815,9 @@ export default async function StudentHomePage({
         </section>
       ) : null}
 
-      <section
-        data-home-block="reserved-classes"
-        className="sendero-surface p-4"
-      >
+      <section data-home-block="reserved-classes" className="sendero-surface p-4">
         <div className="flex items-center justify-between gap-3">
-          <p className="sendero-eyebrow">
-            Tus próximas clases
-          </p>
+          <p className="sendero-eyebrow">Tus próximas clases</p>
           {nextClass ? (
             <Link href="/student/mis-clases" className="text-xs font-semibold text-white">
               Ver todas →

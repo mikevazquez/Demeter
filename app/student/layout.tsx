@@ -113,9 +113,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
       <header className="sendero-topbar">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <Link href="/student" className="min-w-0">
-            <p className="sendero-brand">
-              DEMETER
-            </p>
+            <p className="sendero-brand">DEMETER</p>
             <p className="truncate text-sm font-semibold text-white">{studio.name}</p>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">

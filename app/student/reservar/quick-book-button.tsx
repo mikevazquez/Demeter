@@ -151,9 +151,7 @@ export function QuickBookButton({
                   ¡Tu lugar está listo!
                 </h2>
                 <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                  <p className="sendero-eyebrow !text-[var(--sendero-lilac)]">
-                    {discipline}
-                  </p>
+                  <p className="sendero-eyebrow !text-[var(--sendero-lilac)]">{discipline}</p>
                   <p className="mt-1 font-semibold text-white">{activity}</p>
                   <p className="mt-1 text-sm text-zinc-400">{timeLabel}</p>
                 </div>

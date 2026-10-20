@@ -190,9 +190,7 @@ export default async function StudentProgressPage() {
   return (
     <main className="space-y-5 pb-4">
       <header>
-        <p className="sendero-brand">
-          Rewards
-        </p>
+        <p className="sendero-brand">Rewards</p>
         <h1 className="mt-2 text-4xl tracking-tight text-[var(--sendero-ink)] sm:text-5xl">
           Rewards
         </h1>
@@ -207,9 +205,7 @@ export default async function StudentProgressPage() {
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="sendero-eyebrow !text-[var(--sendero-lilac)]">
-              Medallas
-            </p>
+            <p className="sendero-eyebrow !text-[var(--sendero-lilac)]">Medallas</p>
             <h2 className="mt-1 text-xl text-[var(--sendero-ink)]">Tu Medallero</h2>
             <p className="mt-1 text-xs leading-5 text-zinc-400">
               Consulta requisitos, recompensas y tu progreso hacia Bronce, Plata, Oro o Diamante.
@@ -273,9 +269,7 @@ export default async function StudentProgressPage() {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="sendero-eyebrow !text-[var(--sendero-lilac)]">
-                  {nearest.eyebrow}
-                </p>
+                <p className="sendero-eyebrow !text-[var(--sendero-lilac)]">{nearest.eyebrow}</p>
                 <h2 className="mt-1 text-2xl text-[var(--sendero-ink)]">{nearest.title}</h2>
               </div>
               <StateChip tone="magenta">{nearest.percent}%</StateChip>
@@ -488,9 +482,7 @@ export default async function StudentProgressPage() {
                 className="sendero-surface group flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-white/[0.04]"
               >
                 <div className="min-w-0">
-                  <p className="sendero-eyebrow !text-[var(--sendero-mint)]">
-                    Disponible
-                  </p>
+                  <p className="sendero-eyebrow !text-[var(--sendero-mint)]">Disponible</p>
                   <strong className="mt-1 block truncate text-sm text-white">
                     {rewardBenefitLabel(reward)}
                   </strong>

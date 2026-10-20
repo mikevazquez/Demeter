@@ -229,10 +229,10 @@ export default async function StudentReservePage({
     <main className="space-y-5 pb-4">
       <BookingEligibilityRefresh />
       <header>
-        <p className="sendero-brand">
-          Portal alumna
-        </p>
-        <h1 className="mt-2 text-3xl leading-tight text-[var(--sendero-ink)] sm:text-4xl">Reservar clase</h1>
+        <p className="sendero-brand">Portal alumna</p>
+        <h1 className="mt-2 text-3xl leading-tight text-[var(--sendero-ink)] sm:text-4xl">
+          Reservar clase
+        </h1>
         <p className="mt-1.5 max-w-xl text-xs leading-5 text-[var(--sendero-muted)]">
           Elige una fecha para consultar la agenda completa de ese día.
         </p>
@@ -254,10 +254,7 @@ export default async function StudentReservePage({
         </section>
       ) : null}
 
-      <section
-        aria-label="Seleccionar fecha"
-        className="sendero-surface p-3 sm:p-4"
-      >
+      <section aria-label="Seleccionar fecha" className="sendero-surface p-3 sm:p-4">
         <div className="mb-3 flex items-center justify-between gap-3">
           {weekStart > currentWeekStart ? (
             <Link
@@ -300,7 +297,7 @@ export default async function StudentReservePage({
                 ? "bg-[var(--sendero-mint)] text-[var(--sendero-night)] shadow-[0_0_24px_rgba(143,230,200,0.16)]"
                 : isPast
                   ? "border border-white/5 bg-black/10 text-zinc-700"
-                   : "border border-[var(--sendero-line)] bg-black/15 text-[var(--sendero-muted)] hover:border-[rgba(143,230,200,0.35)] hover:text-[var(--sendero-ink)]"
+                  : "border border-[var(--sendero-line)] bg-black/15 text-[var(--sendero-muted)] hover:border-[rgba(143,230,200,0.35)] hover:text-[var(--sendero-ink)]"
             }`;
             const holidayTheme = holiday ? getHolidayTheme(holiday.theme_key) : null;
             const holidayClosed = holiday?.operation_mode === "closed";
@@ -379,9 +376,7 @@ export default async function StudentReservePage({
         <section className="space-y-2.5">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="sendero-eyebrow">
-                Clases del día
-              </p>
+              <p className="sendero-eyebrow">Clases del día</p>
               <h2 className="mt-1 text-xl capitalize text-[var(--sendero-ink)]">
                 {longDate(selectedDate)}
               </h2>
@@ -475,7 +470,9 @@ export default async function StudentReservePage({
                       >
                         {session.activity}
                       </span>
-                      <span className="block text-xs font-semibold text-[var(--sendero-ink-2)]">{timeLabel}</span>
+                      <span className="block text-xs font-semibold text-[var(--sendero-ink-2)]">
+                        {timeLabel}
+                      </span>
                       {session.coach ? (
                         <span className="block truncate text-[11px] text-[var(--sendero-muted)]">
                           {session.coach}
@@ -499,7 +496,7 @@ export default async function StudentReservePage({
                       className={`relative flex min-h-16 min-w-0 flex-col items-center justify-center self-stretch rounded-[14px] border px-2 text-center ${
                         fewSpots
                           ? "border-[rgba(246,214,122,0.45)] bg-[var(--sendero-moon-soft)]"
-                           : "border-[rgba(143,230,200,0.42)] bg-[var(--sendero-mint-soft)]"
+                          : "border-[rgba(143,230,200,0.42)] bg-[var(--sendero-mint-soft)]"
                       }`}
                     >
                       <strong

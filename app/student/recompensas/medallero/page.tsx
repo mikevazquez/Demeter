@@ -134,9 +134,7 @@ export default async function StudentMedalsPage() {
     return (
       <main className="space-y-5 pb-5">
         <header>
-          <p className="sendero-brand">
-            Medallas
-          </p>
+          <p className="sendero-brand">Medallas</p>
           <h1 className="mt-2 text-4xl tracking-tight text-[var(--sendero-ink)]">Medallero</h1>
         </header>
 
@@ -148,10 +146,7 @@ export default async function StudentMedalsPage() {
           <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-400">
             Completa tu onboarding para entrar al programa mensual de Medallas.
           </p>
-          <Link
-            href="/student/recompensas"
-            className="sendero-button sendero-button-primary mt-5"
-          >
+          <Link href="/student/recompensas" className="sendero-button sendero-button-primary mt-5">
             Continuar activación
           </Link>
         </section>
@@ -162,7 +157,10 @@ export default async function StudentMedalsPage() {
   return (
     <main className="space-y-5 pb-5">
       <header>
-        <Link href="/student/recompensas" className="text-xs font-semibold text-[var(--sendero-mint)]">
+        <Link
+          href="/student/recompensas"
+          className="text-xs font-semibold text-[var(--sendero-mint)]"
+        >
           ← Mi progreso
         </Link>
         <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
@@ -176,9 +174,7 @@ export default async function StudentMedalsPage() {
       </header>
 
       <section className="sendero-surface p-4">
-        <p className="sendero-eyebrow">
-          Tu Medalla actual
-        </p>
+        <p className="sendero-eyebrow">Tu Medalla actual</p>
         <div className="mt-2 flex items-center justify-between gap-3">
           <strong className="text-xl text-[var(--sendero-ink)]">
             {status.medal_title ? `Medalla ${status.medal_title}` : "Sin Medalla este ciclo"}

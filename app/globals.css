@@ -2930,7 +2930,6 @@ a.admin-nav-item:hover .nav-dot {
   }
 }
 
-
 /* =========================================================
    SENDERO · Studio Flow visual system
    Scoped so screens can migrate progressively.
@@ -3101,8 +3100,7 @@ a.admin-nav-item:hover .nav-dot {
 
 .sendero-nav-item-active {
   color: var(--sendero-mint);
-  background:
-    radial-gradient(70% 90% at 50% 50%, rgba(143, 230, 200, 0.18), transparent 100%);
+  background: radial-gradient(70% 90% at 50% 50%, rgba(143, 230, 200, 0.18), transparent 100%);
 }
 
 .sendero-mobile-nav {

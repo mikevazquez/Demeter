@@ -84,9 +84,7 @@ export default async function StudentEvaluationsPage() {
     <main className="space-y-5 pb-4">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <p className="sendero-brand">
-            Mi progreso
-          </p>
+          <p className="sendero-brand">Mi progreso</p>
           <h1 className="mt-2 text-4xl tracking-tight text-[var(--sendero-ink)] sm:text-5xl">
             Evaluaciones
           </h1>
@@ -149,9 +147,7 @@ export default async function StudentEvaluationsPage() {
                     {statusCopy(item.invitation_status)}
                   </span>
                 ) : item.cycle_id ? (
-                  <span className="sendero-chip sendero-chip-mint">
-                    Ciclo activo
-                  </span>
+                  <span className="sendero-chip sendero-chip-mint">Ciclo activo</span>
                 ) : (
                   <span className="rounded-full border border-white/10 px-3 py-1 text-[10px] font-semibold text-zinc-500">
                     Sin evaluaciones
@@ -265,9 +261,7 @@ export default async function StudentEvaluationsPage() {
       <section>
         <div className="mb-2 flex items-center justify-between gap-3">
           <div>
-            <p className="sendero-eyebrow !text-[var(--sendero-mint)]">
-              Historial
-            </p>
+            <p className="sendero-eyebrow !text-[var(--sendero-mint)]">Historial</p>
             <h2 className="mt-1 text-2xl text-[var(--sendero-ink)]">Evaluaciones realizadas</h2>
           </div>
           <span className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-zinc-500">

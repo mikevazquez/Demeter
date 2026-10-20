@@ -75,7 +75,9 @@ function ClassRow({
               {statusCopy[item.status] ?? item.status}
             </span>
           </div>
-          <p className="mt-1 text-xs text-[var(--sendero-ink-2)]">{formatDateTime(item.starts_at, timezone)}</p>
+          <p className="mt-1 text-xs text-[var(--sendero-ink-2)]">
+            {formatDateTime(item.starts_at, timezone)}
+          </p>
           <p className="mt-0.5 truncate text-[11px] text-[var(--sendero-muted)]">
             {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
           </p>
@@ -146,11 +148,11 @@ function WaitlistRow({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <p className="truncate text-base text-[var(--sendero-ink)]">{item.activity}</p>
-            <span className="sendero-chip sendero-chip-moon !px-2 !py-0.5">
-              En lista de espera
-            </span>
+            <span className="sendero-chip sendero-chip-moon !px-2 !py-0.5">En lista de espera</span>
           </div>
-          <p className="mt-1 text-xs text-[var(--sendero-ink-2)]">{formatDateTime(item.starts_at, timezone)}</p>
+          <p className="mt-1 text-xs text-[var(--sendero-ink-2)]">
+            {formatDateTime(item.starts_at, timezone)}
+          </p>
           <p className="mt-0.5 truncate text-[11px] text-[var(--sendero-muted)]">
             {[item.coach, item.space].filter(Boolean).join(" · ") || item.discipline}
           </p>
@@ -233,9 +235,7 @@ export default async function StudentClassesPage({
 
       <header className="flex items-end justify-between gap-4">
         <div>
-          <p className="sendero-brand">
-            Portal alumna
-          </p>
+          <p className="sendero-brand">Portal alumna</p>
           <h1 className="mt-2 text-3xl text-[var(--sendero-ink)] sm:text-4xl">Mis clases</h1>
         </div>
         <Link
@@ -246,17 +246,14 @@ export default async function StudentClassesPage({
         </Link>
       </header>
 
-      <nav
-        aria-label="Vista de mis clases"
-        className="sendero-surface-soft grid grid-cols-2 p-1"
-      >
+      <nav aria-label="Vista de mis clases" className="sendero-surface-soft grid grid-cols-2 p-1">
         <Link
           href="/student/mis-clases"
           aria-current={activeView === "upcoming" ? "page" : undefined}
           className={`rounded-xl px-4 py-2.5 text-center text-xs font-semibold transition ${
             activeView === "upcoming"
               ? "bg-[var(--sendero-mint)] text-[var(--sendero-night)]"
-               : "text-[var(--sendero-muted)] hover:text-[var(--sendero-ink)]"
+              : "text-[var(--sendero-muted)] hover:text-[var(--sendero-ink)]"
           }`}
         >
           Próximas{upcoming.length ? ` (${upcoming.length})` : ""}
@@ -267,7 +264,7 @@ export default async function StudentClassesPage({
           className={`rounded-xl px-4 py-2.5 text-center text-xs font-semibold transition ${
             activeView === "history"
               ? "bg-[var(--sendero-mint)] text-[var(--sendero-night)]"
-               : "text-[var(--sendero-muted)] hover:text-[var(--sendero-ink)]"
+              : "text-[var(--sendero-muted)] hover:text-[var(--sendero-ink)]"
           }`}
         >
           Historial
@@ -291,9 +288,7 @@ export default async function StudentClassesPage({
         <section className="space-y-3">
           {waitlistItems.length ? (
             <div>
-              <p className="sendero-eyebrow mb-2">
-                Lista de espera
-              </p>
+              <p className="sendero-eyebrow mb-2">Lista de espera</p>
               <div className="space-y-2">
                 {waitlistItems.map((item) => (
                   <WaitlistRow
@@ -310,9 +305,7 @@ export default async function StudentClassesPage({
           {nextClass ? (
             <>
               <div>
-                <p className="sendero-eyebrow mb-2">
-                  Tu próxima clase
-                </p>
+                <p className="sendero-eyebrow mb-2">Tu próxima clase</p>
                 {nextClass.status === "cancelled_by_studio" ? (
                   <ClassRow item={nextClass} timezone={studio.timezone} />
                 ) : (
@@ -414,9 +407,7 @@ export default async function StudentClassesPage({
         </section>
       ) : (
         <section>
-          <p className="sendero-eyebrow mb-2">
-            Clases anteriores
-          </p>
+          <p className="sendero-eyebrow mb-2">Clases anteriores</p>
           {history.length ? (
             <div className="space-y-2">
               {history.map((item) => (

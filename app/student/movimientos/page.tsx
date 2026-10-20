@@ -69,9 +69,7 @@ export default async function StudentMovementsPage() {
   return (
     <main className="space-y-5 pb-4">
       <header>
-        <p className="sendero-brand">
-          Movimientos
-        </p>
+        <p className="sendero-brand">Movimientos</p>
         <h1 className="mt-2 text-4xl tracking-tight text-[var(--sendero-ink)] sm:text-5xl">
           Historial de tus créditos
         </h1>
@@ -122,10 +120,7 @@ export default async function StudentMovementsPage() {
         </section>
       ) : null}
 
-      <section
-        data-movements-block="ledger"
-        className="sendero-surface p-5 sm:p-6"
-      >
+      <section data-movements-block="ledger" className="sendero-surface p-5 sm:p-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-xl text-[var(--sendero-ink)]">Actividad de créditos</h2>

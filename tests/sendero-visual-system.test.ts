@@ -18,9 +18,9 @@ describe("Sendero visual system", () => {
   });
 
   it("uses Marcellus and Montserrat only inside the student Sendero shell", () => {
-    expect(layout).toContain('Marcellus');
-    expect(layout).toContain('Montserrat');
-    expect(layout).toContain('className={\`sendero ');
+    expect(layout).toContain("Marcellus");
+    expect(layout).toContain("Montserrat");
+    expect(layout).toContain("className={\`sendero ");
   });
 
   it("migrates student navigation to Sendero without changing routes", () => {
@@ -66,8 +66,8 @@ describe("Sendero visual system", () => {
 
     expect(classes).toContain('supabase.rpc("student_classes_feed")');
     expect(classes).toContain('supabase.rpc("student_waitlist_feed")');
-    expect(classes).toContain('/cancelar');
-    expect(classes).toContain('view=history');
+    expect(classes).toContain("/cancelar");
+    expect(classes).toContain("view=history");
     expect(classes).toContain("sendero-surface");
     expect(classes).toContain("sendero-chip-mint");
     expect(classes).toContain("sendero-chip-moon");
@@ -90,8 +90,8 @@ describe("Sendero visual system", () => {
     expect(profile).toContain("updateStudentProfileAction");
     expect(profile).toContain('name="email"');
     expect(profile).toContain('name="birth_date"');
-    expect(profile).toContain('/student/perfil/notificaciones');
-    expect(profile).toContain('/student/documentos');
+    expect(profile).toContain("/student/perfil/notificaciones");
+    expect(profile).toContain("/student/documentos");
     expect(profile).toContain("sendero-surface");
     expect(profile).toContain("sendero-button-primary");
   });

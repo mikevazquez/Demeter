@@ -207,9 +207,7 @@ export default async function ScheduleEvaluationPage({
       </Link>
 
       <header>
-        <p className="sendero-brand">
-          {invitation.discipline_name}
-        </p>
+        <p className="sendero-brand">{invitation.discipline_name}</p>
         <h1 className="mt-2 text-4xl tracking-tight text-[var(--sendero-ink)]">
           Programar evaluación
         </h1>
@@ -304,9 +302,7 @@ export default async function ScheduleEvaluationPage({
                 <div className="sendero-surface-soft p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="sendero-eyebrow !text-[var(--sendero-mint)]">
-                        Opción 1
-                      </p>
+                      <p className="sendero-eyebrow !text-[var(--sendero-mint)]">Opción 1</p>
                       <h3 className="mt-1 text-base font-semibold text-white">Pagar esta clase</h3>
                       <p className="mt-1 text-xs text-zinc-500">
                         Compra únicamente el acceso para la clase que elegiste.
