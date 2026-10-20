@@ -62,11 +62,12 @@ describe("Catálogo de figuras Pole v1", () => {
     expect(client).not.toContain("generateCombo");
   });
 
-  it("is reachable from Admin Más and keeps the artifact visual language", () => {
+  it("is reachable from Admin Más and uses the approved Sendero visual language", () => {
     expect(more).toContain('href: "/admin/catalogo"');
-    expect(styles).toContain("--catalog-accent: #8a2c5e");
-    expect(styles).toContain("--lv-p: #2f7fb8");
-    expect(styles).toContain("@media (prefers-color-scheme: dark)");
+    expect(page).toContain("sendero-catalog");
+    expect(styles).toContain("--catalog-accent: #8fe6c8");
+    expect(styles).toContain("--lv-p: #8fe6c8");
+    expect(styles).toContain('font-family: "Sendero Marcellus"');
     expect(styles).toContain("@media (prefers-reduced-motion: reduce)");
   });
 });
