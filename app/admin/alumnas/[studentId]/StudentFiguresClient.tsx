@@ -34,15 +34,7 @@ type Props = {
 
 const figures = catalog.figuras as Figure[];
 
-function ProgressButton({
-  studentId,
-  elementId,
-  completed,
-}: {
-  studentId: string;
-  elementId: string;
-  completed: boolean;
-}) {
+function ProgressButton({ completed }: { completed: boolean }) {
   const { pending } = useFormStatus();
 
   return (
@@ -216,11 +208,7 @@ export default function StudentFiguresClient({
                     <input type="hidden" name="student_id" value={studentId} />
                     <input type="hidden" name="element_id" value={elementId} />
                     <input type="hidden" name="completed" value={isCompleted ? "false" : "true"} />
-                    <ProgressButton
-                      studentId={studentId}
-                      elementId={elementId}
-                      completed={isCompleted}
-                    />
+                    <ProgressButton completed={isCompleted} />
                   </form>
                 ) : null}
               </div>
