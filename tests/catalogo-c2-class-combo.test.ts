@@ -59,6 +59,15 @@ describe("Catálogo C2 · flujo de clase Pole por nivel", () => {
     expect(action).toContain("CAPABILITIES.EVALUATIONS_WRITE");
   });
 
+  it("keeps Professional outside combos but lets instructors authorize and validate it", () => {
+    expect(panel).toContain("professionalSuggestionSlugs");
+    expect(client).toContain("Autorizar figuras Profesional");
+    expect(client).toContain("La logró");
+    expect(action).toContain("setProfessionalPoleAuthorizationAction");
+    expect(action).toContain('"student_pole_authorizations"');
+    expect(action).toContain("pole_professional_authorization_advanced_only");
+  });
+
   it("uses Sendero for the guided flow", () => {
     expect(styles).toContain("#8fe6c8");
     expect(styles).toContain('"Sendero Marcellus"');
