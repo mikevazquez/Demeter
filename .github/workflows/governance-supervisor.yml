@@ -1,0 +1,158 @@
+name: Governance Supervisor
+
+on:
+  push:
+    branches: [main, feat/governance-supervisor-20261020]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Reviewed operating action (main only)
+        required: true
+        type: choice
+        options: [tick, admit, migrate]
+        default: tick
+      legacy_head:
+        description: Exact legacy head for an explicitly approved migration
+        required: false
+        type: string
+      task_contract_json:
+        description: Explicitly authorized task contract for admission
+        required: false
+        type: string
+      authorization_issue:
+        description: Owner authorization issue URL for admission
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: governance-supervisor-${{ (github.event_name == 'push' || github.event_name == 'pull_request') && github.ref || 'operating' }}
+  cancel-in-progress: false
+
+jobs:
+  supervisor-tests:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node --test tests/automation/supervisor*.node.mjs
+      - name: Managed process continuity (synthetic worker, real processes)
+        run: node scripts/automation/supervisor-process-proof.mjs --directory "$RUNNER_TEMP/supervisor-process-proof"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: supervisor-process-proof
+          path: ${{ runner.temp }}/supervisor-process-proof/
+
+  proof-dispatch:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/governance-supervisor-20261020'
+    needs: supervisor-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: write
+      issues: read
+      checks: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CLAUDE_ROUTINE_FIRE_URL: ${{ secrets.CLAUDE_ROUTINE_FIRE_URL }}
+      CLAUDE_ROUTINE_FIRE_TOKEN: ${{ secrets.CLAUDE_ROUTINE_FIRE_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Preserve legacy snapshot, prove remote CAS, admit pilot and reserve one activation
+        run: node scripts/automation/supervisor-runner.mjs proof-init
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: supervisor-dispatch-board
+          path: supervisor-output/
+
+  proof-observe:
+    if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/feat/governance-supervisor-20261020' && needs.supervisor-tests.result == 'success' }}
+    needs: [supervisor-tests, proof-dispatch]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: write
+      issues: read
+      checks: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Independent observer recovers the durable attempt (no activation credentials)
+        shell: bash
+        run: |
+          for observation in {1..10}; do
+            node scripts/automation/supervisor-runner.mjs proof-tick
+            if node -e 'const s=require("./supervisor-output/observation.json"); process.exit(s.active_task_id === null ? 0 : 1)'; then
+              break
+            fi
+            sleep 45
+          done
+      - name: Require independently verified pilot evidence
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const observation = JSON.parse(fs.readFileSync('supervisor-output/observation.json', 'utf8'));
+          const task = observation.task_statuses.find(task => task.task_id === 'GOV-SUPERVISOR-001-PILOT-01');
+          if (task?.status !== 'verified' || task.verification_status !== 'verified' || task.base_sha !== process.env.GITHUB_SHA || task.evidence_sha !== process.env.GITHUB_SHA) {
+            throw new Error(`Pilot is not verified: ${task?.status ?? 'missing'}. Inspect the board; no automatic redispatch is allowed.`);
+          }
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: supervisor-observer-board
+          path: supervisor-output/
+
+  operating:
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && vars.GOVERNANCE_SUPERVISOR_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: write
+      issues: read
+      checks: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GOVERNANCE_SUPERVISOR_ENABLED: ${{ vars.GOVERNANCE_SUPERVISOR_ENABLED }}
+      GOVERNANCE_MIGRATION_APPROVED_HEAD: ${{ inputs.legacy_head }}
+      SUPERVISOR_TASK_CONTRACT_JSON: ${{ inputs.task_contract_json }}
+      SUPERVISOR_AUTHORIZATION_ISSUE: ${{ inputs.authorization_issue }}
+      CLAUDE_ROUTINE_FIRE_URL: ${{ secrets.CLAUDE_ROUTINE_FIRE_URL }}
+      CLAUDE_ROUTINE_FIRE_TOKEN: ${{ secrets.CLAUDE_ROUTINE_FIRE_TOKEN }}
+      SUPERVISOR_MODE: ${{ github.event_name == 'schedule' && 'tick' || inputs.mode }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/automation/supervisor-runner.mjs "$SUPERVISOR_MODE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: supervisor-board-${{ github.run_id }}
+          path: supervisor-output/
