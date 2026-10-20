@@ -211,7 +211,6 @@ export default async function StudentProfilePage({
   const canReadRewards = can(CAPABILITIES.REWARDS_READ);
   const canManageRewards = can(CAPABILITIES.REWARDS_MANAGE);
   const canReadEvaluations = can(CAPABILITIES.EVALUATIONS_READ);
-  const canWriteEvaluations = can(CAPABILITIES.EVALUATIONS_WRITE);
   const canReadDocuments = can(CAPABILITIES.DOCUMENTS_READ);
   const canArchive = can(CAPABILITIES.STUDENTS_ARCHIVE);
   const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
@@ -2027,7 +2026,7 @@ export default async function StudentProfilePage({
       ) : null}
 
       {view === "figures" && canReadEvaluations ? (
-        <StudentFiguresPanel studentId={student.id} canWrite={canWriteEvaluations} />
+        <StudentFiguresPanel studentId={student.id} />
       ) : null}
 
       {view === "documents" && canReadDocuments ? (
