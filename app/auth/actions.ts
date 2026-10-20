@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import {
@@ -430,6 +430,67 @@ export async function createInitialOwnerAccount(formData: FormData) {
 
   await supabase.auth.signOut();
   redirect("/setup?created=1");
+}
+
+
+export async function requestStudioPasswordReset(formData: FormData) {
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+
+  if (!email) {
+    redirect("/login/studio?error=recovery_missing");
+  }
+
+  const headerStore = await headers();
+  const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host");
+  const proto = headerStore.get("x-forwarded-proto") ?? "https";
+  const origin = host ? `${proto}://${host}` : null;
+
+  if (!origin) {
+    redirect("/login/studio?error=recovery");
+  }
+
+  const supabase = await createClient("admin");
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/callback?next=/login/studio/restablecer`,
+  });
+
+  if (error) {
+    console.error("[auth.recovery] resetPasswordForEmail failed", {
+      code: error.code,
+      status: error.status,
+      message: error.message.slice(0, 160),
+    });
+    redirect("/login/studio?error=recovery");
+  }
+
+  redirect("/login/studio?recovery=sent");
+}
+
+export async function completeStudioPasswordReset(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const confirmation = String(formData.get("password_confirmation") ?? "");
+
+  if (password.length < 8 || password !== confirmation) {
+    redirect("/login/studio/restablecer?error=invalid");
+  }
+
+  const supabase = await createClient("admin");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login/studio?error=recovery_session");
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    redirect("/login/studio/restablecer?error=password");
+  }
+
+  redirect("/login/studio?recovery=changed");
 }
 
 export async function signOut(formData?: FormData) {
