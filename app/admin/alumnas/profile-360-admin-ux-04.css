@@ -1920,3 +1920,122 @@
     gap: 4px;
   }
 }
+
+
+.admin-ux04-profile360 .profile360-workshop-payment-form {
+  border: 1px solid #b9e4dd;
+  border-radius: 12px;
+  background: #f7fcfa;
+}
+.admin-ux04-profile360 .profile360-workshop-payment-form > summary {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 0 13px;
+  color: #0c8174;
+  font-size: 10px;
+  font-weight: 850;
+  cursor: pointer;
+  list-style: none;
+}
+.admin-ux04-profile360 .profile360-workshop-payment-form > summary::-webkit-details-marker {
+  display: none;
+}
+.admin-ux04-profile360 .profile360-workshop-payment-form > summary::before {
+  content: "+";
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: #159b8c;
+  color: #fff;
+  font-size: 13px;
+}
+.admin-ux04-profile360 .profile360-workshop-payment-form[open] > summary::before {
+  content: "−";
+}
+.admin-ux04-profile360 .profile360-workshop-payment-form form {
+  display: grid;
+  gap: 10px;
+  padding: 12px 13px 13px;
+  border-top: 1px solid #dcebe7;
+}
+.admin-ux04-profile360 .profile360-workshop-payment-balance {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 11px;
+  border-radius: 10px;
+  background: #edf8f6;
+}
+.admin-ux04-profile360 .profile360-workshop-payment-balance span {
+  color: #557168;
+  font-size: 9px;
+  font-weight: 700;
+}
+.admin-ux04-profile360 .profile360-workshop-payment-balance strong {
+  color: #0c8174;
+  font-size: 14px;
+}
+.admin-ux04-profile360 .profile360-workshop-payment-form label {
+  display: grid;
+  gap: 5px;
+  color: #5d697c;
+  font-size: 9px;
+  font-weight: 750;
+}
+.admin-ux04-profile360 .profile360-workshop-payment-form input,
+.admin-ux04-profile360 .profile360-workshop-payment-form select {
+  min-height: 40px;
+  width: 100%;
+  padding: 0 10px;
+  border: 1px solid #d9e2e7;
+  border-radius: 10px;
+  background: #fff;
+  color: #263247;
+  font: inherit;
+}
+.admin-ux04-profile360 .profile360-workshop-payment-form small {
+  color: #7b8798;
+  font-size: 8px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.admin-ux04-profile360 .profile360-workshop-payment-form button {
+  min-height: 40px;
+  border: 1px solid #159b8c;
+  border-radius: 10px;
+  background: #159b8c;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 850;
+}
+.admin-ux04-profile360 .profile360-workshop-payment-form button:disabled {
+  opacity: 0.6;
+}
+.admin-ux04-profile360 .profile360-workshop-payment-error {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: #fff0f2;
+  color: #a44258;
+  font-size: 9px;
+}
+.admin-ux04-profile360 .profile360-workshop-payment-success {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: #edf8f6;
+  color: #0c8174;
+  font-size: 9px;
+  font-weight: 700;
+}
+.admin-ux04-profile360 .profile360-workshop-payment.is-secondary {
+  border-color: #d6dde5;
+  background: #fff;
+  color: #536174;
+}
