@@ -207,19 +207,19 @@ export default async function ScheduleEvaluationPage({
       </Link>
 
       <header>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-fuchsia-300">
+        <p className="sendero-brand">
           {invitation.discipline_name}
         </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">
+        <h1 className="mt-2 text-4xl tracking-tight text-[var(--sendero-ink)]">
           Programar evaluación
         </h1>
-        <p className="mt-1.5 text-sm leading-6 text-zinc-400">
+        <p className="mt-2 text-sm leading-6 text-[var(--sendero-muted)]">
           Selecciona una clase real dentro de la ventana disponible. Tu reserva usa exactamente las
           mismas reglas, créditos y políticas que cualquier otra clase.
         </p>
       </header>
 
-      <section className="rounded-3xl border border-fuchsia-500/25 bg-fuchsia-500/[0.055] p-4">
+      <section className="sendero-surface p-4">
         <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-500">
           Ventana de evaluación
         </p>
@@ -259,7 +259,7 @@ export default async function ScheduleEvaluationPage({
           </p>
 
           {needsPurchase && enrollmentRequirement?.missing ? (
-            <div className="mt-4 rounded-2xl border border-violet-400/20 bg-violet-400/[0.055] px-4 py-3">
+            <div className="sendero-surface-soft mt-4 px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
@@ -301,10 +301,10 @@ export default async function ScheduleEvaluationPage({
           {needsPurchase && selectedSession && needsClassAccess ? (
             <div className="mt-5 space-y-4">
               {selectedSession.drop_in_price_minor != null ? (
-                <div className="rounded-2xl border border-fuchsia-500/25 bg-black/15 p-4">
+                <div className="sendero-surface-soft p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+                      <p className="sendero-eyebrow !text-[var(--sendero-mint)]">
                         Opción 1
                       </p>
                       <h3 className="mt-1 text-base font-semibold text-white">Pagar esta clase</h3>
@@ -330,7 +330,7 @@ export default async function ScheduleEvaluationPage({
                 </div>
               ) : null}
 
-              <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
+              <div className="sendero-surface-soft p-4">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
                   {selectedSession.drop_in_price_minor != null ? "Opción 2" : "Comprar acceso"}
                 </p>
@@ -345,7 +345,7 @@ export default async function ScheduleEvaluationPage({
                     {eligiblePackages.map((product) => (
                       <article
                         key={product.id}
-                        className="grid gap-3 rounded-2xl border border-white/10 bg-white/[0.025] p-4 sm:grid-cols-[1fr_auto] sm:items-center"
+                        className="sendero-surface-soft grid gap-3 p-4 sm:grid-cols-[1fr_auto] sm:items-center"
                       >
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
@@ -412,10 +412,10 @@ export default async function ScheduleEvaluationPage({
             return (
               <article
                 key={session.session_id}
-                className="grid gap-3 rounded-3xl border border-white/10 bg-white/[0.025] p-4 sm:grid-cols-[1fr_auto] sm:items-center"
+                className="sendero-surface grid gap-3 p-4 sm:grid-cols-[1fr_auto] sm:items-center"
               >
                 <div className="min-w-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+                  <p className="sendero-eyebrow !text-[var(--sendero-mint)]">
                     {formatDateTime(session.starts_at, studio.timezone)}
                   </p>
                   <h2 className="mt-1 text-base font-semibold text-white">{session.activity}</h2>
@@ -450,7 +450,7 @@ export default async function ScheduleEvaluationPage({
                     <input type="hidden" name="session_id" value={session.session_id} />
                     <PendingActionButton
                       pendingLabel="Programando…"
-                      className="min-h-11 w-full rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500 sm:w-auto"
+                      className="sendero-button sendero-button-primary w-full sm:w-auto"
                     >
                       {alreadyReserved
                         ? "Usar esta reserva"
@@ -464,7 +464,7 @@ export default async function ScheduleEvaluationPage({
             );
           })
         ) : (
-          <div className="rounded-3xl border border-white/10 bg-white/[0.025] p-6 text-center">
+          <div className="sendero-surface-soft p-6 text-center">
             <p className="text-sm font-semibold text-white">No hay clases disponibles</p>
             <p className="mt-1 text-xs leading-5 text-zinc-500">
               No encontramos clases de {invitation.discipline_name} dentro de esta ventana. Tu
