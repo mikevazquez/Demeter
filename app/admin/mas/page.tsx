@@ -43,6 +43,12 @@ const items: MoreItem[] = [
     capability: CAPABILITIES.EVALUATIONS_READ,
   },
   {
+    title: "Catálogo",
+    description: "Consulta figuras de Pole, niveles, familias, prerrequisitos y combos base.",
+    href: "/admin/catalogo",
+    capability: CAPABILITIES.EVALUATIONS_READ,
+  },
+  {
     title: "Paquetes",
     description: "Paquetes por clases, restricciones, ilimitados y talleres.",
     href: "/admin/productos",
