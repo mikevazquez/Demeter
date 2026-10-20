@@ -1,77 +1,43 @@
-create table if not exists public.student_technical_element_progress (
+create table if not exists public.student_pole_figure_achievement_events (
   id uuid primary key default gen_random_uuid(),
   studio_id uuid not null references public.studios(id) on delete cascade,
-  student_id uuid not null references public.students(id) on delete cascade,
-  discipline_id uuid not null references public.disciplines(id) on delete cascade,
-  element_id uuid not null references public.technical_elements(id) on delete cascade,
-  status text not null default 'pending' check (status in ('pending','completed')),
-  completed_at timestamptz,
-  completed_by uuid references auth.users(id) on delete set null,
-  updated_by uuid references auth.users(id) on delete set null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (studio_id, student_id, element_id),
-  check (
-    (status = 'completed' and completed_at is not null and completed_by is not null)
-    or
-    (status = 'pending' and completed_at is null and completed_by is null)
-  )
-);
-
-create index if not exists student_technical_element_progress_student_idx
-  on public.student_technical_element_progress (studio_id, student_id, discipline_id, status);
-
-create index if not exists student_technical_element_progress_element_idx
-  on public.student_technical_element_progress (studio_id, element_id, status);
-
-create table if not exists public.student_technical_element_progress_events (
-  id uuid primary key default gen_random_uuid(),
-  studio_id uuid not null references public.studios(id) on delete cascade,
-  student_id uuid not null references public.students(id) on delete cascade,
-  discipline_id uuid not null references public.disciplines(id) on delete cascade,
-  element_id uuid not null references public.technical_elements(id) on delete cascade,
-  from_status text check (from_status is null or from_status in ('pending','completed')),
-  to_status text not null check (to_status in ('pending','completed')),
+  student_id uuid not null,
+  figure_element_id uuid not null,
+  action text not null check (action in ('marked','unmarked')),
   actor_user_id uuid not null references auth.users(id) on delete restrict,
-  occurred_at timestamptz not null default now()
+  class_session_id uuid,
+  occurred_at timestamptz not null default now(),
+  foreign key (studio_id, student_id)
+    references public.students(studio_id, id) on delete cascade,
+  foreign key (studio_id, figure_element_id)
+    references public.pole_figure_profiles(studio_id, element_id),
+  foreign key (studio_id, class_session_id)
+    references public.class_sessions(studio_id, id)
 );
 
-create index if not exists student_technical_element_progress_events_student_idx
-  on public.student_technical_element_progress_events (studio_id, student_id, occurred_at desc);
+create index if not exists student_pole_figure_achievement_events_student_idx
+  on public.student_pole_figure_achievement_events (studio_id, student_id, occurred_at desc);
 
-alter table public.student_technical_element_progress enable row level security;
-alter table public.student_technical_element_progress_events enable row level security;
+alter table public.student_pole_figure_achievement_events enable row level security;
 
-create policy student_technical_progress_staff_or_self_read
-  on public.student_technical_element_progress
-  for select
-  to authenticated
-  using (
-    private.has_capability(studio_id, 'evaluations.read')
-    or private.is_current_student(student_id, studio_id)
-  );
-
-create policy student_technical_progress_staff_insert
-  on public.student_technical_element_progress
+create policy student_pole_figure_achievements_staff_insert
+  on public.student_pole_figure_achievements
   for insert
   to authenticated
   with check (
     private.has_capability(studio_id, 'evaluations.write')
-    and updated_by = auth.uid()
+    and source = 'instructor'
+    and marked_by = auth.uid()
   );
 
-create policy student_technical_progress_staff_update
-  on public.student_technical_element_progress
-  for update
+create policy student_pole_figure_achievements_staff_delete
+  on public.student_pole_figure_achievements
+  for delete
   to authenticated
-  using (private.has_capability(studio_id, 'evaluations.write'))
-  with check (
-    private.has_capability(studio_id, 'evaluations.write')
-    and updated_by = auth.uid()
-  );
+  using (private.has_capability(studio_id, 'evaluations.write'));
 
-create policy student_technical_progress_events_staff_or_self_read
-  on public.student_technical_element_progress_events
+create policy student_pole_figure_achievement_events_staff_or_self_read
+  on public.student_pole_figure_achievement_events
   for select
   to authenticated
   using (
@@ -79,8 +45,8 @@ create policy student_technical_progress_events_staff_or_self_read
     or private.is_current_student(student_id, studio_id)
   );
 
-create policy student_technical_progress_events_staff_insert
-  on public.student_technical_element_progress_events
+create policy student_pole_figure_achievement_events_staff_insert
+  on public.student_pole_figure_achievement_events
   for insert
   to authenticated
   with check (
@@ -88,27 +54,24 @@ create policy student_technical_progress_events_staff_insert
     and actor_user_id = auth.uid()
   );
 
-revoke all on public.student_technical_element_progress from anon;
-revoke all on public.student_technical_element_progress_events from anon;
-grant select, insert, update on public.student_technical_element_progress to authenticated;
-grant select, insert on public.student_technical_element_progress_events to authenticated;
+grant insert, delete on public.student_pole_figure_achievements to authenticated;
+grant select, insert on public.student_pole_figure_achievement_events to authenticated;
+revoke all on public.student_pole_figure_achievement_events from anon;
 
-create or replace function public.set_student_technical_element_progress(
+create or replace function public.set_student_pole_figure_achievement(
   p_student_id uuid,
-  p_element_id uuid,
-  p_completed boolean
+  p_figure_element_id uuid,
+  p_completed boolean,
+  p_class_session_id uuid default null
 )
-returns public.student_technical_element_progress
+returns boolean
 language plpgsql
 security invoker
 set search_path = ''
 as $function$
 declare
   v_studio_id uuid;
-  v_discipline_id uuid;
-  v_from_status text;
-  v_to_status text := case when p_completed then 'completed' else 'pending' end;
-  v_result public.student_technical_element_progress;
+  v_existing_id uuid;
 begin
   select s.studio_id
     into v_studio_id
@@ -124,87 +87,101 @@ begin
     raise exception 'forbidden';
   end if;
 
-  select e.discipline_id
-    into v_discipline_id
-  from public.technical_elements e
-  where e.id = p_element_id
-    and e.studio_id = v_studio_id
-    and e.active = true;
-
-  if v_discipline_id is null then
-    raise exception 'technical_element_not_found';
+  if not exists (
+    select 1
+    from public.pole_figure_profiles p
+    where p.studio_id = v_studio_id
+      and p.element_id = p_figure_element_id
+  ) then
+    raise exception 'pole_figure_not_found';
   end if;
 
-  select p.status
-    into v_from_status
-  from public.student_technical_element_progress p
-  where p.studio_id = v_studio_id
-    and p.student_id = p_student_id
-    and p.element_id = p_element_id
+  if p_class_session_id is not null and not exists (
+    select 1
+    from public.class_sessions cs
+    where cs.studio_id = v_studio_id
+      and cs.id = p_class_session_id
+  ) then
+    raise exception 'class_session_not_found';
+  end if;
+
+  select a.id
+    into v_existing_id
+  from public.student_pole_figure_achievements a
+  where a.studio_id = v_studio_id
+    and a.student_id = p_student_id
+    and a.figure_element_id = p_figure_element_id
   for update;
 
-  if v_from_status is not distinct from v_to_status then
-    select *
-      into v_result
-    from public.student_technical_element_progress p
-    where p.studio_id = v_studio_id
-      and p.student_id = p_student_id
-      and p.element_id = p_element_id;
-    return v_result;
+  if p_completed and v_existing_id is null then
+    insert into public.student_pole_figure_achievements (
+      studio_id,
+      student_id,
+      figure_element_id,
+      source,
+      marked_by,
+      class_session_id,
+      achieved_at,
+      validated_at
+    )
+    values (
+      v_studio_id,
+      p_student_id,
+      p_figure_element_id,
+      'instructor',
+      auth.uid(),
+      p_class_session_id,
+      now(),
+      now()
+    );
+
+    insert into public.student_pole_figure_achievement_events (
+      studio_id,
+      student_id,
+      figure_element_id,
+      action,
+      actor_user_id,
+      class_session_id
+    )
+    values (
+      v_studio_id,
+      p_student_id,
+      p_figure_element_id,
+      'marked',
+      auth.uid(),
+      p_class_session_id
+    );
+
+    return true;
   end if;
 
-  insert into public.student_technical_element_progress (
-    studio_id,
-    student_id,
-    discipline_id,
-    element_id,
-    status,
-    completed_at,
-    completed_by,
-    updated_by
-  )
-  values (
-    v_studio_id,
-    p_student_id,
-    v_discipline_id,
-    p_element_id,
-    v_to_status,
-    case when p_completed then now() else null end,
-    case when p_completed then auth.uid() else null end,
-    auth.uid()
-  )
-  on conflict (studio_id, student_id, element_id)
-  do update set
-    status = excluded.status,
-    discipline_id = excluded.discipline_id,
-    completed_at = excluded.completed_at,
-    completed_by = excluded.completed_by,
-    updated_by = excluded.updated_by,
-    updated_at = now()
-  returning * into v_result;
+  if not p_completed and v_existing_id is not null then
+    delete from public.student_pole_figure_achievements
+    where id = v_existing_id;
 
-  insert into public.student_technical_element_progress_events (
-    studio_id,
-    student_id,
-    discipline_id,
-    element_id,
-    from_status,
-    to_status,
-    actor_user_id
-  )
-  values (
-    v_studio_id,
-    p_student_id,
-    v_discipline_id,
-    p_element_id,
-    v_from_status,
-    v_to_status,
-    auth.uid()
-  );
+    insert into public.student_pole_figure_achievement_events (
+      studio_id,
+      student_id,
+      figure_element_id,
+      action,
+      actor_user_id,
+      class_session_id
+    )
+    values (
+      v_studio_id,
+      p_student_id,
+      p_figure_element_id,
+      'unmarked',
+      auth.uid(),
+      p_class_session_id
+    );
 
-  return v_result;
+    return false;
+  end if;
+
+  return p_completed;
 end;
 $function$;
 
-revoke all on function public.set_student_technical_element_progress(uuid, uuid, boolean) from public;
-grant execute on function public.set_student_technical_element_progress(uuid, uuid, boolean) to authenticated;
+revoke all on function public.set_student_pole_figure_achievement(uuid, uuid, boolean, uuid) from public;
+grant execute on function public.set_student_pole_figure_achievement(uuid, uuid, boolean, uuid) to authenticated;
