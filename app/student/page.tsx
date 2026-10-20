@@ -14,7 +14,7 @@ import {
 import { getStudentHomePackageState } from "@/lib/student/home-package-state";
 import { disciplineImage } from "@/lib/student/discipline-style";
 
-import StudentNoticeDialog from "./components/StudentNoticeDialog";
+import BirthdayGiftExperience, { type BirthdayPassSnapshot } from "./components/BirthdayGiftExperience";\nimport StudentNoticeDialog from "./components/StudentNoticeDialog";
 
 type RewardLevelView = {
   key?: string;
@@ -161,6 +161,7 @@ export default async function StudentHomePage({
     unreadEvaluationResult,
     appNotificationResult,
     classesResult,
+    birthdayPassResult,
   ] = await Promise.all([
     supabase.rpc("student_reward_status_snapshot"),
     supabase
@@ -189,6 +190,7 @@ export default async function StudentHomePage({
       .limit(1)
       .maybeSingle(),
     supabase.rpc("student_classes_feed"),
+    supabase.rpc("student_birthday_pass_snapshot"),
   ]);
 
   const rewardStatus = (rewardStatusResult.data as RewardStatusSnapshot | null) ?? null;
@@ -206,6 +208,10 @@ export default async function StudentHomePage({
     (unreadEvaluationResult.data as EvaluationHomeHistoryItem | null) ?? null;
   const latestAppNotification =
     (appNotificationResult.data as AppNotificationHomeItem | null) ?? null;
+  const birthdayPass =
+    birthdayPassResult.error
+      ? null
+      : ((birthdayPassResult.data as BirthdayPassSnapshot | null) ?? null);
 
   const technicalLevelMap = new Map<string, { disciplineName: string; levelTitle: string }>();
   for (const evaluation of evaluationsSnapshot?.history ?? []) {
@@ -316,6 +322,11 @@ export default async function StudentHomePage({
 
   return (
     <main className="space-y-3 pb-4 sm:space-y-4">
+      <BirthdayGiftExperience
+        firstName={snapshot.profile.first_name}
+        pass={birthdayPass}
+      />
+
       {enrollmentExpiringSoon ? (
         <section className="rounded-[26px] border border-amber-400/30 bg-amber-400/[0.06] p-4 sm:p-5">
           <p className="text-xs font-semibold text-amber-200">Tu inscripción está por vencer</p>
