@@ -47,4 +47,11 @@ describe("Cumpleaños Demeter · B2 student portal", () => {
     expect(experience).toContain('data-home-block="birthday-message"');
     expect(experience).toContain('data-home-block="birthday-pass"');
   });
+
+  it("keeps the visual UAT override restricted to Vercel Preview", () => {
+    expect(home).toContain('process.env.VERCEL_ENV === "preview"');
+    expect(home).toContain('query.birthday_demo === "day"');
+    expect(home).toContain('query.birthday_demo === "month"');
+    expect(home).toContain('query.birthday_demo === "used"');
+  });
 });
