@@ -4,9 +4,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { SessionOperations } from "./SessionOperations";
+import { GiftIcon } from "./GiftIcon";
 
 export type TodayRosterItem = {
   id: string;
+  isBirthday?: boolean;
   studentName: string;
   status: string;
   packageLabel: string;
@@ -108,6 +110,7 @@ export function TodayClasses({
     const sessionId = hash.replace("#session-", "");
     return classes.some((item) => item.id === sessionId) ? sessionId : null;
   });
+  const [birthdayOpenOverrides, setBirthdayOpenOverrides] = useState<Record<string, boolean>>({});
 
   if (!classes.length) {
     return <div className="today-empty-state">No hay clases programadas para este día.</div>;
@@ -116,7 +119,10 @@ export function TodayClasses({
   return (
     <div className="today-class-list">
       {classes.map((item) => {
-        const isOpen = openSessionId === item.id;
+        const hasBirthday = item.roster.some((student) => student.isBirthday);
+        const isOpen = hasBirthday
+          ? (birthdayOpenOverrides[item.id] ?? true)
+          : openSessionId === item.id;
         const startsAt = new Date(item.startsAt).getTime();
         const endsAt = new Date(item.endsAt).getTime();
         const phase =
@@ -158,6 +164,9 @@ export function TodayClasses({
               className="today-class-summary"
               type="button"
               onClick={() => {
+                if (hasBirthday) {
+                  setBirthdayOpenOverrides((previous) => ({ ...previous, [item.id]: !isOpen }));
+                }
                 const next = isOpen ? null : item.id;
                 setOpenSessionId(next);
                 const url = new URL(window.location.href);
@@ -170,7 +179,15 @@ export function TodayClasses({
               <span className="today-class-accent" aria-hidden="true" />
               <span className="today-class-time">{item.time}</span>
               <span className="today-class-copy">
-                <strong>{item.name}</strong>
+                <span className="today-class-title-line">
+                  <strong>{item.name}</strong>
+                  {hasBirthday ? (
+                    <span className="today-class-birthday-tag">
+                      <GiftIcon size={13} />
+                      Cumpleañera
+                    </span>
+                  ) : null}
+                </span>
                 <small className="today-class-meta">
                   {item.instructor}
                   {item.space !== "Sin espacio" ? ` · ${item.space}` : ""}
