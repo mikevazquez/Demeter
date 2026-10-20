@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Marcellus, Montserrat } from "next/font/google";
 import Link from "next/link";
 import { cache } from "react";
 
@@ -8,6 +9,18 @@ import { getStudentShellContext, getStudentStudioContext } from "@/lib/student/p
 import PendingActionButton from "./components/PendingActionButton";
 import PwaBrandingSync from "@/app/components/PwaBrandingSync";
 import { StudentNav } from "./StudentNav";
+
+const senderoDisplay = Marcellus({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-sendero-display",
+});
+
+const senderoBody = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-sendero-body",
+});
 
 type PwaBrand = {
   name: string;
@@ -90,19 +103,17 @@ export default async function StudentLayout({ children }: { children: React.Reac
     .is("read_at", null);
 
   return (
-    <div className="min-h-screen bg-[#090a0f] text-white">
+    <div className={`sendero ${senderoDisplay.variable} ${senderoBody.variable}`}>
       <PwaBrandingSync
         name={brand.name}
         manifestHref={"/pwa/manifest?" + query}
         appleTouchIconHref={"/pwa/studio-icon/180?" + query}
       />
 
-      <header className="border-b border-white/10 bg-[#0d0e14]/95 backdrop-blur">
+      <header className="sendero-topbar">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <Link href="/student" className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-fuchsia-300">
-              DEMETER
-            </p>
+            <p className="sendero-brand">DEMETER</p>
             <p className="truncate text-sm font-semibold text-white">{studio.name}</p>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
@@ -110,7 +121,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
               href="/student/notificaciones"
               aria-label="Notificaciones"
               title="Notificaciones"
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/30 text-[#D4AF37] transition hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/10 hover:text-[#E6C85C]"
+              className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--sendero-line)] text-[var(--sendero-moon)] transition hover:bg-[var(--sendero-moon-soft)]"
             >
               <svg
                 aria-hidden="true"
@@ -139,7 +150,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
               <input type="hidden" name="mode" value="student" />
               <PendingActionButton
                 pendingLabel="Saliendo…"
-                className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:bg-white/[0.05] hover:text-white disabled:cursor-wait disabled:opacity-60"
+                className="sendero-button sendero-button-ghost !min-h-10 !px-4 !text-xs disabled:cursor-wait disabled:opacity-60"
               >
                 Salir
               </PendingActionButton>

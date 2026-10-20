@@ -118,15 +118,15 @@ export default async function StudentEvaluationResultPage({
       />
 
       <section className="px-1 pt-2">
-        <h2 className="text-3xl font-semibold tracking-tight text-white">{headline}</h2>
+        <h2 className="text-4xl tracking-tight text-[var(--sendero-ink)]">{headline}</h2>
         <p className="mt-1 text-sm leading-6 text-zinc-400">{subheadline}</p>
       </section>
 
-      <section className="flex items-center justify-between gap-3 rounded-[24px] border border-white/10 bg-white/[0.025] p-4">
+      <section className="sendero-surface flex items-center justify-between gap-3 p-4">
         <div className="flex min-w-0 items-center gap-3">
           <span
             aria-hidden="true"
-            className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-fuchsia-500/[0.12] text-xl text-fuchsia-400"
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--sendero-lilac-soft)] text-xl text-[var(--sendero-lilac)]"
           >
             ✦
           </span>
@@ -170,7 +170,7 @@ export default async function StudentEvaluationResultPage({
       </section>
 
       <section className="grid grid-cols-2 gap-3">
-        <div className="rounded-[22px] border border-white/10 bg-white/[0.025] p-4">
+        <div className="sendero-surface p-4">
           <div className="flex items-center gap-3">
             <span aria-hidden="true" className="text-xl text-fuchsia-400">
               ▣
@@ -183,7 +183,7 @@ export default async function StudentEvaluationResultPage({
             </div>
           </div>
         </div>
-        <div className="rounded-[22px] border border-white/10 bg-white/[0.025] p-4">
+        <div className="sendero-surface p-4">
           <div className="flex items-center gap-3">
             <span aria-hidden="true" className="text-xl text-fuchsia-400">
               ☆
@@ -199,10 +199,8 @@ export default async function StudentEvaluationResultPage({
       </section>
 
       {result.criteria.length ? (
-        <section className="rounded-[24px] border border-fuchsia-500/30 bg-[radial-gradient(circle_at_90%_0%,rgba(236,72,153,0.08),transparent_36%),rgba(255,255,255,0.02)] p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-300">
-            Desglose de puntaje
-          </p>
+        <section className="sendero-surface p-4">
+          <p className="sendero-eyebrow !text-[var(--sendero-mint)]">Desglose de puntaje</p>
           <h2 className="mt-1 text-lg font-semibold text-white">Tu evaluación</h2>
 
           <div className="mt-4 divide-y divide-white/[0.06]">
@@ -218,7 +216,7 @@ export default async function StudentEvaluationResultPage({
                   </span>
                   <span className="h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
                     <span
-                      className="block h-full rounded-full bg-fuchsia-500"
+                      className="block h-full rounded-full bg-[var(--sendero-mint)]"
                       style={{ width: `${score}%` }}
                     />
                   </span>
@@ -231,7 +229,7 @@ export default async function StudentEvaluationResultPage({
       ) : null}
 
       {result.coach_message || result.strengths?.length || result.improvement_areas?.length ? (
-        <section className="rounded-[24px] border border-fuchsia-500/30 bg-fuchsia-500/[0.035] p-4">
+        <section className="sendero-surface p-4">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
             Feedback de tu coach
           </p>
@@ -258,7 +256,7 @@ export default async function StudentEvaluationResultPage({
       ) : null}
 
       {result.next_due_on ? (
-        <section className="rounded-[24px] border border-white/10 bg-white/[0.025] p-4">
+        <section className="sendero-surface p-4">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
             Siguiente evaluación
           </p>
@@ -278,7 +276,7 @@ export default async function StudentEvaluationResultPage({
         </section>
       ) : null}
 
-      <section className="rounded-[24px] border border-fuchsia-500/25 bg-[linear-gradient(110deg,rgba(112,26,75,0.35),rgba(236,72,153,0.04))] p-4">
+      <section className="sendero-surface p-4">
         <div className="flex items-center justify-between gap-4">
           <div>
             <span aria-hidden="true" className="text-lg text-fuchsia-400">
@@ -307,7 +305,7 @@ export default async function StudentEvaluationResultPage({
 
       <Link
         href="/student/evaluaciones"
-        className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+        className="sendero-button sendero-button-primary min-h-12 w-full"
       >
         Ver historial de evaluaciones
       </Link>
