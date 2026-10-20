@@ -243,3 +243,5 @@ jobs:
           git add "$FILE"
           git commit -m "feat: add C1 student figure progress schema"
           git push origin HEAD:feat/catalogo-figuras-pole-v1
+
+# trigger
