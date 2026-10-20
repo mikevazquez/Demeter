@@ -21,7 +21,10 @@ export default async function PoleCatalogPage() {
   await getAdminContext(CAPABILITIES.EVALUATIONS_READ);
 
   return (
-    <div className={`${display.variable} ${body.variable}`} style={{ fontFamily: "var(--font-catalog-body)" }}>
+    <div
+      className={`${display.variable} ${body.variable}`}
+      style={{ fontFamily: "var(--font-catalog-body)" }}
+    >
       <PoleCatalogClient />
     </div>
   );

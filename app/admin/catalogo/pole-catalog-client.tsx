@@ -82,7 +82,8 @@ export default function PoleCatalogClient() {
   }, []);
 
   const families = useMemo(
-    () => [...new Set(pool.map((figure) => figure.familia))].sort((a, b) => a.localeCompare(b, "es")),
+    () =>
+      [...new Set(pool.map((figure) => figure.familia))].sort((a, b) => a.localeCompare(b, "es")),
     [pool],
   );
 
@@ -100,8 +101,7 @@ export default function PoleCatalogClient() {
     const needle = query.trim().toLowerCase();
     return pool.filter((figure) => {
       const matchesSearch =
-        !needle ||
-        `${figure.nombre} ${figure.nombre_es}`.toLowerCase().includes(needle);
+        !needle || `${figure.nombre} ${figure.nombre_es}`.toLowerCase().includes(needle);
       const matchesFamily = !family || figure.familia === family;
       const matchesType = !type || figure.tipo === type;
       const matchesLevel = !levels.size || levels.has(figure.nivel);
@@ -255,7 +255,11 @@ export default function PoleCatalogClient() {
             <div className={styles.list}>
               {shown.length ? (
                 shown.map((figure) => (
-                  <article className={styles.row} id={`catalog-figure-${figure.id}`} key={figure.id}>
+                  <article
+                    className={styles.row}
+                    id={`catalog-figure-${figure.id}`}
+                    key={figure.id}
+                  >
                     <div className={styles.name}>
                       <FigureName figure={figure} />
                     </div>
@@ -306,8 +310,8 @@ export default function PoleCatalogClient() {
         ) : (
           <section>
             <p className={styles.note}>
-              Secuencias semilla por nivel. En una fase posterior podrán alimentar un generador
-              que combine figuras ya logradas con una nueva figura del nivel de la alumna.
+              Secuencias semilla por nivel. En una fase posterior podrán alimentar un generador que
+              combine figuras ya logradas con una nueva figura del nivel de la alumna.
             </p>
             <div className={styles.combos}>
               {(["Principiante", "Intermedio", "Avanzado"] as const).flatMap((level) =>
@@ -337,9 +341,9 @@ export default function PoleCatalogClient() {
         )}
 
         <p className={styles.note}>
-          “Profesional” se conserva para consulta, pero queda fuera de cualquier futura
-          generación automática. Este catálogo no incorpora textos ni fotografías del material
-          de referencia; las descripciones futuras deberán ser propias de Demeter.
+          “Profesional” se conserva para consulta, pero queda fuera de cualquier futura generación
+          automática. Este catálogo no incorpora textos ni fotografías del material de referencia;
+          las descripciones futuras deberán ser propias de Demeter.
         </p>
       </div>
     </main>
