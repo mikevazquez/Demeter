@@ -72,4 +72,15 @@ describe("Sendero visual system", () => {
     expect(classes).toContain("sendero-chip-mint");
     expect(classes).toContain("sendero-chip-moon");
   });
+
+  it("migrates package and credits without changing commerce data sources", () => {
+    const packagePage = readFileSync(join(process.cwd(), "app/student/paquete/page.tsx"), "utf8");
+
+    expect(packagePage).toContain('supabase.rpc("student_enrollment_purchase_option")');
+    expect(packagePage).toContain('supabase.rpc("student_online_product_options")');
+    expect(packagePage).toContain("PurchasePackageButton");
+    expect(packagePage).toContain("PurchaseEnrollmentButton");
+    expect(packagePage).toContain("sendero-surface");
+    expect(packagePage).toContain("sendero-button-primary");
+  });
 });
