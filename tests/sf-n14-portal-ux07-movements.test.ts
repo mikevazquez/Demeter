@@ -52,10 +52,10 @@ describe("SF-N14 PORTAL UX-07 Movimientos", () => {
     expect(page).toContain('activePackage ? "/student/reservar" : "/student/paquete"');
   });
 
-  it("uses the approved dark-magenta student portal language", () => {
-    expect(page).toContain("text-fuchsia-300");
-    expect(page).toContain("border-fuchsia-500/20");
-    expect(page).toContain("bg-white/[0.03]");
+  it("uses the approved Sendero student portal language", () => {
+    expect(page).toContain("var(--sendero-lilac)");
+    expect(page).toContain("sendero-surface");
+    expect(page).toContain("sendero-surface-soft");
     expect(page).toContain('data-movements-block="ledger"');
   });
 });
