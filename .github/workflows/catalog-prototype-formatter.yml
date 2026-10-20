@@ -2,6 +2,11 @@ name: Catalog Prototype Formatter
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feat/catalogo-figuras-pole-v1
+    paths:
+      - .github/workflows/catalog-prototype-formatter.yml
 
 permissions:
   contents: write
