@@ -84,13 +84,13 @@ export default async function StudentEvaluationsPage() {
     <main className="space-y-5 pb-4">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-fuchsia-300">
+          <p className="sendero-brand">
             Mi progreso
           </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+          <h1 className="mt-2 text-4xl tracking-tight text-[var(--sendero-ink)] sm:text-5xl">
             Evaluaciones
           </h1>
-          <p className="mt-1.5 text-sm text-zinc-400">
+          <p className="mt-2 text-sm leading-6 text-[var(--sendero-muted)]">
             Tu progreso técnico, disciplina por disciplina.
           </p>
         </div>
@@ -109,7 +109,7 @@ export default async function StudentEvaluationsPage() {
           cards.map((item) => (
             <article
               key={item.discipline_id}
-              className="relative overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_100%_0%,rgba(236,72,153,0.12),transparent_34%),rgba(255,255,255,0.025)] p-5"
+              className="sendero-surface relative overflow-hidden p-5"
             >
               <span
                 aria-hidden="true"
@@ -135,7 +135,7 @@ export default async function StudentEvaluationsPage() {
               ) : null}
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-semibold text-white">{item.discipline_name}</h2>
+                  <h2 className="text-2xl text-[var(--sendero-ink)]">{item.discipline_name}</h2>
                   <p className="mt-1 text-sm text-zinc-400">
                     Nivel actual:{" "}
                     <strong className="text-zinc-200">
@@ -145,11 +145,11 @@ export default async function StudentEvaluationsPage() {
                 </div>
 
                 {item.invitation_status ? (
-                  <span className="rounded-full border border-fuchsia-500/35 bg-fuchsia-500/[0.08] px-3 py-1 text-[10px] font-semibold text-fuchsia-300">
+                  <span className="sendero-chip sendero-chip-lilac">
                     {statusCopy(item.invitation_status)}
                   </span>
                 ) : item.cycle_id ? (
-                  <span className="rounded-full border border-emerald-400/30 bg-emerald-400/[0.08] px-3 py-1 text-[10px] font-semibold text-emerald-300">
+                  <span className="sendero-chip sendero-chip-mint">
                     Ciclo activo
                   </span>
                 ) : (
@@ -160,7 +160,7 @@ export default async function StudentEvaluationsPage() {
               </div>
 
               {item.invitation_status === "offered" && item.invitation_id ? (
-                <div className="mt-5 rounded-2xl border border-fuchsia-500/25 bg-fuchsia-500/[0.06] p-4">
+                <div className="sendero-surface-soft mt-5 p-4">
                   <p className="text-sm font-semibold text-white">Tu evaluación está disponible</p>
                   <p className="mt-1 text-xs leading-5 text-zinc-400">
                     Puedes aceptarla y elegir una clase entre el{" "}
@@ -169,7 +169,7 @@ export default async function StudentEvaluationsPage() {
                   </p>
                   <Link
                     href={"/student/evaluaciones/" + item.invitation_id}
-                    className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+                    className="sendero-button sendero-button-primary mt-4 w-full"
                   >
                     Ver invitación
                   </Link>
@@ -183,7 +183,7 @@ export default async function StudentEvaluationsPage() {
                   </p>
                   <Link
                     href={"/student/evaluaciones/" + item.invitation_id + "/programar"}
-                    className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+                    className="sendero-button sendero-button-primary mt-3 w-full"
                   >
                     Programar evaluación
                   </Link>
@@ -212,7 +212,7 @@ export default async function StudentEvaluationsPage() {
                   </div>
                 </div>
               ) : item.invitation_status === "in_progress" ? (
-                <div className="mt-5 rounded-2xl border border-fuchsia-500/25 bg-fuchsia-500/[0.06] p-4">
+                <div className="sendero-surface-soft mt-5 p-4">
                   <p className="text-sm font-semibold text-white">Evaluación en curso</p>
                   <p className="mt-1 text-xs text-zinc-400">
                     Tu coach está registrando la evaluación. El resultado aparecerá cuando esté
@@ -244,7 +244,7 @@ export default async function StudentEvaluationsPage() {
               {item.latest_evaluation_id && !item.invitation_status ? (
                 <Link
                   href={"/student/evaluaciones/resultado/" + item.latest_evaluation_id}
-                  className="mt-4 flex min-h-12 items-center justify-between rounded-2xl bg-fuchsia-600 px-4 text-sm font-semibold text-white transition hover:bg-fuchsia-500"
+                  className="sendero-button sendero-button-primary mt-4 flex min-h-12 w-full items-center justify-between"
                 >
                   <span>Ver resultado de tu evaluación</span>
                   <span aria-hidden="true">→</span>
@@ -253,7 +253,7 @@ export default async function StudentEvaluationsPage() {
             </article>
           ))
         ) : (
-          <div className="rounded-3xl border border-white/10 bg-white/[0.025] p-6 text-center">
+          <div className="sendero-surface-soft p-6 text-center">
             <p className="text-sm font-semibold text-white">Aún no hay disciplinas evaluables</p>
             <p className="mt-1 text-xs text-zinc-500">
               El estudio todavía no ha habilitado niveles técnicos para tu cuenta.
@@ -265,10 +265,10 @@ export default async function StudentEvaluationsPage() {
       <section>
         <div className="mb-2 flex items-center justify-between gap-3">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
+            <p className="sendero-eyebrow !text-[var(--sendero-mint)]">
               Historial
             </p>
-            <h2 className="mt-1 text-xl font-semibold text-white">Evaluaciones realizadas</h2>
+            <h2 className="mt-1 text-2xl text-[var(--sendero-ink)]">Evaluaciones realizadas</h2>
           </div>
           <span className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-zinc-500">
             {history.length}
@@ -276,7 +276,7 @@ export default async function StudentEvaluationsPage() {
         </div>
 
         {history.length ? (
-          <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.025]">
+          <div className="sendero-surface overflow-hidden">
             {history.map((evaluation) => (
               <Link
                 key={evaluation.id}
@@ -307,7 +307,7 @@ export default async function StudentEvaluationsPage() {
             ))}
           </div>
         ) : (
-          <div className="rounded-3xl border border-white/10 bg-white/[0.025] p-6 text-center">
+          <div className="sendero-surface-soft p-6 text-center">
             <p className="text-sm font-semibold text-white">Aún no hay evaluaciones</p>
             <p className="mt-1 text-xs text-zinc-500">
               Cuando completes una evaluación, tu resultado aparecerá aquí.
