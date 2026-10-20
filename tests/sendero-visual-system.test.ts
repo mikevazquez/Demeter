@@ -95,4 +95,18 @@ describe("Sendero visual system", () => {
     expect(profile).toContain("sendero-surface");
     expect(profile).toContain("sendero-button-primary");
   });
+
+  it("recognizes Admin Hoy as an existing Sendero surface instead of duplicating it", () => {
+    const admin = readFileSync(join(process.cwd(), "app/admin/page.tsx"), "utf8");
+    const adminLayout = readFileSync(join(process.cwd(), "app/admin/layout.tsx"), "utf8");
+    const adminSendero = readFileSync(join(process.cwd(), "app/admin/hoy/sendero.css"), "utf8");
+
+    expect(admin).toContain("hoy-sendero");
+    expect(admin).toContain("sendero-columns");
+    expect(admin).toContain("sendero-schedule");
+    expect(adminLayout).toContain('import "./hoy/sendero.css"');
+    expect(adminSendero).toContain("--accent: #8fe6c8");
+    expect(adminSendero).toContain("--warning: #f6d67a");
+    expect(adminSendero).toContain("--danger: #f28a7a");
+  });
 });
