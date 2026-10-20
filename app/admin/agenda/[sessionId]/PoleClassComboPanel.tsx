@@ -2,23 +2,38 @@ import catalog from "@/app/admin/catalogo/pole-catalog-data.json";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-import PoleClassComboClient, { type PoleComboRecommendation } from "./PoleClassComboClient";
+import PoleClassComboClient, {
+  type PoleClassGroup,
+  type PoleComboRecommendation,
+} from "./PoleClassComboClient";
 
 type RosterStudent = {
   studentId: string;
   name: string;
 };
 
-type CatalogCombo = {
-  nivel: "Principiante" | "Intermedio" | "Avanzado";
-  figuras: string[];
+type CatalogFigure = {
+  id: string;
+  nombre: string;
+  nombre_es: string;
+  nivel: "Principiante" | "Intermedio" | "Avanzado" | "Profesional" | "Por revisar";
+  tipo: string;
+  prerrequisitos_sugeridos: string[];
 };
 
-const comboLevelRank: Record<CatalogCombo["nivel"], number> = {
+const catalogLevelOrder = {
   Principiante: 1,
   Intermedio: 2,
-  Avanzado: 4,
-};
+  Avanzado: 3,
+} as const;
+
+function toCatalogLevel(title: string | null | undefined): keyof typeof catalogLevelOrder {
+  const normalized = (title ?? "").toLowerCase();
+
+  if (normalized.includes("avanz")) return "Avanzado";
+  if (normalized.includes("inter")) return "Intermedio";
+  return "Principiante";
+}
 
 export default async function PoleClassComboPanel({
   sessionId,
@@ -113,93 +128,141 @@ export default async function PoleClassComboPanel({
     }),
   );
 
-  const rosterWithLevel = roster.map((student) => {
-    const levelId = latestAssignmentByStudent.get(student.studentId);
-    const level = levelId ? levelByDisciplineLevelId.get(levelId) : null;
-    return {
-      ...student,
-      levelTitle: level?.title ?? "Principiante",
-      levelOrder: level?.order ?? 1,
-    };
-  });
-
-  const groupLevelOrder = Math.min(...rosterWithLevel.map((student) => student.levelOrder));
-  const profileBySlug = new Map((profiles ?? []).map((item) => [item.slug, item]));
-  const nameByElement = new Map((elements ?? []).map((item) => [item.id, item.name]));
   const completedByStudent = new Map<string, Set<string>>();
-
-  for (const student of rosterWithLevel) {
-    completedByStudent.set(student.studentId, new Set());
-  }
+  for (const student of roster) completedByStudent.set(student.studentId, new Set());
   for (const achievement of achievements ?? []) {
     completedByStudent.get(achievement.student_id)?.add(achievement.figure_element_id);
   }
 
-  const candidates = (catalog.combos_base as CatalogCombo[])
-    .filter((combo) => comboLevelRank[combo.nivel] <= groupLevelOrder)
-    .map((combo, comboIndex) => {
-      const figures = combo.figuras
-        .map((slug) => profileBySlug.get(slug))
-        .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const profileBySlug = new Map((profiles ?? []).map((item) => [item.slug, item]));
+  const slugByElementId = new Map((profiles ?? []).map((item) => [item.element_id, item.slug]));
+  const nameByElement = new Map((elements ?? []).map((item) => [item.id, item.name]));
+  const sourceFigures = catalog.figuras as CatalogFigure[];
+  const sourceBySlug = new Map(sourceFigures.map((figure) => [figure.id, figure]));
 
-      if (figures.length !== combo.figuras.length || !figures.length) return null;
+  const students = roster.map((student) => {
+    const levelId = latestAssignmentByStudent.get(student.studentId);
+    const configuredLevel = levelId ? levelByDisciplineLevelId.get(levelId) : null;
+    const catalogLevel = toCatalogLevel(configuredLevel?.title);
+    const achievedSlugs = new Set(
+      [...(completedByStudent.get(student.studentId) ?? [])]
+        .map((elementId) => slugByElementId.get(elementId))
+        .filter((slug): slug is string => Boolean(slug)),
+    );
+    const totalAtLevel = sourceFigures.filter((figure) => figure.nivel === catalogLevel).length;
+    const completedAtLevel = sourceFigures.filter(
+      (figure) => figure.nivel === catalogLevel && achievedSlugs.has(figure.id),
+    ).length;
 
-      const missingCounts = figures.map(
+    return {
+      ...student,
+      levelTitle: configuredLevel?.title ?? "Principiante",
+      catalogLevel,
+      achievedSlugs,
+      completedAtLevel,
+      totalAtLevel,
+    };
+  });
+
+  const grouped = new Map<keyof typeof catalogLevelOrder, typeof students>();
+  for (const level of Object.keys(catalogLevelOrder) as Array<keyof typeof catalogLevelOrder>) {
+    grouped.set(level, []);
+  }
+  for (const student of students) grouped.get(student.catalogLevel)?.push(student);
+
+  const groups: PoleClassGroup[] = [];
+
+  for (const level of Object.keys(catalogLevelOrder) as Array<keyof typeof catalogLevelOrder>) {
+    const members = grouped.get(level) ?? [];
+    if (!members.length) continue;
+
+    const allKnow = (slug: string) => members.every((student) => student.achievedSlugs.has(slug));
+    const nobodyKnows = (slug: string) => members.every((student) => !student.achievedSlugs.has(slug));
+
+    const candidates = sourceFigures
+      .filter(
         (figure) =>
-          rosterWithLevel.filter(
-            (student) => !completedByStudent.get(student.studentId)?.has(figure.element_id),
-          ).length,
+          figure.nivel === level &&
+          figure.prerrequisitos_sugeridos.length > 0 &&
+          nobodyKnows(figure.id) &&
+          figure.prerrequisitos_sugeridos.every(allKnow),
+      )
+      .sort(
+        (left, right) =>
+          Number(right.tipo === "Giro" || right.tipo === "Invertida") -
+          Number(left.tipo === "Giro" || left.tipo === "Invertida"),
       );
-      const newFigureIndex = missingCounts.reduce(
-        (bestIndex, value, index, values) => (value > values[bestIndex] ? index : bestIndex),
-        0,
+
+    const known = sourceFigures.filter(
+      (figure) =>
+        figure.nivel !== "Profesional" &&
+        figure.nivel !== "Por revisar" &&
+        catalogLevelOrder[figure.nivel as keyof typeof catalogLevelOrder] <=
+          catalogLevelOrder[level] &&
+        allKnow(figure.id),
+    );
+
+    const recommendations: PoleComboRecommendation[] = candidates.slice(0, 12).map((candidate, index) => {
+      const prerequisite =
+        candidate.prerrequisitos_sugeridos.find((slug) => known.some((figure) => figure.id === slug)) ??
+        null;
+      const sameType = known.filter(
+        (figure) => figure.id !== prerequisite && figure.tipo === candidate.tipo,
       );
-      const supportKnown = figures.reduce((score, figure, index) => {
-        if (index === newFigureIndex) return score;
-        return (
-          score +
-          rosterWithLevel.filter((student) =>
-            completedByStudent.get(student.studentId)?.has(figure.element_id),
-          ).length
-        );
-      }, 0);
+      const otherKnown: CatalogFigure[] = [];
 
-      const newReach = missingCounts[newFigureIndex] ?? 0;
-      const score = supportKnown * 100 + newReach * 10 - comboIndex / 1000;
+      for (let offset = 0; offset < sameType.length && otherKnown.length < 2; offset += 1) {
+        const item = sameType[(offset + index * 2) % sameType.length];
+        if (item && !otherKnown.some((figure) => figure.id === item.id)) otherKnown.push(item);
+      }
 
-      const recommendation: PoleComboRecommendation = {
-        id: `${combo.nivel}-${combo.figuras.join("-")}`,
-        level: combo.nivel,
-        newFigureElementId: figures[newFigureIndex].element_id,
-        figures: figures.map((figure, index) => ({
-          elementId: figure.element_id,
-          slug: figure.slug,
-          name: nameByElement.get(figure.element_id) ?? figure.original_name,
-          originalName: figure.original_name,
-          status: index === newFigureIndex ? "new" : "review",
-          students: rosterWithLevel.map((student) => ({
-            studentId: student.studentId,
-            name: student.name,
-            levelTitle: student.levelTitle,
-            completed: completedByStudent.get(student.studentId)?.has(figure.element_id) ?? false,
-          })),
-        })),
+      const sequence = [
+        ...(prerequisite ? [sourceBySlug.get(prerequisite)] : []),
+        candidate,
+        ...otherKnown,
+      ].filter((figure): figure is CatalogFigure => Boolean(figure));
+
+      return {
+        id: `${level}-${candidate.id}-${index}`,
+        level,
+        newFigureElementId: profileBySlug.get(candidate.id)?.element_id ?? "",
+        newFigureSlug: candidate.id,
+        figures: sequence.flatMap((figure) => {
+          const profile = profileBySlug.get(figure.id);
+          if (!profile) return [];
+
+          return [
+            {
+              elementId: profile.element_id,
+              slug: figure.id,
+              name: nameByElement.get(profile.element_id) ?? figure.nombre_es ?? figure.nombre,
+              originalName: figure.nombre,
+              type: figure.tipo,
+              status: figure.id === candidate.id ? ("new" as const) : ("review" as const),
+            },
+          ];
+        }),
       };
+    }).filter((recommendation) => recommendation.newFigureElementId && recommendation.figures.length >= 2);
 
-      return { score, recommendation };
-    })
-    .filter((item): item is NonNullable<typeof item> => Boolean(item))
-    .sort((left, right) => right.score - left.score)
-    .slice(0, 5)
-    .map((item) => item.recommendation);
-
-  if (!candidates.length) return null;
+    groups.push({
+      level,
+      label: members.length === 1 ? level : `${level}s`,
+      members: members.map((student) => ({
+        studentId: student.studentId,
+        name: student.name,
+        levelTitle: student.levelTitle,
+        completedAtLevel: student.completedAtLevel,
+        totalAtLevel: student.totalAtLevel,
+      })),
+      recommendations,
+    });
+  }
 
   return (
     <PoleClassComboClient
       sessionId={sessionId}
-      recommendations={candidates}
-      studentCount={rosterWithLevel.length}
+      groups={groups}
       canWrite={canWrite}
     />
   );
