@@ -1,4 +1,8 @@
+import { after } from "next/server";
+
 type PilotMessage = { fromWaId: string };
+
+export const DEMI_PILOT_FORWARDED_HEADER = "x-demi-pilot-forwarded";
 
 function parsePilotTarget(raw: string | undefined) {
   const value = raw?.trim();
@@ -57,7 +61,7 @@ export async function forwardSignedMetaWebhook(input: {
       headers: {
         "content-type": "application/json",
         "x-hub-signature-256": input.signature,
-        "x-demi-pilot-forwarded": "1",
+        [DEMI_PILOT_FORWARDED_HEADER]: "1",
       },
       body: input.rawBody,
       signal: controller.signal,
@@ -68,4 +72,48 @@ export async function forwardSignedMetaWebhook(input: {
   } finally {
     clearTimeout(timer);
   }
+}
+
+type BackgroundScheduler = (task: () => Promise<unknown>) => void;
+
+/**
+ * Runs pilot work after the response is sent. On Vercel this keeps the function alive
+ * until the task settles; the scheduler is injectable for tests.
+ */
+export function schedulePilotBackground(
+  task: () => Promise<unknown>,
+  scheduler: BackgroundScheduler = after,
+) {
+  scheduler(async () => {
+    try {
+      await task();
+    } catch {
+      console.info("demi_meta_webhook", { stage: "pilot_deferred", outcome: "task_threw" });
+    }
+  });
+}
+
+/**
+ * Executes a deferred pilot turn. Only retryable failures (non-2xx) are retried, and the
+ * underlying pipeline's conditional claims keep processed or in-flight events from repeating.
+ */
+export async function runPilotDeferredTurn(
+  attempt: () => Promise<Response>,
+  options: { maxAttempts?: number; delayMs?: number; sleep?: (ms: number) => Promise<void> } = {},
+) {
+  const maxAttempts = Math.max(1, options.maxAttempts ?? 2);
+  const delayMs = options.delayMs ?? 2_000;
+  const sleep = options.sleep ?? ((ms: number) => new Promise<void>((done) => setTimeout(done, ms)));
+  let status = 0;
+  for (let attempts = 1; attempts <= maxAttempts; attempts += 1) {
+    try {
+      const response = await attempt();
+      status = response.status;
+      if (response.ok) return { ok: true as const, attempts, status };
+    } catch {
+      status = 500;
+    }
+    if (attempts < maxAttempts) await sleep(delayMs);
+  }
+  return { ok: false as const, attempts: maxAttempts, status };
 }

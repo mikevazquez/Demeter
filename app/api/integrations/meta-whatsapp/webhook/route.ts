@@ -9,7 +9,13 @@ import { handleDemiEnrollmentReceipt } from "@/lib/assistant/enrollment-payment"
 import { readTransferReceipt, rejectedTransferReceiptReply } from "@/lib/assistant/receipt-reader";
 import { trialReceiptConfirmation } from "@/lib/assistant/receipt-confirmation";
 import { provisionStudentAccessWithServiceClient } from "@/lib/assistant/student-access";
-import { forwardSignedMetaWebhook, pilotForwardTarget } from "@/lib/assistant/pilot-forwarding";
+import {
+  DEMI_PILOT_FORWARDED_HEADER,
+  forwardSignedMetaWebhook,
+  pilotForwardTarget,
+  runPilotDeferredTurn,
+  schedulePilotBackground,
+} from "@/lib/assistant/pilot-forwarding";
 import {
   downloadMetaWhatsAppMedia,
   extractMetaInboundMessages,
@@ -1097,7 +1103,7 @@ export async function POST(request: Request) {
     messages,
     targetUrl: process.env.DEMI_PILOT_FORWARD_URL,
     allowWaIds: process.env.DEMI_PILOT_FORWARD_WA_IDS,
-    alreadyForwarded: request.headers.get("x-demi-pilot-forwarded") === "1",
+    alreadyForwarded: request.headers.get(DEMI_PILOT_FORWARDED_HEADER) === "1",
   });
   if (pilotTarget) {
     const forwarded = await forwardSignedMetaWebhook({
@@ -1152,6 +1158,47 @@ export async function POST(request: Request) {
     message_count: messages.length,
   });
 
+  const forwardedPilot = request.headers.get(DEMI_PILOT_FORWARDED_HEADER) === "1";
+  const processInput = { supabase, studioId, messages, webhookConfig, rawBody };
+  if (!forwardedPilot) {
+    return processInboundMessages({ ...processInput, captureOnly: false });
+  }
+
+  // Pilot requests forwarded from production must be acknowledged before the origin's
+  // forwarding timeout. Persist every eligible event first (idempotent by provider id),
+  // acknowledge, then run the unchanged turn pipeline in the background.
+  const captured = await processInboundMessages({ ...processInput, captureOnly: true });
+  if (captured.status !== 200) return captured;
+
+  schedulePilotBackground(async () => {
+    const result = await runPilotDeferredTurn(() =>
+      processInboundMessages({ ...processInput, captureOnly: false }),
+    );
+    console.info("demi_meta_webhook", {
+      stage: "pilot_deferred",
+      outcome: result.ok ? "processed" : "retry_exhausted",
+      attempts: result.attempts,
+      status: result.status,
+    });
+  });
+
+  console.info("demi_meta_webhook", {
+    stage: "pilot_deferred",
+    outcome: "accepted",
+    message_count: messages.length,
+  });
+  return json({ ok: true, accepted: true, deferred: true, messages: messages.length }, 202);
+}
+
+async function processInboundMessages(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  studioId: string;
+  messages: ReturnType<typeof extractMetaInboundMessages>;
+  webhookConfig: MetaWhatsAppWebhookConfig;
+  rawBody: string;
+  captureOnly: boolean;
+}): Promise<Response> {
+  const { supabase, studioId, messages, webhookConfig, rawBody, captureOnly } = input;
   let runtimeContext;
   try {
     runtimeContext = await loadRuntimeContext(supabase, studioId);
@@ -1253,6 +1300,14 @@ export async function POST(request: Request) {
       outcomes.push({
         provider_message_id: message.providerMessageId,
         outcome: "capture_failed",
+      });
+      continue;
+    }
+
+    if (captureOnly) {
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "captured_deferred",
       });
       continue;
     }
