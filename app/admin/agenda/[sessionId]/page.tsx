@@ -10,6 +10,7 @@ import {
 } from "@/lib/reservations/capacity";
 import { SessionOperations } from "../../hoy/SessionOperations";
 import { cancelSession, setMinimumOverride, updateSession } from "./actions";
+import { PoleClassPanel } from "./PoleClassPanel";
 
 function formatExpiry(value: string | null) {
   if (!value) return "Sin vencimiento";
@@ -70,6 +71,8 @@ export default async function SessionDetailPage({
   const canEdit = can(CAPABILITIES.SCHEDULE_WRITE);
   const canAttendance = can(CAPABILITIES.ATTENDANCE_WRITE);
   const canCreateStudent = can(CAPABILITIES.STUDENTS_WRITE);
+  const canReadPole = can(CAPABILITIES.EVALUATIONS_READ);
+  const canWritePole = can(CAPABILITIES.EVALUATIONS_WRITE);
 
   const [{ data: template }, { data: spaces }, { data: instructors }, { data: reservations }] =
     await Promise.all([
@@ -582,6 +585,26 @@ export default async function SessionDetailPage({
           showToggle={false}
         />
       </section>
+
+      {canReadPole && session.status !== "cancelled" ? (
+        <PoleClassPanel
+          supabase={supabase}
+          studioId={studio.id}
+          sessionId={session.id}
+          disciplineId={template?.discipline_id}
+          students={(reservations ?? [])
+            .filter(
+              (reservation) =>
+                reservation.student_id &&
+                (reservation.status === "reserved" || reservation.status === "attended"),
+            )
+            .map((reservation) => ({
+              id: reservation.student_id!,
+              name: studentMap.get(reservation.student_id!) ?? "Alumna",
+            }))}
+          canWrite={canWritePole}
+        />
+      ) : null}
 
       {session.requires_resource ? (
         <section className="panel">

@@ -126,6 +126,33 @@ export default async function StudentProfilePage({
         </StudentNoticeDialog>
       ) : null}
 
+      <Link
+        href="/student/perfil/figuras"
+        data-profile-block="pole-figures"
+        className="sendero-surface group grid min-h-24 grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-white/[0.04]"
+      >
+        <span
+          aria-hidden="true"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--sendero-mint-soft)] text-lg text-[var(--sendero-mint)]"
+        >
+          ✦
+        </span>
+        <span className="min-w-0">
+          <strong className="block text-sm font-semibold text-[var(--sendero-ink)]">
+            Figuras de Pole
+          </strong>
+          <span className="mt-0.5 block text-xs text-zinc-500">
+            Tu progreso, tus siguientes figuras y las fotos de tus logros.
+          </span>
+        </span>
+        <span
+          aria-hidden="true"
+          className="text-xl text-zinc-600 transition group-hover:text-[var(--sendero-mint)]"
+        >
+          ›
+        </span>
+      </Link>
+
       <section data-profile-block="identity" className="sendero-surface overflow-hidden">
         <div className="border-b border-white/10 p-5 sm:p-6">
           <div className="flex items-center gap-4">

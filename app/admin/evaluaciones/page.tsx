@@ -38,6 +38,9 @@ export default async function EvaluationsDashboardPage({
           <h1>Evaluaciones</h1>
           <p>Elige una disciplina para configurar sus niveles técnicos.</p>
         </div>
+        <Link className="secondary-button" href="/admin/evaluaciones/figuras-pole">
+          Figuras de Pole
+        </Link>
       </header>
 
       {qs.error ? (
