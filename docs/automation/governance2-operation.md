@@ -5,6 +5,46 @@ This policy describes the reviewed workflow and its limits. It does not authoriz
 new model tasks, broaden the adapter's ID allowlist, merge a PR or deploy anything.
 Notion's methodology master records decisions; issue #318 records technical evidence.
 
+## Define and document before development
+
+Mike established this order on 2026-10-21 for every Governance project:
+recover prior decisions and tasks, define the intended result, resolve material
+product questions, document the definition and all tasks for the agreed block in
+Notion, and only then start eligible implementation. The current policy is in
+[Governance's methodology](https://app.notion.com/p/3fbd78f7146381dfac4dff5ecd9b98f5).
+
+Before changing product code, active prompts, functional configuration or schema,
+search the canonical Notion backlog. Reuse existing task IDs and preserve their
+history; inspect technical evidence when needed to reconcile actual delivery.
+Each task must record its objective, included and excluded work, source
+requirements, observable acceptance criteria, its own Definition of Done,
+dependencies, actual status and next action. Record the executor when assigned.
+Ordinary implementation choices within the defined scope do not need repeated
+approval.
+
+Define UAT in Notion before development as part of readiness: traceable cases,
+preconditions and fixtures, steps or messages, expected responses and actual
+system effects, test surface and environment, acceptance criteria and evidence.
+Distinguish simulated actions from verified integration outcomes. For performance
+work, establish the measurement method, baseline and target before implementation.
+Prepare access and test data before presenting the candidate for functional UAT.
+If testing needs a temporary pilot, document isolation, activation, stop conditions
+and restoration; reuse existing mechanisms without expanding product scope.
+Record external blockers rather than treating them as authorization to change
+another component. Planning, execution and acceptance are separate milestones.
+
+Keep unresolved definitions in Discovery, defined deferred work in Backlog, and
+eligible work in Ready. An idea may remain documented without starting work.
+Do not implement a task while a material product decision is open. A recurring
+problem must first be matched to its prior task or linked regression, rather
+than starting a duplicate investigation or implementation.
+
+Update Notion at material decisions, starts, blockers, validation and delivery.
+Mark Done only when that task's Definition of Done has evidence appropriate to
+its scope. Documentation, implementation, technical checks, functional UAT and
+production release remain distinct. This documentation step does not authorize
+new execution, merge, deployment or changes to the existing release gates.
+
 ## Current release state
 
 The implementation is consolidated for review in [#331](https://github.com/mikevazquez/Demeter/pull/331),
