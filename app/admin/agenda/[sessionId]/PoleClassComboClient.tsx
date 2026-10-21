@@ -2,7 +2,10 @@
 
 import { useMemo, useState, useTransition } from "react";
 
-import { savePoleClassResultsAction, setProfessionalPoleAuthorizationAction } from "./pole-actions";
+import {
+  savePoleClassResultsAction,
+  setProfessionalPoleAuthorizationAction,
+} from "./pole-actions";
 import styles from "./pole-class-combo.module.css";
 
 type StudentState = {
@@ -73,15 +76,16 @@ export default function PoleClassComboClient({
       ),
     ),
   );
-  const [professionalCompleted, setProfessionalCompleted] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(
-      groups.flatMap((group) =>
-        group.professionalSuggestions.map((suggestion) => [
-          `${suggestion.studentId}|${suggestion.elementId}`,
-          suggestion.completed,
-        ]),
+  const [professionalCompleted, setProfessionalCompleted] = useState<Record<string, boolean>>(
+    () =>
+      Object.fromEntries(
+        groups.flatMap((group) =>
+          group.professionalSuggestions.map((suggestion) => [
+            `${suggestion.studentId}|${suggestion.elementId}`,
+            suggestion.completed,
+          ]),
+        ),
       ),
-    ),
   );
   const [authorizationPending, setAuthorizationPending] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -377,7 +381,9 @@ export default function PoleClassComboClient({
                           {canWrite && !completed ? (
                             <button
                               type="button"
-                              className={authorized ? styles.authorizedButton : styles.authorizeButton}
+                              className={
+                                authorized ? styles.authorizedButton : styles.authorizeButton
+                              }
                               onClick={() => toggleProfessionalAuthorization(suggestion)}
                               disabled={authorizationPending === key}
                             >
@@ -398,7 +404,12 @@ export default function PoleClassComboClient({
           ) : null}
 
           {canWrite ? (
-            <button className={styles.save} type="button" onClick={saveResults} disabled={isPending}>
+            <button
+              className={styles.save}
+              type="button"
+              onClick={saveResults}
+              disabled={isPending}
+            >
               {isPending ? "Guardando…" : "Guardar progreso"}
             </button>
           ) : null}
