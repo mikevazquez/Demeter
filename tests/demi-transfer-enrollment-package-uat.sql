@@ -18,7 +18,13 @@ begin
   select id,price_minor into pack,pack_price from public.product_templates where studio_id=s and name='Paquete UAT 8 clases';
   select id,price_minor into enr,enr_price from public.product_templates where studio_id=s and product_type='enrollment';
   select id into st from public.students s2 where s2.studio_id=s and active and lifecycle_status='active'
-    and not private.student_has_active_enrollment(s,s2.id,current_date) order by created_at limit 1;
+    -- Fixture lookup under service_role: the private helper is intentionally not executable.
+    -- Keep its exact active/date predicate without changing any business function or grants.
+    and not exists (
+      select 1 from public.student_enrollments se
+      where se.studio_id=s and se.student_id=s2.id and se.status='active'
+        and se.starts_on<=current_date and (se.expires_on is null or se.expires_on>=current_date)
+    ) order by created_at limit 1;
   if st is null or pack is null or enr is null then raise exception 'fixtures_missing'; end if;
   update public.enrollment_policies set enabled=true,required_for_package_purchase=true,enrollment_product_template_id=enr where studio_id=s;
   update public.product_templates set enrollment_included=false where id=pack;

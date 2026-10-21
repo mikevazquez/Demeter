@@ -69,3 +69,62 @@ vínculo verificado existente; no se suplantan identidades desde el chat.
 
 Las correcciones de transporte quedan fuera de esta rama; cualquier caso crítico
 bloqueado por ellas permanece visible y no se declara terminado.
+
+## Ejecución de Codex · 21 octubre, 20:21–20:24 UTC
+
+Fuente de migraciones y scripts: `claude/demi-prospect-transfer-20261021`,
+`b0d0b7a66423a78783e1433a796f86d64c61d7d4`. Proyecto comprobado:
+Studio Flow Sandbox, `hedouonyhynuvwbckdlg`. Producción, canales, adapters,
+variables productivas y activación del piloto quedaron fuera de la ejecución.
+
+Las tres migraciones se aplicaron mediante Supabase MCP, en el orden solicitado.
+MCP asigna la versión de ejecución remota; se conserva esta correspondencia para
+evitar reaplicarlas por una diferencia de timestamp:
+
+| Archivo de origen | Versión remota | Nombre                               |
+| ----------------- | -------------- | ------------------------------------ |
+| 20261021190000    | 20261021202125 | demi_supersede_resolved_pendings     |
+| 20261021200000    | 20261021202130 | demi_transfer_enrollment_and_package |
+| 20261021210000    | 20261021202138 | demi_prospect_transfer_purchase      |
+
+| Script                                   | Resultado final             | Controles | Límite                                                                       |
+| ---------------------------------------- | --------------------------- | --------- | ---------------------------------------------------------------------------- |
+| demi-resolved-pendings-uat.sql           | Pasa sin ajuste             | 7         | SQL; no acredita la respuesta al saludo                                      |
+| demi-transfer-enrollment-package-uat.sql | Pasa tras ajuste de fixture | 4         | Vista previa/preparación; no prueba activación con comprobante               |
+| demi-prospect-transfer-purchase-uat.sql  | Pasa sin ajuste             | 7         | Compra sintética con perfil/activación; no acredita conversación ni WhatsApp |
+
+Primer intento de inscripción: `42501 permission denied for function
+student_has_active_enrollment`. Sólo se cambió la selección de fixture: consulta
+equivalente con `NOT EXISTS` sobre `student_enrollments`, mismo predicado de
+estado/fechas, sin llamar directamente a la función privada desde `service_role`.
+No se cambiaron reglas, funciones ni grants. Los tres scripts usan rollback; una
+consulta posterior confirmó cero runs creados desde 20:21 UTC. La evidencia cruda,
+incluido el intento fallido, está en `sandbox-sql-20261021.json`.
+
+Banco: S11–S15 preparados en `workbench-cases-20261021.json`, **bloqueados**, sin
+conversaciones ejecutadas ni inserción en la UI autenticada. No hay sesión de
+aplicación disponible en este ejecutor. La Preview de `01d8d9cb` está READY
+(`dpl_ASB3bUroDZ5DQ1gTzcS5CuJwhxBP`); usando el acceso protegido de Vercel MCP,
+la aplicación entrega `/login/studio`. El acceso de Vercel no inicia sesión de
+administrador en Studio Flow.
+
+Además, el simulador del workbench no representa todavía los estados requeridos:
+`simulateAssistantAction` devuelve `simulation_not_supported` para
+`prepare_bank_transfer_purchase` y `complete_purchase_profile`; los contextos
+operativos `awaiting_profile` y pendientes cerrados se omiten con `testSimulation`.
+El fixture de alumna no define inscripción vigente/ausente. Estos límites se
+comprobaron por lectura de código, no mediante una corrida conversacional.
+`test-simulation.ts` es idéntico en `b0d0b7a` y `01d8d9cb`.
+
+Velocidad base `bfd395e1` contra candidata `01d8d9cb`: **bloqueada por acceso**,
+0/30 turnos por versión. Mediana, p95 y tokens de salida: no disponibles.
+C03: bloqueado, sin ejecución. No se reutilizaron tiempos históricos como si
+fueran esta comparación. El manifiesto conserva protocolo, agrupaciones y
+criterios para reanudar; no hay aprobación técnica completa, funcional ni de
+liberación.
+
+Siguiente acción: recuperar sesión autenticada Sandbox; Claude debe preparar
+fixtures/simulación de compras, inscripción, comprobante y pendiente cerrado en
+el workbench, manteniendo la interceptación de efectos. Ejecutar S11–S15,
+comparación alternada S01–S10 (30 turnos por versión) y C03 sobre sus SHA reales.
+DEMI-PILOT-01 continúa bloqueado; UAT funcional de Mike pendiente.

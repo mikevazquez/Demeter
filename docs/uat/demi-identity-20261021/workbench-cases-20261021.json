@@ -1,0 +1,166 @@
+{
+  "sourceSha": "b0d0b7a66423a78783e1433a796f86d64c61d7d4",
+  "environment": "hedouonyhynuvwbckdlg",
+  "scope": "Prepared bank cases; not inserted into authenticated UI and not executed.",
+  "cases": [
+    {
+      "id": "S11",
+      "task": "DEMI-PROS-03",
+      "title": "Prospecto elige Pase Descubre",
+      "preconditions": [
+        "Prospecto sin ficha ni compra previa",
+        "Producto oficial elegible con enrollment_included=true",
+        "Precio consultado en Sandbox; no fijar 499 si el catálogo difiere"
+      ],
+      "messages": ["Quiero el Pase Descubre y pagarlo por transferencia."],
+      "expected": [
+        "Conserva el Pase y cobra sólo su precio oficial",
+        "No pide nombre, nacimiento ni correo",
+        "No crea ni actualiza ficha antes del comprobante",
+        "No llama prepare_first_class_payment"
+      ],
+      "requiredEvidence": [
+        "Respuesta, product_ref, importe y argumentos",
+        "Ausencia de acción real por testSimulation"
+      ],
+      "blockers": ["WORKBENCH-AUTH", "WORKBENCH-TRANSFER-SIMULATION"],
+      "status": "blocked",
+      "observedReply": null,
+      "conversationId": null,
+      "executed": false
+    },
+    {
+      "id": "S12",
+      "task": "DEMI-PROS-03",
+      "title": "Prospecto elige paquete de 8",
+      "preconditions": [
+        "Prospecto sin ficha",
+        "Paquete no incluye inscripción",
+        "Política exige inscripción y no hay inscripción vigente"
+      ],
+      "messages": [
+        "Quiero el paquete de 8 por transferencia.",
+        "No, aún no acepto.",
+        "Sí, acepto la inscripción y el paquete por el total que me explicaste."
+      ],
+      "expected": [
+        "Primero explica paquete + inscripción + total oficiales",
+        "Vista previa no crea intención",
+        "No prepara al rechazar o antes de aceptar",
+        "Prepara sólo tras aceptar con enrollment_accepted=true",
+        "No pide datos personales antes del comprobante"
+      ],
+      "blockers": [
+        "WORKBENCH-AUTH",
+        "WORKBENCH-TRANSFER-SIMULATION",
+        "WORKBENCH-ENROLLMENT-FIXTURE"
+      ],
+      "status": "blocked",
+      "observedReply": null,
+      "conversationId": null,
+      "executed": false
+    },
+    {
+      "id": "S13",
+      "task": "DEMI-PROS-03",
+      "title": "Comprobante correcto, perfil pendiente",
+      "preconditions": [
+        "Compra de prospecto existente",
+        "Comprobante sintético recibido y monto coincidente",
+        "Estado del sistema awaiting_profile; texto 'ya pagué' no prueba recepción"
+      ],
+      "messages": ["Aquí está mi comprobante."],
+      "expected": [
+        "Pide juntos nombre completo, fecha de nacimiento y correo",
+        "No vuelve a cobrar ni pide otro comprobante",
+        "No declara validación definitiva ni activación antes de completar perfil"
+      ],
+      "blockers": ["WORKBENCH-AUTH", "WORKBENCH-PROFILE-CONTEXT"],
+      "status": "blocked",
+      "observedReply": null,
+      "conversationId": null,
+      "executed": false
+    },
+    {
+      "id": "S14",
+      "task": "DEMI-PROS-03",
+      "title": "Alumna sin inscripción elige paquete de 8",
+      "preconditions": [
+        "Alumna verificada sin inscripción vigente",
+        "Paquete sin inscripción incluida",
+        "Política exige inscripción"
+      ],
+      "messages": [
+        "Quiero comprar el paquete de 8 por transferencia.",
+        "Sí, acepto la inscripción y el paquete por ese total."
+      ],
+      "expected": [
+        "Mismo desglose de inscripción + paquete + total",
+        "No prepara antes de aceptar",
+        "Con inscripción incluida o vigente cobra sólo paquete"
+      ],
+      "blockers": [
+        "WORKBENCH-AUTH",
+        "WORKBENCH-TRANSFER-SIMULATION",
+        "WORKBENCH-ENROLLMENT-FIXTURE"
+      ],
+      "status": "blocked",
+      "observedReply": null,
+      "conversationId": null,
+      "executed": false
+    },
+    {
+      "id": "S15",
+      "task": "DEMI-BASE-03",
+      "title": "Pendiente de primera clase resuelto en app",
+      "preconditions": [
+        "Pendiente de ayer sin comprobante",
+        "Compra en app de paquete que cubre clases",
+        "Servidor dejó pendiente superseded antes del turno"
+      ],
+      "messages": ["hola"],
+      "expected": [
+        "Saluda con estado actual",
+        "No menciona pendiente cerrado, pago ni datos bancarios",
+        "No crea compra ni reserva con saludo"
+      ],
+      "blockers": ["WORKBENCH-AUTH", "WORKBENCH-RESOLVED-PENDING-CONTEXT"],
+      "status": "blocked",
+      "observedReply": null,
+      "conversationId": null,
+      "executed": false
+    }
+  ],
+  "speedComparison": {
+    "status": "blocked",
+    "sourceBaseSha": "bfd395e11e6bb54f2841a3c3c1f3b6a0d8863cd9",
+    "candidateSha": "01d8d9cba024bc7bb4c254c96eb4c8d5f15b256b",
+    "candidateBranch": "claude/demi-latency-memory-20261021",
+    "surface": "authenticated-sandbox-workbench",
+    "model": "gpt-5.6-luna",
+    "reasoning": "medium",
+    "plannedTurnsPerVersion": 30,
+    "executedTurnsPerVersion": 0,
+    "cases": "S01–S10, tres repeticiones, mismos mensajes/historia/configuración que baseline-web.json; sesiones/fechas revalidadas",
+    "ordering": "Secuencial alternada por par; AB para pares pares, BA para impares; cada par mismo caso y repetición. Conservar orden y duración completa de cada solicitud.",
+    "types": {
+      "greeting": ["S01", "S02"],
+      "query": ["S03", "S04", "S05", "S06", "S07", "S08"],
+      "action": ["S09", "S10"]
+    },
+    "reportBy": "case, type and total; sample count, median, p95 nearest-rank, total output tokens per turn (all calls), errors and unauthorized actions; preserve slow/error samples",
+    "acceptance": "candidate median/p95 <= base with zero unauthorized actions or critical identity/payment/capacity errors",
+    "metrics": {
+      "base": null,
+      "candidate": null
+    },
+    "C03": {
+      "status": "blocked",
+      "executed": false,
+      "setup": "Guardar elección de actividad y horario, superar dieciséis mensajes de ventana, retomar con respuesta breve; comprobar memoria persistida cuando la nueva salida tenga memory=null. Repetir con corrección reciente que prevalezca y sin mezcla de identidad/tenant.",
+      "evidence": "contexto antes/después, memoria persistida, mensajes enviados al modelo, respuesta y herramientas",
+      "result": null
+    },
+    "blocker": "No authenticated application session in this execution environment. Vercel MCP can access candidate deployment but app redirects to /login/studio. Historical runs are not reused as this comparison."
+  }
+}
