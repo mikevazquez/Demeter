@@ -1159,7 +1159,14 @@ export async function POST(request: Request) {
   });
 
   const forwardedPilot = request.headers.get(DEMI_PILOT_FORWARDED_HEADER) === "1";
-  const processInput = { supabase, studioId, messages, webhookConfig, rawBody };
+  const processInput = {
+    supabase,
+    studioId,
+    messages,
+    webhookConfig,
+    rawBody,
+    requestUrl: request.url,
+  };
   if (!forwardedPilot) {
     return processInboundMessages({ ...processInput, captureOnly: false });
   }
@@ -1196,9 +1203,10 @@ async function processInboundMessages(input: {
   messages: ReturnType<typeof extractMetaInboundMessages>;
   webhookConfig: MetaWhatsAppWebhookConfig;
   rawBody: string;
+  requestUrl: string;
   captureOnly: boolean;
 }): Promise<Response> {
-  const { supabase, studioId, messages, webhookConfig, rawBody, captureOnly } = input;
+  const { supabase, studioId, messages, webhookConfig, rawBody, requestUrl, captureOnly } = input;
   let runtimeContext;
   try {
     runtimeContext = await loadRuntimeContext(supabase, studioId);
@@ -1644,7 +1652,7 @@ async function processInboundMessages(input: {
             messageType: message.messageType,
             messageText: message.text,
             webhookConfig,
-            activationUrl: new URL("/login/student/activar", request.url).toString(),
+            activationUrl: new URL("/login/student/activar", requestUrl).toString(),
           });
       } catch {
         retryableFailure = true;
@@ -1937,7 +1945,7 @@ async function processInboundMessages(input: {
         studentCategory,
         crmContactId,
         identityNeedsName,
-        activationUrl: new URL("/login/student/activar", request.url).toString(),
+        activationUrl: new URL("/login/student/activar", requestUrl).toString(),
         serviceMode: true,
         history,
         stickerImages,
