@@ -41,6 +41,10 @@ type HistoryMessage = {
   content: string;
 };
 
+function isBlockedWhatsAppLookup(channel: OrchestratorInput["channel"], toolName: string) {
+  return channel === "whatsapp" && toolName === "identify_meta_contact";
+}
+
 type OpenAIOutputItem = {
   type: string;
   id?: string;
@@ -945,14 +949,19 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     input.improvePrompt || stickerTurn
       ? []
       : [
-          ...assistantReadToolDefinitions,
-          ...assistantActionToolDefinitions.filter((tool) =>
-            input.studentId || input.testSimulation
-              ? true
-              : !["prepare_transfer_package_choice", "prepare_bank_transfer_purchase"].includes(
-                  tool.name,
-                ),
+          ...assistantReadToolDefinitions.filter(
+            (tool) =>
+              input.studentId || input.testSimulation || tool.name !== "get_student_package_status",
           ),
+          ...assistantActionToolDefinitions
+            .filter((tool) => !isBlockedWhatsAppLookup(input.channel, tool.name))
+            .filter((tool) =>
+              input.studentId || input.testSimulation
+                ? true
+                : !["prepare_transfer_package_choice", "prepare_bank_transfer_purchase"].includes(
+                    tool.name,
+                  ),
+            ),
         ];
 
   let pendingPaymentContext = "";

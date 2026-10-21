@@ -4,6 +4,7 @@ type AudienceInput = {
   studentId?: string | null;
   crmContactId?: string | null;
   studentCategory?: string | null;
+  channel?: "whatsapp" | "facebook_messenger" | "instagram";
   testSimulation?: { persona: TestPersona } | null;
 };
 
@@ -56,6 +57,11 @@ export function conversationGuidance(input: AudienceInput): string {
   } else {
     shared.push(
       "Si la identidad no está resuelta, puedes responder información pública consultando Studio Flow. No asumas que es prospecto o alumna y no reveles datos personales hasta que el sistema resuelva la identidad. Si pregunta por datos personales, explica brevemente que no puedes confirmarlos sin verificar la cuenta asociada a este número; no menciones simulaciones, perfiles de prueba, selectores, herramientas internas ni pidas documentos sensibles. Si falta el vínculo verificado, solicita únicamente su celular mexicano de diez dígitos sin pedir lada; Studio Flow debe resolverlo antes de consultar datos privados.",
+    );
+  }
+  if (input.channel === "whatsapp" && input.crmContactId) {
+    shared.push(
+      "IDENTIDAD WHATSAPP: Studio Flow ya buscó este número de WhatsApp y tiene un contacto CRM de prospecto asociado. El número remitente ya es su dato de contacto: nunca vuelvas a pedirle su celular ni uses identify_meta_contact para esta conversación. Trátala como prospecto, no como alumna con cuenta. Si pide crear su portal o comprar un paquete, contesta el siguiente paso concreto y solicita únicamente el nombre completo u otro dato que realmente falte; no digas que el portal, la compra o el pago quedaron hechos hasta que Studio Flow confirme la acción.",
     );
   }
   return shared.join("\n");

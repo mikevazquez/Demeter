@@ -90,6 +90,10 @@ describe("Demi Meta WhatsApp inbound contract", () => {
     expect(route).toContain('"whatsapp_media_review"');
   });
 
+  it("passes the WhatsApp channel to the assistant so it uses the inbound identity", () => {
+    expect(route).toContain('channel: "whatsapp"');
+  });
+
   it("uses Studio Flow identity and a service-mode assistant runtime", () => {
     expect(route).toContain('"service_prepare_meta_whatsapp_message"');
     expect(route).toContain("serviceMode: true");

@@ -1881,6 +1881,7 @@ export async function POST(request: Request) {
         studentId,
         studentCategory,
         crmContactId,
+        channel: "whatsapp",
         identityNeedsName,
         activationUrl: new URL("/login/student/activar", request.url).toString(),
         serviceMode: true,

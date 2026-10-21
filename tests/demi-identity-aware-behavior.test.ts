@@ -5,6 +5,15 @@ import { describe, expect, it } from "vitest";
 describe("Demi identity-aware behavior", () => {
   const source = readFileSync(join(process.cwd(), "lib/assistant/orchestrator.ts"), "utf8");
 
+  it("does not expose student package status to an unlinked prospect", () => {
+    expect(source).toContain('tool.name !== "get_student_package_status"');
+  });
+
+  it("prevents Meta Inbox identity lookup from being called in WhatsApp", () => {
+    expect(source).toContain("function isBlockedWhatsAppLookup");
+    expect(source).toContain("!isBlockedWhatsAppLookup(input.channel, tool.name)");
+  });
+
   it("includes student and prospect identity rules", () => {
     const phrases = [
       "En WhatsApp se resuelve por teléfono normalizado",
