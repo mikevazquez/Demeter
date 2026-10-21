@@ -282,6 +282,27 @@ describe("Sandbox workbench purchase fixtures", () => {
     expect(h.state.transfer).toBeUndefined();
   });
 
+  it("accepts an unchanged quote after a JSONB round trip reorders nested keys", async () => {
+    const h = harness();
+    await h.prepare();
+    function jsonbOrder(value: unknown): unknown {
+      if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+      return Object.fromEntries(
+        Object.entries(value)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([key, item]) => [key, jsonbOrder(item)]),
+      );
+    }
+    h.state.transferPreview = jsonbOrder(h.state.transferPreview) as typeof h.state.transferPreview;
+    h.input.turnId = "turn-2";
+    expect(await h.prepare(packId, true)).toMatchObject({
+      ok: true,
+      status: "awaiting_receipt",
+      total_amount_minor: 80000,
+    });
+    expect(h.forbidden).not.toHaveBeenCalled();
+  });
+
   it("does not quote a hidden or cross-studio product", async () => {
     const h = harness();
     h.rows.product_templates[0].studio_id = "different-studio";

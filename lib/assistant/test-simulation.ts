@@ -21,6 +21,25 @@ type TransferQuote = {
   credits: number | null;
   unlimited: boolean;
 };
+
+function transferQuoteSignature(quote: TransferQuote | undefined) {
+  if (!quote) return null;
+  // JSONB does not preserve object key order between workbench turns.
+  return JSON.stringify([
+    quote.product_ref,
+    quote.package.name,
+    quote.package.amount_minor,
+    quote.package.currency,
+    quote.enrollment?.name ?? null,
+    quote.enrollment?.amount_minor ?? null,
+    quote.enrollment?.currency ?? null,
+    quote.enrollment_required,
+    quote.enrollment_included,
+    quote.total_amount_minor,
+    quote.credits,
+    quote.unlimited,
+  ]);
+}
 export type TestSimulation = {
   persona: TestPersona;
   identityNeedsName: boolean;
@@ -317,7 +336,7 @@ export async function simulateAssistantAction(
     const confirmed =
       args.enrollment_accepted === true &&
       state.transferPreview?.turnId !== input.turnId &&
-      JSON.stringify(state.transferPreview?.quote) === JSON.stringify(quote);
+      transferQuoteSignature(state.transferPreview?.quote) === transferQuoteSignature(quote);
     if (quote.enrollment_required && !confirmed) {
       state.transferPreview = { quote, turnId: input.turnId };
       return result({
