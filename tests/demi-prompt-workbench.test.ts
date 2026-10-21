@@ -82,6 +82,7 @@ function orchestratorHarness(
 ) {
   const action = vi.fn().mockRejectedValue(new Error("Real actions must never execute in a test"));
   const simulate = vi.fn().mockResolvedValue({ ok: true, simulated: true });
+  const simulatedRead = vi.fn<(state: unknown, name: string) => unknown>(() => null);
   const read = vi.fn().mockResolvedValue({ ok: true, activities: [] });
   const db = fakeDatabase(pendingAction, pendingPayment);
   const actionModule = serverModule<typeof import("../lib/assistant/action-tools")>(
@@ -98,7 +99,7 @@ function orchestratorHarness(
     "lib/assistant/orchestrator.ts",
     {
       "./costs": { estimateModelCostUsdMicros: () => ({ usdMicros: 10 }) },
-      "./test-simulation": { simulateAssistantAction: simulate, simulatedReadTool: () => null },
+      "./test-simulation": { simulateAssistantAction: simulate, simulatedReadTool: simulatedRead },
       "./action-tools": {
         executeAssistantActionTool: action,
         isExplicitAssistantConfirmation: actionModule.isExplicitAssistantConfirmation,
@@ -119,6 +120,7 @@ function orchestratorHarness(
           "prepare_first_class_payment",
           "prepare_transfer_package_choice",
           "prepare_bank_transfer_purchase",
+          "complete_purchase_profile",
           "complete_group_booking",
         ].map((name) => ({ name, type: "function" })),
         assistantReadToolNames: new Set(["get_activity_catalog"]),
@@ -127,6 +129,8 @@ function orchestratorHarness(
           "execute_booking",
           "complete_group_booking",
           "prepare_student_access_activation",
+          "prepare_bank_transfer_purchase",
+          "complete_purchase_profile",
         ]),
       },
     },
@@ -161,6 +165,7 @@ function orchestratorHarness(
     ...db,
     action,
     simulate,
+    simulatedRead,
     read,
     input: input as unknown as Parameters<typeof mod.runAssistantTurn>[0],
     run: mod.runAssistantTurn,
@@ -177,6 +182,72 @@ afterEach(() => {
 });
 
 describe("Demi prompt workbench", () => {
+  it.each([
+    [{ closed_first_class: true }, "PENDIENTES CERRADOS", "hola"],
+    [
+      { purchase_status: "awaiting_profile", purchase: { total_amount_minor: 80000 } },
+      "COMPRA PAGADA ESPERANDO PERFIL",
+      "¿Qué sigue?",
+    ],
+    [
+      { purchase_status: "awaiting_receipt", purchase: { total_amount_minor: 49900 } },
+      "COMPRA PENDIENTE DE COMPROBANTE",
+      "Ya pagué",
+    ],
+  ])(
+    "passes simulated current payment context to the model without operational reads",
+    async (context, marker, message) => {
+      const h = orchestratorHarness();
+      h.input.history = [{ role: "user", content: message }];
+      h.simulatedRead.mockImplementation((_state, name) =>
+        name === "get_student_package_status"
+          ? { ok: true, student_state: { category: "prospect" }, workbench_context: context }
+          : { ok: true, reservations: [] },
+      );
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (_url, init) => {
+          const body = JSON.parse(String(init?.body));
+          expect(body.instructions).toContain(marker);
+          if (message === "hola") expect(body.tools).toEqual([]);
+          return new Response(JSON.stringify(reply("Respuesta sintética, no UAT del modelo.")));
+        }),
+      );
+      await h.run(h.input);
+      expect(h.read).not.toHaveBeenCalled();
+      expect(h.action).not.toHaveBeenCalled();
+      expect(h.reads).not.toContain("assistant_transfer_purchase_intents");
+      expect(h.reads).not.toContain("demi_group_bookings");
+    },
+  );
+
+  it.each(["prepare_bank_transfer_purchase", "complete_purchase_profile"])(
+    "intercepts %s before its real executor",
+    async (name) => {
+      const h = orchestratorHarness();
+      h.input.history = [{ role: "user", content: "Quiero continuar con el paquete elegido." }];
+      h.simulate.mockResolvedValue({ ok: false, simulated: true, reason_code: "fixture_test" });
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      vi.stubGlobal(
+        "fetch",
+        vi
+          .fn()
+          .mockResolvedValueOnce(
+            new Response(
+              JSON.stringify({
+                output: [{ type: "function_call", name, call_id: "fixture", arguments: "{}" }],
+              }),
+            ),
+          )
+          .mockResolvedValueOnce(new Response(JSON.stringify(reply("Seguimos con la prueba.")))),
+      );
+      await h.run(h.input);
+      expect(h.simulate).toHaveBeenCalledOnce();
+      expect(h.action).not.toHaveBeenCalled();
+    },
+  );
+
   it("loads current rights and reservations before responding to a greeting", async () => {
     const h = orchestratorHarness();
     h.input.testSimulation = undefined;

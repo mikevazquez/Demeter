@@ -9,14 +9,20 @@ import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 import {
   isFirstVisitPersona,
   isTestPersona,
+  isWorkbenchCase,
+  WORKBENCH_CASES,
   validPrompt,
   type TestPersona,
+  type WorkbenchCase,
 } from "@/lib/assistant/prompt-workbench";
 import {
   confirmSimulatedProspectName,
   createTestSimulation,
+  initializeTestScenario,
+  recordSimulatedTransferReceipt,
   type TestSimulation,
 } from "@/lib/assistant/test-simulation";
+import { assertDemiUatEnvironment } from "@/lib/assistant/uat-environment";
 import { proposeDemiAdminPlan, type DemiAdminPlan } from "@/lib/assistant/admin-copilot";
 
 const hash = (text: string) => createHash("sha256").update(text).digest("hex");
@@ -62,18 +68,31 @@ export async function testDemiPrompt(input: {
   message: string;
   persona: TestPersona;
   improve?: boolean;
+  workbenchCase?: WorkbenchCase;
+  simulationEvent?: "matching_transfer_receipt";
 }) {
   const { supabase, studio, user } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
   if (!validPrompt(input.instructions)) return { ok: false as const, error: "invalid_prompt" };
   const message = String(input.message ?? "").trim();
   if (!message || message.length > 2000) return { ok: false as const, error: "invalid_message" };
   if (!isTestPersona(input.persona)) return { ok: false as const, error: "request_failed" };
+  const workbenchCase = input.workbenchCase ?? "standard";
+  if (!isWorkbenchCase(workbenchCase))
+    return { ok: false as const, error: "invalid_workbench_case" };
+  if (workbenchCase !== "standard" || input.simulationEvent) {
+    assertDemiUatEnvironment(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.VERCEL_ENV);
+    if (
+      input.improve ||
+      WORKBENCH_CASES.find((item) => item.id === workbenchCase)?.persona !== input.persona
+    )
+      return { ok: false as const, error: "invalid_workbench_case" };
+  }
   const { data: config, error: configError } = await loadDemiRuntimeConfig(supabase, studio.id);
   if (configError || !config) return { ok: false as const, error: "assistant_not_configured" };
 
   const promptHash = hash(input.instructions);
   let conversationId = input.improve ? "" : String(input.conversationId ?? "");
-  let state = createTestSimulation(input.persona);
+  let state = createTestSimulation(input.persona, workbenchCase);
   if (conversationId) {
     const { data: conversation, error } = await supabase
       .from("assistant_conversations")
@@ -88,8 +107,13 @@ export async function testDemiPrompt(input: {
       return { ok: false as const, error: "conversation_not_found" };
     if (ctx.prompt_hash !== promptHash || ctx.persona !== input.persona || ctx.purpose !== "test")
       return { ok: false as const, error: "draft_changed" };
+    if ((ctx.workbench_case ?? "standard") !== workbenchCase)
+      return { ok: false as const, error: "draft_changed" };
     state = ctx.simulation as TestSimulation;
   } else {
+    if (input.simulationEvent) return { ok: false as const, error: "purchase_not_pending" };
+    if (!(await initializeTestScenario(supabase, studio.id, state)))
+      return { ok: false as const, error: "workbench_fixture_unavailable" };
     const { data, error } = await supabase
       .from("assistant_conversations")
       .insert({
@@ -102,6 +126,7 @@ export async function testDemiPrompt(input: {
           prompt_hash: promptHash,
           prompt_snapshot: input.instructions,
           persona: input.persona,
+          workbench_case: workbenchCase,
           purpose: input.improve ? "improve" : "test",
           simulation: state,
         },
@@ -110,6 +135,20 @@ export async function testDemiPrompt(input: {
       .single();
     if (error || !data) return { ok: false as const, error: "request_failed" };
     conversationId = data.id;
+    if (workbenchCase === "S15") {
+      const { error: fixtureHistoryError } = await supabase.from("assistant_turns").insert({
+        studio_id: studio.id,
+        conversation_id: conversationId,
+        direction: "outbound",
+        role: "assistant",
+        content:
+          "Tu primera clase quedó pendiente de una transferencia de 150 MXN. Envíame el comprobante para continuar.",
+        sanitized: true,
+        created_at: new Date(Date.now() - 24 * 60 * 60_000).toISOString(),
+      });
+      if (fixtureHistoryError)
+        return { ok: false as const, error: "workbench_fixture_unavailable" };
+    }
   }
 
   if (!input.improve && isFirstVisitPersona(input.persona)) {
@@ -153,6 +192,13 @@ export async function testDemiPrompt(input: {
   if (lockError || !locked) return { ok: false as const, error: "assistant_busy" };
 
   try {
+    if (input.simulationEvent) {
+      if (
+        input.simulationEvent !== "matching_transfer_receipt" ||
+        !recordSimulatedTransferReceipt(state)
+      )
+        return { ok: false as const, error: "purchase_not_pending" };
+    }
     const userContent = input.improve
       ? `PROMPT ORIGINAL:\n${input.instructions}\n\nCAMBIO SOLICITADO:\n${message}`
       : message;
@@ -221,6 +267,7 @@ export async function testDemiPrompt(input: {
           prompt_hash: promptHash,
           prompt_snapshot: input.instructions,
           persona: input.persona,
+          workbench_case: workbenchCase,
           purpose: input.improve ? "improve" : "test",
           simulation: state,
         },
@@ -230,7 +277,13 @@ export async function testDemiPrompt(input: {
       .eq("studio_id", studio.id)
       .eq("id", conversationId);
     if (stateError) throw new Error("request_failed");
-    return { ok: true as const, conversationId, reply: result.reply };
+    return {
+      ok: true as const,
+      conversationId,
+      reply: result.reply,
+      canSimulateReceipt:
+        workbenchCase !== "standard" && state.transfer?.status === "awaiting_receipt",
+    };
   } catch (error) {
     const code = error instanceof Error ? error.message : "request_failed";
     return {

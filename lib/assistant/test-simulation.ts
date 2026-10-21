@@ -3,9 +3,24 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AssistantStudioContext } from "./read-tools";
 import { isExplicitAssistantConfirmation } from "./action-tools";
-import { isActiveStudentPersona, isFirstVisitPersona, type TestPersona } from "./prompt-workbench";
+import {
+  isActiveStudentPersona,
+  isFirstVisitPersona,
+  type TestPersona,
+  type WorkbenchCase,
+} from "./prompt-workbench";
 
 type Summary = Record<string, unknown>;
+type TransferQuote = {
+  product_ref: string;
+  package: { name: string; amount_minor: number; currency: string };
+  enrollment: { name: string; amount_minor: number; currency: string } | null;
+  enrollment_required: boolean;
+  enrollment_included: boolean;
+  total_amount_minor: number;
+  credits: number | null;
+  unlimited: boolean;
+};
 export type TestSimulation = {
   persona: TestPersona;
   identityNeedsName: boolean;
@@ -13,9 +28,20 @@ export type TestSimulation = {
   pending?: { tool: string; summary: Summary; preparedTurnId: string } | null;
   reservations: Summary[];
   credits: number;
+  workbenchCase?: WorkbenchCase;
+  enrollmentStatus?: "active" | "missing";
+  transfer?: {
+    status: "awaiting_receipt" | "awaiting_profile" | "provisional_active";
+    quote: TransferQuote;
+    receiptEvidence?: "seeded_fixture" | "admin_fixture_event";
+  };
+  transferPreview?: { quote: TransferQuote; turnId: string };
 };
 
-export function createTestSimulation(persona: TestPersona): TestSimulation {
+export function createTestSimulation(
+  persona: TestPersona,
+  workbenchCase: WorkbenchCase = "standard",
+): TestSimulation {
   const hasUpcomingReservation =
     persona === "trial_pending_reserved" || persona === "student_reserved";
   const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -41,10 +67,124 @@ export function createTestSimulation(persona: TestPersona): TestSimulation {
         ]
       : [],
     credits: isActiveStudentPersona(persona) ? 8 : 0,
+    ...(workbenchCase !== "standard"
+      ? {
+          workbenchCase,
+          enrollmentStatus: workbenchCase === "S15" ? ("active" as const) : ("missing" as const),
+          ...(workbenchCase === "S14" ? { credits: 0 } : {}),
+        }
+      : {}),
   };
 }
 
+// Read-only quote for an explicitly selected fixture. This is not operational eligibility.
+async function testTransferQuote(
+  supabase: SupabaseClient,
+  studioId: string,
+  state: TestSimulation,
+  productRef: string,
+) {
+  if (!/^product:[0-9a-f-]{36}$/i.test(productRef)) return null;
+  const product = await supabase
+    .from("product_templates")
+    .select("id,name,price_minor,currency,enrollment_included,credit_limit,unlimited")
+    .eq("studio_id", studioId)
+    .eq("id", productRef.slice(8))
+    .eq("active", true)
+    .neq("product_type", "enrollment")
+    .or("assistant_visible.is.null,assistant_visible.eq.true")
+    .maybeSingle();
+  if (product.error || !product.data || !Number.isInteger(product.data.price_minor)) return null;
+  const policy = await supabase
+    .from("enrollment_policies")
+    .select("enabled,required_for_package_purchase,enrollment_product_template_id")
+    .eq("studio_id", studioId)
+    .maybeSingle();
+  if (policy.error) return null;
+  let enrollment: TransferQuote["enrollment"] = null;
+  if (
+    !product.data.enrollment_included &&
+    state.enrollmentStatus !== "active" &&
+    policy.data?.enabled &&
+    policy.data.required_for_package_purchase
+  ) {
+    const item = await supabase
+      .from("product_templates")
+      .select("name,price_minor,currency")
+      .eq("studio_id", studioId)
+      .eq("id", policy.data.enrollment_product_template_id)
+      .eq("active", true)
+      .eq("product_type", "enrollment")
+      .maybeSingle();
+    if (
+      item.error ||
+      !item.data ||
+      !Number.isInteger(item.data.price_minor) ||
+      item.data.currency !== product.data.currency
+    )
+      return null;
+    enrollment = {
+      name: item.data.name,
+      amount_minor: item.data.price_minor,
+      currency: item.data.currency,
+    };
+  }
+  return {
+    product_ref: productRef,
+    package: {
+      name: product.data.name,
+      amount_minor: product.data.price_minor,
+      currency: product.data.currency,
+    },
+    enrollment,
+    enrollment_required: Boolean(enrollment),
+    enrollment_included: product.data.enrollment_included === true,
+    total_amount_minor: product.data.price_minor + (enrollment?.amount_minor ?? 0),
+    credits: product.data.credit_limit,
+    unlimited: product.data.unlimited === true,
+  } satisfies TransferQuote;
+}
+
+export async function initializeTestScenario(
+  supabase: SupabaseClient,
+  studioId: string,
+  state: TestSimulation,
+) {
+  if (state.workbenchCase !== "S13") return true;
+  const product = await supabase
+    .from("product_templates")
+    .select("id")
+    .eq("studio_id", studioId)
+    .eq("active", true)
+    .eq("credit_limit", 8)
+    .eq("enrollment_included", false)
+    .or("assistant_visible.is.null,assistant_visible.eq.true")
+    .order("created_at")
+    .limit(1)
+    .maybeSingle();
+  if (product.error || !product.data) return false;
+  const quote = await testTransferQuote(supabase, studioId, state, `product:${product.data.id}`);
+  if (!quote) return false;
+  state.transfer = { status: "awaiting_profile", quote, receiptEvidence: "seeded_fixture" };
+  return true;
+}
+
+// Only an explicit admin fixture event constitutes receipt evidence, never a chat claim.
+export function recordSimulatedTransferReceipt(state: TestSimulation) {
+  if (!state.workbenchCase || state.workbenchCase === "standard" || !state.transfer) return false;
+  if (state.transfer.status !== "awaiting_receipt") return true;
+  state.transfer.status = state.persona === "prospect" ? "awaiting_profile" : "provisional_active";
+  state.transfer.receiptEvidence = "admin_fixture_event";
+  if (state.persona !== "prospect") {
+    state.credits = state.transfer.quote.credits ?? 0;
+    if (state.transfer.quote.enrollment_required || state.transfer.quote.enrollment_included)
+      state.enrollmentStatus = "active";
+  }
+  return true;
+}
+
 export function confirmSimulatedProspectName(state: TestSimulation, message: string) {
+  if (state.workbenchCase && state.workbenchCase !== "standard") return false;
   if (state.persona !== "prospect" || !state.identityNeedsName) return false;
 
   const cleanedMessage = message.trim().replace(/^(?:hola[,!\s]+)?/i, "");
@@ -80,6 +220,8 @@ export function simulatedReadTool(state: TestSimulation, tool: string) {
     };
   }
   if (tool === "get_student_package_status") {
+    const activeTransfer =
+      state.transfer?.status === "provisional_active" ? state.transfer.quote : null;
     const category =
       state.persona === "unresolved_identity"
         ? "unresolved"
@@ -102,6 +244,7 @@ export function simulatedReadTool(state: TestSimulation, tool: string) {
       simulated: true,
       student_state: {
         category,
+        ...(state.enrollmentStatus ? { enrollment_status: state.enrollmentStatus } : {}),
         ...(state.persona === "former_student"
           ? {
               lifecycle_status: "inactive",
@@ -111,13 +254,24 @@ export function simulatedReadTool(state: TestSimulation, tool: string) {
             }
           : {}),
       },
-      current_package: hasActivePackage
+      ...(state.workbenchCase && state.workbenchCase !== "standard"
         ? {
-            name: "Paquete de prueba: 8 clases",
-            available_credits: state.credits,
-            unlimited: false,
+            workbench_context: {
+              closed_first_class: state.workbenchCase === "S15",
+              purchase_status: state.transfer?.status ?? null,
+              purchase: state.transfer?.quote ?? null,
+            },
           }
-        : null,
+        : {}),
+      current_package:
+        hasActivePackage &&
+        (state.workbenchCase !== "S14" || state.transfer?.status === "provisional_active")
+          ? {
+              name: activeTransfer?.package.name ?? "Paquete de prueba: 8 clases",
+              available_credits: activeTransfer?.unlimited ? null : state.credits,
+              unlimited: activeTransfer?.unlimited ?? false,
+            }
+          : null,
       packages: [],
     };
   }
@@ -140,6 +294,106 @@ export async function simulateAssistantAction(
 ) {
   const { state } = input;
   const result = (data: Summary): Summary & { simulated: true } => ({ simulated: true, ...data });
+  if (
+    state.workbenchCase &&
+    state.workbenchCase !== "standard" &&
+    tool === "prepare_bank_transfer_purchase"
+  ) {
+    if (state.transfer && state.transfer.status !== "awaiting_receipt") {
+      return result({
+        ok: false,
+        reason_code: "purchase_already_received",
+        status: state.transfer.status,
+      });
+    }
+    const quote = await testTransferQuote(
+      input.supabase,
+      input.studio.id,
+      state,
+      String(args.product_ref ?? ""),
+    );
+    if (!quote) return result({ ok: false, reason_code: "purchase_quote_unavailable" });
+    // Mirror the existing confirmation boundary without creating any purchase records.
+    const confirmed =
+      args.enrollment_accepted === true &&
+      state.transferPreview?.turnId !== input.turnId &&
+      JSON.stringify(state.transferPreview?.quote) === JSON.stringify(quote);
+    if (quote.enrollment_required && !confirmed) {
+      state.transferPreview = { quote, turnId: input.turnId };
+      return result({
+        ok: false,
+        reason_code: "enrollment_confirmation_required",
+        package: quote.package,
+        enrollment: quote.enrollment,
+        total_amount_minor: quote.total_amount_minor,
+        instruction:
+          "Explica paquete, inscripción y total. Pregunta si acepta pagarlos juntos; no prepares ni compartas datos bancarios antes de su aceptación.",
+      });
+    }
+    state.transfer = { status: "awaiting_receipt", quote };
+    return result({
+      ok: true,
+      status: "awaiting_receipt",
+      ...quote,
+      receipt_required: true,
+      profile_required_after_payment: state.persona === "prospect",
+      bank_details: {
+        bank_name: "Banco de prueba",
+        account_holder: "Simulación sin pago real",
+        instructions:
+          "No realices transferencias. Usa el botón de comprobante simulado para continuar.",
+      },
+      instruction:
+        "Conserva este producto y total. No pidas datos personales antes del comprobante. No se ha creado una ficha, compra ni cobro real.",
+    });
+  }
+  if (
+    state.workbenchCase &&
+    state.workbenchCase !== "standard" &&
+    tool === "complete_purchase_profile"
+  ) {
+    if (!state.transfer || state.transfer.status === "awaiting_receipt")
+      return result({ ok: false, reason_code: "payment_not_confirmed" });
+    if (state.transfer.status === "provisional_active")
+      return result({ ok: true, status: "provisional_active", idempotent: true });
+    const name = String(args.full_name ?? "").trim();
+    if (!/\S+\s+\S+/.test(name) || name.length > 160)
+      return result({ ok: false, reason_code: "full_name_required" });
+    const birth = String(args.birth_date ?? "");
+    const date = new Date(birth + "T00:00:00Z");
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: input.studio.timezone }).format(
+      new Date(),
+    );
+    const oldest = new Date(today + "T00:00:00Z");
+    oldest.setUTCFullYear(oldest.getUTCFullYear() - 100);
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(birth) ||
+      !Number.isFinite(date.getTime()) ||
+      date.toISOString().slice(0, 10) !== birth ||
+      birth > today ||
+      date < oldest
+    )
+      return result({ ok: false, reason_code: "birth_date_invalid" });
+    const email = String(args.email ?? "").trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 254)
+      return result({ ok: false, reason_code: "email_invalid" });
+    state.transfer.status = "provisional_active";
+    state.persona = "student";
+    state.identityNeedsName = false;
+    if (state.transfer.quote.enrollment_required || state.transfer.quote.enrollment_included)
+      state.enrollmentStatus = "active";
+    state.credits = state.transfer.quote.credits ?? 0;
+    return result({
+      ok: true,
+      status: "provisional_active",
+      package_name: state.transfer.quote.package.name,
+      enrollment_paid: state.transfer.quote.enrollment_required,
+      enrollment_included: state.transfer.quote.enrollment_included,
+      revocable_until_validated: true,
+      instruction:
+        "Perfil y paquete activados sólo en la simulación. La transferencia queda pendiente de validación definitiva; no afirmes pago validado.",
+    });
+  }
   if (
     tool === "prepare_booking" &&
     isFirstVisitPersona(state.persona) &&

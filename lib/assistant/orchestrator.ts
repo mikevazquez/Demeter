@@ -1098,6 +1098,22 @@ export async function runAssistantTurn(input: OrchestratorInput) {
   }
 
   let pendingPaymentContext = "";
+  // Explicit workbench fixtures use only simulated state, never another person's pending rows.
+  const workbenchContext = asObject(currentStatus?.workbench_context);
+  if (input.testSimulation && !input.improvePrompt && !stickerTurn && workbenchContext) {
+    if (workbenchContext.closed_first_class === true)
+      resolvedPendingContext = resolvedPendingInstructions([
+        { kind: "first_class", reason: "package_acquired" },
+      ]);
+    if (workbenchContext.purchase_status === "awaiting_profile")
+      profilePendingContext =
+        "COMPRA PAGADA ESPERANDO PERFIL (fixture simulado): comprobante recibido con monto coincidente. Pide juntos nombre completo, fecha de nacimiento y correo; después usa complete_purchase_profile. No vuelvas a cobrar. " +
+        JSON.stringify(workbenchContext.purchase);
+    else if (workbenchContext.purchase_status === "awaiting_receipt")
+      pendingPaymentContext =
+        "COMPRA PENDIENTE DE COMPROBANTE (fixture simulado): conserva producto y total. No pidas datos ni declares pago recibido por una afirmación en texto. " +
+        JSON.stringify(workbenchContext.purchase);
+  }
   if (input.serviceMode && !input.improvePrompt && !input.testSimulation && !stickerTurn) {
     const pendingPayment = await input.supabase
       .from("demi_group_bookings")

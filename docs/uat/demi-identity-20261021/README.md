@@ -69,3 +69,62 @@ vínculo verificado existente; no se suplantan identidades desde el chat.
 
 Las correcciones de transporte quedan fuera de esta rama; cualquier caso crítico
 bloqueado por ellas permanece visible y no se declara terminado.
+
+## Banco comercial S11–S15 · preparación de Codex
+
+Mike autorizó que Codex asumiera también el desarrollo del simulador en Sandbox.
+Rama `codex/demi-workbench-state-uat-20261021`, sobre
+`01d8d9cba024bc7bb4c254c96eb4c8d5f15b256b` (#361). No requiere nuevas migraciones.
+
+El selector «Caso de prueba» aparece sólo en Sandbox y conserva «Conversación
+libre» como valor predeterminado para el benchmark existente. Cambiar el caso,
+perfil o borrador exige una conversación nueva. El servidor comprueba Sandbox,
+propietario, estudio, caso y hash del borrador antes de utilizar el estado.
+
+| Caso | Estado inicial                                              | Mensaje / comprobación                                                          |
+| ---- | ----------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| S11  | Prospecto sin ficha ni inscripción                          | Elegir Pase Descubre: sólo precio oficial; sin datos personales                 |
+| S12  | Prospecto sin inscripción                                   | Elegir paquete de 8: desglose y confirmación antes de preparar; «no» no prepara |
+| S13  | Comprobante ficticio coincidente; awaiting_profile          | Pedir juntos nombre completo, nacimiento y correo; validar antes de activar     |
+| S14  | Alumna sin inscripción ni paquete                           | Mismo desglose; sólo preparar tras aceptación                                   |
+| S15  | Paquete activo; pendiente cerrado; mensaje de cobro de ayer | «hola»: contexto actual y sin repetir pendiente, cobro ni datos bancarios       |
+
+En S11/S12/S14, después de preparar, el botón «Simular comprobante coincidente»
+introduce un evento explícito de fixture. Escribir «ya pagué» no lo introduce.
+El prospecto sigue sin perfil hasta completar los tres datos válidos. El estado
+provisional y los reintentos no crean ventas, personas, paquetes ni créditos en
+las tablas de negocio. El comprobante inicial de S13 también queda identificado
+como fixture. Nunca se valida definitivamente una transferencia.
+
+Los importes se leen del producto y la política del estudio, con filtros de
+estudio/visibilidad. Los datos bancarios del caso son rótulos de simulación, sin
+números de cuenta reales. La simulación **no certifica elegibilidad operativa,
+cupo, pago ni activación reales**; eso sigue en el UAT operativo separado.
+
+Demo preparado en Studio Flow Sandbox `hedouonyhynuvwbckdlg`:
+
+- Run `66f7d517-5aff-44e7-96b6-ce15db70b7ba`.
+- Estudio **Demi UAT · 66f7d517**, `54dd112f-12ab-4e77-928c-877b12276eb2`.
+- Pase Descubre `8aeacd90-8506-42e5-a0ee-b99534046343`: 499 MXN, cuatro clases,
+  inscripción incluida; copia del producto de Sandbox `53b7dae5-5ed3-4923-8203-22bcd3041b5f`.
+- Paquete UAT de 8 `acb28f46-e996-4b47-a288-621dea99a94e`: 600 MXN, sin inscripción;
+  importe de «Mensual · 8 clases» `3ce3fad7-40e6-4b34-8aa2-9e4cee51ef66`.
+- Inscripción UAT: 200 MXN; política vigente de fixture exige inscripción.
+- No se modificó el run del benchmark `f476451f-bc32-4139-a7c3-7a6dbcd18c60`
+  ni el catálogo del estudio de origen. El demo permanece preparado; no se borra
+  como si fuera una corrida transaccional con rollback.
+
+Verificación local: 1.726 pruebas en 232 archivos, cero fallos; tipos, lint
+(19 advertencias preexistentes, cero errores), formato y build pasan. Incluye
+pruebas de aislamiento, confirmación, comprobante, datos inválidos, replay,
+precio cambiado, contexto del orquestador y rechazo de fixtures en producción.
+La primera compilación con un enlace de node_modules falló por la raíz de
+Turbopack; con las mismas dependencias copiadas dentro del worktree pasó.
+
+**Pendiente:** comprobar la UI y S11–S15 con el modelo en la Preview autenticada,
+benchmark alternado (30 turnos por versión) y C03. Estas pruebas locales no los
+sustituyen. La comparación original conserva candidata exacta `01d8d9cb` y base
+runtime `bfd395e1`; si se mide esta nueva rama se identifica como otra candidata.
+La Preview histórica `8c551473f6ffdcca07e57741bf74a0cc4bf416e5` del benchmark
+está READY y su código de `lib/assistant`/workbench-actions coincide con bfd395e1.
+No se activa WhatsApp ni se toca producción.
