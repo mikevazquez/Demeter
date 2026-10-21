@@ -234,7 +234,7 @@ begin
         v_discipline.id,
         coalesce(nullif(v_item.data->>'nombre_es',''), v_item.data->>'nombre'),
         'figure',
-        true,
+        v_catalog_level <> 'por_revisar',
         v_item.data->>'id'
       )
       on conflict (studio_id, pole_catalog_slug)
@@ -243,7 +243,7 @@ begin
         discipline_id = excluded.discipline_id,
         name = excluded.name,
         element_kind = excluded.element_kind,
-        active = true,
+        active = excluded.active,
         updated_at = now()
       returning id into v_element_id;
 
