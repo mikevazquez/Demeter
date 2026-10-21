@@ -226,6 +226,22 @@ export function confirmSimulatedProspectName(state: TestSimulation, message: str
   return true;
 }
 
+// Studio-local date (YYYY-MM-DD) offset by whole days, for synthetic validity windows.
+function simulatedLocalDate(offsetDays: number) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City" }).format(
+    new Date(Date.now() + offsetDays * 24 * 60 * 60 * 1000),
+  );
+}
+
+const FOLLOWUP_STAGES = new Set([
+  "answering_questions",
+  "awaiting_receipt",
+  "awaiting_participant_data",
+  "not_booked",
+  "not_qualified",
+  "opt_out",
+]);
+
 export function simulatedReadTool(state: TestSimulation, tool: string) {
   if (
     state.persona === "unresolved_identity" &&
@@ -258,6 +274,23 @@ export function simulatedReadTool(state: TestSimulation, tool: string) {
                     ? "former_student"
                     : "active_student";
     const hasActivePackage = isActiveStudentPersona(state.persona);
+    // Same shape as the real get_student_package_status, including validity dates (S03).
+    const unlimited = activeTransfer?.unlimited ?? false;
+    const creditLimit = unlimited ? null : (activeTransfer?.credits ?? 8);
+    const availableCredits = unlimited ? null : state.credits;
+    const currentPackage =
+      hasActivePackage &&
+      (state.workbenchCase !== "S14" || state.transfer?.status === "provisional_active")
+        ? {
+            name: activeTransfer?.package.name ?? "Paquete de prueba: 8 clases",
+            unlimited,
+            available_credits: availableCredits,
+            credit_limit: creditLimit,
+            starts_on: simulatedLocalDate(-5),
+            expires_on: simulatedLocalDate(25),
+            depleted: !unlimited && (availableCredits ?? 0) <= 0,
+          }
+        : null;
     return {
       ok: true,
       simulated: true,
@@ -282,16 +315,8 @@ export function simulatedReadTool(state: TestSimulation, tool: string) {
             },
           }
         : {}),
-      current_package:
-        hasActivePackage &&
-        (state.workbenchCase !== "S14" || state.transfer?.status === "provisional_active")
-          ? {
-              name: activeTransfer?.package.name ?? "Paquete de prueba: 8 clases",
-              available_credits: activeTransfer?.unlimited ? null : state.credits,
-              unlimited: activeTransfer?.unlimited ?? false,
-            }
-          : null,
-      packages: [],
+      current_package: currentPackage,
+      packages: currentPackage ? [currentPackage] : [],
     };
   }
   if (tool === "get_student_reservations") {
@@ -511,6 +536,24 @@ export async function simulateAssistantAction(
       );
     }
     return result({ ok: true, status: "executed", summary: pending.summary });
+  }
+
+  // CRM stage only: validates like the real tool but never schedules or sends follow-ups.
+  if (tool === "update_contact_followup") {
+    const stage = String(args.stage ?? "");
+    const reason = typeof args.reason === "string" ? args.reason.trim() : "";
+    if (!FOLLOWUP_STAGES.has(stage)) return result({ ok: false, error: "invalid_stage" });
+    if (stage === "not_qualified" && !reason)
+      return result({ ok: false, error: "reason_required" });
+    if (state.persona !== "prospect" && !state.persona.startsWith("trial_"))
+      return result({ ok: false, error: "followup_not_applicable" });
+    return result({
+      ok: true,
+      status: "simulated",
+      stage,
+      reason: reason || null,
+      reason_message: "Etapa simulada; no se programan ni envían seguimientos reales.",
+    });
   }
 
   if (tool === "record_trial_payment_preference") {
