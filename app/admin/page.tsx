@@ -12,6 +12,10 @@ import { individualPaymentSummary } from "@/lib/reservations/individual-payment-
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
 import QuickActions from "./hoy/QuickActions";
 import PoleClassComboPanel from "./agenda/[sessionId]/PoleClassComboPanel";
+import { birthdaysInMonth, birthdaysOn, mexicoToday, type BirthdayStudent } from "./hoy/birthdays";
+import { loadBirthdayStudents } from "./hoy/load-birthdays";
+import { GiftIcon } from "./hoy/GiftIcon";
+import { MonthlyBirthdays } from "./hoy/MonthlyBirthdays";
 
 function formatExpiry(value: string | null, locale: string) {
   if (!value) return "Sin vencimiento";
