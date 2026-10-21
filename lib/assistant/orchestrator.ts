@@ -98,6 +98,8 @@ type OrchestratorInput = {
   stickerImages?: string[];
   testSimulation?: TestSimulation;
   improvePrompt?: boolean;
+  /** DEMI-BATCH-02: false once a newer message of the same contact arrived. */
+  isTurnCurrent?: () => Promise<boolean>;
 };
 
 export type AssistantTrace = {
@@ -159,6 +161,15 @@ function replyClaimsHumanHandoff(reply: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("es-MX");
   return normalized.includes("atencion humana");
+}
+
+async function assertActionTurnCurrent(input: OrchestratorInput) {
+  if (!input.isTurnCurrent) return;
+  if (!(await input.isTurnCurrent())) throw new Error("assistant_turn_superseded");
+}
+
+function rethrowSuperseded(error: unknown) {
+  if (error instanceof Error && error.message === "assistant_turn_superseded") throw error;
 }
 
 async function ensureHumanHandoffForReply(
@@ -534,6 +545,7 @@ async function tryServerSideTransferPackageChoice(input: OrchestratorInput, trac
   let result: unknown;
   let toolStatus: "executed" | "blocked" | "error" = "executed";
   try {
+    await assertActionTurnCurrent(input);
     result = await executeAssistantActionTool(
       {
         supabase: input.supabase,
@@ -552,7 +564,8 @@ async function tryServerSideTransferPackageChoice(input: OrchestratorInput, trac
       args,
     );
     if (asObject(result)?.ok === false) toolStatus = "blocked";
-  } catch {
+  } catch (error) {
+    rethrowSuperseded(error);
     result = { ok: false, error: "tool_execution_failed" };
     toolStatus = "error";
   }
@@ -684,6 +697,7 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
   let result: unknown;
   let toolStatus: "executed" | "blocked" | "error" = "executed";
   try {
+    await assertActionTurnCurrent(input);
     result = await executeAssistantActionTool(
       {
         supabase: input.supabase,
@@ -702,7 +716,8 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
       {},
     );
     if (asObject(result)?.ok === false) toolStatus = "blocked";
-  } catch {
+  } catch (error) {
+    rethrowSuperseded(error);
     result = { ok: false, error: "tool_execution_failed" };
     toolStatus = "error";
   }
@@ -828,6 +843,7 @@ async function tryServerSidePostTrialEnrollmentMethod(
   let result: unknown;
   let toolStatus: "executed" | "blocked" | "error" = "executed";
   try {
+    await assertActionTurnCurrent(input);
     result = await executeAssistantActionTool(
       {
         supabase: input.supabase,
@@ -846,7 +862,8 @@ async function tryServerSidePostTrialEnrollmentMethod(
       { payment_method: method },
     );
     if (asObject(result)?.ok === false) toolStatus = "blocked";
-  } catch {
+  } catch (error) {
+    rethrowSuperseded(error);
     result = { ok: false, error: "tool_execution_failed" };
     toolStatus = "error";
   }
@@ -1635,6 +1652,9 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       } else {
         const currentUserMessage =
           [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
+        const actionBlocked =
+          socialOnly || shouldBlockPaymentForInformation(toolName, currentUserMessage);
+        if (!input.testSimulation && !actionBlocked) await assertActionTurnCurrent(input);
         result = socialOnly
           ? {
               ok: false,
@@ -1684,7 +1704,8 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       if (resultObject?.ok === false) {
         toolStatus = "blocked";
       }
-    } catch {
+    } catch (error) {
+      rethrowSuperseded(error);
       result = { ok: false, error: "tool_execution_failed" };
       toolStatus = "error";
     }
