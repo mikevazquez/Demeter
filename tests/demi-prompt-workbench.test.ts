@@ -199,6 +199,7 @@ describe("Demi prompt workbench", () => {
       expect(body.instructions).toContain('"available_credits":8');
       expect(body.instructions).toContain("Para alumnas, resuelve primero su solicitud concreta");
       expect(body.text.format.name).toBe("demi_conversation_reply");
+      expect(body.tools).toEqual([]);
       return new Response(
         JSON.stringify(
           reply(
@@ -243,6 +244,41 @@ describe("Demi prompt workbench", () => {
     );
     expect((await h.run(h.input)).reply).toBe("Hola, ¿en qué te ayudo?");
     expect(h.action).not.toHaveBeenCalled();
+  });
+
+  it("never authorizes a payment action from a greeting, even if a model requests it", async () => {
+    const h = orchestratorHarness();
+    h.input.history = [{ role: "user", content: "Hola" }];
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              output: [
+                {
+                  type: "function_call",
+                  name: "prepare_first_class_payment",
+                  call_id: "unrequested",
+                  arguments: "{}",
+                },
+              ],
+            }),
+          ),
+        )
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify(reply("Hola, ¿necesitas ayuda con el pago?"))),
+        ),
+    );
+    const result = await h.run(h.input);
+    expect(h.action).not.toHaveBeenCalled();
+    expect(h.simulate).not.toHaveBeenCalled();
+    expect(result.trace.toolCalls).toContainEqual({
+      name: "prepare_first_class_payment",
+      status: "blocked",
+    });
   });
 
   it("answers a mixed information request while retaining exact payment instructions", async () => {

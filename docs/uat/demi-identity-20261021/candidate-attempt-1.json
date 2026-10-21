@@ -1,0 +1,275 @@
+{
+  "label": "candidate-web",
+  "surface": "authenticated-sandbox-workbench",
+  "deployedSha": "ca97c983da1e3eceeeb38fad5f8a508b938ba746",
+  "comparisonBase": "bfd395e11e6bb54f2841a3c3c1f3b6a0d8863cd9",
+  "transport": "none",
+  "runId": "f476451f-bc32-4139-a7c3-7a6dbcd18c60",
+  "studioId": "d0357e3d-f962-4628-8ba8-a401708b6157",
+  "model": "gpt-5.6-luna",
+  "reasoning": "medium",
+  "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+  "samples": [
+    {
+      "id": "S01",
+      "rep": 0,
+      "persona": "student",
+      "conversationId": "74bccc8b-a09a-46cc-bd46-30a842940630",
+      "httpStatus": 200,
+      "durationMs": 5092,
+      "ok": true,
+      "reply": "¡Hola! Soy Demi 😊 ¿En qué te ayudo hoy?",
+      "metrics": [
+        {
+          "model": "gpt-5.6-luna",
+          "latency_ms": 3174,
+          "input_tokens": 12888,
+          "cached_input_tokens": 12885,
+          "output_tokens": 53,
+          "reasoning_tokens": 0,
+          "estimated_cost_usd_micros": 322,
+          "status": "completed",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "id": "S02",
+      "rep": 0,
+      "persona": "prospect",
+      "conversationId": "b02b563c-37c4-4b17-bf78-aac21192f01b",
+      "httpStatus": 200,
+      "durationMs": 27363,
+      "ok": true,
+      "reply": "¡Hola! Encontré Pole Fitness mañana, jueves 22 de octubre, a las 18:00 en la sede Principal. Este chat de pruebas no puede generar el pago ni el enlace para completar tu primera clase, así que todavía no hay reserva. ¿Quieres que revisemos otra fecha u horario?",
+      "metrics": [
+        {
+          "model": "gpt-5.6-luna",
+          "latency_ms": 7319,
+          "input_tokens": 13763,
+          "cached_input_tokens": 0,
+          "output_tokens": 136,
+          "reasoning_tokens": 70,
+          "estimated_cost_usd_micros": 2916,
+          "status": "completed",
+          "error_code": null
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "latency_ms": 4857,
+          "input_tokens": 14195,
+          "cached_input_tokens": 13760,
+          "output_tokens": 72,
+          "reasoning_tokens": 18,
+          "estimated_cost_usd_micros": 449,
+          "status": "completed",
+          "error_code": null
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "latency_ms": 8560,
+          "input_tokens": 14325,
+          "cached_input_tokens": 14192,
+          "output_tokens": 213,
+          "reasoning_tokens": 82,
+          "estimated_cost_usd_micros": 567,
+          "status": "completed",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "id": "S03",
+      "rep": 0,
+      "persona": "student",
+      "conversationId": "8b065eb3-0cdb-4d8d-bd6d-0fef1e061972",
+      "httpStatus": 200,
+      "durationMs": 10543,
+      "ok": true,
+      "reply": "Tienes 8 clases disponibles en tu paquete de prueba. Por ahora no aparece una fecha de vencimiento registrada, así que no quiero inventarte una. Si quieres, puedo ayudarte a revisar una clase disponible para reservar.",
+      "metrics": [
+        {
+          "model": "gpt-5.6-luna",
+          "latency_ms": 3561,
+          "input_tokens": 12900,
+          "cached_input_tokens": 0,
+          "output_tokens": 41,
+          "reasoning_tokens": 23,
+          "estimated_cost_usd_micros": 2630,
+          "status": "completed",
+          "error_code": null
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "latency_ms": 5153,
+          "input_tokens": 13001,
+          "cached_input_tokens": 12897,
+          "output_tokens": 221,
+          "reasoning_tokens": 127,
+          "estimated_cost_usd_micros": 544,
+          "status": "completed",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "id": "S04",
+      "rep": 0,
+      "persona": "prospect",
+      "conversationId": "0f37be3b-55ef-4125-b908-d1c929fad95d",
+      "httpStatus": 200,
+      "durationMs": 15395,
+      "ok": true,
+      "reply": "Mañana, jueves 22 de octubre, hay Pole Fitness de 18:00 a 19:00 en la sede Principal, Avenida San Gaspar #240, Tonalá, Jalisco. Hay una opción disponible para reservar. 🌸",
+      "metrics": [
+        {
+          "model": "gpt-5.6-luna",
+          "latency_ms": 7544,
+          "input_tokens": 14101,
+          "cached_input_tokens": 13722,
+          "output_tokens": 227,
+          "reasoning_tokens": 112,
+          "estimated_cost_usd_micros": 623,
+          "status": "completed",
+          "error_code": null
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "latency_ms": 5552,
+          "input_tokens": 13725,
+          "cached_input_tokens": 13707,
+          "output_tokens": 84,
+          "reasoning_tokens": 22,
+          "estimated_cost_usd_micros": 379,
+          "status": "completed",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "rep": 0,
+      "persona": "prospect",
+      "conversationId": "69b2622a-6886-4275-ab0f-109e4ff42ba9",
+      "httpStatus": 200,
+      "durationMs": 17238,
+      "ok": true,
+      "reply": "Estos son todos los horarios de Pole Fitness del 21 al 27 de octubre, en horario local:\n\nHoy, miércoles 21:\n• 14:22–15:22\n• 16:22–17:22\n\nJueves 22:\n• 18:00–19:00, con una opción disponible y otra llena\n\nViernes 23:\n• 18:00–19:00\n\nNo hay más horarios publicados del 24 al 27 de octubre. Todas son en la sede Principal: Avenida San Gaspar #240, Tonalá, Jalisco.",
+      "metrics": [
+        {
+          "model": "gpt-5.6-luna",
+          "latency_ms": 9106,
+          "input_tokens": 14439,
+          "cached_input_tokens": 13731,
+          "output_tokens": 401,
+          "reasoning_tokens": 175,
+          "estimated_cost_usd_micros": 898,
+          "status": "completed",
+          "error_code": null
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "latency_ms": 5936,
+          "input_tokens": 13734,
+          "cached_input_tokens": 13707,
+          "output_tokens": 93,
+          "reasoning_tokens": 31,
+          "estimated_cost_usd_micros": 392,
+          "status": "completed",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "rep": 0,
+      "persona": "prospect",
+      "conversationId": "862afd8a-ebca-47b9-8169-7f01c1d08ec2",
+      "httpStatus": 200,
+      "durationMs": 21683,
+      "ok": true,
+      "reply": "Hoy no hay clases de Pole Fitness disponibles después de las 6:00 p. m. ¿Quieres que revise mañana o alguna otra fecha?",
+      "metrics": [
+        {
+          "model": "gpt-5.6-luna",
+          "latency_ms": 10566,
+          "input_tokens": 13899,
+          "cached_input_tokens": 13728,
+          "output_tokens": 137,
+          "reasoning_tokens": 50,
+          "estimated_cost_usd_micros": 474,
+          "status": "completed",
+          "error_code": null
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "latency_ms": 9214,
+          "input_tokens": 13731,
+          "cached_input_tokens": 0,
+          "output_tokens": 87,
+          "reasoning_tokens": 23,
+          "estimated_cost_usd_micros": 2851,
+          "status": "completed",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "id": "S07",
+      "rep": 0,
+      "persona": "prospect",
+      "conversationId": "834cf338-f201-453f-b3c3-467bcd7754c7",
+      "httpStatus": 200,
+      "durationMs": 15566,
+      "ok": true,
+      "reply": "Sí, encontré estas opciones por la tarde para Pole Fitness:\n\n• Jueves 22 de octubre, 6:00 a 7:00 pm\n• Viernes 23 de octubre, 6:00 a 7:00 pm\n\nAmbas son en la sede Principal, Avenida San Gaspar #240, Tonalá. ¿Cuál te funciona mejor?",
+      "metrics": [
+        {
+          "model": "gpt-5.6-luna",
+          "latency_ms": 6121,
+          "input_tokens": 14313,
+          "cached_input_tokens": 13766,
+          "output_tokens": 203,
+          "reasoning_tokens": 54,
+          "estimated_cost_usd_micros": 629,
+          "status": "completed",
+          "error_code": null
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "latency_ms": 7168,
+          "input_tokens": 13769,
+          "cached_input_tokens": 13707,
+          "output_tokens": 144,
+          "reasoning_tokens": 80,
+          "estimated_cost_usd_micros": 460,
+          "status": "completed",
+          "error_code": null
+        }
+      ]
+    },
+    {
+      "id": "S08",
+      "rep": 0,
+      "persona": "prospect",
+      "conversationId": "fb5fae31-0952-4611-b3cd-f8a63ea0905b",
+      "httpStatus": 200,
+      "durationMs": 6563,
+      "ok": true,
+      "reply": "Sí, puedes ir al estudio y pagar en efectivo, pero no tendrás una reserva ni el lugar asegurado; podrás tomar la clase únicamente si hay cupo al llegar.",
+      "metrics": [
+        {
+          "model": "gpt-5.6-luna",
+          "latency_ms": 5239,
+          "input_tokens": 13736,
+          "cached_input_tokens": 13707,
+          "output_tokens": 238,
+          "reasoning_tokens": 136,
+          "estimated_cost_usd_micros": 566,
+          "status": "completed",
+          "error_code": null
+        }
+      ]
+    }
+  ]
+}

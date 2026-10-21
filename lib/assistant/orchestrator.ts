@@ -122,6 +122,19 @@ function localDateKey(timeZone: string) {
   }).format(new Date());
 }
 
+function isSocialOnlyMessage(message: string) {
+  const value = message
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-MX")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+  return /^(?:hola|hola demi|buenos dias|buenas tardes|buenas noches|hey|gracias|muchas gracias|mil gracias|ok|vale|perfecto|entendido)$/.test(
+    value,
+  );
+}
+
 function outputText(output: OpenAIOutputItem[]) {
   return output
     .filter((item) => item.type === "message")
@@ -921,6 +934,9 @@ export async function runAssistantTurn(input: OrchestratorInput) {
   };
 
   const stickerTurn = Boolean(input.stickerImages?.length);
+  const latestUserMessage =
+    [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
+  const socialOnly = isSocialOnlyMessage(latestUserMessage);
   const contextScope = {
     supabase: input.supabase,
     studioId: input.studio.id,
@@ -987,10 +1003,19 @@ export async function runAssistantTurn(input: OrchestratorInput) {
   }
 
   const tools =
-    input.improvePrompt || stickerTurn
+    input.improvePrompt || stickerTurn || socialOnly
       ? []
       : [
-          ...assistantReadToolDefinitions,
+          ...assistantReadToolDefinitions.filter((tool) => {
+            if (tool.name === "get_student_package_status")
+              return !(currentStatus?.ok === true && typeof currentCategory === "string");
+            if (tool.name === "get_student_reservations")
+              return !(
+                asObject(reservationsContext)?.ok === true &&
+                Array.isArray(asObject(reservationsContext)?.reservations)
+              );
+            return true;
+          }),
           ...assistantActionToolDefinitions.filter((tool) =>
             input.studentId || input.testSimulation
               ? true
@@ -1505,42 +1530,49 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       } else {
         const currentUserMessage =
           [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
-        result = shouldBlockPaymentForInformation(toolName, currentUserMessage)
+        result = socialOnly
           ? {
               ok: false,
-              reason_code: "information_request_not_payment_authorization",
+              reason_code: "social_message_is_not_action_authorization",
               instruction:
-                "Responde la consulta informativa con los datos consultados. Conserva el pago pendiente sin repetir datos bancarios ni preparar otro cobro. Si pide información general, explica la actividad y los requisitos disponibles; pregunta qué detalle desea conocer sólo si falta contexto.",
+                "Un saludo o agradecimiento no autoriza acciones. Responde con el contexto actual y, si hay un pendiente relevante, pregunta brevemente si necesita ayuda. No prepares pagos, reservas ni cambios.",
             }
-          : input.testSimulation
-            ? await simulateAssistantAction(
-                {
-                  state: input.testSimulation,
-                  supabase: input.supabase,
-                  studio: input.studio,
-                  turnId: input.turnId,
-                  currentUserMessage,
-                },
-                toolName,
-                args,
-              )
-            : await executeAssistantActionTool(
-                {
-                  supabase: input.supabase,
-                  studio: input.studio,
-                  conversationId: input.conversationId,
-                  turnId: input.turnId,
-                  studentId: input.studentId,
-                  crmContactId: input.crmContactId,
-                  identityNeedsName: input.identityNeedsName === true,
-                  channel: input.channel,
-                  activationUrl: input.activationUrl,
-                  serviceMode: input.serviceMode === true,
-                  currentUserMessage,
-                },
-                toolName,
-                args,
-              );
+          : shouldBlockPaymentForInformation(toolName, currentUserMessage)
+            ? {
+                ok: false,
+                reason_code: "information_request_not_payment_authorization",
+                instruction:
+                  "Responde la consulta informativa con los datos consultados. Conserva el pago pendiente sin repetir datos bancarios ni preparar otro cobro. Si pide información general, explica la actividad y los requisitos disponibles; pregunta qué detalle desea conocer sólo si falta contexto.",
+              }
+            : input.testSimulation
+              ? await simulateAssistantAction(
+                  {
+                    state: input.testSimulation,
+                    supabase: input.supabase,
+                    studio: input.studio,
+                    turnId: input.turnId,
+                    currentUserMessage,
+                  },
+                  toolName,
+                  args,
+                )
+              : await executeAssistantActionTool(
+                  {
+                    supabase: input.supabase,
+                    studio: input.studio,
+                    conversationId: input.conversationId,
+                    turnId: input.turnId,
+                    studentId: input.studentId,
+                    crmContactId: input.crmContactId,
+                    identityNeedsName: input.identityNeedsName === true,
+                    channel: input.channel,
+                    activationUrl: input.activationUrl,
+                    serviceMode: input.serviceMode === true,
+                    currentUserMessage,
+                  },
+                  toolName,
+                  args,
+                );
       }
 
       const resultObject = asObject(result);
@@ -1552,6 +1584,12 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       toolStatus = "error";
     }
     toolCallsThisTurn += 1;
+    // After an action attempt, allow a new read of any state it may have changed.
+    if (isActionTool && !socialOnly) {
+      for (const definition of assistantReadToolDefinitions) {
+        if (!tools.some((tool) => tool.name === definition.name)) tools.push(definition);
+      }
+    }
 
     const resultObject = asObject(result);
     if (
