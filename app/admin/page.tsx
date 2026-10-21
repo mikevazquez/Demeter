@@ -10,7 +10,6 @@ import {
 } from "@/lib/reservations/capacity";
 import { individualPaymentSummary } from "@/lib/reservations/individual-payment-summary";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
-import PoleClassComboPanel from "./agenda/[sessionId]/PoleClassComboPanel";
 import QuickActions from "./hoy/QuickActions";
 import { birthdaysInMonth, birthdaysOn, mexicoToday, type BirthdayStudent } from "./hoy/birthdays";
 import { loadBirthdayStudents } from "./hoy/load-birthdays";
@@ -689,6 +688,15 @@ export default async function AdminPage({
   const pendingCount =
     cashDebts.length + (selectedKey === todayKey ? pendingTransferReviews.length : 0);
   const effectiveServerNow = new Date(String(serverNow ?? now.toISOString())).getTime();
+  const livePoleClasses = classes.filter(
+    (item) =>
+      item.sessionStatus === "scheduled" &&
+      new Date(item.startsAt).getTime() <= effectiveServerNow &&
+      effectiveServerNow < new Date(item.endsAt).getTime(),
+  );
+  const PoleClassComboPanel = livePoleClasses.length
+    ? (await import("./agenda/[sessionId]/PoleClassComboPanel")).default
+    : null;
 
   return (
     <main className="dashboard-shell hoy-dashboard hoy-approved hoy-v2 hoy-sendero">
@@ -800,28 +808,25 @@ export default async function AdminPage({
             <TodayClasses
               key={selectedKey}
               classes={classes}
-              poleFlows={classes
-                .filter(
-                  (item) =>
-                    item.sessionStatus === "scheduled" &&
-                    new Date(item.startsAt).getTime() <= effectiveServerNow &&
-                    effectiveServerNow < new Date(item.endsAt).getTime(),
-                )
-                .map((item) => ({
-                  sessionId: item.id,
-                  node: (
-                    <PoleClassComboPanel
-                      sessionId={item.id}
-                      disciplineId={item.disciplineId ?? null}
-                      roster={item.roster.flatMap((rosterItem) =>
-                        rosterItem.studentId
-                          ? [{ studentId: rosterItem.studentId, name: rosterItem.studentName }]
-                          : [],
-                      )}
-                      canWrite={can(CAPABILITIES.EVALUATIONS_WRITE)}
-                    />
-                  ),
-                }))}
+              poleFlows={
+                PoleClassComboPanel
+                  ? livePoleClasses.map((item) => ({
+                      sessionId: item.id,
+                      node: (
+                        <PoleClassComboPanel
+                          sessionId={item.id}
+                          disciplineId={item.disciplineId ?? null}
+                          roster={item.roster.flatMap((rosterItem) =>
+                            rosterItem.studentId
+                              ? [{ studentId: rosterItem.studentId, name: rosterItem.studentName }]
+                              : [],
+                          )}
+                          canWrite={can(CAPABILITIES.EVALUATIONS_WRITE)}
+                        />
+                      ),
+                    }))
+                  : []
+              }
               returnDate={selectedKey}
               serverNow={String(serverNow ?? now.toISOString())}
               canAttendance={canWriteAttendance}
