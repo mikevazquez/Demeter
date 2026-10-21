@@ -39,8 +39,8 @@ begin
   if (select first_name from public.persons where id=person)<>'Prospecto UAT' then raise exception 'C1_person_changed'; end if;
   if (select lifecycle_status from public.crm_contacts where id=contact)<>'prospect' then raise exception 'C1_contact_changed'; end if;
 
-  insert into public.assistant_whatsapp_events(studio_id,provider,provider_event_id,phone_number_id,contact_wa_id,message_type,processing_status)
-  values(s,'meta_whatsapp','uat-receipt-'||intent,'uat','529990001234','image','processed') returning id into ev;
+  insert into public.assistant_whatsapp_events(studio_id,provider,provider_event_id,phone_number_id,contact_wa_id,message_type,processing_status,payload_fingerprint)
+  values(s,'meta_whatsapp','uat-receipt-'||intent,'uat','529990001234','image','processed',md5('uat-receipt-'||intent)) returning id into ev;
   r := public.service_record_prospect_transfer_receipt(s,c,contact,intent,ev,'uat-receipt-'||intent,'uat-media');
   if r->>'status'<>'awaiting_profile' then raise exception 'C3_receipt:%',r; end if;
   r := public.service_record_prospect_transfer_receipt(s,c,contact,intent,ev,'uat-receipt-'||intent,'uat-media');
