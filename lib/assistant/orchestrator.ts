@@ -950,6 +950,9 @@ export async function runAssistantTurn(input: OrchestratorInput) {
     turnId: input.turnId,
   };
   const contextualTurn = !stickerTurn && !input.improvePrompt;
+  // Greetings/thanks cannot change preferences. Keep current reads and stored memory,
+  // but do not spend a structured response or a memory write on a social message.
+  const memoryTurn = contextualTurn && !socialOnly;
   const readPersonalContext = async (name: string) => {
     if (input.testSimulation) return simulatedReadTool(input.testSimulation, name);
     if (!input.studentId) return { ok: false, error: "identity_required" };
@@ -1239,6 +1242,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           contextInstructions(
             { status: statusContext, reservations: reservationsContext },
             contextSnapshot,
+            memoryTurn,
           ),
           "Studio Flow es la única fuente de verdad operativa.",
           "Regla vigente de pagos: Bancomer recibe transferencias y depósitos OXXO directos, con comprobante y revisión manual. Mercado Pago recibe ligas/checkout. Cuando Studio Flow devuelve automatic_verification=true y receipt_required=false, espera payment_verified=true, nunca solicites comprobante ni afirmes que el pago está en revisión manual. No ofrezcas OXXO dentro de Mercado Pago. Demi nunca ejecuta reembolsos: crea atención humana con las referencias y no promete devolución ni plazo.",
@@ -1410,6 +1414,11 @@ export async function runAssistantTurn(input: OrchestratorInput) {
   let provisionalTransferBooking = false;
   let mixedPaymentInstructions: string | null = null;
   const testDeadline = Date.now() + 90_000;
+  const responseText = {
+    ...(memoryTurn ? { format: conversationResponseFormat } : {}),
+    // GPT-5 supports a response verbosity setting; keep older configured models compatible.
+    ...(contextualTurn && /^gpt-5(?:[.-]|$)/.test(input.config.model) ? { verbosity: "low" } : {}),
+  };
 
   for (let attempt = 0; attempt < input.config.max_model_calls_per_turn; attempt += 1) {
     const spend = await spentUsdMicros(input.supabase, input.studio.id, input.conversationId);
@@ -1451,7 +1460,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           parallel_tool_calls: false,
           store: false,
           reasoning: { effort: input.config.reasoning_effort },
-          ...(contextualTurn ? { text: { format: conversationResponseFormat } } : {}),
+          ...(Object.keys(responseText).length ? { text: responseText } : {}),
           max_output_tokens: input.improvePrompt ? 7000 : stickerTurn ? 400 : 1200,
         }),
         cache: "no-store",
@@ -1568,7 +1577,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           ? `${text}\n\nEl pago continúa en revisión. Las reservas que dependen de ese pago pueden cancelarse si no se valida.`
           : text;
       const safeReply = await ensureHumanHandoffForReply(input, trace, customerText, modelCallId);
-      if (contextualTurn) {
+      if (memoryTurn) {
         // Memory failure must not replay an already successful business action.
         await saveConversationMemory(contextScope, contextSnapshot, decoded.memory).catch(
           () => false,

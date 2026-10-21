@@ -182,6 +182,69 @@ afterEach(() => {
 });
 
 describe("Demi prompt workbench", () => {
+  it.each(["Hola", "Gracias.", "Entendido"])(
+    "preserves stored memory for social message %s even if the model returns a replacement",
+    async (message) => {
+      const save = vi.spyOn(conversationContext, "saveConversationMemory");
+      try {
+        const h = orchestratorHarness();
+        h.input.history = [{ role: "user", content: message }];
+        vi.stubEnv("OPENAI_API_KEY", "test");
+        vi.stubGlobal(
+          "fetch",
+          vi.fn(async (_url, init) => {
+            const body = JSON.parse(String(init?.body));
+            expect(body.text).toBeUndefined();
+            expect(body.tools).toEqual([]);
+            return new Response(
+              JSON.stringify(
+                reply(
+                  JSON.stringify({
+                    reply: "Con gusto.",
+                    memory: {
+                      intent: null,
+                      activity: null,
+                      availability: null,
+                      selected_option: null,
+                      next_step: null,
+                    },
+                  }),
+                ),
+              ),
+            );
+          }),
+        );
+        expect((await h.run(h.input)).reply).toBe("Con gusto.");
+        expect(save).not.toHaveBeenCalled();
+        expect(h.action).not.toHaveBeenCalled();
+        expect(h.simulate).not.toHaveBeenCalled();
+      } finally {
+        save.mockRestore();
+      }
+    },
+  );
+
+  it.each([
+    ["gpt-5.6-luna", "low"],
+    ["gpt-4.1", undefined],
+  ])("retains structured memory for preference changes on %s", async (model, verbosity) => {
+    const h = orchestratorHarness();
+    h.input.config.model = model!;
+    h.input.history = [{ role: "user", content: "Ahora sólo puedo los viernes a las 18:00." }];
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url, init) => {
+        const body = JSON.parse(String(init?.body));
+        expect(body.text.format.name).toBe("demi_conversation_reply");
+        expect(body.text.verbosity).toBe(verbosity);
+        expect(body.instructions).toContain("aplica correcciones recientes");
+        return new Response(JSON.stringify(reply("Revisamos los viernes.")));
+      }),
+    );
+    expect((await h.run(h.input)).reply).toBe("Revisamos los viernes.");
+  });
+
   it.each([
     [{ closed_first_class: true }, "PENDIENTES CERRADOS", "hola"],
     [
@@ -274,7 +337,8 @@ describe("Demi prompt workbench", () => {
       const body = JSON.parse(String(init?.body));
       expect(body.instructions).toContain('"available_credits":8');
       expect(body.instructions).toContain("Para alumnas, resuelve primero su solicitud concreta");
-      expect(body.text.format.name).toBe("demi_conversation_reply");
+      expect(body.text).toBeUndefined();
+      expect(body.instructions).toContain("La memoria existente se conserva automáticamente");
       expect(body.tools).toEqual([]);
       return new Response(
         JSON.stringify(

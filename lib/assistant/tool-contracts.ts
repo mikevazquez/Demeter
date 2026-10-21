@@ -31,7 +31,7 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
     type: "function",
     name: "search_class_availability",
     description:
-      "Consulta clases reales y lugares disponibles en Studio Flow. Úsala siempre para preguntas de horarios, fechas, 'hoy', 'mañana', horas concretas o disponibilidad. No devuelve precios comerciales; para precios usa get_commercial_options. Nunca inventes una clase. Si la persona nombra una actividad concreta, conserva ese nombre exacto en activity_query; no lo abrevies a una categoría más amplia.",
+      "Consulta clases reales y lugares disponibles en Studio Flow. Úsala siempre para preguntas de horarios, fechas, 'hoy', 'mañana', horas concretas o disponibilidad. Cada llamada admite como máximo 14 días inclusivos (date_to menos date_from <= 13 días). Para un día de semana concreto, empieza por su próxima fecha; amplía por tramos sólo si hace falta. Si pide todo un período, recórrelo por tramos de hasta 14 días y pagina con next_offset sin omitir resultados. No devuelve precios comerciales; para precios usa get_commercial_options. Nunca inventes una clase. Si la persona nombra una actividad concreta, conserva ese nombre exacto en activity_query; no lo abrevies a una categoría más amplia.",
     strict: true,
     parameters: {
       type: "object",
@@ -47,7 +47,8 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
         },
         date_to: {
           type: "string",
-          description: "Fecha final local del estudio en formato YYYY-MM-DD.",
+          description:
+            "Fecha final local YYYY-MM-DD, inclusiva y como máximo 13 días después de date_from (14 días en total).",
         },
         after_time: {
           type: ["string", "null"],
