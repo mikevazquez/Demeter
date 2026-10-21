@@ -121,10 +121,25 @@ precio cambiado, contexto del orquestador y rechazo de fixtures en producción.
 La primera compilación con un enlace de node_modules falló por la raíz de
 Turbopack; con las mismas dependencias copiadas dentro del worktree pasó.
 
-**Pendiente:** comprobar la UI y S11–S15 con el modelo en la Preview autenticada,
-benchmark alternado (30 turnos por versión) y C03. Estas pruebas locales no los
-sustituyen. La comparación original conserva candidata exacta `01d8d9cb` y base
-runtime `bfd395e1`; si se mide esta nueva rama se identifica como otra candidata.
-La Preview histórica `8c551473f6ffdcca07e57741bf74a0cc4bf416e5` del benchmark
-está READY y su código de `lib/assistant`/workbench-actions coincide con bfd395e1.
-No se activa WhatsApp ni se toca producción.
+## Resultado del bloque · 21 oct 21:29 UTC
+
+[Informe completo y siguientes acciones](results-20261021.md): **bloque NO
+APROBADO por velocidad**. El acceso temporal se habilitó, utilizó y revocó.
+
+- S11–S15 pasan sus criterios en runtime `e5773f2f`, tras corregir dos fallos del
+  simulador conservados en las corridas `48e83cb5` y `1a8de925`. CI39677677496
+  success, suite completa sin fallos, formato/lint/tipos/build pasan. Los
+  seguimientos auxiliares siguen bloqueados por capacidad del simulador.
+- Comparación alternada completada: 30 turnos por versión, base runtimebfd395e1
+  (Preview8c551473) frente a candidata exacta01d8d9cb. Mediana6,418→7,101s,
+  p9511,673→10,117s; salida4.825→7.272tokens. **FALLA** el objetivo de mediana.
+- C03 conserva actividad/horarios fuera de16 mensajes, aplica corrección y retiene
+  memoria tras «Gracias». Hallazgo: tres búsquedas excedieron14 días y se
+  corrigieron durante el turno. Vigencia de S03 sin fecha en fixture: bloqueada.
+- Cuenta sintética desactivada, membresías/sesiones revocadas; login denegado y
+  sesión vieja enviada al login. Archivos privados de acceso eliminados. Demo y
+  trazas permanecen en Sandbox; cero nuevas filas de negocio en auditoría.
+
+No se activa WhatsApp ni se toca producción. Claude debe corregir la regresión,
+entregar nuevo SHA/CI/Preview y repetir la comparación; UAT funcional de Mike y
+criterios operativos siguen pendientes. No hay PR integrado ni liberación.
