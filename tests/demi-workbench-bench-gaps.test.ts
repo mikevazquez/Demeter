@@ -66,7 +66,7 @@ describe("Workbench bench gaps: S03 validity and simulated follow-up", () => {
     const ok = await sim.simulateAssistantAction(context(state), "update_contact_followup", args);
     expect(ok).toMatchObject({ ok: true, simulated: true, status: "simulated" });
     expect(ok).toMatchObject({ stage: "answering_questions" });
-    expect(String((ok as { reason_message: string }).reason_message)).toContain("no se programan");
+    expect(String(ok.reason_message)).toContain("no se programan");
   });
 
   it("validates follow-up stages like the real contract", async () => {
