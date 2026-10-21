@@ -1020,13 +1020,15 @@ export async function runAssistantTurn(input: OrchestratorInput) {
               );
             return true;
           }),
-          ...assistantActionToolDefinitions.filter((tool) =>
-            input.studentId || input.testSimulation
-              ? true
-              : !["prepare_transfer_package_choice", "prepare_bank_transfer_purchase"].includes(
-                  tool.name,
-                ),
-          ),
+          ...assistantActionToolDefinitions.filter((tool) => {
+            if (input.testSimulation) return true;
+            // D-PAY-01: prospects buy packages by transfer; profile only after the receipt.
+            if (tool.name === "complete_purchase_profile")
+              return !input.studentId && Boolean(input.crmContactId);
+            if (input.studentId) return true;
+            if (tool.name === "prepare_bank_transfer_purchase") return Boolean(input.crmContactId);
+            return tool.name !== "prepare_transfer_package_choice";
+          }),
         ];
 
   let resolvedPendingContext = "";
@@ -1065,6 +1067,34 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         reason: reasonOf(row),
       })),
     ]);
+  }
+
+  let profilePendingContext = "";
+  if (
+    input.serviceMode &&
+    !input.improvePrompt &&
+    !input.testSimulation &&
+    !stickerTurn &&
+    !input.studentId &&
+    input.crmContactId
+  ) {
+    try {
+      const awaiting = await input.supabase
+        .from("assistant_transfer_purchase_intents")
+        .select("amount_minor,currency,enrollment_amount_minor")
+        .eq("studio_id", input.studio.id)
+        .eq("conversation_id", input.conversationId)
+        .eq("status", "awaiting_profile")
+        .limit(1)
+        .maybeSingle();
+      if (!awaiting.error && awaiting.data) {
+        profilePendingContext =
+          "COMPRA PAGADA ESPERANDO PERFIL: el comprobante de su paquete ya coincidió con el monto. Pide nombre completo, fecha de nacimiento y correo, y después usa complete_purchase_profile. No vuelvas a cobrar ni pidas otro comprobante. " +
+          JSON.stringify(awaiting.data);
+      }
+    } catch {
+      profilePendingContext = "";
+    }
   }
 
   let pendingPaymentContext = "";
@@ -1203,6 +1233,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           "Cuando prepare_first_class_payment o execute_booking devuelva group_id y participant_count=1 para una primera clase individual, conserva ese group_id: espera comprobante bancario o payment_verified=true de Mercado Pago y después pide juntos los datos faltantes; completa con complete_group_booking y un único participante. No crees la ficha antes del comprobante bancario o de payment_verified=true ni anuncies una reserva cuando reservation_confirmed=false.",
           "Una solicitud de pago sólo conserva la clase y horario elegidos; no retiene cupo ni promete espacio por 24 horas. Si el pago fue recibido pero la clase pasó o se llenó, informa que se conserva el pago y ofrece otro horario disponible sin cobrar nuevamente ni prometer reembolsos. Cuando el usuario elija la alternativa, usa prepare_first_class_payment o prepare_group_booking con esa clase para reutilizar la misma solicitud pagada, y después complete_group_booking. Sólo continúa si Studio Flow confirma payment_preserved=true o payment_verified=true; no crees otro cobro para resolver un horario vencido.",
           pendingPaymentContext,
+          profilePendingContext,
           resolvedPendingContext,
           "Para grupos o para reservar sólo para otra persona, usa prepare_group_booking; aunque sea una sola participante, usa participant_count=1 y no prepare_first_class_payment. La identidad y teléfono del pagador no deben sustituir los de la participante. Si dos participantes comparten teléfono, no prometas registrarlas con ese mismo número, no inventes otro y no pidas pago; crea atención humana para verificar identidad/contactos antes de continuar. Para grupos, usa prepare_group_booking con la clase exacta, número de participantes y número de primeras clases a pagar. No conviertas al pagador en participante automáticamente. Primero da el total y el método devuelto por Studio Flow; espera comprobante para Bancomer o payment_verified=true para Mercado Pago antes de solicitar juntos nombres y celulares faltantes. Sólo después usa complete_group_booking con el group_id. Informa los resultados individuales y cualquier fallo o importe sin asignar; pago recibido sigue en revisión. En un grupo mixto, la reserva cubierta con créditos propios de una alumna es confirmada y no depende de validar la transferencia de otra participante; sólo la reserva cubierta por transferencia pendiente se informa como provisional. Cuando el resultado parcial devuelva human_review_created=true, informa que el caso ya fue creado para el equipo humano y que la conversación queda en revisión; no ofrezcas ejecutar otra reserva o devolución mientras el equipo controla el caso. No confirmes todo el grupo por memoria ni repitas cobros al reintentar.",
           "Usa update_contact_followup cuando cambie la etapa comercial: preguntas, esperando comprobante o datos posteriores. Rechazar las primeras opciones de horario no es rechazar el servicio: explora otras fechas o restricciones reales antes de descartar. Registra not_qualified sólo ante rechazo explícito del servicio o cuando, tras explorar la oferta pertinente, la persona confirme que no existe alternativa que le sirva. Vivir lejos por sí solo no basta. Si pide no recibir mensajes registra opt_out; conserva por separado cualquier rechazo definitivo ya confirmado. No marques No clasifica por silencio: el worker registra No agendó después de dos seguimientos sin respuesta. Al regresar una persona, conserva su identidad y retoma el flujo desde la información real.",
@@ -1273,6 +1304,8 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           "Sólo para una persona con ficha de alumna verificada que quiere comprar un paquete: cuando elija transferencia y todavía deba escoger paquete, llama prepare_transfer_package_choice ANTES de responder, usando la session_ref exacta y únicamente los product_ref de los paquetes que vas a mostrar. Después muestra solo las options devueltas por esa herramienta y pregunta cuál prefiere. Ese estado dura hasta 24 horas para que una respuesta posterior como '8 clases' continúe el mismo pago sin reconstruir reservas.",
           "Para un prospecto sin ficha de alumna que solicita su primera clase individual, llama prepare_first_class_payment con la clase exacta ANTES de ofrecer datos bancarios o un enlace externo. Esta herramienta no crea alumna ni reserva y no requiere otra confirmación para obtener instrucciones de pago; no uses elección ni compra de paquetes. Si devuelve external_checkout, comparte su URL exacta de Mercado Pago cuando la persona prefiera ese método; no inventes enlaces ni uses el checkout privado de otra alumna. Si test_only=true advierte que es una prueba y no debe hacer un pago real. El enlace no prueba pago: si automatic_verification=true y receipt_required=false, no pidas comprobante, espera payment_verified=true del proveedor. Para Bancomer, depósito OXXO a Bancomer o enlace estático con receipt_required=true, pide comprobante y conserva revisión manual. Después pide juntos los datos faltantes. Si no devuelve enlace, ofrece únicamente los métodos disponibles. Compartir instrucciones de pago no confirma la reserva.",
           "Si la persona ya eligió un paquete concreto en el mismo mensaje en que eligió transferencia, puedes llamar directamente prepare_bank_transfer_purchase con la session_ref y product_ref exactas.",
+          "Un prospecto también puede comprar cualquier paquete por transferencia: ser prospecto no lo impide. Conserva el producto que eligió y nunca lo cambies por clase suelta ni llames prepare_first_class_payment cuando eligió un paquete o el Pase. Usa prepare_bank_transfer_purchase con enrollment_accepted=false; si devuelve enrollment_confirmation_required, explica paquete, inscripción y total y, sólo si acepta, vuelve a llamarla con enrollment_accepted=true. Si el producto incluye inscripción (como el Pase Descubre) no hay cargo adicional. Antes del comprobante no pidas nombre, fecha de nacimiento ni correo y no crees registros.",
+          "Cuando un prospecto ya envió el comprobante de su paquete y el sistema lo dejó esperando perfil, pide en un solo mensaje nombre completo, fecha de nacimiento y correo. Al tenerlos, llama complete_purchase_profile; ese paso registra su perfil, la convierte en alumna y activa inscripción y paquete provisionalmente. Si falta o es inválido un dato, pide sólo ese dato.",
           "Después de compartir los datos bancarios, pide que envíe el comprobante por este mismo chat. Explica que al recibir el comprobante el paquete se activará de forma provisional para que pueda continuar, pero quedará pendiente de validación y puede ser revocado si la transferencia no se confirma correctamente.",
           "Nunca afirmes que la transferencia fue validada solo porque llegó un comprobante. La validación definitiva es posterior.",
           "Cuando get_commercial_options devuelva compatibility_filtered=true, menciona únicamente opciones de ese resultado. Nunca sugieras un producto de otra actividad o disciplina. Si no hay opciones compatibles, dilo claramente.",

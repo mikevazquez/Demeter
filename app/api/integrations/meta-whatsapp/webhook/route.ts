@@ -289,7 +289,7 @@ async function createReceiptValidationHandoff(input: {
   supabase: ReturnType<typeof createServiceClient>;
   studioId: string;
   conversationId: string;
-  studentId: string;
+  studentId: string | null;
   note: string;
 }) {
   const { data: policy } = await input.supabase
@@ -466,6 +466,7 @@ async function activateTransferReceiptIfPending(input: {
   studioId: string;
   conversationId: string;
   studentId: string | null;
+  crmContactId?: string | null;
   eventId: string;
   providerMessageId: string;
   mediaId: string | null;
@@ -474,22 +475,33 @@ async function activateTransferReceiptIfPending(input: {
   webhookConfig: MetaWhatsAppWebhookConfig;
   activationUrl: string;
 }) {
-  if (!input.studentId || !input.mediaId || !["image", "document"].includes(input.messageType)) {
+  // D-PAY-01: a prospect (no student yet) can have a package purchase waiting for its receipt.
+  const prospectContactId = !input.studentId ? (input.crmContactId ?? null) : null;
+  if (
+    (!input.studentId && !prospectContactId) ||
+    !input.mediaId ||
+    !["image", "document"].includes(input.messageType)
+  ) {
     return { handled: false as const };
   }
 
-  const { data: pendingIntent, error: pendingError } = await input.supabase
+  let intentQuery = input.supabase
     .from("assistant_transfer_purchase_intents")
     .select("id,amount_minor,currency,status,expires_at,intent_kind")
     .eq("studio_id", input.studioId)
-    .eq("conversation_id", input.conversationId)
-    .eq("student_id", input.studentId)
+    .eq("conversation_id", input.conversationId);
+  intentQuery = input.studentId
+    ? intentQuery.eq("student_id", input.studentId)
+    : intentQuery.is("student_id", null).eq("crm_contact_id", prospectContactId!);
+  const { data: pendingIntent, error: pendingError } = await intentQuery
     .eq("status", "awaiting_receipt")
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (pendingError) throw new Error("transfer_intent_lookup_failed");
+  // Prospects without a pending package purchase keep the existing media handling.
+  if (!input.studentId && !pendingIntent) return { handled: false as const };
 
   const media = await downloadMetaWhatsAppMedia({
     config: input.webhookConfig,
@@ -519,7 +531,8 @@ async function activateTransferReceiptIfPending(input: {
           ? "webp"
           : "jpg";
   const provisionalKey = pendingIntent?.id ?? sha256Hex(input.providerMessageId).slice(0, 24);
-  const storagePath = `${input.studioId}/${input.studentId}/${provisionalKey}/receipt.${extension}`;
+  const ownerKey = input.studentId ?? `prospect-${prospectContactId}`;
+  const storagePath = `${input.studioId}/${ownerKey}/${provisionalKey}/receipt.${extension}`;
   const { error: storageError } = await input.supabase.storage
     .from("transfer-receipts")
     .upload(storagePath, media.bytes, {
@@ -587,6 +600,33 @@ async function activateTransferReceiptIfPending(input: {
         handled: true as const,
         result: { ok: false, reason_code: "receipt_amount_mismatch" },
         reply: `Recibí tu comprobante, pero el monto que pude leer (${formatReceiptMoney(reading.amountMinor, expectedCurrency)}) no coincide con tu ${paymentSubject} pendiente (${formatReceiptMoney(expectedAmount, expectedCurrency)}). No confirmé nada. Puedes enviarme el comprobante correcto.`,
+      };
+    }
+
+    if (!input.studentId) {
+      // Nothing about the person changes until the profile arrives after this matching receipt.
+      const recorded = await input.supabase.rpc("service_record_prospect_transfer_receipt", {
+        p_studio: input.studioId,
+        p_conversation: input.conversationId,
+        p_contact: prospectContactId,
+        p_intent: pendingIntent.id,
+        p_event: input.eventId,
+        p_provider_message: input.providerMessageId,
+        p_media: input.mediaId,
+      });
+      const recordedResult = isObject(recorded.data) ? recorded.data : null;
+      if (recorded.error) throw new Error("prospect_receipt_record_failed");
+      if (!recordedResult || recordedResult.ok !== true) {
+        return {
+          handled: false as const,
+          reasonCode: String(recordedResult?.reason_code ?? "prospect_receipt_not_recorded"),
+        };
+      }
+      return {
+        handled: true as const,
+        result: recordedResult,
+        reply:
+          "¡Gracias! Recibí tu comprobante y el monto coincide. Para registrarte como alumna y activar tu paquete, compárteme en un solo mensaje tu nombre completo, tu fecha de nacimiento y tu correo electrónico.",
       };
     }
 
@@ -1583,6 +1623,7 @@ export async function POST(request: Request) {
             studioId,
             conversationId,
             studentId,
+            crmContactId,
             eventId: event.id,
             providerMessageId: message.providerMessageId,
             mediaId: message.mediaId,

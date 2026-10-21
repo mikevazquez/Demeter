@@ -216,6 +216,12 @@ export type PrepareBankTransferPurchaseArgs = {
   enrollment_accepted?: boolean | null;
 };
 
+export type CompletePurchaseProfileArgs = {
+  full_name: string;
+  birth_date: string;
+  email: string;
+};
+
 export type PrepareTransferPackageChoiceArgs = {
   session_ref: string | null;
   product_refs: string[];
@@ -630,6 +636,26 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
         },
       },
       required: ["reason_code", "note"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "complete_purchase_profile",
+    description:
+      "Sólo para un prospecto cuya compra de paquete por transferencia ya tiene comprobante con monto coincidente (estado awaiting_profile). Registra nombre completo, fecha de nacimiento y correo, crea su ficha de alumna y activa inscripción y paquete provisionalmente. Nunca la uses antes del comprobante.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {
+        full_name: {
+          type: "string",
+          description: "Nombre y apellidos tal como los dio la persona.",
+        },
+        birth_date: { type: "string", description: "Fecha de nacimiento en formato YYYY-MM-DD." },
+        email: { type: "string", description: "Correo electrónico de la persona." },
+      },
+      required: ["full_name", "birth_date", "email"],
       additionalProperties: false,
     },
   },

@@ -18,6 +18,7 @@ import type {
   PrepareStudentAccessActivationArgs,
   SelectResourceOptionArgs,
   PrepareBankTransferPurchaseArgs,
+  CompletePurchaseProfileArgs,
   PrepareTransferPackageChoiceArgs,
 } from "./tool-contracts";
 
@@ -3957,11 +3958,133 @@ async function prepareTransferPackageChoice(
   };
 }
 
+// D-PAY-01 · A prospect may buy any package by transfer. Nothing about the person changes here:
+// only the pending purchase is recorded; profile and activation happen after the receipt.
+async function prepareProspectBankTransferPurchase(
+  ctx: AssistantActionToolContext,
+  args: PrepareBankTransferPurchaseArgs,
+) {
+  const rawSessionRef = args.session_ref?.trim() || null;
+  const sessionId = rawSessionRef ? parseOpaqueRef(rawSessionRef, "session") : null;
+  const productId = parseOpaqueRef(args.product_ref, "product");
+  if (rawSessionRef && !sessionId) return { ok: false, error: "invalid_session_ref" };
+  if (!productId) return { ok: false, error: "invalid_product_ref" };
+
+  if (args.enrollment_accepted !== true) {
+    const preview = await ctx.supabase.rpc("service_preview_prospect_transfer_purchase", {
+      p_studio: ctx.studio.id,
+      p_conversation: ctx.conversationId,
+      p_contact: ctx.crmContactId,
+      p_product: productId,
+    });
+    const previewResult = asObject(preview.data);
+    if (preview.error || !previewResult || previewResult.ok !== true) {
+      return {
+        ok: false,
+        error: "bank_transfer_purchase_prepare_failed",
+        reason_code: String(previewResult?.reason_code ?? "bank_transfer_purchase_preview_failed"),
+      };
+    }
+    if (previewResult.enrollment_required === true) {
+      return {
+        ok: false,
+        reason_code: "enrollment_confirmation_required",
+        package: previewResult.package,
+        enrollment: previewResult.enrollment,
+        total_amount_minor: previewResult.total_amount_minor,
+        instruction:
+          "Explica que este paquete requiere inscripción, muestra paquete, inscripción y total, y pregunta si desea pagar ambos en una sola transferencia. No compartas datos bancarios todavía ni pidas datos personales.",
+      };
+    }
+  }
+
+  const { data, error } = await ctx.supabase.rpc("service_prepare_prospect_transfer_purchase", {
+    p_studio: ctx.studio.id,
+    p_conversation: ctx.conversationId,
+    p_contact: ctx.crmContactId,
+    p_session: sessionId,
+    p_product: productId,
+  });
+  const result = asObject(data);
+  if (error || !result || result.ok !== true) {
+    return {
+      ok: false,
+      error: "bank_transfer_purchase_prepare_failed",
+      reason_code: String(result?.reason_code ?? "bank_transfer_purchase_prepare_failed"),
+    };
+  }
+  return {
+    ok: true,
+    status: "awaiting_receipt",
+    intent_id: result.intent_id,
+    package: result.package,
+    enrollment_required: result.enrollment_required === true,
+    enrollment: result.enrollment ?? null,
+    total_amount_minor: result.total_amount_minor ?? null,
+    bank_details: result.bank_details,
+    receipt_required: true,
+    profile_required_after_payment: true,
+    revocable_until_validated: true,
+    instruction:
+      "Comparte el total y los datos bancarios. No pidas nombre, fecha de nacimiento ni correo hasta que llegue el comprobante con el monto correcto.",
+  };
+}
+
+// After a matching receipt: register the profile and activate enrollment + package.
+async function completePurchaseProfile(
+  ctx: AssistantActionToolContext,
+  args: CompletePurchaseProfileArgs,
+) {
+  if (!ctx.serviceMode) return { ok: false, reason_code: "service_mode_required" };
+  if (ctx.studentId || !ctx.crmContactId)
+    return { ok: false, reason_code: "prospect_purchase_not_found" };
+  const birthDate = String(args.birth_date ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate))
+    return { ok: false, reason_code: "birth_date_invalid" };
+  const { data, error } = await ctx.supabase.rpc("service_complete_prospect_transfer_purchase", {
+    p_studio: ctx.studio.id,
+    p_conversation: ctx.conversationId,
+    p_contact: ctx.crmContactId,
+    p_full_name: String(args.full_name ?? ""),
+    p_birth_date: birthDate,
+    p_email: String(args.email ?? ""),
+  });
+  const result = asObject(data);
+  if (error) {
+    return {
+      ok: false,
+      reason_code: "purchase_activation_failed",
+      instruction:
+        "No se pudo completar el registro y la activación. No afirmes que el paquete está activo; crea atención humana con escalate_to_human usando technical_block.",
+    };
+  }
+  if (!result || result.ok !== true) {
+    return {
+      ok: false,
+      reason_code: String(result?.reason_code ?? "purchase_profile_failed"),
+      instruction:
+        "Pide solamente el dato que falta o es inválido. Si el correo ya está en uso, pide otro correo; no reveles a quién pertenece.",
+    };
+  }
+  const activation = asObject(result.activation);
+  return {
+    ok: true,
+    status: "provisional_active",
+    package_name: activation?.package_name ?? null,
+    enrollment_paid: activation?.enrollment_paid === true,
+    enrollment_included: Boolean(activation?.enrollment_id) && activation?.enrollment_paid !== true,
+    revocable_until_validated: true,
+    instruction:
+      "Confirma que ya quedó registrada como alumna y que su paquete está activo provisionalmente; el pago queda pendiente de validación y puede revocarse si la transferencia no se confirma. Ofrece ayuda para reservar.",
+  };
+}
+
 async function prepareBankTransferPurchase(
   ctx: AssistantActionToolContext,
   args: PrepareBankTransferPurchaseArgs,
 ) {
   if (!ctx.serviceMode) return { ok: false, error: "bank_transfer_purchase_requires_service_mode" };
+  if (!ctx.studentId && ctx.crmContactId) return prepareProspectBankTransferPurchase(ctx, args);
   if (!ctx.studentId) return { ok: false, error: "identity_required" };
 
   const rawSessionRef = args.session_ref?.trim() || null;
@@ -4206,6 +4329,8 @@ export async function executeAssistantActionTool(
       return prepareTransferPackageChoice(ctx, args as PrepareTransferPackageChoiceArgs);
     case "prepare_bank_transfer_purchase":
       return prepareBankTransferPurchase(ctx, args as PrepareBankTransferPurchaseArgs);
+    case "complete_purchase_profile":
+      return completePurchaseProfile(ctx, args as CompletePurchaseProfileArgs);
     case "record_trial_payment_preference":
       return recordTrialPaymentPreference(ctx, args as RecordTrialPaymentPreferenceArgs);
     case "prepare_student_access_activation":
