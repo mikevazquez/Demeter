@@ -194,6 +194,11 @@ describe("Demi prompt workbench", () => {
       "COMPRA PENDIENTE DE COMPROBANTE",
       "Ya pagué",
     ],
+    [
+      { purchase_status: "provisional_active", purchase: { total_amount_minor: 80000 } },
+      "COMPROBANTE RECIBIDO Y PAQUETE ACTIVO PROVISIONALMENTE",
+      "Envío el comprobante de prueba por el monto acordado.",
+    ],
   ])(
     "passes simulated current payment context to the model without operational reads",
     async (context, marker, message) => {

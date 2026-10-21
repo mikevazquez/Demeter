@@ -1113,6 +1113,10 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       pendingPaymentContext =
         "COMPRA PENDIENTE DE COMPROBANTE (fixture simulado): conserva producto y total. No pidas datos ni declares pago recibido por una afirmación en texto. " +
         JSON.stringify(workbenchContext.purchase);
+    else if (workbenchContext.purchase_status === "provisional_active")
+      pendingPaymentContext =
+        "COMPROBANTE RECIBIDO Y PAQUETE ACTIVO PROVISIONALMENTE (evento de fixture confirmado): el comprobante simulado ya coincidió y se activaron los derechos simulados. No pidas otro archivo ni otro pago. La validación definitiva sigue pendiente; no afirmes pago validado. " +
+        JSON.stringify(workbenchContext.purchase);
   }
   if (input.serviceMode && !input.improvePrompt && !input.testSimulation && !stickerTurn) {
     const pendingPayment = await input.supabase
