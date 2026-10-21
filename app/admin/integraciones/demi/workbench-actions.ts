@@ -204,10 +204,18 @@ export async function testDemiPrompt(input: {
       sanitized: true,
     });
     if (replyError) throw new Error("request_failed");
+    const savedContext = await supabase
+      .from("assistant_conversations")
+      .select("context")
+      .eq("studio_id", studio.id)
+      .eq("id", conversationId)
+      .maybeSingle();
+    if (savedContext.error) throw new Error("request_failed");
     const { error: stateError } = await supabase
       .from("assistant_conversations")
       .update({
         context: {
+          ...savedContext.data?.context,
           workbench: true,
           owner: user.id,
           prompt_hash: promptHash,

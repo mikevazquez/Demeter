@@ -9,6 +9,7 @@ export type SearchClassAvailabilityArgs = {
   after_time: string | null;
   before_time: string | null;
   limit: number;
+  offset?: number;
 };
 
 export type CommercialOptionsArgs = {
@@ -60,8 +61,22 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
           type: "integer",
           description: "Máximo de resultados. Usa normalmente 10 y nunca más de 20.",
         },
+        offset: {
+          type: "integer",
+          minimum: 0,
+          description:
+            "Empieza en 0. Para continuar la misma búsqueda usa next_offset del resultado anterior; conserva los mismos filtros.",
+        },
       },
-      required: ["activity_query", "date_from", "date_to", "after_time", "before_time", "limit"],
+      required: [
+        "activity_query",
+        "date_from",
+        "date_to",
+        "after_time",
+        "before_time",
+        "limit",
+        "offset",
+      ],
       additionalProperties: false,
     },
   },

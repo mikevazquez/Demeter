@@ -5,6 +5,7 @@ import {
 } from "../lib/assistant/information-intent";
 import { resolveEnrollmentStatus } from "../lib/assistant/enrollment-state";
 import * as temporaryInformation from "../lib/assistant/temporary-information";
+import * as conversationContext from "../lib/assistant/conversation-context";
 import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -107,6 +108,7 @@ function orchestratorHarness(
       },
       "./read-tools": { executeAssistantReadTool: read },
       "./conversation-guidance": { conversationGuidance, needsFirstVisitGuidance },
+      "./conversation-context": conversationContext,
       "./prompt-workbench": { testPersonaLabel },
       "./first-class-payment-instructions": { firstClassPaymentInstructions },
       "./information-intent": { isMixedInformationActionRequest, shouldBlockPaymentForInformation },
@@ -175,6 +177,74 @@ afterEach(() => {
 });
 
 describe("Demi prompt workbench", () => {
+  it("loads current rights and reservations before responding to a greeting", async () => {
+    const h = orchestratorHarness();
+    h.input.testSimulation = undefined;
+    h.input.studentId = "verified-student";
+    h.input.studentCategory = "trial_pending";
+    h.input.history = [{ role: "user", content: "Hola" }];
+    h.read.mockImplementation(async (_ctx, name) =>
+      name === "get_student_package_status"
+        ? {
+            ok: true,
+            student_state: { category: "student", enrollment_status: "active" },
+            current_package: { available_credits: 8 },
+          }
+        : { ok: true, reservations: [] },
+    );
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    const fetcher = vi.fn(async (_url, init) => {
+      expect(h.read).toHaveBeenCalledTimes(2);
+      const body = JSON.parse(String(init?.body));
+      expect(body.instructions).toContain('"available_credits":8');
+      expect(body.instructions).toContain("Para alumnas, resuelve primero su solicitud concreta");
+      expect(body.text.format.name).toBe("demi_conversation_reply");
+      return new Response(
+        JSON.stringify(
+          reply(
+            JSON.stringify({
+              reply: "¡Hola! ¿Te ayudo a reservar?",
+              memory: {
+                intent: null,
+                activity: null,
+                availability: null,
+                selected_option: null,
+                next_step: null,
+              },
+            }),
+          ),
+        ),
+      );
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const result = await h.run(h.input);
+    expect(result.reply).toBe("¡Hola! ¿Te ayudo a reservar?");
+    expect(result.reply).not.toContain("memory");
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(h.action).not.toHaveBeenCalled();
+  });
+
+  it("keeps a failed initial rights lookup unknown instead of using a stale lifecycle", async () => {
+    const h = orchestratorHarness();
+    h.input.testSimulation = undefined;
+    h.input.studentId = "verified-student";
+    h.input.studentCategory = "trial_pending";
+    h.input.history = [{ role: "user", content: "Hola" }];
+    h.read.mockRejectedValue(new Error("unavailable"));
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url, init) => {
+        const body = JSON.parse(String(init?.body));
+        expect(body.instructions).toContain("context_unavailable");
+        expect(body.instructions).toContain("no pudo determinar su etapa actual");
+        return new Response(JSON.stringify(reply("Hola, ¿en qué te ayudo?")));
+      }),
+    );
+    expect((await h.run(h.input)).reply).toBe("Hola, ¿en qué te ayudo?");
+    expect(h.action).not.toHaveBeenCalled();
+  });
+
   it("answers a mixed information request while retaining exact payment instructions", async () => {
     const h = orchestratorHarness();
     h.input.history = [{ role: "user", content: "¿Dónde están? También quiero reservar." }];
