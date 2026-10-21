@@ -103,7 +103,8 @@ export async function runPilotDeferredTurn(
 ) {
   const maxAttempts = Math.max(1, options.maxAttempts ?? 2);
   const delayMs = options.delayMs ?? 2_000;
-  const sleep = options.sleep ?? ((ms: number) => new Promise<void>((done) => setTimeout(done, ms)));
+  const sleep =
+    options.sleep ?? ((ms: number) => new Promise<void>((done) => setTimeout(done, ms)));
   let status = 0;
   for (let attempts = 1; attempts <= maxAttempts; attempts += 1) {
     try {

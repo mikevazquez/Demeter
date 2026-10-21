@@ -40,7 +40,8 @@ function load<T>(path: string, deps: Record<string, unknown>): T {
 }
 
 // Copied from the replay regression harness; adds the real pilot module and an injectable
-// background scheduler. In-memory persistence models conditional updates, unique event insertion and snapshot reads.
+// background scheduler. In-memory persistence models conditional updates, unique event
+// insertion and snapshot reads.
 // It tests application orchestration, not PostgreSQL locking or live Meta delivery.
 function harness(opts: Opts = {}) {
   const httpStatus = 200;
@@ -302,7 +303,7 @@ describe("DEMI-PILOT-01 deferred receiver for forwarded pilot webhooks", () => {
     }
   });
 
-  it("T3 keeps a single effect when the same event is redelivered during and after processing", async () => {
+  it("T3 keeps one effect when the event is redelivered during and after processing", async () => {
     const h = harness({ modelDelayMs: 20 });
     expect((await h.post(h.request())).status).toBe(202);
     const first = h.drain();
