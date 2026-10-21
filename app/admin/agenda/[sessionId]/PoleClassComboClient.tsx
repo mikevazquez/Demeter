@@ -2,10 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 
-import {
-  savePoleClassResultsAction,
-  setProfessionalPoleAuthorizationAction,
-} from "./pole-actions";
+import { savePoleClassResultsAction, setProfessionalPoleAuthorizationAction } from "./pole-actions";
 import styles from "./pole-class-combo.module.css";
 
 type StudentState = {
@@ -66,27 +63,25 @@ export default function PoleClassComboClient({
   const [optionIndex, setOptionIndex] = useState<Record<string, number>>({});
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState(false);
-  const [authorizationState, setAuthorizationState] = useState<Record<string, boolean>>(
-    () =>
-      Object.fromEntries(
-        groups.flatMap((group) =>
-          group.professionalSuggestions.map((suggestion) => [
-            `${suggestion.studentId}|${suggestion.elementId}`,
-            suggestion.authorized,
-          ]),
-        ),
+  const [authorizationState, setAuthorizationState] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(
+      groups.flatMap((group) =>
+        group.professionalSuggestions.map((suggestion) => [
+          `${suggestion.studentId}|${suggestion.elementId}`,
+          suggestion.authorized,
+        ]),
       ),
+    ),
   );
-  const [professionalCompleted, setProfessionalCompleted] = useState<Record<string, boolean>>(
-    () =>
-      Object.fromEntries(
-        groups.flatMap((group) =>
-          group.professionalSuggestions.map((suggestion) => [
-            `${suggestion.studentId}|${suggestion.elementId}`,
-            suggestion.completed,
-          ]),
-        ),
+  const [professionalCompleted, setProfessionalCompleted] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(
+      groups.flatMap((group) =>
+        group.professionalSuggestions.map((suggestion) => [
+          `${suggestion.studentId}|${suggestion.elementId}`,
+          suggestion.completed,
+        ]),
       ),
+    ),
   );
   const [authorizationPending, setAuthorizationPending] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -118,8 +113,7 @@ export default function PoleClassComboClient({
   function nextOption(group: PoleClassGroup) {
     setOptionIndex((current) => ({
       ...current,
-      [group.level]:
-        ((current[group.level] ?? 0) + 1) % Math.max(group.recommendations.length, 1),
+      [group.level]: ((current[group.level] ?? 0) + 1) % Math.max(group.recommendations.length, 1),
     }));
     setChecked({});
     setSaved(false);
@@ -201,17 +195,13 @@ export default function PoleClassComboClient({
           <p>COMBO DE CLASE</p>
           <h3>Pole por niveles</h3>
           <span>
-            {totalStudents} {totalStudents === 1 ? "alumna" : "alumnas"} ·{" "}
-            {groups.length} {groups.length === 1 ? "nivel" : "niveles"}
+            {totalStudents} {totalStudents === 1 ? "alumna" : "alumnas"} · {groups.length}{" "}
+            {groups.length === 1 ? "nivel" : "niveles"}
           </span>
         </div>
 
         {!generated ? (
-          <button
-            className={styles.primary}
-            type="button"
-            onClick={() => setGenerated(true)}
-          >
+          <button className={styles.primary} type="button" onClick={() => setGenerated(true)}>
             Generar combos
           </button>
         ) : (
@@ -242,9 +232,7 @@ export default function PoleClassComboClient({
                   <div className={styles.groupHeader}>
                     <div>
                       <span>{group.label}</span>
-                      <strong>
-                        {group.members.map((student) => student.name).join(" · ")}
-                      </strong>
+                      <strong>{group.members.map((student) => student.name).join(" · ")}</strong>
                     </div>
                   </div>
                   <p className={styles.emptyMessage}>
@@ -283,9 +271,7 @@ export default function PoleClassComboClient({
                 <div className={styles.sequence}>
                   {combo.figures.map((figure, figureIndex) => (
                     <div
-                      className={
-                        figure.status === "new" ? styles.sequenceNew : styles.sequenceRow
-                      }
+                      className={figure.status === "new" ? styles.sequenceNew : styles.sequenceRow}
                       key={figure.elementId}
                     >
                       <span className={styles.position}>{figureIndex + 1}</span>
