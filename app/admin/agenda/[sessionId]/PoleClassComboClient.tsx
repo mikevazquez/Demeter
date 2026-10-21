@@ -66,15 +66,16 @@ export default function PoleClassComboClient({
   const [optionIndex, setOptionIndex] = useState<Record<string, number>>({});
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState(false);
-  const [authorizationState, setAuthorizationState] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(
-      groups.flatMap((group) =>
-        group.professionalSuggestions.map((suggestion) => [
-          `${suggestion.studentId}|${suggestion.elementId}`,
-          suggestion.authorized,
-        ]),
+  const [authorizationState, setAuthorizationState] = useState<Record<string, boolean>>(
+    () =>
+      Object.fromEntries(
+        groups.flatMap((group) =>
+          group.professionalSuggestions.map((suggestion) => [
+            `${suggestion.studentId}|${suggestion.elementId}`,
+            suggestion.authorized,
+          ]),
+        ),
       ),
-    ),
   );
   const [professionalCompleted, setProfessionalCompleted] = useState<Record<string, boolean>>(
     () =>
@@ -117,7 +118,8 @@ export default function PoleClassComboClient({
   function nextOption(group: PoleClassGroup) {
     setOptionIndex((current) => ({
       ...current,
-      [group.level]: ((current[group.level] ?? 0) + 1) % Math.max(group.recommendations.length, 1),
+      [group.level]:
+        ((current[group.level] ?? 0) + 1) % Math.max(group.recommendations.length, 1),
     }));
     setChecked({});
     setSaved(false);
@@ -205,7 +207,11 @@ export default function PoleClassComboClient({
         </div>
 
         {!generated ? (
-          <button className={styles.primary} type="button" onClick={() => setGenerated(true)}>
+          <button
+            className={styles.primary}
+            type="button"
+            onClick={() => setGenerated(true)}
+          >
             Generar combos
           </button>
         ) : (
@@ -223,7 +229,8 @@ export default function PoleClassComboClient({
         <div className={styles.readyState}>
           <strong>Listo para generar</strong>
           <span>
-            Studio Flow usará el nivel y las figuras logradas de las alumnas inscritas en esta clase.
+            Studio Flow usará el nivel y las figuras logradas de las alumnas inscritas en esta
+            clase.
           </span>
         </div>
       ) : !showResults ? (
@@ -235,7 +242,9 @@ export default function PoleClassComboClient({
                   <div className={styles.groupHeader}>
                     <div>
                       <span>{group.label}</span>
-                      <strong>{group.members.map((student) => student.name).join(" · ")}</strong>
+                      <strong>
+                        {group.members.map((student) => student.name).join(" · ")}
+                      </strong>
                     </div>
                   </div>
                   <p className={styles.emptyMessage}>
@@ -274,7 +283,9 @@ export default function PoleClassComboClient({
                 <div className={styles.sequence}>
                   {combo.figures.map((figure, figureIndex) => (
                     <div
-                      className={figure.status === "new" ? styles.sequenceNew : styles.sequenceRow}
+                      className={
+                        figure.status === "new" ? styles.sequenceNew : styles.sequenceRow
+                      }
                       key={figure.elementId}
                     >
                       <span className={styles.position}>{figureIndex + 1}</span>
