@@ -594,6 +594,9 @@ async function tryServerSideTransferPackageChoice(input: OrchestratorInput, trac
     status: toolStatus,
   });
 
+  // D-PAY-03: the model explains enrollment + package and asks before preparing the charge.
+  if (resultObject.reason_code === "enrollment_confirmation_required") return null;
+
   if (resultObject.ok !== true || !bankDetails) {
     const reason = String(resultObject.reason_message ?? "").trim();
     return {

@@ -212,6 +212,8 @@ export type PrepareWaitlistJoinArgs = {
 export type PrepareBankTransferPurchaseArgs = {
   session_ref: string | null;
   product_ref: string;
+  /** D-PAY-03: the person accepted paying the required enrollment together with the package. */
+  enrollment_accepted?: boolean | null;
 };
 
 export type PrepareTransferPackageChoiceArgs = {
@@ -569,7 +571,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     type: "function",
     name: "prepare_bank_transfer_purchase",
     description:
-      "Prepara una compra por transferencia después de que la persona eligió un paquete concreto. Puede vincularse a una clase o hacerse sin reservar ninguna clase. Guarda la intención pendiente y devuelve monto y datos bancarios reales. No activa créditos todavía; la activación provisional ocurre cuando llega un comprobante cuyo monto coincide.",
+      "Prepara una compra por transferencia después de que la persona eligió un paquete concreto. Puede vincularse a una clase o hacerse sin reservar ninguna clase. Si el paquete requiere inscripción y la persona no la tiene vigente, la primera llamada con enrollment_accepted=false no crea nada y devuelve enrollment_confirmation_required con paquete, inscripción y total: explícalo y, sólo si acepta, vuelve a llamar con enrollment_accepted=true para cobrar inscripción y paquete en una sola transferencia. Si el paquete incluye inscripción no hay cargo adicional. Guarda la intención pendiente y devuelve monto total y datos bancarios reales. No activa créditos todavía; la activación provisional ocurre cuando llega un comprobante cuyo monto coincide.",
     strict: true,
     parameters: {
       type: "object",
@@ -584,8 +586,13 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
           description:
             "Referencia product:<uuid> exacta del paquete seleccionado de get_commercial_options.",
         },
+        enrollment_accepted: {
+          type: "boolean",
+          description:
+            "true sólo si la persona ya aceptó pagar la inscripción requerida junto con el paquete después de conocer el total.",
+        },
       },
-      required: ["session_ref", "product_ref"],
+      required: ["session_ref", "product_ref", "enrollment_accepted"],
       additionalProperties: false,
     },
   },

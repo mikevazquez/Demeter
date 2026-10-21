@@ -3970,6 +3970,34 @@ async function prepareBankTransferPurchase(
   if (rawSessionRef && !sessionId) return { ok: false, error: "invalid_session_ref" };
   if (!productId) return { ok: false, error: "invalid_product_ref" };
 
+  // D-PAY-03: never charge a required enrollment the person has not accepted yet.
+  if (args.enrollment_accepted !== true) {
+    const preview = await ctx.supabase.rpc("service_preview_transfer_purchase", {
+      target_studio_id: ctx.studio.id,
+      target_student_id: ctx.studentId,
+      target_product_template_id: productId,
+    });
+    const previewResult = asObject(preview.data);
+    if (preview.error || !previewResult || previewResult.ok !== true) {
+      return {
+        ok: false,
+        error: "bank_transfer_purchase_prepare_failed",
+        reason_code: String(previewResult?.reason_code ?? "bank_transfer_purchase_preview_failed"),
+      };
+    }
+    if (previewResult.enrollment_required === true) {
+      return {
+        ok: false,
+        reason_code: "enrollment_confirmation_required",
+        package: previewResult.package,
+        enrollment: previewResult.enrollment,
+        total_amount_minor: previewResult.total_amount_minor,
+        instruction:
+          "Explica que este paquete requiere inscripción vigente, muestra paquete, inscripción y total, y pregunta si desea pagar ambos en una sola transferencia. No compartas datos bancarios todavía.",
+      };
+    }
+  }
+
   const { data, error } = await ctx.supabase.rpc("service_prepare_transfer_purchase", {
     target_studio_id: ctx.studio.id,
     target_conversation_id: ctx.conversationId,
@@ -3992,6 +4020,9 @@ async function prepareBankTransferPurchase(
     status: "awaiting_receipt",
     intent_id: result.intent_id,
     package: result.package,
+    enrollment_required: result.enrollment_required === true,
+    enrollment: result.enrollment ?? null,
+    total_amount_minor: result.total_amount_minor ?? null,
     bank_details: result.bank_details,
     receipt_required: result.receipt_required === true,
     revocable_until_validated: result.revocable_until_validated === true,
