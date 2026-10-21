@@ -7,6 +7,7 @@ import {
   decodeConversationReply,
   loadConversationContext,
   localConversationClock,
+  resolvedPendingInstructions,
   saveConversationMemory,
 } from "./conversation-context";
 import { testPersonaLabel } from "./prompt-workbench";
@@ -1025,6 +1026,44 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           ),
         ];
 
+  let resolvedPendingContext = "";
+  if (input.serviceMode && !input.improvePrompt && !input.testSimulation && !stickerTurn) {
+    // DEMI-BASE-03: pendings closed by another channel must not be resumed from memory/history.
+    // Best effort: an unavailable notice never blocks the turn; current tools still validate.
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const readSuperseded = async (table: string, columns: string) => {
+      try {
+        const result = await input.supabase
+          .from(table)
+          .select(columns)
+          .eq("studio_id", input.studio.id)
+          .eq("conversation_id", input.conversationId)
+          .eq("status", "superseded")
+          .gte("superseded_at", since)
+          .limit(3);
+        return result.error ? [] : ((result.data ?? []) as unknown as Record<string, unknown>[]);
+      } catch {
+        return [];
+      }
+    };
+    const [groups, intents] = await Promise.all([
+      readSuperseded("demi_group_bookings", "superseded_reason"),
+      readSuperseded("assistant_transfer_purchase_intents", "intent_kind,superseded_reason"),
+    ]);
+    const reasonOf = (row: Record<string, unknown>) =>
+      typeof row.superseded_reason === "string" ? row.superseded_reason : null;
+    resolvedPendingContext = resolvedPendingInstructions([
+      ...groups.map((row) => ({ kind: "first_class" as const, reason: reasonOf(row) })),
+      ...intents.map((row) => ({
+        kind:
+          row.intent_kind === "trial_class"
+            ? ("trial_class" as const)
+            : ("product_purchase" as const),
+        reason: reasonOf(row),
+      })),
+    ]);
+  }
+
   let pendingPaymentContext = "";
   if (input.serviceMode && !input.improvePrompt && !input.testSimulation && !stickerTurn) {
     const pendingPayment = await input.supabase
@@ -1161,6 +1200,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           "Cuando prepare_first_class_payment o execute_booking devuelva group_id y participant_count=1 para una primera clase individual, conserva ese group_id: espera comprobante bancario o payment_verified=true de Mercado Pago y después pide juntos los datos faltantes; completa con complete_group_booking y un único participante. No crees la ficha antes del comprobante bancario o de payment_verified=true ni anuncies una reserva cuando reservation_confirmed=false.",
           "Una solicitud de pago sólo conserva la clase y horario elegidos; no retiene cupo ni promete espacio por 24 horas. Si el pago fue recibido pero la clase pasó o se llenó, informa que se conserva el pago y ofrece otro horario disponible sin cobrar nuevamente ni prometer reembolsos. Cuando el usuario elija la alternativa, usa prepare_first_class_payment o prepare_group_booking con esa clase para reutilizar la misma solicitud pagada, y después complete_group_booking. Sólo continúa si Studio Flow confirma payment_preserved=true o payment_verified=true; no crees otro cobro para resolver un horario vencido.",
           pendingPaymentContext,
+          resolvedPendingContext,
           "Para grupos o para reservar sólo para otra persona, usa prepare_group_booking; aunque sea una sola participante, usa participant_count=1 y no prepare_first_class_payment. La identidad y teléfono del pagador no deben sustituir los de la participante. Si dos participantes comparten teléfono, no prometas registrarlas con ese mismo número, no inventes otro y no pidas pago; crea atención humana para verificar identidad/contactos antes de continuar. Para grupos, usa prepare_group_booking con la clase exacta, número de participantes y número de primeras clases a pagar. No conviertas al pagador en participante automáticamente. Primero da el total y el método devuelto por Studio Flow; espera comprobante para Bancomer o payment_verified=true para Mercado Pago antes de solicitar juntos nombres y celulares faltantes. Sólo después usa complete_group_booking con el group_id. Informa los resultados individuales y cualquier fallo o importe sin asignar; pago recibido sigue en revisión. En un grupo mixto, la reserva cubierta con créditos propios de una alumna es confirmada y no depende de validar la transferencia de otra participante; sólo la reserva cubierta por transferencia pendiente se informa como provisional. Cuando el resultado parcial devuelva human_review_created=true, informa que el caso ya fue creado para el equipo humano y que la conversación queda en revisión; no ofrezcas ejecutar otra reserva o devolución mientras el equipo controla el caso. No confirmes todo el grupo por memoria ni repitas cobros al reintentar.",
           "Usa update_contact_followup cuando cambie la etapa comercial: preguntas, esperando comprobante o datos posteriores. Rechazar las primeras opciones de horario no es rechazar el servicio: explora otras fechas o restricciones reales antes de descartar. Registra not_qualified sólo ante rechazo explícito del servicio o cuando, tras explorar la oferta pertinente, la persona confirme que no existe alternativa que le sirva. Vivir lejos por sí solo no basta. Si pide no recibir mensajes registra opt_out; conserva por separado cualquier rechazo definitivo ya confirmado. No marques No clasifica por silencio: el worker registra No agendó después de dos seguimientos sin respuesta. Al regresar una persona, conserva su identidad y retoma el flujo desde la información real.",
           "Al iniciar una conversación, conserva la identidad verificada y la etapa que entrega Studio Flow. En WhatsApp se resuelve por teléfono normalizado; en otros canales no presupongas que tienes su teléfono. Si falta una identidad verificada, atiende consultas informativas y pide solo los datos obligatorios cuando quiera reservar; nunca reveles información personal de una ficha no vinculada.",

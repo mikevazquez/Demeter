@@ -189,3 +189,31 @@ export function contextInstructions(
     "Si vuelve con un saludo y había un pendiente todavía vigente, retómalo con una pregunta útil y breve, sin reenviar datos bancarios. Si ya tiene paquete/inscripción activos, ofrece ayudar a reservar sin insistir con el cobro anterior. Si ya tiene reserva, atiende esa reserva. No afirmes que un pago concreto se liquidó sólo porque ahora existe otro paquete; para eso consulta el estado de esa operación. Sin pendiente relevante, saluda naturalmente.",
   ].join("\n");
 }
+
+type ResolvedPendingRow = {
+  kind: "first_class" | "product_purchase" | "trial_class";
+  reason: string | null;
+};
+
+/**
+ * DEMI-BASE-03 · Pendings that were closed because the person resolved them through another
+ * channel (app, team, another purchase). Demi must not resume or charge them again.
+ */
+export function resolvedPendingInstructions(rows: ResolvedPendingRow[]) {
+  if (!rows.length) return "";
+  const labels = Array.from(
+    new Set(
+      rows.map((row) =>
+        row.kind === "product_purchase"
+          ? "compra de paquete por transferencia"
+          : "pago de primera clase",
+      ),
+    ),
+  );
+  return (
+    "PENDIENTES CERRADOS: " +
+    JSON.stringify(rows.map((row) => ({ kind: row.kind, reason: row.reason }))) +
+    ` Studio Flow cerró ${labels.join(" y ")} porque la persona ya lo resolvió por otra vía (compra, paquete o reserva actuales). ` +
+    "Ese pendiente ya no existe: no lo menciones, no reenvíes datos bancarios ni pidas comprobante por él y no lo retomes aunque la memoria o el historial lo indiquen. Atiende con el estado actual."
+  );
+}
