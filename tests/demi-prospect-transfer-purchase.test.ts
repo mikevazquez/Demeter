@@ -38,9 +38,7 @@ describe("DEMI-PROS-03A prospect buys a package by transfer (D-PAY-01)", () => {
   it("waits for the profile after a matching receipt", () => {
     expect(migration).toContain("set status='awaiting_profile'");
     expect(webhook).toContain("service_record_prospect_transfer_receipt");
-    expect(webhook).toContain(
-      "tu nombre completo, tu fecha de nacimiento y tu correo electrónico",
-    );
+    expect(webhook).toContain("tu nombre completo, tu fecha de nacimiento y tu correo electrónico");
   });
 
   it("registers the profile, creates the student and activates in one transaction", () => {
