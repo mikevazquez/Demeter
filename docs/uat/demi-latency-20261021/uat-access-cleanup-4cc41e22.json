@@ -1,0 +1,32 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "4cc41e2247e60f6e01ddb81f5946bf3f4bdc3288",
+  "syntheticUserId": "5a6b9730-4969-4651-b858-e35068414a87",
+  "activeMemberships": 0,
+  "accountStatus": "disabled",
+  "authBanned": true,
+  "authSessions": 0,
+  "authRefreshTokens": 0,
+  "passwordSignInAfterCleanup": {
+    "httpStatus": 400,
+    "errorCode": "user_banned"
+  },
+  "staleBrowserAfterCleanup": {
+    "httpStatus": 200,
+    "path": "/login/studio"
+  },
+  "localPrivateFilesRemoved": 6,
+  "businessAuditSince": "2026-10-21T21:44:00Z",
+  "businessNewRowsInTwoUatStudios": 0,
+  "businessTablesChecked": [
+    "product_acquisitions",
+    "sales",
+    "students",
+    "student_enrollments",
+    "assistant_transfer_purchase_intents",
+    "assistant_enrollment_intents",
+    "demi_group_bookings"
+  ],
+  "previousTemporaryUserStillRevoked": true,
+  "demoAndConversationsRetained": true
+}

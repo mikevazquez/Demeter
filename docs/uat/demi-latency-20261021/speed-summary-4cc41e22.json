@@ -1,0 +1,371 @@
+{
+  "status": "PASSED_LATENCY",
+  "criterion": "Both total median and nearest-rank p95 must be <= paired base; quality and C03 verified separately",
+  "p95Method": "nearest rank ceil(0.95*n)",
+  "tokensMethod": "sum output_tokens from all model calls of each turn including reasoning tokens as provider reports",
+  "byType": {
+    "saludo": {
+      "base": {
+        "n": 6,
+        "medianMs": 4260.0,
+        "p95Ms": 11369,
+        "outputTokensTotal": 175,
+        "outputTokensMedian": 28.5,
+        "modelCalls": 6,
+        "reasoningTokensTotal": 59,
+        "errors": 0
+      },
+      "candidate": {
+        "n": 6,
+        "medianMs": 3336.0,
+        "p95Ms": 5054,
+        "outputTokensTotal": 500,
+        "outputTokensMedian": 44.5,
+        "modelCalls": 6,
+        "reasoningTokensTotal": 328,
+        "errors": 0
+      },
+      "medianNotWorse": true,
+      "p95NotWorse": true,
+      "comparisonStatus": "PASSED"
+    },
+    "consulta": {
+      "base": {
+        "n": 18,
+        "medianMs": 7372.5,
+        "p95Ms": 16342,
+        "outputTokensTotal": 3653,
+        "outputTokensMedian": 197.5,
+        "modelCalls": 36,
+        "reasoningTokensTotal": 1703,
+        "errors": 0
+      },
+      "candidate": {
+        "n": 18,
+        "medianMs": 7540.0,
+        "p95Ms": 11877,
+        "outputTokensTotal": 4025,
+        "outputTokensMedian": 237.0,
+        "modelCalls": 30,
+        "reasoningTokensTotal": 1822,
+        "errors": 0
+      },
+      "medianNotWorse": false,
+      "p95NotWorse": true,
+      "comparisonStatus": "REGRESSION"
+    },
+    "accion": {
+      "base": {
+        "n": 6,
+        "medianMs": 8260.0,
+        "p95Ms": 12314,
+        "outputTokensTotal": 1124,
+        "outputTokensMedian": 186.5,
+        "modelCalls": 17,
+        "reasoningTokensTotal": 430,
+        "errors": 0
+      },
+      "candidate": {
+        "n": 6,
+        "medianMs": 8667.5,
+        "p95Ms": 11622,
+        "outputTokensTotal": 1352,
+        "outputTokensMedian": 189.0,
+        "modelCalls": 14,
+        "reasoningTokensTotal": 403,
+        "errors": 0
+      },
+      "medianNotWorse": false,
+      "p95NotWorse": true,
+      "comparisonStatus": "REGRESSION"
+    },
+    "total": {
+      "base": {
+        "n": 30,
+        "medianMs": 7745.5,
+        "p95Ms": 12314,
+        "outputTokensTotal": 4952,
+        "outputTokensMedian": 174.0,
+        "modelCalls": 59,
+        "reasoningTokensTotal": 2192,
+        "errors": 0
+      },
+      "candidate": {
+        "n": 30,
+        "medianMs": 6793.0,
+        "p95Ms": 11622,
+        "outputTokensTotal": 5877,
+        "outputTokensMedian": 195.0,
+        "modelCalls": 50,
+        "reasoningTokensTotal": 2553,
+        "errors": 0
+      },
+      "medianNotWorse": true,
+      "p95NotWorse": true,
+      "comparisonStatus": "PASSED"
+    }
+  },
+  "byCase": {
+    "S01": {
+      "base": {
+        "n": 3,
+        "medianMs": 4388,
+        "p95Ms": 8035,
+        "outputTokensTotal": 64,
+        "outputTokensMedian": 23,
+        "modelCalls": 3,
+        "reasoningTokensTotal": 0,
+        "errors": 0
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 3045,
+        "p95Ms": 3284,
+        "outputTokensTotal": 79,
+        "outputTokensMedian": 26,
+        "modelCalls": 3,
+        "reasoningTokensTotal": 0,
+        "errors": 0
+      },
+      "medianNotWorse": true,
+      "p95NotWorse": true,
+      "comparisonStatus": "PASSED"
+    },
+    "S02": {
+      "base": {
+        "n": 3,
+        "medianMs": 4132,
+        "p95Ms": 11369,
+        "outputTokensTotal": 111,
+        "outputTokensMedian": 35,
+        "modelCalls": 3,
+        "reasoningTokensTotal": 59,
+        "errors": 0
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 4518,
+        "p95Ms": 5054,
+        "outputTokensTotal": 421,
+        "outputTokensMedian": 166,
+        "modelCalls": 3,
+        "reasoningTokensTotal": 328,
+        "errors": 0
+      },
+      "medianNotWorse": false,
+      "p95NotWorse": true,
+      "comparisonStatus": "REGRESSION"
+    },
+    "S03": {
+      "base": {
+        "n": 3,
+        "medianMs": 6950,
+        "p95Ms": 7107,
+        "outputTokensTotal": 625,
+        "outputTokensMedian": 206,
+        "modelCalls": 6,
+        "reasoningTokensTotal": 449,
+        "errors": 0
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 4930,
+        "p95Ms": 5509,
+        "outputTokensTotal": 370,
+        "outputTokensMedian": 139,
+        "modelCalls": 3,
+        "reasoningTokensTotal": 228,
+        "errors": 0
+      },
+      "medianNotWorse": true,
+      "p95NotWorse": true,
+      "comparisonStatus": "PASSED"
+    },
+    "S04": {
+      "base": {
+        "n": 3,
+        "medianMs": 6850,
+        "p95Ms": 16342,
+        "outputTokensTotal": 539,
+        "outputTokensMedian": 187,
+        "modelCalls": 6,
+        "reasoningTokensTotal": 204,
+        "errors": 0
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 9041,
+        "p95Ms": 11877,
+        "outputTokensTotal": 680,
+        "outputTokensMedian": 233,
+        "modelCalls": 6,
+        "reasoningTokensTotal": 306,
+        "errors": 0
+      },
+      "medianNotWorse": false,
+      "p95NotWorse": true,
+      "comparisonStatus": "REGRESSION"
+    },
+    "S05": {
+      "base": {
+        "n": 3,
+        "medianMs": 8340,
+        "p95Ms": 11951,
+        "outputTokensTotal": 902,
+        "outputTokensMedian": 283,
+        "modelCalls": 6,
+        "reasoningTokensTotal": 397,
+        "errors": 0
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 8510,
+        "p95Ms": 9243,
+        "outputTokensTotal": 855,
+        "outputTokensMedian": 294,
+        "modelCalls": 6,
+        "reasoningTokensTotal": 306,
+        "errors": 0
+      },
+      "medianNotWorse": false,
+      "p95NotWorse": true,
+      "comparisonStatus": "REGRESSION"
+    },
+    "S06": {
+      "base": {
+        "n": 3,
+        "medianMs": 6441,
+        "p95Ms": 8476,
+        "outputTokensTotal": 366,
+        "outputTokensMedian": 122,
+        "modelCalls": 6,
+        "reasoningTokensTotal": 93,
+        "errors": 0
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 9579,
+        "p95Ms": 11142,
+        "outputTokensTotal": 642,
+        "outputTokensMedian": 220,
+        "modelCalls": 6,
+        "reasoningTokensTotal": 208,
+        "errors": 0
+      },
+      "medianNotWorse": false,
+      "p95NotWorse": false,
+      "comparisonStatus": "REGRESSION"
+    },
+    "S07": {
+      "base": {
+        "n": 3,
+        "medianMs": 8638,
+        "p95Ms": 9869,
+        "outputTokensTotal": 751,
+        "outputTokensMedian": 259,
+        "modelCalls": 6,
+        "reasoningTokensTotal": 362,
+        "errors": 0
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 8603,
+        "p95Ms": 8628,
+        "outputTokensTotal": 927,
+        "outputTokensMedian": 291,
+        "modelCalls": 6,
+        "reasoningTokensTotal": 421,
+        "errors": 0
+      },
+      "medianNotWorse": true,
+      "p95NotWorse": true,
+      "comparisonStatus": "PASSED"
+    },
+    "S08": {
+      "base": {
+        "n": 3,
+        "medianMs": 6473,
+        "p95Ms": 7882,
+        "outputTokensTotal": 470,
+        "outputTokensMedian": 162,
+        "modelCalls": 6,
+        "reasoningTokensTotal": 198,
+        "errors": 0
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 4644,
+        "p95Ms": 6845,
+        "outputTokensTotal": 551,
+        "outputTokensMedian": 162,
+        "modelCalls": 3,
+        "reasoningTokensTotal": 353,
+        "errors": 0
+      },
+      "medianNotWorse": true,
+      "p95NotWorse": true,
+      "comparisonStatus": "PASSED"
+    },
+    "S09": {
+      "base": {
+        "n": 3,
+        "medianMs": 8003,
+        "p95Ms": 12314,
+        "outputTokensTotal": 551,
+        "outputTokensMedian": 194,
+        "modelCalls": 8,
+        "reasoningTokensTotal": 161,
+        "errors": 0
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 9157,
+        "p95Ms": 9858,
+        "outputTokensTotal": 824,
+        "outputTokensMedian": 320,
+        "modelCalls": 8,
+        "reasoningTokensTotal": 254,
+        "errors": 0
+      },
+      "medianNotWorse": false,
+      "p95NotWorse": true,
+      "comparisonStatus": "REGRESSION"
+    },
+    "S10": {
+      "base": {
+        "n": 3,
+        "medianMs": 8517,
+        "p95Ms": 11322,
+        "outputTokensTotal": 573,
+        "outputTokensMedian": 179,
+        "modelCalls": 9,
+        "reasoningTokensTotal": 269,
+        "errors": 0
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 8178,
+        "p95Ms": 11622,
+        "outputTokensTotal": 528,
+        "outputTokensMedian": 181,
+        "modelCalls": 6,
+        "reasoningTokensTotal": 149,
+        "errors": 0
+      },
+      "medianNotWorse": true,
+      "p95NotWorse": false,
+      "comparisonStatus": "REGRESSION"
+    }
+  },
+  "deltasPct": {
+    "medianMs": -12.297463043057256,
+    "p95Ms": -5.619619944778298,
+    "outputTokensTotal": 18.679321486268186
+  },
+  "scope": "Only the predeclared total-latency threshold passes; query/action median regressions and tokens above base remain explicit. This is not functional UAT approval.",
+  "qualityLimitations": {
+    "S03": "BLOCKED expiry date: simulated status lacks date",
+    "S02": "Seeded payment history; no real payment pending certified",
+    "outputTokensVsBase": "18.7% higher, not approved as token/cost reduction vs base"
+  }
+}

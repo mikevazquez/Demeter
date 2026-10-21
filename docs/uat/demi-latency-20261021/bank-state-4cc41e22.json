@@ -1,0 +1,245 @@
+[
+  {
+    "id": "04e8c303-acbc-437e-bdd9-690510e451b1",
+    "simulation": {
+      "credits": 8,
+      "persona": "student",
+      "transfer": {
+        "quote": {
+          "credits": 8,
+          "package": {
+            "name": "Paquete UAT 8 clases",
+            "currency": "MXN",
+            "amount_minor": 60000
+          },
+          "unlimited": false,
+          "enrollment": {
+            "name": "Inscripción UAT",
+            "currency": "MXN",
+            "amount_minor": 20000
+          },
+          "product_ref": "product:acb28f46-e996-4b47-a288-621dea99a94e",
+          "total_amount_minor": 80000,
+          "enrollment_included": false,
+          "enrollment_required": true
+        },
+        "status": "provisional_active",
+        "receiptEvidence": "seeded_fixture"
+      },
+      "reservations": [],
+      "workbenchCase": "S13",
+      "enrollmentStatus": "active",
+      "identityNeedsName": false,
+      "paymentBeforeBooking": true
+    },
+    "owner": "5a6b9730-4969-4651-b858-e35068414a87",
+    "workbench_case": "S13",
+    "prompt_hash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+    "memory": {
+      "intent": "reservar primera clase",
+      "subject": "unresolved",
+      "turn_id": "ae503b9d-cef1-415e-92f4-252fadceeb3c",
+      "version": 1,
+      "activity": null,
+      "next_step": "Elegir horario",
+      "availability": null,
+      "selected_option": "Paquete UAT 8 clases",
+      "turn_started_at": 1792619860997
+    }
+  },
+  {
+    "id": "2159687b-7a36-4ba6-bc06-1bd6bbaa114d",
+    "simulation": {
+      "credits": 8,
+      "persona": "student",
+      "transfer": {
+        "quote": {
+          "credits": 8,
+          "package": {
+            "name": "Paquete UAT 8 clases",
+            "currency": "MXN",
+            "amount_minor": 60000
+          },
+          "unlimited": false,
+          "enrollment": {
+            "name": "Inscripción UAT",
+            "currency": "MXN",
+            "amount_minor": 20000
+          },
+          "product_ref": "product:acb28f46-e996-4b47-a288-621dea99a94e",
+          "total_amount_minor": 80000,
+          "enrollment_included": false,
+          "enrollment_required": true
+        },
+        "status": "provisional_active",
+        "receiptEvidence": "admin_fixture_event"
+      },
+      "reservations": [],
+      "workbenchCase": "S12",
+      "transferPreview": {
+        "quote": {
+          "credits": 8,
+          "package": {
+            "name": "Paquete UAT 8 clases",
+            "currency": "MXN",
+            "amount_minor": 60000
+          },
+          "unlimited": false,
+          "enrollment": {
+            "name": "Inscripción UAT",
+            "currency": "MXN",
+            "amount_minor": 20000
+          },
+          "product_ref": "product:acb28f46-e996-4b47-a288-621dea99a94e",
+          "total_amount_minor": 80000,
+          "enrollment_included": false,
+          "enrollment_required": true
+        },
+        "turnId": "de4caf9c-4035-4da8-944c-94aa0b6c7f9f"
+      },
+      "enrollmentStatus": "active",
+      "identityNeedsName": false,
+      "paymentBeforeBooking": true
+    },
+    "owner": "5a6b9730-4969-4651-b858-e35068414a87",
+    "workbench_case": "S12",
+    "prompt_hash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+    "memory": {
+      "intent": "Comprar paquete por transferencia",
+      "subject": "unresolved",
+      "turn_id": "a7508045-497f-4a62-94e0-c556a3a6c621",
+      "version": 1,
+      "activity": null,
+      "next_step": "Elegir primera clase",
+      "availability": null,
+      "selected_option": "Paquete de 8 clases",
+      "turn_started_at": 1792619847314
+    }
+  },
+  {
+    "id": "772dd517-1d86-48a2-9eaa-fe8c83999558",
+    "simulation": {
+      "credits": 8,
+      "persona": "student",
+      "transfer": {
+        "quote": {
+          "credits": 8,
+          "package": {
+            "name": "Paquete UAT 8 clases",
+            "currency": "MXN",
+            "amount_minor": 60000
+          },
+          "unlimited": false,
+          "enrollment": {
+            "name": "Inscripción UAT",
+            "currency": "MXN",
+            "amount_minor": 20000
+          },
+          "product_ref": "product:acb28f46-e996-4b47-a288-621dea99a94e",
+          "total_amount_minor": 80000,
+          "enrollment_included": false,
+          "enrollment_required": true
+        },
+        "status": "provisional_active",
+        "receiptEvidence": "admin_fixture_event"
+      },
+      "reservations": [],
+      "workbenchCase": "S14",
+      "transferPreview": {
+        "quote": {
+          "credits": 8,
+          "package": {
+            "name": "Paquete UAT 8 clases",
+            "currency": "MXN",
+            "amount_minor": 60000
+          },
+          "unlimited": false,
+          "enrollment": {
+            "name": "Inscripción UAT",
+            "currency": "MXN",
+            "amount_minor": 20000
+          },
+          "product_ref": "product:acb28f46-e996-4b47-a288-621dea99a94e",
+          "total_amount_minor": 80000,
+          "enrollment_included": false,
+          "enrollment_required": true
+        },
+        "turnId": "8a7062f8-72cf-4a5a-b41f-654a19a200d8"
+      },
+      "enrollmentStatus": "active",
+      "identityNeedsName": false
+    },
+    "owner": "5a6b9730-4969-4651-b858-e35068414a87",
+    "workbench_case": "S14",
+    "prompt_hash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+    "memory": {
+      "intent": "Comprar paquete por transferencia",
+      "subject": "unresolved",
+      "turn_id": "78406236-8f30-4390-97b8-91fef782aedb",
+      "version": 1,
+      "activity": null,
+      "next_step": "Reservar una clase",
+      "availability": null,
+      "selected_option": "Paquete de 8 clases",
+      "turn_started_at": 1792619892270
+    }
+  },
+  {
+    "id": "9eb9aaac-19ed-44ad-887f-3a535a2dd7ac",
+    "simulation": {
+      "credits": 0,
+      "persona": "prospect",
+      "transfer": {
+        "quote": {
+          "credits": 4,
+          "package": {
+            "name": "Pase Descubre",
+            "currency": "MXN",
+            "amount_minor": 49900
+          },
+          "unlimited": false,
+          "enrollment": null,
+          "product_ref": "product:8aeacd90-8506-42e5-a0ee-b99534046343",
+          "total_amount_minor": 49900,
+          "enrollment_included": true,
+          "enrollment_required": false
+        },
+        "status": "awaiting_receipt"
+      },
+      "reservations": [],
+      "workbenchCase": "S11",
+      "enrollmentStatus": "missing",
+      "identityNeedsName": true,
+      "paymentBeforeBooking": true
+    },
+    "owner": "5a6b9730-4969-4651-b858-e35068414a87",
+    "workbench_case": "S11",
+    "prompt_hash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+    "memory": {
+      "intent": "Comprar Pase Descubre",
+      "subject": "unresolved",
+      "turn_id": "b2baf280-a597-47b4-aad8-02f2674bf5d8",
+      "version": 1,
+      "activity": null,
+      "next_step": "Enviar comprobante simulado",
+      "availability": null,
+      "selected_option": "Pase Descubre por transferencia",
+      "turn_started_at": 1792619795412
+    }
+  },
+  {
+    "id": "e14bf08f-b30e-4df4-b71d-c2cd2eab00bf",
+    "simulation": {
+      "credits": 8,
+      "persona": "student",
+      "reservations": [],
+      "workbenchCase": "S15",
+      "enrollmentStatus": "active",
+      "identityNeedsName": false
+    },
+    "owner": "5a6b9730-4969-4651-b858-e35068414a87",
+    "workbench_case": "S15",
+    "prompt_hash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+    "memory": null
+  }
+]
