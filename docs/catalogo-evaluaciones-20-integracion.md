@@ -36,11 +36,17 @@ Desglose técnico POLE-01-08 a 24. Bloque liberado por Mike el 22-oct-2026.
   Mike, máximo 5, del nivel de catálogo correspondiente) y funciones de escritura
   sólo para `evaluations.configure`.
 
+- **POLE-01-12** pantalla `/admin/catalogo/obligatorias`. **POLE-01-13**
+  `staff_generate_pole_evaluation_templates` (`20261022170000`): plantilla v2 por nivel
+  40/30/30 activada con el motor. **POLE-01-14** `pole_evaluation_figure_plans`
+  (`20261022180000`): combo 4 + dictado 3 por evaluación, cambio antes de empezar,
+  confirmación en vivo para Élite y congelado al empezar.
+
 ## SQL local
 
 Prueba aislada (PostgreSQL local, nunca Sandbox ni producción): aplicar
 `tests/fixtures/pole-test-doubles.sql`, las migraciones de Pole en orden y
-`tests/pole01-level-mandatory.sql` (9 controles, termina en rollback).
+`scripts/pole01-sql-tests.sh` (21 controles en 3 archivos, cada uno termina en rollback).
 
 ## Siguiente
 

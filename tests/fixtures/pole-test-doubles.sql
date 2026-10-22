@@ -112,3 +112,12 @@ create table public.evaluation_template_elements (
   unique (template_version_id, element_id), unique (template_version_id, sort_order), unique (studio_id, id)
 );
 grant select on public.evaluation_templates, public.evaluation_template_versions, public.evaluation_template_criteria, public.evaluation_template_elements to authenticated;
+
+create table public.technical_evaluations (
+  id uuid primary key default gen_random_uuid(), studio_id uuid not null, student_id uuid not null references public.students(id),
+  discipline_id uuid not null, current_discipline_level_id_at_start uuid references public.discipline_technical_levels(id),
+  template_version_id uuid, status text not null default 'draft' check (status in ('draft','published')),
+  automatic_outcome text, final_outcome text, total_score numeric, published_at timestamptz,
+  unique (studio_id, id)
+);
+grant select on public.technical_evaluations to authenticated;

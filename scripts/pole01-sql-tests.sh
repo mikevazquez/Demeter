@@ -18,9 +18,11 @@ for migration in \
   20261020214233_catalog_c2_achievement_invoker_lock_fix \
   20261020220000_pole_sandbox_parity_functions \
   20261022160000_pole01_level_map_mandatory_figures \
-  20261022170000_pole01_evaluation_template_generator; do
+  20261022170000_pole01_evaluation_template_generator \
+  20261022180000_pole01_evaluation_figure_plan; do
   run "supabase/migrations/$migration.sql"
 done
-for test in tests/pole01-level-mandatory.sql tests/pole01-template-generator.sql; do
+for test in tests/pole01-level-mandatory.sql tests/pole01-template-generator.sql \
+  tests/pole01-evaluation-plan.sql; do
   psql -v ON_ERROR_STOP=1 -q -d "$DB" -At -f "$test" | tail -1
 done
