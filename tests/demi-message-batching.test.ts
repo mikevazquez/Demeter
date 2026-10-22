@@ -300,6 +300,12 @@ describe("DEMI-BATCH-01/02 consecutive messages and stale replies", () => {
       (row) => outcome(row) === "superseded_by_newer_message",
     );
     expect(superseded).toHaveLength(2);
+    // Replaying an older, ignored part of the burst must neither resurrect it nor append text.
+    const inboundBefore = h.rows.assistant_turns.filter((row) => row.role === "user").length;
+    await h.post(h.request([{ id: "wamid.b1-1", body: "Hola" }]));
+    expect(h.model).toHaveBeenCalledTimes(1);
+    expect(h.transport).toHaveBeenCalledTimes(1);
+    expect(h.rows.assistant_turns.filter((row) => row.role === "user")).toHaveLength(inboundBefore);
   });
 
   it("B2 never groups messages from different contacts", async () => {

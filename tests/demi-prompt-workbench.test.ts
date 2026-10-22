@@ -182,6 +182,73 @@ afterEach(() => {
 });
 
 describe("Demi prompt workbench", () => {
+  it.each([false, true])(
+    "executes the real orchestrator action barrier after generation (current=%s)",
+    async (current) => {
+      const h = orchestratorHarness();
+      h.input.testSimulation = undefined;
+      h.input.history = [{ role: "user", content: "Sí, reserva la clase elegida." }];
+      let turnCurrent = true;
+      h.input.isTurnCurrent = vi.fn(async () => turnCurrent);
+      h.action.mockResolvedValue({ ok: true });
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      let releaseModel!: (response: Response) => void;
+      const modelPending = new Promise<Response>((resolve) => {
+        releaseModel = resolve;
+      });
+      const fetcher = vi
+        .fn()
+        .mockReturnValueOnce(modelPending)
+        .mockResolvedValueOnce(new Response(JSON.stringify(reply("Resultado sintético."))));
+      vi.stubGlobal("fetch", fetcher);
+      const pending = h.run(h.input);
+      // Attach the rejection assertion before resolving the model to avoid unhandled rejection.
+      const assertion = current
+        ? expect(pending).resolves.toMatchObject({ reply: "Resultado sintético." })
+        : expect(pending).rejects.toThrow("assistant_turn_superseded");
+      await vi.waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
+      turnCurrent = current;
+      releaseModel(
+        new Response(
+          JSON.stringify({
+            output: [
+              {
+                type: "function_call",
+                name: "execute_booking",
+                call_id: "delayed-action",
+                arguments: "{}",
+              },
+            ],
+          }),
+        ),
+      );
+      await assertion;
+      expect(h.input.isTurnCurrent).toHaveBeenCalledOnce();
+      expect(h.action).toHaveBeenCalledTimes(current ? 1 : 0);
+      expect(h.simulate).not.toHaveBeenCalled();
+      expect(
+        h.writes.every((table) =>
+          ["assistant_model_calls", "assistant_tool_executions"].includes(table),
+        ),
+      ).toBe(true);
+    },
+  );
+
+  it.each(["booking.create", "booking.cancel", "booking.reschedule", "commerce.cash_purchase"])(
+    "rejects a superseded server confirmation before %s can execute",
+    async (action_type) => {
+      const h = orchestratorHarness({ id: "pending-action", action_type });
+      h.input.testSimulation = undefined;
+      h.input.isTurnCurrent = vi.fn(async () => false);
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      const fetcher = vi.fn();
+      vi.stubGlobal("fetch", fetcher);
+      await expect(h.run(h.input)).rejects.toThrow("assistant_turn_superseded");
+      expect(h.action).not.toHaveBeenCalled();
+      expect(fetcher).not.toHaveBeenCalled();
+    },
+  );
+
   it.each(["Hola", "Gracias.", "Entendido"])(
     "preserves stored memory for social message %s even if the model returns a replacement",
     async (message) => {
