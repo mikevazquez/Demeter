@@ -217,6 +217,8 @@ export default function Bank({
               <option value="contacts">Dos contactos intercalados</option>
               <option value="media">Texto e imagen</option>
               <option value="stale">Texto nuevo durante la generación</option>
+              <option value="stale_cancellation">Retractar cancelación durante ejecución</option>
+              <option value="cancellation_control">Cancelar y repetir el mismo evento</option>
               <option value="replay">Repetir el mismo evento</option>
               <option value="outside">Dos mensajes fuera de la ventana</option>
               <option value="tenant_guard">Aislamiento entre estudios</option>

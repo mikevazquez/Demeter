@@ -453,6 +453,8 @@ export async function runDemiUatBurst(id: string, scenario: string) {
       "contacts",
       "media",
       "stale",
+      "stale_cancellation",
+      "cancellation_control",
       "replay",
       "outside",
       "tenant_guard",
@@ -464,7 +466,8 @@ export async function runDemiUatBurst(id: string, scenario: string) {
     if (process.env.DEMI_PILOT_FORWARD_URL || process.env.DEMI_PILOT_FORWARD_WA_IDS)
       throw new Error("demi_uat_burst_forwarding_configured");
     const people = ctx.run.fixtures.people;
-    const person = people.prospect;
+    const cancellationCase = ["stale_cancellation", "cancellation_control"].includes(scenario);
+    const person = cancellationCase ? people.trial_reserved : people.prospect;
     if (!person || !people.student_active || ctx.run.studio_id === ctx.studio.id)
       throw new Error("demi_uat_burst_fixture_invalid");
     const config: MetaWhatsAppWebhookConfig = {
@@ -613,8 +616,20 @@ export async function runDemiUatBurst(id: string, scenario: string) {
             await Promise.all(pending);
             return;
           }
-          if (scenario === "stale") {
-            const first = message("¿Qué opciones y precios tienen para empezar Pole Fitness?");
+          const cancellationRequest =
+            "Antes de cancelar, consulta la política de cancelación. Después cancela mi única reserva de Pole Fitness porque no podré asistir.";
+          if (scenario === "cancellation_control") {
+            const first = message(cancellationRequest);
+            await send([first]);
+            await send([first]);
+            return;
+          }
+          if (scenario === "stale" || scenario === "stale_cancellation") {
+            const first = message(
+              cancellationCase
+                ? cancellationRequest
+                : "¿Qué opciones y precios tienen para empezar Pole Fitness?",
+            );
             let settled = false;
             const pending = send([first]).finally(() => {
               settled = true;
@@ -648,9 +663,16 @@ export async function runDemiUatBurst(id: string, scenario: string) {
               // Drain both receivers before releasing the run lease, including observation errors.
               await Promise.all([
                 pending,
-                send([message("Espera, mi pregunta ahora es: ¿dónde está el estudio?")]),
+                send([
+                  message(
+                    cancellationCase
+                      ? "Espera, ya no quiero cancelar. Mantén mi reserva; sí podré asistir."
+                      : "Espera, mi pregunta ahora es: ¿dónde está el estudio?",
+                  ),
+                ]),
               ]);
             }
+            if (cancellationCase) await send([first]);
             return;
           }
           await send([texts[0]]);
