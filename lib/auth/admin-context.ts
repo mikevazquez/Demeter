@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
 import { STUDIO_CONTEXT_COOKIE } from "@/lib/auth/studio-context-cookie";
+import type { PlatformModuleKey } from "@/lib/platform/catalog";
+import { loadStudioEntitlements, studioHasModule } from "@/lib/platform/entitlements";
 import { createClient } from "@/lib/supabase/server";
 
 async function getAdminContextImpl(requiredCapability?: Capability) {
@@ -85,6 +87,9 @@ async function getAdminContextImpl(requiredCapability?: Capability) {
     redirect("/login/studio?error=access");
   }
 
+  // NEB-01-03 · plan, módulos y estado de pago del estudio (null = sin Nébora aún: no bloquea).
+  const entitlements = await loadStudioEntitlements(supabase, studio.id);
+
   if (requiredCapability && !capabilities.has(requiredCapability)) {
     redirect(
       capabilities.has(CAPABILITIES.ADMIN_PORTAL)
@@ -101,8 +106,12 @@ async function getAdminContextImpl(requiredCapability?: Capability) {
     studio,
     profile: profileResult.data,
     capabilities,
+    entitlements,
     can(capability: Capability) {
       return capabilities.has(capability);
+    },
+    hasModule(module: PlatformModuleKey) {
+      return studioHasModule(entitlements, module);
     },
   };
 }

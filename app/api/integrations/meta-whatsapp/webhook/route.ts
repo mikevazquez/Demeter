@@ -24,6 +24,7 @@ import {
   extractMetaDeliveryStatuses,
   persistMetaDeliveryStatuses,
 } from "@/lib/assistant/meta-delivery-status";
+import { loadStudioEntitlementsService } from "@/lib/platform/entitlements";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
@@ -1090,6 +1091,13 @@ export async function POST(request: Request) {
     body = JSON.parse(rawBody);
   } catch {
     return json({ error: "invalid_json" }, 400);
+  }
+
+  // NEB-01-03 · Si el estudio no tiene Demi contratada, se confirma a Meta y no se procesa.
+  const entitlements = await loadStudioEntitlementsService(supabase, studioId);
+  if (entitlements && !entitlements.modules.demi) {
+    console.info("demi_meta_webhook", { stage: "entitlements", outcome: "module_not_contracted" });
+    return json({ ok: true, skipped: "module_not_contracted" });
   }
 
   const messages = extractMetaInboundMessages(body);

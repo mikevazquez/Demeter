@@ -5,6 +5,7 @@ import { signOut } from "@/app/auth/actions";
 import PwaBrandingSync from "@/app/components/PwaBrandingSync";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { subscriptionNotice } from "@/lib/platform/entitlements";
 import { AdminMobileNavigation, AdminNavigation } from "./admin-navigation";
 import "./hoy.css";
 import "./roster-uat.css";
@@ -86,7 +87,9 @@ const roleLabels: Record<string, string> = {
 };
 
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const { supabase, studio, membership, can, user, profile } = await getCachedAdminContext();
+  const { supabase, studio, membership, can, hasModule, entitlements, user, profile } =
+    await getCachedAdminContext();
+  const billingNotice = subscriptionNotice(entitlements);
   const pwaQuery = pwaBrandQuery(studio);
   const instructorOnly = can(CAPABILITIES.INSTRUCTOR_PORTAL) && !can(CAPABILITIES.ADMIN_PORTAL);
   const brandLogoUrl = studio.logo_path
@@ -133,13 +136,13 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         ...(can(CAPABILITIES.DOCUMENTS_READ)
           ? [{ href: "/admin/documentos", label: "Documentos", enabled: true }]
           : []),
-        ...(can(CAPABILITIES.REWARDS_READ)
+        ...(can(CAPABILITIES.REWARDS_READ) && hasModule("recompensas")
           ? [
               { href: "/admin/retos", label: "Retos", enabled: true },
               { href: "/admin/recompensas", label: "Rewards", enabled: true },
             ]
           : []),
-        ...(can(CAPABILITIES.EVALUATIONS_READ)
+        ...(can(CAPABILITIES.EVALUATIONS_READ) && hasModule("catalogo")
           ? [{ href: "/admin/evaluaciones", label: "Evaluaciones", enabled: true }]
           : []),
         ...(can(CAPABILITIES.PRODUCTS_READ)
@@ -299,6 +302,11 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
               </div>
             </header>
           </>
+        ) : null}
+        {billingNotice ? (
+          <p className="admin-billing-notice" role="status">
+            {billingNotice}
+          </p>
         ) : null}
         {children}
       </div>

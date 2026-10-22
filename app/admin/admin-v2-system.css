@@ -817,3 +817,14 @@
   border-color: #efc7cd !important;
   background: #fff7f8 !important;
 }
+
+/* NEB-01-03 · Aviso de suscripción (gracia, solo lectura, suspendido). */
+.admin-billing-notice {
+  margin: 12px 16px 0;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(246, 214, 122, 0.14);
+  color: #f6d67a;
+  font-size: 14px;
+  line-height: 1.45;
+}

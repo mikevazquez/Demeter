@@ -10,9 +10,10 @@ run() { psql -v ON_ERROR_STOP=1 -q -d "$DB" -f "$1" >/dev/null; }
 run tests/fixtures/neb01-test-doubles.sql
 for migration in \
   20261022210000_neb01_platform_admins_audit \
-  20261022211000_neb01_plans_modules_entitlements; do
+  20261022211000_neb01_plans_modules_entitlements \
+  20261022212000_neb01_entitlement_guards; do
   run "supabase/migrations/$migration.sql"
 done
-for test in tests/neb01-platform.sql; do
+for test in tests/neb01-platform.sql tests/neb01-guards.sql; do
   psql -v ON_ERROR_STOP=1 -q -d "$DB" -At -f "$test" | tail -1
 done
