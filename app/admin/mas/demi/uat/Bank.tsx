@@ -8,6 +8,7 @@ import {
   getDemiUatRun,
   moveDemiUatSession,
   sendDemiUatMessage,
+  runDemiUatBurst,
   runDemiUatNotifications,
   runDemiUatFollowups,
   reviewDemiUatGroup,
@@ -56,6 +57,7 @@ export default function Bank({
   const [session, setSession] = useState("timely");
   const [metaRecipient, setMetaRecipient] = useState("");
   const [hours, setHours] = useState(6);
+  const [burstScenario, setBurstScenario] = useState("burst");
   async function perform(action: () => Promise<Data>) {
     setBusy(true);
     setError("");
@@ -198,6 +200,35 @@ export default function Bank({
       {busy && <p role="status">Procesando y guardando evidencia…</p>}
       {data && (
         <>
+          <section>
+            <h2>Ráfagas sintéticas</h2>
+            <p>
+              Crea una ejecución nueva para cada variante. Las respuestas quedan capturadas en la
+              evidencia; revisa también los turnos, eventos y cambios de estado.
+            </p>
+            <select
+              aria-label="Variante de ráfaga"
+              value={burstScenario}
+              disabled={busy}
+              onChange={(event) => setBurstScenario(event.target.value)}
+            >
+              <option value="burst">Tres textos consecutivos</option>
+              <option value="same_payload">Tres textos en un webhook</option>
+              <option value="contacts">Dos contactos intercalados</option>
+              <option value="media">Texto e imagen</option>
+              <option value="stale">Texto nuevo durante la generación</option>
+              <option value="replay">Repetir el mismo evento</option>
+              <option value="outside">Dos mensajes fuera de la ventana</option>
+              <option value="tenant_guard">Aislamiento entre estudios</option>
+              <option value="signature_guard">Rechazar firma inválida</option>
+            </select>
+            <button
+              disabled={busy || !modelReady}
+              onClick={() => perform(() => runDemiUatBurst(data.run.id, burstScenario))}
+            >
+              Ejecutar variante y guardar evidencia
+            </button>
+          </section>
           <section>
             <h2>2. Conversar con Demi</h2>
             <form

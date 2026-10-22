@@ -443,6 +443,247 @@ export async function sendDemiUatMessage(form: FormData) {
   });
   return getDemiUatRun(id);
 }
+// Bounded, signed requests to the real receiver; only this authenticated capture scope
+// supplies the synthetic credentials. No client-provided URL, phone, body or secret.
+export async function runDemiUatBurst(id: string, scenario: string) {
+  if (
+    ![
+      "burst",
+      "same_payload",
+      "contacts",
+      "media",
+      "stale",
+      "replay",
+      "outside",
+      "tenant_guard",
+      "signature_guard",
+    ].includes(scenario)
+  )
+    throw new Error("demi_uat_burst_scenario_invalid");
+  await locked(id, async (ctx) => {
+    if (process.env.DEMI_PILOT_FORWARD_URL || process.env.DEMI_PILOT_FORWARD_WA_IDS)
+      throw new Error("demi_uat_burst_forwarding_configured");
+    const people = ctx.run.fixtures.people;
+    const person = people.prospect;
+    if (!person || !people.student_active || ctx.run.studio_id === ctx.studio.id)
+      throw new Error("demi_uat_burst_fixture_invalid");
+    const config: MetaWhatsAppWebhookConfig = {
+      accessToken: "uat-capture-only",
+      phoneNumberId: "99900000001",
+      wabaId: "99900000002",
+      graphApiVersion: "v23.0",
+      appSecret: randomBytes(32).toString("hex"),
+      verifyToken: "uat",
+      pilotWaIds: [],
+      languageCode: "es_MX",
+      countryCallingCode: "52",
+      templates: {},
+    };
+    const configuredQuiet = Number(process.env.DEMI_META_BURST_QUIET_MS ?? "2500");
+    const quietMs =
+      Number.isFinite(configuredQuiet) && configuredQuiet >= 0 && configuredQuiet <= 10000
+        ? Math.round(configuredQuiet)
+        : 2500;
+    const pause = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
+    const batchId = randomUUID();
+    const started = new Date().toISOString();
+    const inputs: Json[] = [];
+    const responses: Json[] = [];
+    const media = new Map<string, MetaDownloadedMedia>();
+    const mediaId = `uat-image-${batchId}`;
+    media.set(mediaId, {
+      bytes: new Uint8Array(
+        Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aZ1cAAAAASUVORK5CYII=",
+          "base64",
+        ),
+      ),
+      mimeType: "image/png",
+      fileSize: 68,
+    });
+    const message = (text: string, waId = person.wa_id, image = false) => ({
+      id: `uat-inbound-${randomUUID()}`,
+      from: waId,
+      timestamp: String(Math.floor(Date.now() / 1000)),
+      type: image ? "image" : "text",
+      ...(image
+        ? { image: { id: mediaId, mime_type: "image/png", caption: text } }
+        : { text: { body: text } }),
+    });
+    const send = async (
+      messages: ReturnType<typeof message>[],
+      studioId = ctx.run.studio_id,
+      validSignature = true,
+    ) => {
+      const body = JSON.stringify({
+        object: "whatsapp_business_account",
+        entry: [
+          {
+            id: config.wabaId,
+            changes: [
+              {
+                field: "messages",
+                value: {
+                  messaging_product: "whatsapp",
+                  metadata: { phone_number_id: config.phoneNumberId },
+                  contacts: messages.map((m) => ({
+                    wa_id: m.from,
+                    profile: { name: "UAT ráfaga sintética" },
+                  })),
+                  messages,
+                },
+              },
+            ],
+          },
+        ],
+      });
+      const sentAt = new Date().toISOString();
+      inputs.push({ messages, sent_at: sentAt, target_studio: studioId, validSignature });
+      let response: Response;
+      try {
+        response = await receiveWhatsApp(
+          new Request(
+            `http://localhost/api/integrations/meta-whatsapp/webhook?studio=${studioId}`,
+            {
+              method: "POST",
+              headers: {
+                "content-type": "application/json",
+                "x-hub-signature-256": validSignature
+                  ? `sha256=${createHmac("sha256", config.appSecret).update(body).digest("hex")}`
+                  : `sha256=${"0".repeat(64)}`,
+              },
+              body,
+            },
+          ),
+        );
+      } catch (error) {
+        failure = error instanceof Error ? error.message : "demi_uat_receiver_failed";
+        responses.push({ provider_ids: messages.map((m) => m.id), failure });
+        return;
+      }
+      responses.push({
+        provider_ids: messages.map((m) => m.id),
+        sent_at: sentAt,
+        completed_at: new Date().toISOString(),
+        http_status: response.status,
+        result: await response.json(),
+      });
+    };
+    await record(ctx, "before_burst", {
+      batch_id: batchId,
+      scenario,
+      started_at: started,
+      quiet_ms: quietMs,
+      commit: process.env.VERCEL_GIT_COMMIT_SHA ?? "local",
+      state: await snapshot(ctx),
+    });
+    let failure: string | null = null;
+    let observedModelCallDuringFirstRequest = false;
+    try {
+      await withDemiUatScope(
+        { runId: id, studioId: ctx.run.studio_id, supabase: ctx.service, config, media },
+        async () => {
+          const texts = [
+            message("Hola"),
+            message("Estoy buscando una clase de Pole Fitness"),
+            message("¿Qué opciones tienen para empezar?"),
+          ];
+          if (scenario === "same_payload") return send(texts);
+          if (scenario === "tenant_guard") return send([texts[0]], ctx.studio.id);
+          if (scenario === "signature_guard") return send([texts[0]], ctx.run.studio_id, false);
+          if (scenario === "contacts")
+            return void (await Promise.all([
+              send([texts[0]]),
+              send([message("¿Cuántas clases me quedan?", people.student_active.wa_id)]),
+            ]));
+          if (scenario === "burst" || scenario === "media") {
+            const pending = [send([texts[0]])];
+            await pause(400);
+            pending.push(
+              send([
+                scenario === "media"
+                  ? message("Imagen sintética de prueba, no es un pago.", person.wa_id, true)
+                  : texts[1],
+              ]),
+            );
+            if (scenario === "burst") {
+              await pause(400);
+              pending.push(send([texts[2]]));
+            }
+            await Promise.all(pending);
+            return;
+          }
+          if (scenario === "stale") {
+            const first = message("¿Qué opciones y precios tienen para empezar Pole Fitness?");
+            let settled = false;
+            const pending = send([first]).finally(() => {
+              settled = true;
+            });
+            const deadline = Date.now() + 25000;
+            try {
+              while (!settled && Date.now() < deadline) {
+                await pause(250);
+                const event = await ctx.service
+                  .from("assistant_whatsapp_events")
+                  .select("assistant_conversation_id")
+                  .eq("studio_id", ctx.run.studio_id)
+                  .eq("provider_event_id", first.id)
+                  .maybeSingle();
+                if (event.error) throw new Error("demi_uat_burst_observation_failed");
+                if (!event.data?.assistant_conversation_id) continue;
+                const call = await ctx.service
+                  .from("assistant_model_calls")
+                  .select("id")
+                  .eq("studio_id", ctx.run.studio_id)
+                  .eq("conversation_id", event.data.assistant_conversation_id)
+                  .gte("created_at", started)
+                  .limit(1);
+                if (call.error) throw new Error("demi_uat_burst_observation_failed");
+                if (call.data?.length && !settled) {
+                  observedModelCallDuringFirstRequest = true;
+                  break;
+                }
+              }
+            } finally {
+              // Drain both receivers before releasing the run lease, including observation errors.
+              await Promise.all([
+                pending,
+                send([message("Espera, mi pregunta ahora es: ¿dónde está el estudio?")]),
+              ]);
+            }
+            return;
+          }
+          await send([texts[0]]);
+          if (scenario === "outside") {
+            await pause(quietMs + 300);
+            await send([message("¿Dónde está el estudio?")]);
+          } else {
+            await send([texts[0]]);
+          }
+        },
+      );
+    } catch (error) {
+      failure = error instanceof Error ? error.message : "demi_uat_burst_failed";
+    }
+    await record(ctx, "after_burst", {
+      batch_id: batchId,
+      scenario,
+      started_at: started,
+      completed_at: new Date().toISOString(),
+      quiet_ms: quietMs,
+      commit: process.env.VERCEL_GIT_COMMIT_SHA ?? "local",
+      transport: "capture_only",
+      observed_model_call_during_first_request: observedModelCallDuringFirstRequest,
+      failure,
+      inputs,
+      responses,
+      state: await snapshot(ctx),
+    });
+    if (failure) throw new Error(failure);
+  });
+  return getDemiUatRun(id);
+}
+
 export async function configureDemiUatFailures(id: string, count: number) {
   if (!Number.isInteger(count) || count < 0 || count > 3)
     throw new Error("demi_uat_failure_count_invalid");
