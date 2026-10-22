@@ -1084,6 +1084,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         ];
 
   let resolvedPendingContext = "";
+  let transferPurchaseContext = "";
   if (input.serviceMode && !input.improvePrompt && !input.testSimulation && !stickerTurn) {
     // DEMI-BASE-03: pendings closed by another channel must not be resumed from memory/history.
     // Best effort: an unavailable notice never blocks the turn; current tools still validate.
@@ -1103,10 +1104,37 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         return [];
       }
     };
-    const [groups, intents] = await Promise.all([
+    const readCurrentPurchase = async () => {
+      if (!input.studentId) return null;
+      try {
+        const result = await input.supabase
+          .from("assistant_transfer_purchase_intents")
+          .select("id,status,amount_minor,currency")
+          .eq("studio_id", input.studio.id)
+          .eq("conversation_id", input.conversationId)
+          .eq("student_id", input.studentId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        return result.error ? null : result.data;
+      } catch {
+        return null;
+      }
+    };
+    const [groups, intents, purchase] = await Promise.all([
       readSuperseded("demi_group_bookings", "superseded_reason"),
       readSuperseded("assistant_transfer_purchase_intents", "intent_kind,superseded_reason"),
+      readCurrentPurchase(),
     ]);
+    if (purchase?.status === "validated") {
+      transferPurchaseContext =
+        "PAGO DEL PAQUETE VALIDADO POR STUDIO FLOW: la compra por transferencia de esta alumna y conversación está validada. Este estado actual prevalece sobre mensajes anteriores de revisión pendiente o activación provisional. No digas que la validación definitiva sigue pendiente, no pidas otro comprobante ni otro pago para esta compra. Consulta derechos y reservas actuales para agendar; la validación del pago no acredita por sí sola una reserva. " +
+        JSON.stringify(purchase);
+    } else if (purchase?.status === "provisional_active") {
+      transferPurchaseContext =
+        "PAQUETE PROVISIONAL, VALIDACIÓN PENDIENTE: el comprobante permitió activar provisionalmente el paquete, pero la revisión definitiva aún está pendiente. No afirmes pago validado ni pidas otro pago o comprobante para esta compra. Usa derechos y reglas actuales de Studio Flow. " +
+        JSON.stringify(purchase);
+    }
     const reasonOf = (row: Record<string, unknown>) =>
       typeof row.superseded_reason === "string" ? row.superseded_reason : null;
     resolvedPendingContext = resolvedPendingInstructions([
@@ -1308,6 +1336,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           pendingPaymentContext,
           profilePendingContext,
           resolvedPendingContext,
+          transferPurchaseContext,
           "Para grupos o para reservar sólo para otra persona, usa prepare_group_booking; aunque sea una sola participante, usa participant_count=1 y no prepare_first_class_payment. La identidad y teléfono del pagador no deben sustituir los de la participante. Si dos participantes comparten teléfono, no prometas registrarlas con ese mismo número, no inventes otro y no pidas pago; crea atención humana para verificar identidad/contactos antes de continuar. Para grupos, usa prepare_group_booking con la clase exacta, número de participantes y número de primeras clases a pagar. No conviertas al pagador en participante automáticamente. Primero da el total y el método devuelto por Studio Flow; espera comprobante para Bancomer o payment_verified=true para Mercado Pago antes de solicitar juntos nombres y celulares faltantes. Sólo después usa complete_group_booking con el group_id. Informa los resultados individuales y cualquier fallo o importe sin asignar; pago recibido sigue en revisión. En un grupo mixto, la reserva cubierta con créditos propios de una alumna es confirmada y no depende de validar la transferencia de otra participante; sólo la reserva cubierta por transferencia pendiente se informa como provisional. Cuando el resultado parcial devuelva human_review_created=true, informa que el caso ya fue creado para el equipo humano y que la conversación queda en revisión; no ofrezcas ejecutar otra reserva o devolución mientras el equipo controla el caso. No confirmes todo el grupo por memoria ni repitas cobros al reintentar.",
           "Usa update_contact_followup cuando cambie la etapa comercial: preguntas, esperando comprobante o datos posteriores. Rechazar las primeras opciones de horario no es rechazar el servicio: explora otras fechas o restricciones reales antes de descartar. Registra not_qualified sólo ante rechazo explícito del servicio o cuando, tras explorar la oferta pertinente, la persona confirme que no existe alternativa que le sirva. Vivir lejos por sí solo no basta. Si pide no recibir mensajes registra opt_out; conserva por separado cualquier rechazo definitivo ya confirmado. No marques No clasifica por silencio: el worker registra No agendó después de dos seguimientos sin respuesta. Al regresar una persona, conserva su identidad y retoma el flujo desde la información real.",
           "Al iniciar una conversación, conserva la identidad verificada y la etapa que entrega Studio Flow. En WhatsApp se resuelve por teléfono normalizado; en otros canales no presupongas que tienes su teléfono. Si falta una identidad verificada, atiende consultas informativas y pide solo los datos obligatorios cuando quiera reservar; nunca reveles información personal de una ficha no vinculada.",

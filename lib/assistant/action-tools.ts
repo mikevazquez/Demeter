@@ -4227,12 +4227,22 @@ async function escalateToHuman(ctx: AssistantActionToolContext, args: Record<str
   const note = String(args.note ?? "").trim() || null;
   if (!reasonCode) return { ok: false, error: "handoff_reason_required" };
 
-  const { data: policy, error: policyError } = await ctx.supabase
-    .from("assistant_handoff_policies")
-    .select("reason_code,label,enabled,blocking")
-    .eq("studio_id", ctx.studio.id)
-    .eq("reason_code", reasonCode)
-    .maybeSingle();
+  const policyQuery = () =>
+    ctx.supabase
+      .from("assistant_handoff_policies")
+      .select("reason_code,label,enabled,blocking")
+      .eq("studio_id", ctx.studio.id)
+      .eq("reason_code", reasonCode);
+  let policyResult = await policyQuery().eq("assistant_key", "demi").maybeSingle();
+  // Legacy studios have one policy per reason and no assistant_key column.
+  // Permission errors and ambiguous rows must not bypass the assistant scope.
+  if (
+    policyResult.error?.code === "42703" &&
+    policyResult.error.message.includes("assistant_key")
+  ) {
+    policyResult = await policyQuery().maybeSingle();
+  }
+  const { data: policy, error: policyError } = policyResult;
 
   if (policyError || !policy || policy.enabled !== true) {
     return { ok: false, error: "handoff_reason_not_enabled", reason_code: reasonCode };

@@ -39,6 +39,7 @@ function serverModule<T>(path: string, dependencies: Record<string, unknown>) {
 function fakeDatabase(
   pendingAction: Record<string, unknown> | null = null,
   pendingPayment: Record<string, unknown> | null = null,
+  transferPurchase: Record<string, unknown> | null = null,
 ) {
   const writes: string[] = [];
   const reads: string[] = [];
@@ -64,7 +65,9 @@ function fakeDatabase(
               ? pendingAction
               : table === "demi_group_bookings"
                 ? pendingPayment
-                : null,
+                : table === "assistant_transfer_purchase_intents"
+                  ? transferPurchase
+                  : null,
           error: null,
         }),
         then: (resolve: (value: unknown) => unknown) =>
@@ -79,12 +82,13 @@ function fakeDatabase(
 function orchestratorHarness(
   pendingAction: Record<string, unknown> | null = null,
   pendingPayment: Record<string, unknown> | null = null,
+  transferPurchase: Record<string, unknown> | null = null,
 ) {
   const action = vi.fn().mockRejectedValue(new Error("Real actions must never execute in a test"));
   const simulate = vi.fn().mockResolvedValue({ ok: true, simulated: true });
   const simulatedRead = vi.fn<(state: unknown, name: string) => unknown>(() => null);
   const read = vi.fn().mockResolvedValue({ ok: true, activities: [] });
-  const db = fakeDatabase(pendingAction, pendingPayment);
+  const db = fakeDatabase(pendingAction, pendingPayment, transferPurchase);
   const actionModule = serverModule<typeof import("../lib/assistant/action-tools")>(
     "lib/assistant/action-tools.ts",
     {
@@ -1485,7 +1489,206 @@ describe("cash purchases require a separate explicit confirmation", () => {
   }
 });
 
+describe("current package transfer validation reaches the model", () => {
+  it.each([
+    { status: "validated", marker: "PAGO DEL PAQUETE VALIDADO POR STUDIO FLOW" },
+    { status: "provisional_active", marker: "PAQUETE PROVISIONAL, VALIDACIÓN PENDIENTE" },
+  ])("uses current $status instead of stale conversation history", async ({ status, marker }) => {
+    const h = orchestratorHarness(null, null, {
+      id: "purchase",
+      status,
+      amount_minor: 80000,
+      currency: "MXN",
+    });
+    h.input.testSimulation = undefined;
+    h.input.serviceMode = true;
+    h.input.studentId = "student";
+    h.input.history = [
+      { role: "assistant", content: "La validación definitiva está pendiente." },
+      { role: "user", content: "¿Mi pago ya está validado?" },
+    ];
+    const from = h.input.supabase.from.bind(h.input.supabase);
+    const filters: unknown[][] = [];
+    h.input.supabase.from = ((table: string) => {
+      const query = from(table) as never as { eq: (...args: unknown[]) => unknown };
+      const eq = query.eq.bind(query);
+      query.eq = (...args: unknown[]) => {
+        if (table === "assistant_transfer_purchase_intents") filters.push(args);
+        return eq(...args);
+      };
+      return query;
+    }) as unknown as typeof h.input.supabase.from;
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url, init) => {
+        const body = JSON.parse(String(init?.body));
+        expect(body.instructions).toContain(marker);
+        if (status === "validated")
+          expect(body.instructions).toContain(
+            "No digas que la validación definitiva sigue pendiente",
+          );
+        else expect(body.instructions).toContain("No afirmes pago validado");
+        return new Response(JSON.stringify(reply("Respuesta de prueba, sin modelo real.")));
+      }),
+    );
+    await h.run(h.input);
+    expect(filters).toContainEqual(["studio_id", "studio"]);
+    expect(filters).toContainEqual(["conversation_id", "conversation"]);
+    expect(filters).toContainEqual(["student_id", "student"]);
+    expect(h.action).not.toHaveBeenCalled();
+  });
+
+  it.each(["awaiting_receipt", "rejected", "cancelled"])(
+    "does not call a $status purchase validated",
+    async (status) => {
+      const h = orchestratorHarness(null, null, { id: "purchase", status });
+      h.input.testSimulation = undefined;
+      h.input.serviceMode = true;
+      h.input.studentId = "student";
+      h.input.history = [{ role: "user", content: "¿Mi pago ya está validado?" }];
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (_url, init) => {
+          const body = JSON.parse(String(init?.body));
+          expect(body.instructions).not.toContain("PAGO DEL PAQUETE VALIDADO POR STUDIO FLOW");
+          return new Response(JSON.stringify(reply("Respuesta de prueba.")));
+        }),
+      );
+      await h.run(h.input);
+      expect(h.action).not.toHaveBeenCalled();
+    },
+  );
+});
+
 describe("handoff reasons match configured operational policies", () => {
+  it.each([
+    { demi: true, polina: false, legacy: false, expected: true },
+    { demi: false, polina: true, legacy: false, expected: false },
+    { demi: true, polina: true, legacy: false, expected: true },
+    { demi: true, polina: false, legacy: true, expected: true },
+    { demi: false, polina: true, legacy: true, expected: false },
+  ])(
+    "isolates Demi policies from another assistant, including legacy=$legacy, demi=$demi, polina=$polina",
+    async ({ demi, polina, legacy, expected }) => {
+      const mod = serverModule<typeof import("../lib/assistant/action-tools")>(
+        "lib/assistant/action-tools.ts",
+        { "node:crypto": {}, "./read-tools": {}, "./group-booking": {} },
+      );
+      const rows = [
+        {
+          studio_id: "studio",
+          assistant_key: "demi",
+          reason_code: "refund_request",
+          enabled: demi,
+          blocking: true,
+        },
+        ...(!legacy
+          ? [
+              {
+                studio_id: "studio",
+                assistant_key: "polina",
+                reason_code: "refund_request",
+                enabled: polina,
+                blocking: false,
+              },
+            ]
+          : []),
+        {
+          studio_id: "other",
+          assistant_key: "demi",
+          reason_code: "refund_request",
+          enabled: true,
+          blocking: true,
+        },
+      ];
+      const from = vi.fn(() => {
+        const filters: Record<string, unknown> = {};
+        const query = {
+          select: () => query,
+          eq: (key: string, value: unknown) => {
+            filters[key] = value;
+            return query;
+          },
+          maybeSingle: async () => {
+            if (legacy && "assistant_key" in filters) {
+              return {
+                data: null,
+                error: {
+                  code: "42703",
+                  message: "column assistant_handoff_policies.assistant_key does not exist",
+                },
+              };
+            }
+            const matching = rows.filter((row) =>
+              Object.entries(filters).every(([k, v]) => row[k as keyof typeof row] === v),
+            );
+            return matching.length > 1
+              ? { data: null, error: { code: "PGRST116", message: "multiple rows" } }
+              : { data: matching[0] ?? null, error: null };
+          },
+        };
+        return query;
+      });
+      const rpc = vi.fn(async () => ({ data: { ok: true }, error: null }));
+      const result = await mod.executeAssistantActionTool(
+        {
+          supabase: { from, rpc } as never,
+          studio: { id: "studio" } as never,
+          conversationId: "conversation",
+          turnId: "turn",
+          studentId: "student",
+          crmContactId: null,
+          activationUrl: null,
+          serviceMode: true,
+          currentUserMessage: "Solicito reembolso",
+        },
+        "escalate_to_human",
+        { reason_code: "refund_request" },
+      );
+      expect(result).toMatchObject({ ok: expected });
+      expect(rpc).toHaveBeenCalledTimes(expected ? 1 : 0);
+      expect(from).toHaveBeenCalledTimes(legacy ? 2 : 1);
+    },
+  );
+
+  it.each([
+    { code: "42501", message: "permission denied" },
+    { code: "42703", message: "column unrelated_field does not exist" },
+    { code: "PGRST116", message: "multiple rows" },
+  ])("does not bypass policy errors ($code)", async (error) => {
+    const mod = serverModule<typeof import("../lib/assistant/action-tools")>(
+      "lib/assistant/action-tools.ts",
+      { "node:crypto": {}, "./read-tools": {}, "./group-booking": {} },
+    );
+    const query = {
+      select: () => query,
+      eq: () => query,
+      maybeSingle: async () => ({ data: null, error }),
+    };
+    const from = vi.fn(() => query);
+    const rpc = vi.fn();
+    const result = await mod.executeAssistantActionTool(
+      {
+        supabase: { from, rpc } as never,
+        studio: { id: "studio" } as never,
+        conversationId: "conversation",
+        turnId: "turn",
+        studentId: "student",
+        crmContactId: null,
+        activationUrl: null,
+        serviceMode: true,
+        currentUserMessage: "Necesito ayuda",
+      },
+      "escalate_to_human",
+      { reason_code: "technical_block" },
+    );
+    expect(result).toMatchObject({ ok: false, error: "handoff_reason_not_enabled" });
+    expect(from).toHaveBeenCalledTimes(1);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it.each([
     { requested: "user_requested_human", canonical: "human_requested", enabled: true },
     { requested: "refund_request", canonical: "refund_request", enabled: true },
