@@ -122,14 +122,18 @@ function DirectScoreEditor({
   );
 }
 
+export type EvaluationItemSaved = (itemId: string, status: string, score: number | null) => void;
+
 function V2ItemEditor({
   evaluationId,
   item,
   blockType,
+  onItemSaved,
 }: {
   evaluationId: string;
   item: EvaluationV2ItemLive;
   blockType: string;
+  onItemSaved?: EvaluationItemSaved;
 }) {
   const [status, setStatus] = useState(item.resultStatus);
   const [score, setScore] = useState(item.score === null ? "" : String(item.score));
@@ -150,6 +154,10 @@ function V2ItemEditor({
     startTransition(async () => {
       const result = await saveTechnicalElementResultAction(formData);
       setMessage(result.ok ? "Guardado" : result.message || "No se pudo guardar");
+      if (result.ok) {
+        const numeric = nextScore === "" ? null : Number(nextScore);
+        onItemSaved?.(item.id, nextStatus, Number.isFinite(numeric) ? numeric : null);
+      }
     });
   }
 
@@ -279,9 +287,11 @@ function V2ItemEditor({
 export function EvaluationLiveFormV2({
   evaluationId,
   blocks,
+  onItemSaved,
 }: {
   evaluationId: string;
   blocks: EvaluationV2BlockLive[];
+  onItemSaved?: EvaluationItemSaved;
 }) {
   const [activeBlockId, setActiveBlockId] = useState(blocks[0]?.id ?? null);
   const activeBlock = blocks.find((block) => block.id === activeBlockId) ?? blocks[0] ?? null;
@@ -344,6 +354,7 @@ export function EvaluationLiveFormV2({
                   evaluationId={evaluationId}
                   item={item}
                   blockType={activeBlock.blockType}
+                  onItemSaved={onItemSaved}
                 />
               ))}
             </div>

@@ -6,6 +6,7 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { EvaluationLiveForm } from "../EvaluationLiveForm";
 import { EvaluationLiveFormV2 } from "../EvaluationLiveFormV2";
+import { PoleLiveWorkspace } from "../PoleLiveWorkspace";
 import { PolePlanPanel } from "../PolePlanPanel";
 import { loadPoleEvaluationContext, type PoleEvaluationContext } from "@/lib/pole/evaluation-plan";
 import {
@@ -412,7 +413,16 @@ export default async function TechnicalEvaluationDetailPage({
             />
           ) : null}
 
-          {poleContext.isPole && !poleContext.plan?.locked ? null : isV2 ? (
+          {poleContext.isPole && !poleContext.plan?.locked ? null : poleContext.isPole && isV2 ? (
+            <PoleLiveWorkspace
+              evaluationId={evaluation.id}
+              blocks={liveV2Blocks}
+              blockKeys={Object.fromEntries(
+                criteria.map((criterion) => [criterion.id, String(criterion.criterion_key ?? "")]),
+              )}
+              minimum={Number(version.pass_threshold ?? 0)}
+            />
+          ) : isV2 ? (
             <EvaluationLiveFormV2 evaluationId={evaluation.id} blocks={liveV2Blocks} />
           ) : (
             <EvaluationLiveForm

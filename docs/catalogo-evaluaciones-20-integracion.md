@@ -47,6 +47,10 @@ Desglose técnico POLE-01-08 a 24. Bloque liberado por Mike el 22-oct-2026.
   si alcanza el mínimo pero falta una obligatoria queda `pole_retained_promotions` y sube
   sola cuando la coach marca esa figura en clase.
 
+- **POLE-01-16** `PoleLiveWorkspace`: calificación en vivo 40/30/30 contra el mínimo del
+  paso mientras la coach califica (`lib/pole/live-score.ts`, mismas reglas que el motor),
+  aviso de obligatorias en «No cumple» y pronóstico (sube / retenida / no alcanza).
+
 ## SQL local
 
 Prueba aislada (PostgreSQL local, nunca Sandbox ni producción): aplicar
@@ -55,7 +59,7 @@ Prueba aislada (PostgreSQL local, nunca Sandbox ni producción): aplicar
 
 ## Siguiente
 
-POLE-01-16 (calificación en vivo y estilo Sendero de la evaluación), POLE-01-19 (revisar
+POLE-01-18 (mostrar «falta X para subir» a la alumna), POLE-01-19 (revisar
 combo de clase y marcado en clase), migraciones en Sandbox (Codex), demo y UAT. Producción
 no se toca sin autorización explícita de Mike; ahí el catálogo de pole no existe y el pase
 incluye todas las migraciones anteriores.

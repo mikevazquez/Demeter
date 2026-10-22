@@ -3250,3 +3250,107 @@ main:has(.evaluations-page) {
   font-size: 15px;
   font-weight: 600;
 }
+
+/* POLE-01-16 · Live grade (Sendero palette) */
+.pole-live {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #2a2c33;
+  color: #f1eee6;
+  border-radius: 24px;
+}
+
+.pole-live-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.pole-live h2 {
+  margin: 0;
+  font-family: "Sendero Marcellus", Georgia, serif;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.pole-live-total {
+  margin: 0;
+  color: #a3a6b2;
+  font-size: 13px;
+}
+
+.pole-live-total strong {
+  color: #f1eee6;
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.pole-live-track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: #1d1e23;
+}
+
+.pole-live-track i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: #f6d67a;
+  transition: width 0.3s ease;
+}
+
+.pole-live-approved .pole-live-track i {
+  background: #8fe6c8;
+}
+
+.pole-live-track b {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  background: #f1eee6;
+}
+
+.pole-live-blocks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pole-live-blocks li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: #30323a;
+  font-size: 12px;
+  color: #a3a6b2;
+}
+
+.pole-live-blocks strong {
+  color: #f1eee6;
+  font-size: 18px;
+}
+
+.pole-live-outlook {
+  margin: 0;
+  font-size: 14px;
+  color: #cfd0d8;
+}
+
+.pole-live-warning {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(242, 138, 122, 0.16);
+  color: #f6b3a8;
+  font-size: 14px;
+}
