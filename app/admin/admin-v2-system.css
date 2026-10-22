@@ -828,3 +828,74 @@
   font-size: 14px;
   line-height: 1.45;
 }
+
+/* NEB-01-03 · Módulos con candado y oferta self-service. */
+.admin-nav-item .nav-lock {
+  display: inline-flex;
+  margin-left: auto;
+  color: var(--muted, #6b7280);
+}
+.module-offer .module-offer-chip {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(23, 168, 120, 0.12);
+  color: #0f7a57;
+  font-size: 12px;
+  font-weight: 700;
+}
+.module-offer .module-offer-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 560px;
+  padding: 20px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 20px;
+  background: #ffffff;
+}
+.module-offer .module-offer-card p {
+  margin: 0;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.module-offer .module-offer-price {
+  font-size: 24px;
+  color: #111827;
+}
+.module-offer .module-offer-suggestion {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(23, 168, 120, 0.08);
+}
+.module-offer .module-offer-button {
+  min-height: 48px;
+  width: 100%;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent, #17a878);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.module-offer .module-offer-muted {
+  color: #6b7280;
+}
+.module-offer .module-offer-notice {
+  max-width: 560px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+}
+.module-offer .module-offer-notice.is-ok {
+  background: rgba(23, 168, 120, 0.12);
+  color: #0f5f45;
+}
+.module-offer .module-offer-notice.is-error {
+  background: rgba(220, 38, 38, 0.1);
+  color: #991b1b;
+}

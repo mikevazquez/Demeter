@@ -2,6 +2,7 @@
 \set ON_ERROR_STOP on
 begin;
 create temp table results (n int, name text, ok boolean);
+grant all on results to authenticated;
 
 insert into public.platform_admins (user_id) values ('00000000-0000-0000-0000-0000000000a1');
 insert into public.studios (id, name, slug) values ('30000000-0000-0000-0000-000000000003', 'Core Studio', 'core-studio');
@@ -68,6 +69,23 @@ insert into results select 9, 'lectura de servicio restringida',
   not has_function_privilege('authenticated', 'public.platform_studio_entitlements_service(uuid)', 'execute')
   and has_function_privilege('service_role', 'public.platform_studio_entitlements_service(uuid)', 'execute');
 
+-- 10-12 · el estudio solicita un módulo: dueño sí, coach no, y no si ya lo tiene.
+insert into public.studio_memberships values
+  ('30000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-0000000000b1', 'owner', true),
+  ('30000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-0000000000c1', 'coach', true);
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b1';
+insert into results select 10, 'dueño solicita módulo',
+  (public.studio_request_module('30000000-0000-0000-0000-000000000003', 'catalogo') ->> 'requested')::boolean;
+insert into results select 11, 'no se solicita lo que ya tiene',
+  pg_temp.err($q$select public.studio_request_module('30000000-0000-0000-0000-000000000003', 'recompensas')$q$) = 'module_already_active';
+set local request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000c1';
+insert into results select 12, 'coach no solicita',
+  pg_temp.err($q$select public.studio_request_module('30000000-0000-0000-0000-000000000003', 'recursos')$q$) = 'forbidden';
+reset role;
+insert into results select 13, 'solicitud en bitácora',
+  (select count(*) = 1 from public.platform_audit_log where action = 'studio.module.requested' and detail ->> 'module' = 'catalogo');
+
 select n, name, ok from results order by n;
-select case when bool_and(coalesce(ok, false)) and count(*) = 9 then 'NEB01 GUARDS OK ' || count(*) else 'NEB01 GUARDS FAIL' end from results;
+select case when bool_and(coalesce(ok, false)) and count(*) = 13 then 'NEB01 GUARDS OK ' || count(*) else 'NEB01 GUARDS FAIL' end from results;
 rollback;

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
-import type { PlatformModuleKey } from "@/lib/platform/catalog";
+import { modulePriceLabel, type PlatformModuleKey } from "@/lib/platform/catalog";
 
 type MoreItem = {
   title: string;
@@ -127,7 +127,6 @@ const items: MoreItem[] = [
 export default async function MorePage() {
   const ctx = await getAdminContext();
   const visibleItems = items.filter((item) => {
-    if (item.requiresModule && !ctx.hasModule(item.requiresModule)) return false;
     if (item.ownerOnly) return ctx.membership.role === "owner";
     return item.capability ? ctx.can(item.capability) : false;
   });
@@ -150,7 +149,11 @@ export default async function MorePage() {
               </span>
               <span className="more-row-copy">
                 <strong>{item.title}</strong>
-                <small>{item.description}</small>
+                <small>
+                  {item.requiresModule && !ctx.hasModule(item.requiresModule)
+                    ? "Bloqueado · " + modulePriceLabel(item.requiresModule)
+                    : item.description}
+                </small>
               </span>
               <span className="module-chevron" aria-hidden="true">
                 ›

@@ -113,3 +113,82 @@ export function monthlyPriceMxn(input: {
     ? Math.round((total * (100 - PLATFORM_SETTINGS.foundingDiscountPct)) / 100)
     : total;
 }
+
+const MXN = new Intl.NumberFormat("es-MX", {
+  style: "currency",
+  currency: "MXN",
+  maximumFractionDigits: 0,
+});
+
+export function formatMxn(amount: number): string {
+  return MXN.format(amount);
+}
+
+/** Texto corto del precio de un módulo suelto (Demi: configuración + cuota pendiente). */
+export function modulePriceLabel(moduleKey: PlatformModuleKey): string {
+  const entry = PLATFORM_MODULES.find((item) => item.key === moduleKey);
+  if (!entry) return "";
+  if (moduleKey === "demi") {
+    return `configuración ${formatMxn(entry.setupPriceMxn ?? 0)} + cuota mensual`;
+  }
+  return `${formatMxn(entry.monthlyPriceMxn ?? 0)} al mes`;
+}
+
+export type ModuleActivationQuote = {
+  moduleKey: PlatformModuleKey;
+  modulePriceMxn: number | null;
+  setupPriceMxn: number | null;
+  monthlyBeforeMxn: number;
+  monthlyAfterMxn: number;
+  /** Plan que incluye todo lo que tendría y sale más barato que sumar módulos sueltos. */
+  suggestedPlan: { key: PlatformPlanKey; label: string; monthlyPriceMxn: number } | null;
+};
+
+/** NEB-01-03/34 · Cuánto pagaría el estudio si activa el módulo y si le conviene un plan. */
+export function moduleActivationQuote(input: {
+  plan: PlatformPlanKey;
+  activeModules: PlatformModuleKey[];
+  foundingAlumni: boolean;
+  moduleKey: PlatformModuleKey;
+}): ModuleActivationQuote {
+  const plan = platformPlan(input.plan);
+  const entry = PLATFORM_MODULES.find((item) => item.key === input.moduleKey);
+  const addons = input.activeModules.filter((key) => !plan.includedModules.includes(key));
+  const before = monthlyPriceMxn({
+    plan: plan.key,
+    addons,
+    foundingAlumni: input.foundingAlumni,
+  });
+  const after = monthlyPriceMxn({
+    plan: plan.key,
+    addons: [...addons, input.moduleKey],
+    foundingAlumni: input.foundingAlumni,
+  });
+  const wanted = [...new Set([...input.activeModules, input.moduleKey])].filter(
+    (key) => key !== "demi",
+  );
+  let suggestedPlan: ModuleActivationQuote["suggestedPlan"] = null;
+  if (plan.key !== "founding" && plan.key !== "allaccess") {
+    for (const candidate of PLATFORM_PLANS) {
+      if (!candidate.sellable || candidate.key === "founding" || candidate.key === plan.key)
+        continue;
+      if (!wanted.every((key) => candidate.includedModules.includes(key))) continue;
+      const price = monthlyPriceMxn({
+        plan: candidate.key,
+        addons: [],
+        foundingAlumni: input.foundingAlumni,
+      });
+      if (price < after && (!suggestedPlan || price < suggestedPlan.monthlyPriceMxn)) {
+        suggestedPlan = { key: candidate.key, label: candidate.label, monthlyPriceMxn: price };
+      }
+    }
+  }
+  return {
+    moduleKey: input.moduleKey,
+    modulePriceMxn: entry?.monthlyPriceMxn ?? null,
+    setupPriceMxn: entry?.setupPriceMxn ?? null,
+    monthlyBeforeMxn: before,
+    monthlyAfterMxn: after,
+    suggestedPlan,
+  };
+}

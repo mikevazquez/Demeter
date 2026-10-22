@@ -11,7 +11,8 @@ run tests/fixtures/neb01-test-doubles.sql
 for migration in \
   20261022210000_neb01_platform_admins_audit \
   20261022211000_neb01_plans_modules_entitlements \
-  20261022212000_neb01_entitlement_guards; do
+  20261022212000_neb01_entitlement_guards \
+  20261022213000_neb01_module_activation_requests; do
   run "supabase/migrations/$migration.sql"
 done
 for test in tests/neb01-platform.sql tests/neb01-guards.sql; do

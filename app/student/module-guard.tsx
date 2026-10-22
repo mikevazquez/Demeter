@@ -14,7 +14,7 @@ export default async function StudentModuleGuard({
   const access = await getStudentAccessContext();
   const entitlements = await loadStudioEntitlements(access.supabase, access.membership.studio_id);
   if (!studioHasModule(entitlements, moduleKey)) {
-    return <ModuleLocked module={moduleKey} surface="student" />;
+    return <ModuleLocked module={moduleKey} />;
   }
   return children;
 }

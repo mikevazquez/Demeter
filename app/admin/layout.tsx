@@ -90,6 +90,8 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
   const { supabase, studio, membership, can, hasModule, entitlements, user, profile } =
     await getCachedAdminContext();
   const billingNotice = subscriptionNotice(entitlements);
+  // NEB-01-03 · lo no contratado se muestra con candado (self-service, NEB-01-34).
+  const rewardsContracted = hasModule("recompensas");
   const pwaQuery = pwaBrandQuery(studio);
   const instructorOnly = can(CAPABILITIES.INSTRUCTOR_PORTAL) && !can(CAPABILITIES.ADMIN_PORTAL);
   const brandLogoUrl = studio.logo_path
@@ -136,14 +138,31 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         ...(can(CAPABILITIES.DOCUMENTS_READ)
           ? [{ href: "/admin/documentos", label: "Documentos", enabled: true }]
           : []),
-        ...(can(CAPABILITIES.REWARDS_READ) && hasModule("recompensas")
+        ...(can(CAPABILITIES.REWARDS_READ)
           ? [
-              { href: "/admin/retos", label: "Retos", enabled: true },
-              { href: "/admin/recompensas", label: "Rewards", enabled: true },
+              {
+                href: "/admin/retos",
+                label: "Retos",
+                enabled: true,
+                locked: !rewardsContracted,
+              },
+              {
+                href: "/admin/recompensas",
+                label: "Rewards",
+                enabled: true,
+                locked: !rewardsContracted,
+              },
             ]
           : []),
-        ...(can(CAPABILITIES.EVALUATIONS_READ) && hasModule("catalogo")
-          ? [{ href: "/admin/evaluaciones", label: "Evaluaciones", enabled: true }]
+        ...(can(CAPABILITIES.EVALUATIONS_READ)
+          ? [
+              {
+                href: "/admin/evaluaciones",
+                label: "Evaluaciones",
+                enabled: true,
+                locked: !hasModule("catalogo"),
+              },
+            ]
           : []),
         ...(can(CAPABILITIES.PRODUCTS_READ)
           ? [{ href: "/admin/productos", label: "Paquetes", enabled: true }]
