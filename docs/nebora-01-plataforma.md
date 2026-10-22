@@ -48,17 +48,41 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
   - `lib/platform/entitlements.ts`. Si las tablas todavía no existen, `null` significa «no
     bloquear nada».
 
+### NEB-01-03 · Bloqueo de lo no contratado (`20261022212000`)
+
+- **Base de datos:** se bloquean las altas.
+  - Si el estudio está en solo lectura o suspendido, no se pueden insertar ventas ni reservas
+    (error `studio_read_only`). Cobrar pagos de ventas viejas sigue permitido.
+  - Si el estudio no tiene el módulo, no se pueden crear sus registros (error
+    `module_not_contracted`):
+    - Recompensas: programas y retos.
+    - Catálogo y evaluaciones: plantillas, evaluaciones e invitaciones.
+    - Recursos y mapa: recursos, mapas y asignación de lugar.
+- **Admin:**
+  - Retos, Rewards y Evaluaciones solo aparecen en el menú y en «Más» si el estudio tiene el
+    módulo. Demi y Recursos, solo en «Más».
+  - Cada sección de un módulo tiene una guardia en su `layout.tsx` que muestra «Este módulo no
+    está incluido en tu plan».
+  - Aparece un aviso cuando el estudio está en gracia, en solo lectura o suspendido.
+- **Portal de la alumna:** Retos se oculta sin Recompensas. Recompensas, retos y evaluaciones
+  también tienen guardia de módulo. En solo lectura, la alumna ve un mensaje claro al intentar
+  reservar.
+- **Demi:** el webhook de WhatsApp le confirma a Meta y no procesa los mensajes de un estudio
+  sin Demi. Para eso usa `platform_studio_entitlements_service`, que solo puede llamar
+  `service_role`.
+- Si la migración no está aplicada, `entitlements` es `null` y nada se bloquea.
+
 ## Pruebas
 
 - SQL local, nunca contra Sandbox ni producción:
-  `PGHOST=… PGPORT=… PGUSER=postgres scripts/neb01-sql-tests.sh`. Corre 18 controles y deshace
-  todo al terminar.
-- Vitest: `tests/neb01-catalog.test.ts`.
+  `PGHOST=… PGPORT=… PGUSER=postgres scripts/neb01-sql-tests.sh`. Corre 18 controles de plataforma
+  y 9 de bloqueos, y deshace todo al terminar.
+- Vitest: `tests/neb01-catalog.test.ts` y `tests/neb01-guards.test.ts`.
 
 ## Para Codex
 
 1. Aplicar en Sandbox, en orden, `20261022210000_neb01_platform_admins_audit` y
-   `20261022211000_neb01_plans_modules_entitlements`.
+   `20261022211000_neb01_plans_modules_entitlements` y `20261022212000_neb01_entitlement_guards`.
 2. Insertar a Mike en `platform_admins` con su cuenta de Sandbox.
 3. Verificar que todos los estudios quedaron en `allaccess/internal` y correr QA.
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
+import type { PlatformModuleKey } from "@/lib/platform/catalog";
 
 type MoreItem = {
   title: string;
@@ -9,6 +10,8 @@ type MoreItem = {
   href: string;
   capability?: Capability;
   ownerOnly?: boolean;
+  /** NEB-01-03 · módulo de Nébora que debe estar contratado. */
+  requiresModule?: PlatformModuleKey;
 };
 
 const items: MoreItem[] = [
@@ -17,6 +20,7 @@ const items: MoreItem[] = [
     description: "Personalidad, objetivos, reglas, pruebas y atención del asistente del estudio.",
     href: "/admin/mas/demi",
     ownerOnly: true,
+    requiresModule: "demi",
   },
   {
     title: "Actividades",
@@ -40,6 +44,7 @@ const items: MoreItem[] = [
     title: "Evaluaciones",
     description: "Configura disciplinas, niveles y criterios técnicos.",
     href: "/admin/evaluaciones",
+    requiresModule: "catalogo",
     capability: CAPABILITIES.EVALUATIONS_READ,
   },
   {
@@ -64,12 +69,14 @@ const items: MoreItem[] = [
     title: "Retos",
     description: "Crea retos individuales y competencias con ranking, premios y progreso.",
     href: "/admin/retos",
+    requiresModule: "recompensas",
     capability: CAPABILITIES.REWARDS_READ,
   },
   {
     title: "Rewards",
     description: "Programas, logros, medallas, seguimiento y recompensas generadas.",
     href: "/admin/recompensas",
+    requiresModule: "recompensas",
     capability: CAPABILITIES.REWARDS_READ,
   },
   {
@@ -106,6 +113,7 @@ const items: MoreItem[] = [
     title: "Recursos y espacios",
     description: "Recursos físicos, mapas y distribución de los espacios.",
     href: "/admin/configuracion/recursos",
+    requiresModule: "recursos",
     ownerOnly: true,
   },
   {
@@ -119,6 +127,7 @@ const items: MoreItem[] = [
 export default async function MorePage() {
   const ctx = await getAdminContext();
   const visibleItems = items.filter((item) => {
+    if (item.requiresModule && !ctx.hasModule(item.requiresModule)) return false;
     if (item.ownerOnly) return ctx.membership.role === "owner";
     return item.capability ? ctx.can(item.capability) : false;
   });
