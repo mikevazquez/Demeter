@@ -71,3 +71,44 @@ insert into public.role_capabilities values
 create unique index on public.discipline_technical_levels(studio_id,id);
 create unique index on public.students(studio_id,id);
 create table if not exists public.profiles(id uuid primary key, full_name text);
+
+-- Minimal EVALUACIONES v2 template tables (same columns and checks as Sandbox, no runtime).
+create table public.evaluation_templates (
+  id uuid primary key default gen_random_uuid(), studio_id uuid not null, discipline_id uuid not null,
+  discipline_technical_level_id uuid not null, name text not null check (length(trim(name)) > 0),
+  created_by uuid, archived_at timestamptz, created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(), unique (studio_id, id)
+);
+create table public.evaluation_template_versions (
+  id uuid primary key default gen_random_uuid(), studio_id uuid not null, template_id uuid not null references public.evaluation_templates(id),
+  version_number integer not null check (version_number > 0), status text not null default 'draft' check (status in ('draft','active','archived')),
+  pass_threshold numeric not null default 80 check (pass_threshold between 0 and 100), default_category_min numeric not null default 70,
+  default_attempts_per_element smallint not null default 3, default_attempts_per_combo smallint not null default 3,
+  evaluator_instructions text, created_by uuid, activated_at timestamptz, archived_at timestamptz,
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now(),
+  schema_version smallint not null default 1 check (schema_version in (1,2)),
+  unique (studio_id, id), unique (template_id, version_number)
+);
+create unique index evaluation_template_one_active_version_uq on public.evaluation_template_versions(template_id) where status = 'active';
+create table public.evaluation_template_criteria (
+  id uuid primary key default gen_random_uuid(), studio_id uuid not null, template_version_id uuid not null references public.evaluation_template_versions(id),
+  criterion_key text not null check (criterion_key ~ '^[a-z0-9_]+$'), label text not null check (length(trim(label)) > 0), description text,
+  weight_percent numeric not null check (weight_percent between 0 and 100), min_percent numeric check (min_percent is null or min_percent between 0 and 100),
+  sort_order smallint not null check (sort_order > 0), created_at timestamptz not null default now(), updated_at timestamptz not null default now(),
+  block_type text not null default 'direct_score' check (block_type in ('direct_score','weighted_criteria','element_list','correct_incorrect','meets')),
+  progression_required boolean not null default false, evaluator_instructions text,
+  unique (template_version_id, criterion_key), unique (template_version_id, sort_order), unique (studio_id, id)
+);
+create table public.evaluation_template_elements (
+  id uuid primary key default gen_random_uuid(), studio_id uuid not null, template_version_id uuid not null references public.evaluation_template_versions(id),
+  element_id uuid not null references public.technical_elements(id), criterion_id uuid references public.evaluation_template_criteria(id),
+  mandatory boolean not null default false, scored boolean not null default true, max_score numeric not null default 10 check (max_score > 0),
+  min_score numeric check (min_score is null or min_score >= 0), attempts_allowed smallint, sort_order smallint not null check (sort_order > 0),
+  evaluator_instructions text, element_snapshot jsonb not null default '{}', created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(), item_label text, item_description text,
+  item_kind text not null default 'element' check (item_kind in ('criterion','element','question')),
+  item_weight_percent numeric check (item_weight_percent is null or item_weight_percent between 0 and 100),
+  progression_required boolean not null default false,
+  unique (template_version_id, element_id), unique (template_version_id, sort_order), unique (studio_id, id)
+);
+grant select on public.evaluation_templates, public.evaluation_template_versions, public.evaluation_template_criteria, public.evaluation_template_elements to authenticated;

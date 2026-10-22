@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import data from "./pole-catalog-data.json";
@@ -169,6 +170,9 @@ export default function PoleCatalogClient() {
               </span>
             ))}
           </div>
+          <Link className={styles.mandatoryLink} href="/admin/catalogo/obligatorias">
+            Obligatorias y mínimos por nivel →
+          </Link>
         </header>
 
         <div className={styles.tabs} role="tablist" aria-label="Vistas del catálogo">

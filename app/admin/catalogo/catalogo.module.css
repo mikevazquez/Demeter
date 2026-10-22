@@ -509,3 +509,22 @@
     padding-bottom: calc(112px + env(safe-area-inset-bottom));
   }
 }
+
+.mandatoryLink {
+  align-self: flex-start;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 18px;
+  border: 1px solid var(--catalog-accent);
+  border-radius: 999px;
+  color: var(--catalog-accent);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.mandatoryLink:focus-visible {
+  outline: 2px solid var(--catalog-moon);
+  outline-offset: 2px;
+}
