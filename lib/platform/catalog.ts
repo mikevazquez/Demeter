@@ -103,11 +103,11 @@ export function monthlyPriceMxn(input: {
   if (plan.key === "allaccess") return 0;
   if (plan.key === "founding") return plan.monthlyPriceMxn;
   const extras = PLATFORM_MODULES.filter(
-    (module) =>
-      input.addons.includes(module.key) &&
-      !plan.includedModules.includes(module.key) &&
-      module.monthlyPriceMxn !== null,
-  ).reduce((sum, module) => sum + (module.monthlyPriceMxn ?? 0), 0);
+    (entry) =>
+      input.addons.includes(entry.key) &&
+      !plan.includedModules.includes(entry.key) &&
+      entry.monthlyPriceMxn !== null,
+  ).reduce((sum, entry) => sum + (entry.monthlyPriceMxn ?? 0), 0);
   const total = plan.monthlyPriceMxn + extras;
   return input.foundingAlumni
     ? Math.round((total * (100 - PLATFORM_SETTINGS.foundingDiscountPct)) / 100)

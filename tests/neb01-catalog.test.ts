@@ -23,9 +23,9 @@ describe("NEB-01-02 catálogo comercial", () => {
         `('${plan.key}', '${plan.label}', ${plan.monthlyPriceMxn}, ${plan.setupPriceMxn}, '${modules}', '${plan.brandLevel}', ${plan.sellable},`,
       );
     }
-    for (const module of PLATFORM_MODULES) {
+    for (const entry of PLATFORM_MODULES) {
       expect(plans).toContain(
-        `('${module.key}', '${module.label}', ${module.monthlyPriceMxn ?? "null"}, ${module.setupPriceMxn ?? "null"},`,
+        `('${entry.key}', '${entry.label}', ${entry.monthlyPriceMxn ?? "null"}, ${entry.setupPriceMxn ?? "null"},`,
       );
     }
   });
