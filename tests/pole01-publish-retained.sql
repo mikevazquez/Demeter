@@ -91,8 +91,11 @@ begin
   if (select cardinality(missing_figure_ids) from public.pole_retained_promotions where student_id = retained_student) <> 1 then raise exception 'R2_missing'; end if;
   if exists (select 1 from public.student_pole_figure_achievements where student_id = retained_student and figure_element_id = missing) then raise exception 'R2_marked_missing'; end if;
 
-  -- R3: the coach marks it in class → the student moves to Intermedio and the retention is released.
-  perform private.pole_mark_achieved('10000000-0000-0000-0000-000000000001', retained_student, missing, '00000000-0000-0000-0000-0000000000a1', null);
+  -- R3: the coach marks it in class (real class RPC) → the student moves to Intermedio and the retention is released.
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000a1', true);
+  set local role authenticated;
+  perform public.set_student_pole_figure_achievement(retained_student, missing, true, null);
+  reset role;
   select dl.id into intermediate from public.discipline_technical_levels dl
   join public.technical_level_definitions d on d.id = dl.technical_level_id where d.level_key = 'intermediate';
   if (select discipline_technical_level_id from public.student_discipline_levels where student_id = retained_student) <> intermediate then raise exception 'R3_level'; end if;
