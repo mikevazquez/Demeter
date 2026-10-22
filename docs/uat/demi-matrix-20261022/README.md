@@ -7,7 +7,9 @@
 - Rama `codex/demi-handoff-uat-20261022`, [PR #367 borrador](https://github.com/mikevazquez/Demeter/pull/367). Este bloque cambia scripts/evidencia; no aplicación, migraciones, permisos, reglas comerciales, canales ni adapters. No merge.
 - Receptor, modelo, RPC y PostgreSQL reales con **salida capturada**. Comprobantes/efectivo sintéticos; sin OCR, banco, pasarela o Meta externo certificados. Producción intacta; DEMI-PILOT-01 bloqueado/inactivo.
 
-## Resultado vigente
+## Corrida original y alcance vigente
+
+**Correcciones posteriores:** [candidata `56607e7e`](../demi-fixes-20261022/README.md) supera el error SQL de efectivo con25controles reales y añade correcciones/regresiones locales de derivación por asistente y validación de pago. Es una versión posterior a esta corrida; sus conversaciones completas siguen pendientes. Las filas y JSON inferiores conservan los resultados originales, sin convertir los fallos históricos en aprobados.
 
 **Alcance corregido por Mike:** A07 es un proceso manual, fuera de la automatización de Demi; deja de bloquearla. Efectivo distingue prospecto y alumna y deriva al agotar X intentos, no al elegir ese medio. El débito transferencia→reserva sí pasó (8→7). Ver [decisión y pendientes vigentes](scope-clarification.md) y [reinspección de créditos](transfer-credit-reinspection.json). No se cambian las corridas históricas ni se aprueba el proceso manual.
 
