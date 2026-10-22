@@ -12,6 +12,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   conversationGuidance,
   needsFirstVisitGuidance,
+  prospectCashTurnGuidance,
 } from "../lib/assistant/conversation-guidance";
 import {
   isActiveStudentPersona,
@@ -112,7 +113,11 @@ function orchestratorHarness(
           message.toLocaleLowerCase("es-MX").includes("efectivo") ? "cash" : null,
       },
       "./read-tools": { executeAssistantReadTool: read },
-      "./conversation-guidance": { conversationGuidance, needsFirstVisitGuidance },
+      "./conversation-guidance": {
+        conversationGuidance,
+        needsFirstVisitGuidance,
+        prospectCashTurnGuidance,
+      },
       "./conversation-context": conversationContext,
       "./prompt-workbench": { testPersonaLabel },
       "./first-class-payment-instructions": { firstClassPaymentInstructions },

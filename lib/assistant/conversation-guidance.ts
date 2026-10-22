@@ -4,8 +4,77 @@ type AudienceInput = {
   studentId?: string | null;
   crmContactId?: string | null;
   studentCategory?: string | null;
-  testSimulation?: { persona: TestPersona } | null;
+  testSimulation?: { persona: TestPersona; reservations?: readonly unknown[] } | null;
 };
+
+type PaymentHistory = readonly { role: string; content: string }[];
+
+export function prospectCashPaymentStage(
+  input: AudienceInput,
+  history: PaymentHistory,
+): "first_objection" | "second_refusal" | null {
+  const prospect = input.testSimulation
+    ? input.testSimulation.persona === "prospect"
+    : Boolean(input.crmContactId) && !input.studentId;
+  if (!prospect || history.at(-1)?.role !== "user" || input.testSimulation?.reservations?.length)
+    return null;
+  const normalize = (text: string) =>
+    text
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  const current = normalize(history.at(-1)!.content);
+  if (
+    /(?:hablar|comunicarme|pasame|comunica).{0,40}(?:persona|humano|alguien del equipo)|no (?:quiero ir|quiero asistir|me interesa)|ya no voy|mejor (?:ya )?no voy/.test(
+      current,
+    )
+  )
+    return null;
+  let objections = 0;
+  let paymentContext = false;
+  let currentIsObjection = false;
+  for (const message of history) {
+    const text = normalize(message.content);
+    if (message.role === "assistant") {
+      paymentContext = /anticipo|anticipad|transfer|deposit|forma de pago|efectivo/.test(text);
+      continue;
+    }
+    if (message.role !== "user") continue;
+    // Accepting advance payment ends the objection sequence. Do not count a
+    // negated cash preference ("no quiero efectivo, prefiero transferencia").
+    const acceptsAdvance =
+      /(?:mejor si|si puedo|acepto|prefiero|quiero|pasame|comparteme).{0,65}(?:transfer|oxxo|deposit|anticipad)/.test(
+        text,
+      ) && !/no (?:puedo|quiero|acepto)|tampoco puedo/.test(text);
+    const rejectsCash = /no (?:quiero|prefiero).{0,25}efectivo/.test(text);
+    if (acceptsAdvance || rejectsCash) {
+      objections = 0;
+      currentIsObjection = false;
+      continue;
+    }
+    const cashRequest =
+      /(?:pagar|pago|pagare|puedo|solo|solamente|unicamente|prefiero|quiero|tengo|aceptan).{0,35}efectivo|pago al llegar|^efectivo[.!]?$/.test(
+        text,
+      );
+    const rejectsAdvance =
+      /(?:no|tampoco) (?:puedo|quiero).{0,40}(?:transfer|deposit|adelant|anticipad)/.test(text);
+    const contextualRefusal =
+      paymentContext && /^(?:no gracias[, .]*)?(?:no|tampoco) puedo[.!]?$/.test(text.trim());
+    currentIsObjection = cashRequest || rejectsAdvance || contextualRefusal;
+    if (currentIsObjection) objections += 1;
+  }
+  if (!currentIsObjection) return null;
+  return objections >= 2 ? "second_refusal" : "first_objection";
+}
+
+export function prospectCashTurnGuidance(input: AudienceInput, history: PaymentHistory): string {
+  const stage = prospectCashPaymentStage(input, history);
+  if (stage === "first_objection")
+    return "ETAPA DE PAGO DE ESTE TURNO: PRIMERA OBJECIÓN. Responde con empatía y explica una sola vez el anticipo para asegurar su primera clase, conservando los métodos habilitados. En esta respuesta NO ofrezcas acudir sin reserva ni pagar en efectivo al llegar, tampoco como posibilidad condicional. Espera una nueva negativa antes de ofrecer esa alternativa. No reserves ni derives a un humano por esta objeción.";
+  if (stage === "second_refusal")
+    return "ETAPA DE PAGO DE ESTE TURNO: SEGUNDA NEGATIVA. Deja de insistir en el anticipo. Explica con empatía que puede acudir y pagar en efectivo ese día sólo si hay cupo al llegar. Las clases se agendan con anticipación: va sin reserva y no se garantiza que pueda tomar la clase. No crees ficha, reserva, retención, compra, promesa de pago ni atención humana por esta negativa.";
+  return "";
+}
 
 export function needsFirstVisitGuidance(input: AudienceInput): boolean {
   if (input.testSimulation) return isFirstVisitPersona(input.testSimulation.persona);
