@@ -1,0 +1,53 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "55f59c2cef805908d45748a06c205dcc8ad60a67",
+  "before": {
+    "event_count": 12,
+    "case_results": [
+      {
+        "case": "M13",
+        "commit": "55f59c2cef805908d45748a06c205dcc8ad60a67",
+        "status": "failed"
+      },
+      {
+        "case": "M09",
+        "commit": "55f59c2cef805908d45748a06c205dcc8ad60a67",
+        "status": "partial"
+      },
+      {
+        "case": "M10",
+        "commit": "55f59c2cef805908d45748a06c205dcc8ad60a67",
+        "status": "partial"
+      },
+      {
+        "case": "M07",
+        "commit": "55f59c2cef805908d45748a06c205dcc8ad60a67",
+        "status": "partial"
+      }
+    ],
+    "captured_replies": 12,
+    "followups_pending": 0,
+    "uncaptured_attempts": 0,
+    "notification_attempts": 16
+  },
+  "after": {
+    "banned": true,
+    "user_id": "efe87ea5-2b5e-416e-9239-50156c5497d0",
+    "sessions": 0,
+    "run_leases": [
+      {
+        "id": "01ed1730-11bd-43ac-b685-134ddd22ba52",
+        "lease_until": null
+      },
+      {
+        "id": "cf463ea9-be76-41a0-a763-562bc3334e83",
+        "lease_until": null
+      }
+    ],
+    "account_status": "disabled",
+    "refresh_tokens": 0,
+    "faults_restored": true,
+    "pending_followups": 0,
+    "active_memberships": 0
+  }
+}
