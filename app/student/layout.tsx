@@ -4,12 +4,7 @@ import Link from "next/link";
 import { cache } from "react";
 
 import { signOut } from "@/app/auth/actions";
-import { loadStudioEntitlements, studioHasModule } from "@/lib/platform/entitlements";
-import {
-  getStudentAccessContext,
-  getStudentShellContext,
-  getStudentStudioContext,
-} from "@/lib/student/portal";
+import { getStudentShellContext, getStudentStudioContext } from "@/lib/student/portal";
 
 import PendingActionButton from "./components/PendingActionButton";
 import PwaBrandingSync from "@/app/components/PwaBrandingSync";
@@ -99,10 +94,6 @@ export default async function StudentLayout({ children }: { children: React.Reac
     getPwaBrand(),
   ]);
   const studentFirstName = student.full_name.trim().split(/\s+/)[0] || "Alumna";
-  // NEB-01-03 · Retos solo aparece si el estudio tiene el módulo de Recompensas.
-  const access = await getStudentAccessContext();
-  const entitlements = await loadStudioEntitlements(supabase, access.membership.studio_id);
-  const hiddenNavHrefs = studioHasModule(entitlements, "recompensas") ? [] : ["/student/retos"];
   const query = pwaBrandQuery(brand);
   const { count: unreadNotificationCount } = await supabase
     .from("app_notifications")
@@ -169,7 +160,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
       </header>
 
       <div className="mx-auto flex max-w-7xl gap-6 px-4 pb-32 pt-6 sm:px-6 lg:px-8 lg:pb-10">
-        <StudentNav hiddenHrefs={hiddenNavHrefs} />
+        <StudentNav />
         <div className="min-w-0 flex-1">{children}</div>
       </div>
     </div>

@@ -31,7 +31,6 @@ function errorCode(error: { message?: string } | null, fallback: string) {
     "resource_required",
     "resource_full",
     "resource_not_available",
-    "studio_read_only",
   ];
   return known.find((item) => error.message?.includes(item)) ?? fallback;
 }

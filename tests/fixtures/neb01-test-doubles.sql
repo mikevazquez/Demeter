@@ -29,15 +29,3 @@ insert into auth.users values
   ('00000000-0000-0000-0000-0000000000c1'); -- coach of studio B
 insert into public.studios (id, name, slug) values ('10000000-0000-0000-0000-000000000001', 'Demeter Fitness', 'demeter-fitness');
 grant select on public.studios, public.studio_memberships to authenticated;
-
--- Minimal stand-ins for the tables NEB-01-03 guards (only id + studio_id matter).
-create table public.sales (id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id));
-create table public.reservations (id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id));
-create table public.reward_programs (id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id));
-create table public.reward_challenge_enrollments (id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id));
-create table public.evaluation_templates (id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id));
-create table public.technical_evaluations (id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id));
-create table public.evaluation_invitations (id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id));
-create table public.resources (id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id));
-create table public.space_maps (id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id));
-create table public.reservation_resource_assignments (id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id));

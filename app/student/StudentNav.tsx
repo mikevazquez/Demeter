@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { studentNavigationItems as allItems } from "@/lib/student/navigation";
+import { studentNavigationItems as items } from "@/lib/student/navigation";
 
 function isActive(pathname: string, href: string) {
   if (href === "/student") return pathname === href;
@@ -13,9 +13,8 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function StudentNav({ hiddenHrefs = [] }: { hiddenHrefs?: string[] }) {
+export function StudentNav() {
   const pathname = usePathname();
-  const items = allItems.filter((item) => !hiddenHrefs.includes(item.href));
 
   return (
     <>
