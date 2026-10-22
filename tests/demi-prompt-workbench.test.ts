@@ -13,6 +13,7 @@ import {
   conversationGuidance,
   needsFirstVisitGuidance,
   prospectCashTurnGuidance,
+  prospectCashTurnReply,
 } from "../lib/assistant/conversation-guidance";
 import {
   isActiveStudentPersona,
@@ -117,6 +118,7 @@ function orchestratorHarness(
         conversationGuidance,
         needsFirstVisitGuidance,
         prospectCashTurnGuidance,
+        prospectCashTurnReply,
       },
       "./conversation-context": conversationContext,
       "./prompt-workbench": { testPersonaLabel },
@@ -633,37 +635,14 @@ describe("Demi prompt workbench", () => {
         : []),
     ];
     vi.stubEnv("OPENAI_API_KEY", "test");
-    const fetcher = vi
-      .fn()
-      .mockImplementationOnce(async (_url, init) => {
-        const body = JSON.parse(String(init?.body));
-        expect(body.tools.map((t: { name: string }) => t.name)).toEqual(["get_activity_catalog"]);
-        return new Response(
-          JSON.stringify({
-            output: [
-              {
-                type: "function_call",
-                name: "prepare_first_class_payment",
-                call_id: "unexpected-payment",
-                arguments: "{}",
-              },
-            ],
-          }),
-        );
-      })
-      .mockImplementationOnce(async (_url, init) => {
-        const body = JSON.parse(String(init?.body));
-        expect(body.input.at(-1).output).toContain("payment_objection_is_not_action_authorization");
-        return new Response(JSON.stringify(reply("Respuesta de objeción sin crear un pago.")));
-      });
+    const fetcher = vi.fn().mockRejectedValue(new Error("Payment objections need no model call"));
     vi.stubGlobal("fetch", fetcher);
     const result = await h.run(h.input);
     expect(h.action).not.toHaveBeenCalled();
     expect(h.simulate).not.toHaveBeenCalled();
-    expect(result.trace.toolCalls).toContainEqual({
-      name: "prepare_first_class_payment",
-      status: "blocked",
-    });
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(result.trace.toolCalls).toEqual([]);
+    expect(result.reply).toContain(second ? "únicamente si hay lugar" : "pago por adelantado");
   });
 
   it("answers a mixed information request while retaining exact payment instructions", async () => {

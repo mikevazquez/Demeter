@@ -76,6 +76,18 @@ export function prospectCashTurnGuidance(input: AudienceInput, history: PaymentH
   return "";
 }
 
+export function prospectCashTurnReply(
+  input: AudienceInput,
+  history: PaymentHistory,
+): string | null {
+  const stage = prospectCashPaymentStage(input, history);
+  if (stage === "first_objection")
+    return "Entiendo. Para asegurar tu lugar en esta primera clase necesitamos el pago por adelantado, por alguno de los métodos habilitados. Pagar en efectivo al llegar no confirma una reserva.";
+  if (stage === "second_refusal")
+    return "Entiendo. Puedes acercarte al estudio y pagar la clase ese día en efectivo, únicamente si hay lugar al llegar. Las clases se agendan con anticipación, así que irías sin reserva y no podemos garantizarte que haya espacio para tomarla.";
+  return null;
+}
+
 export function needsFirstVisitGuidance(input: AudienceInput): boolean {
   if (input.testSimulation) return isFirstVisitPersona(input.testSimulation.persona);
   if (input.studentId) {

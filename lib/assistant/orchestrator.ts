@@ -4,6 +4,7 @@ import {
   conversationGuidance,
   needsFirstVisitGuidance,
   prospectCashTurnGuidance,
+  prospectCashTurnReply,
 } from "./conversation-guidance";
 import {
   contextInstructions,
@@ -1023,9 +1024,10 @@ export async function runAssistantTurn(input: OrchestratorInput) {
   const currentCategory = asObject(currentStatus?.student_state)?.category;
   if (typeof currentCategory === "string") input = { ...input, studentCategory: currentCategory };
   else if (input.studentId) input = { ...input, studentCategory: null };
-  const cashObjectionInstructions = contextualTurn
-    ? prospectCashTurnGuidance(input, input.history)
-    : "";
+  if (contextualTurn) {
+    const cashReply = prospectCashTurnReply(input, input.history);
+    if (cashReply) return { reply: cashReply, trace };
+  }
   if (
     stickerTurn &&
     (input.stickerImages!.length > 3 ||
@@ -1069,7 +1071,6 @@ export async function runAssistantTurn(input: OrchestratorInput) {
             return true;
           }),
           ...assistantActionToolDefinitions.filter((tool) => {
-            if (cashObjectionInstructions) return false;
             if (input.testSimulation) {
               if (
                 tool.name === "prepare_transfer_package_choice" &&
@@ -1474,7 +1475,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           input.config.personality_instructions.trim()
             ? `Personalidad configurada por el estudio: ${input.config.personality_instructions.trim()}`
             : "",
-          cashObjectionInstructions,
+          prospectCashTurnGuidance(input, input.history),
         ]
           .filter(Boolean)
           .join("\n");
@@ -1723,9 +1724,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         const currentUserMessage =
           [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
         const actionBlocked =
-          socialOnly ||
-          Boolean(cashObjectionInstructions) ||
-          shouldBlockPaymentForInformation(toolName, currentUserMessage);
+          socialOnly || shouldBlockPaymentForInformation(toolName, currentUserMessage);
         if (!input.testSimulation && !actionBlocked) await assertActionTurnCurrent(input);
         result = socialOnly
           ? {
@@ -1734,48 +1733,42 @@ export async function runAssistantTurn(input: OrchestratorInput) {
               instruction:
                 "Un saludo o agradecimiento no autoriza acciones. Responde con el contexto actual y, si hay un pendiente relevante, pregunta brevemente si necesita ayuda. No prepares pagos, reservas ni cambios.",
             }
-          : cashObjectionInstructions
+          : shouldBlockPaymentForInformation(toolName, currentUserMessage)
             ? {
                 ok: false,
-                reason_code: "payment_objection_is_not_action_authorization",
-                instruction: cashObjectionInstructions,
+                reason_code: "information_request_not_payment_authorization",
+                instruction:
+                  "Responde la consulta informativa con los datos consultados. Conserva el pago pendiente sin repetir datos bancarios ni preparar otro cobro. Si pide información general, explica la actividad y los requisitos disponibles; pregunta qué detalle desea conocer sólo si falta contexto.",
               }
-            : shouldBlockPaymentForInformation(toolName, currentUserMessage)
-              ? {
-                  ok: false,
-                  reason_code: "information_request_not_payment_authorization",
-                  instruction:
-                    "Responde la consulta informativa con los datos consultados. Conserva el pago pendiente sin repetir datos bancarios ni preparar otro cobro. Si pide información general, explica la actividad y los requisitos disponibles; pregunta qué detalle desea conocer sólo si falta contexto.",
-                }
-              : input.testSimulation
-                ? await simulateAssistantAction(
-                    {
-                      state: input.testSimulation,
-                      supabase: input.supabase,
-                      studio: input.studio,
-                      turnId: input.turnId,
-                      currentUserMessage,
-                    },
-                    toolName,
-                    args,
-                  )
-                : await executeAssistantActionTool(
-                    {
-                      supabase: input.supabase,
-                      studio: input.studio,
-                      conversationId: input.conversationId,
-                      turnId: input.turnId,
-                      studentId: input.studentId,
-                      crmContactId: input.crmContactId,
-                      identityNeedsName: input.identityNeedsName === true,
-                      channel: input.channel,
-                      activationUrl: input.activationUrl,
-                      serviceMode: input.serviceMode === true,
-                      currentUserMessage,
-                    },
-                    toolName,
-                    args,
-                  );
+            : input.testSimulation
+              ? await simulateAssistantAction(
+                  {
+                    state: input.testSimulation,
+                    supabase: input.supabase,
+                    studio: input.studio,
+                    turnId: input.turnId,
+                    currentUserMessage,
+                  },
+                  toolName,
+                  args,
+                )
+              : await executeAssistantActionTool(
+                  {
+                    supabase: input.supabase,
+                    studio: input.studio,
+                    conversationId: input.conversationId,
+                    turnId: input.turnId,
+                    studentId: input.studentId,
+                    crmContactId: input.crmContactId,
+                    identityNeedsName: input.identityNeedsName === true,
+                    channel: input.channel,
+                    activationUrl: input.activationUrl,
+                    serviceMode: input.serviceMode === true,
+                    currentUserMessage,
+                  },
+                  toolName,
+                  args,
+                );
       }
 
       const resultObject = asObject(result);

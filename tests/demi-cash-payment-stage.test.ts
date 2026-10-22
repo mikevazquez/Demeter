@@ -108,4 +108,18 @@ describe("prospect payment objection stages", () => {
       ),
     ).toBeNull();
   });
+
+  it("resets after the exact operational acceptance message before another cash request", () => {
+    expect(
+      prospectCashPaymentStage(prospect, [
+        ...first,
+        assistant("El pago anticipado asegura el lugar."),
+        user("No gracias, sólo puedo pagar en efectivo, no puedo hacer el pago anticipado."),
+        assistant("Puedes acudir sin reserva si hay cupo."),
+        user("Mejor sí puedo pagar por adelantado. Pásame cómo depositar en OXXO para esa clase."),
+        assistant("Transferencia o depósito OXXO: datos ficticios de UAT."),
+        user("¿Puedo pagar en efectivo en el estudio?"),
+      ]),
+    ).toBe("first_objection");
+  });
 });
