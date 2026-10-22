@@ -6,7 +6,9 @@ import { describe, expect, it } from "vitest";
 
 const stableBlobs: Record<string, string> = {
   "app/auth/actions.ts": "90a3b8155c458303cdbb4ac9020bca29b52db354",
-  "lib/auth/admin-context.ts": "a7f548fd68204521686dba09eeaed95d11f72254",
+  // NEB-01-03 (autorizado por Mike el 22-oct-2026): admin-context solo agrega la lectura de los
+  // derechos de Nébora y hasModule(); la sesión, la cookie de estudio y los permisos no cambian.
+  "lib/auth/admin-context.ts": "4afc9373b2baaa7af420bd2118dc9963460ec2cd",
   "lib/auth/studio-context-cookie.ts": "ed8605c1d786a8b04b4cd6b799c1853621f3d7d0",
   // d6d4185 added bookingReasonCopyForStudent; the reviewed diff changes no session/auth logic.
   "lib/student/portal.ts": "ca6f4fdfe22ebcd6f76bd63e9272da70cc014195",
@@ -51,9 +53,22 @@ describe("Studio Flow V2 release safety", () => {
       "current_studio_capabilities",
       "allowRestricted",
       "STUDIO_MODULES",
-      "hasModule(",
     ]) {
       expect(source).not.toContain(forbidden);
     }
+  });
+
+  // NEB-01-03 · Mike autorizó (22-oct-2026) el bloqueo por plan de Nébora. Solo se permite a
+  // través de lib/platform/entitlements, y sin datos de Nébora nada se bloquea.
+  it("gates admin modules only through Nébora entitlements, failing open", () => {
+    const layout = readFileSync(join(process.cwd(), "app/admin/layout.tsx"), "utf8");
+    const context = readFileSync(join(process.cwd(), "lib/auth/admin-context.ts"), "utf8");
+    const entitlements = readFileSync(join(process.cwd(), "lib/platform/entitlements.ts"), "utf8");
+
+    expect(context).toContain(
+      'import { loadStudioEntitlements, studioHasModule } from "@/lib/platform/entitlements";',
+    );
+    expect(layout.match(/hasModule\(/g)?.length).toBe(2);
+    expect(entitlements).toContain("if (!entitlements) return true;");
   });
 });
