@@ -178,6 +178,54 @@ const reply = (text: string) => ({
   output: [{ type: "message", content: [{ type: "output_text", text }] }],
   usage: { input_tokens: 10, output_tokens: 5 },
 });
+
+describe("F01 server confirmation routes", () => {
+  const summary = {
+    date: "2026-10-22",
+    starts_at_local: "18:00",
+    commercial_status: "package_covered",
+  };
+  const message = "Sí, confirmo la reserva del jueves 22 de octubre a las 18:00 con mi paquete.";
+  it("confirms a matching booking without consulting the model or preparing again", async () => {
+    const h = orchestratorHarness({
+      id: "pending",
+      action_type: "booking.create",
+      confirmation_summary: summary,
+    });
+    h.input.testSimulation = undefined;
+    h.input.history = [{ role: "user", content: message }];
+    h.action.mockResolvedValue({ ok: true, status: "executed", summary });
+    const fetcher = vi.fn();
+    vi.stubGlobal("fetch", fetcher);
+    const result = await h.run(h.input);
+    expect(h.action).toHaveBeenCalledOnce();
+    expect(h.action).toHaveBeenCalledWith(
+      expect.objectContaining({ currentUserMessage: message }),
+      "execute_booking",
+      {},
+    );
+    expect(result.reply).toContain("confirmada");
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+  it.each([
+    "booking.cancel",
+    "booking.reschedule",
+    "waitlist.join",
+    "commerce.cash_purchase",
+    "account.activate",
+  ])("does not route booking details to pending %s", async (action_type) => {
+    const h = orchestratorHarness({ id: "pending", action_type, confirmation_summary: summary });
+    h.input.testSimulation = undefined;
+    h.input.history = [{ role: "user", content: message }];
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify(reply("Revisemos la reserva.")))),
+    );
+    await h.run(h.input);
+    expect(h.action).not.toHaveBeenCalled();
+  });
+});
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();

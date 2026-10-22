@@ -666,11 +666,17 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
     [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
 
   const genericConfirmation = isExplicitAssistantConfirmation(currentUserMessage);
-  if (!genericConfirmation && !isExplicitCashPurchaseConfirmation(currentUserMessage)) return null;
+  const cashConfirmation = isExplicitCashPurchaseConfirmation(currentUserMessage);
+  // This prefilter only avoids unrelated DB reads. Authorization below still
+  // requires a booking pending whose local date/time matches the full statement.
+  const detailedBookingCandidate = /^(?:s[ií],?\s+)?confirmo (?:la|esa|esta) reserva del /iu.test(
+    currentUserMessage.trim(),
+  );
+  if (!genericConfirmation && !cashConfirmation && !detailedBookingCandidate) return null;
 
   const { data: pending, error } = await input.supabase
     .from("assistant_pending_actions")
-    .select("id,action_type,expires_at")
+    .select("id,action_type,expires_at,confirmation_summary")
     .eq("studio_id", input.studio.id)
     .eq("conversation_id", input.conversationId)
     .eq("status", "pending")
@@ -680,7 +686,15 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
     .maybeSingle();
 
   if (error || !pending) return null;
-  if (!genericConfirmation && pending.action_type !== "commerce.cash_purchase") return null;
+  const detailedBookingConfirmation =
+    pending.action_type === "booking.create" &&
+    isExplicitAssistantConfirmation(currentUserMessage, asObject(pending.confirmation_summary));
+  if (
+    !genericConfirmation &&
+    !(cashConfirmation && pending.action_type === "commerce.cash_purchase") &&
+    !detailedBookingConfirmation
+  )
+    return null;
 
   const executeToolByAction: Record<string, string> = {
     "booking.create": "execute_booking",
@@ -784,7 +798,14 @@ async function trySimulatedConfirmation(input: OrchestratorInput, trace: Assista
     [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
   const pending = input.testSimulation?.pending;
 
-  if (!pending || !isExplicitAssistantConfirmation(currentUserMessage)) return null;
+  if (
+    !pending ||
+    !isExplicitAssistantConfirmation(
+      currentUserMessage,
+      pending.tool === "execute_booking" ? pending.summary : undefined,
+    )
+  )
+    return null;
   if (
     ![
       "execute_booking",

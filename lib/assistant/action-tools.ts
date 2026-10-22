@@ -215,8 +215,68 @@ function normalizeConfirmation(value: string) {
     .trim();
 }
 
-export function isExplicitAssistantConfirmation(value: string) {
-  if (!value.trim() || value.includes("?")) return false;
+function matchesDetailedBookingConfirmation(
+  value: string,
+  summary: Record<string, unknown> | null | undefined,
+) {
+  if (!summary || /[?¿]/.test(value)) return false;
+  // Parse a complete, bounded statement. Extra clauses (including conditions or
+  // negations) must not authorize an action merely because they contain "confirmo".
+  const statement = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-MX")
+    .trim()
+    .replace(/[.!]$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const match = statement.match(
+    /^(?:si,? )?confirmo (?:la|esa|esta) reserva del (?:(domingo|lunes|martes|miercoles|jueves|viernes|sabado) )?(\d{1,2}) de ([a-z]+)(?: de (\d{4}))? a las (\d{1,2}):(\d{2})( con mi paquete)?$/,
+  );
+  if (!match) return false;
+  const date = String(summary.date ?? "");
+  const time = String(summary.starts_at_local ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) return false;
+  const instant = new Date(`${date}T12:00:00Z`);
+  if (!Number.isFinite(instant.getTime()) || instant.toISOString().slice(0, 10) !== date)
+    return false;
+  const months = [
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+  ];
+  const weekdays = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
+  const [, weekday, day, month, year, hour, minute, withPackage] = match;
+  if (weekday && weekday !== weekdays[instant.getUTCDay()]) return false;
+  if (
+    Number(day) !== Number(date.slice(8)) ||
+    months.indexOf(month) + 1 !== Number(date.slice(5, 7))
+  )
+    return false;
+  if (year && year !== date.slice(0, 4)) return false;
+  if (`${hour.padStart(2, "0")}:${minute}` !== time) return false;
+  if (
+    withPackage &&
+    (summary.commercial_status !== "package_covered" || summary.trial_booking === true)
+  )
+    return false;
+  return true;
+}
+
+export function isExplicitAssistantConfirmation(
+  value: string,
+  bookingSummary?: Record<string, unknown> | null,
+) {
+  if (!value.trim() || /[?¿]/.test(value)) return false;
 
   const normalized = normalizeConfirmation(value);
   if (!normalized) return false;
@@ -266,7 +326,7 @@ export function isExplicitAssistantConfirmation(value: string) {
     "correcto",
   ]);
 
-  return accepted.has(normalized);
+  return accepted.has(normalized) || matchesDetailedBookingConfirmation(value, bookingSummary);
 }
 
 export function isExplicitCashPurchaseConfirmation(
@@ -1648,7 +1708,9 @@ async function executeBookingOperation(ctx: AssistantActionToolContext, args: Ex
     return { ok: false, error: "confirmation_requires_new_turn" };
   }
 
-  if (!isExplicitAssistantConfirmation(ctx.currentUserMessage)) {
+  if (
+    !isExplicitAssistantConfirmation(ctx.currentUserMessage, asObject(pending.confirmation_summary))
+  ) {
     return { ok: false, error: "explicit_confirmation_required" };
   }
 

@@ -486,7 +486,10 @@ export async function simulateAssistantAction(
       !pending ||
       pending.tool !== tool ||
       pending.preparedTurnId === input.turnId ||
-      !isExplicitAssistantConfirmation(input.currentUserMessage)
+      !isExplicitAssistantConfirmation(
+        input.currentUserMessage,
+        tool === "execute_booking" ? pending.summary : undefined,
+      )
     ) {
       return result({
         ok: false,
@@ -641,6 +644,9 @@ export async function simulateAssistantAction(
       ),
       starts_at_local: localTime(session.starts_at),
       ends_at_local: localTime(session.ends_at),
+      ...(tool === "prepare_booking" && isActiveStudentPersona(state.persona) && state.credits > 0
+        ? { commercial_status: "package_covered" }
+        : {}),
       ...(isTrialBooking
         ? {
             trial_booking: true,
