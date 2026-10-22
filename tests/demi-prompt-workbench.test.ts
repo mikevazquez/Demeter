@@ -620,6 +620,52 @@ describe("Demi prompt workbench", () => {
     });
   });
 
+  it.each([false, true])("blocks actions during payment objection (second=%s)", async (second) => {
+    const h = orchestratorHarness();
+    h.input.history = [
+      { role: "assistant", content: "El anticipo asegura tu primera clase." },
+      { role: "user", content: "¿Puedo pagar en efectivo?" },
+      ...(second
+        ? [
+            { role: "assistant" as const, content: "Para asegurar lugar se necesita anticipo." },
+            { role: "user" as const, content: "No gracias, sólo puedo en efectivo." },
+          ]
+        : []),
+    ];
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    const fetcher = vi
+      .fn()
+      .mockImplementationOnce(async (_url, init) => {
+        const body = JSON.parse(String(init?.body));
+        expect(body.tools.map((t: { name: string }) => t.name)).toEqual(["get_activity_catalog"]);
+        return new Response(
+          JSON.stringify({
+            output: [
+              {
+                type: "function_call",
+                name: "prepare_first_class_payment",
+                call_id: "unexpected-payment",
+                arguments: "{}",
+              },
+            ],
+          }),
+        );
+      })
+      .mockImplementationOnce(async (_url, init) => {
+        const body = JSON.parse(String(init?.body));
+        expect(body.input.at(-1).output).toContain("payment_objection_is_not_action_authorization");
+        return new Response(JSON.stringify(reply("Respuesta de objeción sin crear un pago.")));
+      });
+    vi.stubGlobal("fetch", fetcher);
+    const result = await h.run(h.input);
+    expect(h.action).not.toHaveBeenCalled();
+    expect(h.simulate).not.toHaveBeenCalled();
+    expect(result.trace.toolCalls).toContainEqual({
+      name: "prepare_first_class_payment",
+      status: "blocked",
+    });
+  });
+
   it("answers a mixed information request while retaining exact payment instructions", async () => {
     const h = orchestratorHarness();
     h.input.history = [{ role: "user", content: "¿Dónde están? También quiero reservar." }];
