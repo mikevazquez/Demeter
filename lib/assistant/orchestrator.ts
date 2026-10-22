@@ -1042,6 +1042,12 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           }),
           ...assistantActionToolDefinitions.filter((tool) => {
             if (input.testSimulation) {
+              if (
+                tool.name === "prepare_transfer_package_choice" &&
+                input.testSimulation.workbenchCase &&
+                input.testSimulation.workbenchCase !== "standard"
+              )
+                return false;
               if (tool.name !== "update_contact_followup") return true;
               // Offer only the personas supported by the simulated follow-up contract.
               const persona = input.testSimulation.persona;
@@ -1114,7 +1120,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
         .maybeSingle();
       if (!awaiting.error && awaiting.data) {
         profilePendingContext =
-          "COMPRA PAGADA ESPERANDO PERFIL: el comprobante de su paquete ya coincidió con el monto. Pide nombre completo, fecha de nacimiento y correo, y después usa complete_purchase_profile. No vuelvas a cobrar ni pidas otro comprobante. " +
+          "COMPROBANTE RECIBIDO, PERFIL PENDIENTE: el comprobante de su paquete ya coincidió con el monto, pero aún falta completar su perfil. El paquete y la inscripción todavía no están activos; no afirmes que ya se activaron ni ofrezcas reservar con ellos. Pide nombre completo, fecha de nacimiento y correo, y después usa complete_purchase_profile. Sólo un resultado provisional_active de esa herramienta permite informar la activación provisional. No vuelvas a cobrar ni pidas otro comprobante. " +
           JSON.stringify(awaiting.data);
       }
     } catch {
@@ -1132,7 +1138,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       ]);
     if (workbenchContext.purchase_status === "awaiting_profile")
       profilePendingContext =
-        "COMPRA PAGADA ESPERANDO PERFIL (fixture simulado): comprobante recibido con monto coincidente. Pide juntos nombre completo, fecha de nacimiento y correo; después usa complete_purchase_profile. No vuelvas a cobrar. " +
+        "COMPROBANTE RECIBIDO, PERFIL PENDIENTE (fixture simulado): comprobante recibido con monto coincidente, pero aún falta completar su perfil. El paquete y la inscripción todavía no están activos; no afirmes que ya se activaron ni ofrezcas reservar con ellos. Pide juntos nombre completo, fecha de nacimiento y correo; después usa complete_purchase_profile. Sólo un resultado provisional_active de esa herramienta permite informar la activación provisional. No vuelvas a cobrar. " +
         JSON.stringify(workbenchContext.purchase);
     else if (workbenchContext.purchase_status === "awaiting_receipt")
       pendingPaymentContext =

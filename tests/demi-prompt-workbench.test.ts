@@ -185,6 +185,44 @@ afterEach(() => {
 
 describe("Demi prompt workbench", () => {
   it.each([
+    ["standard", true],
+    ["S11", false],
+    ["S12", false],
+    ["S13", false],
+    ["S14", false],
+    ["S15", false],
+  ] as const)(
+    "keeps transfer-choice availability consistent with fixture %s",
+    async (workbenchCase, offered) => {
+      const h = orchestratorHarness();
+      h.input.testSimulation!.workbenchCase = workbenchCase;
+      h.input.history = [
+        { role: "user", content: "Quiero el paquete de ocho clases por transferencia." },
+      ];
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (_url, init) => {
+          const body = JSON.parse(String(init?.body));
+          expect(
+            body.tools.some(
+              (tool: { name: string }) => tool.name === "prepare_transfer_package_choice",
+            ),
+          ).toBe(offered);
+          expect(
+            body.tools.some(
+              (tool: { name: string }) => tool.name === "prepare_bank_transfer_purchase",
+            ),
+          ).toBe(true);
+          return new Response(JSON.stringify(reply("Revisemos el paquete elegido.")));
+        }),
+      );
+      await h.run(h.input);
+      expect(h.action).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
     ["student", false],
     ["former_student", false],
     ["prospect", true],
@@ -347,7 +385,7 @@ describe("Demi prompt workbench", () => {
     [{ closed_first_class: true }, "PENDIENTES CERRADOS", "hola"],
     [
       { purchase_status: "awaiting_profile", purchase: { total_amount_minor: 80000 } },
-      "COMPRA PAGADA ESPERANDO PERFIL",
+      "COMPROBANTE RECIBIDO, PERFIL PENDIENTE",
       "¿Qué sigue?",
     ],
     [
@@ -376,6 +414,12 @@ describe("Demi prompt workbench", () => {
         vi.fn(async (_url, init) => {
           const body = JSON.parse(String(init?.body));
           expect(body.instructions).toContain(marker);
+          if ("purchase_status" in context && context.purchase_status === "awaiting_profile") {
+            expect(body.instructions).toContain(
+              "El paquete y la inscripción todavía no están activos",
+            );
+            expect(body.instructions).toContain("Sólo un resultado provisional_active");
+          }
           if (message === "hola") expect(body.tools).toEqual([]);
           return new Response(JSON.stringify(reply("Respuesta sintética, no UAT del modelo.")));
         }),
