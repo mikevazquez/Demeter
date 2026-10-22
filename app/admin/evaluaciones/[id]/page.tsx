@@ -4,12 +4,8 @@ import { notFound } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
-import { shortDate, type BaseItemHint, type PersonalItem } from "@/lib/evaluations/pole-adaptive";
-import { loadPoleEvaluationContext } from "@/lib/evaluations/pole-context";
-
 import { EvaluationLiveForm } from "../EvaluationLiveForm";
-import type { EvaluationItemHintView } from "../EvaluationLiveFormV2";
-import { EvaluationLiveWorkspace, type PoleWorkspaceData } from "../EvaluationLiveWorkspace";
+import { EvaluationLiveFormV2 } from "../EvaluationLiveFormV2";
 import {
   openEvaluationFeedbackAction,
   publishTechnicalEvaluationAction,
@@ -21,43 +17,6 @@ function statusLabel(value: string | null) {
   if (value === "stays") return "Permanece";
   if (value === "incomplete") return "Incompleta";
   return "Pendiente";
-}
-
-function baseHintView(hint: BaseItemHint, timeZone: string): EvaluationItemHintView {
-  if (hint.kind === "recent_class") {
-    return {
-      label: `Validada en clase el ${shortDate(hint.date, timeZone)}`,
-      tone: "mint",
-      note: "Basta 1 intento",
-    };
-  }
-  if (hint.kind === "self_marked") {
-    return { label: `La marcó ella el ${shortDate(hint.date, timeZone)}`, tone: "lilac" };
-  }
-  if (hint.kind === "achieved") return { label: "Ya la tiene", tone: "line" };
-  return { label: "Aún no la marca", tone: "moon" };
-}
-
-function personalMeta(item: PersonalItem, timeZone: string): EvaluationItemHintView[] {
-  if (item.reason === "pending_previous") {
-    return [
-      item.achievement
-        ? {
-            label: `La volvió a marcar el ${shortDate(item.achievement.achievedAt, timeZone)}`,
-            tone: "lilac",
-          }
-        : { label: "No la cumplió la vez pasada", tone: "coral" },
-    ];
-  }
-  if (item.reason === "self_marked") {
-    return [
-      {
-        label: `Marcada el ${shortDate(item.achievement?.achievedAt ?? new Date().toISOString(), timeZone)}`,
-        tone: "lilac",
-      },
-    ];
-  }
-  return [{ label: "Pasos previos completos", tone: "mint" }];
 }
 
 function snapshotName(value: unknown, fallback: string) {
@@ -146,7 +105,7 @@ export default async function TechnicalEvaluationDetailPage({
       ctx.supabase
         .from("evaluation_template_elements")
         .select(
-          "id,element_id,criterion_id,mandatory,scored,max_score,min_score,attempts_allowed,sort_order,element_snapshot,item_label,item_description,item_kind,item_weight_percent,progression_required",
+          "id,criterion_id,mandatory,scored,max_score,min_score,attempts_allowed,sort_order,element_snapshot,item_label,item_description,item_kind,item_weight_percent,progression_required",
         )
         .eq("template_version_id", version.id)
         .order("sort_order"),
@@ -355,479 +314,376 @@ export default async function TechnicalEvaluationDetailPage({
 
   const isPublished = evaluation.status === "published";
   const step = isPublished ? "published" : (qs.step ?? "live");
-  const timeZone = ctx.studio.timezone ?? "America/Mexico_City";
-
-  const poleContext = isV2
-    ? await loadPoleEvaluationContext(ctx.supabase, {
-        studioId: ctx.studio.id,
-        evaluationId: evaluation.id,
-        studentId: evaluation.student_id,
-        disciplineId: evaluation.discipline_id,
-        templateElements: templateElements.map((item) => ({
-          id: item.id,
-          elementId: item.element_id,
-        })),
-        todayIso: new Date().toISOString(),
-      })
-    : null;
-
-  const liveNameById = new Map(liveElements.map((item) => [item.id, item.name]));
-  const poleWorkspace: PoleWorkspaceData | null = poleContext
-    ? {
-        hints: Object.fromEntries(
-          Object.entries(poleContext.baseHints).map(([itemId, hint]) => [
-            itemId,
-            baseHintView(hint, timeZone),
-          ]),
-        ),
-        baseFigures: Object.fromEntries(
-          Object.entries(poleContext.baseFigures).map(([itemId, figure]) => [
-            itemId,
-            { ...figure, name: liveNameById.get(itemId) ?? "Figura" },
-          ]),
-        ),
-        personalItems: poleContext.personalItems.map((item) => ({
-          ...item,
-          meta: personalMeta(item, timeZone),
-        })),
-        readiness: poleContext.readiness,
-      }
-    : null;
-  const personalMeets =
-    poleContext?.personalItems.filter((item) => item.resultStatus === "meets") ?? [];
-  const personalPractice =
-    poleContext?.personalItems.filter((item) => item.resultStatus === "does_not_meet") ?? [];
-  const nextLevelForPersonal = nextProgressionLink
-    ? (levelTitleMap.get(nextProgressionLink.id) ?? null)
-    : null;
 
   return (
-    <div className="sendero-evaluaciones">
-      <main className="evaluations-page">
-        <header className="eval-header">
-          <div className="eval-header-copy">
-            <Link className="back-link compact" href="/admin/evaluaciones">
-              ← Evaluaciones
-            </Link>
-            <span className="eval-eyebrow">
-              {step === "live"
-                ? "Evaluación en vivo"
-                : step === "resumen"
-                  ? "Resumen de evaluación"
-                  : step === "feedback"
-                    ? "Cierre y feedback"
-                    : "Resultado de evaluación"}{" "}
-              · {isV2 ? evaluationPurposeLabel : targetLevel}
-            </span>
-            <h1>{evaluation.student_name_snapshot}</h1>
+    <main className="evaluations-page">
+      <header className="eval-header">
+        <div className="eval-header-copy">
+          <Link className="back-link compact" href="/admin/evaluaciones">
+            ← Evaluaciones
+          </Link>
+          <h1>
+            {step === "live"
+              ? "Evaluación en vivo"
+              : step === "resumen"
+                ? "Resumen de evaluación"
+                : step === "feedback"
+                  ? "Cierre y feedback"
+                  : "Resultado de evaluación"}
+          </h1>
+          <p>
+            {evaluation.student_name_snapshot} · {disciplineResult.data?.name ?? "Disciplina"} ·{" "}
+            {isV2 ? evaluationPurposeLabel : targetLevel}
+          </p>
+        </div>
+        <span className={`eval-status ${isPublished ? "approved" : ""}`}>
+          {isPublished ? "Publicada" : "Borrador"}
+        </span>
+      </header>
+      {qs.error ? (
+        <div className="eval-notice">
+          No pudimos completar la acción. Revisa los datos e inténtalo de nuevo.
+        </div>
+      ) : null}
+
+      <section className="eval-panel eval-config-section">
+        <header>
+          <div>
+            <h2>{evaluation.student_name_snapshot}</h2>
             <p>
               {disciplineResult.data?.name ?? "Disciplina"} ·{" "}
-              {evaluation.evaluation_purpose === "progression" && isV2
-                ? `${currentLevel} → ${nextProgressionLevel}`
-                : evaluation.evaluation_purpose === "diagnostic" && isV2
-                  ? `Nivel en evaluación: ${targetLevel}`
-                  : targetLevel}
+              {isV2 && evaluation.evaluation_purpose === "diagnostic" ? (
+                <>Diagnóstico adaptativo · Nivel en evaluación: {targetLevel}</>
+              ) : isV2 && evaluation.evaluation_purpose === "placement" ? (
+                <>
+                  Nivel a validar: {targetLevel} · Actual: {currentLevel}
+                </>
+              ) : isV2 && evaluation.evaluation_purpose === "progression" ? (
+                <>
+                  Nivel actual: {currentLevel} · Objetivo: {nextProgressionLevel}
+                </>
+              ) : (
+                <>
+                  Objetivo: {targetLevel} · Actual: {currentLevel}
+                </>
+              )}
             </p>
           </div>
-          <div className="eval-header-meta">
-            {templateResult.data?.name ? (
-              <span className="eval-status">{templateResult.data.name}</span>
-            ) : null}
-            <span className={`eval-status ${isPublished ? "approved" : ""}`}>
-              {isPublished ? "Publicada" : "Borrador"}
-            </span>
-          </div>
+          <span className="eval-status">{templateResult.data?.name}</span>
         </header>
-        {qs.error ? (
-          <div className="eval-notice">
-            No pudimos completar la acción. Revisa los datos e inténtalo de nuevo.
-          </div>
-        ) : null}
+      </section>
 
-        <section className="eval-panel eval-config-section eval-context-strip">
-          <p>
-            {isV2 && evaluation.evaluation_purpose === "diagnostic" ? (
-              <>
-                Diagnóstico adaptativo: si aprueba {targetLevel}, sigue el siguiente nivel el mismo
-                día.
-              </>
-            ) : isV2 && evaluation.evaluation_purpose === "placement" ? (
-              <>
-                Nivel a validar: {targetLevel} · Actual: {currentLevel}
-              </>
-            ) : isV2 && evaluation.evaluation_purpose === "progression" ? (
-              <>
-                Nivel actual: {currentLevel} · Si aprueba, sube a {nextProgressionLevel}
-              </>
-            ) : (
-              <>
-                Objetivo: {targetLevel} · Actual: {currentLevel}
-              </>
-            )}
-          </p>
-        </section>
+      {step === "live" ? (
+        <>
+          <section className="eval-panel eval-live-progress">
+            <div className="eval-progress-header">
+              <span>{isV2 ? "Captura completada" : "Elementos evaluados"}</span>
+              <strong>
+                {liveCompleted} de {liveTotal} · {liveProgress}%
+              </strong>
+            </div>
+            <div className="eval-progress-track">
+              <i style={{ width: `${liveProgress}%` }} />
+            </div>
+          </section>
 
-        {step === "live" ? (
-          <>
-            <section className="eval-panel eval-live-progress">
-              <div className="eval-progress-header">
-                <span>{isV2 ? "Captura completada" : "Elementos evaluados"}</span>
+          {isV2 ? (
+            <EvaluationLiveFormV2 evaluationId={evaluation.id} blocks={liveV2Blocks} />
+          ) : (
+            <EvaluationLiveForm
+              evaluationId={evaluation.id}
+              criteria={liveCriteria}
+              elements={liveElements}
+              combos={liveCombos}
+            />
+          )}
+
+          <form action={recalculateTechnicalEvaluationAction} className="eval-form-actions">
+            <input type="hidden" name="evaluation_id" value={evaluation.id} />
+            <button className="eval-primary-button" type="submit">
+              Finalizar parte técnica →
+            </button>
+          </form>
+        </>
+      ) : null}
+
+      {step === "resumen" || step === "feedback" || step === "published" ? (
+        <>
+          <section className="eval-panel eval-summary-card">
+            <div className="eval-summary-top">
+              <div className="eval-total-score">
+                <small>Resultado global</small>
                 <strong>
-                  {liveCompleted} de {liveTotal} · {liveProgress}%
+                  {evaluation.total_score === null ? "—" : `${Math.round(evaluation.total_score)}%`}
                 </strong>
+                <span className={`eval-status ${evaluation.automatic_outcome ?? ""}`}>
+                  {statusLabel(
+                    step === "published" ? evaluation.final_outcome : evaluation.automatic_outcome,
+                  )}
+                </span>
               </div>
-              <div className="eval-progress-track">
-                <i style={{ width: `${liveProgress}%` }} />
+
+              <div className="eval-breakdown">
+                {criteria.map((criterion) => {
+                  const result = criterionResultMap.get(criterion.id);
+                  const score = result ? Number(result.score_percent) : 0;
+                  return (
+                    <div className="eval-breakdown-row" key={criterion.id}>
+                      <span>{criterion.label}</span>
+                      <span className="eval-breakdown-track">
+                        <i style={{ width: `${Math.min(score, 100)}%` }} />
+                      </span>
+                      <strong>{Math.round(score)}%</strong>
+                    </div>
+                  );
+                })}
               </div>
-            </section>
+            </div>
+          </section>
 
-            {isV2 ? (
-              <EvaluationLiveWorkspace
-                evaluationId={evaluation.id}
-                blocks={liveV2Blocks}
-                studentName={evaluation.student_name_snapshot}
-                nextLevelTitle={nextLevelForPersonal}
-                passThreshold={Number(version.pass_threshold)}
-                pole={poleWorkspace}
-              />
-            ) : (
-              <EvaluationLiveForm
-                evaluationId={evaluation.id}
-                criteria={liveCriteria}
-                elements={liveElements}
-                combos={liveCombos}
-              />
-            )}
-
-            <form action={recalculateTechnicalEvaluationAction} className="eval-form-actions">
-              <input type="hidden" name="evaluation_id" value={evaluation.id} />
-              <button className="eval-primary-button" type="submit">
-                Finalizar parte técnica →
-              </button>
-            </form>
-          </>
-        ) : null}
-
-        {step === "resumen" || step === "feedback" || step === "published" ? (
-          <>
-            <section className="eval-panel eval-summary-card">
-              <div className="eval-summary-top">
-                <div className="eval-total-score">
-                  <small>Resultado global</small>
+          {isV2 && evaluation.automatic_outcome !== "incomplete" ? (
+            <section className="eval-panel eval-v2-outcome-card">
+              <small>Resultado de nivel</small>
+              <div className="eval-v2-level-result">
+                <div>
+                  <span>Nivel evaluado</span>
+                  <strong>{targetLevel}</strong>
+                </div>
+                <div>
+                  <span>Nivel confirmado después de la evaluación</span>
                   <strong>
-                    {evaluation.total_score === null
-                      ? "—"
-                      : `${Math.round(evaluation.total_score)}%`}
+                    {evaluation.evaluation_purpose === "diagnostic"
+                      ? (resultingLevel ??
+                        (evaluation.automatic_outcome === "approved"
+                          ? `Continúa a ${nextProgressionLevel}`
+                          : "Se confirmará al cerrar el diagnóstico"))
+                      : evaluation.evaluation_purpose === "placement"
+                        ? evaluation.automatic_outcome === "approved"
+                          ? targetLevel
+                          : "Sin nivel confirmado"
+                        : evaluation.evaluation_purpose === "progression"
+                          ? evaluation.automatic_outcome === "approved"
+                            ? nextProgressionLevel
+                            : currentLevel
+                          : currentLevel}
                   </strong>
-                  <span className={`eval-status ${evaluation.automatic_outcome ?? ""}`}>
-                    {statusLabel(
-                      step === "published"
-                        ? evaluation.final_outcome
-                        : evaluation.automatic_outcome,
-                    )}
-                  </span>
-                </div>
-
-                <div className="eval-breakdown">
-                  {criteria.map((criterion) => {
-                    const result = criterionResultMap.get(criterion.id);
-                    const score = result ? Number(result.score_percent) : 0;
-                    return (
-                      <div className="eval-breakdown-row" key={criterion.id}>
-                        <span>{criterion.label}</span>
-                        <span className="eval-breakdown-track">
-                          <i style={{ width: `${Math.min(score, 100)}%` }} />
-                        </span>
-                        <strong>{Math.round(score)}%</strong>
-                      </div>
-                    );
-                  })}
                 </div>
               </div>
-            </section>
-
-            {isV2 && evaluation.automatic_outcome !== "incomplete" ? (
-              <section className="eval-panel eval-v2-outcome-card">
-                <small>Resultado de nivel</small>
-                <div className="eval-v2-level-result">
-                  <div>
-                    <span>Nivel evaluado</span>
-                    <strong>{targetLevel}</strong>
-                  </div>
-                  <div>
-                    <span>Nivel confirmado después de la evaluación</span>
-                    <strong>
-                      {evaluation.evaluation_purpose === "diagnostic"
-                        ? (resultingLevel ??
-                          (evaluation.automatic_outcome === "approved"
-                            ? `Continúa a ${nextProgressionLevel}`
-                            : "Se confirmará al cerrar el diagnóstico"))
-                        : evaluation.evaluation_purpose === "placement"
-                          ? evaluation.automatic_outcome === "approved"
-                            ? targetLevel
-                            : "Sin nivel confirmado"
-                          : evaluation.evaluation_purpose === "progression"
-                            ? evaluation.automatic_outcome === "approved"
-                              ? nextProgressionLevel
-                              : currentLevel
-                            : currentLevel}
-                    </strong>
-                  </div>
-                </div>
-                {step === "published" ? (
-                  <span>
-                    {evaluation.evaluation_purpose === "diagnostic"
-                      ? resultingLevel
-                        ? `Diagnóstico finalizado. Nivel confirmado: ${resultingLevel}.`
-                        : `Nivel ${targetLevel} superado. El diagnóstico continúa.`
-                      : evaluation.evaluation_purpose === "placement" &&
-                          evaluation.automatic_outcome !== "approved"
-                        ? `Resultado publicado. Esta colocación no confirmó ${targetLevel}.`
-                        : "Resultado publicado y nivel actualizado según corresponda."}
-                  </span>
-                ) : (
-                  <span>El nivel se actualizará al publicar el resultado.</span>
-                )}
-              </section>
-            ) : null}
-
-            <section className="eval-feedback-grid">
-              {hasProgressionRequirements ? (
-                <article className="eval-panel eval-feedback-card">
-                  <h3>Requisitos de progresión</h3>
-                  <p className="eval-row-copy">
-                    <small>
-                      {progressionRequirementsMet} / {progressionRequirementItems.length} cumplen
-                    </small>
-                  </p>
-                </article>
-              ) : null}
-              {!isV2 ? (
-                <article className="eval-panel eval-feedback-card">
-                  <h3>Requisitos de progresión · Combos</h3>
-                  <p className="eval-row-copy">
-                    <small>
-                      {
-                        templateCombos.filter(
-                          (item) =>
-                            item.mandatory &&
-                            comboResultMap.get(item.id)?.result_status === "meets",
-                        ).length
-                      }{" "}
-                      / {templateCombos.filter((item) => item.mandatory).length} cumplen
-                    </small>
-                  </p>
-                </article>
+              {step === "published" ? (
+                <span>
+                  {evaluation.evaluation_purpose === "diagnostic"
+                    ? resultingLevel
+                      ? `Diagnóstico finalizado. Nivel confirmado: ${resultingLevel}.`
+                      : `Nivel ${targetLevel} superado. El diagnóstico continúa.`
+                    : evaluation.evaluation_purpose === "placement" &&
+                        evaluation.automatic_outcome !== "approved"
+                      ? `Resultado publicado. Esta colocación no confirmó ${targetLevel}.`
+                      : "Resultado publicado y nivel actualizado según corresponda."}
+                </span>
               ) : (
-                <article className="eval-panel eval-feedback-card">
-                  <h3>Tipo de evaluación</h3>
-                  <p className="eval-row-copy">
-                    <small>
-                      {evaluation.evaluation_purpose === "diagnostic"
-                        ? "Diagnóstico inicial adaptativo"
-                        : evaluation.evaluation_purpose === "placement"
-                          ? "Colocación inicial"
-                          : evaluation.evaluation_purpose === "exception"
-                            ? "Evaluación excepcional"
-                            : "Progresión"}
-                    </small>
-                  </p>
-                </article>
+                <span>El nivel se actualizará al publicar el resultado.</span>
               )}
             </section>
-            {poleContext && poleContext.personalItems.length ? (
-              <section className="eval-panel eval-config-section eval-pole-summary">
-                <header>
-                  <div>
-                    <h2>Parte personalizada</h2>
-                    <p>
-                      {personalMeets.length} de {poleContext.personalItems.length} cumplen. No
-                      cambia el resultado del nivel.
-                    </p>
-                  </div>
-                </header>
-                <div className="eval-pole-summary-grid">
-                  <div>
-                    <span className="eval-eyebrow">
-                      {step === "published" ? "Validadas en su progreso" : "Se validan al publicar"}
-                    </span>
-                    {personalMeets.length ? (
-                      <ul>
-                        {personalMeets.map((item) => (
-                          <li key={item.id}>{item.name}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="eval-muted">Ninguna todavía.</p>
-                    )}
-                  </div>
-                  <div>
-                    <span className="eval-eyebrow">Para practicar</span>
-                    {personalPractice.length ? (
-                      <ul>
-                        {personalPractice.map((item) => (
-                          <li key={item.id}>{item.name}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="eval-muted">Nada pendiente.</p>
-                    )}
-                  </div>
-                </div>
-              </section>
-            ) : null}
+          ) : null}
+
+          <section className="eval-feedback-grid">
             {hasProgressionRequirements ? (
-              <p className="eval-summary-hint">
-                Los requisitos de progresión son una condición adicional para subir de nivel.
-              </p>
+              <article className="eval-panel eval-feedback-card">
+                <h3>Requisitos de progresión</h3>
+                <p className="eval-row-copy">
+                  <small>
+                    {progressionRequirementsMet} / {progressionRequirementItems.length} cumplen
+                  </small>
+                </p>
+              </article>
             ) : null}
-          </>
-        ) : null}
-
-        {step === "resumen" ? (
-          <div className="eval-form-actions">
-            <Link className="eval-secondary-button" href={`/admin/evaluaciones/${evaluation.id}`}>
-              {evaluation.automatic_outcome === "incomplete"
-                ? "Completar evaluación"
-                : "Editar evaluación"}
-            </Link>
-            {evaluation.automatic_outcome !== "incomplete" ? (
-              <form action={openEvaluationFeedbackAction}>
-                <input type="hidden" name="evaluation_id" value={evaluation.id} />
-                <button className="eval-primary-button" type="submit">
-                  {evaluation.evaluation_purpose === "diagnostic" &&
-                  evaluation.automatic_outcome === "approved" &&
-                  nextProgressionLink
-                    ? "Continuar diagnóstico →"
-                    : "Continuar con feedback →"}
-                </button>
-              </form>
+            {!isV2 ? (
+              <article className="eval-panel eval-feedback-card">
+                <h3>Requisitos de progresión · Combos</h3>
+                <p className="eval-row-copy">
+                  <small>
+                    {
+                      templateCombos.filter(
+                        (item) =>
+                          item.mandatory && comboResultMap.get(item.id)?.result_status === "meets",
+                      ).length
+                    }{" "}
+                    / {templateCombos.filter((item) => item.mandatory).length} cumplen
+                  </small>
+                </p>
+              </article>
             ) : (
-              <span className="eval-notice">
-                Faltan datos por evaluar. Todos los elementos deben tener resultado antes de
-                finalizar la parte técnica.
-              </span>
+              <article className="eval-panel eval-feedback-card">
+                <h3>Tipo de evaluación</h3>
+                <p className="eval-row-copy">
+                  <small>
+                    {evaluation.evaluation_purpose === "diagnostic"
+                      ? "Diagnóstico inicial adaptativo"
+                      : evaluation.evaluation_purpose === "placement"
+                        ? "Colocación inicial"
+                        : evaluation.evaluation_purpose === "exception"
+                          ? "Evaluación excepcional"
+                          : "Progresión"}
+                  </small>
+                </p>
+              </article>
             )}
-          </div>
-        ) : null}
-
-        {step === "feedback" ? (
-          <section className="eval-panel eval-config-section">
-            <header>
-              <div>
-                <h2>Feedback del coach</h2>
-                <p>Convierte el resultado técnico en una guía clara para la alumna.</p>
-              </div>
-            </header>
-            <form action={publishTechnicalEvaluationAction} className="eval-form">
-              <input type="hidden" name="evaluation_id" value={evaluation.id} />
-              <div className="eval-field-grid">
-                <div className="eval-field">
-                  <label htmlFor="strengths">Fortalezas · una por línea</label>
-                  <textarea
-                    id="strengths"
-                    name="strengths"
-                    placeholder={"Buen control\nLíneas limpias"}
-                  />
-                </div>
-                <div className="eval-field">
-                  <label htmlFor="improvements">Áreas por mejorar · una por línea</label>
-                  <textarea
-                    id="improvements"
-                    name="improvement_areas"
-                    placeholder={"Fuerza de entrada\nControl del descenso"}
-                  />
-                </div>
-              </div>
-              <div className="eval-field">
-                <label htmlFor="coach-message">Mensaje del coach</label>
-                <textarea
-                  id="coach-message"
-                  name="coach_message"
-                  placeholder="Excelente trabajo. Se nota mucho tu progreso…"
-                />
-              </div>
-              <div className="eval-field">
-                <label htmlFor="next-objective">Próximo objetivo</label>
-                <textarea
-                  id="next-objective"
-                  name="next_objective"
-                  placeholder="Trabajar fuerza en invert y preparar los combos del siguiente nivel."
-                />
-              </div>
-
-              <div className="eval-form-actions">
-                <Link
-                  className="eval-secondary-button"
-                  href={`/admin/evaluaciones/${evaluation.id}?step=resumen`}
-                >
-                  Volver
-                </Link>
-                <button className="eval-primary-button" type="submit">
-                  Publicar para la alumna
-                </button>
-              </div>
-            </form>
           </section>
-        ) : null}
+          {hasProgressionRequirements ? (
+            <p className="eval-summary-hint">
+              Los requisitos de progresión son una condición adicional para subir de nivel.
+            </p>
+          ) : null}
+        </>
+      ) : null}
 
-        {step === "published" ? (
-          <>
-            <section className="eval-feedback-grid">
-              <article className="eval-panel eval-feedback-card">
-                <h3>Tus fortalezas</h3>
-                {(evaluation.strengths ?? []).length ? (
-                  <ul>
-                    {evaluation.strengths.map((item: string) => (
-                      <li key={item}>✓ {item}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="eval-row-copy">
-                    <small>Sin fortalezas capturadas.</small>
-                  </p>
-                )}
-              </article>
-              <article className="eval-panel eval-feedback-card">
-                <h3>Áreas por mejorar</h3>
-                {(evaluation.improvement_areas ?? []).length ? (
-                  <ul>
-                    {evaluation.improvement_areas.map((item: string) => (
-                      <li key={item}>↗ {item}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="eval-row-copy">
-                    <small>Sin áreas capturadas.</small>
-                  </p>
-                )}
-              </article>
+      {step === "resumen" ? (
+        <div className="eval-form-actions">
+          <Link className="eval-secondary-button" href={`/admin/evaluaciones/${evaluation.id}`}>
+            {evaluation.automatic_outcome === "incomplete"
+              ? "Completar evaluación"
+              : "Editar evaluación"}
+          </Link>
+          {evaluation.automatic_outcome !== "incomplete" ? (
+            <form action={openEvaluationFeedbackAction}>
+              <input type="hidden" name="evaluation_id" value={evaluation.id} />
+              <button className="eval-primary-button" type="submit">
+                {evaluation.evaluation_purpose === "diagnostic" &&
+                evaluation.automatic_outcome === "approved" &&
+                nextProgressionLink
+                  ? "Continuar diagnóstico →"
+                  : "Continuar con feedback →"}
+              </button>
+            </form>
+          ) : (
+            <span className="eval-notice">
+              Faltan datos por evaluar. Todos los elementos deben tener resultado antes de finalizar
+              la parte técnica.
+            </span>
+          )}
+        </div>
+      ) : null}
+
+      {step === "feedback" ? (
+        <section className="eval-panel eval-config-section">
+          <header>
+            <div>
+              <h2>Feedback del coach</h2>
+              <p>Convierte el resultado técnico en una guía clara para la alumna.</p>
+            </div>
+          </header>
+          <form action={publishTechnicalEvaluationAction} className="eval-form">
+            <input type="hidden" name="evaluation_id" value={evaluation.id} />
+            <div className="eval-field-grid">
+              <div className="eval-field">
+                <label htmlFor="strengths">Fortalezas · una por línea</label>
+                <textarea
+                  id="strengths"
+                  name="strengths"
+                  placeholder={"Buen control\nLíneas limpias"}
+                />
+              </div>
+              <div className="eval-field">
+                <label htmlFor="improvements">Áreas por mejorar · una por línea</label>
+                <textarea
+                  id="improvements"
+                  name="improvement_areas"
+                  placeholder={"Fuerza de entrada\nControl del descenso"}
+                />
+              </div>
+            </div>
+            <div className="eval-field">
+              <label htmlFor="coach-message">Mensaje del coach</label>
+              <textarea
+                id="coach-message"
+                name="coach_message"
+                placeholder="Excelente trabajo. Se nota mucho tu progreso…"
+              />
+            </div>
+            <div className="eval-field">
+              <label htmlFor="next-objective">Próximo objetivo</label>
+              <textarea
+                id="next-objective"
+                name="next_objective"
+                placeholder="Trabajar fuerza en invert y preparar los combos del siguiente nivel."
+              />
+            </div>
+
+            <div className="eval-form-actions">
+              <Link
+                className="eval-secondary-button"
+                href={`/admin/evaluaciones/${evaluation.id}?step=resumen`}
+              >
+                Volver
+              </Link>
+              <button className="eval-primary-button" type="submit">
+                Publicar para la alumna
+              </button>
+            </div>
+          </form>
+        </section>
+      ) : null}
+
+      {step === "published" ? (
+        <>
+          <section className="eval-feedback-grid">
+            <article className="eval-panel eval-feedback-card">
+              <h3>Tus fortalezas</h3>
+              {(evaluation.strengths ?? []).length ? (
+                <ul>
+                  {evaluation.strengths.map((item: string) => (
+                    <li key={item}>✓ {item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="eval-row-copy">
+                  <small>Sin fortalezas capturadas.</small>
+                </p>
+              )}
+            </article>
+            <article className="eval-panel eval-feedback-card">
+              <h3>Áreas por mejorar</h3>
+              {(evaluation.improvement_areas ?? []).length ? (
+                <ul>
+                  {evaluation.improvement_areas.map((item: string) => (
+                    <li key={item}>↗ {item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="eval-row-copy">
+                  <small>Sin áreas capturadas.</small>
+                </p>
+              )}
+            </article>
+          </section>
+
+          {evaluation.coach_message ? (
+            <section className="eval-panel eval-config-section">
+              <header>
+                <div>
+                  <h2>Comentario de tu coach</h2>
+                </div>
+              </header>
+              <p style={{ color: "#b8c1cd", fontSize: 11, lineHeight: 1.7 }}>
+                {evaluation.coach_message}
+              </p>
             </section>
+          ) : null}
 
-            {evaluation.coach_message ? (
-              <section className="eval-panel eval-config-section">
-                <header>
-                  <div>
-                    <h2>Comentario de tu coach</h2>
-                  </div>
-                </header>
-                <p className="eval-coach-copy">{evaluation.coach_message}</p>
-              </section>
-            ) : null}
-
-            {evaluation.next_objective ? (
-              <section className="eval-panel eval-config-section">
-                <header>
-                  <div>
-                    <h2>Próximo objetivo</h2>
-                  </div>
-                </header>
-                <p className="eval-coach-copy">{evaluation.next_objective}</p>
-              </section>
-            ) : null}
-          </>
-        ) : null}
-      </main>
-    </div>
+          {evaluation.next_objective ? (
+            <section className="eval-panel eval-config-section">
+              <header>
+                <div>
+                  <h2>Próximo objetivo</h2>
+                </div>
+              </header>
+              <p style={{ color: "#b8c1cd", fontSize: 11, lineHeight: 1.7 }}>
+                {evaluation.next_objective}
+              </p>
+            </section>
+          ) : null}
+        </>
+      ) : null}
+    </main>
   );
 }

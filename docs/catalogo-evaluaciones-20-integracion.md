@@ -1,81 +1,34 @@
-# Catálogo y Evaluaciones 2.0 · integración en revisión
+# Catálogo y Evaluaciones 2.0 · integración (POLE-01)
 
-## Estado y procedencia
+## Fuente canónica
 
-Continuación autorizada por Mike el 20 de octubre de 2026 bajo Governance 2.0.
-Bloque canónico: https://app.notion.com/p/3ffd78f7146381a6ae39c89b6c66a5e6.
+Notion: épica POLE-01 «Catálogo como base: evaluación por nivel, combo de clase y
+progreso» y la página «Studio Flow · Catálogo y Evaluaciones 2.0 · Integración y UAT».
+Desglose técnico POLE-01-08 a 24. Bloque liberado por Mike el 22-oct-2026.
 
-Base Catálogo C1/C2: PR #348, `807d2441440859ce0f19ab88f18edba57add5cd6`.
-Capa de Evaluaciones: PR #351, `4661d37da94a91d8e86d7bad23710ac934696228`.
-Se reutilizan sus componentes de evaluación y se adaptan a C1/C2. Las ramas
-originales permanecen intactas. Esta integración todavía no es una entrega UAT.
+## Estado de esta rama (22-oct-2026)
 
-## Problema resuelto en código
+- Incluye `main` hasta `bfd395e1`.
+- **POLE-01-20 · migraciones con paridad exacta a Sandbox.** El catálogo vivía en
+  Sandbox con migraciones que no estaban en el repositorio. Se agregan con el mismo
+  texto que registra `supabase_migrations.schema_migrations` (md5 verificado):
+  `20261012182710_pole_figures_domain`, `20261012182739_pole_figures_seed`,
+  `20261012183439_pole_figures_integrity` y
+  `20261020214233_catalog_c2_achievement_invoker_lock_fix`. El seed reproduce
+  byte a byte el catálogo (1.206 figuras) de `lib/pole/catalog-seed.json` minificado.
+- `20261020060255_catalog_c1_student_figure_progress` (bitácora de marcado en clase)
+  existe en Sandbox pero **sin registro** en el historial de migraciones: Codex debe
+  verificar la paridad y registrarla, no volver a aplicarla.
+- Se quitaron `20261020060658` y `20261020060721`: copias idénticas de una tabla de
+  progreso de elementos técnicos que ningún código usa y que Sandbox no tiene.
+- **POLE-01-15 · se retiró la evaluación adaptativa de PR 351/352** (parte
+  personalizada, pistas y `evaluaciones04_pole_adaptive`). Evaluaciones vuelve al
+  estado de `main`; catálogo, combo de clase desde Hoy, figuras de la alumna y
+  portal se conservan.
 
-PR #351 consultaba `student_pole_achievements`, con `element_id`, y dependía de
-`pole_level_map`. Sandbox y C1/C2 usan `student_pole_figure_achievements`, con
-`figure_element_id`. La migración de PR #274 intentaría recrear tablas que ya
-existen con otra estructura. No se debe aplicar como prerrequisito de esta entrega.
+## Siguiente
 
-La capa de Evaluaciones ahora lee y escribe el progreso canónico existente.
-Conserva las rutas de catálogo, clase y portal de C1/C2; agrega las pistas y la
-parte personalizada a Evaluaciones. Cada lectura filtra por estudio. Una consulta
-fallida desactiva esta capa en lugar de presentar logros como inexistentes.
-El mapeo usa los cinco `level_key` confirmados en Sandbox y la correspondencia
-funcional documentada por el desarrollo original.
-
-El guardado y la regeneración de ítems bloquean primero su evaluación para
-serializarse con la publicación. También se corrigen la preparación de plantillas
-vacías y las pistas de validaciones con fecha futura.
-
-## Decisión funcional pendiente
-
-Se preguntó a Mike si publicar una evaluación debe marcar automáticamente como
-hechas las figuras con resultado Cumple, o si el instructor debe marcarlas aparte.
-El SQL y la vista previa de cambios del portal conservan la **propuesta** de PR
-#351: publicar valida las figuras aprobadas. Esto no representa una decisión
-aprobada. No aplicar esta migración en Sandbox ni solicitar UAT hasta resolverlo;
-si la respuesta es marcado separado, cambiar juntos SQL, copy y pruebas.
-
-La propuesta de plantillas de #351 conserva hasta ocho figuras, 80% figuras y
-20% técnica/seguridad. Las plantillas existentes no se reemplazan.
-
-## Verificación y límites
-
-Los resultados finales del candidato se registran en Notion y en su PR.
-Las pruebas SQL usan PostgreSQL 17 sin red, datos sintéticos y dobles explícitos
-para los servicios base de Supabase. Ejercitan la migración y el activador real
-versionado de plantillas. No acreditan login, transporte de Supabase, auditoría
-canónica desplegada ni UAT visual/funcional en Sandbox.
-
-Las lecturas de Sandbox confirmaron columnas y restricciones del progreso,
-firmas RPC y los cinco niveles. No se aplicaron migraciones ni se modificaron
-datos de Sandbox o producción durante esta preparación.
-
-## Reproducir la prueba SQL aislada
-
-Desde la raíz del repositorio, con Docker y Python disponibles:
-
-```sh
-python - <<'PY'
-import csv, json
-with open('/tmp/pole-evaluations-seed.csv', 'w') as output:
-    csv.writer(output).writerow([json.dumps(json.load(open('app/admin/catalogo/pole-catalog-data.json')))])
-PY
-docker run -d --name pole-evaluation-test --network none --memory 512m --cpus 1 -e POSTGRES_HOST_AUTH_METHOD=trust -v "$PWD:/src:ro" postgres:17-alpine
-docker exec pole-evaluation-test pg_isready -U postgres
-docker cp /tmp/pole-evaluations-seed.csv pole-evaluation-test:/tmp/pole-evaluations-seed.csv
-docker exec pole-evaluation-test psql -U postgres -v ON_ERROR_STOP=1 -f /src/tests/evaluations-pole-adaptive-uat.sql
-```
-
-Esperar a que `pg_isready` indique que acepta conexiones antes de ejecutar psql.
-Las aserciones y rechazos incorrectos detienen la prueba. El contenedor no publica
-puertos ni recibe credenciales de Supabase. Se puede detener después de revisar.
-
-## Siguiente acción
-
-Resolver la regla de publicación con Mike, verificar la migración contra el esquema
-completo pertinente y preparar una única versión Sandbox con demo sintético.
-Después: UAT técnico del recorrido Hoy → combo → catálogo → evaluación → portal,
-y UAT funcional de Mike sobre esa misma versión. Producción requiere autorización
-explícita posterior; este bloque no fusiona main ni promueve una versión.
+POLE-01-08/09: correspondencia de niveles, obligatorias por nivel y mínimos por paso.
+Después el generador de plantilla de tres apartados (40/30/30) sobre el motor
+EVALUACIONES-01. Producción no se toca sin autorización explícita de Mike; ahí el
+catálogo de pole no existe y el pase incluye todas las migraciones anteriores.

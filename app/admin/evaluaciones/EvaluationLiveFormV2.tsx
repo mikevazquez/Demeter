@@ -20,12 +20,6 @@ export type EvaluationV2ItemLive = {
   notes: string;
 };
 
-export type EvaluationItemHintView = {
-  label: string;
-  tone: "mint" | "lilac" | "moon" | "coral" | "line";
-  note?: string;
-};
-
 export type EvaluationV2BlockLive = {
   id: string;
   label: string;
@@ -132,14 +126,10 @@ function V2ItemEditor({
   evaluationId,
   item,
   blockType,
-  hint,
-  onStatusChange,
 }: {
   evaluationId: string;
   item: EvaluationV2ItemLive;
   blockType: string;
-  hint?: EvaluationItemHintView;
-  onStatusChange?: (itemId: string, status: string) => void;
 }) {
   const [status, setStatus] = useState(item.resultStatus);
   const [score, setScore] = useState(item.score === null ? "" : String(item.score));
@@ -160,7 +150,6 @@ function V2ItemEditor({
     startTransition(async () => {
       const result = await saveTechnicalElementResultAction(formData);
       setMessage(result.ok ? "Guardado" : result.message || "No se pudo guardar");
-      if (result.ok) onStatusChange?.(item.id, nextStatus);
     });
   }
 
@@ -191,8 +180,6 @@ function V2ItemEditor({
           {item.progressionRequired ? (
             <span className="eval-v2-requirement">Requisito para progresión</span>
           ) : null}
-          {hint ? <span className={`eval-hint eval-hint-${hint.tone}`}>{hint.label}</span> : null}
-          {hint?.note ? <span className="eval-hint-note">{hint.note}</span> : null}
         </div>
       </div>
 
@@ -292,13 +279,9 @@ function V2ItemEditor({
 export function EvaluationLiveFormV2({
   evaluationId,
   blocks,
-  hints,
-  onStatusChange,
 }: {
   evaluationId: string;
   blocks: EvaluationV2BlockLive[];
-  hints?: Record<string, EvaluationItemHintView>;
-  onStatusChange?: (itemId: string, status: string) => void;
 }) {
   const [activeBlockId, setActiveBlockId] = useState(blocks[0]?.id ?? null);
   const activeBlock = blocks.find((block) => block.id === activeBlockId) ?? blocks[0] ?? null;
@@ -361,8 +344,6 @@ export function EvaluationLiveFormV2({
                   evaluationId={evaluationId}
                   item={item}
                   blockType={activeBlock.blockType}
-                  hint={hints?.[item.id]}
-                  onStatusChange={onStatusChange}
                 />
               ))}
             </div>
