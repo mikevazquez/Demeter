@@ -1,5 +1,7 @@
 # Aclaración de alcance de Mike · 22 oct 2026
 
+**Decisión posterior:** [C07 · objeciones al anticipo](../demi-cash-objections-20261022/README.md) sustituye la interpretación histórica de X → humano que aparece abajo: primera objeción, una explicación; segunda negativa, visita sin reserva sujeta a cupo, sin derivación por ese motivo. La alumna conserva su flujo de deuda. El historial inferior no acredita la nueva conversación.
+
 Esta decisión posterior actualiza el alcance de la matriz de `f5f9c056`; no reescribe las corridas ni convierte los fallos históricos en aprobados. Runtime observado: `5feefafb38a98e57a91b749e514a52c0a1212a8b`; único backend: Studio Flow Sandbox `hedouonyhynuvwbckdlg`. Este bloque sólo modifica documentación/evidencia y consulta datos existentes; no ejecuta nuevas compras, reservas ni mensajes.
 
 ## Efectivo y derivación
