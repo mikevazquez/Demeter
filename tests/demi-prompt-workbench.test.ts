@@ -122,6 +122,7 @@ function orchestratorHarness(
           "prepare_bank_transfer_purchase",
           "complete_purchase_profile",
           "complete_group_booking",
+          "update_contact_followup",
         ].map((name) => ({ name, type: "function" })),
         assistantReadToolNames: new Set(["get_activity_catalog"]),
         assistantActionToolNames: new Set([
@@ -131,6 +132,7 @@ function orchestratorHarness(
           "prepare_student_access_activation",
           "prepare_bank_transfer_purchase",
           "complete_purchase_profile",
+          "update_contact_followup",
         ]),
       },
     },
@@ -182,6 +184,35 @@ afterEach(() => {
 });
 
 describe("Demi prompt workbench", () => {
+  it.each([
+    ["student", false],
+    ["former_student", false],
+    ["prospect", true],
+    ["trial_reserved", true],
+  ] as const)(
+    "offers simulated follow-up only for applicable persona %s",
+    async (persona, allowed) => {
+      const h = orchestratorHarness();
+      h.input.testSimulation!.persona = persona;
+      h.input.history = [
+        { role: "user", content: "Quiero el paquete de ocho clases por transferencia." },
+      ];
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (_url, init) => {
+          const body = JSON.parse(String(init?.body));
+          expect(
+            body.tools.some((tool: { name: string }) => tool.name === "update_contact_followup"),
+          ).toBe(allowed);
+          return new Response(JSON.stringify(reply("Revisemos las opciones del paquete.")));
+        }),
+      );
+      await h.run(h.input);
+      expect(h.action).not.toHaveBeenCalled();
+      expect(h.simulate).not.toHaveBeenCalled();
+    },
+  );
   it.each([false, true])(
     "executes the real orchestrator action barrier after generation (current=%s)",
     async (current) => {

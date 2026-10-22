@@ -1041,7 +1041,12 @@ export async function runAssistantTurn(input: OrchestratorInput) {
             return true;
           }),
           ...assistantActionToolDefinitions.filter((tool) => {
-            if (input.testSimulation) return true;
+            if (input.testSimulation) {
+              if (tool.name !== "update_contact_followup") return true;
+              // Offer only the personas supported by the simulated follow-up contract.
+              const persona = input.testSimulation.persona;
+              return persona === "prospect" || persona.startsWith("trial_");
+            }
             // D-PAY-01: prospects buy packages by transfer; profile only after the receipt.
             if (tool.name === "complete_purchase_profile")
               return !input.studentId && Boolean(input.crmContactId);
