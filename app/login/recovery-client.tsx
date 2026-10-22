@@ -44,7 +44,7 @@ export function SubmitButton({
 
 function ResendButton({ sentAt }: { sentAt: number }) {
   const { pending } = useFormStatus();
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(sentAt);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
