@@ -11,6 +11,8 @@
 
 **Correcciones posteriores:** [candidata `56607e7e`](../demi-fixes-20261022/README.md) supera el error SQL de efectivo con25controles reales y añade correcciones/regresiones locales de derivación por asistente y validación de pago. Es una versión posterior a esta corrida; sus conversaciones completas siguen pendientes. Las filas y JSON inferiores conservan los resultados originales, sin convertir los fallos históricos en aprobados.
 
+[F06 · fuente `af412c40`](../demi-reminder-fix-20261022/README.md) corrige después el recordatorio duplicado en DB:12controles y dos transacciones realmente solapadas pasan, con un aviso y un trabajo por canal. Motor/entrega capturada de esta corrección aún no repetidos; los fallos de la corrida original se preservan abajo.
+
 **Alcance corregido por Mike:** A07 es un proceso manual, fuera de la automatización de Demi; deja de bloquearla. Efectivo distingue prospecto y alumna y deriva al agotar X intentos, no al elegir ese medio. El débito transferencia→reserva sí pasó (8→7). Ver [decisión y pendientes vigentes](scope-clarification.md) y [reinspección de créditos](transfer-credit-reinspection.json). No se cambian las corridas históricas ni se aprueba el proceso manual.
 
 **14 suites / 99 controles SQL pasan con roles reales; dos suites de efectivo fallan.** El probe histórico A07 se cuenta aparte: seis variantes de motor pasan y una quedó bloqueada bajo la expectativa anterior de automatización. A07 es ahora manual y no bloquea Demi. Las dos suites fallidas se detienen en la creación de compra por falta de permiso; sus pasos posteriores quedan sin acreditar.

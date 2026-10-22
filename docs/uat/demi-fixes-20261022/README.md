@@ -2,6 +2,8 @@
 
 **Verificación técnica aprobada en las superficies indicadas; UAT integral continúa BLOQUEADO.** Base `776537bbe92624cddb26727709f31b5e34a0e5e7`, candidata `56607e7e366cf8ea02cf6e34e8a8d477cba8d73f`, [PR #367 borrador](https://github.com/mikevazquez/Demeter/pull/367). Único backend: Studio Flow Sandbox `hedouonyhynuvwbckdlg`. No se atribuyen conversaciones del runtime anterior `5feefafb` a esta candidata.
 
+Actualización posterior: [F06 se corrige en DB en `af412c40`](../demi-reminder-fix-20261022/README.md), con12controles y concurrencia real aprobados en esa superficie. La referencia a F06 pendiente más abajo conserva el estado de este bloque56607e7e; la entrega completa sigue sin repetir.
+
 ## Cambios y evidencia
 
 | Defecto                                                            | Corrección                                                                                                                                                                                                             | Verificación y límite                                                                                                                                                                                                                              |
