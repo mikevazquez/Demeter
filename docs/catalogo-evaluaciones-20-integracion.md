@@ -26,9 +26,24 @@ Desglose técnico POLE-01-08 a 24. Bloque liberado por Mike el 22-oct-2026.
   estado de `main`; catálogo, combo de clase desde Hoy, figuras de la alumna y
   portal se conservan.
 
+- **Paridad de funciones con Sandbox.** Sandbox tenía cambios fuera del historial:
+  `private.pole_seed` corregido (`20261012190000_pole_seed_sandbox_parity`) y
+  `pole_save_plan` / `pole_snapshot` (`20261020220000_pole_sandbox_parity_functions`).
+  Las 26 funciones de Pole quedan con el mismo md5 de cuerpo que Sandbox.
+- **POLE-01-08/09/10** (`20261022160000_pole01_level_map_mandatory_figures`):
+  correspondencia de niveles y mínimos por estudio (85/87/90/92, Élite no sube),
+  obligatorias por nivel de alumna (propuesta automática 4–5 por nivel, aprobación de
+  Mike, máximo 5, del nivel de catálogo correspondiente) y funciones de escritura
+  sólo para `evaluations.configure`.
+
+## SQL local
+
+Prueba aislada (PostgreSQL local, nunca Sandbox ni producción): aplicar
+`tests/fixtures/pole-test-doubles.sql`, las migraciones de Pole en orden y
+`tests/pole01-level-mandatory.sql` (9 controles, termina en rollback).
+
 ## Siguiente
 
-POLE-01-08/09: correspondencia de niveles, obligatorias por nivel y mínimos por paso.
-Después el generador de plantilla de tres apartados (40/30/30) sobre el motor
+POLE-01-12 (pantalla de obligatorias en el catálogo) y POLE-01-13, el generador de plantilla de tres apartados (40/30/30) sobre el motor
 EVALUACIONES-01. Producción no se toca sin autorización explícita de Mike; ahí el
 catálogo de pole no existe y el pase incluye todas las migraciones anteriores.
