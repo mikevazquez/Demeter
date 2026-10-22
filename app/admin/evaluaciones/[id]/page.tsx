@@ -6,6 +6,8 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { EvaluationLiveForm } from "../EvaluationLiveForm";
 import { EvaluationLiveFormV2 } from "../EvaluationLiveFormV2";
+import { PolePlanPanel } from "../PolePlanPanel";
+import { loadPoleEvaluationContext, type PoleEvaluationContext } from "@/lib/pole/evaluation-plan";
 import {
   openEvaluationFeedbackAction,
   publishTechnicalEvaluationAction,
@@ -36,7 +38,7 @@ export default async function TechnicalEvaluationDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ step?: string; error?: string }>;
+  searchParams: Promise<{ step?: string; error?: string; pole?: string }>;
 }) {
   const [{ id }, qs, ctx] = await Promise.all([
     params,
@@ -87,6 +89,10 @@ export default async function TechnicalEvaluationDetailPage({
   const version = versionResult.data;
   if (!version) notFound();
   const isV2 = Number(version.schema_version ?? 1) === 2;
+  // POLE-01-14/16 · Evaluations generated from the Pole catalog choose their figures first.
+  const poleContext: PoleEvaluationContext = isV2
+    ? await loadPoleEvaluationContext(ctx.supabase, ctx.studio.id, evaluation)
+    : { isPole: false, levelKey: null, plan: null };
 
   const [templateResult, criteriaResult, templateElementsResult, templateCombosResult] =
     await Promise.all([
@@ -237,13 +243,20 @@ export default async function TechnicalEvaluationDetailPage({
     };
   });
 
+  const poleDictated = poleContext.plan?.dictated ?? [];
+  const poleCombo = poleContext.plan?.combo ?? [];
   const liveV2Blocks = criteria.map((criterion) => {
     const result = criterionResultMap.get(criterion.id);
     const blockItems = liveElements
       .filter((item) => item.criterionId === criterion.id)
-      .map((item) => ({
+      .map((item, index) => ({
         id: item.id,
-        name: item.name,
+        name:
+          poleContext.isPole &&
+          criterion.criterion_key === "pole_nomenclature" &&
+          poleDictated[index]
+            ? `Dictada ${index + 1}: ${poleDictated[index].name}`
+            : item.name,
         description: item.description,
         scored: item.scored,
         maxScore: item.maxScore,
@@ -260,7 +273,10 @@ export default async function TechnicalEvaluationDetailPage({
     return {
       id: criterion.id,
       label: criterion.label,
-      description: criterion.description,
+      description:
+        poleContext.isPole && criterion.criterion_key === "pole_combo" && poleCombo.length
+          ? `Combo: ${poleCombo.map((figure) => figure.name).join(" → ")}`
+          : criterion.description,
       blockType: criterion.block_type ?? "direct_score",
       weightPercent: Number(criterion.weight_percent),
       minPercent:
@@ -387,7 +403,16 @@ export default async function TechnicalEvaluationDetailPage({
             </div>
           </section>
 
-          {isV2 ? (
+          {poleContext.isPole ? (
+            <PolePlanPanel
+              evaluationId={evaluation.id}
+              context={poleContext}
+              canWrite={ctx.can(CAPABILITIES.EVALUATIONS_WRITE)}
+              message={qs.pole}
+            />
+          ) : null}
+
+          {poleContext.isPole && !poleContext.plan?.locked ? null : isV2 ? (
             <EvaluationLiveFormV2 evaluationId={evaluation.id} blocks={liveV2Blocks} />
           ) : (
             <EvaluationLiveForm

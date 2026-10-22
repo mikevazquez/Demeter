@@ -3155,3 +3155,98 @@ main:has(.evaluations-page) {
 .evaluations-page .eval-simple-requirements-list {
   border-color: var(--eval-line) !important;
 }
+
+/* POLE-01-14/16 · Figures of a Pole evaluation (combo 4 + dictation 3). */
+.pole-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pole-plan h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.pole-plan-copy,
+.pole-plan-notice {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pole-plan-notice {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(246, 200, 78, 0.14);
+}
+
+.pole-plan-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pole-plan-form fieldset {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pole-plan-form legend {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pole-plan-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.pole-plan-field select {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  font-size: 15px;
+}
+
+.pole-plan-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pole-plan-confirm li,
+.pole-plan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pole-plan-summary {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.pole-plan-summary dt {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.pole-plan-summary dd {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+}
