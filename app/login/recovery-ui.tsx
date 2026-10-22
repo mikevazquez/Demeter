@@ -54,13 +54,7 @@ export function RecoveryPath({ step }: { step: RecoveryStep }) {
   );
 }
 
-export function RecoveryShell({
-  backHref,
-  children,
-}: {
-  backHref?: string;
-  children: ReactNode;
-}) {
+export function RecoveryShell({ backHref, children }: { backHref?: string; children: ReactNode }) {
   return (
     <main className="srec-shell">
       <section className="srec-card">

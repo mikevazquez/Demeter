@@ -66,16 +66,14 @@ const PORTALS = {
   student: {
     action: requestStudentRecoveryAction,
     eyebrow: "Portal de alumnas",
-    copy:
-      "Escribe el teléfono con el que entras al portal. Te enviaremos por WhatsApp un enlace para crear una contraseña nueva.",
+    copy: "Escribe el teléfono con el que entras al portal. Te enviaremos por WhatsApp un enlace para crear una contraseña nueva.",
     label: "Teléfono",
     field: "phone",
     inputType: "tel",
     inputMode: "tel",
     autoComplete: "tel",
     placeholder: "33 1234 5678",
-    note:
-      "El enlace funciona en cualquier navegador y vence en 60 minutos. ¿Cambiaste de número? Avisa en recepción.",
+    note: "El enlace funciona en cualquier navegador y vence en 60 minutos. ¿Cambiaste de número? Avisa en recepción.",
     invalid: "Escribe un teléfono de 10 dígitos.",
     loginHref: "/login/student",
     sentTitle: "Revisa tu WhatsApp",
@@ -86,8 +84,7 @@ const PORTALS = {
   studio: {
     action: requestStudioRecoveryAction,
     eyebrow: "Portal de administración",
-    copy:
-      "Escribe el correo de tu cuenta de equipo. Te enviaremos un enlace para crear una contraseña nueva.",
+    copy: "Escribe el correo de tu cuenta de equipo. Te enviaremos un enlace para crear una contraseña nueva.",
     label: "Correo",
     field: "email",
     inputType: "email",
