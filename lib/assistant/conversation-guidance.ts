@@ -82,9 +82,16 @@ export function prospectCashTurnReply(
 ): string | null {
   const stage = prospectCashPaymentStage(input, history);
   if (stage === "first_objection")
-    return "Entiendo. Para asegurar tu lugar en esta primera clase necesitamos el pago por adelantado, por alguno de los métodos habilitados. Pagar en efectivo al llegar no confirma una reserva.";
+    return "Entiendo que prefieras pagar en efectivo. Como los lugares se reservan con anticipación, el pago por adelantado nos permite confirmar un lugar para tu primera clase. Sin ese pago, el lugar sigue disponible para otras personas y no queda reservado a tu nombre. Puedes hacerlo por alguno de los métodos habilitados.";
   if (stage === "second_refusal")
-    return "Entiendo. Puedes acercarte al estudio y pagar la clase ese día en efectivo, únicamente si hay lugar al llegar. Las clases se agendan con anticipación, así que irías sin reserva y no podemos garantizarte que haya espacio para tomarla.";
+    return history.some(
+      (message) =>
+        message.role === "assistant" &&
+        message.content.includes("recepción recibe y registra el pago") &&
+        message.content.includes("únicamente si hay lugar"),
+    )
+      ? "Claro, te lo explico de otra forma: pagarías en efectivo directamente con recepción al llegar al estudio. Si en ese momento hay un lugar libre, puedes tomar la clase; si todos los lugares ya están reservados, no podrías entrar a esa clase. Por eso la visita sería sin reserva y no puedo asegurarte un lugar."
+      : "Entiendo que el pago anticipado no sea una opción para ti. Puedes acercarte al estudio y pagar la clase ese día en efectivo, únicamente si hay lugar al llegar; recepción recibe y registra el pago. Como las clases se agendan con anticipación, irías sin reserva y no podemos garantizarte que haya espacio para tomarla.";
   return null;
 }
 
@@ -106,6 +113,9 @@ export function conversationGuidance(input: AudienceInput): string {
     "Un agradecimiento no es consentimiento para reservar, cobrar, cancelar ni enviar seguimientos. Si ya resolviste la necesidad y ofreciste un siguiente paso, responde al agradecimiento brevemente sin repetir la invitación. Respeta 'solo quería información', 'después', 'no me interesa' y las despedidas explícitas.",
     "Personaliza horarios: conserva actividad, día y rango de horas. Las primeras dos o tres opciones son recomendaciones iniciales, no toda la oferta. Si pide todos los horarios, consulta el período completo y continúa con next_offset mientras has_more=true, manteniendo filtros. Si query_truncated=true divide por días antes de afirmar que mostró toda la oferta. No conviertas cero resultados de un rango en inexistencia de la actividad; comprueba el catálogo si hace falta.",
     "Una objeción no es una despedida: reconoce la dificultad, busca una alternativa real y haz como máximo una pregunta sobre el dato que falta. Si los primeros horarios no sirven, amplía fechas o pregunta por sus horas disponibles; no repitas las mismas tres opciones. Si le preocupa ser principiante, usa información oficial y una recomendación pertinente, sin prometer resultados médicos. Respeta una negativa definitiva.",
+    "Ante una objeción, reconoce primero lo que la persona quiere en concreto y explica por qué existe la limitación, usando sólo las reglas y datos verificados. No basta con repetir la regla ni añadir 'entiendo' al mismo texto. Si insiste, pregunta por qué o dice que no entendió, reformula en palabras más sencillas o con un ejemplo breve y ofrece una alternativa real. No inventes motivos, excepciones ni disponibilidad para sonar empática; si el motivo no está disponible, dilo sin especular. Evita sonar condescendiente y no culpes a la persona por no entender.",
+    "Si quiere una clase que Studio Flow indica llena, reconoce su preferencia por ese horario y explica que los lugares ya están ocupados, por lo que no puedes confirmar otro. Si vuelve a pedir ese horario, aclara que su preferencia se entiende pero no crea un lugar libre; ofrece consultar otra fecha u horario real y conserva la actividad y profesor solicitados. No vuelvas a ejecutar la misma reserva sólo por insistencia ni prometas lista de espera o cupo sin elegibilidad verificada. Una consulta nueva de disponibilidad sí puede comprobar si cambió el cupo.",
+    "El efectivo se entrega en el estudio: recepción recibe y registra el pago. Demi sólo informa sobre ese cobro; no recibe efectivo, no pide comprobantes de efectivo ni promete revisarlo o validarlo. Que la persona diga 'ya pagué en efectivo' no acredita un pago: informa que recepción lo registra, sin iniciar una revisión de transferencia ni darlo por pagado. Puedes consultar el estado ya registrado en Studio Flow si pregunta por su saldo o adeudo. El alta autorizada de un paquete por cobrar para una alumna identificada conserva sus reglas y advertencias; no es un cobro recibido.",
     "No prometas reserva ni retención de cupo sin el pago o créditos válidos que Studio Flow exige. Ofrecer una visita sin reserva no crea una reserva, retiene cupo ni registra una promesa de pago.",
   ];
   if (needsFirstVisitGuidance(input)) {

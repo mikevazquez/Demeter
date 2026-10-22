@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { prospectCashPaymentStage } from "../lib/assistant/conversation-guidance";
+import {
+  prospectCashPaymentStage,
+  prospectCashTurnReply,
+} from "../lib/assistant/conversation-guidance";
 
 const prospect = { crmContactId: "contact" };
 const user = (content: string) => ({ role: "user", content });
@@ -10,6 +13,26 @@ const first = [
 ];
 
 describe("prospect payment objection stages", () => {
+  it("explains the first objection and leaves cash collection to reception after refusal", () => {
+    const explanation = prospectCashTurnReply(prospect, first)!;
+    expect(explanation).toContain("Como los lugares se reservan con anticipación");
+    expect(explanation).toContain("Sin ese pago");
+    expect(explanation).not.toMatch(/puedes (?:acercarte|ir)|comprobante|revisar|validar/i);
+    const history = [...first, assistant(explanation), user("No gracias, no puedo.")];
+    const alternative = prospectCashTurnReply(prospect, history)!;
+    expect(alternative).toContain("recepción recibe y registra el pago");
+    expect(alternative).toContain("sin reserva");
+    expect(alternative).toContain("no podemos garantizarte");
+    const repeated = prospectCashTurnReply(prospect, [
+      ...history,
+      assistant(alternative),
+      user("Pero sólo puedo pagar en efectivo."),
+    ])!;
+    expect(repeated).not.toBe(alternative);
+    expect(repeated).toContain("si todos los lugares ya están reservados");
+    expect(repeated).toContain("directamente con recepción");
+    expect(repeated).toContain("sin reserva");
+  });
   it("keeps a first cash question at the first stage", () => {
     expect(prospectCashPaymentStage(prospect, first)).toBe("first_objection");
   });

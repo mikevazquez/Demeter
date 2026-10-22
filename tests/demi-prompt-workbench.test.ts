@@ -643,6 +643,7 @@ describe("Demi prompt workbench", () => {
     expect(fetcher).not.toHaveBeenCalled();
     expect(result.trace.toolCalls).toEqual([]);
     expect(result.reply).toContain(second ? "únicamente si hay lugar" : "pago por adelantado");
+    expect(result.reply).toContain(second ? "recepción recibe y registra el pago" : "Sin ese pago");
   });
 
   it("answers a mixed information request while retaining exact payment instructions", async () => {

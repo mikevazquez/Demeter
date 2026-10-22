@@ -363,7 +363,8 @@ const BOOKING_REASON_MESSAGES: Record<string, string> = {
   no_active_product: "No hay un paquete o membresía vigente que cubra la clase.",
   outside_product: "El paquete vigente no aplica para esta actividad.",
   outside_product_schedule: "El paquete vigente no aplica para este horario.",
-  session_full: "La clase ya está llena.",
+  session_full:
+    "Entiendo que quieras ese horario. La clase ya está llena: todos sus lugares están ocupados y no puedo confirmar otra reserva. Puedo ayudarte a buscar otra fecha u horario.",
   no_credits: "No hay créditos suficientes para reservar.",
   resource_required: "Esta clase requiere seleccionar un recurso.",
   resource_not_available: "El recurso seleccionado ya no está disponible.",
