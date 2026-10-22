@@ -188,7 +188,7 @@ describe("Demi prompt workbench", () => {
     ["student", false],
     ["former_student", false],
     ["prospect", true],
-    ["trial_reserved", true],
+    ["trial_pending_reserved", true],
   ] as const)(
     "offers simulated follow-up only for applicable persona %s",
     async (persona, allowed) => {
