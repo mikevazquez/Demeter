@@ -62,8 +62,11 @@ describe("NEB-01-03 bloqueo de lo no contratado", () => {
 describe("NEB-01-03 módulos con candado y oferta self-service", () => {
   it("el menú del admin muestra lo no contratado con candado en vez de ocultarlo", () => {
     const layout = read("app/admin/layout.tsx");
-    expect(layout).toContain("locked: !rewardsContracted");
-    expect(layout).toContain('locked: !hasModule("catalogo")');
+    expect(layout).toContain(
+      'hasModule("recompensas") ? [] : ["/admin/retos", "/admin/recompensas"]',
+    );
+    expect(layout).toContain('hasModule("catalogo") ? [] : ["/admin/evaluaciones"]');
+    expect(layout).toContain("locked: lockedHrefs.includes(item.href)");
     expect(read("app/admin/admin-navigation.tsx")).toContain('aria-label="Módulo no contratado"');
   });
 

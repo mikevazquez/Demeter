@@ -91,7 +91,10 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
     await getCachedAdminContext();
   const billingNotice = subscriptionNotice(entitlements);
   // NEB-01-03 · lo no contratado se muestra con candado (self-service, NEB-01-34).
-  const rewardsContracted = hasModule("recompensas");
+  const lockedHrefs = [
+    ...(hasModule("recompensas") ? [] : ["/admin/retos", "/admin/recompensas"]),
+    ...(hasModule("catalogo") ? [] : ["/admin/evaluaciones"]),
+  ];
   const pwaQuery = pwaBrandQuery(studio);
   const instructorOnly = can(CAPABILITIES.INSTRUCTOR_PORTAL) && !can(CAPABILITIES.ADMIN_PORTAL);
   const brandLogoUrl = studio.logo_path
@@ -140,29 +143,12 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           : []),
         ...(can(CAPABILITIES.REWARDS_READ)
           ? [
-              {
-                href: "/admin/retos",
-                label: "Retos",
-                enabled: true,
-                locked: !rewardsContracted,
-              },
-              {
-                href: "/admin/recompensas",
-                label: "Rewards",
-                enabled: true,
-                locked: !rewardsContracted,
-              },
+              { href: "/admin/retos", label: "Retos", enabled: true },
+              { href: "/admin/recompensas", label: "Rewards", enabled: true },
             ]
           : []),
         ...(can(CAPABILITIES.EVALUATIONS_READ)
-          ? [
-              {
-                href: "/admin/evaluaciones",
-                label: "Evaluaciones",
-                enabled: true,
-                locked: !hasModule("catalogo"),
-              },
-            ]
+          ? [{ href: "/admin/evaluaciones", label: "Evaluaciones", enabled: true }]
           : []),
         ...(can(CAPABILITIES.PRODUCTS_READ)
           ? [{ href: "/admin/productos", label: "Paquetes", enabled: true }]
@@ -266,7 +252,12 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           </div>
         </div>
 
-        <AdminNavigation items={desktopNavItems} />
+        <AdminNavigation
+          items={desktopNavItems.map((item) => ({
+            ...item,
+            locked: lockedHrefs.includes(item.href),
+          }))}
+        />
 
         <div className="sidebar-footer">
           <div className="sidebar-user">
