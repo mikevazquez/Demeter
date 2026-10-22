@@ -121,3 +121,20 @@ create table public.technical_evaluations (
   unique (studio_id, id)
 );
 grant select on public.technical_evaluations to authenticated;
+alter table public.technical_evaluations
+  add column evaluator_user_id uuid, add column created_by uuid,
+  add column evaluation_purpose text not null default 'progression',
+  add column target_discipline_level_id uuid;
+alter table public.student_discipline_levels
+  add column effective_from date, add column source_evaluation_id uuid, add column updated_at timestamptz default now();
+create table public.technical_evaluation_element_results (
+  id uuid primary key default gen_random_uuid(), studio_id uuid not null, evaluation_id uuid not null references public.technical_evaluations(id),
+  template_element_id uuid not null references public.evaluation_template_elements(id), result_status text not null default 'not_evaluated',
+  score numeric, unique (evaluation_id, template_element_id)
+);
+create table public.technical_evaluation_criterion_results (
+  id uuid primary key default gen_random_uuid(), studio_id uuid not null, evaluation_id uuid not null references public.technical_evaluations(id),
+  template_criterion_id uuid not null references public.evaluation_template_criteria(id), score_percent numeric, passed boolean,
+  unique (evaluation_id, template_criterion_id)
+);
+grant select on public.technical_evaluation_element_results, public.technical_evaluation_criterion_results, public.student_discipline_levels to authenticated;

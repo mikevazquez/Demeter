@@ -42,14 +42,20 @@ Desglose técnico POLE-01-08 a 24. Bloque liberado por Mike el 22-oct-2026.
   (`20261022180000`): combo 4 + dictado 3 por evaluación, cambio antes de empezar,
   confirmación en vivo para Élite y congelado al empezar.
 
+- **POLE-01-17/18** (`20261022190000`): al publicar se marcan logradas las obligatorias
+  con Cumple, las dictadas con Correcto y el combo si la calificación alcanza el mínimo;
+  si alcanza el mínimo pero falta una obligatoria queda `pole_retained_promotions` y sube
+  sola cuando la coach marca esa figura en clase.
+
 ## SQL local
 
 Prueba aislada (PostgreSQL local, nunca Sandbox ni producción): aplicar
 `tests/fixtures/pole-test-doubles.sql`, las migraciones de Pole en orden y
-`scripts/pole01-sql-tests.sh` (21 controles en 3 archivos, cada uno termina en rollback).
+`scripts/pole01-sql-tests.sh` (24 controles en 4 archivos, cada uno termina en rollback).
 
 ## Siguiente
 
-POLE-01-12 (pantalla de obligatorias en el catálogo) y POLE-01-13, el generador de plantilla de tres apartados (40/30/30) sobre el motor
-EVALUACIONES-01. Producción no se toca sin autorización explícita de Mike; ahí el
-catálogo de pole no existe y el pase incluye todas las migraciones anteriores.
+POLE-01-16 (calificación en vivo y estilo Sendero de la evaluación), POLE-01-19 (revisar
+combo de clase y marcado en clase), migraciones en Sandbox (Codex), demo y UAT. Producción
+no se toca sin autorización explícita de Mike; ahí el catálogo de pole no existe y el pase
+incluye todas las migraciones anteriores.
