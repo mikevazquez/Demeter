@@ -806,3 +806,24 @@
     padding-inline: 12px;
   }
 }
+
+/* POLE-01-18 · Retained promotion */
+.pole-retained {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(242, 138, 122, 0.3);
+  background: rgba(242, 138, 122, 0.1);
+}
+
+.pole-retained strong {
+  color: #f6b3a8;
+  font-size: 15px;
+}
+
+.pole-retained p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}

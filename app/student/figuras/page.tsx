@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import catalog from "@/app/admin/catalogo/pole-catalog-data.json";
+import { loadPoleRetainedPromotion, retainedPromotionCopy } from "@/lib/pole/retained";
 import { getStudentPortalContext } from "@/lib/student/portal";
 
 import PoleFigurePhotoPicker from "./PoleFigurePhotoPicker";
@@ -51,6 +52,14 @@ export default async function StudentFiguresPage() {
       </main>
     );
   }
+
+  const retained = await loadPoleRetainedPromotion(
+    supabase,
+    membership.studio_id,
+    studentId,
+    poleDiscipline.id,
+  );
+  const retainedCopy = retained ? retainedPromotionCopy(retained) : null;
 
   const { data: studentLevel } = await supabase
     .from("student_discipline_levels")
@@ -279,6 +288,31 @@ export default async function StudentFiguresPage() {
           de las figuras que ya conseguiste.
         </p>
       </header>
+
+      {retainedCopy ? (
+        <section
+          className="sendero-surface border border-[var(--sendero-coral)]/25 p-5"
+          aria-labelledby="pole-retained-title"
+        >
+          <p className="sendero-eyebrow">Ascenso pendiente</p>
+          <h2 id="pole-retained-title" className="mt-2 text-2xl text-[var(--sendero-ink)]">
+            {retainedCopy.title}
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-[var(--sendero-muted)]">
+            {retainedCopy.detail}
+          </p>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {retainedCopy.pending.map((name) => (
+              <li
+                key={name}
+                className="rounded-full bg-white/[0.06] px-3 py-1.5 text-sm text-[var(--sendero-ink)]"
+              >
+                {name}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="sendero-surface overflow-hidden p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">

@@ -1,5 +1,6 @@
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { loadPoleRetainedPromotion, retainedPromotionCopy } from "@/lib/pole/retained";
 
 import StudentFiguresClient from "./StudentFiguresClient";
 
@@ -117,13 +118,32 @@ export default async function StudentFiguresPanel({ studentId }: { studentId: st
       completed: completed.has(profile.element_id),
     }));
 
+  const retained = await loadPoleRetainedPromotion(
+    supabase,
+    studio.id,
+    studentId,
+    poleDiscipline.id,
+  );
+  const retainedCopy = retained ? retainedPromotionCopy(retained) : null;
+
   return (
-    <StudentFiguresClient
-      currentLevelTitle={currentLevelTitle}
-      figures={figures}
-      totalCatalogFigures={
-        (profiles ?? []).filter((profile) => profile.catalog_level === currentCatalogLevel).length
-      }
-    />
+    <>
+      {retainedCopy ? (
+        <section className="profile360-view-panel pole-retained" aria-label="Ascenso retenido">
+          <strong>{retainedCopy.title}</strong>
+          <p>
+            Alcanzó la calificación mínima. Sube sola en cuanto marques en clase:{" "}
+            {retainedCopy.pending.join(", ")}.
+          </p>
+        </section>
+      ) : null}
+      <StudentFiguresClient
+        currentLevelTitle={currentLevelTitle}
+        figures={figures}
+        totalCatalogFigures={
+          (profiles ?? []).filter((profile) => profile.catalog_level === currentCatalogLevel).length
+        }
+      />
+    </>
   );
 }
