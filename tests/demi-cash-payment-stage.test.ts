@@ -13,6 +13,36 @@ const first = [
 ];
 
 describe("prospect payment objection stages", () => {
+  it("rephrases explanation questions without counting them as another refusal", () => {
+    const history = [
+      ...first,
+      assistant(prospectCashTurnReply(prospect, first)!),
+      user("¿Por qué necesito pagar antes? No entendí."),
+    ];
+    expect(prospectCashPaymentStage(prospect, history)).toBe("first_objection");
+    const explanation = prospectCashTurnReply(prospect, history)!;
+    expect(explanation).not.toBe(history.at(-2)!.content);
+    expect(explanation).not.toMatch(/al llegar|acercarte|efectivo/);
+    const repeated = [...history, assistant(explanation), user("¿Me lo explicas de otra forma?")];
+    expect(prospectCashPaymentStage(prospect, repeated)).toBe("first_objection");
+    expect(prospectCashTurnReply(prospect, repeated)).toContain("Por ejemplo");
+    expect(prospectCashTurnReply(prospect, repeated)).not.toBe(explanation);
+    expect(
+      prospectCashPaymentStage(prospect, [
+        ...repeated,
+        assistant(prospectCashTurnReply(prospect, repeated)!),
+        user("No gracias, no puedo."),
+      ]),
+    ).toBe("second_refusal");
+    expect(
+      prospectCashPaymentStage(prospect, [
+        ...history,
+        user("Mejor sí, prefiero transferencia."),
+        assistant("Estos son los datos para transferir."),
+        user("¿Por qué?"),
+      ]),
+    ).toBeNull();
+  });
   it("explains the first objection and leaves cash collection to reception after refusal", () => {
     const explanation = prospectCashTurnReply(prospect, first)!;
     expect(explanation).toContain("Como los lugares se reservan con anticipación");

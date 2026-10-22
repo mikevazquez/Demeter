@@ -9,6 +9,10 @@ type AudienceInput = {
 
 type PaymentHistory = readonly { role: string; content: string }[];
 
+function asksForExplanation(text: string): boolean {
+  return /por qu[eé]|no (?:lo )?ent(?:end[ií]|iendo)|expl[ií]ca|otra forma/i.test(text);
+}
+
 export function prospectCashPaymentStage(
   input: AudienceInput,
   history: PaymentHistory,
@@ -33,6 +37,7 @@ export function prospectCashPaymentStage(
   let objections = 0;
   let paymentContext = false;
   let currentIsObjection = false;
+  let currentIsExplanation = false;
   for (const message of history) {
     const text = normalize(message.content);
     if (message.role === "assistant") {
@@ -50,6 +55,7 @@ export function prospectCashPaymentStage(
     if (acceptsAdvance || rejectsCash) {
       objections = 0;
       currentIsObjection = false;
+      currentIsExplanation = false;
       continue;
     }
     const cashRequest =
@@ -61,9 +67,10 @@ export function prospectCashPaymentStage(
     const contextualRefusal =
       paymentContext && /^(?:no gracias[, .]*)?(?:no|tampoco) puedo[.!]?$/.test(text.trim());
     currentIsObjection = cashRequest || rejectsAdvance || contextualRefusal;
+    currentIsExplanation = paymentContext && objections > 0 && asksForExplanation(text);
     if (currentIsObjection) objections += 1;
   }
-  if (!currentIsObjection) return null;
+  if (!currentIsObjection && !currentIsExplanation) return null;
   return objections >= 2 ? "second_refusal" : "first_objection";
 }
 
@@ -81,6 +88,10 @@ export function prospectCashTurnReply(
   history: PaymentHistory,
 ): string | null {
   const stage = prospectCashPaymentStage(input, history);
+  if (stage === "first_objection" && asksForExplanation(history.at(-1)?.content ?? ""))
+    return history.at(-2)?.content.includes("la clase tiene un límite de lugares")
+      ? "Por ejemplo: elegir un horario me dice a qué clase quieres ir; completar el pago anticipado permite confirmar tu reserva para esa clase. Son dos pasos distintos. Si sólo elegimos el horario, todavía no hay una reserva a tu nombre."
+      : "Claro: la clase tiene un límite de lugares. El pago anticipado es el paso que permite confirmar uno para ti; mientras no se complete ese paso, otras personas pueden reservarlo. Por eso, sin el pago por adelantado no se confirma una reserva a tu nombre.";
   if (stage === "first_objection")
     return "Entiendo que prefieras pagar en efectivo. Como los lugares se reservan con anticipación, el pago por adelantado nos permite confirmar un lugar para tu primera clase. Sin ese pago, el lugar sigue disponible para otras personas y no queda reservado a tu nombre. Puedes hacerlo por alguno de los métodos habilitados.";
   if (stage === "second_refusal")
