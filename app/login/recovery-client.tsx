@@ -145,7 +145,7 @@ export function RecoveryRequestFlow({ portal }: { portal: keyof typeof PORTALS }
         <div className="srec-footer">
           <form action={formAction}>
             <input type="hidden" name={config.field} value={state.identifier ?? ""} />
-            <ResendButton key={state.sentAt ?? 0} sentAt={state.sentAt ?? Date.now()} />
+            <ResendButton key={state.sentAt ?? 0} sentAt={state.sentAt ?? 0} />
           </form>
           <button className="srec-link" type="button" onClick={() => setEditing(true)}>
             {config.otherLabel}
