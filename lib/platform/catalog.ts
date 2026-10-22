@@ -5,12 +5,7 @@ export type PlatformModuleKey = "recompensas" | "recursos" | "catalogo" | "demi"
 export type PlatformPlanKey = "core" | "growth" | "pro" | "founding" | "allaccess";
 export type BrandLevel = "powered" | "full";
 export type StudioSubscriptionStatus =
-  | "invited"
-  | "active"
-  | "grace"
-  | "read_only"
-  | "suspended"
-  | "internal";
+  "invited" | "active" | "grace" | "read_only" | "suspended" | "internal";
 
 export type PlatformModule = {
   key: PlatformModuleKey;
