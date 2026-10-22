@@ -17,8 +17,11 @@ begin
   s := (run->>'studio_id')::uuid;
   select id,price_minor into pack,pack_price from public.product_templates where studio_id=s and name='Paquete UAT 8 clases';
   select id,price_minor into enr,enr_price from public.product_templates where studio_id=s and product_type='enrollment';
-  select id into st from public.students s2 where s2.studio_id=s and active and lifecycle_status='active'
-    and not private.student_has_active_enrollment(s,s2.id,current_date) order by created_at limit 1;
+  -- Use the named fixture instead of calling a private helper unavailable to service_role.
+  st := (run#>>'{fixtures,people,trial_payment_rejected,student_id}')::uuid;
+  if exists(select 1 from public.student_enrollments where studio_id=s and student_id=st
+    and status='active' and starts_on<=current_date and (expires_on is null or expires_on>=current_date))
+  then raise exception 'fixture_already_enrolled'; end if;
   if st is null or pack is null or enr is null then raise exception 'fixtures_missing'; end if;
   update public.enrollment_policies set enabled=true,required_for_package_purchase=true,enrollment_product_template_id=enr where studio_id=s;
   update public.product_templates set enrollment_included=false where id=pack;

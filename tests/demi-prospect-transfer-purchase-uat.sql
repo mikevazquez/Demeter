@@ -5,6 +5,7 @@
 -- C4 invalid profile data rejected without changes
 -- C5 profile completes: student created, enrollment + package active, contact converted
 -- C6 replay returns the same result; C7 grants
+-- C8 the requested birth date persists in the source-compatible fixture field.
 begin;
 set local role service_role;
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
@@ -18,6 +19,20 @@ begin
   where studio_id='9fe23cfa-fb47-4670-afeb-ed4a56433772' and role='owner' and active limit 1;
   run := public.service_create_demi_uat_run('9fe23cfa-fb47-4670-afeb-ed4a56433772',owner,'demi-pros-03a-prospect-transfer');
   s := (run->>'studio_id')::uuid;
+  -- The UAT run builder does not copy custom profile definitions. Keep the
+  -- source's existing birth-date definition so persistence is actually tested.
+  insert into public.profile_field_definitions
+  select (jsonb_populate_record(null::public.profile_field_definitions,
+    to_jsonb(d)||jsonb_build_object('id',gen_random_uuid(),'studio_id',s,
+      'created_at',clock_timestamp(),'updated_at',clock_timestamp()))).*
+  from public.profile_field_definitions d
+  where d.studio_id='9fe23cfa-fb47-4670-afeb-ed4a56433772'
+    and d.entity_type='student' and d.key='birth_date' and d.active
+    and not exists(select 1 from public.profile_field_definitions f
+      where f.studio_id=s and f.entity_type='student' and f.key='birth_date');
+  if not exists(select 1 from public.profile_field_definitions
+    where studio_id=s and entity_type='student' and key='birth_date' and active)
+  then raise exception 'birth_date_fixture_missing'; end if;
   select id,price_minor into pack,pack_price from public.product_templates where studio_id=s and name='Paquete UAT 8 clases';
   select id,price_minor into enr,enr_price from public.product_templates where studio_id=s and product_type='enrollment';
   update public.enrollment_policies set enabled=true,required_for_package_purchase=true,enrollment_product_template_id=enr where studio_id=s;
@@ -60,6 +75,11 @@ begin
   if not exists(select 1 from public.student_enrollments where studio_id=s and student_id=student and status='active' and resolution_type='paid') then raise exception 'C5_enrollment'; end if;
   if (select student_type::text from public.students where id=student)<>'regular' then raise exception 'C5_not_regular'; end if;
   if (select lifecycle_status from public.crm_contacts where id=contact)<>'student' then raise exception 'C5_contact'; end if;
+  if not exists(select 1 from public.profile_field_values v
+    join public.profile_field_definitions d on d.id=v.definition_id and d.studio_id=v.studio_id
+    where v.studio_id=s and v.person_id=person and d.key='birth_date'
+      and v.value=to_jsonb('1995-05-10'::text))
+  then raise exception 'C8_birth_date_not_persisted'; end if;
   if (select total_minor from public.sales where idempotency_key=intent)<>pack_price+enr_price then raise exception 'C5_sale_total'; end if;
 
   r := public.service_complete_prospect_transfer_purchase(s,c,contact,'Ana Prueba Sintética',date '1995-05-10','otro@example.test');
@@ -67,5 +87,5 @@ begin
 
   if has_function_privilege('authenticated','public.service_complete_prospect_transfer_purchase(uuid,uuid,uuid,text,date,text)','EXECUTE') then raise exception 'C7_permissions'; end if;
 end $$;
-select 'passed' result, 7 controls, 'synthetic prospect; rollback; no real payment or message' scope;
+select 'passed' result, 8 controls, 'synthetic prospect; birth-date fixture copied; rollback; no real payment or message' scope;
 rollback;
