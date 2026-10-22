@@ -1,5 +1,7 @@
 # Demi · relevo de Claude · Sandbox · 22 oct 2026
 
+La [continuación](CONTINUATION.md) resuelve la prueba antes de una acción con DB real y conserva una nueva corrección comercial verificada. Lo siguiente documenta la ronda anterior y sus bloqueos en ese momento.
+
 **Los casos técnicos ejecutados pasan; el UAT integral sigue sin aprobar.**
 Pendientes: experiencia funcional de Mike, regresión operativa completa y carrera
 antes de una acción contra la base real. DEMI-PILOT-01 continúa bloqueado e inactivo.

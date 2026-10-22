@@ -1,0 +1,557 @@
+{
+  "sha": "b98d14eea7640753023082331630529830928626",
+  "environment": "hedouonyhynuvwbckdlg",
+  "verdict": "FAIL_S12_PREMATURE_ACTIVATION_AND_BLOCKED_S14_UNSUPPORTED_CHOICE",
+  "tools": [
+    {
+      "conversation_id": "ec514ecd-2ffb-4773-8c3d-857f2b49d34f",
+      "turn_id": "f221081b-068f-4180-9b72-89ad9c87b425",
+      "tool_name": "get_commercial_options",
+      "request_json": {
+        "session_ref": null
+      },
+      "result_json": {
+        "ok": true,
+        "options": [
+          {
+            "name": "Primera clase UAT",
+            "currency": "MXN",
+            "unlimited": false,
+            "description": null,
+            "price_minor": 15000,
+            "product_ref": "product:7f38db4d-40dc-49cc-ba44-80e1c440eda8",
+            "credit_limit": 1,
+            "package_term": null,
+            "product_type": "other",
+            "validity_days": 1,
+            "online_purchasable": false,
+            "enrollment_included": false,
+            "purchase_eligibility": "all",
+            "purchase_limit_per_student": null
+          },
+          {
+            "name": "Inscripción UAT",
+            "currency": "MXN",
+            "unlimited": false,
+            "description": null,
+            "price_minor": 20000,
+            "product_ref": "product:fdd9af4c-d88a-494e-80d5-e2d386b7ea2a",
+            "credit_limit": null,
+            "package_term": null,
+            "product_type": "enrollment",
+            "validity_days": 365,
+            "online_purchasable": false,
+            "enrollment_included": false,
+            "purchase_eligibility": "all",
+            "purchase_limit_per_student": null
+          },
+          {
+            "name": "Pase Descubre",
+            "currency": "MXN",
+            "unlimited": false,
+            "description": "4 clases para comenzar en Demeter. Puedes combinar disciplinas o repetir tus favoritas.",
+            "price_minor": 49900,
+            "product_ref": "product:8aeacd90-8506-42e5-a0ee-b99534046343",
+            "credit_limit": 4,
+            "package_term": "custom",
+            "product_type": "package",
+            "validity_days": 21,
+            "online_purchasable": false,
+            "enrollment_included": true,
+            "purchase_eligibility": "new_customer",
+            "purchase_limit_per_student": 1
+          },
+          {
+            "name": "Paquete UAT 8 clases",
+            "currency": "MXN",
+            "unlimited": false,
+            "description": null,
+            "price_minor": 60000,
+            "product_ref": "product:acb28f46-e996-4b47-a288-621dea99a94e",
+            "credit_limit": 8,
+            "package_term": "monthly",
+            "product_type": "package",
+            "validity_days": 30,
+            "online_purchasable": false,
+            "enrollment_included": false,
+            "purchase_eligibility": "all",
+            "purchase_limit_per_student": null
+          }
+        ],
+        "payment_options": [
+          {
+            "code": "bank_transfer",
+            "label": "Transferencia UAT",
+            "channel": "transfer",
+            "provider": null
+          }
+        ],
+        "compatibility_filtered": false
+      },
+      "status": "executed",
+      "created_at": "2026-10-22 03:06:59.070448+00"
+    },
+    {
+      "conversation_id": "ec514ecd-2ffb-4773-8c3d-857f2b49d34f",
+      "turn_id": "f221081b-068f-4180-9b72-89ad9c87b425",
+      "tool_name": "prepare_bank_transfer_purchase",
+      "request_json": {
+        "product_ref": "product:acb28f46-e996-4b47-a288-621dea99a94e",
+        "session_ref": null,
+        "enrollment_accepted": false
+      },
+      "result_json": {
+        "ok": false,
+        "package": {
+          "name": "Paquete UAT 8 clases",
+          "currency": "MXN",
+          "amount_minor": 60000
+        },
+        "simulated": true,
+        "enrollment": {
+          "name": "Inscripción UAT",
+          "currency": "MXN",
+          "amount_minor": 20000
+        },
+        "instruction": "Explica paquete, inscripción y total. Pregunta si acepta pagarlos juntos; no prepares ni compartas datos bancarios antes de su aceptación.",
+        "reason_code": "enrollment_confirmation_required",
+        "total_amount_minor": 80000
+      },
+      "status": "blocked",
+      "created_at": "2026-10-22 03:07:01.824642+00"
+    },
+    {
+      "conversation_id": "ec514ecd-2ffb-4773-8c3d-857f2b49d34f",
+      "turn_id": "c7be8216-78a1-4a6a-a0f4-3117e4fd20d4",
+      "tool_name": "get_commercial_options",
+      "request_json": {
+        "session_ref": null
+      },
+      "result_json": {
+        "ok": true,
+        "options": [
+          {
+            "name": "Primera clase UAT",
+            "currency": "MXN",
+            "unlimited": false,
+            "description": null,
+            "price_minor": 15000,
+            "product_ref": "product:7f38db4d-40dc-49cc-ba44-80e1c440eda8",
+            "credit_limit": 1,
+            "package_term": null,
+            "product_type": "other",
+            "validity_days": 1,
+            "online_purchasable": false,
+            "enrollment_included": false,
+            "purchase_eligibility": "all",
+            "purchase_limit_per_student": null
+          },
+          {
+            "name": "Inscripción UAT",
+            "currency": "MXN",
+            "unlimited": false,
+            "description": null,
+            "price_minor": 20000,
+            "product_ref": "product:fdd9af4c-d88a-494e-80d5-e2d386b7ea2a",
+            "credit_limit": null,
+            "package_term": null,
+            "product_type": "enrollment",
+            "validity_days": 365,
+            "online_purchasable": false,
+            "enrollment_included": false,
+            "purchase_eligibility": "all",
+            "purchase_limit_per_student": null
+          },
+          {
+            "name": "Pase Descubre",
+            "currency": "MXN",
+            "unlimited": false,
+            "description": "4 clases para comenzar en Demeter. Puedes combinar disciplinas o repetir tus favoritas.",
+            "price_minor": 49900,
+            "product_ref": "product:8aeacd90-8506-42e5-a0ee-b99534046343",
+            "credit_limit": 4,
+            "package_term": "custom",
+            "product_type": "package",
+            "validity_days": 21,
+            "online_purchasable": false,
+            "enrollment_included": true,
+            "purchase_eligibility": "new_customer",
+            "purchase_limit_per_student": 1
+          },
+          {
+            "name": "Paquete UAT 8 clases",
+            "currency": "MXN",
+            "unlimited": false,
+            "description": null,
+            "price_minor": 60000,
+            "product_ref": "product:acb28f46-e996-4b47-a288-621dea99a94e",
+            "credit_limit": 8,
+            "package_term": "monthly",
+            "product_type": "package",
+            "validity_days": 30,
+            "online_purchasable": false,
+            "enrollment_included": false,
+            "purchase_eligibility": "all",
+            "purchase_limit_per_student": null
+          }
+        ],
+        "payment_options": [
+          {
+            "code": "bank_transfer",
+            "label": "Transferencia UAT",
+            "channel": "transfer",
+            "provider": null
+          }
+        ],
+        "compatibility_filtered": false
+      },
+      "status": "executed",
+      "created_at": "2026-10-22 03:07:14.675819+00"
+    },
+    {
+      "conversation_id": "ec514ecd-2ffb-4773-8c3d-857f2b49d34f",
+      "turn_id": "c7be8216-78a1-4a6a-a0f4-3117e4fd20d4",
+      "tool_name": "prepare_bank_transfer_purchase",
+      "request_json": {
+        "product_ref": "product:acb28f46-e996-4b47-a288-621dea99a94e",
+        "session_ref": null,
+        "enrollment_accepted": true
+      },
+      "result_json": {
+        "ok": true,
+        "status": "awaiting_receipt",
+        "credits": 8,
+        "package": {
+          "name": "Paquete UAT 8 clases",
+          "currency": "MXN",
+          "amount_minor": 60000
+        },
+        "simulated": true,
+        "unlimited": false,
+        "enrollment": {
+          "name": "Inscripción UAT",
+          "currency": "MXN",
+          "amount_minor": 20000
+        },
+        "instruction": "Conserva este producto y total. No pidas datos personales antes del comprobante. No se ha creado una ficha, compra ni cobro real.",
+        "product_ref": "product:acb28f46-e996-4b47-a288-621dea99a94e",
+        "bank_details": {
+          "bank_name": "Banco de prueba",
+          "instructions": "No realices transferencias. Usa el botón de comprobante simulado para continuar.",
+          "account_holder": "Simulación sin pago real"
+        },
+        "receipt_required": true,
+        "total_amount_minor": 80000,
+        "enrollment_included": false,
+        "enrollment_required": true,
+        "profile_required_after_payment": true
+      },
+      "status": "executed",
+      "created_at": "2026-10-22 03:07:16.986965+00"
+    },
+    {
+      "conversation_id": "ec514ecd-2ffb-4773-8c3d-857f2b49d34f",
+      "turn_id": "c7be8216-78a1-4a6a-a0f4-3117e4fd20d4",
+      "tool_name": "update_contact_followup",
+      "request_json": {
+        "stage": "awaiting_receipt",
+        "reason": "Aceptó pagar inscripción y Paquete UAT 8 clases por transferencia; falta comprobante."
+      },
+      "result_json": {
+        "ok": true,
+        "stage": "awaiting_receipt",
+        "reason": "Aceptó pagar inscripción y Paquete UAT 8 clases por transferencia; falta comprobante.",
+        "status": "simulated",
+        "simulated": true,
+        "reason_message": "Etapa simulada; no se programan ni envían seguimientos reales."
+      },
+      "status": "executed",
+      "created_at": "2026-10-22 03:07:19.464892+00"
+    },
+    {
+      "conversation_id": "ec514ecd-2ffb-4773-8c3d-857f2b49d34f",
+      "turn_id": "0b59b472-7c8e-467e-80a5-70fbf9b152e9",
+      "tool_name": "complete_purchase_profile",
+      "request_json": {
+        "email": "ana.prueba.s12@example.test",
+        "full_name": "Ana Prueba Sintética",
+        "birth_date": "1995-05-10"
+      },
+      "result_json": {
+        "ok": true,
+        "status": "provisional_active",
+        "simulated": true,
+        "instruction": "Perfil y paquete activados sólo en la simulación. La transferencia queda pendiente de validación definitiva; no afirmes pago validado.",
+        "package_name": "Paquete UAT 8 clases",
+        "enrollment_paid": true,
+        "enrollment_included": false,
+        "revocable_until_validated": true
+      },
+      "status": "executed",
+      "created_at": "2026-10-22 03:07:30.090422+00"
+    },
+    {
+      "conversation_id": "e95765f3-aa33-454a-9aa4-cb3b3adb12f4",
+      "turn_id": "73aabfba-87f3-43f4-9bd2-311013ddc312",
+      "tool_name": "get_commercial_options",
+      "request_json": {
+        "session_ref": null
+      },
+      "result_json": {
+        "ok": true,
+        "options": [
+          {
+            "name": "Primera clase UAT",
+            "currency": "MXN",
+            "unlimited": false,
+            "description": null,
+            "price_minor": 15000,
+            "product_ref": "product:7f38db4d-40dc-49cc-ba44-80e1c440eda8",
+            "credit_limit": 1,
+            "package_term": null,
+            "product_type": "other",
+            "validity_days": 1,
+            "online_purchasable": false,
+            "enrollment_included": false,
+            "purchase_eligibility": "all",
+            "purchase_limit_per_student": null
+          },
+          {
+            "name": "Inscripción UAT",
+            "currency": "MXN",
+            "unlimited": false,
+            "description": null,
+            "price_minor": 20000,
+            "product_ref": "product:fdd9af4c-d88a-494e-80d5-e2d386b7ea2a",
+            "credit_limit": null,
+            "package_term": null,
+            "product_type": "enrollment",
+            "validity_days": 365,
+            "online_purchasable": false,
+            "enrollment_included": false,
+            "purchase_eligibility": "all",
+            "purchase_limit_per_student": null
+          },
+          {
+            "name": "Pase Descubre",
+            "currency": "MXN",
+            "unlimited": false,
+            "description": "4 clases para comenzar en Demeter. Puedes combinar disciplinas o repetir tus favoritas.",
+            "price_minor": 49900,
+            "product_ref": "product:8aeacd90-8506-42e5-a0ee-b99534046343",
+            "credit_limit": 4,
+            "package_term": "custom",
+            "product_type": "package",
+            "validity_days": 21,
+            "online_purchasable": false,
+            "enrollment_included": true,
+            "purchase_eligibility": "new_customer",
+            "purchase_limit_per_student": 1
+          },
+          {
+            "name": "Paquete UAT 8 clases",
+            "currency": "MXN",
+            "unlimited": false,
+            "description": null,
+            "price_minor": 60000,
+            "product_ref": "product:acb28f46-e996-4b47-a288-621dea99a94e",
+            "credit_limit": 8,
+            "package_term": "monthly",
+            "product_type": "package",
+            "validity_days": 30,
+            "online_purchasable": false,
+            "enrollment_included": false,
+            "purchase_eligibility": "all",
+            "purchase_limit_per_student": null
+          }
+        ],
+        "payment_options": [
+          {
+            "code": "bank_transfer",
+            "label": "Transferencia UAT",
+            "channel": "transfer",
+            "provider": null
+          }
+        ],
+        "compatibility_filtered": false
+      },
+      "status": "executed",
+      "created_at": "2026-10-22 03:07:35.219663+00"
+    },
+    {
+      "conversation_id": "e95765f3-aa33-454a-9aa4-cb3b3adb12f4",
+      "turn_id": "73aabfba-87f3-43f4-9bd2-311013ddc312",
+      "tool_name": "prepare_transfer_package_choice",
+      "request_json": {
+        "session_ref": null,
+        "product_refs": ["product:acb28f46-e996-4b47-a288-621dea99a94e"]
+      },
+      "result_json": {
+        "ok": false,
+        "error": "simulation_not_supported",
+        "simulated": true,
+        "reason_message": "Esta acción no se ejecuta en el chat de pruebas. No se genera un pago, enlace de acceso ni mensaje real."
+      },
+      "status": "blocked",
+      "created_at": "2026-10-22 03:07:37.124054+00"
+    },
+    {
+      "conversation_id": "e95765f3-aa33-454a-9aa4-cb3b3adb12f4",
+      "turn_id": "73aabfba-87f3-43f4-9bd2-311013ddc312",
+      "tool_name": "prepare_bank_transfer_purchase",
+      "request_json": {
+        "product_ref": "product:acb28f46-e996-4b47-a288-621dea99a94e",
+        "session_ref": null,
+        "enrollment_accepted": false
+      },
+      "result_json": {
+        "ok": false,
+        "package": {
+          "name": "Paquete UAT 8 clases",
+          "currency": "MXN",
+          "amount_minor": 60000
+        },
+        "simulated": true,
+        "enrollment": {
+          "name": "Inscripción UAT",
+          "currency": "MXN",
+          "amount_minor": 20000
+        },
+        "instruction": "Explica paquete, inscripción y total. Pregunta si acepta pagarlos juntos; no prepares ni compartas datos bancarios antes de su aceptación.",
+        "reason_code": "enrollment_confirmation_required",
+        "total_amount_minor": 80000
+      },
+      "status": "blocked",
+      "created_at": "2026-10-22 03:07:39.224733+00"
+    },
+    {
+      "conversation_id": "e95765f3-aa33-454a-9aa4-cb3b3adb12f4",
+      "turn_id": "a80009ee-39c7-4764-a64e-959589f8f7e4",
+      "tool_name": "get_commercial_options",
+      "request_json": {
+        "session_ref": null
+      },
+      "result_json": {
+        "ok": true,
+        "options": [
+          {
+            "name": "Primera clase UAT",
+            "currency": "MXN",
+            "unlimited": false,
+            "description": null,
+            "price_minor": 15000,
+            "product_ref": "product:7f38db4d-40dc-49cc-ba44-80e1c440eda8",
+            "credit_limit": 1,
+            "package_term": null,
+            "product_type": "other",
+            "validity_days": 1,
+            "online_purchasable": false,
+            "enrollment_included": false,
+            "purchase_eligibility": "all",
+            "purchase_limit_per_student": null
+          },
+          {
+            "name": "Inscripción UAT",
+            "currency": "MXN",
+            "unlimited": false,
+            "description": null,
+            "price_minor": 20000,
+            "product_ref": "product:fdd9af4c-d88a-494e-80d5-e2d386b7ea2a",
+            "credit_limit": null,
+            "package_term": null,
+            "product_type": "enrollment",
+            "validity_days": 365,
+            "online_purchasable": false,
+            "enrollment_included": false,
+            "purchase_eligibility": "all",
+            "purchase_limit_per_student": null
+          },
+          {
+            "name": "Pase Descubre",
+            "currency": "MXN",
+            "unlimited": false,
+            "description": "4 clases para comenzar en Demeter. Puedes combinar disciplinas o repetir tus favoritas.",
+            "price_minor": 49900,
+            "product_ref": "product:8aeacd90-8506-42e5-a0ee-b99534046343",
+            "credit_limit": 4,
+            "package_term": "custom",
+            "product_type": "package",
+            "validity_days": 21,
+            "online_purchasable": false,
+            "enrollment_included": true,
+            "purchase_eligibility": "new_customer",
+            "purchase_limit_per_student": 1
+          },
+          {
+            "name": "Paquete UAT 8 clases",
+            "currency": "MXN",
+            "unlimited": false,
+            "description": null,
+            "price_minor": 60000,
+            "product_ref": "product:acb28f46-e996-4b47-a288-621dea99a94e",
+            "credit_limit": 8,
+            "package_term": "monthly",
+            "product_type": "package",
+            "validity_days": 30,
+            "online_purchasable": false,
+            "enrollment_included": false,
+            "purchase_eligibility": "all",
+            "purchase_limit_per_student": null
+          }
+        ],
+        "payment_options": [
+          {
+            "code": "bank_transfer",
+            "label": "Transferencia UAT",
+            "channel": "transfer",
+            "provider": null
+          }
+        ],
+        "compatibility_filtered": false
+      },
+      "status": "executed",
+      "created_at": "2026-10-22 03:07:44.345189+00"
+    },
+    {
+      "conversation_id": "e95765f3-aa33-454a-9aa4-cb3b3adb12f4",
+      "turn_id": "a80009ee-39c7-4764-a64e-959589f8f7e4",
+      "tool_name": "prepare_bank_transfer_purchase",
+      "request_json": {
+        "product_ref": "product:acb28f46-e996-4b47-a288-621dea99a94e",
+        "session_ref": null,
+        "enrollment_accepted": true
+      },
+      "result_json": {
+        "ok": true,
+        "status": "awaiting_receipt",
+        "credits": 8,
+        "package": {
+          "name": "Paquete UAT 8 clases",
+          "currency": "MXN",
+          "amount_minor": 60000
+        },
+        "simulated": true,
+        "unlimited": false,
+        "enrollment": {
+          "name": "Inscripción UAT",
+          "currency": "MXN",
+          "amount_minor": 20000
+        },
+        "instruction": "Conserva este producto y total. No pidas datos personales antes del comprobante. No se ha creado una ficha, compra ni cobro real.",
+        "product_ref": "product:acb28f46-e996-4b47-a288-621dea99a94e",
+        "bank_details": {
+          "bank_name": "Banco de prueba",
+          "instructions": "No realices transferencias. Usa el botón de comprobante simulado para continuar.",
+          "account_holder": "Simulación sin pago real"
+        },
+        "receipt_required": true,
+        "total_amount_minor": 80000,
+        "enrollment_included": false,
+        "enrollment_required": true,
+        "profile_required_after_payment": false
+      },
+      "status": "executed",
+      "created_at": "2026-10-22 03:07:45.896724+00"
+    }
+  ]
+}
