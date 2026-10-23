@@ -128,3 +128,18 @@ export function formatMoney(minor: number, locale: string, currency: string, dig
     maximumFractionDigits: digits,
   }).format(minor / 100);
 }
+
+export const profileErrorCopy: Record<string, string> = {
+  phone_exists: "Ese teléfono ya pertenece a otra alumna.",
+  profile_fields: "No se pudieron guardar los campos adicionales. Revisa sus valores.",
+  acquisition_forbidden: "Tu rol no puede modificar adquisiciones.",
+  acquisition_not_found: "La adquisición ya no está disponible.",
+  acquisition_date_invalid: "Selecciona una fecha de inicio válida.",
+  credits_invalid: "Indica créditos disponibles válidos y un motivo obligatorio.",
+  adjustment_reason_required: "El motivo del ajuste de créditos es obligatorio.",
+  unlimited_acquisition: "Una adquisición ilimitada no admite ajuste manual de créditos.",
+  acquisition_not_editable: "Esta adquisición ya no puede modificarse.",
+  communication_preferences:
+    "No se pudieron guardar las preferencias de comunicación. Inténtalo de nuevo.",
+  transfer_review: "No se pudo actualizar la validación de la transferencia.",
+};

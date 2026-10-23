@@ -135,3 +135,13 @@ describe("P360-V2 · perfiles con datos incompletos", () => {
     expect(code).toContain('?? student.phone ?? ""');
   });
 });
+
+describe("P360-V2-08 · lectura del perfil por pestaña", () => {
+  const code = profile360Source();
+
+  it("sólo lee progreso, historial y comprobantes en la pestaña que los muestra", () => {
+    expect(code).toContain('tab === "progress" || tab === "activity"');
+    expect(code).toContain('tab === "activity"\n      ? buildProfileHistory(');
+    expect(code).toContain('withReceipts: canReadSales && tab === "packages"');
+  });
+});

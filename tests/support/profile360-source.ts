@@ -14,6 +14,11 @@ export function profile360Source() {
     "profile-format.ts",
     "profile-pending.ts",
     "profile-tabs.ts",
+    "read-progress.ts",
+    "read-sales.ts",
+    "read-transfers.ts",
+    "read-classes.ts",
+    "build-history.ts",
     "Profile360Header.tsx",
     ...readdirSync(join(root, "tabs"))
       .filter((file) => file.endsWith(".tsx"))
