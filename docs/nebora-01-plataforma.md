@@ -106,19 +106,49 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 - **Orden de despliegue:** aplicar la migración antes de publicar el código. Si no, Demeter
   mostraría su nombre completo en lugar de «Demeter».
 
+### NEB-01-10/11/12 · Consola de Nébora (`20261022215000`)
+
+- Ruta `/plataforma`, fuera de `/admin`: es de la plataforma, no de un estudio. Usa la misma
+  sesión del admin. Quien no está en `platform_admins` recibe 404.
+- Lecturas nuevas, solo para plataforma (`platform_require_admin`), sin escrituras:
+  - `platform_overview()`: ingreso mensual (estudios activos y en gracia), estudios por estado,
+    lugares Founding usados, alumnas activas y módulos pedidos sin activar.
+  - `platform_list_studios()`: marca, subdominio, plan, estado, mensualidad, mes de Founding,
+    día y fecha de corte, alumnas activas y pedidos.
+  - `platform_studio_detail(estudio)`: alumnas (registradas, activas, con paquete vigente,
+    nuevas del mes), clases de la semana y del mes, reservas del mes (asistencias y
+    cancelaciones), ventas confirmadas del mes, consumo de Demi del mes (llamadas, tokens y
+    costo estimado en USD), último acceso del dueño, plan y módulos, pedidos pendientes y las
+    últimas 20 entradas de la bitácora.
+  - «Este mes» y «esta semana» se cuentan en hora de Ciudad de México.
+- Pantallas:
+  - Inicio (`/plataforma`): métricas y lista de estudios.
+  - Ficha (`/plataforma/estudios/[id]`) con pestañas Números, Plan y módulos, Cobros y
+    Bitácora.
+  - Plan y módulos cambia plan y día de corte, activa o desactiva módulos sueltos y cambia el
+    estado de la cuenta. Usa `platform_set_studio_plan/module/status`, que dejan todo en la
+    bitácora. Activar aquí no cobra; el cobro llega con Stripe (NEB-01-07 y NEB-01-34).
+  - Cobros es un aviso hasta que se conecte Stripe.
+- Fuera de este alcance: entrar al estudio para corregir datos (NEB-01-13) y el alta guiada de
+  estudios (NEB-01-14).
+
 ## Pruebas
 
 - SQL local, nunca contra Sandbox ni producción:
   `PGHOST=… PGPORT=… PGUSER=postgres scripts/neb01-sql-tests.sh`. Corre 18 controles de plataforma
-  13 de bloqueos y solicitudes y 3 de marca, y deshace todo al terminar.
-- Vitest: `tests/neb01-catalog.test.ts`, `tests/neb01-guards.test.ts` y `tests/neb01-branding.test.ts`.
+  13 de bloqueos y solicitudes, 3 de marca y 12 de la consola, y deshace todo al terminar.
+- Vitest: `tests/neb01-catalog.test.ts`, `tests/neb01-guards.test.ts`, `tests/neb01-branding.test.ts` y
+  `tests/neb01-console.test.ts`.
 
 ## Para Codex
 
 1. Aplicar en Sandbox, en orden, `20261022210000_neb01_platform_admins_audit` y
    `20261022211000_neb01_plans_modules_entitlements` y `20261022212000_neb01_entitlement_guards` y
-   `20261022213000_neb01_module_activation_requests` y `20261022214000_neb01_studio_brand_name`.
+   `20261022213000_neb01_module_activation_requests`, `20261022214000_neb01_studio_brand_name` y
+   `20261022215000_neb01_platform_console_reads`.
 2. Insertar a Mike en `platform_admins` con su cuenta de Sandbox.
 3. Verificar que todos los estudios quedaron en `allaccess/internal` y correr QA.
+4. Con la cuenta de Mike, abrir `/plataforma` y la ficha de Demeter. Con una cuenta que no sea
+   plataforma, confirmar que `/plataforma` da 404.
 
 Producción no se toca sin la autorización explícita de Mike.

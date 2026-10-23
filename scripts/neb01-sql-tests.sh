@@ -13,9 +13,10 @@ for migration in \
   20261022211000_neb01_plans_modules_entitlements \
   20261022212000_neb01_entitlement_guards \
   20261022213000_neb01_module_activation_requests \
-  20261022214000_neb01_studio_brand_name; do
+  20261022214000_neb01_studio_brand_name \
+  20261022215000_neb01_platform_console_reads; do
   run "supabase/migrations/$migration.sql"
 done
-for test in tests/neb01-platform.sql tests/neb01-guards.sql tests/neb01-branding.sql; do
+for test in tests/neb01-platform.sql tests/neb01-guards.sql tests/neb01-branding.sql tests/neb01-console.sql; do
   psql -v ON_ERROR_STOP=1 -q -d "$DB" -At -f "$test" | tail -1
 done
