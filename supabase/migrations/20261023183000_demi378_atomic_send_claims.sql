@@ -110,6 +110,36 @@ revoke all on function public.assistant_whatsapp_claim_current_text(uuid, uuid, 
 grant execute on function public.assistant_whatsapp_claim_current_text(uuid, uuid, uuid)
   to service_role;
 
+-- Terminal outcome must be written by the owner of the exact claim token.
+-- An ambiguous network outcome stays 'uncertain' until reconciled manually.
+create or replace function public.assistant_whatsapp_finish_text_claim(
+  p_claim_token uuid,
+  p_state text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $demi_finish$
+begin
+  if auth.role() is distinct from 'service_role' then
+    raise exception 'service_role required' using errcode = '42501';
+  end if;
+  if p_state not in ('accepted', 'uncertain', 'failed_final') then
+    raise exception 'invalid claim terminal state' using errcode = '22023';
+  end if;
+  update public.assistant_whatsapp_send_claims
+  set state = p_state, updated_at = now()
+  where claim_token = p_claim_token and state = 'claimed';
+  return found;
+end;
+$demi_finish$;
+
+revoke all on function public.assistant_whatsapp_finish_text_claim(uuid, text)
+  from public, anon, authenticated;
+grant execute on function public.assistant_whatsapp_finish_text_claim(uuid, text)
+  to service_role;
+
 -- Claims and inbound insertion now share a transaction lock. A new message arriving
 -- AFTER claim commit may still precede the external HTTP send: do not interpret
 -- the claim as a cancellable delivery or an exactly-once provider guarantee.
