@@ -573,7 +573,11 @@ test(
       ...options,
       now: after(31),
       workerSignals: [
-        { workerId: "claude-code-web", state: "no_capacity", observedAt: after(30) },
+        {
+          workerId: "claude-code-web",
+          state: "no_capacity",
+          observedAt: after(30),
+        },
       ],
     });
     const silent = await taskOf(store);
@@ -599,7 +603,11 @@ test(
       ...options,
       now: after(31),
       workerSignals: [
-        { workerId: "claude-code-web", state: "no_capacity", observedAt: after(30) },
+        {
+          workerId: "claude-code-web",
+          state: "no_capacity",
+          observedAt: after(30),
+        },
       ],
     });
     await tickSupervisor({
