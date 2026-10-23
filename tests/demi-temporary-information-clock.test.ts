@@ -47,7 +47,12 @@ describe("Demi isolated UAT clock", () => {
       },
     };
     const context = (temporaryInformationNow?: string) => ({
-      supabase: { from: () => builder } as never,
+      supabase: {
+        from: (table: string) =>
+          table === "activity_programs"
+            ? { ...builder, order: () => Promise.resolve({ data: [], error: null }) }
+            : builder,
+      } as never,
       studio: {
         id: "uat-studio",
         name: "UAT",

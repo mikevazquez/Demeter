@@ -52,4 +52,21 @@ describe("Demi temporary information", () => {
     expect(rankTemporaryInformation([item()], "taller de aro")[0].id).toBe("1");
     expect(rankTemporaryInformation([item()], "twerk")).toEqual([]);
   });
+
+  it("finds workshops by their type for a generic plural question, even without taller in the name", () => {
+    const workshop = item({
+      title: "Aparatos Aéreos para principiantes",
+      details: "",
+      discipline: null,
+    });
+    const promotion = item({ id: "promo", kind: "promotion", title: "Descuento mensual" });
+    expect(
+      rankTemporaryInformation([workshop, promotion], "¿Qué talleres tienen disponibles?"),
+    ).toEqual([workshop]);
+    expect(rankTemporaryInformation([workshop], "información de talleres")).toEqual([workshop]);
+    expect(
+      rankTemporaryInformation([workshop], "precio de aparatos aereos para principiantes"),
+    ).toEqual([workshop]);
+    expect(rankTemporaryInformation([workshop], "taller de twerk")).toEqual([]);
+  });
 });

@@ -65,6 +65,9 @@ function context(rows: ReturnType<typeof record>[], timezone = "America/Mexico_C
       supabase: {
         from: (table: string) => {
           calls.push(["from", table]);
+          if (table === "activity_programs") {
+            return { ...builder, order: () => Promise.resolve({ data: [], error: null }) };
+          }
           return builder;
         },
       } as never,
