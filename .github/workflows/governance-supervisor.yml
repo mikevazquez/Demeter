@@ -54,6 +54,30 @@ jobs:
           name: supervisor-process-proof
           path: ${{ runner.temp }}/supervisor-process-proof/
 
+  admission-proof:
+    if: github.event_name == 'pull_request' && github.head_ref == 'feat/gov-router-chat-admission-20261023'
+    needs: supervisor-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Prove ChatGPT admission from durable GitHub comment
+        run: node scripts/automation/governance-admission-proof.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: governance-gpt-admission-proof
+          path: supervisor-output/admission-proof.json
+          if-no-files-found: error
+
   proof-dispatch:
     if: github.event_name == 'push' && github.ref == 'refs/heads/feat/governance-supervisor-20261020'
     needs: supervisor-tests

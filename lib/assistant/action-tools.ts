@@ -1,3 +1,4 @@
+import type { DemiActionGuard } from "./demi-text-send-claim";
 import "server-only";
 
 import { createHash, randomUUID } from "node:crypto";
@@ -35,6 +36,7 @@ type AssistantActionToolContext = {
   activationUrl: string | null;
   serviceMode?: boolean;
   currentUserMessage: string;
+  actionGuard?: DemiActionGuard;
 };
 
 function asObject(value: unknown) {
@@ -4343,7 +4345,7 @@ async function recordTrialPaymentPreference(
   };
 }
 
-export async function executeAssistantActionTool(
+async function executeAssistantActionToolUncoordinated(
   ctx: AssistantActionToolContext,
   toolName: string,
   args: Record<string, unknown>,
@@ -4461,4 +4463,13 @@ export async function executeAssistantActionTool(
     default:
       return { ok: false, error: "tool_not_allowed" };
   }
+}
+
+export async function executeAssistantActionTool(
+  ctx: AssistantActionToolContext,
+  toolName: string,
+  args: Record<string, unknown>,
+) {
+  const run = () => executeAssistantActionToolUncoordinated(ctx, toolName, args);
+  return ctx.actionGuard ? ctx.actionGuard(toolName, args, run) : run();
 }

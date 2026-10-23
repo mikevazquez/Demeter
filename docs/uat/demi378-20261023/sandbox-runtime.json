@@ -1,0 +1,43 @@
+{
+  "project": "hedouonyhynuvwbckdlg",
+  "studio": "8fb290c2-6411-4396-b7f9-f8eb8ade8868",
+  "results": [
+    {
+      "name": "real Sandbox sessions: one of six workers owns the turn; accepted send sealed",
+      "passed": true
+    },
+    {
+      "name": "new text during generation invalidates the pending response",
+      "passed": true
+    },
+    {
+      "name": "capture between reservation and final authorization prevents send",
+      "passed": true
+    },
+    {
+      "name": "ambiguous network result is quarantined without blocking a new turn",
+      "passed": true
+    },
+    {
+      "name": "Meta accepted but receipt write unavailable cannot resend",
+      "passed": true
+    },
+    {
+      "name": "abandoned generation lease recovers and rejects the previous token",
+      "passed": true
+    },
+    {
+      "name": "action receipt replays a simulated effect once; unknown effects never replay",
+      "passed": true
+    },
+    {
+      "name": "signed webhook, real Sandbox identity/history/claims and captured Meta; replay sends once",
+      "passed": true
+    }
+  ],
+  "simulatedProviderAttempts": 5,
+  "simulatedEffects": 2,
+  "realMetaRequests": 0,
+  "realPaymentRequests": 0,
+  "finishedAt": "2026-10-23T19:48:54.319Z"
+}
