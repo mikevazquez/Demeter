@@ -1,0 +1,31 @@
+Workshop provisional payment confirmation regression — Sandbox
+Date: 2026-10-16 local / 2026-10-17 UTC
+Environment: Supabase Sandbox hedouonyhynuvwbckdlg only
+Branch: design/workshop-payment-contract-20261016, Draft PR #317
+
+Scope: re-test the staff-confirmed provisional-hold flow after installation
+of the global reservation capacity and session-capacity triggers.
+
+A PL/pgSQL DO block used an active studio-admin simulated authenticated JWT,
+created a synthetic full-price provisional hold on the one-seat workshop
+fixture, called public.admin_confirm_workshop_provisional_hold with
+p_received=true, then replayed the exact confirmation.
+
+Assertions executed in the SAME database transaction:
+- First confirmation returns state confirmed.
+- Repeated confirmation returns replayed=true.
+- Exactly one new sale, one new payment and one new reservation exist
+  inside the test transaction relative to the initial counts.
+- A deliberate sentinel exception rolled back the entire inner
+  subtransaction, including synthetic financial and reservation records.
+- SQL connector returned [] without errors, meaning all assertions passed.
+- Follow-up read confirmed zero active holds and zero persisted
+  UAT-REGRESSION-... holds.
+
+Result: PASS. Global capacity triggers did not break the positive
+staff-confirmed transfer checkout path. No synthetic sale or payment
+was persisted.
+
+Limitations: simulated JWT in SQL, not a real browser-authenticated staff
+session. Real independent HTTP race test and browser UAT remain pending.
+Production unchanged; PR #317 remains Draft.

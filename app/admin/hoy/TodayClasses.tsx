@@ -8,6 +8,8 @@ import { GiftIcon } from "./GiftIcon";
 
 export type TodayRosterItem = {
   id: string;
+  workshopSaleId?: string;
+  workshopBalanceMinor?: number;
   isBirthday?: boolean;
   studentName: string;
   status: string;
@@ -35,6 +37,7 @@ export type TodayClassItem = {
   startsAt: string;
   endsAt: string;
   name: string;
+  kindLabel: string;
   instructor: string;
   space: string;
   occupied: number;
@@ -176,6 +179,9 @@ export function TodayClasses({
               <span className="today-class-accent" aria-hidden="true" />
               <span className="today-class-time">{item.time}</span>
               <span className="today-class-copy">
+                {item.kindLabel !== "Clase" ? (
+                  <small className="today-class-kind">{item.kindLabel}</small>
+                ) : null}
                 <span className="today-class-title-line">
                   <strong>{item.name}</strong>
                   {hasBirthday ? (

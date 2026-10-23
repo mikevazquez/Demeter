@@ -60,6 +60,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Workshop payment gate (isolated PostgreSQL)
+        run: npm run test:workshops:db
+
   result-recovery:
     if: ${{ github.event_name == 'pull_request' && github.head_ref == 'governance2/result-recovery-review-318-v1' }}
     runs-on: ubuntu-latest

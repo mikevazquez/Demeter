@@ -133,7 +133,29 @@ async function snapshot(ctx: Awaited<ReturnType<typeof ownedRun>>) {
     );
     entries.push(...batch);
   }
-  return Object.fromEntries(entries);
+  const state = Object.fromEntries(entries);
+  if (ctx.run.baseline?.task === "DEMI-TALL") {
+    const conversations = Array.isArray(state.assistant_conversations)
+      ? state.assistant_conversations.filter(
+          (row) => row.status === "open" && row.assistant_key === "demi",
+        )
+      : [];
+    // Use the narrow recovery RPC instead of granting the bank direct access
+    // to private holds or identity-registration audit records.
+    state.workshop_context = await Promise.all(
+      conversations.map(async (row) => {
+        const result = await ctx.service.rpc("service_demi_workshop_context", {
+          p_studio: ctx.run.studio_id,
+          p_conversation: row.id,
+        });
+        return {
+          conversation_id: row.id,
+          ...(result.error ? { error: result.error.message } : result.data),
+        };
+      }),
+    );
+  }
+  return state;
 }
 
 export async function listDemiUatRuns() {

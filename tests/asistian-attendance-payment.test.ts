@@ -15,8 +15,8 @@ describe("Asistian pending payment attendance", () => {
     expect(today).toContain("commercial_status");
     expect(today).toContain('reservation.commercial_status === "payment_pending"');
     expect(today).toContain("drop_in_price_minor");
-    expect(detail).toContain('reservation.commercial_status === "payment_pending"');
-    expect(detail).toContain("drop_in_price_minor");
+    expect(detail).not.toContain("<SessionOperations");
+    expect(detail).toContain("Registra asistencia, reservas y pagos desde Hoy.");
   });
 
   it("asks for payment before attendance and keeps no-show unchanged", () => {

@@ -1,0 +1,138 @@
+{
+  "date": "2026-10-15",
+  "project": "hedouonyhynuvwbckdlg",
+  "ids": {
+    "studio_a": "f76a76cb-d623-47eb-8bc1-9e74a2e7cdc7",
+    "studio_b": "33d04d41-7cf6-476f-b195-3144ad86336b",
+    "admin_a": "56b980cc-ecd7-4ef8-9e33-dc84ba009443",
+    "admin_b": "1c586c65-87d2-4444-81b8-ba9228a04910",
+    "reception_a": "499e3141-5ec7-4ee4-89e2-31617d3e584b",
+    "site_a": "d295af34-5ac6-492a-b493-089f0136d032",
+    "site_b": "baccaf63-8fc1-4fcf-a2b1-09527b56573a",
+    "space_a": "ec6c97dc-5daf-4baf-b35a-999c546d3945",
+    "space_b": "c22b978d-1864-4dc7-8a35-799c8df12ce6",
+    "coach_a": "08ea6ac4-5d5c-4cfd-a876-35bac90a937e",
+    "coach_b": "72b23c11-46a2-4535-91b5-8e1b17ed1e10",
+    "coach_person_a": "159aec93-03fb-4650-b131-0e54ca230609",
+    "coach_person_b": "35c4db9e-45db-4d36-8c75-22178220fc16",
+    "discipline_a": "b9da4045-1b02-4d00-a8d8-de53572071bb",
+    "discipline_b": "cacc7abc-3d15-4cfe-8651-b47fc1e15b5e",
+    "discipline2_a": "df58b0b1-9e65-4355-8caa-b591b9f919dd"
+  },
+  "users": [
+    {
+      "id": "56b980cc-ecd7-4ef8-9e33-dc84ba009443",
+      "email": "talleres.admin.a.20261015@example.invalid",
+      "name": "UAT Talleres Admin A",
+      "role": "admin",
+      "studio": "f76a76cb-d623-47eb-8bc1-9e74a2e7cdc7"
+    },
+    {
+      "id": "1c586c65-87d2-4444-81b8-ba9228a04910",
+      "email": "talleres.admin.b.20261015@example.invalid",
+      "name": "UAT Talleres Admin B",
+      "role": "admin",
+      "studio": "33d04d41-7cf6-476f-b195-3144ad86336b"
+    },
+    {
+      "id": "499e3141-5ec7-4ee4-89e2-31617d3e584b",
+      "email": "talleres.recepcion.20261015@example.invalid",
+      "name": "UAT Talleres Recepción A",
+      "role": "reception",
+      "studio": "f76a76cb-d623-47eb-8bc1-9e74a2e7cdc7"
+    }
+  ],
+  "students": [
+    {
+      "id": "79971abe-9554-40e6-8c09-96dc30b58ffd",
+      "personId": "5d03ce7c-45fe-4602-ba68-b4e396f326cd",
+      "studio": "f76a76cb-d623-47eb-8bc1-9e74a2e7cdc7",
+      "name": "UAT Ana Compra completa",
+      "index": 1
+    },
+    {
+      "id": "bb726120-7890-4310-af87-4a35646aab63",
+      "personId": "a6fdd911-1a80-426b-9f7f-3396a17d6701",
+      "studio": "f76a76cb-d623-47eb-8bc1-9e74a2e7cdc7",
+      "name": "UAT Bea Fechas individuales",
+      "index": 2
+    },
+    {
+      "id": "d541010a-dab3-47c1-9579-eea57b04c19d",
+      "personId": "0710d451-a753-43cb-b28c-71ae88940cc4",
+      "studio": "f76a76cb-d623-47eb-8bc1-9e74a2e7cdc7",
+      "name": "UAT Carla Anticipo",
+      "index": 3
+    },
+    {
+      "id": "3b35aeb3-ad84-46ec-b287-82c9dba5c605",
+      "personId": "990f6f64-a059-4ed7-aa8a-55698b6809be",
+      "studio": "f76a76cb-d623-47eb-8bc1-9e74a2e7cdc7",
+      "name": "UAT Diana Último cupo",
+      "index": 4
+    },
+    {
+      "id": "d0c4d0b0-afa8-4ba1-ac5e-263e70ea25a1",
+      "personId": "d00fd9be-40e9-4c11-9b3f-651e1489631d",
+      "studio": "f76a76cb-d623-47eb-8bc1-9e74a2e7cdc7",
+      "name": "UAT Elena Segundo comprador",
+      "index": 5
+    },
+    {
+      "id": "53baeb64-c843-41b4-9053-58951853cbef",
+      "personId": "d77cbc24-76ff-461a-aaa2-0cbe18d8931a",
+      "studio": "f76a76cb-d623-47eb-8bc1-9e74a2e7cdc7",
+      "name": "UAT Fabiola Inscripción vigente",
+      "index": 6
+    },
+    {
+      "id": "26518acb-0d6a-46cd-a8c8-4c7d1283578f",
+      "personId": "f8737c82-d373-4faf-a0eb-b7de4897273a",
+      "studio": "f76a76cb-d623-47eb-8bc1-9e74a2e7cdc7",
+      "name": "UAT Gabriela Inscripción vencida",
+      "index": 7
+    },
+    {
+      "id": "1dced5c9-aa0e-4ce4-a662-c1f4a251d840",
+      "personId": "647c108e-09ef-4cdb-8ddc-90b3c3e5b2d0",
+      "studio": "f76a76cb-d623-47eb-8bc1-9e74a2e7cdc7",
+      "name": "UAT Helena Sin inscripción",
+      "index": 8
+    },
+    {
+      "id": "03bbb1d8-17d0-45a5-a123-81eac4737058",
+      "personId": "60038d4f-f126-4cd6-a7e2-c10dfe24bb9d",
+      "studio": "f76a76cb-d623-47eb-8bc1-9e74a2e7cdc7",
+      "name": "UAT Inés Bloqueada",
+      "index": 9
+    },
+    {
+      "id": "d71ac8ab-8742-41e1-90ea-4c24cd867956",
+      "personId": "c8b70d00-b918-456a-a77f-416d5b63489a",
+      "studio": "f76a76cb-d623-47eb-8bc1-9e74a2e7cdc7",
+      "name": "UAT Julia Inactiva",
+      "index": 10
+    },
+    {
+      "id": "e00effce-9186-4f99-9b53-94452bbb0361",
+      "personId": "a7c59b8c-3f7e-400f-84e7-3eb29309ceba",
+      "studio": "f76a76cb-d623-47eb-8bc1-9e74a2e7cdc7",
+      "name": "UAT Karla Reintentos",
+      "index": 11
+    },
+    {
+      "id": "9e0f6d36-a548-41d1-93ca-d5404c201e85",
+      "personId": "7fbdf225-c246-42c2-9790-721ffbe935c1",
+      "studio": "f76a76cb-d623-47eb-8bc1-9e74a2e7cdc7",
+      "name": "UAT Luna Prueba técnica",
+      "index": 12
+    },
+    {
+      "id": "90486192-98c3-4995-9644-e344ab476c9c",
+      "personId": "e7c032ee-e05b-45c7-8fac-2e5c3261c7dd",
+      "studio": "33d04d41-7cf6-476f-b195-3144ad86336b",
+      "name": "UAT Otra alumna B",
+      "index": 13
+    }
+  ]
+}

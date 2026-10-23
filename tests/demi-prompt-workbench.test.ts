@@ -32,6 +32,15 @@ function serverModule<T>(path: string, dependencies: Record<string, unknown>) {
   new Function("require", "module", "exports", code)(
     (name: string) => {
       if (name === "./demi-text-send-claim") return turnCoordination;
+      if (name === "./workshop-purchase" && !(name in dependencies))
+        return {
+          workshopPurchaseAction: () => {
+            throw new Error("Unexpected workshop action in legacy flow");
+          },
+          workshopPaymentInstructions: () => {
+            throw new Error("Unexpected workshop payment in legacy flow");
+          },
+        };
       if (!(name in dependencies)) throw new Error(`Unexpected dependency: ${name}`);
       return dependencies[name];
     },
@@ -99,6 +108,9 @@ function orchestratorHarness(
     {
       "node:crypto": { createHash: vi.fn(), randomUUID: vi.fn() },
       "./read-tools": { getCommercialOptions: vi.fn() },
+      "./workshop-purchase": {
+        workshopPurchaseAction: vi.fn().mockRejectedValue(new Error("Unexpected workshop action")),
+      },
       "./group-booking": {
         groupBookingAction: vi.fn().mockRejectedValue(new Error("Unexpected group action")),
       },
@@ -107,6 +119,11 @@ function orchestratorHarness(
   const mod = serverModule<typeof import("../lib/assistant/orchestrator")>(
     "lib/assistant/orchestrator.ts",
     {
+      "./workshop-purchase": {
+        workshopPaymentInstructions: vi.fn().mockImplementation(() => {
+          throw new Error("Unexpected workshop confirmation");
+        }),
+      },
       "./costs": { estimateModelCostUsdMicros: () => ({ usdMicros: 10 }) },
       "./test-simulation": { simulateAssistantAction: simulate, simulatedReadTool: simulatedRead },
       "./action-tools": {
@@ -1449,6 +1466,11 @@ describe("Demi shared commercial price", () => {
           },
         },
         "./class-preparation": { preparationFromStudioPrompt: () => null },
+        "./workshop-information": {
+          getWorkshopInformation: () => {
+            throw new Error("Unexpected workshop read in commercial price test");
+          },
+        },
       },
     );
     const sessionId = "11111111-1111-4111-8111-111111111111";

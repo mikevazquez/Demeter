@@ -1,3 +1,4 @@
+import { handleDemiWorkshopReceipt } from "@/lib/assistant/workshop-purchase";
 import { DemiTurnCoordinator, DemiCoordinationError } from "@/lib/assistant/demi-text-send-claim";
 import { demiDeliveryRetryPolicy } from "@/lib/assistant/delivery-retry-policy";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
@@ -1838,7 +1839,7 @@ export async function POST(request: Request) {
             "receipt_handlers",
             { media_id: message.mediaId },
             async () => {
-              const groupReceipt = await handleDemiGroupReceipt({
+              const workshopReceipt = await handleDemiWorkshopReceipt({
                 supabase,
                 studioId,
                 conversationId,
@@ -1848,6 +1849,18 @@ export async function POST(request: Request) {
                 messageType: message.messageType,
                 webhookConfig,
               });
+              const groupReceipt = workshopReceipt.handled
+                ? workshopReceipt
+                : await handleDemiGroupReceipt({
+                    supabase,
+                    studioId,
+                    conversationId,
+                    eventId: event.id,
+                    providerMessageId: message.providerMessageId,
+                    mediaId: message.mediaId,
+                    messageType: message.messageType,
+                    webhookConfig,
+                  });
               transferReceipt = groupReceipt.handled
                 ? groupReceipt
                 : await handleDemiEnrollmentReceipt({

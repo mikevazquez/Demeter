@@ -7,6 +7,7 @@ import ContactConversation from "../ContactConversation";
 import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import StudentLifecycleActions from "./StudentLifecycleActions";
 import StudentLifecycleNoticeDialog from "./StudentLifecycleNoticeDialog";
+import { StudentWorkshops } from "./StudentWorkshops";
 import Profile360Overview from "./Profile360Overview";
 import StudentPackageCard from "./StudentPackageCard";
 import StudentPortalAccessSection from "./StudentPortalAccessSection";
@@ -1138,6 +1139,10 @@ export default async function StudentProfilePage({
         error={query.lifecycle_error}
       />
 
+      {view === "summary" && canReadSales ? (
+        <StudentWorkshops studentId={student.id} showEmpty={false} />
+      ) : null}
+
       {query.error ? (
         <div className="notice error">
           {errorCopy[query.error] ?? "No se pudo guardar el cambio."}
@@ -2057,6 +2062,7 @@ export default async function StudentProfilePage({
       ) : null}
       {view === "history" ? (
         <div className="profile360-history-stack">
+          {canReadSales ? <StudentWorkshops studentId={student.id} /> : null}
           {canReadSales ? (
             <section className="profile360-view-panel profile360-sales-history">
               <div className="profile360-view-heading">

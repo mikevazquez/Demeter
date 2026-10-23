@@ -152,6 +152,7 @@ export async function registerSalePaymentAction(formData: FormData) {
 
   revalidatePath("/admin/ventas");
   revalidatePath(`/admin/ventas/${saleId}`);
+  revalidatePath("/admin/alumnas", "layout");
   redirect(`/admin/ventas/${saleId}?created=payment`);
 }
 

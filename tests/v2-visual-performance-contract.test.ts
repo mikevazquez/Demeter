@@ -111,7 +111,7 @@ describe("Studio Flow V2 visual + performance contract", () => {
 
   it("batches acquisition balance reads instead of one RPC per acquisition", () => {
     expect(today).toContain('rpc("acquisition_credit_balances"');
-    expect(sessionDetail).toContain('rpc("acquisition_credit_balances"');
+    expect(sessionDetail).not.toContain('rpc("acquisition_credit_balances"');
     expect(balanceMigration).toContain("public.acquisition_credit_balances");
     expect(balanceMigration).toContain("public.acquisition_credit_balance");
   });

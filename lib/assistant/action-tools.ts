@@ -5,6 +5,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getCommercialOptions, type AssistantStudioContext } from "./read-tools";
+import { workshopPurchaseAction } from "./workshop-purchase";
 import { groupBookingAction } from "./group-booking";
 import type {
   ExecuteBookingArgs,
@@ -4350,6 +4351,11 @@ async function executeAssistantActionToolUncoordinated(
   args: Record<string, unknown>,
 ) {
   switch (toolName) {
+    case "register_workshop_participant":
+    case "record_workshop_continuation":
+    case "prepare_workshop_purchase":
+    case "confirm_workshop_purchase":
+      return workshopPurchaseAction(ctx, toolName, args);
     case "prepare_enrollment_payment": {
       if (!ctx.serviceMode || !ctx.studentId)
         return { ok: false, reason_code: "verified_student_required" };

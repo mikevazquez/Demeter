@@ -153,6 +153,19 @@
   text-overflow: clip;
   line-height: 1.2;
 }
+.sendero-agenda .agenda-session-kind {
+  width: fit-content;
+  border-radius: 999px;
+  background: #ffffff99;
+  padding: 2px 7px;
+  color: #62546f;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
 .sendero-agenda .agenda-session-block.is-compact {
   gap: 1px;
   padding-block: 4px;

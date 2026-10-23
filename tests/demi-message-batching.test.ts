@@ -197,6 +197,7 @@ function harness(onModel?: (input: ModelInput, rows: Record<string, Row[]>) => v
     "@/lib/assistant/audio-transcription": {},
     "@/lib/assistant/group-booking": {},
     "@/lib/assistant/enrollment-payment": {},
+    "@/lib/assistant/workshop-purchase": {},
     "@/lib/assistant/receipt-reader": {},
     "@/lib/assistant/receipt-confirmation": {},
     "@/lib/assistant/student-access": {},

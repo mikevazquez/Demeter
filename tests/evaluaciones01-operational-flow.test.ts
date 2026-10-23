@@ -168,8 +168,8 @@ describe("EVALUACIONES-01 operational cycle", () => {
     expect(adminToday).toContain('"evaluation_invitations"');
     expect(adminToday).toContain("evaluationCount");
     expect(adminToday).toContain("evaluationStatus");
-    expect(adminSessionDetail).toContain('"evaluation_invitations"');
-    expect(adminSessionDetail).toContain("evaluationStatus");
+    expect(adminSessionDetail).not.toContain('"evaluation_invitations"');
+    expect(adminSessionDetail).toContain("Registra asistencia, reservas y pagos desde Hoy.");
     expect(adminSessionOperations).toContain("Evaluación programada");
     expect(adminSessionOperations).toContain("Evaluación en curso");
     expect(adminSessionOperations).toContain("Iniciar evaluación →");
