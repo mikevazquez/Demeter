@@ -567,25 +567,25 @@ test("a turn-completed event is activity, not receipt verification or permission
 test(
   "read-only silence releases the slot as stale capacity without inventing completion",
   async () => {
-  const { store, options, calls } = await setup();
-  await tickSupervisor(options);
-  await tickSupervisor({
-    ...options,
-    now: after(31),
-    workerSignals: [
-      { workerId: "claude-code-web", state: "no_capacity", observedAt: after(30) },
-    ],
-  });
-  const silent = await taskOf(store);
-  assert.equal(silent.status, "paused_capacity");
-  assert.equal(silent.requires_user_action, false);
-  assert.equal(silent.last_worker_activity_at, undefined);
-  assert.equal(silent.attempts[0].last_activity_at, undefined);
-  assert.equal(silent.attempts[0].intent_at, START);
-  assert.equal(silent.attempts[0].status, "rejected_capacity");
-  assert.equal(silent.attempts[0].finished_at, after(31));
-  assert.equal(silent.next_attempt_at, after(46));
-  assert.equal((await store.read()).state.active_task_id, null);
+    const { store, options, calls } = await setup();
+    await tickSupervisor(options);
+    await tickSupervisor({
+      ...options,
+      now: after(31),
+      workerSignals: [
+        { workerId: "claude-code-web", state: "no_capacity", observedAt: after(30) },
+      ],
+    });
+    const silent = await taskOf(store);
+    assert.equal(silent.status, "paused_capacity");
+    assert.equal(silent.requires_user_action, false);
+    assert.equal(silent.last_worker_activity_at, undefined);
+    assert.equal(silent.attempts[0].last_activity_at, undefined);
+    assert.equal(silent.attempts[0].intent_at, START);
+    assert.equal(silent.attempts[0].status, "rejected_capacity");
+    assert.equal(silent.attempts[0].finished_at, after(31));
+    assert.equal(silent.next_attempt_at, after(46));
+    assert.equal((await store.read()).state.active_task_id, null);
     assert.equal(calls.length, 1);
   },
 );
@@ -593,36 +593,36 @@ test(
 test(
   "read-only stale capacity preserves task identity and prefers another eligible worker",
   async () => {
-  const { store, options, calls, taskContract } = await setup();
-  await tickSupervisor(options);
-  await tickSupervisor({
-    ...options,
-    now: after(31),
-    workerSignals: [
-      { workerId: "claude-code-web", state: "no_capacity", observedAt: after(30) },
-    ],
-  });
-  await tickSupervisor({
-    ...options,
-    now: after(46),
-    workers: [
-      worker(),
-      worker({
-        workerId: "gpt-routine-worker",
-        relativeCost: 2,
-        contextScore: 0,
-      }),
-    ],
-  });
-  const task = await taskOf(store);
-  assert.equal(calls.length, 2);
-  assert.equal(task.status, "sent");
-  assert.equal(task.attempts.length, 2);
-  assert.equal(task.attempts[0].worker_id, "claude-code-web");
-  assert.equal(task.attempts[0].status, "rejected_capacity");
-  assert.equal(task.attempts[1].worker_id, "gpt-routine-worker");
-  assert.equal(calls[1].task.task_id, taskContract.task_id);
-  assert.equal(calls[1].task.contract_sha256, supervisorContractSha256(taskContract));
+    const { store, options, calls, taskContract } = await setup();
+    await tickSupervisor(options);
+    await tickSupervisor({
+      ...options,
+      now: after(31),
+      workerSignals: [
+        { workerId: "claude-code-web", state: "no_capacity", observedAt: after(30) },
+      ],
+    });
+    await tickSupervisor({
+      ...options,
+      now: after(46),
+      workers: [
+        worker(),
+        worker({
+          workerId: "gpt-routine-worker",
+          relativeCost: 2,
+          contextScore: 0,
+        }),
+      ],
+    });
+    const task = await taskOf(store);
+    assert.equal(calls.length, 2);
+    assert.equal(task.status, "sent");
+    assert.equal(task.attempts.length, 2);
+    assert.equal(task.attempts[0].worker_id, "claude-code-web");
+    assert.equal(task.attempts[0].status, "rejected_capacity");
+    assert.equal(task.attempts[1].worker_id, "gpt-routine-worker");
+    assert.equal(calls[1].task.task_id, taskContract.task_id);
+    assert.equal(calls[1].task.contract_sha256, supervisorContractSha256(taskContract));
     assert.equal((await store.read()).state.active_task_id, taskContract.task_id);
   },
 );
@@ -630,19 +630,19 @@ test(
 test(
   "writable silence remains fail-closed until process closure or checkpoint is proven",
   async () => {
-  const { store, options, calls } = await setup({
-    read_only: false,
-    recovery: { mode: "checkpoint", max_attempts: 3 },
-  });
-  await tickSupervisor(options);
-  await tickSupervisor({ ...options, now: after(31) });
-  const silent = await taskOf(store);
-  assert.equal(silent.status, "no_signal");
-  assert.equal(silent.requires_user_action, true);
-  assert.equal(silent.attempts[0].status, "sent");
-  assert.equal((await store.read()).state.active_task_id, silent.task_id);
-  await tickSupervisor({ ...options, now: after(120) });
-  assert.equal(calls.length, 1);
+    const { store, options, calls } = await setup({
+      read_only: false,
+      recovery: { mode: "checkpoint", max_attempts: 3 },
+    });
+    await tickSupervisor(options);
+    await tickSupervisor({ ...options, now: after(31) });
+    const silent = await taskOf(store);
+    assert.equal(silent.status, "no_signal");
+    assert.equal(silent.requires_user_action, true);
+    assert.equal(silent.attempts[0].status, "sent");
+    assert.equal((await store.read()).state.active_task_id, silent.task_id);
+    await tickSupervisor({ ...options, now: after(120) });
+    assert.equal(calls.length, 1);
     assert.equal((await taskOf(store)).attempts.length, 1);
   },
 );
