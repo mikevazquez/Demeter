@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { scheduleProspectTrial } from "./actions";
+import { resolveStudioTimeZone } from "@/lib/studio-time";
 
 const errorCopy: Record<string, string> = {
   payment_method_required: "Selecciona cómo pagó la primera clase.",
@@ -66,7 +67,7 @@ export default async function ScheduleProspectTrialPage({
     month: "long",
     hour: "numeric",
     minute: "2-digit",
-    timeZone: studio.timezone ?? "America/Mexico_City",
+    timeZone: resolveStudioTimeZone(studio.timezone),
   });
 
   return (

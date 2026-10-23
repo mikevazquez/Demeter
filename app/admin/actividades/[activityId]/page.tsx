@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { studioLocalDateKey } from "@/lib/studio-time";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { ActivityWizard, type ActivityDraft } from "../ActivityWizard";
@@ -79,7 +80,7 @@ export default async function ActivityDetailPage({
     requiresResource: activity.requires_resource,
     defaultInstructorId: firstSchedule?.instructor_id ?? "",
     defaultSpaceId: firstSchedule?.space_id ?? "",
-    startsOn: firstSchedule?.starts_on ?? new Date().toISOString().slice(0, 10),
+    startsOn: firstSchedule?.starts_on ?? studioLocalDateKey(studio.timezone),
     endsOn: firstSchedule?.ends_on ?? "",
     schedules: (schedules ?? []).map((schedule) => ({
       id: schedule.id,
@@ -122,6 +123,7 @@ export default async function ActivityDetailPage({
       </header>
 
       <ActivityWizard
+        timeZone={studio.timezone}
         locale={studio.locale}
         currency={studio.currency}
         mode="edit"

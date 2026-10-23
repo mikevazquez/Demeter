@@ -2,6 +2,8 @@
 
 import { useFormStatus } from "react-dom";
 
+import { MEXICO_TIME_ZONES } from "@/lib/studio-time";
+
 import { saveStudioRegionalSettingsAction } from "./actions";
 
 function SubmitButton() {
@@ -25,27 +27,37 @@ export function RegionalSettingsForm({
   locale: string;
   phoneCountryCallingCode: string;
 }) {
+  const zoneOptions = MEXICO_TIME_ZONES.some((zone) => zone.value === timezone)
+    ? MEXICO_TIME_ZONES
+    : [{ value: timezone, label: timezone }, ...MEXICO_TIME_ZONES];
   return (
     <form action={saveStudioRegionalSettingsAction} className="advanced-v2-form">
       <input type="hidden" name="return_to" value="region" />
 
       <label className="advanced-v2-field">
         <span>Zona horaria</span>
-        <input name="timezone" defaultValue={timezone} required />
-        <small>Ejemplo: America/Mexico_City.</small>
+        <select name="timezone" defaultValue={timezone} required>
+          {zoneOptions.map((zone) => (
+            <option key={zone.value} value={zone.value}>
+              {zone.label}
+            </option>
+          ))}
+        </select>
+        <small>
+          Horarios, «hoy», cumpleaños, recordatorios y reportes se calculan con esta hora.
+        </small>
       </label>
 
-      <label className="advanced-v2-field">
-        <span>Moneda</span>
-        <input name="currency" defaultValue={currency} minLength={3} maxLength={3} required />
-        <small>Ejemplos: MXN, USD o EUR.</small>
-      </label>
-
-      <label className="advanced-v2-field">
-        <span>Formato regional</span>
-        <input name="locale" defaultValue={locale} minLength={2} maxLength={20} required />
-        <small>Ejemplos: es-MX o en-US.</small>
-      </label>
+      {/* NEB-01-35 · Nébora v1 es solo para México: pesos y español de México quedan fijos. */}
+      <input type="hidden" name="currency" value={currency} />
+      <input type="hidden" name="locale" value={locale} />
+      <div className="advanced-v2-field">
+        <span>Moneda y formato</span>
+        <p>
+          {currency} · {locale}
+        </p>
+        <small>Por ahora todos los estudios usan pesos mexicanos y español de México.</small>
+      </div>
 
       <label className="advanced-v2-field">
         <span>Prefijo telefónico</span>

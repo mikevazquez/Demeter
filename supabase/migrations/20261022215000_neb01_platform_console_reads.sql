@@ -6,30 +6,34 @@
 -- Solo lecturas. Las escrituras siguen siendo platform_set_studio_plan/module/status (NEB-01-02).
 -- Estados de reserva (enum reservation_status): reserved, attended, cancelled_on_time,
 -- cancelled_late, no_show, cancelled_by_studio. Se comparan como texto.
--- "Este mes" y "esta semana" se cuentan en hora de Ciudad de México.
+-- "Este mes", "esta semana", "hoy" y la fecha de corte se cuentan en la zona horaria de cada
+-- estudio (NEB-01-35); sin zona, en la del centro de México.
 
-create or replace function private.platform_month_start()
+create or replace function private.platform_month_start(p_tz text default 'America/Mexico_City')
 returns timestamptz
 language sql
 stable
 set search_path = ''
 as $$
-  select date_trunc('month', now() at time zone 'America/Mexico_City') at time zone 'America/Mexico_City';
+  select date_trunc('month', now() at time zone p_tz) at time zone p_tz;
 $$;
-revoke all on function private.platform_month_start() from public, anon, authenticated;
+revoke all on function private.platform_month_start(text) from public, anon, authenticated;
 
-create or replace function private.platform_week_start()
+create or replace function private.platform_week_start(p_tz text default 'America/Mexico_City')
 returns timestamptz
 language sql
 stable
 set search_path = ''
 as $$
-  select date_trunc('week', now() at time zone 'America/Mexico_City') at time zone 'America/Mexico_City';
+  select date_trunc('week', now() at time zone p_tz) at time zone p_tz;
 $$;
-revoke all on function private.platform_week_start() from public, anon, authenticated;
+revoke all on function private.platform_week_start(text) from public, anon, authenticated;
 
 -- Siguiente fecha de corte (día 1..28) a partir de hoy; null si no tiene día de corte.
-create or replace function private.platform_next_cut_on(p_cut_day smallint)
+create or replace function private.platform_next_cut_on(
+  p_cut_day smallint,
+  p_tz text default 'America/Mexico_City'
+)
 returns date
 language sql
 stable
@@ -37,12 +41,12 @@ set search_path = ''
 as $$
   select case
     when p_cut_day is null then null
-    when extract(day from (now() at time zone 'America/Mexico_City'))::int <= p_cut_day
-      then (date_trunc('month', now() at time zone 'America/Mexico_City')::date + (p_cut_day - 1))
-    else ((date_trunc('month', now() at time zone 'America/Mexico_City') + interval '1 month')::date + (p_cut_day - 1))
+    when extract(day from (now() at time zone p_tz))::int <= p_cut_day
+      then (date_trunc('month', now() at time zone p_tz)::date + (p_cut_day - 1))
+    else ((date_trunc('month', now() at time zone p_tz) + interval '1 month')::date + (p_cut_day - 1))
   end;
 $$;
-revoke all on function private.platform_next_cut_on(smallint) from public, anon, authenticated;
+revoke all on function private.platform_next_cut_on(smallint, text) from public, anon, authenticated;
 
 -- Módulos que un estudio pidió activar y todavía no tiene.
 create or replace function private.platform_pending_requests(p_studio uuid)
@@ -130,10 +134,10 @@ begin
     'status', sub.status,
     'monthly_price_mxn', private.studio_monthly_price_mxn(s.id),
     'founding_month', case when sub.plan_key = 'founding' and sub.founding_started_on is not null
-      then (extract(year from age(current_date, sub.founding_started_on)) * 12
-        + extract(month from age(current_date, sub.founding_started_on)))::int + 1 end,
+      then (extract(year from age((now() at time zone coalesce(nullif(btrim(s.timezone), ''), 'America/Mexico_City'))::date, sub.founding_started_on)) * 12
+        + extract(month from age((now() at time zone coalesce(nullif(btrim(s.timezone), ''), 'America/Mexico_City'))::date, sub.founding_started_on)))::int + 1 end,
     'cut_day', sub.cut_day,
-    'next_cut_on', private.platform_next_cut_on(sub.cut_day),
+    'next_cut_on', private.platform_next_cut_on(sub.cut_day, coalesce(nullif(btrim(s.timezone), ''), 'America/Mexico_City')),
     'students_active', private.platform_studio_students_active(s.id),
     'pending_requests', jsonb_array_length(private.platform_pending_requests(s.id))
   ) order by s.name), '[]'::jsonb) into v_result
@@ -155,14 +159,20 @@ security definer
 set search_path = ''
 as $$
 declare
-  v_month timestamptz := private.platform_month_start();
-  v_week timestamptz := private.platform_week_start();
+  v_tz text;
+  v_month timestamptz;
+  v_week timestamptz;
+  v_today date;
   v_studio public.studios;
   v_sub public.studio_subscriptions;
 begin
   perform private.platform_require_admin();
   select * into v_studio from public.studios where id = p_studio;
   if v_studio.id is null then raise exception 'studio_not_found'; end if;
+  v_tz := coalesce(nullif(btrim(v_studio.timezone), ''), 'America/Mexico_City');
+  v_month := private.platform_month_start(v_tz);
+  v_week := private.platform_week_start(v_tz);
+  v_today := (now() at time zone v_tz)::date;
   select * into v_sub from public.studio_subscriptions where studio_id = p_studio;
 
   return jsonb_build_object(
@@ -172,7 +182,8 @@ begin
       'brand_name', coalesce(v_studio.brand_name, v_studio.name),
       'slug', v_studio.slug),
     'entitlements', private.studio_entitlements(p_studio),
-    'next_cut_on', private.platform_next_cut_on(v_sub.cut_day),
+    'next_cut_on', private.platform_next_cut_on(v_sub.cut_day, v_tz),
+    'timezone', v_tz,
     'status_changed_at', v_sub.status_changed_at,
     'grace_started_at', v_sub.grace_started_at,
     'students', (select jsonb_build_object(
@@ -183,7 +194,7 @@ begin
     'students_with_package', (select count(distinct pa.student_id)
       from public.product_acquisitions pa
       where pa.studio_id = p_studio and pa.status::text = 'active'
-        and (pa.expires_on is null or pa.expires_on >= current_date)),
+        and (pa.expires_on is null or pa.expires_on >= v_today)),
     'classes', (select jsonb_build_object(
         'this_week', count(*) filter (where cs.starts_at >= v_week and cs.starts_at < v_week + interval '7 days'),
         'this_month', count(*) filter (where cs.starts_at >= v_month and cs.starts_at < v_month + interval '1 month'))

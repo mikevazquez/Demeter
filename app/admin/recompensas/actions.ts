@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { studioLocalDateTimeToIso } from "@/lib/studio-time";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 type ConditionInput = {
@@ -29,15 +30,13 @@ function integerValue(formData: FormData, key: string, fallback: number) {
   return value;
 }
 
-function optionalDateTime(formData: FormData, key: string) {
+// NEB-01-35 · la hora que escribe el estudio es su hora local (antes: -06:00 fijo).
+function optionalDateTime(formData: FormData, key: string, timeZone: string | null | undefined) {
   const raw = textValue(formData, key);
   if (!raw) return null;
-  const normalized = /(?:Z|[+-]\d{2}:\d{2})$/.test(raw)
-    ? raw
-    : `${raw.length === 16 ? `${raw}:00` : raw}-06:00`;
-  const date = new Date(normalized);
-  if (Number.isNaN(date.getTime())) throw new Error(`invalid_date:${key}`);
-  return date.toISOString();
+  const iso = studioLocalDateTimeToIso(raw, timeZone);
+  if (!iso) throw new Error(`invalid_date:${key}`);
+  return iso;
 }
 
 function parseConditions(formData: FormData) {
@@ -624,10 +623,9 @@ async function saveStandaloneRule(formData: FormData, familyOverride: "achieveme
     allow_historical: false,
     attendance_max_one_per_day: true,
   };
-  const scheduledStartAt = optionalDateTime(formData, "scheduled_start_at");
-  const scheduledEndAt = optionalDateTime(formData, "scheduled_end_at");
-
   const { supabase, studio } = await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
+  const scheduledStartAt = optionalDateTime(formData, "scheduled_start_at", studio.timezone);
+  const scheduledEndAt = optionalDateTime(formData, "scheduled_end_at", studio.timezone);
 
   if (ruleId) {
     const { data: rule } = await supabase

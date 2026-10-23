@@ -83,6 +83,7 @@ export default async function NewActivityPage({
         <h3>Clase normal</h3>
       </section>
       <ActivityWizard
+        timeZone={studio.timezone}
         locale={studio.locale}
         currency={studio.currency}
         mode="create"

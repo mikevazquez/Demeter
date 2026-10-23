@@ -55,6 +55,7 @@ export default async function AchievementDetailPage({
       {query.error ? <div className="notice error">{query.error}</div> : null}
 
       <RuleEditorForm
+        timeZone={ctx.studio.timezone}
         mode="achievement"
         rule={rule}
         version={version}

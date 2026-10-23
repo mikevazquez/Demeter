@@ -7,6 +7,7 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import StudentOnboardingForm from "./StudentOnboardingForm";
 import OnboardingCompletedDialog from "./OnboardingCompletedDialog";
 import { loadTrialEnrollmentCredits } from "@/lib/assistant/trial-enrollment-credit";
+import { resolveStudioTimeZone } from "@/lib/studio-time";
 
 function localDate(timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -92,7 +93,7 @@ export default async function StudentOnboardingPage({
 
   if (!student) notFound();
 
-  const today = localDate(studio.timezone ?? "America/Mexico_City");
+  const today = localDate(resolveStudioTimeZone(studio.timezone));
   const canSell = can(CAPABILITIES.SALES_WRITE);
 
   const [

@@ -1,7 +1,9 @@
 import { resolveEnrollmentStatus } from "@/lib/assistant/enrollment-state";
 import { contactStage } from "@/lib/student-crm";
+import { DEFAULT_STUDIO_TIME_ZONE, studioLocalDateKey } from "@/lib/studio-time";
 
-export const BIRTHDAY_TIME_ZONE = "America/Mexico_City";
+// NEB-01-35 · Los cumpleaños se cuentan en la hora del estudio.
+export const BIRTHDAY_TIME_ZONE = DEFAULT_STUDIO_TIME_ZONE;
 
 export type BirthdayStudent = {
   id: string;
@@ -18,16 +20,8 @@ export type BirthdayOccurrence = {
   packageLabel: string;
 };
 
-export function mexicoToday(now: Date) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: BIRTHDAY_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(now);
-  return ["year", "month", "day"]
-    .map((type) => parts.find((part) => part.type === type)!.value)
-    .join("-");
+export function mexicoToday(now: Date, timeZone: string = BIRTHDAY_TIME_ZONE) {
+  return studioLocalDateKey(timeZone, now);
 }
 
 // Validate dates as calendar values, without converting a birthday to local time.

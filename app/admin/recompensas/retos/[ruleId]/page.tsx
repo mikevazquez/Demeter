@@ -66,6 +66,7 @@ export default async function ChallengeDetailPage({
       {query.error ? <div className="notice error">{query.error}</div> : null}
 
       <RuleEditorForm
+        timeZone={ctx.studio.timezone}
         mode="challenge"
         rule={rule}
         version={version}

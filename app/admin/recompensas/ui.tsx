@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { resolveStudioTimeZone } from "@/lib/studio-time";
 
 export type JsonObject = Record<string, unknown>;
 
@@ -58,24 +59,24 @@ export function asArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
-export function formatDateTime(value: string | null | undefined) {
+export function formatDateTime(value: string | null | undefined, timeZone?: string | null) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
   return new Intl.DateTimeFormat("es-MX", {
     dateStyle: "medium",
     timeStyle: "short",
-    timeZone: "America/Mexico_City",
+    timeZone: resolveStudioTimeZone(timeZone),
   }).format(date);
 }
 
-export function formatDate(value: string | null | undefined) {
+export function formatDate(value: string | null | undefined, timeZone?: string | null) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
   return new Intl.DateTimeFormat("es-MX", {
     dateStyle: "medium",
-    timeZone: "America/Mexico_City",
+    timeZone: resolveStudioTimeZone(timeZone),
   }).format(date);
 }
 

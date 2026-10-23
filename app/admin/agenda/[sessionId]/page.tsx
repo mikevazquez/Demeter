@@ -10,6 +10,7 @@ import {
 } from "@/lib/reservations/capacity";
 import { SessionOperations } from "../../hoy/SessionOperations";
 import { cancelSession, setMinimumOverride, updateSession } from "./actions";
+import { resolveStudioTimeZone } from "@/lib/studio-time";
 
 function formatExpiry(value: string | null) {
   if (!value) return "Sin vencimiento";
@@ -174,7 +175,7 @@ export default async function SessionDetailPage({
         }),
   ]);
 
-  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const timeZone = resolveStudioTimeZone(studio.timezone);
   const personMap = new Map(
     (persons ?? []).map((person) => [
       person.id,

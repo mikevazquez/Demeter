@@ -378,7 +378,8 @@
   line-height: 1.5;
 }
 
-.advanced-v2-field input {
+.advanced-v2-field input,
+.advanced-v2-field select {
   width: 100%;
   min-height: 48px;
   padding: 0 12px;
@@ -391,9 +392,17 @@
   font-size: 14px;
 }
 
-.advanced-v2-field input:focus {
+.advanced-v2-field input:focus,
+.advanced-v2-field select:focus {
   border-color: #78cbb0;
   box-shadow: 0 0 0 3px rgba(23, 168, 120, 0.08);
+}
+
+.advanced-v2-field > p {
+  margin: 0;
+  color: var(--advanced-text);
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .advanced-v2-field textarea {
@@ -556,7 +565,8 @@
     font-size: 12px;
   }
 
-  .advanced-v2-field input {
+  .advanced-v2-field input,
+  .advanced-v2-field select {
     font-size: 16px;
   }
 

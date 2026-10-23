@@ -6,7 +6,7 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { RuleEditorForm } from "../../recompensas/RuleEditorForm";
 
 export default async function NewChallengePage() {
-  await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
+  const ctx = await getAdminContext(CAPABILITIES.REWARDS_MANAGE);
   return (
     <main className="dashboard-shell space-y-6 admin-ux04-secondary">
       <header>
@@ -19,7 +19,8 @@ export default async function NewChallengePage() {
           Define objetivo, modalidad, participantes, recompensa y notificaciones antes de publicar.
         </p>
       </header>
-      <RuleEditorForm mode="challenge" canManage />
+      <RuleEditorForm
+        timeZone={ctx.studio.timezone} mode="challenge" canManage />
     </main>
   );
 }

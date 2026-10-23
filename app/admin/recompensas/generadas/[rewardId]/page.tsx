@@ -153,11 +153,11 @@ export default async function GeneratedRewardDetailPage({
           <dl className="mt-5 grid gap-3 text-sm">
             <div className="flex justify-between gap-4">
               <dt className="text-zinc-500">Obtenida</dt>
-              <dd className="text-right text-zinc-300">{formatDateTime(reward.created_at)}</dd>
+              <dd className="text-right text-zinc-300">{formatDateTime(reward.created_at, ctx.studio.timezone)}</dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-zinc-500">Vence</dt>
-              <dd className="text-right text-zinc-300">{formatDateTime(reward.expires_at)}</dd>
+              <dd className="text-right text-zinc-300">{formatDateTime(reward.expires_at, ctx.studio.timezone)}</dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-zinc-500">Entrega</dt>
@@ -176,7 +176,7 @@ export default async function GeneratedRewardDetailPage({
           </p>
           {evaluation ? (
             <p className="mt-3 text-xs text-zinc-500">
-              Validado {formatDateTime(evaluation.evaluated_at)}
+              Validado {formatDateTime(evaluation.evaluated_at, ctx.studio.timezone)}
             </p>
           ) : null}
         </article>
@@ -253,7 +253,7 @@ export default async function GeneratedRewardDetailPage({
               >
                 <div>
                   <strong className="text-sm text-white">{event.event_type}</strong>
-                  <p className="mt-1 text-xs text-zinc-500">{formatDateTime(event.occurred_at)}</p>
+                  <p className="mt-1 text-xs text-zinc-500">{formatDateTime(event.occurred_at, ctx.studio.timezone)}</p>
                 </div>
                 <StatusBadge status={event.to_status} />
               </div>
