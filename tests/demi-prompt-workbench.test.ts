@@ -220,6 +220,27 @@ describe("F01 server confirmation routes", () => {
     expect(result.reply).toContain("confirmada");
     expect(fetcher).not.toHaveBeenCalled();
   });
+  it("confirms a student cash package with provisional access and debt even if absent", async () => {
+    const h = orchestratorHarness({ id: "pending", action_type: "commerce.cash_purchase" });
+    h.input.testSimulation = undefined;
+    h.input.studentId = "student";
+    h.input.serviceMode = true;
+    h.input.history = [{ role: "user", content: "Sí, confirmo" }];
+    h.action.mockResolvedValue({ ok: true, status: "cash_due", payment_received: false });
+    const fetcher = vi.fn();
+    vi.stubGlobal("fetch", fetcher);
+    const result = await h.run(h.input);
+    expect(h.action).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ studentId: "student", serviceMode: true }),
+      "confirm_cash_package_purchase",
+      {},
+    );
+    expect(result.reply).toContain("activo de forma provisional");
+    expect(result.reply).toContain("Aunque no asistas, el adeudo del paquete se mantiene");
+    expect(result.reply).toContain("debes pagarlo completo");
+    expect(result.reply).toContain("para una segunda reserva tendrás que cubrir el adeudo");
+    expect(fetcher).not.toHaveBeenCalled();
+  });
   it.each([
     "booking.cancel",
     "booking.reschedule",
@@ -644,8 +665,15 @@ describe("Demi prompt workbench", () => {
     expect(h.simulate).not.toHaveBeenCalled();
     expect(fetcher).not.toHaveBeenCalled();
     expect(result.trace.toolCalls).toEqual([]);
-    expect(result.reply).toContain(second ? "únicamente si hay lugar" : "pago por adelantado");
-    expect(result.reply).toContain(second ? "recepción recibe y registra el pago" : "Sin ese pago");
+    if (second) {
+      expect(result.reply).toContain("únicamente si hay lugar");
+      expect(result.reply).toContain("recepción recibe y registra el pago");
+      expect(result.reply).toContain("sin reserva");
+      expect(result.reply).toContain("no podemos garantizarte");
+    } else {
+      expect(result.reply).toContain("transferencia o depósito bancario por adelantado");
+      expect(result.reply).not.toMatch(/al llegar|sin reserva|recepción/i);
+    }
   });
 
   it("answers a mixed information request while retaining exact payment instructions", async () => {

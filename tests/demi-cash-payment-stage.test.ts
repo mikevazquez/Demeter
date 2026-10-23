@@ -43,11 +43,13 @@ describe("prospect payment objection stages", () => {
       ]),
     ).toBeNull();
   });
-  it("explains the first objection and leaves cash collection to reception after refusal", () => {
+  it("prioritizes transfer or deposit first and offers walk-in cash only after another objection", () => {
     const explanation = prospectCashTurnReply(prospect, first)!;
     expect(explanation).toContain("Como los lugares se reservan con anticipación");
-    expect(explanation).toContain("Sin ese pago");
-    expect(explanation).not.toMatch(/puedes (?:acercarte|ir)|comprobante|revisar|validar/i);
+    expect(explanation).toContain("transferencia o depósito bancario por adelantado");
+    expect(explanation).toContain("para asegurar tu lugar y agendar tu clase");
+    expect(explanation).not.toMatch(/al llegar|sin reserva|recepción|puedes (?:acercarte|ir)/i);
+    expect(explanation).not.toMatch(/efectivo.{0,20}(?:deshabilitado|no.{0,10}acepta)/i);
     const history = [...first, assistant(explanation), user("No gracias, no puedo.")];
     const alternative = prospectCashTurnReply(prospect, history)!;
     expect(alternative).toContain("recepción recibe y registra el pago");
@@ -66,6 +68,16 @@ describe("prospect payment objection stages", () => {
   it("keeps a first cash question at the first stage", () => {
     expect(prospectCashPaymentStage(prospect, first)).toBe("first_objection");
   });
+
+  it.each(["Efectivo no se puede?", "¿Efectivo?", "Efectivo se puede?"])(
+    "answers short cash questions from the screenshot: %s",
+    (message) => {
+      const reply = prospectCashTurnReply(prospect, [user(message)]);
+      expect(reply).toContain("transferencia o depósito bancario por adelantado");
+      expect(reply).not.toMatch(/al llegar|sin reserva|recepción/i);
+      expect(prospectCashTurnReply({ studentId: "student" }, [user(message)])).toBeNull();
+    },
+  );
 
   it.each(["No gracias, sólo puedo en efectivo.", "No gracias, no puedo."])(
     "advances after a renewed refusal: %s",
