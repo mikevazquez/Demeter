@@ -26,7 +26,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $fn$
 declare
   v_payment public.payments%rowtype;
   v_sale public.sales%rowtype;
@@ -127,7 +127,7 @@ begin
     'amount_minor', v_payment.amount_minor
   );
 end;
-$;
+$fn$;
 
 revoke all on function public.admin_correct_unreceived_payment(uuid,text) from public, anon;
 grant execute on function public.admin_correct_unreceived_payment(uuid,text) to authenticated;
