@@ -388,11 +388,11 @@
   min-width: 0;
   margin: 0;
   padding: 0;
-  border: 0;
+  border: 0 !important;
   border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--p360v2-text);
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--p360v2-text) !important;
 }
 
 /* 2 · Bloques: una sola superficie para todo el perfil. */
@@ -410,11 +410,11 @@
   min-width: 0;
   margin: 0;
   padding: 18px;
-  border: 1px solid var(--p360v2-line);
+  border: 1px solid var(--p360v2-line) !important;
   border-radius: 22px;
-  background: var(--p360v2-surface);
-  box-shadow: none;
-  color: var(--p360v2-text);
+  background: var(--p360v2-surface) !important;
+  box-shadow: none !important;
+  color: var(--p360v2-text) !important;
   color-scheme: dark;
 }
 
@@ -439,9 +439,9 @@
     .profile360-rewards-section
   ) {
   padding: 0;
-  border: 0;
+  border: 0 !important;
   border-radius: 0;
-  background: transparent;
+  background: transparent !important;
 }
 
 /* Un elemento dentro de un bloque (comprobante, cargo, fila) es una tarjeta tenue. */
@@ -450,13 +450,13 @@
   :is(.profile360-package-group, .profile360-view-panel, .profile360-rewards-section)
   :is(article, .student-row, .profile360-reward-list > article) {
   padding: 12px 14px;
-  border: 1px solid var(--p360v2-line);
+  border: 1px solid var(--p360v2-line) !important;
   border-radius: 14px;
-  background: var(--p360v2-inner);
-  color: var(--p360v2-text);
+  background: var(--p360v2-inner) !important;
+  color: var(--p360v2-text) !important;
 }
 .sendero-alumnas .crm-page.p360v2 :is([class*="bg-white"], [class*="bg-black"]) {
-  background: var(--p360v2-inner);
+  background: var(--p360v2-inner) !important;
 }
 
 /* 4 · Encabezados de bloque y colapsables con la misma forma. */
@@ -469,7 +469,7 @@
   padding: 0;
   cursor: pointer;
   list-style: none;
-  color: var(--p360v2-text);
+  color: var(--p360v2-text) !important;
 }
 .sendero-alumnas .crm-page.p360v2 .profile360-detail > summary::-webkit-details-marker {
   display: none;
@@ -479,7 +479,7 @@
   gap: 2px;
 }
 .sendero-alumnas .crm-page.p360v2 .profile360-detail > summary > span[aria-hidden] {
-  color: var(--p360v2-muted);
+  color: var(--p360v2-muted) !important;
   transition: transform 0.15s;
 }
 .sendero-alumnas .crm-page.p360v2 .profile360-detail[open] > summary {
@@ -493,13 +493,13 @@
 .sendero-alumnas .crm-page.p360v2 .profile360-view-heading {
   margin: 0 0 4px;
   padding: 0;
-  border: 0;
-  background: transparent;
+  border: 0 !important;
+  background: transparent !important;
 }
 
 /* 5 · Texto: claro sobre oscuro en todo el perfil. */
 .sendero-alumnas .crm-page.p360v2 :is(h1, h2, h3, h4, strong, b, .text-white, label, legend) {
-  color: var(--p360v2-text);
+  color: var(--p360v2-text) !important;
 }
 .sendero-alumnas
   .crm-page.p360v2
@@ -516,22 +516,22 @@
     .text-zinc-500,
     .text-zinc-600
   ) {
-  color: var(--p360v2-muted);
+  color: var(--p360v2-muted) !important;
 }
 .sendero-alumnas .crm-page.p360v2 .eyebrow {
   letter-spacing: 0.08em;
 }
 .sendero-alumnas .crm-page.p360v2 .text-emerald-300 {
-  color: var(--p360v2-accent);
+  color: var(--p360v2-accent) !important;
 }
 .sendero-alumnas .crm-page.p360v2 .text-amber-300 {
-  color: var(--p360v2-warn);
+  color: var(--p360v2-warn) !important;
 }
 .sendero-alumnas .crm-page.p360v2 .text-rose-300 {
-  color: var(--p360v2-bad);
+  color: var(--p360v2-bad) !important;
 }
 .sendero-alumnas .crm-page.p360v2 :is(.text-fuchsia-300, a:not(.crm-btn):not([class*="button"])) {
-  color: var(--p360v2-accent);
+  color: var(--p360v2-accent) !important;
 }
 
 /* 6 · Controles de formulario con el mismo campo oscuro. */
@@ -539,16 +539,16 @@
   .crm-page.p360v2
   :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
   min-height: 44px;
-  border: 1px solid var(--p360v2-field-line);
+  border: 1px solid var(--p360v2-field-line) !important;
   border-radius: 14px;
   padding: 11px 14px;
-  background: var(--p360v2-field);
-  color: var(--p360v2-text);
+  background: var(--p360v2-field) !important;
+  color: var(--p360v2-text) !important;
   color-scheme: dark;
-  box-shadow: none;
+  box-shadow: none !important;
 }
 .sendero-alumnas .crm-page.p360v2 :is(input, textarea)::placeholder {
-  color: var(--p360v2-muted);
+  color: var(--p360v2-muted) !important;
 }
 .sendero-alumnas .crm-page.p360v2 :is(input[type="checkbox"], input[type="radio"]) {
   accent-color: var(--p360v2-accent);
@@ -556,13 +556,29 @@
 
 /* 7 · Etiquetas y contadores legibles. */
 .sendero-alumnas .crm-page.p360v2 :is(.status-pill, .count-badge, .role-pill) {
-  border: 1px solid var(--p360v2-line);
-  background: var(--p360v2-accent-soft);
-  color: var(--p360v2-accent);
+  border: 1px solid var(--p360v2-line) !important;
+  background: var(--p360v2-accent-soft) !important;
+  color: var(--p360v2-accent) !important;
 }
 .sendero-alumnas .crm-page.p360v2 .empty-state {
-  border: 1px dashed var(--p360v2-line);
+  border: 1px dashed var(--p360v2-line) !important;
   border-radius: 14px;
-  background: transparent;
-  color: var(--p360v2-muted);
+  background: transparent !important;
+  color: var(--p360v2-muted) !important;
+}
+
+/* 8 · Encabezado de la persona: integrado a la página, sin caja de color. */
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(.p360v2-header, .crm-contact-person, .profile360-approved-person) {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--p360v2-text) !important;
+}
+.sendero-alumnas .crm-page.p360v2 .p360v2-header {
+  padding: 4px 0 0;
+}
+.sendero-alumnas .crm-page.p360v2 .profile360-approved-contact span {
+  color: var(--p360v2-muted) !important;
 }
