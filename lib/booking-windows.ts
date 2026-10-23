@@ -103,7 +103,10 @@ export function parseBookingWindowForm(
         ? null
         : "none";
 
-  if (!inRange(cancellation, BOOKING_WINDOW_LIMITS.cancellationMinutes) || Number.isNaN(cancellation))
+  if (
+    !inRange(cancellation, BOOKING_WINDOW_LIMITS.cancellationMinutes) ||
+    Number.isNaN(cancellation)
+  )
     return { ok: false, error: "cancel" };
   if (
     Number.isNaN(close) ||

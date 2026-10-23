@@ -97,7 +97,10 @@ export function BookingRulesFields({
               }
               required
             />
-            <select name="booking_open_unit" defaultValue={openInDays || openMinutes === null ? "days" : "hours"}>
+            <select
+              name="booking_open_unit"
+              defaultValue={openInDays || openMinutes === null ? "days" : "hours"}
+            >
               <option value="days">días antes</option>
               <option value="hours">horas antes</option>
             </select>

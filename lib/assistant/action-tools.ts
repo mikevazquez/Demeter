@@ -54,12 +54,15 @@ async function loadSessionBookingWindows(
     if (!result || result.error || !Array.isArray(result.data)) return null;
     const map = new Map<string, SessionBookingWindow>();
     for (const row of result.data as Record<string, unknown>[]) {
-      if (typeof row?.session_id !== "string" || typeof row.booking_closes_at !== "string") continue;
+      if (typeof row?.session_id !== "string" || typeof row.booking_closes_at !== "string")
+        continue;
       map.set(row.session_id, {
         opensAt: typeof row.booking_opens_at === "string" ? row.booking_opens_at : null,
         closesAt: row.booking_closes_at,
         cancellationCutoffMinutes:
-          typeof row.cancellation_cutoff_minutes === "number" ? row.cancellation_cutoff_minutes : null,
+          typeof row.cancellation_cutoff_minutes === "number"
+            ? row.cancellation_cutoff_minutes
+            : null,
       });
     }
     return map;
@@ -84,7 +87,6 @@ function sessionBookingState(
   return "open";
 }
 // --- fin NEB-01-40 ---
-
 
 type AssistantActionToolContext = {
   supabase: SupabaseClient;

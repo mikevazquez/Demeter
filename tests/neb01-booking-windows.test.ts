@@ -64,19 +64,35 @@ describe("NEB-01-38/39/40 reglas de reserva", () => {
     expect(relative.ok && relative.values.bookingOpenMinutesBefore).toBe(7 * 1440);
     expect(
       parseBookingWindowForm(
-        form({ booking_open_mode: "none", booking_close_minutes: "", checkin_opens_minutes: "1", checkin_closes_minutes: "1" }),
+        form({
+          booking_open_mode: "none",
+          booking_close_minutes: "",
+          checkin_opens_minutes: "1",
+          checkin_closes_minutes: "1",
+        }),
         "studio",
       ),
     ).toEqual({ ok: false, error: "close" });
     expect(
       parseBookingWindowForm(
-        form({ booking_open_mode: "relative", booking_open_amount: "0", booking_close_minutes: "30", checkin_opens_minutes: "1", checkin_closes_minutes: "1" }),
+        form({
+          booking_open_mode: "relative",
+          booking_open_amount: "0",
+          booking_close_minutes: "30",
+          checkin_opens_minutes: "1",
+          checkin_closes_minutes: "1",
+        }),
         "studio",
       ),
     ).toEqual({ ok: false, error: "open" });
     expect(
       parseBookingWindowForm(
-        form({ booking_open_mode: "none", booking_close_minutes: "30", checkin_opens_minutes: "500", checkin_closes_minutes: "1" }),
+        form({
+          booking_open_mode: "none",
+          booking_close_minutes: "30",
+          checkin_opens_minutes: "500",
+          checkin_closes_minutes: "1",
+        }),
         "studio",
       ),
     ).toEqual({ ok: false, error: "checkin" });
@@ -102,15 +118,30 @@ describe("NEB-01-38/39/40 reglas de reserva", () => {
   it("describe la apertura y avisa a la alumna", () => {
     expect(describeBookingOpen(BOOKING_WINDOW_DEFAULTS)).toBe("Sin límite");
     expect(
-      describeBookingOpen({ ...BOOKING_WINDOW_DEFAULTS, bookingOpenMode: "relative", bookingOpenMinutesBefore: 2880 }),
+      describeBookingOpen({
+        ...BOOKING_WINDOW_DEFAULTS,
+        bookingOpenMode: "relative",
+        bookingOpenMinutesBefore: 2880,
+      }),
     ).toBe("2 días antes de la clase");
     expect(
-      describeBookingOpen({ ...BOOKING_WINDOW_DEFAULTS, bookingOpenMode: "weekly", bookingOpenWeekday: 0, bookingOpenTime: "20:00" }),
+      describeBookingOpen({
+        ...BOOKING_WINDOW_DEFAULTS,
+        bookingOpenMode: "weekly",
+        bookingOpenWeekday: 0,
+        bookingOpenTime: "20:00",
+      }),
     ).toContain("Domingo 20:00");
-    expect(bookingWindowCopy("booking_closed", null, "America/Mexico_City")).toBe("Reservas cerradas");
-    expect(bookingWindowCopy("booking_not_open", "2026-11-09T02:00:00Z", "America/Mexico_City")).toMatch(/^Abre /);
+    expect(bookingWindowCopy("booking_closed", null, "America/Mexico_City")).toBe(
+      "Reservas cerradas",
+    );
+    expect(
+      bookingWindowCopy("booking_not_open", "2026-11-09T02:00:00Z", "America/Mexico_City"),
+    ).toMatch(/^Abre /);
     expect(bookingWindowCopy("no_credits", null, "America/Mexico_City")).toBeNull();
-    expect(bookingWindowValuesFromRow({ booking_open_time: "20:00:00", booking_open_mode: "weekly" })).toMatchObject({
+    expect(
+      bookingWindowValuesFromRow({ booking_open_time: "20:00:00", booking_open_mode: "weekly" }),
+    ).toMatchObject({
       bookingOpenTime: "20:00",
       bookingOpenMode: "weekly",
     });
@@ -120,14 +151,16 @@ describe("NEB-01-38/39/40 reglas de reserva", () => {
     const now = Date.parse("2026-11-10T18:00:00Z");
     const session = { status: "scheduled", starts_at: "2026-11-10T18:20:00Z" };
     expect(sessionBookingState(session, null, now)).toBe("closed");
-    expect(sessionBookingState({ ...session, starts_at: "2026-11-10T19:00:00Z" }, null, now)).toBe("open");
+    expect(sessionBookingState({ ...session, starts_at: "2026-11-10T19:00:00Z" }, null, now)).toBe(
+      "open",
+    );
     expect(
-      sessionBookingState(session, { opensAt: null, closesAt: "2026-11-10T18:20:00Z", cancellationCutoffMinutes: 300 }, now),
+      sessionBookingState(session, { opensAt: null, closesAt: "2026-11-10T18:20:00Z" }, now),
     ).toBe("open");
     expect(
       sessionBookingState(
         { ...session, starts_at: "2026-11-20T18:00:00Z" },
-        { opensAt: "2026-11-16T02:00:00Z", closesAt: "2026-11-20T17:30:00Z", cancellationCutoffMinutes: 300 },
+        { opensAt: "2026-11-16T02:00:00Z", closesAt: "2026-11-20T17:30:00Z" },
         now,
       ),
     ).toBe("not_open");
@@ -140,7 +173,9 @@ describe("NEB-01-38/39/40 reglas de reserva", () => {
     expect(migration).toContain("private.session_checkin_opens_at(v_session.id)");
     expect(migration).toContain("private.session_checkin_closes_at(v_session.id)");
     expect(migration).toContain("'public.check_in_reservation(text)'");
-    expect(migration).toContain("'public.service_prepare_demi_group(uuid,uuid,uuid,integer,integer)'");
+    expect(migration).toContain(
+      "'public.service_prepare_demi_group(uuid,uuid,uuid,integer,integer)'",
+    );
     expect(migration).toContain("raise exception 'NEB-01: definición inesperada");
     // El equipo del estudio puede saltar la ventana; la lista de espera no se frena.
     expect(migration).toContain("private.has_capability(p_studio_id, 'schedule.write')");

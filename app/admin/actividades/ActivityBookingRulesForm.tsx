@@ -39,7 +39,11 @@ export function ActivityBookingRulesForm({
 }) {
   const message = notice ? NOTICES[notice] : null;
   return (
-    <form action={saveActivityBookingRulesAction} className="booking-rules-card" id="reglas-reserva">
+    <form
+      action={saveActivityBookingRulesAction}
+      className="booking-rules-card"
+      id="reglas-reserva"
+    >
       <input type="hidden" name="activity_id" value={activityId} />
       <header>
         <h2>Reglas de reserva de esta actividad</h2>
