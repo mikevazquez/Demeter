@@ -17,9 +17,11 @@ import {
   loadPlatformStudioDetail,
   type PlatformStudioDetail,
 } from "@/lib/platform/console";
+import { loadSupportState } from "@/lib/platform/support";
 import { createClient } from "@/lib/supabase/server";
 
 import { setStudioModuleAction, setStudioPlanAction, setStudioStatusAction } from "../../actions";
+import { SupportBar, SupportTab } from "./SupportPanel";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TABS = [
@@ -28,7 +30,14 @@ const TABS = [
   { key: "cobros", label: "Cobros" },
   { key: "bitacora", label: "Bitácora" },
 ] as const;
-type TabKey = (typeof TABS)[number]["key"];
+// NEB-01-17 · Solo con sesión de soporte abierta.
+const SUPPORT_TABS = [
+  { key: "diagnostico", label: "Diagnóstico" },
+  { key: "paquetes", label: "Paquetes" },
+  { key: "horario", label: "Horario" },
+] as const;
+type SupportTabKey = (typeof SUPPORT_TABS)[number]["key"];
+type TabKey = (typeof TABS)[number]["key"] | SupportTabKey;
 
 const NOTICES: Record<string, { tone: "ok" | "error"; text: string }> = {
   plan_guardado: { tone: "ok", text: "Plan guardado. Quedó en la bitácora." },
@@ -42,6 +51,17 @@ const NOTICES: Record<string, { tone: "ok" | "error"; text: string }> = {
   },
   cut_day_invalid: { tone: "error", text: "El día de corte va del 1 al 28." },
   forbidden: { tone: "error", text: "Tu cuenta no es de plataforma." },
+  soporte_iniciado: { tone: "ok", text: "Entraste como soporte. Se avisó a la dueña." },
+  soporte_terminado: { tone: "ok", text: "Saliste del estudio. Quedó en la bitácora." },
+  paquete_guardado: { tone: "ok", text: "Paquete guardado. Quedó en la bitácora con antes y después." },
+  support_reason_required: { tone: "error", text: "Escribe el motivo (3 a 200 caracteres)." },
+  support_session_required: {
+    tone: "error",
+    text: "Tu sesión de soporte terminó. Entra de nuevo para continuar.",
+  },
+  product_not_found: { tone: "error", text: "Ese paquete ya no existe." },
+  product_name_invalid: { tone: "error", text: "El nombre debe tener de 2 a 120 caracteres." },
+  product_price_invalid: { tone: "error", text: "Revisa el precio (por ejemplo 1250.00)." },
   error: { tone: "error", text: "No se pudo guardar. Intenta de nuevo." },
 };
 
@@ -57,12 +77,18 @@ export default async function PlataformaEstudioPage({
   const [{ id }, query] = await Promise.all([params, searchParams]);
   if (!UUID.test(id)) notFound();
   const supabase = await createClient("admin");
-  const detail = await loadPlatformStudioDetail(supabase, id);
+  const [detail, support] = await Promise.all([
+    loadPlatformStudioDetail(supabase, id),
+    loadSupportState(supabase, id),
+  ]);
   if (!detail) notFound();
 
-  const tab: TabKey = TABS.some((item) => item.key === query.tab)
+  const supportActive = support?.active === true;
+  const tabs = supportActive ? [...SUPPORT_TABS, ...TABS] : TABS;
+  const tab: TabKey = tabs.some((item) => item.key === query.tab)
     ? (query.tab as TabKey)
     : "numeros";
+  const supportTab = SUPPORT_TABS.find((item) => item.key === tab)?.key ?? null;
   const notice = query.estado ? (NOTICES[query.estado] ?? NOTICES.error) : null;
   const ent = detail.entitlements;
 
@@ -91,8 +117,10 @@ export default async function PlataformaEstudioPage({
         </p>
       ) : null}
 
+      <SupportBar studioId={id} state={support} />
+
       <nav className="neb-tabs" aria-label="Secciones del estudio">
-        {TABS.map((item) => (
+        {tabs.map((item) => (
           <Link
             key={item.key}
             href={`/plataforma/estudios/${id}?tab=${item.key}`}
@@ -103,6 +131,14 @@ export default async function PlataformaEstudioPage({
         ))}
       </nav>
 
+      {supportTab ? (
+        <SupportTab
+          supabase={supabase}
+          studioId={id}
+          tab={supportTab}
+          timeZone="America/Mexico_City"
+        />
+      ) : null}
       {tab === "numeros" ? <NumbersTab detail={detail} /> : null}
       {tab === "plan" ? <PlanTab detail={detail} /> : null}
       {tab === "cobros" ? <BillingTab detail={detail} /> : null}

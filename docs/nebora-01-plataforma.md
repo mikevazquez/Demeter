@@ -274,3 +274,16 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
    30 minutos; en un estudio de prueba cambiarlos y revisar las fechas de `demi_followups` nuevos.
 
 Producción no se toca sin la autorización explícita de Mike.
+
+## NEB-01-17 · Entrar al estudio como soporte
+
+Migración `20261023161000_neb01_support_sessions.sql`. Desde la ficha del estudio en la consola, «Entrar al
+estudio» pide un motivo y abre una sesión de soporte de 2 horas (una por admin y estudio). Con la sesión
+abierta aparecen las pestañas Diagnóstico, Paquetes (nombre, precio y activo editables) y Horario (14 días).
+Abrir/cerrar, cada pestaña leída y cada cambio quedan en `platform_audit_log`. La dueña ve un aviso en su
+panel mientras soporte está dentro y el historial en Suscripción. No se suplanta su cuenta.
+
+Pruebas: `tests/neb01-support.sql` (11) y `tests/neb01-support.test.ts`.
+Producción: bloqueada por NEB-01-24 (el contrato debe autorizar el acceso de soporte).
+
+Paso para Codex (Sandbox): aplicar después de `20261023160000`. Para probar, Mike debe estar en `platform_admins`.

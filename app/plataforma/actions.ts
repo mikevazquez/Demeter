@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { PLATFORM_MODULES, PLATFORM_PLANS } from "@/lib/platform/catalog";
+import { parsePriceMxnToMinor } from "@/lib/platform/support";
 import { createClient } from "@/lib/supabase/server";
 
 // NEB-01-12 · Acciones de la consola. La base de datos valida que quien llama sea
@@ -81,4 +82,75 @@ export async function setStudioStatusAction(formData: FormData) {
     p_status: status,
   });
   finish(studioId, error, "estado_guardado");
+}
+
+// NEB-01-17 · Modo soporte: entrar con motivo, salir y editar paquetes. Todo queda en bitácora.
+const SUPPORT_ERRORS = [
+  "forbidden",
+  "studio_not_found",
+  "support_reason_required",
+  "support_session_required",
+  "product_not_found",
+  "product_name_invalid",
+  "product_price_invalid",
+];
+
+function finishSupport(
+  studioId: string,
+  tab: string,
+  error: { message?: string } | null,
+  ok: string,
+): never {
+  const state = error
+    ? (SUPPORT_ERRORS.find((code) => error.message?.includes(code)) ?? "error")
+    : ok;
+  revalidatePath(`/plataforma/estudios/${studioId}`);
+  redirect(`/plataforma/estudios/${studioId}?tab=${tab}&estado=${state}`);
+}
+
+export async function startSupportSessionAction(formData: FormData) {
+  const studioId = studioIdFrom(formData);
+  const reason = String(formData.get("reason") ?? "")
+    .trim()
+    .replace(/\s+/g, " ");
+  if (reason.length < 3 || reason.length > 200) {
+    finishSupport(studioId, "numeros", { message: "support_reason_required" }, "");
+  }
+  const supabase = await createClient("admin");
+  const { error } = await supabase.rpc("platform_start_support_session", {
+    p_studio: studioId,
+    p_reason: reason,
+  });
+  finishSupport(studioId, "diagnostico", error, "soporte_iniciado");
+}
+
+export async function endSupportSessionAction(formData: FormData) {
+  const studioId = studioIdFrom(formData);
+  const supabase = await createClient("admin");
+  const { error } = await supabase.rpc("platform_end_support_session", { p_studio: studioId });
+  finishSupport(studioId, "numeros", error, "soporte_terminado");
+}
+
+export async function updateSupportPackageAction(formData: FormData) {
+  const studioId = studioIdFrom(formData);
+  const productId = String(formData.get("product") ?? "");
+  if (!UUID.test(productId)) {
+    finishSupport(studioId, "paquetes", { message: "product_not_found" }, "");
+  }
+  const name = String(formData.get("name") ?? "")
+    .trim()
+    .replace(/\s+/g, " ");
+  const priceMinor = parsePriceMxnToMinor(String(formData.get("price") ?? ""));
+  if (priceMinor === null) {
+    finishSupport(studioId, "paquetes", { message: "product_price_invalid" }, "");
+  }
+  const supabase = await createClient("admin");
+  const { error } = await supabase.rpc("platform_support_update_package", {
+    p_studio: studioId,
+    p_product: productId,
+    p_name: name,
+    p_price_minor: priceMinor,
+    p_active: formData.get("active") === "on",
+  });
+  finishSupport(studioId, "paquetes", error, "paquete_guardado");
 }

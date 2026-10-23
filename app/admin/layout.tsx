@@ -7,6 +7,7 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { subscriptionNotice } from "@/lib/platform/entitlements";
 import { AdminMobileNavigation, AdminNavigation } from "./admin-navigation";
+import SupportAccessNotice from "./components/SupportAccessNotice";
 import "./hoy.css";
 import "./roster-uat.css";
 import "./mobile-nav-overrides.css";
@@ -317,6 +318,9 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           <p className="admin-billing-notice" role="status">
             {billingNotice}
           </p>
+        ) : null}
+        {can(CAPABILITIES.SETTINGS_WRITE) ? (
+          <SupportAccessNotice supabase={supabase} studioId={studio.id} timeZone={studio.timezone} />
         ) : null}
         {children}
       </div>

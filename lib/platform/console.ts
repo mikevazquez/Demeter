@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { StudioEntitlements } from "@/lib/platform/entitlements";
 import { parseEntitlements } from "@/lib/platform/entitlements";
+import { supportAuditLabel } from "@/lib/platform/support";
 import type { PlatformModuleKey, PlatformPlanKey, StudioSubscriptionStatus } from "./catalog";
 
 // NEB-01-10/11/12 · Lecturas de la consola de Nébora (migración 20261023155000).
@@ -199,6 +200,8 @@ export async function loadPlatformStudioDetail(
 /** Texto en español para cada acción de la bitácora. */
 export function auditActionLabel(entry: PlatformAuditEntry): string {
   const detail = entry.detail;
+  const support = supportAuditLabel(entry.action, detail);
+  if (support) return support;
   switch (entry.action) {
     case "studio.plan.set":
       return `Plan: ${String(detail.from ?? "—")} → ${String(detail.to ?? "—")}`;
