@@ -1,10 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const form = readFileSync(
-  "app/admin/actividades/programas/[programId]/EnrollmentForm.tsx",
-  "utf8",
-);
+const form = readFileSync("app/admin/actividades/programas/[programId]/EnrollmentForm.tsx", "utf8");
 const css = readFileSync("app/admin/actividades/actividades.css", "utf8");
 
 describe("workshop student search", () => {
