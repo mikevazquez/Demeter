@@ -2125,6 +2125,37 @@ export async function POST(request: Request) {
       continue;
     }
 
+    // Recheck immediately before delivery; the durable atomic send claim is tracked separately.
+    if (isBatchableText) {
+      let newerBeforeDelivery;
+      try {
+        newerBeforeDelivery = await findNewerConversationText(newerTextScope);
+      } catch {
+        retryableFailure = true;
+        await markEvent(supabase, studioId, event.id, {
+          processing_status: "error",
+          processing_result: { outcome: "message_batch_pre_delivery_lookup_failed" },
+          last_error_code: "message_batch_pre_delivery_lookup_failed",
+        });
+        continue;
+      }
+      if (newerBeforeDelivery) {
+        await markBurstSuperseded({
+          supabase,
+          studioId,
+          eventId: event.id,
+          providerMessageId: message.providerMessageId,
+          newerProviderMessageId: String(newerBeforeDelivery.provider_event_id ?? "") || null,
+          phase: "pre_delivery",
+        });
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "superseded_before_delivery",
+        });
+        continue;
+      }
+    }
+
     const delivery = await sendMetaWhatsAppText({
       config: webhookConfig,
       recipientWaId: message.fromWaId,
