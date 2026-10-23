@@ -56,7 +56,7 @@ describe("Governance worker dispatch", () => {
     const result = dispatchTask(engineeringTask, [cloud, codex]);
     expect(result.status).toBe("assigned");
     expect(result.assignedWorker).toBe("codex");
-    expect(result.decision.rule).toBe("quality_floor_then_fit_then_cost");
+    expect(result.decision.rule).toBe("quality_floor_then_fit_then_effective_cost");
   });
 
   it("falls back to Cloud when the capacity gate observes Codex with no capacity", () => {
