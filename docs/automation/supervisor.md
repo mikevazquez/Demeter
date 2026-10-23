@@ -98,3 +98,41 @@ Los resultados observados se registran en la issue/PR. El [contrato de aceptaci�
 - [Claude Routine API](https://platform.claude.com/docs/en/api/claude-code/routines-fire): crea sesiones; el token de la rutina no concede lectura de sesiones ni idempotencia del POST.
 - [Eventos y schedule de GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule): el schedule depende de la rama predeterminada y puede retrasarse. Los 15 minutos son cadencia solicitada, no SLA.
 - [Codex no interactivo](https://learn.chatgpt.com/docs/non-interactive-mode): salida JSONL y reanudación por sesión explícita. La sintaxis se debe contrastar con la versión instalada en cada host.
+
+## GPT Governance Gateway
+
+El punto de entrada para trabajo nuevo no debe ser un worker escaso. La secuencia canónica es:
+
+```text
+Mike -> GPT/ChatGPT -> Governance intake -> Task Contracts neutrales
+     -> Agent Registry / Capacity Gate -> Dispatcher -> worker
+```
+
+`scripts/automation/governance-gateway.mjs` valida un plan de bloques y genera contratos sin
+`worker_id`, `assigned_worker`, `preferred_worker`, proveedor ni ejecutor fijado. La selección
+se hace después, usando el Dispatcher existente.
+
+El gateway no convierte a GPT en autoridad técnica ni concede permisos. Governance sigue siendo
+owner del trabajo, el supervisor conserva identidad/estado y cada worker sólo recibe el bloque para
+el que supera capacidades, permisos, quality floor y riesgo.
+
+### Política de workers escasos
+
+El `quality_floor` es un gate, no una competición ilimitada por la mayor puntuación. Una vez que los
+workers elegibles superan calidad, permisos y riesgo, el Dispatcher conserva primero especialidad y
+contexto; después compara `effectiveCost = relativeCost + scarcityWeight`. Esto permite reservar
+Codex u otros workers con cuota limitada para bloques donde aportan una capacidad necesaria, sin
+sacrificar el estándar mínimo.
+
+Una mayor `scarcityWeight` nunca vuelve elegible a un worker insuficiente ni bloquea su selección
+cuando es el único que cumple el contrato. La disponibilidad no se inventa: sigue viniendo del
+Agent Registry/Capacity Gate.
+
+### Frontera de intake
+
+GPT puede interpretar la solicitud del usuario y proponer/descomponer el plan, pero antes de
+admisión debe existir un plan estructurado con objetivo, capacidades/permisos, riesgo, quality floor,
+alcance, checks, aceptación, DoD, recuperación y gates. El gateway rechaza cualquier intento de
+preasignar proveedor o worker dentro de ese plan.
+
+Seguimiento del bloque: [GOV-ROUTER-001, issue #379](https://github.com/mikevazquez/Demeter/issues/379).
