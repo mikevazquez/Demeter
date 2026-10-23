@@ -119,7 +119,7 @@ async function markBurstSuperseded(input: {
   eventId: string;
   providerMessageId: string;
   newerProviderMessageId: string | null;
-  phase: "same_payload" | "debounce" | "before_action" | "post_assistant";
+  phase: "same_payload" | "debounce" | "before_action" | "post_assistant" | "pre_delivery";
 }) {
   const batchId = sha256Hex(
     `${input.studioId}:${input.providerMessageId}:${input.newerProviderMessageId ?? "newer"}`,
