@@ -187,9 +187,7 @@ export default async function StudentOnboardingPage({
       ) : null}
 
       {query.access && isAutoAccessStatus(query.access) ? (
-        <div className={autoAccessNoticeClass(query.access)}>
-          {autoAccessMessage(query.access)}
-        </div>
+        <div className={autoAccessNoticeClass(query.access)}>{autoAccessMessage(query.access)}</div>
       ) : null}
 
       {completedHere ? <OnboardingCompletedDialog /> : null}
