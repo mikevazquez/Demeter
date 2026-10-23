@@ -97,6 +97,7 @@ export async function reconcileGatewayAdmissions({ request, store }) {
     for (const comment of comments) {
       if (typeof comment.body !== "string" || !comment.body.includes(MARKER)) continue;
       const admission = parseGatewayAdmissionComment(comment);
+      if (!admission) continue;
       admissions.push(await admitGatewayAdmission({ store, admission }));
     }
     if (comments.length < 100) break;
