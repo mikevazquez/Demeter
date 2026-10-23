@@ -157,7 +157,11 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     products: commonProducts("Pilates", [200, 700, 1300, 1750, 2100, 250]),
     schedule: [
       ...weekdays.map((weekday) => ({ weekday, time: "08:00", activity: "Pilates mat inicial" })),
-      ...weekdays.map((weekday) => ({ weekday, time: "18:30", activity: "Pilates mat intermedio" })),
+      ...weekdays.map((weekday) => ({
+        weekday,
+        time: "18:30",
+        activity: "Pilates mat intermedio",
+      })),
       { weekday: 6, time: "10:00", activity: "Pilates con aros y bandas" },
     ],
   },

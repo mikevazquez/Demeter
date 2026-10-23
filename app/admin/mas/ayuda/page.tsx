@@ -19,7 +19,8 @@ export default async function SupportHelpPage({
   const [query, ctx] = await Promise.all([searchParams, getAdminContext()]);
   if (!ctx.can(CAPABILITIES.SETTINGS_WRITE)) redirect("/admin?error=access");
   // NEB-01-20 · solo donde la función ya está lanzada.
-  if (!(await loadStudioFeatureFlags(ctx.supabase, ctx.studio.id)).has("support_requests")) redirect("/admin/mas");
+  if (!(await loadStudioFeatureFlags(ctx.supabase, ctx.studio.id)).has("support_requests"))
+    redirect("/admin/mas");
   const { data, error } = await ctx.supabase.rpc("studio_support_requests", {
     p_studio: ctx.studio.id,
   });
@@ -50,7 +51,8 @@ export default async function SupportHelpPage({
       ) : null}
       {query.error ? (
         <div className="reservations-v2-notice is-error">
-          {SUPPORT_REQUEST_ERRORS[query.error] ?? "No pudimos enviar tu solicitud. Intenta de nuevo."}
+          {SUPPORT_REQUEST_ERRORS[query.error] ??
+            "No pudimos enviar tu solicitud. Intenta de nuevo."}
         </div>
       ) : null}
 
@@ -58,11 +60,22 @@ export default async function SupportHelpPage({
         <form action={createSupportRequestAction} className="help-form">
           <label>
             <span>Asunto</span>
-            <input name="subject" required minLength={3} maxLength={120} placeholder="Ej. No puedo cambiar un precio" />
+            <input
+              name="subject"
+              required
+              minLength={3}
+              maxLength={120}
+              placeholder="Ej. No puedo cambiar un precio"
+            />
           </label>
           <label>
             <span>Detalle (opcional)</span>
-            <textarea name="body" rows={4} maxLength={2000} placeholder="Qué intentabas hacer y qué pasó" />
+            <textarea
+              name="body"
+              rows={4}
+              maxLength={2000}
+              placeholder="Qué intentabas hacer y qué pasó"
+            />
           </label>
           <button type="submit">Enviar a Nébora</button>
         </form>
@@ -75,10 +88,14 @@ export default async function SupportHelpPage({
             {requests.map((request) => (
               <li key={request.id} className={`help-item is-${request.status}`}>
                 <div>
-                  <span className="help-badge">{request.status === "open" ? "Abierta" : "Resuelta"}</span>
+                  <span className="help-badge">
+                    {request.status === "open" ? "Abierta" : "Resuelta"}
+                  </span>
                   <strong>{request.subject}</strong>
                   <small>{when(request.createdAt)}</small>
-                  {request.response ? <p className="help-response">Respuesta: {request.response}</p> : null}
+                  {request.response ? (
+                    <p className="help-response">Respuesta: {request.response}</p>
+                  ) : null}
                 </div>
               </li>
             ))}

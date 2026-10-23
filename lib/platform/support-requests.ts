@@ -34,7 +34,8 @@ export const SUPPORT_REQUEST_ERRORS: Record<string, string> = {
   forbidden: "Tu cuenta no puede pedir ayuda para este estudio.",
   support_subject_invalid: "Escribe un asunto de 3 a 120 caracteres.",
   support_body_too_long: "El detalle puede tener hasta 2,000 caracteres.",
-  support_too_many_open: "Ya tienes 10 solicitudes abiertas. Espera respuesta antes de enviar otra.",
+  support_too_many_open:
+    "Ya tienes 10 solicitudes abiertas. Espera respuesta antes de enviar otra.",
   support_request_not_found: "Esa solicitud ya no existe.",
 };
 

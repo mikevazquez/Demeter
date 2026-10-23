@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { STARTER_TEMPLATES, starterTemplate, starterTemplatePayload } from "@/lib/platform/starter-templates";
+import {
+  STARTER_TEMPLATES,
+  starterTemplate,
+  starterTemplatePayload,
+} from "@/lib/platform/starter-templates";
 
 describe("NEB-01-15 plantillas de arranque", () => {
   it("trae las cuatro plantillas acordadas", () => {
@@ -26,10 +30,12 @@ describe("NEB-01-15 plantillas de arranque", () => {
           expect(product.packageTerm).toBeNull();
         } else {
           expect(product.validityDays).toBeGreaterThan(0);
-          expect(product.unlimited ? product.creditLimit === null : (product.creditLimit ?? 0) > 0).toBe(true);
-          expect(["package", "membership"].includes(product.productType) ? product.packageTerm : null).toBe(
-            ["package", "membership"].includes(product.productType) ? "monthly" : null,
-          );
+          expect(
+            product.unlimited ? product.creditLimit === null : (product.creditLimit ?? 0) > 0,
+          ).toBe(true);
+          expect(
+            ["package", "membership"].includes(product.productType) ? product.packageTerm : null,
+          ).toBe(["package", "membership"].includes(product.productType) ? "monthly" : null);
         }
       }
       for (const activity of template.activities) {

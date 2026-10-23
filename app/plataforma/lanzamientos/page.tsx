@@ -39,7 +39,8 @@ export default async function PlataformaLanzamientosPage({
     <>
       <section className="neb-hero">
         <p className="neb-eyebrow">
-          Lanzamientos · esta base es {catalog?.environment === "sandbox" ? "Sandbox" : "producción"}
+          Lanzamientos · esta base es{" "}
+          {catalog?.environment === "sandbox" ? "Sandbox" : "producción"}
         </p>
         <h1>Funciones por estudio</h1>
         <p className="neb-muted">
@@ -67,7 +68,8 @@ export default async function PlataformaLanzamientosPage({
               <li key={feature.key}>
                 <article className="neb-card">
                   <p className="neb-eyebrow">
-                    {FEATURE_STAGE_LABEL[feature.stage]} desde {formatDateMx(feature.stageChangedAt)}
+                    {FEATURE_STAGE_LABEL[feature.stage]} desde{" "}
+                    {formatDateMx(feature.stageChangedAt)}
                   </p>
                   <h2>{feature.name}</h2>
                   {feature.description ? <p className="neb-muted">{feature.description}</p> : null}
@@ -87,8 +89,8 @@ export default async function PlataformaLanzamientosPage({
                         <input type="hidden" name="stage" value={next} />
                         {next === "all" ? (
                           <label>
-                            <input type="checkbox" name="confirm_all" /> Confirmo liberar a todos los
-                            estudios
+                            <input type="checkbox" name="confirm_all" /> Confirmo liberar a todos
+                            los estudios
                           </label>
                         ) : null}
                         <button type="submit" className="neb-button">

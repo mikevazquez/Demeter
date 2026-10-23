@@ -103,43 +103,43 @@ export async function SupportTab({
     if (!d) return <p className="neb-muted">Sin datos.</p>;
     return (
       <>
-      <section className="neb-kpis">
-        <article className="neb-kpi">
-          <span>Clases próximos 7 días</span>
-          <strong>{d.classesNext7Days}</strong>
-          <small>{d.classesWithoutReservations7Days} sin reservas</small>
-        </article>
-        <article className="neb-kpi">
-          <span>Reservas próximos 7 días</span>
-          <strong>{d.reservationsNext7Days}</strong>
-        </article>
-        <article className="neb-kpi">
-          <span>Ventas con fecha de pago</span>
-          <strong>{d.salesWithDueDate}</strong>
-          <small>Por cobrar</small>
-        </article>
-        <article className="neb-kpi">
-          <span>Paquetes</span>
-          <strong>{d.productsActive}</strong>
-          <small>{d.productsInactive} inactivos</small>
-        </article>
-      </section>
-      <h2 className="neb-subtitle">Revisión de configuración</h2>
-      {d.issues.length ? (
-        <ol className="neb-audit">
-          {d.issues.map((issue) => (
-            <li key={issue.code}>
-              <time>{SEVERITY_LABEL[issue.severity]}</time>
-              <span>
-                {issue.title}
-                {issue.count > 1 ? ` (${issue.count})` : ""} · {issue.detail}
-              </span>
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <p className="neb-muted">Sin pendientes de configuración.</p>
-      )}
+        <section className="neb-kpis">
+          <article className="neb-kpi">
+            <span>Clases próximos 7 días</span>
+            <strong>{d.classesNext7Days}</strong>
+            <small>{d.classesWithoutReservations7Days} sin reservas</small>
+          </article>
+          <article className="neb-kpi">
+            <span>Reservas próximos 7 días</span>
+            <strong>{d.reservationsNext7Days}</strong>
+          </article>
+          <article className="neb-kpi">
+            <span>Ventas con fecha de pago</span>
+            <strong>{d.salesWithDueDate}</strong>
+            <small>Por cobrar</small>
+          </article>
+          <article className="neb-kpi">
+            <span>Paquetes</span>
+            <strong>{d.productsActive}</strong>
+            <small>{d.productsInactive} inactivos</small>
+          </article>
+        </section>
+        <h2 className="neb-subtitle">Revisión de configuración</h2>
+        {d.issues.length ? (
+          <ol className="neb-audit">
+            {d.issues.map((issue) => (
+              <li key={issue.code}>
+                <time>{SEVERITY_LABEL[issue.severity]}</time>
+                <span>
+                  {issue.title}
+                  {issue.count > 1 ? ` (${issue.count})` : ""} · {issue.detail}
+                </span>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="neb-muted">Sin pendientes de configuración.</p>
+        )}
       </>
     );
   }

@@ -43,7 +43,10 @@ export default async function PlataformaSoportePage({
         >
           Resueltas
         </Link>
-        <Link href="/plataforma/soporte?ver=todas" aria-current={view === null ? "page" : undefined}>
+        <Link
+          href="/plataforma/soporte?ver=todas"
+          aria-current={view === null ? "page" : undefined}
+        >
           Todas
         </Link>
       </nav>

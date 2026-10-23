@@ -26,7 +26,9 @@ export async function DemiUsageTab({
         <article className="neb-kpi">
           <span>Costo {usage.days} días</span>
           <strong>{formatUsdMicros(usage.totals.costUsdMicros)}</strong>
-          <small>{usage.totals.calls} llamadas · {usage.totals.errors} con error</small>
+          <small>
+            {usage.totals.calls} llamadas · {usage.totals.errors} con error
+          </small>
         </article>
         <article className="neb-kpi">
           <span>Por conversación</span>
@@ -35,7 +37,9 @@ export async function DemiUsageTab({
         </article>
         <article className="neb-kpi">
           <span>Tokens</span>
-          <strong>{(usage.totals.inputTokens + usage.totals.outputTokens).toLocaleString("es-MX")}</strong>
+          <strong>
+            {(usage.totals.inputTokens + usage.totals.outputTokens).toLocaleString("es-MX")}
+          </strong>
           <small>
             {usage.totals.cachedInputTokens.toLocaleString("es-MX")} de entrada en caché
           </small>
@@ -51,7 +55,9 @@ export async function DemiUsageTab({
               <span>
                 <span
                   className="neb-bar"
-                  style={{ width: `${Math.max(4, Math.round((day.costUsdMicros / maxDailyCost) * 100))}%` }}
+                  style={{
+                    width: `${Math.max(4, Math.round((day.costUsdMicros / maxDailyCost) * 100))}%`,
+                  }}
                   aria-hidden="true"
                 />
                 {formatUsdMicros(day.costUsdMicros)} · {day.calls} llamadas

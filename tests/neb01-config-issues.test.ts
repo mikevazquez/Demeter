@@ -13,7 +13,14 @@ const migration = read("supabase/migrations/20261023162000_neb01_config_issues.s
 describe("NEB-01-18 revisión de configuración", () => {
   it("ordena por gravedad y descarta vínculos fuera del admin", () => {
     const issues = parseConfigIssues([
-      { code: "b", severity: "suggestion", count: 3, title: "B", detail: "", href: "/admin/alumnas" },
+      {
+        code: "b",
+        severity: "suggestion",
+        count: 3,
+        title: "B",
+        detail: "",
+        href: "/admin/alumnas",
+      },
       { code: "a", severity: "error", count: 1, title: "A", detail: "", href: "https://malo.mx" },
       { code: "c", severity: "warning", count: 0, title: "C", detail: "", href: null },
     ]);

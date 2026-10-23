@@ -14,7 +14,8 @@ export default async function ConfigReviewPage() {
   const ctx = await getAdminContext();
   if (!ctx.can(CAPABILITIES.SETTINGS_WRITE)) redirect("/admin?error=access");
   // NEB-01-20 · solo donde la función ya está lanzada.
-  if (!(await loadStudioFeatureFlags(ctx.supabase, ctx.studio.id)).has("config_review")) redirect("/admin/mas");
+  if (!(await loadStudioFeatureFlags(ctx.supabase, ctx.studio.id)).has("config_review"))
+    redirect("/admin/mas");
   const { data, error } = await ctx.supabase.rpc("studio_config_issues", {
     p_studio: ctx.studio.id,
   });
@@ -27,7 +28,9 @@ export default async function ConfigReviewPage() {
           ← Más
         </Link>
         <h1>Revisión de configuración</h1>
-        <p>Revisamos tu estudio y te decimos qué conviene corregir para vender y reservar sin trabas.</p>
+        <p>
+          Revisamos tu estudio y te decimos qué conviene corregir para vender y reservar sin trabas.
+        </p>
       </header>
 
       {error ? (
@@ -35,7 +38,9 @@ export default async function ConfigReviewPage() {
           No pudimos revisar tu estudio en este momento. Intenta de nuevo más tarde.
         </div>
       ) : issues.length === 0 ? (
-        <div className="reservations-v2-notice is-success">Todo en orden. No encontramos pendientes.</div>
+        <div className="reservations-v2-notice is-success">
+          Todo en orden. No encontramos pendientes.
+        </div>
       ) : (
         <section className="reservations-v2-card">
           <ul className="config-review-list">

@@ -13,7 +13,12 @@ export type DemiUsage = {
   };
   daily: Array<{ day: string; calls: number; tokens: number; costUsdMicros: number }>;
   models: Array<{ model: string; calls: number; costUsdMicros: number }>;
-  topConversations: Array<{ conversationId: string; calls: number; costUsdMicros: number; lastAt: string }>;
+  topConversations: Array<{
+    conversationId: string;
+    calls: number;
+    costUsdMicros: number;
+    lastAt: string;
+  }>;
 };
 
 const n = (value: unknown) => (Number.isFinite(Number(value)) ? Number(value) : 0);
@@ -56,5 +61,7 @@ export function parseDemiUsage(raw: unknown): DemiUsage | null {
 
 /** Costo promedio por conversación en micros de dólar (0 si no hubo). */
 export function averageCostPerConversation(usage: DemiUsage) {
-  return usage.totals.conversations ? Math.round(usage.totals.costUsdMicros / usage.totals.conversations) : 0;
+  return usage.totals.conversations
+    ? Math.round(usage.totals.costUsdMicros / usage.totals.conversations)
+    : 0;
 }

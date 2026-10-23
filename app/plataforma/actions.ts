@@ -205,7 +205,12 @@ export async function setFeatureStageAction(formData: FormData) {
 export async function setFeatureBetaStudioAction(formData: FormData) {
   const feature = String(formData.get("feature") ?? "");
   if (!FEATURE_KEY.test(feature)) finishFeature({ message: "feature_not_found" }, "");
-  const chosen = new Set(formData.getAll("studios").map(String).filter((id) => UUID.test(id)));
+  const chosen = new Set(
+    formData
+      .getAll("studios")
+      .map(String)
+      .filter((id) => UUID.test(id)),
+  );
   const supabase = await createClient("admin");
   const { data } = await supabase.rpc("platform_features_list");
   const current = new Set<string>(

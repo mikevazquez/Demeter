@@ -31,7 +31,9 @@ describe("NEB-01-19 solicitudes de soporte", () => {
   });
 
   it("la tabla no se abre y las funciones piden permiso", () => {
-    expect(migration).toContain("revoke all on table public.support_requests from anon, authenticated;");
+    expect(migration).toContain(
+      "revoke all on table public.support_requests from anon, authenticated;",
+    );
     expect(migration).toContain("private.has_capability(p_studio, 'settings.write')");
     expect(migration).toContain("private.platform_require_admin()");
     expect(migration).toContain("'support.request.created'");

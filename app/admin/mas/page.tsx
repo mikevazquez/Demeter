@@ -161,10 +161,10 @@ export default async function MorePage() {
   // NEB-01-18 · contador de la revisión de configuración.
   const reviewSummary =
     ctx.can(CAPABILITIES.SETTINGS_WRITE) && features.has("config_review")
-    ? await ctx.supabase
-        .rpc("studio_config_issues", { p_studio: ctx.studio.id })
-        .then(({ data, error }) => (error ? null : configIssuesSummary(parseConfigIssues(data))))
-    : null;
+      ? await ctx.supabase
+          .rpc("studio_config_issues", { p_studio: ctx.studio.id })
+          .then(({ data, error }) => (error ? null : configIssuesSummary(parseConfigIssues(data))))
+      : null;
 
   return (
     <main className="dashboard-shell admin-module-page more-page admin-ux04-secondary">
