@@ -1,3 +1,4 @@
+import * as turnCoordination from "../lib/assistant/demi-text-send-claim";
 import * as crypto from "node:crypto";
 import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
@@ -21,6 +22,8 @@ function load<T>(path: string, deps: Record<string, unknown>): T {
     transformSync(readFileSync(path, "utf8"), { loader: "ts", format: "cjs" }).code,
   )(
     (name: string) => {
+      if (name === "@/lib/assistant/demi-text-send-claim" || name === "./demi-text-send-claim")
+        return turnCoordination;
       if (!(name in deps)) throw new Error(`Unexpected dependency: ${name}`);
       return deps[name];
     },

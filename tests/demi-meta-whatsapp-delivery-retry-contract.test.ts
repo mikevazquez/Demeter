@@ -12,7 +12,8 @@ describe("Demi Meta WhatsApp safe send retry", () => {
   it("bounds rate-limit retries without replaying ambiguous server errors", () => {
     expect(channel).toContain("const retryDelaysMs = [250, 500, 1000, 2000]");
     expect(channel).toContain("for (let attempt = 0; attempt < 5; attempt += 1)");
-    expect(channel).toContain("response.status === 429 && attempt < retryDelaysMs.length");
+    expect(channel).toMatch(/response\.status === 429\s*&&\s*attempt < retryDelaysMs\.length/);
+    expect(channel).toContain("input.singleAttempt !== true");
     expect(channel).not.toContain("response.status === 429 || response.status >= 500");
   });
 

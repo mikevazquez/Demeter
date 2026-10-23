@@ -1,3 +1,4 @@
+import { DemiCoordinationError, type DemiActionGuard } from "./demi-text-send-claim";
 import "server-only";
 
 import {
@@ -106,6 +107,7 @@ type OrchestratorInput = {
   improvePrompt?: boolean;
   /** DEMI-BATCH-02: false once a newer message of the same contact arrived. */
   isTurnCurrent?: () => Promise<boolean>;
+  actionGuard?: DemiActionGuard;
 };
 
 export type AssistantTrace = {
@@ -175,6 +177,7 @@ async function assertActionTurnCurrent(input: OrchestratorInput) {
 }
 
 function rethrowSuperseded(error: unknown) {
+  if (error instanceof DemiCoordinationError) throw error;
   if (error instanceof Error && error.message === "assistant_turn_superseded") throw error;
 }
 
@@ -564,6 +567,7 @@ async function tryServerSideTransferPackageChoice(input: OrchestratorInput, trac
         channel: input.channel,
         activationUrl: input.activationUrl,
         serviceMode: input.serviceMode === true,
+        actionGuard: input.actionGuard,
         currentUserMessage,
       },
       "prepare_bank_transfer_purchase",
@@ -730,6 +734,7 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
         channel: input.channel,
         activationUrl: input.activationUrl,
         serviceMode: input.serviceMode === true,
+        actionGuard: input.actionGuard,
         currentUserMessage,
       },
       toolName,
@@ -883,6 +888,7 @@ async function tryServerSidePostTrialEnrollmentMethod(
         channel: input.channel,
         activationUrl: input.activationUrl,
         serviceMode: input.serviceMode === true,
+        actionGuard: input.actionGuard,
         currentUserMessage,
       },
       "resolve_post_trial_enrollment_method",
@@ -1766,6 +1772,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
                     channel: input.channel,
                     activationUrl: input.activationUrl,
                     serviceMode: input.serviceMode === true,
+                    actionGuard: input.actionGuard,
                     currentUserMessage,
                   },
                   toolName,

@@ -36,9 +36,10 @@ describe("DEMI-378 pre-delivery guard", () => {
     expect(guardedPath).toContain('outcome: "cached_reply_newer_text_lookup_failed"');
   });
   it("gates both text delivery paths with atomic claims", () => {
-    expect(route.split("await reserveTextDelivery({")).toHaveLength(3);
-    expect(route.split("await completeTextDelivery({")).toHaveLength(5);
+    expect(route.match(/await sendReply\(/g)).toHaveLength(5);
+    expect(route).toContain("return coordinator.send(");
+    expect(route).toContain("singleAttempt: true");
+    expect(route).toContain("await coordinator?.release()");
     expect(route).toContain('process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS === "true"');
   });
-
 });

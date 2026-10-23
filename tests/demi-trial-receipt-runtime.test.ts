@@ -1,3 +1,4 @@
+import * as turnCoordination from "../lib/assistant/demi-text-send-claim";
 import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
 import { describe, expect, it, vi } from "vitest";
@@ -113,6 +114,8 @@ function harness(
     transformSync(source, { loader: "ts", format: "cjs" }).code,
   )(
     (name: string) => {
+      if (name === "@/lib/assistant/demi-text-send-claim" || name === "./demi-text-send-claim")
+        return turnCoordination;
       if (!(name in deps)) throw new Error(`Unexpected dependency ${name}`);
       return deps[name];
     },

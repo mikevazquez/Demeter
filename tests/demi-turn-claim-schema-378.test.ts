@@ -14,13 +14,13 @@ describe("DEMI-378 claim schema contract", () => {
   it("shares a lock across capture and claim", () => {
     expect(sql).toContain("create trigger assistant_whatsapp_lock_inbound_text");
     expect(sql).toContain("assistant_whatsapp_claim_current_text");
-    expect(sql.split("hashtextextended(")).toHaveLength(3);
-    expect(sql).toContain("pg_advisory_xact_lock(");
+    expect(sql).toContain("after insert on public.assistant_whatsapp_events");
+    expect(sql).toContain("for update;");
   });
 
   it("restricts claim ownership", () => {
     expect(sql).toContain("assistant_whatsapp_one_active_claim");
-    expect(sql).toContain("where state in ('claimed', 'uncertain')");
+    expect(sql).toContain("where state in ('reserved', 'dispatching')");
     expect(sql).toContain("from public, anon, authenticated");
     expect(sql).toContain("to service_role;");
   });
