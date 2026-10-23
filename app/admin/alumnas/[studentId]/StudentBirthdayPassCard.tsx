@@ -94,7 +94,9 @@ export default async function StudentBirthdayPassCard({
       </span>
       <div className="birthday-pass-admin-copy">
         <p className="eyebrow">
-          {info.is_birthday ? "Hoy es su cumpleaños" : `Mes de cumpleaños${monthLabel ? ` · ${monthLabel}` : ""}`}
+          {info.is_birthday
+            ? "Hoy es su cumpleaños"
+            : `Mes de cumpleaños${monthLabel ? ` · ${monthLabel}` : ""}`}
         </p>
         <strong>Pase de cumpleaños · {status}</strong>
         {detail ? <p>{detail}</p> : null}

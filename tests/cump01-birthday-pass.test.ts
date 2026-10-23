@@ -35,11 +35,15 @@ describe("CUMP-01 · pase de cumpleaños", () => {
   it("solo se ofrece en clases de su mes, programadas, con cupo y sin lugar a elegir", () => {
     expect(birthdayPassFitsSession(pass, session, "2026-10-24")).toBe(true);
     expect(birthdayPassFitsSession(pass, session, "2026-11-01")).toBe(false);
-    expect(birthdayPassFitsSession(pass, { ...session, spots_available: 0 }, "2026-10-24")).toBe(false);
-    expect(birthdayPassFitsSession(pass, { ...session, requires_resource: true }, "2026-10-24")).toBe(
+    expect(birthdayPassFitsSession(pass, { ...session, spots_available: 0 }, "2026-10-24")).toBe(
       false,
     );
-    expect(birthdayPassFitsSession(pass, { ...session, status: "cancelled" }, "2026-10-24")).toBe(false);
+    expect(
+      birthdayPassFitsSession(pass, { ...session, requires_resource: true }, "2026-10-24"),
+    ).toBe(false);
+    expect(birthdayPassFitsSession(pass, { ...session, status: "cancelled" }, "2026-10-24")).toBe(
+      false,
+    );
     expect(birthdayPassFitsSession({ ...pass, state: "used" }, session, "2026-10-24")).toBe(false);
     expect(birthdayPassFitsSession(null, session, "2026-10-24")).toBe(false);
   });
@@ -74,7 +78,9 @@ describe("CUMP-01 · pase de cumpleaños", () => {
   it("instala el aviso del día 1 apagado y solo por WhatsApp", () => {
     expect(migration).toContain("'marketing.birthday_month', 'student.birthday_month_due', false");
     expect(migration).toContain("'birthday_month', 259200");
-    expect(migration).toContain("revoke all on function public.system_birthday_month_notification_eligible");
+    expect(migration).toContain(
+      "revoke all on function public.system_birthday_month_notification_eligible",
+    );
     expect(migration).toContain("to service_role");
   });
 

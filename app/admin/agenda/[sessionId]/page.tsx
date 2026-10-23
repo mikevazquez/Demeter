@@ -91,7 +91,9 @@ export default async function SessionDetailPage({
         .eq("status", "active"),
       supabase
         .from("reservations")
-        .select("id,student_id,guest_person_id,status,acquisition_id,commercial_status,birthday_pass_id")
+        .select(
+          "id,student_id,guest_person_id,status,acquisition_id,commercial_status,birthday_pass_id",
+        )
         .eq("session_id", sessionId)
         .in("status", ["reserved", "attended", "no_show"])
         .order("booked_at"),
@@ -299,18 +301,22 @@ export default async function SessionDetailPage({
         : isGuest
           ? "Invitación"
           : acquisition
-          ? (productMap.get(acquisition.product_template_id) ?? "Producto activo")
-          : "Sin producto vinculado",
+            ? (productMap.get(acquisition.product_template_id) ?? "Producto activo")
+            : "Sin producto vinculado",
       creditsLabel: birthdayPass
         ? "Regalo · sin créditos"
         : isGuest
           ? "Beneficio por nivel"
-        : acquisition?.unlimited
-          ? "Ilimitado"
-          : acquisition
-            ? `${balance ?? 0} créditos disponibles`
-            : "—",
-      expiresLabel: birthdayPass ? "Mes de cumpleaños" : isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null),
+          : acquisition?.unlimited
+            ? "Ilimitado"
+            : acquisition
+              ? `${balance ?? 0} créditos disponibles`
+              : "—",
+      expiresLabel: birthdayPass
+        ? "Mes de cumpleaños"
+        : isGuest
+          ? "Misma clase"
+          : formatExpiry(acquisition?.expires_on ?? null),
       studentId: reservation.student_id,
       evaluationInvitationId: evaluationInvitation?.id ?? null,
       evaluationStatus: evaluationInvitation?.status ?? null,

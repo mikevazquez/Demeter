@@ -45,7 +45,10 @@ function dateKeyToUtcNoon(value: string) {
 }
 
 /** Días que le quedan para usar el pase, contando hoy (fecha local del estudio). */
-export function birthdayPassDaysLeft(today: string | null | undefined, expiresOn: string | null | undefined) {
+export function birthdayPassDaysLeft(
+  today: string | null | undefined,
+  expiresOn: string | null | undefined,
+) {
   if (!today || !expiresOn) return null;
   const start = dateKeyToUtcNoon(today);
   const end = dateKeyToUtcNoon(expiresOn);
@@ -58,9 +61,11 @@ export function birthdayDateLabel(value: string | null | undefined) {
   if (!value) return null;
   const time = dateKeyToUtcNoon(value);
   if (!Number.isFinite(time)) return null;
-  return new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "long", timeZone: "UTC" }).format(
-    new Date(time),
-  );
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  }).format(new Date(time));
 }
 
 /**

@@ -92,8 +92,8 @@ export default async function BirthdayPassBookingPage({
                 : "Tu clase de cumpleaños está confirmada."}
             </p>
             <p className="mt-1.5 text-xs leading-5 text-zinc-400">
-              No se usaron créditos de tu paquete. Si cancelas a tiempo, el pase vuelve a tu
-              portal mientras siga tu mes.
+              No se usaron créditos de tu paquete. Si cancelas a tiempo, el pase vuelve a tu portal
+              mientras siga tu mes.
             </p>
             <Link
               href={done === "amiga" ? "/student" : "/student/mis-clases"}
@@ -112,10 +112,10 @@ export default async function BirthdayPassBookingPage({
                 : !selfAllowed && !friendAllowed
                   ? "Ya tienes esta clase reservada."
                   : session.requires_resource
-                  ? "Esta clase requiere elegir lugar; usa tu pase en otra clase."
-                  : session.spots_available <= 0
-                    ? "Esta clase ya está llena."
-                    : `El pase sirve para clases hasta el ${birthdayDateLabel(pass.expires_on) ?? "fin de tu mes"}.`}
+                    ? "Esta clase requiere elegir lugar; usa tu pase en otra clase."
+                    : session.spots_available <= 0
+                      ? "Esta clase ya está llena."
+                      : `El pase sirve para clases hasta el ${birthdayDateLabel(pass.expires_on) ?? "fin de tu mes"}.`}
             </p>
             <Link
               href={`/student/reservar?date=${returnDate}&pase=cumpleanos`}

@@ -64,7 +64,9 @@ beforeEach(() => {
         ? { data: { connected: true, templates: { student_welcome: "welcome" } } }
         : { data: true },
   );
-  mocks.context.mockResolvedValue({ supabase: { rpc: mocks.rpc }, studio: { id: "studio-a", name: "Demeter Fitness Studio" },
+  mocks.context.mockResolvedValue({
+    supabase: { rpc: mocks.rpc },
+    studio: { id: "studio-a", name: "Demeter Fitness Studio" },
   });
   mocks.diagnostics.mockResolvedValue(diagnostics());
 });

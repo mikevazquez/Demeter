@@ -14,7 +14,9 @@ import {
 import { getStudentHomePackageState } from "@/lib/student/home-package-state";
 import { disciplineImage } from "@/lib/student/discipline-style";
 
-import BirthdayGiftExperience, { type BirthdayPassSnapshot } from "./components/BirthdayGiftExperience";
+import BirthdayGiftExperience, {
+  type BirthdayPassSnapshot,
+} from "./components/BirthdayGiftExperience";
 import StudentNoticeDialog from "./components/StudentNoticeDialog";
 
 type RewardLevelView = {
@@ -147,7 +149,12 @@ function creditLimit(activePackage: StudentAcquisition) {
 export default async function StudentHomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ cancelled?: string; error?: string; benefits?: string; birthday_demo?: string }>;
+  searchParams: Promise<{
+    cancelled?: string;
+    error?: string;
+    benefits?: string;
+    birthday_demo?: string;
+  }>;
 }) {
   const [query, { snapshot, studio, supabase, membership }] = await Promise.all([
     searchParams,
@@ -209,13 +216,14 @@ export default async function StudentHomePage({
     (unreadEvaluationResult.data as EvaluationHomeHistoryItem | null) ?? null;
   const latestAppNotification =
     (appNotificationResult.data as AppNotificationHomeItem | null) ?? null;
-  const liveBirthdayPass =
-    birthdayPassResult.error
-      ? null
-      : ((birthdayPassResult.data as BirthdayPassSnapshot | null) ?? null);
+  const liveBirthdayPass = birthdayPassResult.error
+    ? null
+    : ((birthdayPassResult.data as BirthdayPassSnapshot | null) ?? null);
   const birthdayPreviewMode =
     process.env.VERCEL_ENV === "preview" &&
-    (query.birthday_demo === "day" || query.birthday_demo === "month" || query.birthday_demo === "used");
+    (query.birthday_demo === "day" ||
+      query.birthday_demo === "month" ||
+      query.birthday_demo === "used");
   const birthdayPass: BirthdayPassSnapshot | null = birthdayPreviewMode
     ? {
         eligible: true,

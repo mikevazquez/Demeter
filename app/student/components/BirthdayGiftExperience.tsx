@@ -72,7 +72,9 @@ export default function BirthdayGiftExperience({
   const remaining = birthdayPassDaysLeft(pass.today, pass.expires_on);
   const expiresLabel = birthdayDateLabel(pass.expires_on);
   const friendEnabled = pass.friend_enabled !== false;
-  const shareCopy = friendEnabled ? "Úsalo tú o regálaselo a una amiga" : "Úsalo en la clase que elijas";
+  const shareCopy = friendEnabled
+    ? "Úsalo tú o regálaselo a una amiga"
+    : "Úsalo en la clase que elijas";
 
   return (
     <>
@@ -258,7 +260,9 @@ export default function BirthdayGiftExperience({
                     : "Úsalo en la clase que elijas durante tu mes de cumpleaños."}
                 </p>
                 <span className="mt-4 inline-flex rounded-full border border-[#f6d67a]/30 bg-[#f6d67a]/10 px-3 py-1.5 text-xs font-semibold text-[#f6d67a]">
-                  {expiresLabel ? `Válido hasta el ${expiresLabel}` : "Ya está disponible en tu portal"}
+                  {expiresLabel
+                    ? `Válido hasta el ${expiresLabel}`
+                    : "Ya está disponible en tu portal"}
                 </span>
                 <div className="mt-5 flex flex-col gap-2 sm:flex-row">
                   <Link

@@ -10,8 +10,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function knownCode(message: string | null | undefined) {
   if (!message) return "birthday_booking_failed";
-  return Object.keys(BIRTHDAY_BOOKING_ERRORS).find((code) => message.includes(code)) ??
-    "birthday_booking_failed";
+  return (
+    Object.keys(BIRTHDAY_BOOKING_ERRORS).find((code) => message.includes(code)) ??
+    "birthday_booking_failed"
+  );
 }
 
 /** CUMP-01-06 · Reserva una clase con el pase de cumpleaños, para ella o para una amiga. */
