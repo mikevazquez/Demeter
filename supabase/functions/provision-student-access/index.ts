@@ -121,15 +121,28 @@ const handler = {
     if (membershipError) return jsonResponse({ error: "authorization_failed" }, 500);
     if (!callerMembership) return jsonResponse({ error: "forbidden" }, 403);
 
-    const { data: permission, error: permissionError } = await userClient
+    // P360-V2-ACC: el acceso se envía automáticamente al dar de alta, así que cualquier rol que
+    // pueda crear personas (alumnas, prueba o walk-in) puede disparar la provisión inicial.
+    // El enlace solo viaja al WhatsApp de la propia alumna; devolverlo al llamador (return_link),
+    // reenviarlo o generar contraseña temporal siguen exigiendo settings.write.
+    const { data: callerCapabilities, error: permissionError } = await userClient
       .from("role_capabilities")
       .select("capability_key")
       .eq("role", callerMembership.role)
-      .eq("capability_key", "settings.write")
-      .maybeSingle();
+      .in("capability_key", ["settings.write", "students.write", "attendance.write"]);
 
     if (permissionError) return jsonResponse({ error: "authorization_failed" }, 500);
-    if (!permission) return jsonResponse({ error: "forbidden" }, 403);
+    const capabilityKeys = new Set(
+      (callerCapabilities ?? []).map((row: { capability_key: string }) => row.capability_key),
+    );
+    const canManageAccess = capabilityKeys.has("settings.write");
+    const canProvisionOnCreate =
+      canManageAccess ||
+      capabilityKeys.has("students.write") ||
+      capabilityKeys.has("attendance.write");
+    const allowed =
+      mode === "provision" && delivery === "provider" ? canProvisionOnCreate : canManageAccess;
+    if (!allowed) return jsonResponse({ error: "forbidden" }, 403);
 
     if (mode === "resend" || mode === "temporary_password") {
       if (!student.user_id) return jsonResponse({ error: "student_access_missing" }, 409);

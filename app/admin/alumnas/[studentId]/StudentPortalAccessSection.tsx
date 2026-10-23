@@ -64,7 +64,13 @@ export default async function StudentPortalAccessSection({ studentId }: { studen
             <p className="eyebrow">PORTAL DE ALUMNA</p>
             <h2>Cuenta de acceso</h2>
           </div>
-          <span className="count-badge">{accessHealthy ? "Activa" : "Sin acceso"}</span>
+          <span className="count-badge">
+            {accessHealthy
+              ? account?.must_change_password
+                ? "Por activar"
+                : "Activa"
+              : "Acceso no enviado"}
+          </span>
         </div>
 
         {accessHealthy ? (
@@ -99,7 +105,7 @@ export default async function StudentPortalAccessSection({ studentId }: { studen
           <StudentAccessProvisioner studentId={student.id} phone={student.phone} />
         ) : (
           <div className="empty-state">
-            El acceso sólo puede habilitarse mientras el expediente esté activo.
+            El acceso sólo puede enviarse mientras el expediente esté activo.
           </div>
         )}
       </section>

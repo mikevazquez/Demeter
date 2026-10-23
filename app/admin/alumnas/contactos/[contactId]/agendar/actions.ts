@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { autoProvisionStudentAccess } from "@/lib/student/auto-access";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
@@ -29,7 +30,7 @@ export async function scheduleProspectTrial(formData: FormData) {
     target_session_id: sessionId,
     target_payment_method: paymentMethod,
   });
-  const result = data as { ok?: boolean } | null;
+  const result = data as { ok?: boolean; student_id?: string | null } | null;
   if (error || result?.ok !== true) {
     const message = error?.message ?? "trial_booking_failed";
     const known = [
@@ -43,9 +44,11 @@ export async function scheduleProspectTrial(formData: FormData) {
     redirect(scheduleUrl(contactId, `error=${encodeURIComponent(known ?? "booking_failed")}`));
   }
 
+  const access = await autoProvisionStudentAccess(supabase, result?.student_id);
+
   revalidatePath("/admin");
   revalidatePath("/admin/agenda");
   revalidatePath("/admin/alumnas");
   revalidatePath(`/admin/alumnas/contactos/${contactId}`);
-  redirect(scheduleUrl(contactId, `created=${paymentMethod}`));
+  redirect(scheduleUrl(contactId, `created=${paymentMethod}&access=${access.status}`));
 }

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getCoachContext } from "@/lib/auth/coach-context";
+import { autoProvisionStudentAccess } from "@/lib/student/auto-access";
 
 export type CoachWalkinLookupState = {
   status: "idle" | "invalid" | "not_found" | "found" | "already_in_roster" | "error";
@@ -124,7 +125,7 @@ export async function createCoachWalkinAction(formData: FormData) {
   if (!firstName || !isE164(phone)) redirect(`${walkinPath}?error=invalid`);
 
   const { supabase } = await getCoachContext(CAPABILITIES.ATTENDANCE_WRITE);
-  const { error } = await supabase.rpc("create_walkin_student", {
+  const { data: walkin, error } = await supabase.rpc("create_walkin_student", {
     target_session_id: sessionId,
     p_first_name: firstName,
     p_last_name: lastName,
@@ -134,6 +135,10 @@ export async function createCoachWalkinAction(formData: FormData) {
   refreshCoachSession(sessionId);
   if (error?.message.includes("phone_exists")) redirect(`${walkinPath}?error=phone_exists`);
   if (error) redirect(`${walkinPath}?error=create`);
+  await autoProvisionStudentAccess(
+    supabase,
+    (walkin as { student_id?: string | null } | null)?.student_id,
+  );
   redirect(`/coach/clases/${sessionId}/roster?walkin=1`);
 }
 
