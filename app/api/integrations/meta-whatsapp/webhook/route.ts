@@ -2134,7 +2134,9 @@ export async function POST(request: Request) {
         retryableFailure = true;
         await markEvent(supabase, studioId, event.id, {
           processing_status: "error",
-          processing_result: { outcome: "message_batch_pre_delivery_lookup_failed" },
+          processing_result: {
+            outcome: "message_batch_pre_delivery_lookup_failed",
+          },
           last_error_code: "message_batch_pre_delivery_lookup_failed",
         });
         continue;
