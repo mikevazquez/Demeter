@@ -28,8 +28,7 @@ const errorCopy: Record<string, string> = {
     "Este abono sólo aplica a una inscripción del monto mínimo que configuró el estudio, con paquete a precio completo.",
   trial_credit_full_payment_required:
     "Para aplicar el abono, cobra el resto de inscripción más el paquete completo.",
-  trial_credit_same_day_required:
-    "La compra con abono debe registrarse con fecha de hoy.",
+  trial_credit_same_day_required: "La compra con abono debe registrarse con fecha de hoy.",
   trial_credit_replay_mismatch:
     "La operación ya existe con otros datos. Revisa el historial antes de continuar.",
   invalid_request: "Faltan datos para completar el alta.",

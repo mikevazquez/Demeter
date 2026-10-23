@@ -420,17 +420,16 @@ export default function StudentOnboardingForm({
                     inscripción
                   </span>
                   <small>
-                    Pago validado de la primera clase. Se cobra el resto de inscripción más el paquete
-                    completo. El pago original se conserva y sólo puede aplicarse una vez.
+                    Pago validado de la primera clase. Se cobra el resto de inscripción más el
+                    paquete completo. El pago original se conserva y sólo puede aplicarse una vez.
                   </small>
                 </label>
               ) : null}
               {trialCredit ? (
                 <p>
                   Inscripción: {money(selectedEnrollment.priceMinor)} −{" "}
-                  {money(trialCredit.amount_minor)} ya cobrados ={" "}
-                  {money(enrollmentNetMinor)}. Liquida {money(totalMinor)} para completar esta
-                  compra.
+                  {money(trialCredit.amount_minor)} ya cobrados = {money(enrollmentNetMinor)}.
+                  Liquida {money(totalMinor)} para completar esta compra.
                 </p>
               ) : null}
               {enrollmentResolution === "promotion" || enrollmentResolution === "exception" ? (

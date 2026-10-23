@@ -118,7 +118,9 @@ export function TrialCreditForm({
               />
               <b>días después de la clase</b>
             </div>
-            <small>0 = solo el mismo día de la primera clase. Nunca se abona más de lo pagado.</small>
+            <small>
+              0 = solo el mismo día de la primera clase. Nunca se abona más de lo pagado.
+            </small>
           </label>
         </>
       ) : (
