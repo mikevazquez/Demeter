@@ -8,6 +8,8 @@ import { bookStudentSessionInlineAction } from "@/app/student/actions";
 import WaitlistControl from "./WaitlistControl";
 
 const errorCopy: Record<string, string> = {
+  booking_not_open: "Esta clase todavía no abre para reservar.",
+  booking_closed: "Las reservas de esta clase ya cerraron. Escríbele al estudio.",
   studio_read_only:
     "El estudio no está tomando reservas en línea por ahora. Escríbele directamente.",
   booking_failed: "No pudimos crear la reserva. Revisa la clase e intenta de nuevo.",

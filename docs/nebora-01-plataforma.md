@@ -153,20 +153,51 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 - Pendiente de bajo impacto: `student_is_minor` y la fecha por defecto de evaluaciones técnicas
   siguen con `current_date`. El simulador de Demi se ajusta en NEB-01-42.
 
+### NEB-01-38/39/40 · Reglas de reserva por estudio y por actividad (`20261022217000`)
+
+- Reglas nuevas en `studio_operating_policies` (estudio) y en `class_templates` (actividad; vacío
+  = como el estudio):
+  - Tiempo para cancelar (ya existía en el estudio; ahora también por actividad).
+  - Apertura de reservas: sin límite (como hoy), X horas o días antes de cada clase, o un día y
+    hora fijos que abren toda la semana siguiente (ej. domingo 20:00), en la hora del estudio.
+  - Cierre de reservas: minutos antes del inicio (arranque: 30, lo que Demi ya usaba).
+  - Registro con QR: minutos antes y después del inicio (arranque: 20 y 30, como hoy).
+- `private.session_booking_rules(clase)` calcula todo para una clase; de ahí salen la apertura,
+  el cierre, la hora límite para cancelar y la ventana del QR.
+- Dónde se aplica:
+  - Un trigger en `reservations` rechaza reservar fuera de la ventana (`booking_not_open`,
+    `booking_closed`) a alumnas y Demi. El equipo con `schedule.write` o `attendance.write`
+    (recepción, coaches, administración) la puede saltar, y las promociones desde lista de
+    espera y las reservas que llegan desde Asistian no se frenan.
+  - La elegibilidad de la alumna y la de Demi dicen «Abre el …» o «Reservas cerradas».
+  - Cancelar (alumna, Demi, invitadas y Asistian) usa el tiempo de la actividad.
+  - El QR de la alumna y el registro usan la misma ventana configurada.
+  - Las funciones de pago de Demi (grupo, prospecto, Mercado Pago) usan la ventana en lugar de
+    los 30 minutos fijos.
+  - Estas funciones se ajustan sobre su definición vigente en la base; si alguna no tiene el
+    texto esperado, la migración se detiene con «NEB-01: definición inesperada».
+- Pantallas: Configuración › Reservas tiene la sección «Apertura, cierre y registro», y la
+  ficha de cada actividad tiene «Reglas de reserva de esta actividad». En el portal, una clase
+  que todavía no abre muestra «Abre …». Demi no ofrece clases cerradas y avisa cuándo abre una.
+- Cambio para Demeter: la app de la alumna ya no reserva en los últimos 30 minutos (antes solo
+  Demi lo respetaba). Mike confirma ese valor en la demo; se cambia en Configuración › Reservas.
+
 ## Pruebas
 
 - SQL local, nunca contra Sandbox ni producción:
   `PGHOST=… PGPORT=… PGUSER=postgres scripts/neb01-sql-tests.sh`. Corre 18 controles de plataforma
-  13 de bloqueos y solicitudes, 3 de marca, 12 de la consola y 7 de zona horaria, y deshace todo al terminar.
+  13 de bloqueos y solicitudes, 3 de marca, 12 de la consola, 7 de zona horaria y 13 de reglas de reserva, y deshace todo al terminar.
 - Vitest: `tests/neb01-catalog.test.ts`, `tests/neb01-guards.test.ts`, `tests/neb01-branding.test.ts`,
-  `tests/neb01-console.test.ts` y `tests/neb01-timezone.test.ts`.
+  `tests/neb01-console.test.ts`, `tests/neb01-timezone.test.ts` y
+  `tests/neb01-booking-windows.test.ts`.
 
 ## Para Codex
 
 1. Aplicar en Sandbox, en orden, `20261022210000_neb01_platform_admins_audit` y
    `20261022211000_neb01_plans_modules_entitlements` y `20261022212000_neb01_entitlement_guards` y
    `20261022213000_neb01_module_activation_requests`, `20261022214000_neb01_studio_brand_name`,
-   `20261022215000_neb01_platform_console_reads` y `20261022216000_neb01_studio_local_time`.
+   `20261022215000_neb01_platform_console_reads`, `20261022216000_neb01_studio_local_time` y
+   `20261022217000_neb01_booking_windows`.
 2. Insertar a Mike en `platform_admins` con su cuenta de Sandbox.
 3. Verificar que todos los estudios quedaron en `allaccess/internal` y correr QA.
 4. Con la cuenta de Mike, abrir `/plataforma` y la ficha de Demeter. Con una cuenta que no sea
@@ -174,5 +205,10 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 5. Zona horaria: registrar un pago después de las 18:00 (hora del centro) y confirmar que queda
    con la fecha de hoy. En un estudio de prueba con zona `America/Tijuana`, revisar Hoy,
    cumpleaños y fechas de retos.
+6. Reglas de reserva: la migración no debe mostrar «NEB-01: definición inesperada». Con una
+   alumna de prueba, confirmar que no reserva en los últimos 30 minutos y que recepción sí; poner
+   apertura «domingo 20:00» y ver «Abre …» en el portal; poner a una actividad 12 h para cancelar
+   y confirmar que la cancelación es tardía dentro de esas 12 h; revisar que el QR abre y cierra
+   según la configuración; pedirle a Demi una clase que aún no abre.
 
 Producción no se toca sin la autorización explícita de Mike.

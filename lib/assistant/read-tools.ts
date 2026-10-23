@@ -11,6 +11,7 @@ import { preparationFromStudioPrompt } from "./class-preparation";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CommercialOptionsArgs, SearchClassAvailabilityArgs } from "./tool-contracts";
+import { loadSessionBookingWindows, sessionBookingState } from "@/lib/assistant/booking-windows";
 
 export type AssistantStudioContext = {
   id: string;
@@ -211,14 +212,18 @@ export async function searchClassAvailability(
     requestedActivity && !hasLiteralActivity
       ? requestedActivity.replace(/\bpaul\b/g, "pole")
       : requestedActivity;
-  const earliestBookableStart = Date.now() + 30 * 60_000;
+  // NEB-01-40 · ventana de reserva de cada clase (sin migración: no reservar en los últimos 30 min).
+  const bookingWindows = await loadSessionBookingWindows(ctx.supabase, ctx.studio.id, sessionIds);
+  const nowMs = Date.now();
   const exactTemplateMatchExists = activityNeedle
     ? templates.some((item) => activityWords(item.name) === activityWords(activityNeedle))
     : false;
   const matches = [];
 
   for (const session of sessions ?? []) {
-    if (new Date(session.starts_at).getTime() <= earliestBookableStart) continue;
+    const bookingWindow = bookingWindows?.get(session.id) ?? null;
+    const bookingState = sessionBookingState(session, bookingWindow, nowMs);
+    if (bookingState === "closed") continue;
     const template = templateMap.get(session.template_id);
     if (!template?.active) continue;
     const discipline = template.discipline_id
@@ -261,6 +266,15 @@ export async function searchClassAvailability(
       space: session.space_id ? (spaceMap.get(session.space_id) ?? null) : null,
       currency: ctx.studio.currency,
       credit_cost: template.credit_cost,
+      ...(bookingState === "not_open" && bookingWindow?.opensAt
+        ? {
+            bookable_now: false,
+            booking_opens_at_local: (() => {
+              const opens = localParts(bookingWindow.opensAt, ctx.studio.timezone);
+              return `${opens.date} ${opens.time}`;
+            })(),
+          }
+        : {}),
     });
   }
 

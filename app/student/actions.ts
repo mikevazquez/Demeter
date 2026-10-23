@@ -32,6 +32,8 @@ function errorCode(error: { message?: string } | null, fallback: string) {
     "resource_full",
     "resource_not_available",
     "studio_read_only",
+    "booking_not_open",
+    "booking_closed",
   ];
   return known.find((item) => error.message?.includes(item)) ?? fallback;
 }

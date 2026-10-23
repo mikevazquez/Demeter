@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { parseBookingWindowForm } from "@/lib/booking-windows";
 
 function checkboxValue(formData: FormData, key: string) {
   return formData.get(key) === "on";
@@ -85,4 +86,38 @@ export async function saveReservationPolicyAction(formData: FormData) {
   revalidatePath("/admin/configuracion");
   revalidatePath("/admin/configuracion/reservas");
   redirect(reservationsPath({ saved: "1" }));
+}
+
+// NEB-01-39/40 · Apertura y cierre de reservas y ventana del registro con QR del estudio.
+export async function saveBookingWindowsAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+
+  if (ctx.membership.role !== "owner") {
+    redirect("/admin?error=access");
+  }
+  const parsed = parseBookingWindowForm(formData, "studio");
+  if (!parsed.ok) redirect(reservationsPath({ error: `window_${parsed.error}` }));
+  const values = parsed.values;
+
+  const { error } = await ctx.supabase.rpc("owner_update_studio_booking_windows", {
+    p_studio_id: ctx.studio.id,
+    p_booking_close_minutes_before: values.bookingCloseMinutesBefore,
+    p_booking_open_mode: values.bookingOpenMode ?? "none",
+    p_booking_open_minutes_before: values.bookingOpenMinutesBefore,
+    p_booking_open_weekday: values.bookingOpenWeekday,
+    p_booking_open_time: values.bookingOpenTime,
+    p_checkin_opens_minutes_before: values.checkinOpensMinutesBefore,
+    p_checkin_closes_minutes_after: values.checkinClosesMinutesAfter,
+  });
+
+  if (error) {
+    console.error("[studio.reservations] Booking windows update failed", {
+      code: error.code,
+      message: error.message.slice(0, 160),
+    });
+    redirect(reservationsPath({ error: "save" }));
+  }
+
+  revalidatePath("/admin/configuracion/reservas");
+  redirect(reservationsPath({ saved: "windows" }));
 }

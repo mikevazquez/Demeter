@@ -50,3 +50,74 @@ create table public.assistant_model_calls (id uuid primary key default gen_rando
 
 -- NEB-01-35 · stand-in for payments (only what the local-date trigger touches).
 create table public.payments (id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id), amount_minor integer not null default 0, effective_on date not null default current_date);
+
+-- NEB-01-38/39/40 · stand-ins for booking windows (only what the rules and patches touch).
+create function auth.role() returns text language sql stable as $$
+  select coalesce(nullif(current_setting('request.jwt.claim.role', true), ''), 'authenticated') $$;
+grant execute on function auth.role() to anon, authenticated, service_role;
+insert into public.role_capabilities values ('owner', 'schedule.write'), ('owner', 'schedule.read'), ('coach', 'attendance.write');
+create table public.class_templates (id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id), name text not null default 'Clase');
+alter table public.class_sessions add column template_id uuid references public.class_templates(id);
+alter table public.reservations add column student_id uuid references public.students(id), add column session_id uuid references public.class_sessions(id);
+create table public.studio_operating_policies (
+  studio_id uuid primary key references public.studios(id),
+  cancellation_cutoff_minutes integer not null default 300,
+  late_cancellation_consumes_credit boolean not null default true,
+  no_show_consumes_credit boolean not null default true,
+  default_minimum_reservations_enabled boolean not null default false,
+  default_minimum_reservations integer not null default 2,
+  default_minimum_review_minutes_before integer not null default 120,
+  default_minimum_override_allowed boolean not null default true,
+  unlimited_late_cancellation_penalty_minor integer not null default 0,
+  unlimited_no_show_penalty_minor integer not null default 0,
+  updated_by_user_id uuid,
+  updated_at timestamptz not null default now());
+create table public.class_waitlist_entries (id uuid primary key default gen_random_uuid(), studio_id uuid not null, session_id uuid not null, student_id uuid not null, status text not null default 'active');
+create type public.reservation_status as enum ('reserved','attended','cancelled_on_time','cancelled_late','no_show','cancelled_by_studio');
+
+-- Old-style functions with the exact fixed texts the migration replaces.
+create function private.reservation_cancellation_outcome(target_studio_id uuid, target_starts_at timestamptz)
+returns public.reservation_status language sql stable as $$ select 'cancelled_late'::public.reservation_status $$;
+create function public.cancel_reservation(target_reservation_id uuid, target_reason text default null)
+returns text language plpgsql security definer set search_path = '' as $$
+declare
+  v_reservation public.reservations%rowtype;
+  v_session public.class_sessions%rowtype;
+  v_new_status public.reservation_status;
+begin
+  select * into v_reservation from public.reservations where id = target_reservation_id;
+  select * into v_session from public.class_sessions where id = v_reservation.session_id;
+  v_new_status := private.reservation_cancellation_outcome(v_reservation.studio_id, v_session.starts_at);
+  return v_new_status::text;
+end;
+$$;
+create function public.check_in_reservation(p_token text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare
+  v_session public.class_sessions%rowtype;
+begin
+  select * into v_session from public.class_sessions where id = p_token::uuid;
+  if clock_timestamp() < v_session.starts_at - interval '20 minutes' then
+    return jsonb_build_object('status', 'too_early', 'available_at', v_session.starts_at - interval '20 minutes');
+  end if;
+  if clock_timestamp() >= v_session.starts_at + interval '30 minutes' then
+    return jsonb_build_object('status', 'closed');
+  end if;
+  return jsonb_build_object('status', 'checked_in');
+end;
+$$;
+create function private.booking_eligibility_core(target_session_id uuid, target_student_id uuid, p_allow_started_session boolean default false)
+returns jsonb language sql stable as $$ select jsonb_build_object('eligible', true, 'reason_code', null) $$;
+create function private.booking_eligibility_regular_program_baseline(target_session_id uuid, target_student_id uuid)
+returns jsonb language sql stable as $$ select jsonb_build_object('eligible', true, 'reason_code', null) $$;
+create function public.booking_eligibility(target_session_id uuid,target_student_id uuid)
+returns jsonb language plpgsql stable security definer set search_path='' as $$
+declare v_program uuid;
+begin
+ if v_program is null then return private.booking_eligibility_regular_program_baseline(target_session_id,target_student_id); end if;
+ return private.booking_eligibility_core(target_session_id,target_student_id,false);
+end;
+$$;
+grant execute on function public.booking_eligibility(uuid,uuid), public.cancel_reservation(uuid,text), public.check_in_reservation(text) to authenticated;
+alter table public.students add column user_id uuid;
+insert into auth.users (id) values ('00000000-0000-0000-0000-0000000000d1');
