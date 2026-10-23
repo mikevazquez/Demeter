@@ -24,6 +24,29 @@ revoke all on public.assistant_whatsapp_send_claims from public, anon, authentic
 grant select, insert, update on public.assistant_whatsapp_send_claims to service_role;
 grant usage, select on sequence public.assistant_whatsapp_send_claims_id_seq to service_role;
 
+-- Inbound capture and claim must share the same transaction-level lock.
+-- This serializes a committed inbound with an outbound claim acquisition.
+create or replace function public.assistant_whatsapp_lock_inbound_text()
+returns trigger
+language plpgsql
+set search_path = ''
+as $
+begin
+  if new.provider = 'meta_whatsapp' and new.message_type = 'text' then
+    perform pg_advisory_xact_lock(
+      hashtextextended(new.studio_id::text || ':meta_whatsapp:' || new.contact_wa_id, 378)
+    );
+  end if;
+  return new;
+end;
+$;
+
+drop trigger if exists assistant_whatsapp_lock_inbound_text
+  on public.assistant_whatsapp_events;
+create trigger assistant_whatsapp_lock_inbound_text
+before insert on public.assistant_whatsapp_events
+for each row execute function public.assistant_whatsapp_lock_inbound_text();
+
 create or replace function public.assistant_whatsapp_claim_current_text(
   p_studio_id uuid,
   p_event_id uuid,
@@ -87,6 +110,7 @@ revoke all on function public.assistant_whatsapp_claim_current_text(uuid, uuid, 
 grant execute on function public.assistant_whatsapp_claim_current_text(uuid, uuid, uuid)
   to service_role;
 
--- IMPORTANT: before enabling, atomically serialize inbound inserts with claims.
--- Without a shared lock on capture, a new inbound can arrive between claim and
--- provider delivery. Claims are conservative: ambiguous sends stay blocked.
+-- Claims and inbound insertion now share a transaction lock. A new message arriving
+-- AFTER claim commit may still precede the external HTTP send: do not interpret
+-- the claim as a cancellable delivery or an exactly-once provider guarantee.
+-- Application integration and concurrency tests are mandatory before activation.
