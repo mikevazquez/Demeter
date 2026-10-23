@@ -7,6 +7,7 @@ import { admitSupervisorTask, tickSupervisor } from "./supervisor.mjs";
 import { renderSupervisorHtml, renderSupervisorMarkdown } from "./supervisor-dashboard.mjs";
 import { fireClaudeRoutine } from "./claude-routine-worker.mjs";
 import { verifySupervisorReceipt } from "./supervisor-evidence.mjs";
+import { reconcileGatewayAdmissions } from "./governance-admission.mjs";
 
 export const SUPERVISOR_CONFIG = Object.freeze({
   repository: "mikevazquez/Demeter",
@@ -451,6 +452,9 @@ export async function runSupervisorCommand({
     const snapshot = await store.read();
     await output(snapshot, { directory, runUrl, action: "rendered" });
     return snapshot;
+  }
+  if (mode === "tick") {
+    await reconcileGatewayAdmissions({ request, store });
   }
   const configured =
     mode !== "proof-tick" &&
