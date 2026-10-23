@@ -21,6 +21,9 @@ describe("KIOSCO-01 check-in contracts", () => {
   const availableAtMigration = source(
     "supabase/migrations/20261007030150_qr_checkin_available_at_20m_before.sql",
   );
+  const extendedWindowMigration = source(
+    "supabase/migrations/20261023014456_qr_checkin_window_210m_before_30m_after.sql",
+  );
 
   it("creates one opaque token per valid reservation and never models waitlist as a QR source", () => {
     expect(migration).toContain("reservation_checkin_tokens");
@@ -47,6 +50,39 @@ describe("KIOSCO-01 check-in contracts", () => {
     expect(availableAtMigration).toContain("v_session.starts_at - interval ''20 minutes''");
     expect(tokenWindowMigration).toContain("v_session.starts_at + interval ''30 minutes''");
     expect(tokenWindowMigration).toContain("v_session.starts_at - interval ''20 minutes''");
+  });
+
+  it("extends opening to 210 minutes for validation, available_at and QR metadata", () => {
+    expect(extendedWindowMigration).toContain(
+      "v_new_opening constant text := 'v_session.starts_at - interval ''210 minutes'''",
+    );
+    expect(extendedWindowMigration).toContain("v_checkin_now < ' || v_old_opening");
+    expect(extendedWindowMigration).toContain("'''available_at'', ' || v_old_opening");
+    expect(extendedWindowMigration).toContain("'''check_in_opens_at'', ' || v_old_opening");
+    expect(extendedWindowMigration).toContain(
+      "execute replace(v_checkin_definition, v_old_opening, v_new_opening)",
+    );
+    expect(extendedWindowMigration).toContain(
+      "execute replace(v_token_definition, v_old_opening, v_new_opening)",
+    );
+  });
+
+  it("checks both existing windows before updating and preserves the 30-minute close", () => {
+    const firstReplacement = extendedWindowMigration.indexOf("execute replace(");
+    for (const guard of [
+      "raise exception 'Unexpected check_in_reservation",
+      "raise exception 'Unexpected student_reservation_checkin_token",
+    ]) {
+      const guardPosition = extendedWindowMigration.indexOf(guard);
+      expect(guardPosition).toBeGreaterThan(-1);
+      expect(guardPosition).toBeLessThan(firstReplacement);
+    }
+    expect(extendedWindowMigration).toContain(
+      "v_checkin_now >= v_session.starts_at + interval ''30 minutes''",
+    );
+    expect(extendedWindowMigration).toContain(
+      "'''check_in_closes_at'', v_session.starts_at + interval ''30 minutes''",
+    );
   });
 
   it("marks attendance idempotently and emits one domain event", () => {
