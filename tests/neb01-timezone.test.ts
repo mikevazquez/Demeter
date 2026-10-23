@@ -86,6 +86,10 @@ describe("NEB-01-35 hora del estudio", () => {
     expect(migration).toContain(
       "private.studio_local_today(v_sale.studio_id),(select auth.uid()));",
     );
-    expect(migration).not.toMatch(/^\s+current_date,\(select auth\.uid\(\)\)\);/m);
+    // Solo se ajusta la versión que aún guarda current_date; la que delega en
+    // admin_register_sale_payment (ya con fecha local) no se pisa.
+    expect(migration).toContain("public.admin_register_sale_payment(");
+    expect(migration).toContain("execute replace(v_def, v_old, v_new);");
+    expect(migration).not.toContain("create or replace function public.register_sale_payment(");
   });
 });
