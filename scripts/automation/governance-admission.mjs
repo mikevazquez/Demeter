@@ -15,7 +15,7 @@ const ensure = (ok, message) => {
 export function parseGatewayAdmissionComment(comment) {
   if (typeof comment?.body !== "string" || !comment.body.includes(MARKER)) return null;
   ensure(comment.body.length <= 100_000, "Admission comment exceeds limit");
-  ensure(comment.user?.login === "mikevazquez", "Admission author is not trusted");
+  if (comment.user?.login !== "mikevazquez") return null;
   ensure(
     typeof comment.html_url === "string" && comment.html_url.startsWith(COMMENT_PREFIX),
     "Admission comment is outside the reviewed channel",
