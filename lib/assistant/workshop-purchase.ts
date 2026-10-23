@@ -18,6 +18,16 @@ type Context = {
   serviceMode?: boolean;
   currentUserMessage: string;
 };
+
+function workshopConversationError(message: string) {
+  if (message.includes("workshop_demi_disabled"))
+    return "Las altas de talleres por Demi no están habilitadas en este estudio. No solicites un pago ni prometas una inscripción.";
+  if (/workshop_receipt_pending|another_receipt_pending/.test(message))
+    return "Ya hay una solicitud de pago pendiente. Consulta get_workshop_options para recuperar el estado actual; no prepares otro pago ni pidas otra transferencia.";
+  if (message.includes("workshop_confirmation_missing"))
+    return "No hay una cotización vigente para aceptar. Consulta el estado y vuelve a cotizar las fechas antes de solicitar un pago.";
+  return workshopPurchaseError(message);
+}
 export async function workshopPurchaseAction(
   ctx: Context,
   tool: string,
@@ -76,7 +86,7 @@ export async function workshopPurchaseAction(
       return {
         ok: false,
         reason_code: "workshop_prepare_blocked",
-        reason_message: workshopPurchaseError(response.error.message),
+        reason_message: workshopConversationError(response.error.message),
       };
     return response.data;
   }
@@ -120,7 +130,7 @@ export async function workshopPurchaseAction(
     return {
       ok: false,
       reason_code: "workshop_confirmation_blocked",
-      reason_message: workshopPurchaseError(response.error.message),
+      reason_message: workshopConversationError(response.error.message),
     };
   return response.data;
 }

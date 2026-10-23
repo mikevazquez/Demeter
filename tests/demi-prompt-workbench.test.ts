@@ -1436,6 +1436,11 @@ describe("Demi shared commercial price", () => {
           },
         },
         "./class-preparation": { preparationFromStudioPrompt: () => null },
+        "./workshop-information": {
+          getWorkshopInformation: () => {
+            throw new Error("Unexpected workshop read in commercial price test");
+          },
+        },
       },
     );
     const sessionId = "11111111-1111-4111-8111-111111111111";

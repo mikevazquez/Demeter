@@ -40,7 +40,7 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
     name: "get_workshop_options",
     strict: true,
     description:
-      "Consulta talleres reales, fechas, precios completo/individual, anticipo e inscripción. Usa sus referencias exactas para comprar un taller; los paquetes de clases regulares no cubren estas fechas. El contenido temporal informa pero no reemplaza este catálogo ni confirma cupos.",
+      "Consulta talleres reales, fechas y horas locales, precios completo/individual, anticipo e inscripción. enabled=false indica que Demi no tiene habilitadas las altas, no que el estudio carezca de talleres. current_purchase recupera el estado real de la solicitud de esta conversación: consúltalo al retomar un pago o comprobante, antes de pedir otro. Usa referencias exactas para comprar; los paquetes regulares no cubren estas fechas. El contenido temporal no reemplaza catálogo ni confirma cupos.",
     parameters: { type: "object", properties: {}, required: [], additionalProperties: false },
   },
   {

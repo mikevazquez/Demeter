@@ -2032,6 +2032,149 @@ try {
       "50000",
     );
   });
+  query(
+    `begin; ${source("supabase/migrations/20261023134522_demi_workshop_conversation_context.sql")}; commit;`,
+  );
+  const workshopContextSql = (c, tenant = studio) =>
+    `select public.service_demi_workshop_context(${sqlString(tenant)},${sqlString(c?.id)})`;
+  await test("workshop information distinguishes disabled from empty and denies foreign or client recovery", () => {
+    const c = conversation();
+    for (const role of ["anon", "authenticated"])
+      denied(asRole(role, admin, workshopContextSql(c)), "permission denied");
+    denied(
+      asRole("service_role", null, workshopContextSql(c, otherStudio)),
+      "conversation_identity_mismatch",
+    );
+    denied(
+      asRole("service_role", null, workshopContextSql({ id: randomUUID() })),
+      "conversation_identity_mismatch",
+    );
+    query(
+      `update public.workshop_studio_policies set demi_enabled=false where studio_id=${sqlString(studio)}`,
+    );
+    assert.deepEqual(service(workshopContextSql(c)), {
+      ok: true,
+      enabled: false,
+      workshops: [],
+      current_purchase: null,
+    });
+    query(
+      `update public.workshop_studio_policies set demi_enabled=true where studio_id=${sqlString(studio)}`,
+    );
+    assert.equal(service(workshopContextSql(null)).enabled, true);
+    assert.equal(service(workshopContextSql(null)).current_purchase, null);
+  });
+  await test("Demi recovers quote, receipt, provisional and verified purchase without premature income", () => {
+    const w = offer({ deposit: true }),
+      c = conversation();
+    const intent = service(prepareSql(w, c));
+    let status = service(workshopContextSql(c)).current_purchase;
+    assert.equal(status.status, "quoted");
+    assert.equal(status.title, "Local payment test");
+    assert.equal(status.payment_verified, false);
+    assert.equal(status.receipt_received, false);
+    assert.equal(status.reservation_confirmed, false);
+    service(accept(c).sql);
+    assert.equal(service(workshopContextSql(c)).current_purchase.status, "receipt_required");
+    const held = service(receipt(intent, c).sql);
+    status = service(workshopContextSql(c)).current_purchase;
+    assert.equal(status.status, "reserved_provisionally");
+    assert.equal(status.receipt_received, true);
+    assert.equal(status.capacity_held, true);
+    assert.equal(status.payment_verified, false);
+    assert.equal(status.paid_minor, 0);
+    assert.equal(
+      query(
+        `select count(*) from public.workshop_purchases where idempotency_key=${sqlString(intent.intent_id)}`,
+      ),
+      "0",
+    );
+    const other = conversation();
+    assert.equal(service(workshopContextSql(other)).current_purchase, null);
+    const purchase = json(
+      asRole(
+        "authenticated",
+        admin,
+        `select public.admin_confirm_workshop_provisional_hold(${sqlString(studio)},${sqlString(held.hold_id)},true)`,
+      ),
+    );
+    status = service(workshopContextSql(c)).current_purchase;
+    assert.equal(status.status, "confirmed");
+    assert.equal(status.payment_verified, true);
+    assert.equal(status.reservation_confirmed, true);
+    assert.equal(status.paid_minor, 30000);
+    assert.equal(status.balance_minor, 30000);
+    json(asRole("authenticated", admin, profileInstallment(purchase, 10000)));
+    assert.equal(service(workshopContextSql(c)).current_purchase.balance_minor, 20000);
+    json(
+      asRole(
+        "authenticated",
+        admin,
+        `select public.admin_record_workshop_continuation(${sqlString(studio)},${sqlString(purchase.purchase_id)},${sqlString(randomUUID())},'withdraw','Synthetic recovery withdrawal')`,
+      ),
+    );
+    status = service(workshopContextSql(c)).current_purchase;
+    assert.equal(status.status, "cancelled");
+    assert.equal(status.reservation_confirmed, false);
+    assert.equal(status.paid_minor, 40000);
+    assert.equal(status.balance_minor, 20000);
+    assert.equal(
+      query(`select count(*) from public.payments where sale_id=${sqlString(purchase.sale_id)}`),
+      "2",
+    );
+  });
+  await test("expired workshop quote does not recover as a valid payment or confirmed reservation", () => {
+    const w = offer({ deposit: true }),
+      c = conversation();
+    const intent = service(prepareSql(w, c));
+    service(accept(c).sql);
+    query(
+      `update public.demi_workshop_purchase_intents set expires_at=now()-interval '1 second' where id=${sqlString(intent.intent_id)}`,
+    );
+    const status = service(workshopContextSql(c)).current_purchase;
+    assert.equal(status.status, "expired");
+    assert.equal(status.payment_verified, false);
+    assert.equal(status.capacity_held, false);
+    assert.equal(status.reservation_confirmed, false);
+  });
+  await test("rejected or expired receipt cannot recover as confirmed and context reads change no financial records", () => {
+    for (const decision of ["reject", "expire"]) {
+      const w = offer({ deposit: true }),
+        c = conversation();
+      const intent = service(prepareSql(w, c));
+      service(accept(c).sql);
+      const held = service(receipt(intent, c).sql);
+      if (decision === "reject")
+        json(
+          asRole(
+            "authenticated",
+            admin,
+            `select public.admin_reject_workshop_provisional_hold(${sqlString(studio)},${sqlString(held.hold_id)},'Synthetic rejected receipt')`,
+          ),
+        );
+      else
+        query(
+          `update public.workshop_provisional_holds set expires_at=now()-interval '1 second' where id=${sqlString(held.hold_id)}`,
+        );
+      const before = query(
+        "select jsonb_build_object('payments',(select count(*) from public.payments),'purchases',(select count(*) from public.workshop_purchases),'reservations',(select count(*) from public.reservations))",
+      );
+      for (let i = 0; i < 2; i++) {
+        const status = service(workshopContextSql(c)).current_purchase;
+        assert.equal(status.status, decision === "reject" ? "rejected" : "expired");
+        assert.equal(status.receipt_received, true);
+        assert.equal(status.payment_verified, false);
+        assert.equal(status.capacity_held, false);
+        assert.equal(status.reservation_confirmed, false);
+      }
+      assert.equal(
+        query(
+          "select jsonb_build_object('payments',(select count(*) from public.payments),'purchases',(select count(*) from public.workshop_purchases),'reservations',(select count(*) from public.reservations))",
+        ),
+        before,
+      );
+    }
+  });
   console.log(
     `${passed}/${passed} local PostgreSQL integration scenarios passed. No remote database used.`,
   );

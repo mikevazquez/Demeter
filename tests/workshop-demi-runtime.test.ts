@@ -91,6 +91,31 @@ describe("Demi workshop application boundary", () => {
       p_turn: "inbound-turn",
     });
   });
+  it.each(["workshop_receipt_pending", "another_receipt_pending"])(
+    "recovers a pending payment instead of requesting a second transfer: %s",
+    async (message) => {
+      mocks.rpc.mockResolvedValue({ data: null, error: { message } });
+      const result = await workshopPurchaseAction(context(), "prepare_workshop_purchase", {
+        workshop_ref: `workshop:${id}`,
+        session_refs: [`session:${id}`],
+        purchase_mode: "full",
+      });
+      expect(result).toMatchObject({
+        ok: false,
+        reason_message: expect.stringContaining("no prepares otro pago"),
+      });
+      expect(mocks.rpc).toHaveBeenCalledTimes(1);
+    },
+  );
+  it("a disabled workshop flow never invites payment or claims that enrollment succeeded", async () => {
+    mocks.rpc.mockResolvedValue({ data: null, error: { message: "workshop_demi_disabled" } });
+    const result = await workshopPurchaseAction(context(), "confirm_workshop_purchase", {});
+    expect(result).toMatchObject({
+      ok: false,
+      reason_message: expect.stringContaining("No solicites un pago"),
+    });
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+  });
   it("forwards continuation only through the owned-conversation RPC", async () => {
     await workshopPurchaseAction(context(), "record_workshop_continuation", {
       purchase_ref: `purchase:${id}`,

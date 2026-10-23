@@ -8,6 +8,7 @@ import {
 import "server-only";
 import { loadDemiRuntimeConfig } from "./runtime-config";
 import { preparationFromStudioPrompt } from "./class-preparation";
+import { getWorkshopInformation } from "./workshop-information";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CommercialOptionsArgs, SearchClassAvailabilityArgs } from "./tool-contracts";
@@ -1018,14 +1019,8 @@ export async function executeAssistantReadTool(
         ? { ok: false, reason_code: "workshop_purchases_unavailable" }
         : { ok: true, purchases: response.data };
     }
-    case "get_workshop_options": {
-      const response = await ctx.supabase.rpc("service_demi_workshop_catalog", {
-        p_studio: ctx.studio.id,
-      });
-      return response.error
-        ? { ok: false, reason_code: "workshop_catalog_unavailable" }
-        : { ok: true, workshops: response.data };
-    }
+    case "get_workshop_options":
+      return getWorkshopInformation(ctx);
     case "search_class_availability":
       return searchClassAvailability(ctx, args as SearchClassAvailabilityArgs);
     case "get_activity_catalog":
