@@ -52,6 +52,7 @@ begin
   for update;
 
   if not found then raise exception 'sale_not_found'; end if;
+  if v_sale.status::text <> 'confirmed' then raise exception 'sale_not_open'; end if;
   if not private.has_capability(v_sale.studio_id, 'sales.write') then
     raise exception 'forbidden';
   end if;
