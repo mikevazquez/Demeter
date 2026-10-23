@@ -79,14 +79,20 @@ async function markEvent(
   eventId: string,
   patch: JsonObject,
 ) {
-  await supabase
+  const atomicPatch =
+    process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS === "true" && isObject(patch.processing_result)
+      ? { ...patch, processing_result: { ...patch.processing_result, atomic_coordination: true } }
+      : patch;
+  const result = await supabase
     .from("assistant_whatsapp_events")
     .update({
-      ...patch,
+      ...atomicPatch,
       updated_at: new Date().toISOString(),
     })
     .eq("id", eventId)
     .eq("studio_id", studioId);
+  if (process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS === "true" && result.error)
+    throw new DemiCoordinationError("event_audit_unavailable", true);
 }
 
 // Only a TEXT can be superseded, and only by a newer TEXT of the same contact and studio.
@@ -1029,7 +1035,7 @@ async function persistAcceptedReply(input: {
     throw new Error("assistant_reply_persist_failed");
   }
 
-  await input.supabase.from("assistant_whatsapp_deliveries").insert({
+  const audit = await input.supabase.from("assistant_whatsapp_deliveries").insert({
     studio_id: input.studioId,
     event_id: input.eventId,
     conversation_id: input.conversationId,
@@ -1043,6 +1049,8 @@ async function persistAcceptedReply(input: {
     http_status: input.httpStatus,
     response_snapshot: input.responseSnapshot,
   });
+  if (process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS === "true" && audit.error)
+    throw new Error("accepted_delivery_audit_unavailable");
 
   await input.supabase
     .from("assistant_conversations")
@@ -1377,6 +1385,8 @@ export async function POST(request: Request) {
     }
 
     const atomicEnabled = process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS === "true";
+    let coordinatedReply: string | undefined;
+    let coordinatedAcceptedId: string | undefined;
     const coordinator = atomicEnabled
       ? new DemiTurnCoordinator((name, args) => supabase.rpc(name, args), studioId, event.id)
       : undefined;
@@ -1397,7 +1407,15 @@ export async function POST(request: Request) {
       }
       const sendReply = async (input: Parameters<typeof sendMetaWhatsAppText>[0]) => {
         if (!coordinator) return sendMetaWhatsAppText(input);
-        return coordinator.send(() => sendMetaWhatsAppText({ ...input, singleAttempt: true }));
+        coordinatedReply = input.text;
+        await markEvent(supabase, studioId, event.id, {
+          processing_result: { outcome: "reply_prepared", cached_reply: input.text },
+        });
+        const delivery = await coordinator.send(() =>
+          sendMetaWhatsAppText({ ...input, singleAttempt: true }),
+        );
+        if (delivery.status === "accepted") coordinatedAcceptedId = delivery.providerMessageId;
+        return delivery;
       };
       const runAction = <T>(name: string, args: Record<string, unknown>, run: () => Promise<T>) =>
         coordinator ? coordinator.action(name, args, run) : run();
@@ -1418,6 +1436,25 @@ export async function POST(request: Request) {
         continue;
       }
 
+      if (
+        !coordinator &&
+        isObject(event.processing_result) &&
+        event.processing_result.atomic_coordination === true
+      ) {
+        // Rollback cannot turn an old atomic attempt into an unguarded legacy resend/action.
+        await markEvent(supabase, studioId, event.id, {
+          processing_status: "human_review",
+          processing_result: {
+            ...event.processing_result,
+            outcome: "atomic_turn_requires_reconciliation",
+          },
+        });
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "atomic_turn_requires_reconciliation",
+        });
+        continue;
+      }
       const claimed = await supabase
         .from("assistant_whatsapp_events")
         .update({
@@ -1441,6 +1478,14 @@ export async function POST(request: Request) {
         });
         continue;
       }
+
+      if (coordinator)
+        await markEvent(supabase, studioId, event.id, {
+          processing_result: {
+            ...(isObject(event.processing_result) ? event.processing_result : {}),
+            atomic_coordination: true,
+          },
+        });
 
       if (coordinator && message.messageType === "text") {
         // A busy older webhook may not have prepared its history yet. Include all committed
@@ -2377,12 +2422,19 @@ export async function POST(request: Request) {
       const failure =
         error instanceof DemiCoordinationError
           ? error
-          : new DemiCoordinationError("coordinated_turn_failed", true);
+          : coordinatedAcceptedId
+            ? new DemiCoordinationError("reply_persist_failed_after_send")
+            : new DemiCoordinationError("coordinated_turn_failed", true);
       retryableFailure ||= failure.retryable;
-      // A stale worker cannot mutate the new owner's event. Writes here concern its own event only.
+      // Claim state is authoritative even if this event audit write fails.
       await markEvent(supabase, studioId, event.id, {
         processing_status: failure.retryable ? "error" : "human_review",
-        processing_result: { outcome: failure.outcome, outcome_unknown: !failure.retryable },
+        processing_result: {
+          outcome: failure.outcome,
+          outcome_unknown: !failure.retryable,
+          ...(coordinatedAcceptedId ? { provider_message_id: coordinatedAcceptedId } : {}),
+          ...(failure.retryable && coordinatedReply ? { cached_reply: coordinatedReply } : {}),
+        },
         last_error_code: failure.outcome,
       });
       outcomes.push({ provider_message_id: message.providerMessageId, outcome: failure.outcome });

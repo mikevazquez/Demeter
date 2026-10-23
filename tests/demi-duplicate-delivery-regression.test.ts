@@ -49,7 +49,10 @@ function loadSender() {
     .sendMetaWhatsAppText;
 }
 
-function send(fetcher: typeof fetch, overrides: { recipientWaId?: string; text?: string } = {}) {
+function send(
+  fetcher: typeof fetch,
+  overrides: { recipientWaId?: string; text?: string; singleAttempt?: boolean } = {},
+) {
   return loadSender()({
     config,
     recipientWaId: "15555550123",
@@ -128,6 +131,15 @@ describe("Demi duplicate delivery regression: actual sender and retry policy", (
       .mockResolvedValueOnce(Response.json({ messages: [{ id: "wamid.synthetic-recovered" }] }));
     expect(await settle(send(request))).toMatchObject({ status: "accepted" });
     expect(request).toHaveBeenCalledTimes(3);
+  });
+
+  it("uses only one provider request after an atomic dispatch authorization", async () => {
+    const request = vi.fn<typeof fetch>(async () => new Response(null, { status: 429 }));
+    expect(await settle(send(request, { singleAttempt: true }))).toMatchObject({
+      status: "error",
+      httpStatus: 429,
+    });
+    expect(request).toHaveBeenCalledTimes(1);
   });
 
   it("stops immediately when a 429 retry encounters a 500", async () => {

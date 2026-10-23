@@ -1,0 +1,79 @@
+{
+  "schema": [
+    {
+      "result": {
+        "rls": [
+          {
+            "name": "assistant_whatsapp_action_claims",
+            "enabled": true
+          },
+          {
+            "name": "assistant_whatsapp_send_claims",
+            "enabled": true
+          },
+          {
+            "name": "assistant_whatsapp_turn_owners",
+            "enabled": true
+          }
+        ],
+        "project": "hedouonyhynuvwbckdlg",
+        "migrations": [
+          {
+            "name": "demi378_atomic_send_claims",
+            "version": "20261023193554"
+          },
+          {
+            "name": "demi378_preserve_burst_deadline",
+            "version": "20261023194307"
+          },
+          {
+            "name": "demi378_service_role_acl",
+            "version": "20261023194912"
+          }
+        ],
+        "service_delete": false,
+        "service_insert": false,
+        "service_update": false,
+        "client_execute_count": 0,
+        "fixture_has_whatsapp_secret": false
+      }
+    }
+  ],
+  "advisors": {
+    "newCoordinationFindings": [
+      {
+        "name": "rls_enabled_no_policy",
+        "detail": "Table \\`public.assistant_whatsapp_action_claims\\` has RLS enabled, but no policies exist",
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+      },
+      {
+        "name": "rls_enabled_no_policy",
+        "detail": "Table \\`public.assistant_whatsapp_send_claims\\` has RLS enabled, but no policies exist",
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+      },
+      {
+        "name": "rls_enabled_no_policy",
+        "detail": "Table \\`public.assistant_whatsapp_turn_owners\\` has RLS enabled, but no policies exist",
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+      }
+    ],
+    "baselineAdvisoryKinds": [
+      {
+        "name": "rls_enabled_no_policy",
+        "count": 42
+      },
+      {
+        "name": "anon_security_definer_function_executable",
+        "count": 4
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "count": 270
+      },
+      {
+        "name": "auth_leaked_password_protection",
+        "count": 1
+      }
+    ]
+  }
+}

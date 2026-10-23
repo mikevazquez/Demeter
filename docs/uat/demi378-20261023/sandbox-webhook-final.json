@@ -1,0 +1,15 @@
+{
+  "project": "hedouonyhynuvwbckdlg",
+  "studio": "8fb290c2-6411-4396-b7f9-f8eb8ade8868",
+  "results": [
+    {
+      "name": "signed webhook, real Sandbox identity/history/claims and captured Meta; replay sends once",
+      "passed": true
+    }
+  ],
+  "simulatedProviderAttempts": 0,
+  "simulatedEffects": 0,
+  "realMetaRequests": 0,
+  "realPaymentRequests": 0,
+  "finishedAt": "2026-10-23T19:52:48.002Z"
+}

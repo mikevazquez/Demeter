@@ -107,6 +107,10 @@ function harness(onModel?: (input: ModelInput, rows: Record<string, Row[]>) => v
         filters.push((row) => row[key] === value);
         return chain;
       },
+      is: (key: string, value: unknown) => {
+        filters.push((row) => (value === null ? row[key] == null : row[key] === value));
+        return chain;
+      },
       in: (key: string, values: unknown[]) => {
         filters.push((row) => values.includes(row[key]));
         return chain;
@@ -130,7 +134,69 @@ function harness(onModel?: (input: ModelInput, rows: Record<string, Row[]>) => v
     };
     return chain;
   };
-  const rpc = vi.fn(async (name: string, args: Row) => {
+  // Transport/DB doubles exercise the actual webhook wiring. PostgreSQL locking is
+  // independently exercised by demi-turn-coordination-postgres-378.test.ts.
+  const ownerTokens = new Map<string, string>();
+  const sendClaims = new Map<unknown, string>();
+  const actionReceipts = new Map<string, unknown>();
+  const rpc = vi.fn(async (name: string, args: Row): Promise<{ data: unknown; error: unknown }> => {
+    if (name.startsWith("assistant_whatsapp_")) {
+      const ok = (data: unknown) => ({ data, error: null });
+      const event = rows.assistant_whatsapp_events.find((row) => row.id === args.p_event_id);
+      const contact = String(event?.contact_wa_id);
+      const latest = [...rows.assistant_whatsapp_events]
+        .reverse()
+        .find((row) => row.message_type === "text" && row.contact_wa_id === contact);
+      const current = event?.message_type !== "text" || latest?.id === args.p_event_id;
+      if (name === "assistant_whatsapp_coordinate") {
+        if (args.p_operation === "acquire") {
+          if (ownerTokens.has(contact)) return ok({ status: "busy" });
+          if (
+            ["accepted", "uncertain", "dispatching", "failed_final"].includes(
+              sendClaims.get(args.p_event_id) ?? "",
+            )
+          )
+            return ok({ status: "sealed" });
+          if (["processed", "ignored", "human_review"].includes(String(event?.processing_status)))
+            return ok({ status: "handled" });
+          ownerTokens.set(contact, String(args.p_token));
+          return ok({ status: "owned" });
+        }
+        if (ownerTokens.get(contact) !== args.p_token) return ok({ status: "lost" });
+        if (args.p_operation === "release") {
+          ownerTokens.delete(contact);
+          if (event?.processing_status === "processing") event.processing_status = "error";
+          return ok({ status: "released" });
+        }
+        return ok({ status: current ? "current" : "stale" });
+      }
+      if (name === "assistant_whatsapp_claim_current_text") {
+        if (!current || ownerTokens.get(contact) !== args.p_claim_token) return ok(false);
+        sendClaims.set(args.p_event_id, "reserved");
+        return ok(true);
+      }
+      if (name === "assistant_whatsapp_authorize_text_send") {
+        if (!current) return ok(false);
+        sendClaims.set(args.p_event_id, "dispatching");
+        return ok(true);
+      }
+      if (name === "assistant_whatsapp_finish_text_claim") {
+        for (const key of sendClaims.keys())
+          if (sendClaims.get(key) === "dispatching") sendClaims.set(key, String(args.p_state));
+        return ok(true);
+      }
+      const key = `${args.p_event_id}:${args.p_action_key}`;
+      if (name === "assistant_whatsapp_claim_action") {
+        if (!current) return ok({ status: "stale" });
+        if (actionReceipts.has(key))
+          return ok({ status: "completed", result: actionReceipts.get(key) });
+        return ok({ status: "claimed" });
+      }
+      if (name === "assistant_whatsapp_finish_action") {
+        actionReceipts.set(key, args.p_result);
+        return ok(true);
+      }
+    }
     if (name === "service_prepare_meta_whatsapp_message") {
       const event = rows.assistant_whatsapp_events.find((row) => row.id === args.target_event_id);
       if (!event) throw new Error("Missing captured event");
@@ -276,6 +342,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   delete process.env.DEMI_META_BURST_QUIET_MS;
+  delete process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS;
 });
 
 const outcomesOf = async (response: Response) =>
@@ -391,5 +458,81 @@ describe("DEMI-BATCH-01/02 consecutive messages and stale replies", () => {
     expect(orchestrator).toContain("rethrowSuperseded(error);");
     const route = readFileSync("app/api/integrations/meta-whatsapp/webhook/route.ts", "utf8");
     expect(route).toContain('outcome: "superseded_before_action"');
+  });
+});
+
+describe("DEMI-378 actual signed webhook with coordination enabled", () => {
+  it("protects generated replies and preserves a same-payload consolidated history", async () => {
+    process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS = "true";
+    process.env.DEMI_META_BURST_QUIET_MS = "0";
+    const h = harness();
+    const response = await h.post(
+      h.request([
+        { id: "atomic-one", body: "Quiero pole" },
+        { id: "atomic-two", body: "Horarios y ubicación" },
+      ]),
+    );
+    expect(response.status).toBe(200);
+    expect(h.transport).toHaveBeenCalledTimes(1);
+    expect(h.model.mock.calls[0][0].history.map((row) => row.content)).toEqual(
+      expect.arrayContaining(["Quiero pole", "Horarios y ubicación"]),
+    );
+    expect(
+      h.rpc.mock.calls.some(([name]) => name === "assistant_whatsapp_authorize_text_send"),
+    ).toBe(true);
+    await h.post(h.request([{ id: "atomic-two", body: "Horarios y ubicación" }]));
+    expect(h.transport).toHaveBeenCalledTimes(1);
+  });
+  it("suppresses a reply made obsolete during generation", async () => {
+    process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS = "true";
+    process.env.DEMI_META_BURST_QUIET_MS = "0";
+    const h = harness(() => h.storeNewer("atomic-newer"));
+    const response = await h.post(h.request([{ id: "atomic-old" }]));
+    expect(await outcomesOf(response)).toEqual(["superseded_after_assistant"]);
+    expect(h.transport).not.toHaveBeenCalled();
+  });
+  it("protects cached replies using the same final authorization", async () => {
+    process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS = "true";
+    process.env.DEMI_META_BURST_QUIET_MS = "0";
+    const h = harness();
+    h.storeNewer("atomic-cached");
+    const event = h.rows.assistant_whatsapp_events[0];
+    event.processing_status = "error";
+    event.processing_result = { cached_reply: "Cached confirmation" };
+    await h.post(h.request([{ id: "atomic-cached" }]));
+    expect(h.model).not.toHaveBeenCalled();
+    expect(h.transport).toHaveBeenCalledTimes(1);
+    expect(
+      h.rpc.mock.calls.some(([name]) => name === "assistant_whatsapp_authorize_text_send"),
+    ).toBe(true);
+  });
+  it("keeps a previous atomic attempt quarantined after the flag is disabled", async () => {
+    process.env.DEMI_META_BURST_QUIET_MS = "0";
+    const h = harness();
+    h.storeNewer("atomic-rollback");
+    Object.assign(h.rows.assistant_whatsapp_events[0], {
+      processing_status: "error",
+      processing_result: { atomic_coordination: true, cached_reply: "Do not resend" },
+    });
+    const response = await h.post(h.request([{ id: "atomic-rollback" }]));
+    expect(await outcomesOf(response)).toEqual(["atomic_turn_requires_reconciliation"]);
+    expect(h.model).not.toHaveBeenCalled();
+    expect(h.transport).not.toHaveBeenCalled();
+  });
+
+  it("does not strand processing or send when coordination is unavailable", async () => {
+    process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS = "true";
+    process.env.DEMI_META_BURST_QUIET_MS = "0";
+    const h = harness();
+    const original = h.rpc.getMockImplementation()!;
+    h.rpc.mockImplementation(async (name, args) =>
+      name === "assistant_whatsapp_claim_current_text"
+        ? { data: null, error: { code: "offline" } }
+        : original(name, args),
+    );
+    const response = await h.post(h.request([{ id: "atomic-db-failure" }]));
+    expect(response.status).toBe(500);
+    expect(h.transport).not.toHaveBeenCalled();
+    expect(h.rows.assistant_whatsapp_events[0].processing_status).toBe("error");
   });
 });

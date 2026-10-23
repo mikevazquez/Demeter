@@ -86,7 +86,7 @@ describe.runIf(enabled)("DEMI-378 PostgreSQL concurrency and simulated Meta", ()
       "-e",
       "POSTGRES_PASSWORD=synthetic-local-only",
       "-d",
-      "postgres:17",
+      "postgres:17@sha256:b8faeff7712663c2773a190181e1246e37e364b887611c04658c28b44e2408fe",
     ]);
     let ready = false;
     for (let i = 0; i < 50; i++) {
@@ -100,6 +100,8 @@ describe.runIf(enabled)("DEMI-378 PostgreSQL concurrency and simulated Meta", ()
     }
     if (!ready) throw new Error("PostgreSQL did not start");
     await sql(`create role anon; create role authenticated; create role service_role bypassrls;
+      alter default privileges in schema public grant all on tables to service_role;
+      alter default privileges in schema public grant all on sequences to service_role;
       create schema auth;
       create function auth.role() returns text language sql stable as $$ select current_setting('request.jwt.claim.role', true) $$;
       create table public.assistant_whatsapp_events (
@@ -114,6 +116,15 @@ describe.runIf(enabled)("DEMI-378 PostgreSQL concurrency and simulated Meta", ()
       grant execute on function auth.role() to service_role;`);
     await sql(
       readFileSync("supabase/migrations/20261023183000_demi378_atomic_send_claims.sql", "utf8"),
+    );
+    await sql(
+      readFileSync(
+        "supabase/migrations/20261023194048_demi378_preserve_burst_deadline.sql",
+        "utf8",
+      ),
+    );
+    await sql(
+      readFileSync("supabase/migrations/20261023194826_demi378_service_role_acl.sql", "utf8"),
     );
   }, 60_000);
   afterEach(async () => {
@@ -319,6 +330,31 @@ describe.runIf(enabled)("DEMI-378 PostgreSQL concurrency and simulated Meta", ()
         `select count(*) from assistant_whatsapp_turn_owners where studio_id=${literal(studio)}`,
       ),
     ).toBe("1");
+  });
+
+  it("C01b preserves the 12s deadline under sustained input and resets it on dispatch", async () => {
+    const studio = randomUUID();
+    await event(studio);
+    await sql(
+      `update assistant_whatsapp_turn_owners set burst_started_at=clock_timestamp()-interval '13 seconds',last_text_at=clock_timestamp()-interval '1 second' where studio_id=${literal(studio)}`,
+    );
+    const id = await event(studio);
+    const owner = coordinator(studio, id);
+    await owner.acquire();
+    expect(
+      await sql(
+        `select burst_started_at < clock_timestamp()-interval '12 seconds' from assistant_whatsapp_turn_owners where studio_id=${literal(studio)}`,
+      ),
+    ).toBe("t");
+    const wait = vi.fn(async () => {});
+    expect(await owner.waitForQuiet(4000, Date.now, wait)).toBe(true);
+    expect(wait).not.toHaveBeenCalled();
+    await owner.send(accepted);
+    expect(
+      await sql(
+        `select burst_started_at is null from assistant_whatsapp_turn_owners where studio_id=${literal(studio)}`,
+      ),
+    ).toBe("t");
   });
 
   it("denies public/anonymous/authenticated calls and direct service-role mutation", async () => {

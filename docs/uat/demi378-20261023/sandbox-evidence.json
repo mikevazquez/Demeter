@@ -1,0 +1,1669 @@
+{
+  "project": "hedouonyhynuvwbckdlg",
+  "studio": "8fb290c2-6411-4396-b7f9-f8eb8ade8868",
+  "initialStale": [
+    {
+      "result": {
+        "claim": false,
+        "acquire": {
+          "status": "owned"
+        },
+        "current": {
+          "status": "stale",
+          "generation": 2,
+          "last_text_at": "2026-10-23T19:37:02.907527+00:00",
+          "burst_started_at": "2026-10-23T19:37:02.895989+00:00",
+          "current_event_id": "cfb8b9b5-b45d-4b1a-8673-205900d8f62e"
+        },
+        "release": {
+          "status": "released"
+        }
+      }
+    }
+  ],
+  "twelveWorkerRace": [
+    {
+      "token": "37800000-0000-4000-8000-000000000010",
+      "result": {
+        "status": "owned"
+      }
+    },
+    {
+      "token": "37800000-0000-4000-8000-000000000011",
+      "result": {
+        "status": "busy"
+      }
+    },
+    {
+      "token": "37800000-0000-4000-8000-000000000012",
+      "result": {
+        "status": "busy"
+      }
+    },
+    {
+      "token": "37800000-0000-4000-8000-000000000013",
+      "result": {
+        "status": "busy"
+      }
+    },
+    {
+      "token": "37800000-0000-4000-8000-000000000014",
+      "result": {
+        "status": "busy"
+      }
+    },
+    {
+      "token": "37800000-0000-4000-8000-000000000015",
+      "result": {
+        "status": "busy"
+      }
+    },
+    {
+      "token": "37800000-0000-4000-8000-000000000016",
+      "result": {
+        "status": "busy"
+      }
+    },
+    {
+      "token": "37800000-0000-4000-8000-000000000017",
+      "result": {
+        "status": "busy"
+      }
+    },
+    {
+      "token": "37800000-0000-4000-8000-000000000018",
+      "result": {
+        "status": "busy"
+      }
+    },
+    {
+      "token": "37800000-0000-4000-8000-000000000019",
+      "result": {
+        "status": "busy"
+      }
+    },
+    {
+      "token": "37800000-0000-4000-8000-000000000020",
+      "result": {
+        "status": "busy"
+      }
+    },
+    {
+      "token": "37800000-0000-4000-8000-000000000021",
+      "result": {
+        "status": "busy"
+      }
+    }
+  ],
+  "invalidatedReservation": [
+    {
+      "result": {
+        "state": "invalidated",
+        "latest": "d23cc609-8c34-488e-aa00-505800f5322f",
+        "release": {
+          "status": "released"
+        },
+        "authorized_old": false
+      }
+    }
+  ],
+  "businessRpcRegression": [
+    {
+      "results": [
+        {
+          "passed": true,
+          "variant": "normal"
+        },
+        {
+          "passed": true,
+          "variant": "late_without_hold"
+        },
+        {
+          "passed": true,
+          "variant": "class_past"
+        },
+        {
+          "passed": true,
+          "variant": "class_full"
+        },
+        {
+          "passed": true,
+          "variant": "prospect_alternative"
+        }
+      ]
+    }
+  ],
+  "runtime": {
+    "complete": {
+      "project": "hedouonyhynuvwbckdlg",
+      "studio": "8fb290c2-6411-4396-b7f9-f8eb8ade8868",
+      "results": [
+        {
+          "name": "real Sandbox sessions: one of six workers owns the turn; accepted send sealed",
+          "passed": true
+        },
+        {
+          "name": "new text during generation invalidates the pending response",
+          "passed": true
+        },
+        {
+          "name": "capture between reservation and final authorization prevents send",
+          "passed": true
+        },
+        {
+          "name": "ambiguous network result is quarantined without blocking a new turn",
+          "passed": true
+        },
+        {
+          "name": "Meta accepted but receipt write unavailable cannot resend",
+          "passed": true
+        },
+        {
+          "name": "abandoned generation lease recovers and rejects the previous token",
+          "passed": true
+        },
+        {
+          "name": "action receipt replays a simulated effect once; unknown effects never replay",
+          "passed": true
+        },
+        {
+          "name": "signed webhook, real Sandbox identity/history/claims and captured Meta; replay sends once",
+          "passed": true
+        }
+      ],
+      "simulatedProviderAttempts": 5,
+      "simulatedEffects": 2,
+      "realMetaRequests": 0,
+      "realPaymentRequests": 0,
+      "finishedAt": "2026-10-23T19:48:54.319Z"
+    }
+  },
+  "trace": [
+    {
+      "id": 1,
+      "query": "select name,slug from public.studios where id='8fb290c2-6411-4396-b7f9-f8eb8ade8868';",
+      "rows": [
+        {
+          "name": "DEMI378 synthetic concurrency UAT",
+          "slug": "demi378-concurrency-20261023"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "query": "insert into public.assistant_whatsapp_events(id,studio_id,provider_event_id,phone_number_id,contact_wa_id,message_type,payload_fingerprint,coordination_text) values ('cc625aaa-296a-4d06-a8b1-ea83492d6501','8fb290c2-6411-4396-b7f9-f8eb8ade8868','demi378-bridge-cc625aaa-296a-4d06-a8b1-ea83492d6501','synthetic-no-meta','529994812931','text','synthetic','DEMI378 synthetic text');",
+      "rows": []
+    },
+    {
+      "id": 4,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_token => '665279f0-9001-4316-8a37-701ca81e30cf',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "owned"
+          }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_token => 'a854a7d5-33bd-4f03-8d20-6533f30739f4',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "busy"
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_token => '583da77a-e526-4c90-a458-dd6d31c9424a',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "busy"
+          }
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_token => '36ddbca3-b7c8-4852-80a3-92cf5c32a798',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "busy"
+          }
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_token => 'a4e032e6-84b0-4ea1-b99b-456249b4d3f7',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "busy"
+          }
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_token => '81eba2f5-5856-4472-a7d5-f26d3ed1e32d',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "busy"
+          }
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_claim_current_text(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_claim_token => '665279f0-9001-4316-8a37-701ca81e30cf')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_authorize_text_send(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_claim_token => '665279f0-9001-4316-8a37-701ca81e30cf')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_finish_text_claim(p_claim_token => '665279f0-9001-4316-8a37-701ca81e30cf',p_state => 'accepted',p_provider_message_id => 'uat:demi378:c2ebc6aa-e823-472d-ada8-a3e393aea1ce')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_token => '665279f0-9001-4316-8a37-701ca81e30cf',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "released"
+          }
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_token => '5a92ee89-0a8d-4751-abde-914a738ac66d',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "sealed"
+          }
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "query": "insert into public.assistant_whatsapp_events(id,studio_id,provider_event_id,phone_number_id,contact_wa_id,message_type,payload_fingerprint,coordination_text) values ('771babec-cd89-4bee-8809-27ffae1b224d','8fb290c2-6411-4396-b7f9-f8eb8ade8868','demi378-bridge-771babec-cd89-4bee-8809-27ffae1b224d','synthetic-no-meta','529994812931','text','synthetic','DEMI378 synthetic text');",
+      "rows": []
+    },
+    {
+      "id": 15,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '771babec-cd89-4bee-8809-27ffae1b224d',p_token => 'f7965464-171c-4497-ae1b-0ee74baedf71',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "owned"
+          }
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "query": "insert into public.assistant_whatsapp_events(id,studio_id,provider_event_id,phone_number_id,contact_wa_id,message_type,payload_fingerprint,coordination_text) values ('0d3fb118-75ed-4784-b0a5-5637005d0664','8fb290c2-6411-4396-b7f9-f8eb8ade8868','demi378-bridge-0d3fb118-75ed-4784-b0a5-5637005d0664','synthetic-no-meta','529994812931','text','synthetic','DEMI378 synthetic text');",
+      "rows": []
+    },
+    {
+      "id": 17,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '771babec-cd89-4bee-8809-27ffae1b224d',p_token => 'f7965464-171c-4497-ae1b-0ee74baedf71',p_operation => 'current')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "stale",
+            "generation": 3,
+            "last_text_at": "2026-10-23T19:47:32.22201+00:00",
+            "burst_started_at": "2026-10-23T19:47:30.138245+00:00",
+            "current_event_id": "0d3fb118-75ed-4784-b0a5-5637005d0664"
+          }
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_claim_current_text(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '771babec-cd89-4bee-8809-27ffae1b224d',p_claim_token => 'f7965464-171c-4497-ae1b-0ee74baedf71')) as data;",
+      "rows": [
+        {
+          "data": false
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '771babec-cd89-4bee-8809-27ffae1b224d',p_token => 'f7965464-171c-4497-ae1b-0ee74baedf71',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "released"
+          }
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "query": "insert into public.assistant_whatsapp_events(id,studio_id,provider_event_id,phone_number_id,contact_wa_id,message_type,payload_fingerprint,coordination_text) values ('3136e3ed-58b0-46dd-8179-722e2e777199','8fb290c2-6411-4396-b7f9-f8eb8ade8868','demi378-bridge-3136e3ed-58b0-46dd-8179-722e2e777199','synthetic-no-meta','529994812931','text','synthetic','DEMI378 synthetic text');",
+      "rows": []
+    },
+    {
+      "id": 21,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '3136e3ed-58b0-46dd-8179-722e2e777199',p_token => '2343f07e-b938-4291-97bf-ac41b2330315',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "owned"
+          }
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_claim_current_text(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '3136e3ed-58b0-46dd-8179-722e2e777199',p_claim_token => '2343f07e-b938-4291-97bf-ac41b2330315')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "query": "insert into public.assistant_whatsapp_events(id,studio_id,provider_event_id,phone_number_id,contact_wa_id,message_type,payload_fingerprint,coordination_text) values ('be02bb8a-6bc9-4471-945e-fb397ee83a44','8fb290c2-6411-4396-b7f9-f8eb8ade8868','demi378-bridge-be02bb8a-6bc9-4471-945e-fb397ee83a44','synthetic-no-meta','529994812931','text','synthetic','DEMI378 synthetic text');",
+      "rows": []
+    },
+    {
+      "id": 24,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_authorize_text_send(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '3136e3ed-58b0-46dd-8179-722e2e777199',p_claim_token => '2343f07e-b938-4291-97bf-ac41b2330315')) as data;",
+      "rows": [
+        {
+          "data": false
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '3136e3ed-58b0-46dd-8179-722e2e777199',p_token => '2343f07e-b938-4291-97bf-ac41b2330315',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "released"
+          }
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "query": "insert into public.assistant_whatsapp_events(id,studio_id,provider_event_id,phone_number_id,contact_wa_id,message_type,payload_fingerprint,coordination_text) values ('f4df0baf-c787-4601-958f-98781b1640d8','8fb290c2-6411-4396-b7f9-f8eb8ade8868','demi378-bridge-f4df0baf-c787-4601-958f-98781b1640d8','synthetic-no-meta','529994812931','text','synthetic','DEMI378 synthetic text');",
+      "rows": []
+    },
+    {
+      "id": 27,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'f4df0baf-c787-4601-958f-98781b1640d8',p_token => '6cc3d746-0116-431a-9707-55607fd9988c',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "owned"
+          }
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_claim_current_text(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'f4df0baf-c787-4601-958f-98781b1640d8',p_claim_token => '6cc3d746-0116-431a-9707-55607fd9988c')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_authorize_text_send(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'f4df0baf-c787-4601-958f-98781b1640d8',p_claim_token => '6cc3d746-0116-431a-9707-55607fd9988c')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_finish_text_claim(p_claim_token => '6cc3d746-0116-431a-9707-55607fd9988c',p_state => 'uncertain',p_provider_message_id => null)) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'f4df0baf-c787-4601-958f-98781b1640d8',p_token => '6cc3d746-0116-431a-9707-55607fd9988c',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "released"
+          }
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'f4df0baf-c787-4601-958f-98781b1640d8',p_token => '03091179-b9bb-4fe0-83d6-b6aaebada2a2',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "sealed"
+          }
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "query": "insert into public.assistant_whatsapp_events(id,studio_id,provider_event_id,phone_number_id,contact_wa_id,message_type,payload_fingerprint,coordination_text) values ('4b0011d5-ba80-4000-9350-a0456f3eaba9','8fb290c2-6411-4396-b7f9-f8eb8ade8868','demi378-bridge-4b0011d5-ba80-4000-9350-a0456f3eaba9','synthetic-no-meta','529994812931','text','synthetic','DEMI378 synthetic text');",
+      "rows": []
+    },
+    {
+      "id": 34,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '4b0011d5-ba80-4000-9350-a0456f3eaba9',p_token => 'ccbcaa19-f88b-4993-a0b1-51417af85f19',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "owned"
+          }
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_claim_current_text(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '4b0011d5-ba80-4000-9350-a0456f3eaba9',p_claim_token => 'ccbcaa19-f88b-4993-a0b1-51417af85f19')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_authorize_text_send(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '4b0011d5-ba80-4000-9350-a0456f3eaba9',p_claim_token => 'ccbcaa19-f88b-4993-a0b1-51417af85f19')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 37,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_finish_text_claim(p_claim_token => 'ccbcaa19-f88b-4993-a0b1-51417af85f19',p_state => 'accepted',p_provider_message_id => 'uat:demi378:f354d8bb-1705-49b9-9843-36ea7a67ea35')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '4b0011d5-ba80-4000-9350-a0456f3eaba9',p_token => 'ccbcaa19-f88b-4993-a0b1-51417af85f19',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "released"
+          }
+        }
+      ]
+    },
+    {
+      "id": 39,
+      "query": "insert into public.assistant_whatsapp_events(id,studio_id,provider_event_id,phone_number_id,contact_wa_id,message_type,payload_fingerprint,coordination_text) values ('0cf77de0-5e6a-4411-9082-cd81d1c3b44b','8fb290c2-6411-4396-b7f9-f8eb8ade8868','demi378-bridge-0cf77de0-5e6a-4411-9082-cd81d1c3b44b','synthetic-no-meta','529994812931','text','synthetic','DEMI378 synthetic text');",
+      "rows": []
+    },
+    {
+      "id": 40,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '0cf77de0-5e6a-4411-9082-cd81d1c3b44b',p_token => '2f6a0d6a-c1c7-4d5d-8b4a-6cb7314e8c31',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "owned"
+          }
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_claim_current_text(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '0cf77de0-5e6a-4411-9082-cd81d1c3b44b',p_claim_token => '2f6a0d6a-c1c7-4d5d-8b4a-6cb7314e8c31')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_authorize_text_send(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '0cf77de0-5e6a-4411-9082-cd81d1c3b44b',p_claim_token => '2f6a0d6a-c1c7-4d5d-8b4a-6cb7314e8c31')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 43,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '0cf77de0-5e6a-4411-9082-cd81d1c3b44b',p_token => '2f6a0d6a-c1c7-4d5d-8b4a-6cb7314e8c31',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "released"
+          }
+        }
+      ]
+    },
+    {
+      "id": 44,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '0cf77de0-5e6a-4411-9082-cd81d1c3b44b',p_token => '037bf97c-35fb-4f75-931d-f25068b491dd',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "sealed"
+          }
+        }
+      ]
+    },
+    {
+      "id": 45,
+      "query": "insert into public.assistant_whatsapp_events(id,studio_id,provider_event_id,phone_number_id,contact_wa_id,message_type,payload_fingerprint,coordination_text) values ('7d46d187-c1a5-4517-a4e2-c4a3a5d5de0a','8fb290c2-6411-4396-b7f9-f8eb8ade8868','demi378-bridge-7d46d187-c1a5-4517-a4e2-c4a3a5d5de0a','synthetic-no-meta','529994812931','text','synthetic','DEMI378 synthetic text');",
+      "rows": []
+    },
+    {
+      "id": 46,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '7d46d187-c1a5-4517-a4e2-c4a3a5d5de0a',p_token => '8da55396-f849-4803-be09-00d9d0715492',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "owned"
+          }
+        }
+      ]
+    },
+    {
+      "id": 47,
+      "query": "update public.assistant_whatsapp_turn_owners set owner_until=clock_timestamp()-interval '1 second' where studio_id='8fb290c2-6411-4396-b7f9-f8eb8ade8868' and owner_token='8da55396-f849-4803-be09-00d9d0715492';",
+      "rows": []
+    },
+    {
+      "id": 48,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '7d46d187-c1a5-4517-a4e2-c4a3a5d5de0a',p_token => '4cf37b85-1b79-4ef5-8f4c-0d35aba3a052',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "owned"
+          }
+        }
+      ]
+    },
+    {
+      "id": 49,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '7d46d187-c1a5-4517-a4e2-c4a3a5d5de0a',p_token => '8da55396-f849-4803-be09-00d9d0715492',p_operation => 'current')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 50,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_claim_current_text(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '7d46d187-c1a5-4517-a4e2-c4a3a5d5de0a',p_claim_token => '4cf37b85-1b79-4ef5-8f4c-0d35aba3a052')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 51,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_authorize_text_send(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '7d46d187-c1a5-4517-a4e2-c4a3a5d5de0a',p_claim_token => '4cf37b85-1b79-4ef5-8f4c-0d35aba3a052')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 52,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_finish_text_claim(p_claim_token => '4cf37b85-1b79-4ef5-8f4c-0d35aba3a052',p_state => 'accepted',p_provider_message_id => 'uat:demi378:9364b71e-84dc-4b66-97b7-6ded79ecdb15')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 53,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '7d46d187-c1a5-4517-a4e2-c4a3a5d5de0a',p_token => '4cf37b85-1b79-4ef5-8f4c-0d35aba3a052',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "released"
+          }
+        }
+      ]
+    },
+    {
+      "id": 54,
+      "query": "insert into public.assistant_whatsapp_events(id,studio_id,provider_event_id,phone_number_id,contact_wa_id,message_type,payload_fingerprint,coordination_text) values ('75ae4dc7-cf4e-44ec-b255-ad19db7a08ec','8fb290c2-6411-4396-b7f9-f8eb8ade8868','demi378-bridge-75ae4dc7-cf4e-44ec-b255-ad19db7a08ec','synthetic-no-meta','529994812931','text','synthetic','DEMI378 synthetic text');",
+      "rows": []
+    },
+    {
+      "id": 55,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '75ae4dc7-cf4e-44ec-b255-ad19db7a08ec',p_token => 'e5cf611c-4e5d-4e38-bd53-99e3d1153a90',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "owned"
+          }
+        }
+      ]
+    },
+    {
+      "id": 57,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '7d46d187-c1a5-4517-a4e2-c4a3a5d5de0a',p_token => '8da55396-f849-4803-be09-00d9d0715492',p_operation => 'renew')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 56,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_claim_action(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '75ae4dc7-cf4e-44ec-b255-ad19db7a08ec',p_token => 'e5cf611c-4e5d-4e38-bd53-99e3d1153a90',p_action_key => '407ed6af9140cf5eddc9c3e7bcf72f1063fee067fbc541321da89959dac25573')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "claimed"
+          }
+        }
+      ]
+    },
+    {
+      "id": 58,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_finish_action(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '75ae4dc7-cf4e-44ec-b255-ad19db7a08ec',p_token => 'e5cf611c-4e5d-4e38-bd53-99e3d1153a90',p_action_key => '407ed6af9140cf5eddc9c3e7bcf72f1063fee067fbc541321da89959dac25573',p_result => '{\"ok\":true,\"synthetic_effect\":\"fa5a7d9f-8640-4ce0-928b-48ad70fc8610\"}')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 59,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_claim_action(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '75ae4dc7-cf4e-44ec-b255-ad19db7a08ec',p_token => 'e5cf611c-4e5d-4e38-bd53-99e3d1153a90',p_action_key => '407ed6af9140cf5eddc9c3e7bcf72f1063fee067fbc541321da89959dac25573')) as data;",
+      "rows": [
+        {
+          "data": {
+            "result": {
+              "ok": true,
+              "synthetic_effect": "fa5a7d9f-8640-4ce0-928b-48ad70fc8610"
+            },
+            "status": "completed"
+          }
+        }
+      ]
+    },
+    {
+      "id": 60,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_claim_action(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '75ae4dc7-cf4e-44ec-b255-ad19db7a08ec',p_token => 'e5cf611c-4e5d-4e38-bd53-99e3d1153a90',p_action_key => '7b1390a38004410fa80854d29c679d3f20f9b600d6dc55be793b6330c14eab24')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "claimed"
+          }
+        }
+      ]
+    },
+    {
+      "id": 61,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_claim_action(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '75ae4dc7-cf4e-44ec-b255-ad19db7a08ec',p_token => 'e5cf611c-4e5d-4e38-bd53-99e3d1153a90',p_action_key => '7b1390a38004410fa80854d29c679d3f20f9b600d6dc55be793b6330c14eab24')) as data;",
+      "rows": [
+        {
+          "data": {
+            "result": null,
+            "status": "started"
+          }
+        }
+      ]
+    },
+    {
+      "id": 62,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '75ae4dc7-cf4e-44ec-b255-ad19db7a08ec',p_token => 'e5cf611c-4e5d-4e38-bd53-99e3d1153a90',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "released"
+          }
+        }
+      ]
+    },
+    {
+      "id": 63,
+      "query": "select coalesce(jsonb_agg(to_jsonb(q)),'[]') as rows from (select \"id\",\"name\",\"timezone\",\"currency\" from public.\"studios\"  where \"id\"='8fb290c2-6411-4396-b7f9-f8eb8ade8868'  ) q;",
+      "rows": [
+        {
+          "rows": [
+            {
+              "id": "8fb290c2-6411-4396-b7f9-f8eb8ade8868",
+              "name": "DEMI378 synthetic concurrency UAT",
+              "currency": "MXN",
+              "timezone": "America/Mexico_City"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 64,
+      "query": "with q as (insert into public.\"assistant_whatsapp_events\"(\"studio_id\",\"provider\",\"provider_event_id\",\"phone_number_id\",\"contact_wa_id\",\"message_type\",\"body_preview\",\"media_id\",\"provider_timestamp\",\"payload_fingerprint\",\"processing_status\",\"coordination_text\") values ('8fb290c2-6411-4396-b7f9-f8eb8ade8868','meta_whatsapp','uat:demi378:a99a8107-c9ac-4974-b5a6-96d8358bd825:a','synthetic-phone','529990003782','text','DEMI378 Quiero información de Pole',null,null,'dd72fcdbc8525b14884dd583be55be88a8e7ce066a70c1a78e688b1d11b9fc9e','captured','DEMI378 Quiero información de Pole') returning *) select coalesce(jsonb_agg(to_jsonb(q)),'[]') as rows from q;",
+      "rows": [
+        {
+          "rows": [
+            {
+              "id": "bc559a5e-5a66-4ab1-a0c2-ffaa9fd06050",
+              "media_id": null,
+              "provider": "meta_whatsapp",
+              "studio_id": "8fb290c2-6411-4396-b7f9-f8eb8ade8868",
+              "updated_at": "2026-10-23T19:48:17.368642+00:00",
+              "received_at": "2026-10-23T19:48:17.368642+00:00",
+              "body_preview": "DEMI378 Quiero información de Pole",
+              "message_type": "text",
+              "processed_at": null,
+              "attempt_count": 0,
+              "contact_wa_id": "529990003782",
+              "inbound_turn_id": null,
+              "last_error_code": null,
+              "phone_number_id": "synthetic-phone",
+              "outbound_turn_id": null,
+              "coordination_text": "DEMI378 Quiero información de Pole",
+              "processing_result": {},
+              "processing_status": "captured",
+              "provider_event_id": "uat:demi378:a99a8107-c9ac-4974-b5a6-96d8358bd825:a",
+              "provider_timestamp": null,
+              "payload_fingerprint": "dd72fcdbc8525b14884dd583be55be88a8e7ce066a70c1a78e688b1d11b9fc9e",
+              "assistant_conversation_id": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 65,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'bc559a5e-5a66-4ab1-a0c2-ffaa9fd06050',p_token => '11aec834-4f15-49eb-85e3-7d612f679d30',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "owned"
+          }
+        }
+      ]
+    },
+    {
+      "id": 66,
+      "query": "with q as (update public.\"assistant_whatsapp_events\" set \"processing_status\"='processing',\"attempt_count\"='1',\"last_error_code\"=null  where \"studio_id\"='8fb290c2-6411-4396-b7f9-f8eb8ade8868' and \"id\"='bc559a5e-5a66-4ab1-a0c2-ffaa9fd06050' and \"processing_status\" in ('captured','error') returning *) select coalesce(jsonb_agg(to_jsonb(q)),'[]') as rows from q;",
+      "rows": [
+        {
+          "rows": [
+            {
+              "id": "bc559a5e-5a66-4ab1-a0c2-ffaa9fd06050",
+              "media_id": null,
+              "provider": "meta_whatsapp",
+              "studio_id": "8fb290c2-6411-4396-b7f9-f8eb8ade8868",
+              "updated_at": "2026-10-23T19:48:17.368642+00:00",
+              "received_at": "2026-10-23T19:48:17.368642+00:00",
+              "body_preview": "DEMI378 Quiero información de Pole",
+              "message_type": "text",
+              "processed_at": null,
+              "attempt_count": 1,
+              "contact_wa_id": "529990003782",
+              "inbound_turn_id": null,
+              "last_error_code": null,
+              "phone_number_id": "synthetic-phone",
+              "outbound_turn_id": null,
+              "coordination_text": "DEMI378 Quiero información de Pole",
+              "processing_result": {},
+              "processing_status": "processing",
+              "provider_event_id": "uat:demi378:a99a8107-c9ac-4974-b5a6-96d8358bd825:a",
+              "provider_timestamp": null,
+              "payload_fingerprint": "dd72fcdbc8525b14884dd583be55be88a8e7ce066a70c1a78e688b1d11b9fc9e",
+              "assistant_conversation_id": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 67,
+      "query": "select coalesce(jsonb_agg(to_jsonb(q)),'[]') as rows from (select \"id\",\"provider_event_id\",\"contact_wa_id\",\"message_type\",\"coordination_text\",\"body_preview\",\"provider_timestamp\" from public.\"assistant_whatsapp_events\"  where \"studio_id\"='8fb290c2-6411-4396-b7f9-f8eb8ade8868' and \"provider\"='meta_whatsapp' and \"message_type\"='text' and \"contact_wa_id\" in ('529990003782','5219990003782') and \"inbound_turn_id\" is null and \"id\"<>'bc559a5e-5a66-4ab1-a0c2-ffaa9fd06050' order by \"received_at\" asc limit 100) q;",
+      "rows": [
+        {
+          "rows": []
+        }
+      ]
+    },
+    {
+      "id": 68,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.service_prepare_meta_whatsapp_message(target_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',target_event_id => 'bc559a5e-5a66-4ab1-a0c2-ffaa9fd06050',target_provider_message_id => 'uat:demi378:a99a8107-c9ac-4974-b5a6-96d8358bd825:a',target_wa_id => '529990003782',target_profile_name => null,target_message_type => 'text',target_message_text => 'DEMI378 Quiero información de Pole',target_activity_at => '2026-10-23T19:48:20.199Z')) as data;",
+      "rows": [
+        {
+          "data": {
+            "ok": true,
+            "phone_e164": "+529990003782",
+            "student_id": null,
+            "handoff_open": false,
+            "crm_contact_id": "b844289a-ee2b-4764-8cf9-9c4b0b978fdf",
+            "inbound_turn_id": "c1400a34-e27e-48a0-9703-aae6462c03d7",
+            "crm_conversation_id": "99f67813-17b9-4983-9765-b217e97f87e3",
+            "identity_needs_name": true,
+            "assistant_conversation_id": "7bbfd1fc-3e16-4f93-ad7e-de412aca62a0"
+          }
+        }
+      ]
+    },
+    {
+      "id": 69,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '7d46d187-c1a5-4517-a4e2-c4a3a5d5de0a',p_token => '8da55396-f849-4803-be09-00d9d0715492',p_operation => 'renew')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 70,
+      "query": "with q as (update public.\"assistant_whatsapp_events\" set \"processing_status\"='ignored',\"processing_result\"='{\"outcome\":\"superseded_by_newer_message\",\"batch_id\":\"0d213f4f8d9ae9df2b16\",\"newer_provider_message_id\":\"uat:demi378:a99a8107-c9ac-4974-b5a6-96d8358bd825:b\",\"phase\":\"same_payload\"}',\"last_error_code\"=null,\"processed_at\"='2026-10-23T19:48:22.789Z',\"updated_at\"='2026-10-23T19:48:22.790Z'  where \"id\"='bc559a5e-5a66-4ab1-a0c2-ffaa9fd06050' and \"studio_id\"='8fb290c2-6411-4396-b7f9-f8eb8ade8868' returning *) select coalesce(jsonb_agg(to_jsonb(q)),'[]') as rows from q;",
+      "rows": [
+        {
+          "rows": [
+            {
+              "id": "bc559a5e-5a66-4ab1-a0c2-ffaa9fd06050",
+              "media_id": null,
+              "provider": "meta_whatsapp",
+              "studio_id": "8fb290c2-6411-4396-b7f9-f8eb8ade8868",
+              "updated_at": "2026-10-23T19:48:22.79+00:00",
+              "received_at": "2026-10-23T19:48:17.368642+00:00",
+              "body_preview": "DEMI378 Quiero información de Pole",
+              "message_type": "text",
+              "processed_at": "2026-10-23T19:48:22.789+00:00",
+              "attempt_count": 1,
+              "contact_wa_id": "529990003782",
+              "inbound_turn_id": "c1400a34-e27e-48a0-9703-aae6462c03d7",
+              "last_error_code": null,
+              "phone_number_id": "synthetic-phone",
+              "outbound_turn_id": null,
+              "coordination_text": "DEMI378 Quiero información de Pole",
+              "processing_result": {
+                "phase": "same_payload",
+                "outcome": "superseded_by_newer_message",
+                "batch_id": "0d213f4f8d9ae9df2b16",
+                "newer_provider_message_id": "uat:demi378:a99a8107-c9ac-4974-b5a6-96d8358bd825:b"
+              },
+              "processing_status": "ignored",
+              "provider_event_id": "uat:demi378:a99a8107-c9ac-4974-b5a6-96d8358bd825:a",
+              "provider_timestamp": null,
+              "payload_fingerprint": "dd72fcdbc8525b14884dd583be55be88a8e7ce066a70c1a78e688b1d11b9fc9e",
+              "assistant_conversation_id": "7bbfd1fc-3e16-4f93-ad7e-de412aca62a0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 71,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'bc559a5e-5a66-4ab1-a0c2-ffaa9fd06050',p_token => '11aec834-4f15-49eb-85e3-7d612f679d30',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "released"
+          }
+        }
+      ]
+    },
+    {
+      "id": 72,
+      "query": "with q as (insert into public.\"assistant_whatsapp_events\"(\"studio_id\",\"provider\",\"provider_event_id\",\"phone_number_id\",\"contact_wa_id\",\"message_type\",\"body_preview\",\"media_id\",\"provider_timestamp\",\"payload_fingerprint\",\"processing_status\",\"coordination_text\") values ('8fb290c2-6411-4396-b7f9-f8eb8ade8868','meta_whatsapp','uat:demi378:a99a8107-c9ac-4974-b5a6-96d8358bd825:b','synthetic-phone','529990003782','text','DEMI378 Horarios y ubicación',null,null,'4c42753e9e26fa5e6944ac9c1756ee3371f5794f3993dcef6dc311bcebf29a40','captured','DEMI378 Horarios y ubicación') returning *) select coalesce(jsonb_agg(to_jsonb(q)),'[]') as rows from q;",
+      "rows": [
+        {
+          "rows": [
+            {
+              "id": "2da41edf-00b8-471f-ac72-ff3a2193f694",
+              "media_id": null,
+              "provider": "meta_whatsapp",
+              "studio_id": "8fb290c2-6411-4396-b7f9-f8eb8ade8868",
+              "updated_at": "2026-10-23T19:48:26.238416+00:00",
+              "received_at": "2026-10-23T19:48:26.238416+00:00",
+              "body_preview": "DEMI378 Horarios y ubicación",
+              "message_type": "text",
+              "processed_at": null,
+              "attempt_count": 0,
+              "contact_wa_id": "529990003782",
+              "inbound_turn_id": null,
+              "last_error_code": null,
+              "phone_number_id": "synthetic-phone",
+              "outbound_turn_id": null,
+              "coordination_text": "DEMI378 Horarios y ubicación",
+              "processing_result": {},
+              "processing_status": "captured",
+              "provider_event_id": "uat:demi378:a99a8107-c9ac-4974-b5a6-96d8358bd825:b",
+              "provider_timestamp": null,
+              "payload_fingerprint": "4c42753e9e26fa5e6944ac9c1756ee3371f5794f3993dcef6dc311bcebf29a40",
+              "assistant_conversation_id": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 73,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '2da41edf-00b8-471f-ac72-ff3a2193f694',p_token => '5a6f698b-35c6-4a1f-ba3f-0570697b1021',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "owned"
+          }
+        }
+      ]
+    },
+    {
+      "id": 74,
+      "query": "with q as (update public.\"assistant_whatsapp_events\" set \"processing_status\"='processing',\"attempt_count\"='1',\"last_error_code\"=null  where \"studio_id\"='8fb290c2-6411-4396-b7f9-f8eb8ade8868' and \"id\"='2da41edf-00b8-471f-ac72-ff3a2193f694' and \"processing_status\" in ('captured','error') returning *) select coalesce(jsonb_agg(to_jsonb(q)),'[]') as rows from q;",
+      "rows": [
+        {
+          "rows": [
+            {
+              "id": "2da41edf-00b8-471f-ac72-ff3a2193f694",
+              "media_id": null,
+              "provider": "meta_whatsapp",
+              "studio_id": "8fb290c2-6411-4396-b7f9-f8eb8ade8868",
+              "updated_at": "2026-10-23T19:48:26.238416+00:00",
+              "received_at": "2026-10-23T19:48:26.238416+00:00",
+              "body_preview": "DEMI378 Horarios y ubicación",
+              "message_type": "text",
+              "processed_at": null,
+              "attempt_count": 1,
+              "contact_wa_id": "529990003782",
+              "inbound_turn_id": null,
+              "last_error_code": null,
+              "phone_number_id": "synthetic-phone",
+              "outbound_turn_id": null,
+              "coordination_text": "DEMI378 Horarios y ubicación",
+              "processing_result": {},
+              "processing_status": "processing",
+              "provider_event_id": "uat:demi378:a99a8107-c9ac-4974-b5a6-96d8358bd825:b",
+              "provider_timestamp": null,
+              "payload_fingerprint": "4c42753e9e26fa5e6944ac9c1756ee3371f5794f3993dcef6dc311bcebf29a40",
+              "assistant_conversation_id": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 75,
+      "query": "select coalesce(jsonb_agg(to_jsonb(q)),'[]') as rows from (select \"id\",\"provider_event_id\",\"contact_wa_id\",\"message_type\",\"coordination_text\",\"body_preview\",\"provider_timestamp\" from public.\"assistant_whatsapp_events\"  where \"studio_id\"='8fb290c2-6411-4396-b7f9-f8eb8ade8868' and \"provider\"='meta_whatsapp' and \"message_type\"='text' and \"contact_wa_id\" in ('529990003782','5219990003782') and \"inbound_turn_id\" is null and \"id\"<>'2da41edf-00b8-471f-ac72-ff3a2193f694' order by \"received_at\" asc limit 100) q;",
+      "rows": [
+        {
+          "rows": []
+        }
+      ]
+    },
+    {
+      "id": 76,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.service_prepare_meta_whatsapp_message(target_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',target_event_id => '2da41edf-00b8-471f-ac72-ff3a2193f694',target_provider_message_id => 'uat:demi378:a99a8107-c9ac-4974-b5a6-96d8358bd825:b',target_wa_id => '529990003782',target_profile_name => null,target_message_type => 'text',target_message_text => 'DEMI378 Horarios y ubicación',target_activity_at => '2026-10-23T19:48:30.226Z')) as data;",
+      "rows": [
+        {
+          "data": {
+            "ok": true,
+            "phone_e164": "+529990003782",
+            "student_id": null,
+            "handoff_open": false,
+            "crm_contact_id": "b844289a-ee2b-4764-8cf9-9c4b0b978fdf",
+            "inbound_turn_id": "d957b37c-7eb8-4df9-b329-0da6d28f6aa6",
+            "crm_conversation_id": "99f67813-17b9-4983-9765-b217e97f87e3",
+            "identity_needs_name": true,
+            "assistant_conversation_id": "7bbfd1fc-3e16-4f93-ad7e-de412aca62a0"
+          }
+        }
+      ]
+    },
+    {
+      "id": 77,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '7d46d187-c1a5-4517-a4e2-c4a3a5d5de0a',p_token => '8da55396-f849-4803-be09-00d9d0715492',p_operation => 'renew')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 78,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '2da41edf-00b8-471f-ac72-ff3a2193f694',p_token => '5a6f698b-35c6-4a1f-ba3f-0570697b1021',p_operation => 'current')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "current",
+            "generation": 2,
+            "last_text_at": "2026-10-23T19:48:26.241961+00:00",
+            "burst_started_at": "2026-10-23T19:48:26.241961+00:00",
+            "current_event_id": "2da41edf-00b8-471f-ac72-ff3a2193f694"
+          }
+        }
+      ]
+    },
+    {
+      "id": 79,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '2da41edf-00b8-471f-ac72-ff3a2193f694',p_token => '5a6f698b-35c6-4a1f-ba3f-0570697b1021',p_operation => 'current')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "current",
+            "generation": 2,
+            "last_text_at": "2026-10-23T19:48:26.241961+00:00",
+            "burst_started_at": "2026-10-23T19:48:26.241961+00:00",
+            "current_event_id": "2da41edf-00b8-471f-ac72-ff3a2193f694"
+          }
+        }
+      ]
+    },
+    {
+      "id": 80,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_claim_action(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '2da41edf-00b8-471f-ac72-ff3a2193f694',p_token => '5a6f698b-35c6-4a1f-ba3f-0570697b1021',p_action_key => '96936446390e9933644b422b10c542a3d2f48ca79d52de76c6c7fd3fa31a5791')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "claimed"
+          }
+        }
+      ]
+    },
+    {
+      "id": 81,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_finish_action(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '2da41edf-00b8-471f-ac72-ff3a2193f694',p_token => '5a6f698b-35c6-4a1f-ba3f-0570697b1021',p_action_key => '96936446390e9933644b422b10c542a3d2f48ca79d52de76c6c7fd3fa31a5791',p_result => null)) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 82,
+      "query": "select coalesce(jsonb_agg(to_jsonb(q)),'[]') as rows from (select \"role\",\"content\",\"created_at\" from public.\"assistant_turns\"  where \"studio_id\"='8fb290c2-6411-4396-b7f9-f8eb8ade8868' and \"conversation_id\"='7bbfd1fc-3e16-4f93-ad7e-de412aca62a0' and \"role\" in ('user','assistant') order by \"created_at\" desc limit 12) q;",
+      "rows": [
+        {
+          "rows": [
+            {
+              "role": "user",
+              "content": "DEMI378 Horarios y ubicación",
+              "created_at": "2026-10-23T19:48:30.226+00:00"
+            },
+            {
+              "role": "user",
+              "content": "DEMI378 Quiero información de Pole",
+              "created_at": "2026-10-23T19:48:20.199+00:00"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 83,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '2da41edf-00b8-471f-ac72-ff3a2193f694',p_token => '5a6f698b-35c6-4a1f-ba3f-0570697b1021',p_operation => 'current')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "current",
+            "generation": 2,
+            "last_text_at": "2026-10-23T19:48:26.241961+00:00",
+            "burst_started_at": "2026-10-23T19:48:26.241961+00:00",
+            "current_event_id": "2da41edf-00b8-471f-ac72-ff3a2193f694"
+          }
+        }
+      ]
+    },
+    {
+      "id": 84,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '2da41edf-00b8-471f-ac72-ff3a2193f694',p_token => '5a6f698b-35c6-4a1f-ba3f-0570697b1021',p_operation => 'renew')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "current",
+            "generation": 2,
+            "last_text_at": "2026-10-23T19:48:26.241961+00:00",
+            "burst_started_at": "2026-10-23T19:48:26.241961+00:00",
+            "current_event_id": "2da41edf-00b8-471f-ac72-ff3a2193f694"
+          }
+        }
+      ]
+    },
+    {
+      "id": 85,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '2da41edf-00b8-471f-ac72-ff3a2193f694',p_token => '5a6f698b-35c6-4a1f-ba3f-0570697b1021',p_operation => 'current')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "current",
+            "generation": 2,
+            "last_text_at": "2026-10-23T19:48:26.241961+00:00",
+            "burst_started_at": "2026-10-23T19:48:26.241961+00:00",
+            "current_event_id": "2da41edf-00b8-471f-ac72-ff3a2193f694"
+          }
+        }
+      ]
+    },
+    {
+      "id": 86,
+      "query": "with q as (update public.\"assistant_whatsapp_events\" set \"processing_result\"='{\"outcome\":\"reply_prepared\",\"cached_reply\":\"DEMI378 synthetic consolidated response\"}',\"updated_at\"='2026-10-23T19:48:38.524Z'  where \"id\"='2da41edf-00b8-471f-ac72-ff3a2193f694' and \"studio_id\"='8fb290c2-6411-4396-b7f9-f8eb8ade8868' returning *) select coalesce(jsonb_agg(to_jsonb(q)),'[]') as rows from q;",
+      "rows": [
+        {
+          "rows": [
+            {
+              "id": "2da41edf-00b8-471f-ac72-ff3a2193f694",
+              "media_id": null,
+              "provider": "meta_whatsapp",
+              "studio_id": "8fb290c2-6411-4396-b7f9-f8eb8ade8868",
+              "updated_at": "2026-10-23T19:48:38.524+00:00",
+              "received_at": "2026-10-23T19:48:26.238416+00:00",
+              "body_preview": "DEMI378 Horarios y ubicación",
+              "message_type": "text",
+              "processed_at": null,
+              "attempt_count": 1,
+              "contact_wa_id": "529990003782",
+              "inbound_turn_id": "d957b37c-7eb8-4df9-b329-0da6d28f6aa6",
+              "last_error_code": null,
+              "phone_number_id": "synthetic-phone",
+              "outbound_turn_id": null,
+              "coordination_text": "DEMI378 Horarios y ubicación",
+              "processing_result": {
+                "outcome": "reply_prepared",
+                "cached_reply": "DEMI378 synthetic consolidated response"
+              },
+              "processing_status": "processing",
+              "provider_event_id": "uat:demi378:a99a8107-c9ac-4974-b5a6-96d8358bd825:b",
+              "provider_timestamp": null,
+              "payload_fingerprint": "4c42753e9e26fa5e6944ac9c1756ee3371f5794f3993dcef6dc311bcebf29a40",
+              "assistant_conversation_id": "7bbfd1fc-3e16-4f93-ad7e-de412aca62a0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 87,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_claim_current_text(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '2da41edf-00b8-471f-ac72-ff3a2193f694',p_claim_token => '5a6f698b-35c6-4a1f-ba3f-0570697b1021')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 88,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_authorize_text_send(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '2da41edf-00b8-471f-ac72-ff3a2193f694',p_claim_token => '5a6f698b-35c6-4a1f-ba3f-0570697b1021')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 89,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '7d46d187-c1a5-4517-a4e2-c4a3a5d5de0a',p_token => '8da55396-f849-4803-be09-00d9d0715492',p_operation => 'renew')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 90,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_finish_text_claim(p_claim_token => '5a6f698b-35c6-4a1f-ba3f-0570697b1021',p_state => 'accepted',p_provider_message_id => 'uat:demi378:webhook:5097b013-da64-41bd-abc6-444cfa96aa80')) as data;",
+      "rows": [
+        {
+          "data": true
+        }
+      ]
+    },
+    {
+      "id": 91,
+      "query": "with q as (insert into public.\"assistant_turns\"(\"studio_id\",\"conversation_id\",\"direction\",\"role\",\"content\",\"sanitized\",\"channel_message_ref\") values ('8fb290c2-6411-4396-b7f9-f8eb8ade8868','7bbfd1fc-3e16-4f93-ad7e-de412aca62a0','outbound','assistant','DEMI378 synthetic consolidated response','true','uat:demi378:webhook:5097b013-da64-41bd-abc6-444cfa96aa80') returning *) select coalesce(jsonb_agg(to_jsonb(q)),'[]') as rows from q;",
+      "rows": [
+        {
+          "rows": [
+            {
+              "id": "4b16131f-d0bb-4547-aa11-3b5b9879b675",
+              "role": "assistant",
+              "content": "DEMI378 synthetic consolidated response",
+              "direction": "outbound",
+              "sanitized": true,
+              "studio_id": "8fb290c2-6411-4396-b7f9-f8eb8ade8868",
+              "created_at": "2026-10-23T19:48:42.908695+00:00",
+              "conversation_id": "7bbfd1fc-3e16-4f93-ad7e-de412aca62a0",
+              "channel_message_ref": "uat:demi378:webhook:5097b013-da64-41bd-abc6-444cfa96aa80"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 92,
+      "query": "with q as (insert into public.\"assistant_whatsapp_deliveries\"(\"studio_id\",\"event_id\",\"conversation_id\",\"turn_id\",\"recipient_wa_id\",\"provider_message_id\",\"text_fingerprint\",\"attempt_number\",\"status\",\"error_code\",\"http_status\",\"response_snapshot\") values ('8fb290c2-6411-4396-b7f9-f8eb8ade8868','2da41edf-00b8-471f-ac72-ff3a2193f694','7bbfd1fc-3e16-4f93-ad7e-de412aca62a0','4b16131f-d0bb-4547-aa11-3b5b9879b675','529990003782','uat:demi378:webhook:5097b013-da64-41bd-abc6-444cfa96aa80','3d74d4449ace34114ecff5617a03241c5304b41e91129a2019287e9da5c454b2','1','accepted',null,'200','{\"simulated\":true}') returning *) select coalesce(jsonb_agg(to_jsonb(q)),'[]') as rows from q;",
+      "rows": [
+        {
+          "rows": [
+            {
+              "id": "1a888e99-24b4-4980-b675-ff498a762b58",
+              "status": "accepted",
+              "turn_id": "4b16131f-d0bb-4547-aa11-3b5b9879b675",
+              "event_id": "2da41edf-00b8-471f-ac72-ff3a2193f694",
+              "studio_id": "8fb290c2-6411-4396-b7f9-f8eb8ade8868",
+              "created_at": "2026-10-23T19:48:43.720687+00:00",
+              "error_code": null,
+              "http_status": 200,
+              "attempt_number": 1,
+              "conversation_id": "7bbfd1fc-3e16-4f93-ad7e-de412aca62a0",
+              "recipient_wa_id": "529990003782",
+              "text_fingerprint": "3d74d4449ace34114ecff5617a03241c5304b41e91129a2019287e9da5c454b2",
+              "response_snapshot": {
+                "simulated": true
+              },
+              "provider_message_id": "uat:demi378:webhook:5097b013-da64-41bd-abc6-444cfa96aa80"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 93,
+      "query": "with q as (update public.\"assistant_conversations\" set \"last_activity_at\"='2026-10-23T19:48:43.828Z',\"updated_at\"='2026-10-23T19:48:43.828Z'  where \"id\"='7bbfd1fc-3e16-4f93-ad7e-de412aca62a0' and \"studio_id\"='8fb290c2-6411-4396-b7f9-f8eb8ade8868' returning *) select coalesce(jsonb_agg(to_jsonb(q)),'[]') as rows from q;",
+      "rows": [
+        {
+          "rows": [
+            {
+              "id": "7bbfd1fc-3e16-4f93-ad7e-de412aca62a0",
+              "status": "open",
+              "channel": "whatsapp",
+              "context": {
+                "provider": "meta_whatsapp",
+                "contact_phone": "+529990003782",
+                "crm_contact_id": "b844289a-ee2b-4764-8cf9-9c4b0b978fdf",
+                "identity_needs_name": true
+              },
+              "studio_id": "8fb290c2-6411-4396-b7f9-f8eb8ade8868",
+              "created_at": "2026-10-23T19:48:21.205442+00:00",
+              "started_at": "2026-10-23T19:48:21.205441+00:00",
+              "student_id": null,
+              "updated_at": "2026-10-23T19:48:43.828+00:00",
+              "assistant_key": "demi",
+              "last_activity_at": "2026-10-23T19:48:43.828+00:00",
+              "crm_conversation_id": "99f67813-17b9-4983-9765-b217e97f87e3",
+              "external_thread_ref": "529990003782",
+              "workbench_lock_until": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 94,
+      "query": "with q as (update public.\"assistant_whatsapp_events\" set \"processing_status\"='processed',\"outbound_turn_id\"='4b16131f-d0bb-4547-aa11-3b5b9879b675',\"processing_result\"='{\"outcome\":\"replied\",\"provider_message_id\":\"uat:demi378:webhook:5097b013-da64-41bd-abc6-444cfa96aa80\",\"trace\":{\"simulated_model\":true}}',\"last_error_code\"=null,\"processed_at\"='2026-10-23T19:48:44.667Z',\"updated_at\"='2026-10-23T19:48:44.667Z'  where \"id\"='2da41edf-00b8-471f-ac72-ff3a2193f694' and \"studio_id\"='8fb290c2-6411-4396-b7f9-f8eb8ade8868' returning *) select coalesce(jsonb_agg(to_jsonb(q)),'[]') as rows from q;",
+      "rows": [
+        {
+          "rows": [
+            {
+              "id": "2da41edf-00b8-471f-ac72-ff3a2193f694",
+              "media_id": null,
+              "provider": "meta_whatsapp",
+              "studio_id": "8fb290c2-6411-4396-b7f9-f8eb8ade8868",
+              "updated_at": "2026-10-23T19:48:44.667+00:00",
+              "received_at": "2026-10-23T19:48:26.238416+00:00",
+              "body_preview": "DEMI378 Horarios y ubicación",
+              "message_type": "text",
+              "processed_at": "2026-10-23T19:48:44.667+00:00",
+              "attempt_count": 1,
+              "contact_wa_id": "529990003782",
+              "inbound_turn_id": "d957b37c-7eb8-4df9-b329-0da6d28f6aa6",
+              "last_error_code": null,
+              "phone_number_id": "synthetic-phone",
+              "outbound_turn_id": "4b16131f-d0bb-4547-aa11-3b5b9879b675",
+              "coordination_text": "DEMI378 Horarios y ubicación",
+              "processing_result": {
+                "trace": {
+                  "simulated_model": true
+                },
+                "outcome": "replied",
+                "provider_message_id": "uat:demi378:webhook:5097b013-da64-41bd-abc6-444cfa96aa80"
+              },
+              "processing_status": "processed",
+              "provider_event_id": "uat:demi378:a99a8107-c9ac-4974-b5a6-96d8358bd825:b",
+              "provider_timestamp": null,
+              "payload_fingerprint": "4c42753e9e26fa5e6944ac9c1756ee3371f5794f3993dcef6dc311bcebf29a40",
+              "assistant_conversation_id": "7bbfd1fc-3e16-4f93-ad7e-de412aca62a0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 95,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '2da41edf-00b8-471f-ac72-ff3a2193f694',p_token => '5a6f698b-35c6-4a1f-ba3f-0570697b1021',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "released"
+          }
+        }
+      ]
+    },
+    {
+      "id": 96,
+      "query": "select coalesce(jsonb_agg(to_jsonb(q)),'[]') as rows from (select \"id\",\"name\",\"timezone\",\"currency\" from public.\"studios\"  where \"id\"='8fb290c2-6411-4396-b7f9-f8eb8ade8868'  ) q;",
+      "rows": [
+        {
+          "rows": [
+            {
+              "id": "8fb290c2-6411-4396-b7f9-f8eb8ade8868",
+              "name": "DEMI378 synthetic concurrency UAT",
+              "currency": "MXN",
+              "timezone": "America/Mexico_City"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 97,
+      "error": "Error: {\"error\":{\"name\":\"HttpException\",\"message\":\"Failed to run sql query: ERROR:  23505: duplicate key value violates unique constraint \\\"assistant_whatsapp_events_studio_id_provider_provider_event_key\\\"\\nDETAIL:  Key (studio_id, provider, provider_event_id)=(8fb290c2-6411-4396-b7f9-f8eb8ade8868, meta_whatsapp, uat:demi378:a99a8107-c9ac-4974-b5a6-96d8358bd825:b) already exists.\\n\"}}"
+    },
+    {
+      "id": 98,
+      "query": "select coalesce(jsonb_agg(to_jsonb(q)),'[]') as rows from (select \"id\",\"processing_status\",\"attempt_count\",\"assistant_conversation_id\",\"inbound_turn_id\",\"outbound_turn_id\",\"processing_result\",\"received_at\" from public.\"assistant_whatsapp_events\"  where \"studio_id\"='8fb290c2-6411-4396-b7f9-f8eb8ade8868' and \"provider\"='meta_whatsapp' and \"provider_event_id\"='uat:demi378:a99a8107-c9ac-4974-b5a6-96d8358bd825:b'  ) q;",
+      "rows": [
+        {
+          "rows": [
+            {
+              "id": "2da41edf-00b8-471f-ac72-ff3a2193f694",
+              "received_at": "2026-10-23T19:48:26.238416+00:00",
+              "attempt_count": 1,
+              "inbound_turn_id": "d957b37c-7eb8-4df9-b329-0da6d28f6aa6",
+              "outbound_turn_id": "4b16131f-d0bb-4547-aa11-3b5b9879b675",
+              "processing_result": {
+                "trace": {
+                  "simulated_model": true
+                },
+                "outcome": "replied",
+                "provider_message_id": "uat:demi378:webhook:5097b013-da64-41bd-abc6-444cfa96aa80"
+              },
+              "processing_status": "processed",
+              "assistant_conversation_id": "7bbfd1fc-3e16-4f93-ad7e-de412aca62a0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 99,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '7d46d187-c1a5-4517-a4e2-c4a3a5d5de0a',p_token => '8da55396-f849-4803-be09-00d9d0715492',p_operation => 'renew')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 100,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '2da41edf-00b8-471f-ac72-ff3a2193f694',p_token => '88494df4-372a-4513-8c53-0e95cabfbd31',p_operation => 'acquire')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "sealed"
+          }
+        }
+      ]
+    },
+    {
+      "id": 101,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '2da41edf-00b8-471f-ac72-ff3a2193f694',p_token => '88494df4-372a-4513-8c53-0e95cabfbd31',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 102,
+      "query": "select count(*)::int as count from public.assistant_turns where studio_id='8fb290c2-6411-4396-b7f9-f8eb8ade8868' and channel_message_ref like 'uat:demi378:webhook:%';",
+      "rows": [
+        {
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": 104,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_token => '665279f0-9001-4316-8a37-701ca81e30cf',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 103,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_token => '583da77a-e526-4c90-a458-dd6d31c9424a',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 106,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_token => '36ddbca3-b7c8-4852-80a3-92cf5c32a798',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 110,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '771babec-cd89-4bee-8809-27ffae1b224d',p_token => 'f7965464-171c-4497-ae1b-0ee74baedf71',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 108,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_token => '81eba2f5-5856-4472-a7d5-f26d3ed1e32d',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 107,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_token => 'a4e032e6-84b0-4ea1-b99b-456249b4d3f7',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 109,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_token => '5a92ee89-0a8d-4751-abde-914a738ac66d',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 111,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '3136e3ed-58b0-46dd-8179-722e2e777199',p_token => '2343f07e-b938-4291-97bf-ac41b2330315',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 105,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'cc625aaa-296a-4d06-a8b1-ea83492d6501',p_token => 'a854a7d5-33bd-4f03-8d20-6533f30739f4',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 113,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'f4df0baf-c787-4601-958f-98781b1640d8',p_token => '03091179-b9bb-4fe0-83d6-b6aaebada2a2',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 118,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '7d46d187-c1a5-4517-a4e2-c4a3a5d5de0a',p_token => '4cf37b85-1b79-4ef5-8f4c-0d35aba3a052',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 115,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '0cf77de0-5e6a-4411-9082-cd81d1c3b44b',p_token => '2f6a0d6a-c1c7-4d5d-8b4a-6cb7314e8c31',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 112,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => 'f4df0baf-c787-4601-958f-98781b1640d8',p_token => '6cc3d746-0116-431a-9707-55607fd9988c',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 114,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '4b0011d5-ba80-4000-9350-a0456f3eaba9',p_token => 'ccbcaa19-f88b-4993-a0b1-51417af85f19',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 119,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '75ae4dc7-cf4e-44ec-b255-ad19db7a08ec',p_token => 'e5cf611c-4e5d-4e38-bd53-99e3d1153a90',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 116,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '0cf77de0-5e6a-4411-9082-cd81d1c3b44b',p_token => '037bf97c-35fb-4f75-931d-f25068b491dd',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 117,
+      "query": "select set_config('request.jwt.claim.role','service_role',true); select to_jsonb(public.assistant_whatsapp_coordinate(p_studio_id => '8fb290c2-6411-4396-b7f9-f8eb8ade8868',p_event_id => '7d46d187-c1a5-4517-a4e2-c4a3a5d5de0a',p_token => '8da55396-f849-4803-be09-00d9d0715492',p_operation => 'release')) as data;",
+      "rows": [
+        {
+          "data": {
+            "status": "lost"
+          }
+        }
+      ]
+    }
+  ]
+}
