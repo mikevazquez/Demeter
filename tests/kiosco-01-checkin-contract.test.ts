@@ -44,7 +44,7 @@ describe("KIOSCO-01 check-in contracts", () => {
     expect(migration).toContain("new.status = 'cancelled'");
   });
 
-  it("preserves the historical 20/30-minute migrations", () => {
+  it("opens check-in 20 minutes before and closes 30 minutes after class start", () => {
     expect(checkinWindowMigration).toContain("v_session.starts_at - interval ''20 minutes''");
     expect(checkinWindowMigration).toContain("v_session.starts_at + interval ''30 minutes''");
     expect(availableAtMigration).toContain("v_session.starts_at - interval ''20 minutes''");
