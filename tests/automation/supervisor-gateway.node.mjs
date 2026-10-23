@@ -23,7 +23,9 @@ const plan = () => ({
       required_capabilities: ["reasoning"],
       required_permissions: ["repository:read"],
       allowed_paths: ["docs/automation/"],
-      required_checks: [{ name: "supervisor-tests", app_slug: "github-actions" }],
+      required_checks: [
+        { name: "supervisor-tests", app_slug: "github-actions" },
+      ],
       acceptance_criteria: ["El análisis conserva alcance y evidencia."],
       definition_of_done: ["Existe un resultado verificable."],
       forbidden: ["Producción"],
@@ -35,7 +37,10 @@ const plan = () => ({
 test("gateway intake rejects worker/provider pinning", () => {
   const pinned = plan();
   pinned.blocks[0].preferred_worker = "codex";
-  assert.throws(() => validateGatewayPlan(pinned), /Worker selection is forbidden at intake/);
+  assert.throws(
+    () => validateGatewayPlan(pinned),
+    /Worker selection is forbidden at intake/,
+  );
 });
 
 test("gateway creates neutral supervisor contracts", () => {
@@ -103,7 +108,9 @@ test("scarce worker remains eligible when it is the only worker meeting the floo
   const [result] = routeGatewayContracts(contracts, workers);
   assert.equal(result.routing.assignedWorker, "codex-engineering-worker");
   assert.match(
-    result.routing.evaluations.find((entry) => entry.workerId === "gpt-supervisor-worker").reasons.join(","),
+    result.routing.evaluations
+      .find((entry) => entry.workerId === "gpt-supervisor-worker")
+      .reasons.join(","),
     /below_quality_floor/,
   );
 });
