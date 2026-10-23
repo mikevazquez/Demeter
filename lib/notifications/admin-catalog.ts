@@ -1,11 +1,6 @@
 export type NotificationChannelKey = "inbox" | "push" | "whatsapp" | "email";
 export type NotificationProcessCategory =
-  | "reservas"
-  | "paquetes"
-  | "evaluaciones"
-  | "documentos"
-  | "cuenta"
-  | "equipo";
+  "reservas" | "paquetes" | "evaluaciones" | "documentos" | "cuenta" | "equipo";
 
 export const NOTIFICATION_EMOJI_BY_KEY: Readonly<Record<string, string>> = {
   "reservation-confirmed": "✅",

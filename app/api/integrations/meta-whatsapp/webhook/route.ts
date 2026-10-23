@@ -1880,10 +1880,7 @@ export async function POST(request: Request) {
           assistant_name: runtimeContext.config.assistant_name,
           model: runtimeContext.config.model,
           reasoning_effort: runtimeContext.config.reasoning_effort as
-            | "none"
-            | "low"
-            | "medium"
-            | "high",
+            "none" | "low" | "medium" | "high",
           personality_instructions: runtimeContext.config.personality_instructions,
           monthly_budget_usd_micros: runtimeContext.config.monthly_budget_usd_micros,
           conversation_budget_usd_micros: runtimeContext.config.conversation_budget_usd_micros,
