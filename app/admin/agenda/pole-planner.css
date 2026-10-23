@@ -1,0 +1,313 @@
+/* POLE-FIGURAS-01 · Sección de combos en el detalle de sesión.
+   Usa los tokens del sistema admin V2 (admin-v2-system.css): --accent, --line, --muted… */
+
+.pole-planner {
+  display: grid;
+  gap: 18px;
+}
+
+.pole-planner-head,
+.pole-group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pole-planner-head h2,
+.pole-group-head h3 {
+  margin: 0;
+}
+
+.pole-planner-head p,
+.pole-group-head small {
+  display: block;
+  margin: 6px 0 0;
+  max-width: 68ch;
+}
+
+.pole-planner-message {
+  width: fit-content;
+  max-width: 100%;
+  white-space: normal;
+  line-height: 1.4;
+}
+
+.pole-student-list,
+.pole-sequence,
+.pole-validation {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pole-student-list {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+}
+
+.pole-student-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.pole-avatar {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 800;
+}
+
+.pole-student-copy {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.pole-student-copy small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pole-group {
+  display: grid;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.pole-group-head > div:first-child {
+  display: grid;
+  gap: 6px;
+}
+
+.pole-group-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pole-sequence {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.pole-sequence li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.pole-sequence li:first-child {
+  border-top: 0;
+}
+
+.pole-sequence li.is-new {
+  background: var(--accent-soft);
+}
+
+.pole-sequence-number {
+  width: 22px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.pole-sequence-copy {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.pole-sequence-copy small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pole-badge-new {
+  border-color: transparent;
+  background: var(--accent);
+  color: #fff;
+}
+
+.pole-why {
+  margin: 0;
+  font-size: 13px;
+}
+
+.pole-validation {
+  display: grid;
+  gap: 8px;
+}
+
+.pole-validation li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.pole-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pole-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.pole-pro-controls {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  align-items: end;
+}
+
+.pole-pro-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.pole-pro-controls p {
+  margin: 0;
+}
+
+/* Catálogo de figuras (Evaluaciones → Figuras de Pole) */
+.pole-catalog-disciplines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pole-catalog-disciplines a {
+  text-decoration: none;
+}
+
+.pole-catalog-stats {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+}
+
+.pole-catalog-stat {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.pole-catalog-stat small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pole-catalog-stat strong {
+  font-size: 26px;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.pole-catalog-stat span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pole-catalog-filters {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  align-items: end;
+}
+
+.pole-catalog-filters label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.pole-catalog-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.pole-catalog-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.pole-catalog-table th,
+.pole-catalog-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.pole-catalog-table th {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--surface-2);
+}
+
+.pole-catalog-table td small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pole-catalog-table tbody tr:last-child td {
+  border-bottom: 0;
+}
