@@ -9,6 +9,7 @@ import {
   countSeatOccupyingReservations,
 } from "@/lib/reservations/capacity";
 import { SessionOperations } from "../../hoy/SessionOperations";
+import PoleClassComboPanel from "./PoleClassComboPanel";
 import { cancelSession, setMinimumOverride, updateSession } from "./actions";
 
 function formatExpiry(value: string | null) {
@@ -562,6 +563,15 @@ export default async function SessionDetailPage({
           ) : null}
         </section>
       ) : null}
+
+      <PoleClassComboPanel
+        sessionId={sessionId}
+        disciplineId={template?.discipline_id ?? null}
+        roster={roster.flatMap((item) =>
+          item.studentId ? [{ studentId: item.studentId, name: item.studentName }] : [],
+        )}
+        canWrite={can(CAPABILITIES.EVALUATIONS_WRITE)}
+      />
 
       <section className="panel admin-class-operations-panel">
         <SessionOperations

@@ -1,0 +1,273 @@
+/* POLE-01-12 · Obligatorias por nivel · Sendero (same palette as the Pole catalog). */
+.page {
+  min-height: 100%;
+  padding: 28px 16px 48px;
+  background:
+    radial-gradient(circle at 82% 2%, rgba(205, 184, 236, 0.12), transparent 30%),
+    linear-gradient(180deg, #1d1e23, #22232a 62%, #2a2834);
+  color: #f1eee6;
+  font-family: "Sendero Montserrat", system-ui, sans-serif;
+}
+
+.wrap {
+  max-width: 880px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.back {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: #8fe6c8;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.eyebrow {
+  color: #a3a6b2;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.header h1 {
+  margin: 0;
+  font-family: "Sendero Marcellus", Georgia, serif;
+  font-size: clamp(30px, 6vw, 40px);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.lede {
+  margin: 0;
+  max-width: 640px;
+  color: #cfd0d8;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.success,
+.error {
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.success {
+  background: rgba(143, 230, 200, 0.14);
+  color: #b9f2e0;
+}
+
+.error {
+  background: rgba(150, 62, 81, 0.25);
+  color: #f3dde2;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  color: #cfd0d8;
+  font-size: 14px;
+}
+
+.levels {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.level {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  background: #2a2c33;
+}
+
+.levelHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.levelHead h2 {
+  margin: 0;
+  font-family: "Sendero Marcellus", Georgia, serif;
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.meta {
+  margin: 4px 0 0;
+  color: #a3a6b2;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.missing {
+  background: rgba(242, 138, 122, 0.16);
+  color: #f6b3a8;
+}
+
+.proposed,
+.partial {
+  background: rgba(246, 214, 122, 0.16);
+  color: #f6d67a;
+}
+
+.ready {
+  background: rgba(143, 230, 200, 0.16);
+  color: #8fe6c8;
+}
+
+.minimum,
+.add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.minimum label,
+.add label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 200px;
+  color: #a3a6b2;
+  font-size: 12px;
+}
+
+.minimum input,
+.add select {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  background: #1d1e23;
+  color: #f1eee6;
+  font-size: 16px;
+}
+
+.minimum input {
+  max-width: 140px;
+}
+
+.figures {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.figure {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #30323a;
+}
+
+.figureText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.figureText strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.figureActions,
+.levelFoot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.levelFoot {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.primary,
+.secondary,
+.ghost {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary {
+  border: 0;
+  background: #8fe6c8;
+  color: #1d1e23;
+}
+
+.secondary {
+  border: 1px solid #8fe6c8;
+  background: transparent;
+  color: #8fe6c8;
+}
+
+.ghost {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: transparent;
+  color: #f1eee6;
+}
+
+.primary:focus-visible,
+.secondary:focus-visible,
+.ghost:focus-visible,
+.back:focus-visible,
+.minimum input:focus-visible,
+.add select:focus-visible {
+  outline: 2px solid #f6d67a;
+  outline-offset: 2px;
+}
+
+.headerActions,
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
