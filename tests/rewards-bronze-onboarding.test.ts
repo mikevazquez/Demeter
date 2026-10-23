@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
+import { profile360Source } from "./support/profile360-source";
 
 function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
@@ -28,9 +29,9 @@ const homePage = source("app/student/page.tsx");
 const profilePage = source("app/student/perfil/page.tsx");
 const studentActions = source("app/student/actions.ts");
 const rewardsActions = source("app/student/recompensas/actions.ts");
-const adminStudent = source("app/admin/alumnas/[studentId]/page.tsx");
+const adminStudent = profile360Source();
 const adminActions = source("app/admin/alumnas/[studentId]/actions.ts");
-const adminOverview = source("app/admin/alumnas/[studentId]/Profile360Overview.tsx");
+const adminOverview = profile360Source();
 const adminRewards = source("app/admin/recompensas/page.tsx");
 const adminMedals = source("app/admin/recompensas/medallas/page.tsx");
 

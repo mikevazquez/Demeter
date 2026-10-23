@@ -11,6 +11,10 @@ describe("Demi identity, CRM lifecycle, and first trial flow", () => {
   const actionTools = readFileSync(join(process.cwd(), "lib/assistant/action-tools.ts"), "utf8");
   const readTools = readFileSync(join(process.cwd(), "lib/assistant/read-tools.ts"), "utf8");
   const directory = readFileSync(join(process.cwd(), "app/admin/alumnas/page.tsx"), "utf8");
+  const directoryFilters = readFileSync(
+    join(process.cwd(), "app/admin/alumnas/directory-filters.ts"),
+    "utf8",
+  );
   const migration = readFileSync(
     join(process.cwd(), "supabase/migrations/20261006220000_demi_first_trial_name_capture.sql"),
     "utf8",
@@ -45,13 +49,15 @@ describe("Demi identity, CRM lifecycle, and first trial flow", () => {
   });
 
   it("restores the CRM filters for prospects, trial students, and no-shows", () => {
+    // P360-V2-07: estado como selector único y situaciones como filtro de Atención.
     expect(directory).toContain('.eq("lifecycle_status", "prospect")');
-    expect(directory).toContain('.eq("student_type", "trial")');
-    expect(directory).toContain('.eq("trial_status", "no_show")');
-    expect(directory).toContain('{ key: "trial", label: "Prueba", enabled: true }');
-    expect(directory).toContain('{ key: "no_show", label: "No show", enabled: true }');
-    expect(directory).toContain('{ key: "prospect", label: "Prospecto", enabled: true }');
-    expect(directory).toContain('{ key: "expired", label: "Vencidas", enabled: canReadProducts }');
+    expect(directory).toContain(
+      'student.student_type === "trial" && student.trial_status === "no_show"',
+    );
+    expect(directoryFilters).toContain('trial: "Prueba"');
+    expect(directoryFilters).toContain('prospect: "Prospectos"');
+    expect(directoryFilters).toContain('no_show: "No show"');
+    expect(directoryFilters).toContain('expired: "Vencidas"');
   });
 
   it("keeps the first-trial price in Studio Flow and stores the prospect's name", () => {

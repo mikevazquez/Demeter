@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
+import { profile360Source } from "./support/profile360-source";
 
 function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
@@ -11,7 +12,7 @@ describe("Registrar venta reuses the approved commercial flow", () => {
   const page = source("app/admin/ventas/nueva/page.tsx");
   const form = source("app/admin/alumnas/[studentId]/alta/StudentOnboardingForm.tsx");
   const actions = source("app/admin/alumnas/[studentId]/alta/actions.ts");
-  const profile = source("app/admin/alumnas/[studentId]/page.tsx");
+  const profile = profile360Source();
 
   it("selects a student first when there is no context", () => {
     expect(page).toContain('name="student_id"');
@@ -54,7 +55,9 @@ describe("Registrar venta reuses the approved commercial flow", () => {
   });
 
   it("lets authorized staff sell a new package from Perfil 360 with the student preselected", () => {
-    expect(profile).toContain("canSell={can(CAPABILITIES.SALES_WRITE)}");
+    // P360-V2-01: «Vender» es una acción rápida del encabezado del Perfil 360.
+    expect(profile).toContain("const canSell = can(CAPABILITIES.SALES_WRITE)");
+    expect(profile).toContain("href={`/admin/ventas/nueva?student_id=${student.id}`}");
     expect(profile).toContain('href={"/admin/ventas/nueva?student_id=" + student.id}');
     expect(profile).toContain("+ Registrar venta");
   });

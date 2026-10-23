@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
+import { profile360Source } from "./support/profile360-source";
 
 function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
@@ -26,7 +27,7 @@ describe("Enrollment V2", () => {
   const edge = source("supabase/functions/create-mercadopago-order/index.ts");
   const packageCheckout = source("app/student/paquete/checkout/page.tsx");
   const singleCheckout = source("app/student/reservar/checkout/page.tsx");
-  const profile360 = source("app/admin/alumnas/[studentId]/Profile360Overview.tsx");
+  const profile360 = profile360Source();
   const newSalePage = source("app/admin/ventas/nueva/page.tsx");
 
   it("uses one mandatory rule whenever enrollment is enabled", () => {

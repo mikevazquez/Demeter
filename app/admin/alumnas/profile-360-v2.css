@@ -1,0 +1,608 @@
+/* P360-V2 · Perfil 360 y directorio. Sólo lo nuevo; hereda la capa visual Sendero de Alumnas. */
+.p360v2,
+.p360v2-directory {
+  --p360v2-text: var(--crm-navy, #f1eee6);
+  --p360v2-muted: var(--crm-muted, #a3a6b2);
+  --p360v2-line: var(--crm-line, #ffffff14);
+  --p360v2-accent: var(--crm-purple, #8fe6c8);
+  --p360v2-accent-soft: var(--crm-lav, #8fe6c824);
+  --p360v2-surface: #292b33;
+  --p360v2-bad: #f28a7a;
+  --p360v2-bad-soft: #f28a7a24;
+  --p360v2-warn: #f6d67a;
+  --p360v2-warn-soft: #f6d67a24;
+  --p360v2-info: #cdb8ec;
+  --p360v2-info-soft: #cdb8ec26;
+}
+
+.p360v2-stack {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* Encabezado y pestañas */
+.p360v2 .p360v2-header {
+  display: grid;
+  gap: 14px;
+}
+.p360v2-quick {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+  max-width: 420px;
+}
+.p360v2-quick .crm-btn {
+  justify-content: center;
+  text-align: center;
+}
+.p360v2 .p360v2-tabs {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 5;
+  display: flex;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.p360v2 .p360v2-tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+.p360v2-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--p360v2-bad);
+  color: #2a1612;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Resumen */
+.p360v2-section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 4px 2px 0;
+}
+.p360v2-section-title h2 {
+  margin: 0;
+  font-size: 15px;
+}
+.p360v2-section-title span {
+  color: var(--p360v2-muted);
+  font-size: 12px;
+}
+.p360v2-pending {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.p360v2-task {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--p360v2-line);
+  border-radius: 18px;
+  background: var(--p360v2-surface);
+}
+.p360v2-task-bar {
+  flex: none;
+  width: 4px;
+  border-radius: 4px;
+  background: var(--p360v2-info);
+}
+.p360v2-task.is-bad .p360v2-task-bar {
+  background: var(--p360v2-bad);
+}
+.p360v2-task.is-warn .p360v2-task-bar {
+  background: var(--p360v2-warn);
+}
+.p360v2-task-body {
+  flex: 1;
+  min-width: 0;
+}
+.p360v2-task-body h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.p360v2-task-body p {
+  margin: 4px 0 0;
+  color: var(--p360v2-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.p360v2-task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.p360v2-clear {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--p360v2-accent-soft);
+  color: var(--p360v2-accent);
+  font-weight: 600;
+}
+.p360v2-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.p360v2-package h2 {
+  margin: 6px 0 0;
+}
+.p360v2-numbers {
+  font-variant-numeric: tabular-nums;
+}
+.p360v2-note {
+  margin: 6px 0 10px;
+  color: var(--p360v2-text);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* Progreso */
+.p360v2-levels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.p360v2-level {
+  display: grid;
+  gap: 2px;
+  padding: 12px;
+  border: 1px solid var(--p360v2-line);
+  border-radius: 14px;
+}
+.p360v2-level span {
+  color: var(--p360v2-muted);
+  font-size: 12px;
+}
+
+/* Actividad */
+.p360v2-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.p360v2-chips a {
+  padding: 7px 12px;
+  border: 1px solid var(--p360v2-line);
+  border-radius: 999px;
+  color: var(--p360v2-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.p360v2-chips a.is-active {
+  border-color: transparent;
+  background: var(--p360v2-accent-soft);
+  color: var(--p360v2-accent);
+}
+.p360v2-timeline {
+  display: grid;
+  margin: 0;
+  padding: 6px 18px;
+  list-style: none;
+}
+.p360v2-timeline li {
+  display: grid;
+  grid-template-columns: minmax(84px, 120px) minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--p360v2-line);
+}
+.p360v2-timeline li:first-child {
+  border-top: 0;
+}
+.p360v2-timeline time {
+  color: var(--p360v2-muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.p360v2-timeline li > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.p360v2-timeline li > div > span:not(.p360v2-kind) {
+  color: var(--p360v2-muted);
+  font-size: 12.5px;
+}
+.p360v2-kind {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--p360v2-muted);
+}
+.p360v2-timeline .is-message .p360v2-kind {
+  color: var(--p360v2-info);
+}
+.p360v2-timeline .is-class .p360v2-kind {
+  color: var(--p360v2-accent);
+}
+.p360v2-timeline :is(.is-sale, .is-package) .p360v2-kind {
+  color: var(--p360v2-warn);
+}
+.p360v2-bubble {
+  margin: 4px 0 0;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--p360v2-info-soft);
+  overflow-wrap: anywhere;
+}
+.p360v2-bubble.is-mine {
+  background: var(--p360v2-accent-soft);
+}
+.p360v2-link {
+  color: var(--p360v2-accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Directorio */
+.p360v2-directory .p360v2-segment {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--p360v2-surface);
+  scrollbar-width: none;
+}
+.p360v2-directory .p360v2-segment a {
+  flex: none;
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: var(--p360v2-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.p360v2-directory .p360v2-segment a.is-active {
+  background: var(--p360v2-accent-soft);
+  color: var(--p360v2-accent);
+}
+.p360v2-directory .p360v2-segment small {
+  margin-left: 4px;
+  opacity: 0.75;
+}
+.p360v2-directory .p360v2-attention {
+  margin: 10px 0 14px;
+}
+.p360v2-next {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.p360v2-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--p360v2-accent);
+}
+.p360v2-dot.is-ok {
+  background: var(--p360v2-accent);
+}
+.p360v2-dot.is-bad {
+  background: var(--p360v2-bad);
+}
+.p360v2-dot.is-warn {
+  background: var(--p360v2-warn);
+}
+.p360v2-dot.is-info {
+  background: var(--p360v2-info);
+}
+
+@media (max-width: 760px) {
+  .p360v2-quick {
+    max-width: none;
+  }
+  .p360v2-timeline {
+    padding: 4px 14px;
+  }
+  .p360v2-timeline li {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
+
+.p360v2-directory .p360v2-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  text-decoration: none;
+}
+.p360v2-person-body {
+  display: grid;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+.p360v2-person-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.p360v2-person-top strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.p360v2-next-text {
+  overflow: hidden;
+  color: var(--p360v2-text);
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.p360v2-extra {
+  flex: none;
+  color: var(--p360v2-muted);
+  font-size: 11px;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   P360-V2 · Superficie única del Perfil 360 (UAT 23-oct).
+   Todo el perfil usa un solo tipo de bloque oscuro. Los contenedores que sólo
+   agrupan no dibujan caja, y lo que vive dentro de un bloque no dibuja otra
+   caja: se separa con líneas. Mismo texto, mismos controles, mismas etiquetas.
+   ─────────────────────────────────────────────────────────────────────────── */
+.sendero-alumnas .crm-page.p360v2 {
+  --p360v2-field: #1f2127;
+  --p360v2-field-line: #ffffff1f;
+  --p360v2-inner: #ffffff06;
+}
+
+/* 1 · Contenedores que sólo agrupan: sin fondo ni borde. */
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(
+    .profile360-packages-view,
+    .profile360-data-view,
+    .profile360-history-stack,
+    .profile360-evaluations-view
+  ) {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0 !important;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--p360v2-text) !important;
+}
+
+/* 2 · Bloques: una sola superficie para todo el perfil. */
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(
+    .crm-card,
+    .panel,
+    .profile360-view-panel,
+    .profile360-detail,
+    .profile360-package-group,
+    .profile360-package-card,
+    .profile360-rewards-section
+  ) {
+  min-width: 0;
+  margin: 0;
+  padding: 18px;
+  border: 1px solid var(--p360v2-line) !important;
+  border-radius: 22px;
+  background: var(--p360v2-surface) !important;
+  box-shadow: none !important;
+  color: var(--p360v2-text) !important;
+  color-scheme: dark;
+}
+
+/* 3 · Nada dibuja una caja dentro de otra: lo anidado se integra al bloque. */
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(
+    .crm-card,
+    .panel,
+    .profile360-view-panel,
+    .profile360-detail,
+    .profile360-package-group,
+    .profile360-package-card,
+    .profile360-rewards-section
+  )
+  :is(
+    .crm-card,
+    .panel,
+    .profile360-view-panel,
+    .profile360-detail,
+    .profile360-package-group,
+    .profile360-rewards-section
+  ) {
+  padding: 0;
+  border: 0 !important;
+  border-radius: 0;
+  background: transparent !important;
+}
+
+/* Un elemento dentro de un bloque (comprobante, cargo, fila) es una tarjeta tenue. */
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(.profile360-package-group, .profile360-view-panel, .profile360-rewards-section)
+  :is(article, .student-row, .profile360-reward-list > article) {
+  padding: 12px 14px;
+  border: 1px solid var(--p360v2-line) !important;
+  border-radius: 14px;
+  background: var(--p360v2-inner) !important;
+  color: var(--p360v2-text) !important;
+}
+.sendero-alumnas .crm-page.p360v2 :is([class*="bg-white"], [class*="bg-black"]) {
+  background: var(--p360v2-inner) !important;
+}
+
+/* 4 · Encabezados de bloque y colapsables con la misma forma. */
+.sendero-alumnas .crm-page.p360v2 .profile360-detail > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0;
+  cursor: pointer;
+  list-style: none;
+  color: var(--p360v2-text) !important;
+}
+.sendero-alumnas .crm-page.p360v2 .profile360-detail > summary::-webkit-details-marker {
+  display: none;
+}
+.sendero-alumnas .crm-page.p360v2 .profile360-detail > summary > span:first-child {
+  display: grid;
+  gap: 2px;
+}
+.sendero-alumnas .crm-page.p360v2 .profile360-detail > summary > span[aria-hidden] {
+  color: var(--p360v2-muted) !important;
+  transition: transform 0.15s;
+}
+.sendero-alumnas .crm-page.p360v2 .profile360-detail[open] > summary {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--p360v2-line);
+  margin-bottom: 14px;
+}
+.sendero-alumnas .crm-page.p360v2 .profile360-detail[open] > summary > span[aria-hidden] {
+  transform: rotate(90deg);
+}
+.sendero-alumnas .crm-page.p360v2 .profile360-view-heading {
+  margin: 0 0 4px;
+  padding: 0;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+/* 5 · Texto: claro sobre oscuro en todo el perfil. */
+.sendero-alumnas .crm-page.p360v2 :is(h1, h2, h3, h4, strong, b, .text-white, label, legend) {
+  color: var(--p360v2-text) !important;
+}
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(
+    p,
+    small,
+    .eyebrow,
+    .crm-meta,
+    .crm-small,
+    .panel-heading p,
+    .profile360-view-heading p,
+    .text-zinc-300,
+    .text-zinc-400,
+    .text-zinc-500,
+    .text-zinc-600
+  ) {
+  color: var(--p360v2-muted) !important;
+}
+.sendero-alumnas .crm-page.p360v2 .eyebrow {
+  letter-spacing: 0.08em;
+}
+.sendero-alumnas .crm-page.p360v2 .text-emerald-300 {
+  color: var(--p360v2-accent) !important;
+}
+.sendero-alumnas .crm-page.p360v2 .text-amber-300 {
+  color: var(--p360v2-warn) !important;
+}
+.sendero-alumnas .crm-page.p360v2 .text-rose-300 {
+  color: var(--p360v2-bad) !important;
+}
+.sendero-alumnas .crm-page.p360v2 :is(.text-fuchsia-300, a:not(.crm-btn):not([class*="button"])) {
+  color: var(--p360v2-accent) !important;
+}
+
+/* 6 · Controles de formulario con el mismo campo oscuro. */
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  min-height: 44px;
+  border: 1px solid var(--p360v2-field-line) !important;
+  border-radius: 14px;
+  padding: 11px 14px;
+  background: var(--p360v2-field) !important;
+  color: var(--p360v2-text) !important;
+  color-scheme: dark;
+  box-shadow: none !important;
+}
+.sendero-alumnas .crm-page.p360v2 :is(input, textarea)::placeholder {
+  color: var(--p360v2-muted) !important;
+}
+.sendero-alumnas .crm-page.p360v2 :is(input[type="checkbox"], input[type="radio"]) {
+  accent-color: var(--p360v2-accent);
+}
+
+/* 7 · Etiquetas y contadores legibles. */
+.sendero-alumnas .crm-page.p360v2 :is(.status-pill, .count-badge, .role-pill) {
+  border: 1px solid var(--p360v2-line) !important;
+  background: var(--p360v2-accent-soft) !important;
+  color: var(--p360v2-accent) !important;
+}
+.sendero-alumnas .crm-page.p360v2 .empty-state {
+  border: 1px dashed var(--p360v2-line) !important;
+  border-radius: 14px;
+  background: transparent !important;
+  color: var(--p360v2-muted) !important;
+}
+
+/* 8 · Encabezado de la persona: integrado a la página, sin caja de color. */
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(.p360v2-header, .crm-contact-person, .profile360-approved-person) {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--p360v2-text) !important;
+}
+.sendero-alumnas .crm-page.p360v2 .p360v2-header {
+  padding: 4px 0 0;
+}
+.sendero-alumnas .crm-page.p360v2 .profile360-approved-contact span {
+  color: var(--p360v2-muted) !important;
+}
+
+/* 9 · Piezas heredadas que traían su propio fondo: se integran a la superficie única. */
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(.profile360-package-edit-body, .profile360-evaluations-view form) {
+  padding: 14px 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--p360v2-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--p360v2-text) !important;
+}
+.sendero-alumnas .crm-page.p360v2 :is(.profile360-evaluation-card, .profile360-evaluation-history) {
+  border: 1px solid var(--p360v2-line) !important;
+  border-radius: 18px !important;
+  background: var(--p360v2-surface) !important;
+  color: var(--p360v2-text) !important;
+}
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(.student-row, .profile360-detail, .panel, .profile360-package-edit-body)
+  :is(span:not([class]), label > span, small) {
+  color: var(--p360v2-muted) !important;
+}

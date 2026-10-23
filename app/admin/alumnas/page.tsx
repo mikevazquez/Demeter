@@ -5,14 +5,22 @@ import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 
-import ContactRow from "./ContactRow";
-import { contactStage, renewalRecommended } from "@/lib/student-crm";
-import { contactConversations } from "@/lib/student-crm-conversations";
+import ContactRow, { type DirectoryTone } from "./ContactRow";
+import { contactStage, renewalRecommended, type ContactStage } from "@/lib/student-crm";
 
 import { createStudent } from "./actions";
 import DuplicateStudentDialog from "./DuplicateStudentDialog";
 import StudentDeletedDialog from "./StudentDeletedDialog";
 import StudentFormErrorDialog from "./StudentFormErrorDialog";
+import {
+  DIRECTORY_ATTENTION,
+  DIRECTORY_ATTENTION_LABELS,
+  DIRECTORY_STAGES,
+  DIRECTORY_STAGE_LABELS,
+  directoryHref,
+  resolveDirectoryFilters,
+  type DirectoryAttention,
+} from "./directory-filters";
 
 function localDateKey(timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -40,19 +48,17 @@ function shortDate(value: string | null, locale: string) {
   return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
-    year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
-function filterHref(status: string, query: string) {
-  const params = new URLSearchParams();
-  if (status !== "all") params.set("status", status);
-  if (query) params.set("q", query);
-  const suffix = params.toString();
-  return suffix ? `/admin/alumnas?${suffix}` : "/admin/alumnas";
-}
+const toneOrder: Record<DirectoryTone, number> = { bad: 0, warn: 1, info: 2, ok: 3 };
 
+/**
+ * Alumnas · directorio (P360-V2-07).
+ * Estado como selector único (Todas · Prospectos · Prueba · Alumnas · Exalumnas) y un filtro
+ * aparte de Atención. Cada fila muestra el siguiente paso; quien tiene pendientes va primero.
+ */
 export default async function StudentsPage({
   searchParams,
 }: {
@@ -61,6 +67,7 @@ export default async function StudentsPage({
     created?: string;
     q?: string;
     status?: string;
+    att?: string;
     duplicate?: string;
     deleted?: string;
     cancelled?: string;
@@ -71,22 +78,10 @@ export default async function StudentsPage({
     getAdminContext(CAPABILITIES.STUDENTS_READ),
   ]);
   const query = String(params.q ?? "").trim();
-  const requestedStatus = String(params.status ?? "all");
-  const status = [
-    "all",
-    "active",
-    "inactive",
-    "expiring",
-    "expired",
-    "trial",
-    "no_show",
-    "prospect",
-    "followup",
-  ].includes(requestedStatus)
-    ? requestedStatus
-    : "all";
+  const { stage: stageFilter, attention } = resolveDirectoryFilters(params.status, params.att);
   const canEdit = can(CAPABILITIES.STUDENTS_WRITE);
   const canReadProducts = can(CAPABILITIES.PRODUCTS_READ);
+  const canReadSales = can(CAPABILITIES.SALES_READ);
   const timeZone = studio.timezone;
   const today = localDateKey(timeZone);
   const sevenDaysFromToday = addDaysToDateKey(today, 7);
@@ -100,15 +95,7 @@ export default async function StudentsPage({
     .neq("lifecycle_status", "archived")
     .order("full_name");
 
-  if (status === "trial") {
-    studentsQuery = studentsQuery
-      .eq("student_type", "trial")
-      .in("trial_status", ["pending", "attended", "cancelled"]);
-  }
-  if (status === "no_show") {
-    studentsQuery = studentsQuery.eq("student_type", "trial").eq("trial_status", "no_show");
-  }
-  if (status === "prospect") {
+  if (stageFilter === "prospect") {
     studentsQuery = studentsQuery.limit(0);
   }
 
@@ -122,9 +109,6 @@ export default async function StudentsPage({
   }
 
   const duplicateId = String(params.duplicate ?? "").trim();
-  const needsAllStudentsQuery =
-    Boolean(query) || ["active", "inactive", "trial", "no_show"].includes(status);
-  const needsProspectsQuery = true;
   const [
     { data: students },
     allStudentsResult,
@@ -132,27 +116,22 @@ export default async function StudentsPage({
     acquisitionResult,
     { data: duplicateStudent },
     enrollmentResult,
-    entryConversionResult,
+    transferResult,
+    chargeResult,
   ] = await Promise.all([
     studentsQuery,
-    needsAllStudentsQuery
-      ? supabase
-          .from("students")
-          .select("id,lifecycle_status,student_type,trial_status")
-          .eq("studio_id", studio.id)
-          .neq("lifecycle_status", "archived")
-      : Promise.resolve({ data: null }),
-    needsProspectsQuery
-      ? supabase
-          .from("crm_contacts")
-          .select("id,person_id,created_at")
-          .eq("studio_id", studio.id)
-          .eq("lifecycle_status", "prospect")
-          .is("converted_student_id", null)
-          .order("created_at", { ascending: false })
-      : Promise.resolve({
-          data: [] as { id: string; person_id: string; created_at: string }[],
-        }),
+    supabase
+      .from("students")
+      .select("id,lifecycle_status,student_type,trial_status")
+      .eq("studio_id", studio.id)
+      .neq("lifecycle_status", "archived"),
+    supabase
+      .from("crm_contacts")
+      .select("id,person_id,created_at")
+      .eq("studio_id", studio.id)
+      .eq("lifecycle_status", "prospect")
+      .is("converted_student_id", null)
+      .order("created_at", { ascending: false }),
     canReadProducts
       ? supabase
           .from("product_acquisitions")
@@ -176,14 +155,20 @@ export default async function StudentsPage({
       .select("student_id,status,starts_on,expires_on")
       .eq("studio_id", studio.id)
       .is("refunded_at", null),
-    canReadProducts
+    canReadSales
       ? supabase
-          .from("student_entry_conversion_facts")
-          .select(
-            "entry_mode,acquisition_source,converted_to_regular_package,days_to_regular_package",
-          )
+          .from("assistant_transfer_purchase_intents")
+          .select("student_id")
           .eq("studio_id", studio.id)
-      : Promise.resolve({ data: [] }),
+          .eq("status", "provisional_active")
+      : Promise.resolve({ data: [] as { student_id: string | null }[] }),
+    canReadSales
+      ? supabase
+          .from("student_operating_charges")
+          .select("student_id")
+          .eq("studio_id", studio.id)
+          .eq("status", "pending")
+      : Promise.resolve({ data: [] as { student_id: string | null }[] }),
   ]);
   if (enrollmentResult.error) throw new Error("crm_enrollment_unavailable");
   const stageFor = (student: Parameters<typeof contactStage>[0] & { id: string }) =>
@@ -194,14 +179,7 @@ export default async function StudentsPage({
         today,
       ),
     });
-  const allStudents =
-    allStudentsResult.data ??
-    (students ?? []).map((student) => ({
-      id: student.id,
-      lifecycle_status: student.lifecycle_status,
-      student_type: student.student_type,
-      trial_status: student.trial_status,
-    }));
+  const allStudents = allStudentsResult.data ?? [];
   const prospectPersonIds = [
     ...new Set((prospectContacts ?? []).map((contact) => contact.person_id)),
   ];
@@ -250,7 +228,6 @@ export default async function StudentsPage({
       prospect.phone.includes(query)
     );
   });
-  const allAcquisitions = acquisitionResult.data ?? [];
   const acquisitionsByStudent = new Map<
     string,
     Array<{
@@ -265,7 +242,7 @@ export default async function StudentsPage({
     }>
   >();
 
-  for (const acquisition of allAcquisitions ?? []) {
+  for (const acquisition of acquisitionResult.data ?? []) {
     const list = acquisitionsByStudent.get(acquisition.student_id) ?? [];
     list.push(acquisition);
     acquisitionsByStudent.set(acquisition.student_id, list);
@@ -281,60 +258,102 @@ export default async function StudentsPage({
       ) ?? null
     );
   }
-
-  const activeStudentsCount = (allStudents ?? []).filter(
-    (item) => stageFor(item) === "student",
-  ).length;
-  const trialStudentsCount = (allStudents ?? []).filter(
-    (item) =>
-      item.student_type === "trial" &&
-      ["pending", "attended", "cancelled"].includes(item.trial_status ?? ""),
-  ).length;
-  const noShowStudentsCount = (allStudents ?? []).filter(
-    (item) => item.student_type === "trial" && item.trial_status === "no_show",
-  ).length;
-  const expiringStudentsCount = (allStudents ?? []).filter((student) => {
-    const acquisition = currentAcquisitionFor(student.id);
+  function hasExpiredPackage(studentId: string) {
+    return (acquisitionsByStudent.get(studentId) ?? []).some((item) =>
+      Boolean(item.expires_on && item.expires_on < today),
+    );
+  }
+  function isExpiring(studentId: string) {
+    const acquisition = currentAcquisitionFor(studentId);
     return Boolean(
       acquisition?.expires_on &&
       acquisition.expires_on >= today &&
       acquisition.expires_on <= sevenDaysFromToday,
     );
-  }).length;
-  const expiredStudentsCount = (allStudents ?? []).filter((student) => {
-    if (student.student_type === "trial" || currentAcquisitionFor(student.id)) return false;
-    return (acquisitionsByStudent.get(student.id) ?? []).some((item) =>
-      Boolean(item.expires_on && item.expires_on < today),
-    );
-  }).length;
+  }
+  const transferStudents = new Set(
+    (transferResult.data ?? []).map((row) => row.student_id).filter(Boolean),
+  );
+  const chargeStudents = new Set(
+    (chargeResult.data ?? []).map((row) => row.student_id).filter(Boolean),
+  );
 
-  const filteredStudents = (students ?? []).filter((student) => {
-    if (status === "active") return stageFor(student) === "student";
-    if (status === "inactive") return stageFor(student) === "former";
-    if (status === "expiring" || status === "followup") {
+  /** Primer pendiente de la persona, con la misma prioridad que el Resumen del Perfil 360. */
+  function pendingFor(student: {
+    id: string;
+    user_id?: string | null;
+    lifecycle_status: string;
+    stage: ContactStage;
+  }) {
+    const items: Array<{ tone: DirectoryTone; text: string }> = [];
+    const active = student.lifecycle_status !== "inactive";
+    if (transferStudents.has(student.id))
+      items.push({ tone: "bad", text: "Transferencia por validar" });
+    if (chargeStudents.has(student.id)) items.push({ tone: "bad", text: "Penalización pendiente" });
+    if (canReadProducts && active && student.stage !== "former") {
       const acquisition = currentAcquisitionFor(student.id);
+      if (!acquisition) {
+        items.push({
+          tone: "warn",
+          text: hasExpiredPackage(student.id) ? "Paquete vencido" : "Sin paquete activo",
+        });
+      } else if (
+        renewalRecommended(student.stage, acquisition.expires_on, today, sevenDaysFromToday)
+      ) {
+        items.push({
+          tone: "warn",
+          text: `Paquete por vencer · ${shortDate(acquisition.expires_on, studio.locale)}`,
+        });
+      }
+    }
+    if (active && !student.user_id)
+      items.push({ tone: "info", text: "Acceso a la app no enviado" });
+    return items;
+  }
+
+  function matchesAttention(
+    student: { id: string; student_type?: string | null; trial_status?: string | null },
+    pending: Array<{ tone: DirectoryTone }>,
+    filter: DirectoryAttention | null,
+  ) {
+    if (!filter) return true;
+    if (filter === "pending") return pending.some((item) => item.tone !== "info");
+    if (filter === "expiring") return isExpiring(student.id);
+    if (filter === "expired") {
       return (
-        (status !== "followup" || stageFor(student) === "student") &&
-        Boolean(
-          acquisition?.expires_on &&
-          acquisition.expires_on >= today &&
-          acquisition.expires_on <= sevenDaysFromToday,
-        )
+        student.student_type !== "trial" &&
+        !currentAcquisitionFor(student.id) &&
+        hasExpiredPackage(student.id)
       );
     }
+    return student.student_type === "trial" && student.trial_status === "no_show";
+  }
 
-    if (status === "expired") {
-      if (student.student_type === "trial" || currentAcquisitionFor(student.id)) return false;
-      return (acquisitionsByStudent.get(student.id) ?? []).some((item) =>
-        Boolean(item.expires_on && item.expires_on < today),
-      );
-    }
+  const stageCounts: Record<string, number> = {
+    all: allStudents.length + allProspectRows.length,
+    prospect: allProspectRows.length,
+    trial: 0,
+    student: 0,
+    former: 0,
+  };
+  for (const student of allStudents) stageCounts[stageFor(student)] += 1;
 
-    return true;
-  });
+  const rows = (students ?? [])
+    .map((student) => {
+      const stage = stageFor(student);
+      return { student, stage, pending: pendingFor({ ...student, stage }) };
+    })
+    .filter(({ stage }) => stageFilter === "all" || stage === stageFilter)
+    .filter(({ student, pending }) => matchesAttention(student, pending, attention))
+    .sort((a, b) => {
+      const toneA = a.pending[0] ? toneOrder[a.pending[0].tone] : toneOrder.ok;
+      const toneB = b.pending[0] ? toneOrder[b.pending[0].tone] : toneOrder.ok;
+      return toneA - toneB || a.student.full_name.localeCompare(b.student.full_name, "es");
+    });
+  const showProspects = (stageFilter === "all" || stageFilter === "prospect") && !attention;
 
-  const visibleCurrentAcquisitions = filteredStudents
-    .map((student) => currentAcquisitionFor(student.id))
+  const visibleCurrentAcquisitions = rows
+    .map(({ student }) => currentAcquisitionFor(student.id))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
   const visibleAcquisitionIds = visibleCurrentAcquisitions.map((item) => item.id);
   const visibleProductIds = [
@@ -391,46 +410,13 @@ export default async function StudentsPage({
                 }
               : null;
 
-  const recommendationsCount = (allStudents ?? []).filter((student) =>
-    renewalRecommended(
-      stageFor(student),
-      currentAcquisitionFor(student.id)?.expires_on,
-      today,
-      sevenDaysFromToday,
-    ),
-  ).length;
-  const entryFacts = entryConversionResult.data ?? [];
-  const singleClassEntries = entryFacts.filter((item) => item.entry_mode === "single_class").length;
-  const introductoryEntries = entryFacts.filter(
-    (item) => item.entry_mode === "introductory_package",
-  ).length;
-  const introductoryConversions = entryFacts.filter(
-    (item) => item.entry_mode === "introductory_package" && item.converted_to_regular_package,
-  ).length;
-  const introductoryConversionRate =
-    introductoryEntries > 0 ? Math.round((introductoryConversions / introductoryEntries) * 100) : 0;
-
-  const communications = await contactConversations(
-    supabase,
-    studio.id,
-    filteredStudents.map((student) => student.id),
-    status === "all" || status === "prospect" ? prospectRows.map((contact) => contact.id) : [],
-    can(CAPABILITIES.SETTINGS_WRITE),
+  const attentionOptions = DIRECTORY_ATTENTION.filter(
+    (item) => canReadProducts || item === "no_show" || item === "pending",
   );
-  const filters = [
-    { key: "all", label: "Todas", enabled: true },
-    { key: "prospect", label: "Prospecto", enabled: true },
-    { key: "trial", label: "Prueba", enabled: true },
-    { key: "active", label: "Alumna", enabled: true },
-    { key: "inactive", label: "Exalumna", enabled: true },
-    { key: "followup", label: "Con recomendación", enabled: canReadProducts },
-    { key: "expiring", label: "Por vencer", enabled: canReadProducts },
-    { key: "expired", label: "Vencidas", enabled: canReadProducts },
-    { key: "no_show", label: "No show", enabled: true },
-  ];
+  const total = rows.length + (showProspects ? prospectRows.length : 0);
 
   return (
-    <main className="dashboard-shell student-directory-page crm-page">
+    <main className="dashboard-shell student-directory-page crm-page p360v2-directory">
       {duplicateStudent ? (
         <DuplicateStudentDialog studentName={duplicateStudent.full_name} />
       ) : null}
@@ -445,7 +431,6 @@ export default async function StudentsPage({
         <div>
           <p className="eyebrow">CRM DE ALUMNAS · {studio.name}</p>
           <h1>Alumnas</h1>
-          <p>Conversaciones, etapas y seguimiento en un solo lugar.</p>
         </div>
         {canEdit ? (
           <details id="alta-rapida" className="student-quick-create">
@@ -458,7 +443,10 @@ export default async function StudentsPage({
                 <div>
                   <p className="eyebrow">ALTA RÁPIDA</p>
                   <h2>Nueva alumna</h2>
-                  <p>Nombre y teléfono bastan para crear el expediente.</p>
+                  <p>
+                    Nombre y teléfono bastan para crear el expediente. Su acceso a la app le llega
+                    por WhatsApp.
+                  </p>
                 </div>
               </div>
               <form action={createStudent} className="compact-form">
@@ -503,50 +491,10 @@ export default async function StudentsPage({
           <span className="role-pill">{membership.role}</span>
         )}
       </header>
-      {canReadProducts ? (
-        <section className="crm-summary" aria-label="Entrada comercial">
-          <div className="crm-stat">
-            <span>Entrada · clase suelta</span>
-            <b>{singleClassEntries}</b>
-          </div>
-          <div className="crm-stat">
-            <span>Entrada · introductorio</span>
-            <b>{introductoryEntries}</b>
-          </div>
-          <div className="crm-stat is-focus">
-            <span>Intro → paquete regular</span>
-            <b>{introductoryConversionRate}%</b>
-          </div>
-        </section>
-      ) : null}
 
-      <section className="crm-summary" aria-label="Resumen de contactos">
-        <Link className="crm-stat" href={filterHref("prospect", "")}>
-          <span>Prospectos</span>
-          <b>{allProspectRows.length}</b>
-        </Link>
-        <Link className="crm-stat" href={filterHref("trial", "")}>
-          <span>Pruebas</span>
-          <b>{trialStudentsCount}</b>
-        </Link>
-        <Link className="crm-stat" href={filterHref("active", "")}>
-          <span>Alumnas</span>
-          <b>{activeStudentsCount}</b>
-        </Link>
-        {canReadProducts ? (
-          <Link className="crm-stat is-focus" href={filterHref("followup", "")}>
-            <span>Seguimientos sugeridos</span>
-            <b>{recommendationsCount}</b>
-          </Link>
-        ) : (
-          <div className="crm-stat">
-            <span>Personas registradas</span>
-            <b>{allStudents.length + allProspectRows.length}</b>
-          </div>
-        )}
-      </section>
       <form className="student-directory-search" method="get">
-        {status !== "all" ? <input type="hidden" name="status" value={status} /> : null}
+        {stageFilter !== "all" ? <input type="hidden" name="status" value={stageFilter} /> : null}
+        {attention ? <input type="hidden" name="att" value={attention} /> : null}
         <input
           name="q"
           type="search"
@@ -559,29 +507,31 @@ export default async function StudentsPage({
         </button>
       </form>
 
-      <nav
-        className="student-directory-filters student-directory-crm-toolbar"
-        aria-label="Filtrar alumnas"
-      >
-        {filters
-          .filter((filter) => filter.enabled)
-          .map((filter) => (
-            <Link
-              key={filter.key}
-              href={filterHref(filter.key, query)}
-              className={`student-filter-chip${status === filter.key ? " is-active" : ""}`}
-              aria-current={status === filter.key ? "page" : undefined}
-            >
-              {filter.label}
-              {filter.key === "all" ? <small>{allStudents?.length ?? 0}</small> : null}
-              {filter.key === "active" ? <small>{activeStudentsCount}</small> : null}
-              {filter.key === "expiring" ? <small>{expiringStudentsCount}</small> : null}
-              {filter.key === "expired" ? <small>{expiredStudentsCount}</small> : null}
-              {filter.key === "trial" ? <small>{trialStudentsCount}</small> : null}
-              {filter.key === "no_show" ? <small>{noShowStudentsCount}</small> : null}
-              {filter.key === "prospect" ? <small>{allProspectRows.length}</small> : null}
-            </Link>
-          ))}
+      <nav className="p360v2-segment" aria-label="Estado">
+        {DIRECTORY_STAGES.map((item) => (
+          <Link
+            key={item}
+            href={directoryHref(item, attention, query)}
+            className={stageFilter === item ? "is-active" : ""}
+            aria-current={stageFilter === item ? "page" : undefined}
+          >
+            {DIRECTORY_STAGE_LABELS[item]}
+            <small>{stageCounts[item]}</small>
+          </Link>
+        ))}
+      </nav>
+
+      <nav className="p360v2-chips p360v2-attention" aria-label="Atención">
+        {attentionOptions.map((item) => (
+          <Link
+            key={item}
+            href={directoryHref(stageFilter, attention === item ? null : item, query)}
+            className={attention === item ? "is-active" : ""}
+            aria-current={attention === item ? "page" : undefined}
+          >
+            {DIRECTORY_ATTENTION_LABELS[item]}
+          </Link>
+        ))}
       </nav>
 
       {params.created === "student" ? (
@@ -593,68 +543,32 @@ export default async function StudentsPage({
           <div>
             <p className="eyebrow">DIRECTORIO</p>
             <h2>
-              {status === "all"
-                ? "Todas"
-                : status === "active"
-                  ? "Activas"
-                  : status === "inactive"
-                    ? "Inactivas"
-                    : status === "expiring"
-                      ? "Por vencer"
-                      : status === "expired"
-                        ? "Exalumnas"
-                        : status === "trial"
-                          ? "Alumnas de prueba"
-                          : status === "no_show"
-                            ? "No show"
-                            : status === "prospect"
-                              ? "Prospectos"
-                              : "Vencidas"}
+              {DIRECTORY_STAGE_LABELS[stageFilter]}
+              {attention ? ` · ${DIRECTORY_ATTENTION_LABELS[attention]}` : ""}
             </h2>
           </div>
-          <span className="count-badge">
-            {filteredStudents.length +
-              (status === "all" || status === "prospect" ? prospectRows.length : 0)}
-          </span>
+          <span className="count-badge">{total}</span>
         </div>
 
-        {filteredStudents.length === 0 &&
-        (!(status === "all" || status === "prospect") || prospectRows.length === 0) ? (
+        {total === 0 ? (
           <div className="empty-state">
             {query
               ? "No encontramos personas que coincidan con la búsqueda."
-              : "No hay personas en este filtro todavía."}
+              : "No hay personas con estos filtros."}
           </div>
         ) : (
           <div className="student-directory-list">
-            <div className="crm-list-labels" aria-hidden="true">
-              <span>Persona</span>
-              <span>Último mensaje</span>
-              <span>Etapa y estado</span>
-              <span>Próximo paso</span>
-            </div>
-            {filteredStudents.map((student) => {
+            {rows.map(({ student, stage, pending }) => {
               const acquisition = currentAcquisitionFor(student.id);
-              const stage = stageFor(student);
-              const recommended = renewalRecommended(
-                stage,
-                acquisition?.expires_on,
-                today,
-                sevenDaysFromToday,
-              );
               const remaining = acquisition ? (visibleBalanceMap.get(acquisition.id) ?? 0) : null;
-              const hasExpired = (acquisitionsByStudent.get(student.id) ?? []).some((item) =>
-                Boolean(item.expires_on && item.expires_on < today),
-              );
-              const state = !canReadProducts
-                ? "Consulta el perfil"
-                : acquisition?.expires_on
-                  ? "Paquete vence " + shortDate(acquisition.expires_on, studio.locale)
-                  : acquisition
-                    ? "Paquete sin vencimiento"
-                    : hasExpired
-                      ? "Paquete vencido"
-                      : "Sin paquete activo";
+              const first = pending[0];
+              const next = first
+                ? first.text
+                : acquisition && canReadProducts
+                  ? `${productNameMap.get(acquisition.product_template_id) ?? "Paquete"} · ${
+                      acquisition.unlimited ? "ilimitado" : `${remaining} clases`
+                    } · vence ${shortDate(acquisition.expires_on, studio.locale)}`
+                  : "Al día";
               return (
                 <ContactRow
                   key={student.id}
@@ -664,35 +578,13 @@ export default async function StudentsPage({
                   userId={student.user_id}
                   stage={stage}
                   href={`/admin/alumnas/${student.id}`}
-                  channel={communications.channels.get(student.id)}
-                  message={communications.messages.get(student.id)?.[0]}
-                  state={
-                    acquisition
-                      ? `${productNameMap.get(acquisition.product_template_id) ?? "Paquete"} · ${state}`
-                      : state
-                  }
-                  next={
-                    recommended
-                      ? "✦ Renovación sugerida"
-                      : stage === "trial"
-                        ? "Revisar prueba"
-                        : stage === "former"
-                          ? "Revisar expediente"
-                          : "Ver perfil"
-                  }
-                  nextDetail={
-                    acquisition
-                      ? acquisition.unlimited
-                        ? "Clases ilimitadas"
-                        : `${remaining} clases restantes`
-                      : undefined
-                  }
-                  timeZone={timeZone}
-                  locale={studio.locale}
+                  next={next}
+                  tone={first?.tone ?? "ok"}
+                  extra={pending.length > 1 ? pending.length - 1 : undefined}
                 />
               );
             })}
-            {status === "all" || status === "prospect"
+            {showProspects
               ? prospectRows.map((prospect) => (
                   <ContactRow
                     key={prospect.id}
@@ -701,15 +593,8 @@ export default async function StudentsPage({
                     phone={prospect.phone}
                     stage="prospect"
                     href={`/admin/alumnas/contactos/${prospect.id}`}
-                    channel={communications.channels.get(prospect.id)}
-                    message={communications.messages.get(prospect.id)?.[0]}
-                    state="Sin convertir a alumna"
-                    next="Ver contacto"
-                    nextDetail={
-                      "Recibido " + shortDate(prospect.created_at.slice(0, 10), studio.locale)
-                    }
-                    timeZone={timeZone}
-                    locale={studio.locale}
+                    next={`Prospecto desde ${shortDate(prospect.created_at.slice(0, 10), studio.locale)}`}
+                    tone="info"
                   />
                 ))
               : null}

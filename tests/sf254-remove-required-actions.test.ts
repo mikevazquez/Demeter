@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
+import { profile360Source } from "./support/profile360-source";
 
 function read(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
@@ -11,7 +12,7 @@ const dashboard = read("app/admin/page.tsx");
 const layout = read("app/admin/layout.tsx");
 const more = read("app/admin/mas/page.tsx");
 const session = read("app/admin/agenda/[sessionId]/page.tsx");
-const student = read("app/admin/alumnas/[studentId]/page.tsx");
+const student = profile360Source();
 const capabilities = read("lib/auth/capabilities.ts");
 const catalog = read("lib/automations/catalog.ts");
 const migration = read("supabase/migrations/20260920172001_sf254_remove_required_actions.sql");

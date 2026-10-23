@@ -7,30 +7,42 @@ function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
-describe("ADMIN-UX-04 Profile 360 visual homologation", () => {
+describe("ADMIN-UX-04 · P360-V2 Profile 360 visual homologation", () => {
   const page = source("app/admin/alumnas/[studentId]/page.tsx");
-  const overview = source("app/admin/alumnas/[studentId]/Profile360Overview.tsx");
+  const header = source("app/admin/alumnas/[studentId]/Profile360Header.tsx");
+  const tabs = source("app/admin/alumnas/[studentId]/profile-tabs.ts");
   const styles = source("app/admin/alumnas/profile-360-admin-ux-04.css");
   const layout = source("app/admin/layout.tsx");
 
-  it("scopes the approved visual layer without changing Profile 360 flows", () => {
+  it("scopes the approved visual layer and routes the five P360-V2 tabs", () => {
     expect(page).toContain(
-      'className="dashboard-shell profile360-page admin-ux04-profile360 crm-page"',
+      'className="dashboard-shell profile360-page admin-ux04-profile360 crm-page p360v2"',
     );
-    expect(page).toContain("<Profile360Overview");
-    expect(page).toContain('view === "profile"');
-    expect(page).toContain('view === "packages"');
-    expect(page).toContain('view === "rewards"');
-    expect(page).toContain('view === "followup"');
-    expect(page).toContain('view === "history"');
+    expect(page).toContain("<Profile360Header");
+    for (const tab of ["summary", "packages", "progress", "activity", "record"]) {
+      expect(page).toContain(`tab === "${tab}"`);
+    }
   });
 
-  it("keeps the approved identity, tabs and summary architecture", () => {
-    expect(overview).toContain("profile360-approved-header");
-    expect(overview).toContain("profile360-approved-person");
-    expect(overview).toContain("profile360-approved-tabs");
-    expect(overview).toContain("profile360-approved-package");
-    expect(overview).toContain("profile360-approved-indicators");
+  it("keeps legacy ?view= links working by mapping them to their new tab", () => {
+    for (const legacy of [
+      "followup",
+      "rewards",
+      "evaluations",
+      "conversation",
+      "history",
+      "documents",
+      "profile",
+    ]) {
+      expect(tabs).toContain(`  ${legacy}: "`);
+    }
+  });
+
+  it("keeps the approved identity header and a single level of tabs", () => {
+    expect(header).toContain("profile360-approved-header");
+    expect(header).toContain("profile360-approved-person");
+    expect(header).toContain("profile360-approved-tabs");
+    expect(header).not.toContain("crm-operation-tabs");
   });
 
   it("uses the global premium dark baseline and magenta accent", () => {

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
+import { profile360Source } from "./support/profile360-source";
 
 const core = readFileSync(
   join(process.cwd(), "supabase/migrations/20260921003000_sf255_reward_status_core.sql"),
@@ -31,10 +32,7 @@ const waitlistControl = readFileSync(
 );
 const homePage = readFileSync(join(process.cwd(), "app/student/page.tsx"), "utf8");
 const profilePage = readFileSync(join(process.cwd(), "app/student/perfil/page.tsx"), "utf8");
-const adminStudentProfilePage = readFileSync(
-  join(process.cwd(), "app/admin/alumnas/[studentId]/page.tsx"),
-  "utf8",
-);
+const adminStudentProfilePage = profile360Source();
 const studentActions = readFileSync(join(process.cwd(), "app/student/actions.ts"), "utf8");
 const invitationMigration = readFileSync(
   join(process.cwd(), "supabase/migrations/20260921014500_sf255_guest_invitations.sql"),
