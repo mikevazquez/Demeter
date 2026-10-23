@@ -1,0 +1,23 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "24718f760cfd68087a41df6004c135bd982cbc40",
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "FAILED",
+      "errorType": "Playwright.Error",
+      "stage": "not recorded",
+      "businessMutations": 0,
+      "causeProven": false
+    },
+    {
+      "attempt": 2,
+      "status": "PASSED",
+      "surface": "fresh browser, read-only full evidence download",
+      "report": "final-export.json",
+      "businessMutations": 0
+    }
+  ],
+  "firstFailurePreserved": true,
+  "functionalApprovalByMike": false
+}

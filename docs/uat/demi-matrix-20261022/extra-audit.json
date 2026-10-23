@@ -1,0 +1,266 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+  "fixtureAdjustments": [
+    "Audit initially referenced nonexistent demi_group_participants.studio_id; corrected to join group_id to demi_group_bookings.studio_id.",
+    "Audit lease_token corrected to actual demi_uat_runs.lease_until."
+  ],
+  "audit": {
+    "sale_lines": [
+      {
+        "id": "c713a4be-090f-4692-975e-232a8f03d3da",
+        "sale_id": "fc12d3b2-859d-4bf9-8947-210b8d393ef1",
+        "quantity": 1,
+        "studio_id": "01c855e3-5485-4cb6-9a74-9a6ad5ef241f",
+        "created_at": "2026-10-22T13:50:00.065713+00:00",
+        "refunded_at": null,
+        "refunded_by": null,
+        "product_name": "Primera clase UAT",
+        "discount_kind": null,
+        "refund_reason": null,
+        "discount_input": null,
+        "discount_minor": 0,
+        "discount_reason": null,
+        "line_total_minor": 15000,
+        "unit_price_minor": 15000,
+        "product_template_id": "5fe608ed-4c52-48d0-8750-30bcc4780215",
+        "discount_authorized_by": null
+      },
+      {
+        "id": "98a44b7f-4247-4445-8782-27daa5a63ea7",
+        "sale_id": "7a0b3a86-b5d5-4f9c-a78a-28d25465c158",
+        "quantity": 1,
+        "studio_id": "307d6744-ae2d-4042-b78e-7cfa1e7b5b01",
+        "created_at": "2026-10-22T13:42:53.37011+00:00",
+        "refunded_at": null,
+        "refunded_by": null,
+        "product_name": "Paquete UAT 8 clases",
+        "discount_kind": null,
+        "refund_reason": null,
+        "discount_input": null,
+        "discount_minor": 0,
+        "discount_reason": null,
+        "line_total_minor": 60000,
+        "unit_price_minor": 60000,
+        "product_template_id": "317da1a8-d684-47e9-b394-9614163cd30f",
+        "discount_authorized_by": null
+      },
+      {
+        "id": "de522779-b7e7-4208-8f15-03df68f30175",
+        "sale_id": "7a0b3a86-b5d5-4f9c-a78a-28d25465c158",
+        "quantity": 1,
+        "studio_id": "307d6744-ae2d-4042-b78e-7cfa1e7b5b01",
+        "created_at": "2026-10-22T13:42:53.37011+00:00",
+        "refunded_at": null,
+        "refunded_by": null,
+        "product_name": "Inscripción UAT",
+        "discount_kind": null,
+        "refund_reason": null,
+        "discount_input": null,
+        "discount_minor": 0,
+        "discount_reason": null,
+        "line_total_minor": 20000,
+        "unit_price_minor": 20000,
+        "product_template_id": "928f5ddc-5e6d-497a-a17c-5a0e5ae28cfd",
+        "discount_authorized_by": null
+      }
+    ],
+    "booking_failures": [
+      {
+        "id": "2388b294-f85a-4744-a3b1-5eef5b0e9441",
+        "turn_id": "4777d220-591d-44d3-af45-4e2d534d3e05",
+        "studio_id": "77a2813c-0d4d-4433-a3f0-53698fd8337f",
+        "created_at": "2026-10-22T13:52:14.3205+00:00",
+        "error_code": "booking_execution_failed",
+        "pending_id": "9a8c7848-1e07-4d30-831f-c89d8c2f9a62",
+        "session_id": "ad5bd3bf-4575-4ab1-80e9-1584233858da",
+        "student_id": "3a592b68-4494-4f80-a5cd-d03292318359",
+        "conversation_id": "d9f04684-7b51-4b6d-8426-4232696a70c4"
+      },
+      {
+        "id": "2ad39e16-77a0-4742-8225-577d3d865f0c",
+        "turn_id": "3cc462ee-f6e9-4776-a196-e2925ab2bd74",
+        "studio_id": "77a2813c-0d4d-4433-a3f0-53698fd8337f",
+        "created_at": "2026-10-22T13:52:54.541515+00:00",
+        "error_code": "booking_execution_failed",
+        "pending_id": "9a8c7848-1e07-4d30-831f-c89d8c2f9a62",
+        "session_id": "ad5bd3bf-4575-4ab1-80e9-1584233858da",
+        "student_id": "3a592b68-4494-4f80-a5cd-d03292318359",
+        "conversation_id": "d9f04684-7b51-4b6d-8426-4232696a70c4"
+      },
+      {
+        "id": "ae01ccb9-a2c0-44eb-ac1b-5e3b9d0dcffc",
+        "turn_id": "7982a4bc-39c7-44e1-b437-e50555b1212f",
+        "studio_id": "77a2813c-0d4d-4433-a3f0-53698fd8337f",
+        "created_at": "2026-10-22T13:53:39.24887+00:00",
+        "error_code": "booking_execution_failed",
+        "pending_id": "9a8c7848-1e07-4d30-831f-c89d8c2f9a62",
+        "session_id": "ad5bd3bf-4575-4ab1-80e9-1584233858da",
+        "student_id": "3a592b68-4494-4f80-a5cd-d03292318359",
+        "conversation_id": "d9f04684-7b51-4b6d-8426-4232696a70c4"
+      }
+    ],
+    "handoff_policies": [
+      {
+        "enabled": true,
+        "studio_id": "01c855e3-5485-4cb6-9a74-9a6ad5ef241f",
+        "reason_code": "refund_request",
+        "assistant_key": "demi"
+      },
+      {
+        "enabled": true,
+        "studio_id": "01c855e3-5485-4cb6-9a74-9a6ad5ef241f",
+        "reason_code": "technical_block",
+        "assistant_key": "demi"
+      },
+      {
+        "enabled": true,
+        "studio_id": "01c855e3-5485-4cb6-9a74-9a6ad5ef241f",
+        "reason_code": "refund_request",
+        "assistant_key": "polina"
+      },
+      {
+        "enabled": true,
+        "studio_id": "01c855e3-5485-4cb6-9a74-9a6ad5ef241f",
+        "reason_code": "technical_block",
+        "assistant_key": "polina"
+      },
+      {
+        "enabled": true,
+        "studio_id": "69190cff-f90c-4b89-849c-e18c65b2d338",
+        "reason_code": "refund_request",
+        "assistant_key": "demi"
+      },
+      {
+        "enabled": true,
+        "studio_id": "69190cff-f90c-4b89-849c-e18c65b2d338",
+        "reason_code": "technical_block",
+        "assistant_key": "demi"
+      },
+      {
+        "enabled": true,
+        "studio_id": "69190cff-f90c-4b89-849c-e18c65b2d338",
+        "reason_code": "refund_request",
+        "assistant_key": "polina"
+      },
+      {
+        "enabled": true,
+        "studio_id": "69190cff-f90c-4b89-849c-e18c65b2d338",
+        "reason_code": "technical_block",
+        "assistant_key": "polina"
+      },
+      {
+        "enabled": true,
+        "studio_id": "960676d8-520c-4396-9ee1-d45d39108044",
+        "reason_code": "refund_request",
+        "assistant_key": "demi"
+      },
+      {
+        "enabled": true,
+        "studio_id": "960676d8-520c-4396-9ee1-d45d39108044",
+        "reason_code": "technical_block",
+        "assistant_key": "demi"
+      },
+      {
+        "enabled": true,
+        "studio_id": "960676d8-520c-4396-9ee1-d45d39108044",
+        "reason_code": "refund_request",
+        "assistant_key": "polina"
+      },
+      {
+        "enabled": true,
+        "studio_id": "960676d8-520c-4396-9ee1-d45d39108044",
+        "reason_code": "technical_block",
+        "assistant_key": "polina"
+      },
+      {
+        "enabled": true,
+        "studio_id": "e2e22355-27d4-49fb-9ce6-341d15d6aad6",
+        "reason_code": "refund_request",
+        "assistant_key": "demi"
+      },
+      {
+        "enabled": true,
+        "studio_id": "e2e22355-27d4-49fb-9ce6-341d15d6aad6",
+        "reason_code": "technical_block",
+        "assistant_key": "demi"
+      },
+      {
+        "enabled": true,
+        "studio_id": "e2e22355-27d4-49fb-9ce6-341d15d6aad6",
+        "reason_code": "refund_request",
+        "assistant_key": "polina"
+      },
+      {
+        "enabled": true,
+        "studio_id": "e2e22355-27d4-49fb-9ce6-341d15d6aad6",
+        "reason_code": "technical_block",
+        "assistant_key": "polina"
+      },
+      {
+        "enabled": true,
+        "studio_id": "77a2813c-0d4d-4433-a3f0-53698fd8337f",
+        "reason_code": "refund_request",
+        "assistant_key": "demi"
+      },
+      {
+        "enabled": true,
+        "studio_id": "77a2813c-0d4d-4433-a3f0-53698fd8337f",
+        "reason_code": "technical_block",
+        "assistant_key": "demi"
+      },
+      {
+        "enabled": true,
+        "studio_id": "77a2813c-0d4d-4433-a3f0-53698fd8337f",
+        "reason_code": "refund_request",
+        "assistant_key": "polina"
+      },
+      {
+        "enabled": true,
+        "studio_id": "77a2813c-0d4d-4433-a3f0-53698fd8337f",
+        "reason_code": "technical_block",
+        "assistant_key": "polina"
+      },
+      {
+        "enabled": true,
+        "studio_id": "307d6744-ae2d-4042-b78e-7cfa1e7b5b01",
+        "reason_code": "refund_request",
+        "assistant_key": "demi"
+      },
+      {
+        "enabled": true,
+        "studio_id": "307d6744-ae2d-4042-b78e-7cfa1e7b5b01",
+        "reason_code": "technical_block",
+        "assistant_key": "demi"
+      },
+      {
+        "enabled": true,
+        "studio_id": "307d6744-ae2d-4042-b78e-7cfa1e7b5b01",
+        "reason_code": "refund_request",
+        "assistant_key": "polina"
+      },
+      {
+        "enabled": true,
+        "studio_id": "307d6744-ae2d-4042-b78e-7cfa1e7b5b01",
+        "reason_code": "technical_block",
+        "assistant_key": "polina"
+      }
+    ],
+    "group_participants": null,
+    "class_reminder_rules": [
+      {
+        "id": "401d5938-28d2-4497-9f4f-716b49f27ab9",
+        "enabled": true,
+        "rule_key": "p0.booking.class_reminder_5h",
+        "studio_id": "960676d8-520c-4396-9ee1-d45d39108044",
+        "created_at": "2026-10-22T13:37:33.533065+00:00",
+        "event_type": "booking.created",
+        "updated_at": "2026-10-22T13:37:34.042772+00:00",
+        "archived_at": null,
+        "created_by_user_id": null,
+        "updated_by_user_id": null,
+        "current_version_number": 5
+      }
+    ]
+  }
+}

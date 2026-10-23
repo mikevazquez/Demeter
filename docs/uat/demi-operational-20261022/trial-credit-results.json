@@ -1,0 +1,74 @@
+{
+  "sourceSha": "0d3020e73d49afbf998be717583761b3edfb54f5",
+  "environment": "hedouonyhynuvwbckdlg",
+  "script": "tests/demi-2-trial-credit-uat.sql",
+  "rollback": true,
+  "scriptAdjustments": [],
+  "results": [
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "payment_first_no_profiles"
+    },
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "partial_amount_blocked"
+    },
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "two_profiles_reservations_single_allocation"
+    },
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "completion_idempotent"
+    },
+    {
+      "case": "M06",
+      "passed": true,
+      "variant": "review_allocations_once"
+    },
+    {
+      "case": "M10",
+      "passed": true,
+      "variant": "trial_credit_first_class_anchor"
+    },
+    {
+      "case": "M10",
+      "passed": true,
+      "variant": "paid_trial_rebook_preserves_expiry"
+    },
+    {
+      "case": "M10",
+      "passed": true,
+      "variant": "paid_trial_reschedule_preserves_expiry"
+    },
+    {
+      "case": "M10",
+      "passed": true,
+      "variant": "paid_trial_after_expiry_blocked"
+    },
+    {
+      "case": "M10",
+      "passed": true,
+      "variant": "paid_trial_exact_5_hours_restores_once"
+    },
+    {
+      "case": "M10",
+      "passed": true,
+      "variant": "late_credit_exhaustion_blocks_unpaid_and_stale_confirmation"
+    },
+    {
+      "case": "M10",
+      "passed": true,
+      "variant": "fresh_payment_separate_credit_replay_preserves_consumed_history"
+    },
+    {
+      "case": "M10",
+      "passed": true,
+      "variant": "paid_trial_absence_consumed_once_preserved_requires_new_payment"
+    }
+  ]
+}

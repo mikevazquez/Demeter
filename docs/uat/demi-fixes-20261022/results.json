@@ -1,0 +1,378 @@
+{
+  "date": "2026-10-22",
+  "project_id": "hedouonyhynuvwbckdlg",
+  "environment": "Studio Flow Sandbox",
+  "base_sha": "776537bbe92624cddb26727709f31b5e34a0e5e7",
+  "source_sha": "56607e7e366cf8ea02cf6e34e8a8d477cba8d73f",
+  "database_change_source_sha": "cc00036add0e1b59a1ddd1a06d6f5989cfe67c02",
+  "application_status": "Local tests pass; full captured model conversations NOT rerun on this candidate.",
+  "migration": {
+    "version": "20261022144842",
+    "name": "demi_cash_purchase_service_eligibility",
+    "applied": true,
+    "local_version_note": "Created by CLI as 20261022144555; renamed to actual MCP-applied version 20261022144842 without SQL changes. Database migration history untouched."
+  },
+  "result": "TECHNICAL_FIXES_VERIFIED_WITH_UAT_STILL_BLOCKED",
+  "cash": {
+    "sql_controls_passed": 25,
+    "suites": [
+      {
+        "file": "tests/demi-2-cash-human-uat.sql",
+        "before": {
+          "error": {
+            "name": "HttpException",
+            "message": "Failed to run sql query: ERROR:  42501: permission denied for function product_purchase_eligibility\nCONTEXT:  PL/pgSQL function public.service_create_demi_cash_purchase(uuid,uuid,uuid,uuid,uuid,integer) line 50 at assignment\nPL/pgSQL function inline_code_block line 10 at assignment\n"
+          }
+        },
+        "after": [
+          {
+            "case": "M13",
+            "passed": true,
+            "variant": "cash_debt_without_fake_payment_or_start"
+          },
+          {
+            "case": "M13",
+            "passed": true,
+            "variant": "cash_sale_idempotent"
+          },
+          {
+            "case": "M13",
+            "passed": true,
+            "variant": "first_booking_starts_validity_second_blocked_until_collection"
+          },
+          {
+            "case": "M13",
+            "passed": true,
+            "variant": "cash_no_show_consumes_once_and_keeps_debt"
+          },
+          {
+            "case": "M13",
+            "passed": true,
+            "variant": "actual_collection_unlocks_second_booking_without_reset"
+          },
+          {
+            "case": "M17",
+            "passed": true,
+            "variant": "takeover_persisted_resolution_required"
+          },
+          {
+            "case": "M17",
+            "passed": true,
+            "variant": "resolution_returns_control_idempotently"
+          }
+        ]
+      },
+      {
+        "file": "tests/demi-cash-promised-date-uat.sql",
+        "before": {
+          "error": {
+            "name": "HttpException",
+            "message": "Failed to run sql query: ERROR:  42501: permission denied for function product_purchase_eligibility\nCONTEXT:  PL/pgSQL function public.service_create_demi_cash_purchase(uuid,uuid,uuid,uuid,uuid,integer) line 50 at assignment\nPL/pgSQL function public.service_create_demi_cash_purchase_with_due_date(uuid,uuid,uuid,uuid,uuid,integer,date) line 10 at assignment\nPL/pgSQL function inline_code_block line 12 at assignment\n"
+          }
+        },
+        "after": [
+          {
+            "case": "C01",
+            "passed": true,
+            "variant": "promised_date_persisted"
+          },
+          {
+            "case": "C02",
+            "passed": true,
+            "variant": "debt_visible_without_reservation_or_fake_collection"
+          },
+          {
+            "case": "C03",
+            "passed": true,
+            "variant": "replay_preserves_original_promise"
+          },
+          {
+            "case": "C04",
+            "passed": true,
+            "variant": "past_date_rejected_before_sale"
+          }
+        ]
+      },
+      {
+        "file": "tests/demi-cash-eligibility-boundary-uat.sql",
+        "before": null,
+        "after": [
+          {
+            "passed": true,
+            "variant": "invoker_and_private_helper_boundary_preserved"
+          },
+          {
+            "passed": true,
+            "variant": "cross_studio_student_rejected"
+          },
+          {
+            "passed": true,
+            "variant": "conversation_identity_preserved"
+          },
+          {
+            "passed": true,
+            "variant": "cross_studio_product_rejected"
+          },
+          {
+            "passed": true,
+            "variant": "inactive_student_rejected"
+          },
+          {
+            "passed": true,
+            "variant": "price_revalidated"
+          },
+          {
+            "passed": true,
+            "variant": "disabled_cash_rejected"
+          },
+          {
+            "passed": true,
+            "variant": "included_enrollment_restriction_preserved"
+          },
+          {
+            "passed": true,
+            "variant": "purchase_limit_enforced_by_existing_eligibility"
+          },
+          {
+            "passed": true,
+            "variant": "replay_preserves_sale_despite_reached_limit"
+          },
+          {
+            "passed": true,
+            "variant": "new_customer_only_enforced"
+          },
+          {
+            "passed": true,
+            "variant": "one_debt_no_payment_reservation_or_automatic_handoff"
+          },
+          {
+            "passed": true,
+            "variant": "authenticated_denied_even_with_service_claim"
+          },
+          {
+            "passed": true,
+            "variant": "anonymous_denied_even_with_service_claim"
+          }
+        ]
+      }
+    ]
+  },
+  "handoff": {
+    "before_script_adjustment": {
+      "error": {
+        "name": "HttpException",
+        "message": "Failed to run sql query: ERROR:  P0001: expected_nine_reasons:18\nCONTEXT:  PL/pgSQL function inline_code_block line 29 at RAISE\n"
+      }
+    },
+    "after": {
+      "manual_refunds_only": true,
+      "scope_and_permissions": true,
+      "configured_reasons_passed": 9
+    },
+    "script_adjustment": "Filter fixture policy loop by assistant_key=demi; initial 18 rows included Polina, expected nine Demi reasons."
+  },
+  "privilege_baseline": [
+    {
+      "signature": "private.product_purchase_eligibility(uuid,uuid,uuid)",
+      "security_definer": false,
+      "service_execute": false,
+      "authenticated_execute": false,
+      "anon_execute": false
+    },
+    {
+      "signature": "service_product_purchase_eligibility(uuid,uuid,uuid)",
+      "security_definer": true,
+      "service_execute": true,
+      "authenticated_execute": false,
+      "anon_execute": false
+    },
+    {
+      "signature": "service_create_demi_cash_purchase(uuid,uuid,uuid,uuid,uuid,integer)",
+      "security_definer": false,
+      "service_execute": true,
+      "authenticated_execute": false,
+      "anon_execute": false
+    },
+    {
+      "signature": "service_create_demi_cash_purchase_with_due_date(uuid,uuid,uuid,uuid,uuid,integer,date)",
+      "security_definer": false,
+      "service_execute": true,
+      "authenticated_execute": false,
+      "anon_execute": false
+    }
+  ],
+  "privilege_after": [
+    {
+      "signature": "private.product_purchase_eligibility(uuid,uuid,uuid)",
+      "anon_execute": false,
+      "service_execute": false,
+      "security_definer": false,
+      "authenticated_execute": false
+    },
+    {
+      "signature": "service_product_purchase_eligibility(uuid,uuid,uuid)",
+      "anon_execute": false,
+      "service_execute": true,
+      "security_definer": true,
+      "authenticated_execute": false
+    },
+    {
+      "signature": "service_create_demi_cash_purchase(uuid,uuid,uuid,uuid,uuid,integer)",
+      "anon_execute": false,
+      "service_execute": true,
+      "security_definer": false,
+      "authenticated_execute": false
+    },
+    {
+      "signature": "service_create_demi_cash_purchase_with_due_date(uuid,uuid,uuid,uuid,uuid,integer,date)",
+      "anon_execute": false,
+      "service_execute": true,
+      "security_definer": false,
+      "authenticated_execute": false
+    }
+  ],
+  "final_db_audit": {
+    "transfer_context": {
+      "id": "14bbb6ce-06cf-4986-a8c1-9dcebaef4201",
+      "status": "validated",
+      "currency": "MXN",
+      "amount_minor": 80000
+    },
+    "rolled_back_fixtures": 0,
+    "demi_and_polina_policies": [
+      {
+        "enabled": true,
+        "reason_code": "refund_request",
+        "assistant_key": "demi"
+      },
+      {
+        "enabled": true,
+        "reason_code": "technical_block",
+        "assistant_key": "demi"
+      },
+      {
+        "enabled": true,
+        "reason_code": "refund_request",
+        "assistant_key": "polina"
+      },
+      {
+        "enabled": true,
+        "reason_code": "technical_block",
+        "assistant_key": "polina"
+      }
+    ]
+  },
+  "advisors": {
+    "before": [
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "count": 38,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+      },
+      {
+        "name": "anon_security_definer_function_executable",
+        "level": "WARN",
+        "count": 4,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable"
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "count": 270,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable"
+      },
+      {
+        "name": "auth_leaked_password_protection",
+        "level": "WARN",
+        "count": 1,
+        "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+      }
+    ],
+    "after": [
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "count": 38,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+      },
+      {
+        "name": "anon_security_definer_function_executable",
+        "level": "WARN",
+        "count": 4,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable"
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "count": 270,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable"
+      },
+      {
+        "name": "auth_leaked_password_protection",
+        "level": "WARN",
+        "count": 1,
+        "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+      }
+    ],
+    "new_findings": 0
+  },
+  "local_tests": {
+    "files": 236,
+    "passed": 1822,
+    "focused_passed": 115,
+    "typescript": "PASS",
+    "format": "PASS",
+    "eslint_errors": 0,
+    "eslint_preexisting_warnings": 1,
+    "regression_before_fixes": {
+      "handoff": "four new policy cases failed before fix",
+      "transfer_validation": "two status context cases failed before fix"
+    }
+  },
+  "remaining": [
+    "Repeat captured conversations for cash/handoff/validated payment on candidate; no active admin UAT browser session.",
+    "Define X and what counts as a cash attempt; pending user clarification, booking limit three is not assumed.",
+    "MATRIX-F06 duplicate reminder remains failed; no notification engine/channel/adapter modification.",
+    "Investigate eligibility failures/timeouts and complete live profile fixture/Mike functional UAT."
+  ],
+  "safety": {
+    "sql_rollback": true,
+    "permanent_fixtures_after": 0,
+    "new_temporary_accounts": 0,
+    "external_messages": 0,
+    "production_touched": false,
+    "channels_or_adapters_changed": false,
+    "pilot_active": false,
+    "pr_merged": false
+  },
+  "sha256": {
+    "tests/demi-2-cash-human-uat.sql": "5755331e27647d5eea4d6b39e54f9582c81341e65c1b2d47ec0012c4773251a0",
+    "tests/demi-cash-promised-date-uat.sql": "a0f3e4fbc53963420b2d3ab28cf1c8399ef58aa797f0d058417aef50ceeba676",
+    "tests/demi-cash-eligibility-boundary-uat.sql": "c24c4eeb92bbffdb650c088075852616d09e1839d616cdff1d8d09fdf1a932e6",
+    "tests/demi-handoff-all-reasons-uat.sql": "e97d40ed77dae6c0aa268cafacc1b360c3df475420e885a263d069414acab6fc",
+    "supabase/migrations/20261022144842_demi_cash_purchase_service_eligibility.sql": "813ff82c93ec2b101ebd5f8c795b5bfd269678e2008dc2f4224b42bd1df6657d",
+    "lib/assistant/action-tools.ts": "b7546bba20c23de064698cbe8ecbf1d1369b1c5dad7bb7cb94cca58c4cc3490a",
+    "lib/assistant/orchestrator.ts": "e482b31c8bee5bf00a731371c367a7d52138bcedbef77c450f3aada9c6f0069d",
+    "tests/demi-prompt-workbench.test.ts": "6aa98ee18936424fd4e8d520af904987e4fba035c6fbb9ffc9c0221f768f11c0"
+  },
+  "ci": {
+    "sha": "56607e7e366cf8ea02cf6e34e8a8d477cba8d73f",
+    "main": {
+      "id": 39800450094,
+      "conclusion": "success"
+    },
+    "governance_supervisor": {
+      "id": 39800450060,
+      "conclusion": "success"
+    }
+  },
+  "preview": {
+    "id": "dpl_C7zVro8L5qsgR6NSdyZw8cNYNioL",
+    "url": "https://demeterbueno-br1jt47v7-demeter3.vercel.app",
+    "state": "READY",
+    "target": "preview",
+    "sha": "56607e7e366cf8ea02cf6e34e8a8d477cba8d73f",
+    "captured_conversations_repeated": false
+  }
+}

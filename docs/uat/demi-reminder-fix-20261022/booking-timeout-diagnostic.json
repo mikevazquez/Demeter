@@ -1,0 +1,29 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "date": "2026-10-22",
+  "historical_runtime_sha": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+  "diagnostic_database_source_sha": "af412c40629253ea297d9618a28141abe854f213",
+  "original_failures": [
+    {
+      "event_message": "canceling statement due to statement timeout",
+      "function_context": "PL/pgSQL function private.booking_eligibility_core_demi2_base(uuid,uuid,boolean) line 18 at statement block\nPL/pgSQL function private.booking_eligibility_core(uuid,uuid,boolean) line 7 at RETURN\nPL/pgSQL function public.service_booking_eligibility(uuid,uuid,uuid) line 26 at RETURN",
+      "sql_state": "57014",
+      "timestamp": "2026-10-22T13:43:17.382000"
+    },
+    {
+      "event_message": "canceling statement due to statement timeout",
+      "function_context": "SQL expression \"exists(select 1 from public.demi_cash_purchases c join public.class_sessions cs on cs.id=target_session_id and cs.studio_id=c.studio_id join public.sales s on s.id=c.sale_id and s.studio_id=c.studio_id where c.student_id=target_student_id and s.status='confirmed' and s.total_minor>(select coalesce(sum(case when kind='payment' then amount_minor else -amount_minor end),0) from public.payments where sale_id=s.id and studio_id=c.studio_id))\"\nPL/pgSQL function private.booking_eligibility_core(uuid,uuid,boolean) line 3 at IF\nPL/pgSQL function public.service_booking_eligibility(uuid,uuid,uuid) line 26 at RETURN",
+      "sql_state": "57014",
+      "timestamp": "2026-10-22T13:43:20.471000"
+    }
+  ],
+  "scope": "Read-only historical logs and a new rolled-back service_role fixture. No timeout/config/rule change.",
+  "current_probe": {
+    "eligible": true,
+    "database_role": "service_role",
+    "rpc_elapsed_ms": 87.206,
+    "statement_timeout": "8s",
+    "historical_failure_cleared": false
+  },
+  "conclusion": "Historical PostgreSQL 57014 timeouts confirmed inside service_booking_eligibility and private core/wrapper. Fresh fixture passes; old failure not cleared, broader cause not proven."
+}

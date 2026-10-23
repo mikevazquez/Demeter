@@ -1,0 +1,48 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "script": "tests/demi-2-cash-human-uat.sql",
+  "passed": true,
+  "rollback": true,
+  "rows": [
+    {
+      "results": [
+        {
+          "case": "M13",
+          "passed": true,
+          "variant": "cash_debt_without_fake_payment_or_start"
+        },
+        {
+          "case": "M13",
+          "passed": true,
+          "variant": "cash_sale_idempotent"
+        },
+        {
+          "case": "M13",
+          "passed": true,
+          "variant": "first_booking_starts_validity_second_blocked_until_collection"
+        },
+        {
+          "case": "M13",
+          "passed": true,
+          "variant": "cash_no_show_consumes_once_and_keeps_debt"
+        },
+        {
+          "case": "M13",
+          "passed": true,
+          "variant": "actual_collection_unlocks_second_booking_without_reset"
+        },
+        {
+          "case": "M17",
+          "passed": true,
+          "variant": "takeover_persisted_resolution_required"
+        },
+        {
+          "case": "M17",
+          "passed": true,
+          "variant": "resolution_returns_control_idempotently"
+        }
+      ]
+    }
+  ],
+  "runtimeSha": "24718f760cfd68087a41df6004c135bd982cbc40"
+}

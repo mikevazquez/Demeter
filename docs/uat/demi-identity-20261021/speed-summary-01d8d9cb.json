@@ -1,0 +1,301 @@
+{
+  "status": "FAILED",
+  "criterion": "Candidate median and nearest-rank p95 must both be <= base on same surface; no discarded samples",
+  "reason": "Candidate median regressed",
+  "p95Method": "nearest rank ceil(0.95*n)",
+  "tokensMethod": "sum output_tokens of every model call for the turn; includes reasoning tokens as reported by provider",
+  "environment": "hedouonyhynuvwbckdlg",
+  "baseRuntimeSha": "bfd395e11e6bb54f2841a3c3c1f3b6a0d8863cd9",
+  "baseDeploymentSha": "8c551473f6ffdcca07e57741bf74a0cc4bf416e5",
+  "candidateSha": "01d8d9cba024bc7bb4c254c96eb4c8d5f15b256b",
+  "byType": {
+    "saludo": {
+      "base": {
+        "n": 6,
+        "medianMs": 3753.5,
+        "p95Ms": 5286,
+        "outputTokensTotal": 172,
+        "outputTokensMedian": 28.5,
+        "errors": 0,
+        "modelCalls": 6
+      },
+      "candidate": {
+        "n": 6,
+        "medianMs": 4967.0,
+        "p95Ms": 7246,
+        "outputTokensTotal": 1048,
+        "outputTokensMedian": 153.0,
+        "errors": 0,
+        "modelCalls": 6
+      }
+    },
+    "consulta": {
+      "base": {
+        "n": 18,
+        "medianMs": 6970.0,
+        "p95Ms": 14068,
+        "outputTokensTotal": 3599,
+        "outputTokensMedian": 168.0,
+        "errors": 0,
+        "modelCalls": 37
+      },
+      "candidate": {
+        "n": 18,
+        "medianMs": 7430.0,
+        "p95Ms": 12005,
+        "outputTokensTotal": 4733,
+        "outputTokensMedian": 280.5,
+        "errors": 0,
+        "modelCalls": 31
+      }
+    },
+    "accion": {
+      "base": {
+        "n": 6,
+        "medianMs": 7264.0,
+        "p95Ms": 8471,
+        "outputTokensTotal": 1054,
+        "outputTokensMedian": 180.0,
+        "errors": 0,
+        "modelCalls": 15
+      },
+      "candidate": {
+        "n": 6,
+        "medianMs": 7945.0,
+        "p95Ms": 9645,
+        "outputTokensTotal": 1491,
+        "outputTokensMedian": 253.0,
+        "errors": 0,
+        "modelCalls": 15
+      }
+    },
+    "total": {
+      "base": {
+        "n": 30,
+        "medianMs": 6417.5,
+        "p95Ms": 11673,
+        "outputTokensTotal": 4825,
+        "outputTokensMedian": 138.5,
+        "errors": 0,
+        "modelCalls": 58
+      },
+      "candidate": {
+        "n": 30,
+        "medianMs": 7101.0,
+        "p95Ms": 10117,
+        "outputTokensTotal": 7272,
+        "outputTokensMedian": 259.5,
+        "errors": 0,
+        "modelCalls": 52
+      }
+    }
+  },
+  "byCase": {
+    "S01": {
+      "base": {
+        "n": 3,
+        "medianMs": 4011,
+        "p95Ms": 4124,
+        "outputTokensTotal": 69,
+        "outputTokensMedian": 23,
+        "errors": 0,
+        "modelCalls": 3
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 4358,
+        "p95Ms": 4969,
+        "outputTokensTotal": 206,
+        "outputTokensMedian": 69,
+        "errors": 0,
+        "modelCalls": 3
+      }
+    },
+    "S02": {
+      "base": {
+        "n": 3,
+        "medianMs": 3496,
+        "p95Ms": 5286,
+        "outputTokensTotal": 103,
+        "outputTokensMedian": 34,
+        "errors": 0,
+        "modelCalls": 3
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 5167,
+        "p95Ms": 7246,
+        "outputTokensTotal": 842,
+        "outputTokensMedian": 259,
+        "errors": 0,
+        "modelCalls": 3
+      }
+    },
+    "S03": {
+      "base": {
+        "n": 3,
+        "medianMs": 5973,
+        "p95Ms": 14068,
+        "outputTokensTotal": 587,
+        "outputTokensMedian": 181,
+        "errors": 0,
+        "modelCalls": 7
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 4427,
+        "p95Ms": 5739,
+        "outputTokensTotal": 386,
+        "outputTokensMedian": 162,
+        "errors": 0,
+        "modelCalls": 3
+      }
+    },
+    "S04": {
+      "base": {
+        "n": 3,
+        "medianMs": 7500,
+        "p95Ms": 11673,
+        "outputTokensTotal": 401,
+        "outputTokensMedian": 136,
+        "errors": 0,
+        "modelCalls": 6
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 7623,
+        "p95Ms": 12005,
+        "outputTokensTotal": 821,
+        "outputTokensMedian": 276,
+        "errors": 0,
+        "modelCalls": 6
+      }
+    },
+    "S05": {
+      "base": {
+        "n": 3,
+        "medianMs": 8549,
+        "p95Ms": 8577,
+        "outputTokensTotal": 960,
+        "outputTokensMedian": 320,
+        "errors": 0,
+        "modelCalls": 6
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 7814,
+        "p95Ms": 9627,
+        "outputTokensTotal": 1056,
+        "outputTokensMedian": 351,
+        "errors": 0,
+        "modelCalls": 6
+      }
+    },
+    "S06": {
+      "base": {
+        "n": 3,
+        "medianMs": 5956,
+        "p95Ms": 7616,
+        "outputTokensTotal": 359,
+        "outputTokensMedian": 118,
+        "errors": 0,
+        "modelCalls": 6
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 7577,
+        "p95Ms": 7613,
+        "outputTokensTotal": 696,
+        "outputTokensMedian": 234,
+        "errors": 0,
+        "modelCalls": 6
+      }
+    },
+    "S07": {
+      "base": {
+        "n": 3,
+        "medianMs": 7501,
+        "p95Ms": 8451,
+        "outputTokensTotal": 855,
+        "outputTokensMedian": 294,
+        "errors": 0,
+        "modelCalls": 6
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 9035,
+        "p95Ms": 10117,
+        "outputTokensTotal": 1055,
+        "outputTokensMedian": 298,
+        "errors": 0,
+        "modelCalls": 6
+      }
+    },
+    "S08": {
+      "base": {
+        "n": 3,
+        "medianMs": 6951,
+        "p95Ms": 6989,
+        "outputTokensTotal": 437,
+        "outputTokensMedian": 140,
+        "errors": 0,
+        "modelCalls": 6
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 6102,
+        "p95Ms": 6511,
+        "outputTokensTotal": 719,
+        "outputTokensMedian": 287,
+        "errors": 0,
+        "modelCalls": 4
+      }
+    },
+    "S09": {
+      "base": {
+        "n": 3,
+        "medianMs": 6216,
+        "p95Ms": 6461,
+        "outputTokensTotal": 479,
+        "outputTokensMedian": 175,
+        "errors": 0,
+        "modelCalls": 6
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 9323,
+        "p95Ms": 9645,
+        "outputTokensTotal": 913,
+        "outputTokensMedian": 296,
+        "errors": 0,
+        "modelCalls": 9
+      }
+    },
+    "S10": {
+      "base": {
+        "n": 3,
+        "medianMs": 8218,
+        "p95Ms": 8471,
+        "outputTokensTotal": 575,
+        "outputTokensMedian": 221,
+        "errors": 0,
+        "modelCalls": 9
+      },
+      "candidate": {
+        "n": 3,
+        "medianMs": 5590,
+        "p95Ms": 6643,
+        "outputTokensTotal": 578,
+        "outputTokensMedian": 186,
+        "errors": 0,
+        "modelCalls": 6
+      }
+    }
+  },
+  "qualityLimitations": {
+    "S03": "BLOCKED: simulated package status lacks expiry date",
+    "S02": "Seeded conversation history; no real payment intent certified",
+    "base_S08": "FAILED rule: 3/3 omit allowed cash fallback",
+    "realBusinessActions": 0
+  }
+}

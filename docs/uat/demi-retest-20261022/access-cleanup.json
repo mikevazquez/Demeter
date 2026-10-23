@@ -1,0 +1,29 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "d41135aab10670c3a0bcbab0ee77a8a5dea2ad80",
+  "userId": "0fd86d7b-f7ea-410a-8fc6-8017cbeb8a81",
+  "staleSessionDenied": true,
+  "loginHttpStatus": 400,
+  "loginError": "user_banned",
+  "privateFilesRemoved": [
+    "demi-uat-temporary-auth.json",
+    "demi-uat-preview-access.json",
+    "demi-matrix-browser-state.json",
+    "demi-retest-action-ids.json",
+    "demi-c07-preview-access.json",
+    "demi-c07-browser-state.json",
+    "demi-c07-action-id.json",
+    "demi-c07-v2-action-id.json",
+    "demi-c07-v3-preview-access.json",
+    "demi-c07-v3-browser-state.json",
+    "demi-retest-v3-action-ids.json",
+    "demi-c07-v3-action-id.json",
+    "demi-c07-v4-preview-access.json",
+    "demi-c07-v4-browser-state.json",
+    "demi-retest-v4-action-ids.json",
+    "demi-c07-v5-preview-access.json",
+    "demi-c07-v5-browser-state.json",
+    "demi-retest-v5-action-ids.json"
+  ],
+  "privateFilesAbsent": true
+}

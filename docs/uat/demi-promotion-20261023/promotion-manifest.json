@@ -1,0 +1,153 @@
+{
+  "environmentTested": "hedouonyhynuvwbckdlg",
+  "candidateAppSha": "24718f760cfd68087a41df6004c135bd982cbc40",
+  "pullRequest": 367,
+  "branch": "codex/demi-handoff-uat-20261022",
+  "mainObservedSha": "bfd395e11e6bb54f2841a3c3c1f3b6a0d8863cd9",
+  "pullRequestMergeableAtAppSha": true,
+  "pullRequestStillDraft": true,
+  "productionAuthorization": false,
+  "productionModified": false,
+  "pilot": "BLOCKED_INACTIVE",
+  "releaseGate": "MIKE_FUNCTIONAL_ACCEPTANCE_AND_EXPLICIT_PRODUCTION_AUTHORIZATION",
+  "migrations": [
+    {
+      "file": "supabase/migrations/20261021190000_demi_supersede_resolved_pendings.sql",
+      "sha256": "b21629ab5fc4a910ce44c4cff719e9b8b59bfd52579738610c039b481cdc5942",
+      "sandboxRecordedVersion": "20261021202125"
+    },
+    {
+      "file": "supabase/migrations/20261021200000_demi_transfer_enrollment_and_package.sql",
+      "sha256": "01e5ada44137852d31c72e5399b8423bf7b141caa374330b79a0791075f14145",
+      "sandboxRecordedVersion": "20261021202130"
+    },
+    {
+      "file": "supabase/migrations/20261021210000_demi_prospect_transfer_purchase.sql",
+      "sha256": "f1f07213f28cf97be18a7adba23fdfcdd7e8944ac1d9e55ca946a90ea9c6e200",
+      "sandboxRecordedVersion": "20261021202138"
+    },
+    {
+      "file": "supabase/migrations/20261022022254_demi_whatsapp_events_contact_received_index.sql",
+      "sha256": "6d5ba0a57ca7efe2e8bb2057ea00970aea953149bfada3defa770e2a9e9787f3",
+      "sandboxRecordedVersion": "20261022022315"
+    },
+    {
+      "file": "supabase/migrations/20261022144842_demi_cash_purchase_service_eligibility.sql",
+      "sha256": "813ff82c93ec2b101ebd5f8c795b5bfd269678e2008dc2f4224b42bd1df6657d",
+      "sandboxRecordedVersion": "20261022144842"
+    },
+    {
+      "file": "supabase/migrations/20261022183659_demi_class_reminder_deduplication.sql",
+      "sha256": "162873f795dd1a0ecc2220c322878843b3c705b0cf39abd0f895eb943f216c30",
+      "sandboxRecordedVersion": "20261022183659"
+    }
+  ],
+  "stack": [
+    {
+      "baseRefName": "main",
+      "headRefName": "codex/demi-identity-context-20261021",
+      "headRefOid": "7ddb1d3aa42cb4c0e6d0704f12db2efff1b4b217",
+      "isDraft": true,
+      "number": 356,
+      "state": "OPEN",
+      "headAlreadyIncludedInTestedCandidate": true
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "claude/demi-pending-closure-20261021",
+      "headRefOid": "11ac972a522735de5f5cf11a0198b170011f3034",
+      "isDraft": true,
+      "number": 358,
+      "state": "OPEN",
+      "headAlreadyIncludedInTestedCandidate": true
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "claude/demi-transfer-enrollment-20261021",
+      "headRefOid": "66d93402ffe5258fa62e686f73fe8149b68a9cde",
+      "isDraft": true,
+      "number": 359,
+      "state": "OPEN",
+      "headAlreadyIncludedInTestedCandidate": true
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "claude/demi-prospect-transfer-20261021",
+      "headRefOid": "b0d0b7a66423a78783e1433a796f86d64c61d7d4",
+      "isDraft": true,
+      "number": 360,
+      "state": "OPEN",
+      "headAlreadyIncludedInTestedCandidate": true
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "claude/demi-latency-memory-20261021",
+      "headRefOid": "01d8d9cba024bc7bb4c254c96eb4c8d5f15b256b",
+      "isDraft": true,
+      "number": 361,
+      "state": "OPEN",
+      "headAlreadyIncludedInTestedCandidate": true
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "codex/demi-workbench-state-uat-20261021",
+      "headRefOid": "c164924c2434889a4e4d7357b8f8434aae05abb2",
+      "isDraft": true,
+      "number": 363,
+      "state": "OPEN",
+      "headAlreadyIncludedInTestedCandidate": true
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "codex/demi-latency-recovery-20261021",
+      "headRefOid": "693e429f983c095394f35afc38c9cedd682d8428",
+      "isDraft": true,
+      "number": 364,
+      "state": "OPEN",
+      "headAlreadyIncludedInTestedCandidate": true
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "claude/demi-bench-gaps-20261021",
+      "headRefOid": "e601859ead9e370dc8c5f53017c5e6ef337c0cf8",
+      "isDraft": true,
+      "number": 365,
+      "state": "OPEN",
+      "headAlreadyIncludedInTestedCandidate": true
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "claude/demi-batching-20261021",
+      "headRefOid": "8575eec3d4aa100c929508ba8b02bff9a16f45fd",
+      "isDraft": true,
+      "number": 366,
+      "state": "OPEN",
+      "headAlreadyIncludedInTestedCandidate": true
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "codex/demi-handoff-uat-20261022",
+      "headRefOid": "24718f760cfd68087a41df6004c135bd982cbc40",
+      "isDraft": true,
+      "number": 367,
+      "state": "OPEN",
+      "headAlreadyIncludedInTestedCandidate": true
+    }
+  ],
+  "excludedPullRequests": [357, 355],
+  "separateFixturePullRequest": 362,
+  "rollback": {
+    "app": "Return to the previously active production deployment captured before any authorized deployment; main observed at bfd395e11e6bb54f2841a3c3c1f3b6a0d8863cd9",
+    "database": "Retain additive schema and financial records; capture function definitions before applying migrations and restore compatible definitions if required; no destructive blanket down migration"
+  },
+  "promotionOperationsPending": [
+    "Mike reviews REVIEW.md and explicitly accepts the functional experience",
+    "Mike explicitly authorizes this version and migration scope for production, keeping the pilot blocked",
+    "After authorization, capture active production deployment/function definitions and verify migration history by name and content",
+    "Apply missing backward-compatible migrations in file order, using the verified history to avoid duplicate execution",
+    "Integrate the complete tested candidate with its included dependency stack as one release; do not publish intermediate untested stack revisions",
+    "Build a new deployment from the approved code using existing production configuration; no production variables or channel/adapter settings are changed",
+    "Verify the active version, core flow and data integrity; monitor SQLSTATE57014; roll back to the captured deployment/functions if needed without deleting financial records"
+  ],
+  "productionTargetRef": "qfhojvgvhrbautvczffq"
+}

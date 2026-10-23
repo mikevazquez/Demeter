@@ -1,0 +1,63 @@
+{
+  "sourceSha": "8812da6bf89b2dc6e5b1b2fd6d8828b52b8f8ad1",
+  "environment": "hedouonyhynuvwbckdlg",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 7005,
+      "sha256": "495c32261278eeb3ec8ce3c47e623e1409b86f28d13fba3a8a498787f2cca077"
+    },
+    {
+      "path": "access-cleanup.json",
+      "bytes": 354,
+      "sha256": "424821c47bd821aa2e6008a55d0eed744e902cc868ea003c64f6cefe9501ca09"
+    },
+    {
+      "path": "bank-v2.json",
+      "bytes": 8729,
+      "sha256": "0a820c1a8d603cf4d2ab43f3a676a3985e5e470bb759d9d440223a011ae69508"
+    },
+    {
+      "path": "bank-v3.json",
+      "bytes": 8752,
+      "sha256": "0dbc4a372ce703baa196e603ec2f702bd18accef51789792663ea465bc4cdf98"
+    },
+    {
+      "path": "bank.json",
+      "bytes": 8715,
+      "sha256": "c2fa7405b633989ac60f110d75ae020cc86692cfb815eb54390517cf5a6ad52a"
+    },
+    {
+      "path": "database-cleanup.json",
+      "bytes": 475,
+      "sha256": "ec78022642ea75d66acdb414e645b6f07b61158bc1a6c5b4acfe505b803d22e1"
+    },
+    {
+      "path": "database-traces.json",
+      "bytes": 16592,
+      "sha256": "c901c867218a6f29f5990300dd3f865627f691490080b1e40fe04badc405cf8b"
+    },
+    {
+      "path": "fixture-check.json",
+      "bytes": 555,
+      "sha256": "b5f4119c89ce8f238156621897c5a0bbc92cee120f5f8adba3d5f83dcf7baeab"
+    },
+    {
+      "path": "fixture.json",
+      "bytes": 14561,
+      "sha256": "1de3c0247b4dc1cbe643f8b09e0c018f9e7dc5e3b78ba0218ecc651c8f2671a3"
+    },
+    {
+      "path": "preview-access-revocations.json",
+      "bytes": 252,
+      "sha256": "a9584b0be66f750f7d73ebca20b8358ad13b778f5982be3a415fed0bd2c10e6e"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 1793,
+      "sha256": "6d6784dd2de98486688e95efecde0e380dbf6ab4a90a53e8f979bb31ffcb9486"
+    }
+  ],
+  "evidenceIntegrityChecked": true,
+  "integralUatApproved": false
+}

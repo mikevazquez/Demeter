@@ -11,6 +11,8 @@ const studioId = "00000000-0000-4000-8000-000000000001";
 const phoneId = "100000000000001";
 const wabaId = "100000000000002";
 const secret = "synthetic-signing-secret";
+// Replay coverage is independent of the burst quiet window (DEMI-BATCH-01).
+process.env.DEMI_META_BURST_QUIET_MS = "0";
 
 function load<T>(path: string, deps: Record<string, unknown>): T {
   const loaded = { exports: {} };
@@ -94,6 +96,14 @@ function harness(httpStatus = 200, failOutboundPersistence = false) {
       },
       in: (key: string, values: unknown[]) => {
         filters.push((row) => values.includes(row[key]));
+        return chain;
+      },
+      neq: (key: string, value: unknown) => {
+        filters.push((row) => row[key] !== value);
+        return chain;
+      },
+      gt: (key: string, value: unknown) => {
+        filters.push((row) => String(row[key] ?? "") > String(value));
         return chain;
       },
       order: () => chain,

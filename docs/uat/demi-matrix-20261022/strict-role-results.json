@@ -1,0 +1,101 @@
+{
+  "sourceSha": "42ea7bf4559ec14eb10ec1dac6e7de62aea0f258",
+  "runtimeSha": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+  "environment": "hedouonyhynuvwbckdlg",
+  "harnessWorkingTree": true,
+  "scriptAdjustment": "SET LOCAL ROLE service_role added; JWT claims alone did not reproduce runtime privileges. No rules or grants changed.",
+  "supersedes": "The corresponding JWT-only preliminary results in sql-results.json and cash-date-results.json do not certify runtime permissions.",
+  "suites": [
+    {
+      "file": "tests/demi-2-cash-human-uat.sql",
+      "rollback": true,
+      "status": "FAILED",
+      "error": {
+        "name": "HttpException",
+        "message": "Failed to run sql query: ERROR:  42501: permission denied for function product_purchase_eligibility\nCONTEXT:  PL/pgSQL function public.service_create_demi_cash_purchase(uuid,uuid,uuid,uuid,uuid,integer) line 50 at assignment\nPL/pgSQL function inline_code_block line 10 at assignment\n"
+      }
+    },
+    {
+      "file": "tests/demi-cash-promised-date-uat.sql",
+      "rollback": true,
+      "status": "FAILED",
+      "error": {
+        "name": "HttpException",
+        "message": "Failed to run sql query: ERROR:  42501: permission denied for function product_purchase_eligibility\nCONTEXT:  PL/pgSQL function public.service_create_demi_cash_purchase(uuid,uuid,uuid,uuid,uuid,integer) line 50 at assignment\nPL/pgSQL function public.service_create_demi_cash_purchase_with_due_date(uuid,uuid,uuid,uuid,uuid,integer,date) line 10 at assignment\nPL/pgSQL function inline_code_block line 12 at assignment\n"
+      }
+    },
+    {
+      "file": "tests/demi-2-group-followup-uat.sql",
+      "rollback": true,
+      "status": "PASSED",
+      "results": [
+        {
+          "results": [
+            {
+              "case": "M04",
+              "passed": true,
+              "variant": "group_booking_cancels_pending_and_claimed_payer_followups_without_enrolling_payer"
+            },
+            {
+              "case": "M08",
+              "passed": true,
+              "variant": "group_confirmation_reply_does_not_restart_prospect_recovery"
+            },
+            {
+              "case": "M04",
+              "passed": true,
+              "variant": "explicit_crm_schedule_and_worker_cannot_send_group_payer_recovery"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tests/demi-2-deferred-prospect-uat.sql",
+      "rollback": true,
+      "status": "PASSED",
+      "results": [
+        {
+          "results": [
+            {
+              "passed": true,
+              "variant": "payment_quote_keeps_prospect_without_student_or_booking"
+            },
+            {
+              "passed": true,
+              "variant": "quote_replay_no_duplicate_intent"
+            },
+            {
+              "passed": true,
+              "variant": "different_contact_blocked"
+            },
+            {
+              "passed": true,
+              "variant": "participant_creation_requires_proof"
+            },
+            {
+              "passed": true,
+              "variant": "matching_receipt_still_waits_for_personal_data"
+            },
+            {
+              "passed": true,
+              "variant": "different_phone_cannot_replace_verified_identity"
+            },
+            {
+              "passed": true,
+              "variant": "lost_capacity_does_not_create_trial_student"
+            },
+            {
+              "passed": true,
+              "variant": "proof_and_data_create_one_trial_booking_and_link_conversation"
+            },
+            {
+              "passed": true,
+              "variant": "validation_and_replay_charge_once"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

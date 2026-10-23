@@ -1,0 +1,62 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "24718f760cfd68087a41df6004c135bd982cbc40",
+  "functionalStatus": "BOUNDED_READ_RETRY_VERIFIED",
+  "physicalRootCauseProven": false,
+  "timeoutConfigurationChanged": false,
+  "onlyRetriedOperation": "booking eligibility read, once, exclusively SQLSTATE57014; no writes retried",
+  "localFaultScenarios": [
+    "57014 then success: exactly two identical scoped reads",
+    "57014 twice: stop after two",
+    "business denial or other error: one attempt"
+  ],
+  "historicalFailures": [
+    {
+      "at": "2026-10-22T13:43:20.471000",
+      "message": "canceling statement due to statement timeout",
+      "context": "SQL expression \"exists(select 1 from public.demi_cash_purchases c join public.class_sessions cs on cs.id=target_session_id and cs.studio_id=c.studio_id join public.sales s on s.id=c.sale_id and s.studio_id=c.studio_id where c.student_id=target_student_id and s.status='confirmed' and s.total_minor>(select coalesce(sum(case when kind='payment' then amount_minor else -amount_minor end),0) from public.payments where sale_id=s.id and studio_id=c.studio_id))\"\nPL/pgSQL function private.booking_eligibility_core(uuid,uuid,boolean) line 3 at IF\nPL/pgSQL function public.service_booking_eligibility(uuid,uuid,uuid) line 26 at RETURN",
+      "sqlState": "57014"
+    },
+    {
+      "at": "2026-10-22T13:43:17.382000",
+      "message": "canceling statement due to statement timeout",
+      "context": "PL/pgSQL function private.booking_eligibility_core_demi2_base(uuid,uuid,boolean) line 18 at statement block\nPL/pgSQL function private.booking_eligibility_core(uuid,uuid,boolean) line 7 at RETURN\nPL/pgSQL function public.service_booking_eligibility(uuid,uuid,uuid) line 26 at RETURN",
+      "sqlState": "57014"
+    },
+    {
+      "at": "2026-10-22T13:41:18.490000",
+      "message": "canceling statement due to statement timeout",
+      "context": "SQL statement \"SELECT 1 FROM ONLY \"public\".\"notification_rule_versions\" x WHERE \"studio_id\" OPERATOR(pg_catalog.=) $1 AND \"rule_id\" OPERATOR(pg_catalog.=) $2 AND \"version_number\" OPERATOR(pg_catalog.=) $3 FOR KEY SHARE OF x\"\nSQL statement \"insert into public.notification_rule_evaluations (\n    studio_id, event_id, rule_id, rule_version_number, outcome, reason_code,\n    details, recipient_count, notifications_created, evaluated_at\n  ) values (\n    p_studio_id, p_event_id, p_rule_id, p_rule_version_number, p_outcome,\n    nullif(trim(coalesce(p_reason_code, '')), ''), p_details,\n    greatest(coalesce(p_recipient_count, 0), 0),\n    greatest(coalesce(p_notifications_created, 0), 0),\n    clock_timestamp()\n  )\n  on conflict (event_id, rule_id, rule_version_number)\n  do update set\n    outcome = excluded.outcome,\n    reason_code = excluded.reason_code,\n    details = excluded.details,\n    recipient_count = excluded.recipient_count,\n    notifications_created = excluded.notifications_created,\n    evaluated_at = clock_timestamp()\n  returning id\"\nPL/pgSQL function public.system_record_notification_rule_evaluation(uuid,uuid,uuid,integer,text,text,jsonb,integer,integer) line 9 at SQL statement",
+      "sqlState": "57014"
+    },
+    {
+      "at": "2026-10-22T13:39:27.194000",
+      "message": "canceling statement due to statement timeout",
+      "sqlState": "57014"
+    }
+  ],
+  "slowHistoricalUnrelatedQueries": [
+    {
+      "at": "2026-10-22T13:38:28.474000",
+      "message": "duration: 11978.114 ms  plan:\nQuery Text: with normalized_pg_stat_statements as (\n    select\n        calls,\n        -- Truncate query by 10000 characters, because likely we don't need more than that in WHERE clauses\n        lower(regexp_replace(trim(left(query, 10000)), E'\\\\s+', ' ', 'g')) as query\n    from\n        extensions.pg_stat_statements\n    where\n      userid not in (\n        select oid\n        from   pg_roles\n        where  rolname in ('authenticator', 'pgbouncer', '",
+      "context": ""
+    },
+    {
+      "at": "2026-10-22T13:41:31.863000",
+      "message": "duration: 11251.501 ms  plan:\nQuery Text: insert into public.studios(id,name,slug,timezone,currency) select s,'Demi UAT · '||left(run::text,8),'demi-uat-'||run,timezone,currency from public.studios where id=p_source_studio\nInsert on studios  (cost=0.14..2.36 rows=0 width=0)\n  ->  Index Scan using studios_pkey on studios studios_1  (cost=0.14..2.36 rows=1 width=371)\n        Index Cond: (id = '9fe23cfa-fb47-4670-afeb-ed4a56433772'::uuid)",
+      "context": "SQL statement \"insert into public.studios(id,name,slug,timezone,currency) select s,'Demi UAT · '||left(run::text,8),'demi-uat-'||run,timezone,currency from public.studios where id=p_source_studio\"\nPL/pgSQL function public.service_create_demi_uat_run(uuid,uuid,text) line 12 at SQL statement\nPL/pgSQL function inline_code_block line 16 at assignment"
+    },
+    {
+      "at": "2026-10-22T13:43:34.255000",
+      "message": "duration: 14074.036 ms  plan:\nQuery Text: with normalized_pg_stat_statements as (\n    select\n        calls,\n        -- Truncate query by 10000 characters, because likely we don't need more than that in WHERE clauses\n        lower(regexp_replace(trim(left(query, 10000)), E'\\\\s+', ' ', 'g')) as query\n    from\n        extensions.pg_stat_statements\n    where\n      userid not in (\n        select oid\n        from   pg_roles\n        where  rolname in ('authenticator', 'pgbouncer', '",
+      "context": ""
+    }
+  ],
+  "currentObservation": {
+    "windowStart": "2026-10-23T00:24:00Z",
+    "windowEnd": "2026-10-23T00:55:08Z",
+    "loggedStatementTimeouts": 0
+  },
+  "probe": "overlapping-eligibility.json",
+  "residualObservation": "The historical physical resource/contension cause is not proven or claimed eliminated. Current functional mitigation and fail-closed behavior are verified; continue monitoring."
+}

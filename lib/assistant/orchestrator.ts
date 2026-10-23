@@ -1,6 +1,21 @@
 import "server-only";
 
-import { conversationGuidance, needsFirstVisitGuidance } from "./conversation-guidance";
+import {
+  conversationGuidance,
+  explanationTurnGuidance,
+  needsFirstVisitGuidance,
+  prospectCashTurnGuidance,
+  prospectCashTurnReply,
+} from "./conversation-guidance";
+import {
+  contextInstructions,
+  conversationResponseFormat,
+  decodeConversationReply,
+  loadConversationContext,
+  localConversationClock,
+  resolvedPendingInstructions,
+  saveConversationMemory,
+} from "./conversation-context";
 import { testPersonaLabel } from "./prompt-workbench";
 import { firstClassPaymentInstructions } from "./first-class-payment-instructions";
 import {
@@ -89,6 +104,8 @@ type OrchestratorInput = {
   stickerImages?: string[];
   testSimulation?: TestSimulation;
   improvePrompt?: boolean;
+  /** DEMI-BATCH-02: false once a newer message of the same contact arrived. */
+  isTurnCurrent?: () => Promise<boolean>;
 };
 
 export type AssistantTrace = {
@@ -114,6 +131,19 @@ function localDateKey(timeZone: string) {
   }).format(new Date());
 }
 
+function isSocialOnlyMessage(message: string) {
+  const value = message
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-MX")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+  return /^(?:hola|hola demi|buenos dias|buenas tardes|buenas noches|hey|gracias|muchas gracias|mil gracias|ok|vale|perfecto|entendido)$/.test(
+    value,
+  );
+}
+
 function outputText(output: OpenAIOutputItem[]) {
   return output
     .filter((item) => item.type === "message")
@@ -137,6 +167,15 @@ function replyClaimsHumanHandoff(reply: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("es-MX");
   return normalized.includes("atencion humana");
+}
+
+async function assertActionTurnCurrent(input: OrchestratorInput) {
+  if (!input.isTurnCurrent) return;
+  if (!(await input.isTurnCurrent())) throw new Error("assistant_turn_superseded");
+}
+
+function rethrowSuperseded(error: unknown) {
+  if (error instanceof Error && error.message === "assistant_turn_superseded") throw error;
 }
 
 async function ensureHumanHandoffForReply(
@@ -307,7 +346,7 @@ function confirmationReply(toolName: string, result: Record<string, unknown>) {
     return "Ya recibí tu comprobante y el pago sigue en revisión. Para continuar, envíame juntos tu nombre completo y celular mexicano de diez dígitos, sin lada. Todavía no he confirmado tu reserva.";
   if (toolName === "confirm_cash_package_purchase")
     return (
-      "Registré tu paquete con el efectivo pendiente de cobro." +
+      "Registré tu paquete por cobrar. El efectivo lo recibe y registra recepción en el estudio." +
       (typeof result.payment_due_on === "string"
         ? ` La fecha de pago es ${formatDateForReply(result.payment_due_on)}.`
         : "") +
@@ -512,6 +551,7 @@ async function tryServerSideTransferPackageChoice(input: OrchestratorInput, trac
   let result: unknown;
   let toolStatus: "executed" | "blocked" | "error" = "executed";
   try {
+    await assertActionTurnCurrent(input);
     result = await executeAssistantActionTool(
       {
         supabase: input.supabase,
@@ -530,7 +570,8 @@ async function tryServerSideTransferPackageChoice(input: OrchestratorInput, trac
       args,
     );
     if (asObject(result)?.ok === false) toolStatus = "blocked";
-  } catch {
+  } catch (error) {
+    rethrowSuperseded(error);
     result = { ok: false, error: "tool_execution_failed" };
     toolStatus = "error";
   }
@@ -571,6 +612,9 @@ async function tryServerSideTransferPackageChoice(input: OrchestratorInput, trac
     name: "prepare_bank_transfer_purchase",
     status: toolStatus,
   });
+
+  // D-PAY-03: the model explains enrollment + package and asks before preparing the charge.
+  if (resultObject.reason_code === "enrollment_confirmation_required") return null;
 
   if (resultObject.ok !== true || !bankDetails) {
     const reason = String(resultObject.reason_message ?? "").trim();
@@ -628,11 +672,17 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
     [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
 
   const genericConfirmation = isExplicitAssistantConfirmation(currentUserMessage);
-  if (!genericConfirmation && !isExplicitCashPurchaseConfirmation(currentUserMessage)) return null;
+  const cashConfirmation = isExplicitCashPurchaseConfirmation(currentUserMessage);
+  // This prefilter only avoids unrelated DB reads. Authorization below still
+  // requires a booking pending whose local date/time matches the full statement.
+  const detailedBookingCandidate = /^(?:s[ií],?\s+)?confirmo (?:la|esa|esta) reserva del /iu.test(
+    currentUserMessage.trim(),
+  );
+  if (!genericConfirmation && !cashConfirmation && !detailedBookingCandidate) return null;
 
   const { data: pending, error } = await input.supabase
     .from("assistant_pending_actions")
-    .select("id,action_type,expires_at")
+    .select("id,action_type,expires_at,confirmation_summary")
     .eq("studio_id", input.studio.id)
     .eq("conversation_id", input.conversationId)
     .eq("status", "pending")
@@ -642,7 +692,15 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
     .maybeSingle();
 
   if (error || !pending) return null;
-  if (!genericConfirmation && pending.action_type !== "commerce.cash_purchase") return null;
+  const detailedBookingConfirmation =
+    pending.action_type === "booking.create" &&
+    isExplicitAssistantConfirmation(currentUserMessage, asObject(pending.confirmation_summary));
+  if (
+    !genericConfirmation &&
+    !(cashConfirmation && pending.action_type === "commerce.cash_purchase") &&
+    !detailedBookingConfirmation
+  )
+    return null;
 
   const executeToolByAction: Record<string, string> = {
     "booking.create": "execute_booking",
@@ -659,6 +717,7 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
   let result: unknown;
   let toolStatus: "executed" | "blocked" | "error" = "executed";
   try {
+    await assertActionTurnCurrent(input);
     result = await executeAssistantActionTool(
       {
         supabase: input.supabase,
@@ -677,7 +736,8 @@ async function tryServerSideConfirmation(input: OrchestratorInput, trace: Assist
       {},
     );
     if (asObject(result)?.ok === false) toolStatus = "blocked";
-  } catch {
+  } catch (error) {
+    rethrowSuperseded(error);
     result = { ok: false, error: "tool_execution_failed" };
     toolStatus = "error";
   }
@@ -744,7 +804,14 @@ async function trySimulatedConfirmation(input: OrchestratorInput, trace: Assista
     [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
   const pending = input.testSimulation?.pending;
 
-  if (!pending || !isExplicitAssistantConfirmation(currentUserMessage)) return null;
+  if (
+    !pending ||
+    !isExplicitAssistantConfirmation(
+      currentUserMessage,
+      pending.tool === "execute_booking" ? pending.summary : undefined,
+    )
+  )
+    return null;
   if (
     ![
       "execute_booking",
@@ -803,6 +870,7 @@ async function tryServerSidePostTrialEnrollmentMethod(
   let result: unknown;
   let toolStatus: "executed" | "blocked" | "error" = "executed";
   try {
+    await assertActionTurnCurrent(input);
     result = await executeAssistantActionTool(
       {
         supabase: input.supabase,
@@ -821,7 +889,8 @@ async function tryServerSidePostTrialEnrollmentMethod(
       { payment_method: method },
     );
     if (asObject(result)?.ok === false) toolStatus = "blocked";
-  } catch {
+  } catch (error) {
+    rethrowSuperseded(error);
     result = { ok: false, error: "tool_execution_failed" };
     toolStatus = "error";
   }
@@ -913,6 +982,53 @@ export async function runAssistantTurn(input: OrchestratorInput) {
   };
 
   const stickerTurn = Boolean(input.stickerImages?.length);
+  const latestUserMessage =
+    [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
+  const socialOnly = isSocialOnlyMessage(latestUserMessage);
+  const contextScope = {
+    supabase: input.supabase,
+    studioId: input.studio.id,
+    conversationId: input.conversationId,
+    studentId: input.studentId,
+    crmContactId: input.crmContactId,
+    turnId: input.turnId,
+  };
+  const contextualTurn = !stickerTurn && !input.improvePrompt;
+  // Greetings/thanks cannot change preferences. Keep current reads and stored memory,
+  // but do not spend a structured response or a memory write on a social message.
+  const memoryTurn = contextualTurn && !socialOnly;
+  const readPersonalContext = async (name: string) => {
+    if (input.testSimulation) return simulatedReadTool(input.testSimulation, name);
+    if (!input.studentId) return { ok: false, error: "identity_required" };
+    try {
+      return await executeAssistantReadTool(
+        { supabase: input.supabase, studio: input.studio, studentId: input.studentId },
+        name,
+        {},
+      );
+    } catch {
+      return { ok: false, error: "context_unavailable" };
+    }
+  };
+  const [contextSnapshot, statusContext, reservationsContext] = contextualTurn
+    ? await Promise.all([
+        loadConversationContext(contextScope).catch((error) => {
+          if (error instanceof Error && error.message === "conversation_identity_mismatch")
+            throw error;
+          return null;
+        }),
+        readPersonalContext("get_student_package_status"),
+        readPersonalContext("get_student_reservations"),
+      ])
+    : [null, null, null];
+  const currentStatus = asObject(statusContext);
+  const currentCategory = asObject(currentStatus?.student_state)?.category;
+  if (typeof currentCategory === "string") input = { ...input, studentCategory: currentCategory };
+  else if (input.studentId) input = { ...input, studentCategory: null };
+  if (contextualTurn) {
+    const cashReply = prospectCashTurnReply(input, input.history);
+    if (cashReply) return { reply: cashReply, trace };
+  }
   if (
     stickerTurn &&
     (input.stickerImages!.length > 3 ||
@@ -942,20 +1058,156 @@ export async function runAssistantTurn(input: OrchestratorInput) {
   }
 
   const tools =
-    input.improvePrompt || stickerTurn
+    input.improvePrompt || stickerTurn || socialOnly
       ? []
       : [
-          ...assistantReadToolDefinitions,
-          ...assistantActionToolDefinitions.filter((tool) =>
-            input.studentId || input.testSimulation
-              ? true
-              : !["prepare_transfer_package_choice", "prepare_bank_transfer_purchase"].includes(
-                  tool.name,
-                ),
-          ),
+          ...assistantReadToolDefinitions.filter((tool) => {
+            if (tool.name === "get_student_package_status")
+              return !(currentStatus?.ok === true && typeof currentCategory === "string");
+            if (tool.name === "get_student_reservations")
+              return !(
+                asObject(reservationsContext)?.ok === true &&
+                Array.isArray(asObject(reservationsContext)?.reservations)
+              );
+            return true;
+          }),
+          ...assistantActionToolDefinitions.filter((tool) => {
+            if (input.testSimulation) {
+              if (
+                tool.name === "prepare_transfer_package_choice" &&
+                input.testSimulation.workbenchCase &&
+                input.testSimulation.workbenchCase !== "standard"
+              )
+                return false;
+              if (tool.name !== "update_contact_followup") return true;
+              // Offer only the personas supported by the simulated follow-up contract.
+              const persona = input.testSimulation.persona;
+              return persona === "prospect" || persona.startsWith("trial_");
+            }
+            // D-PAY-01: prospects buy packages by transfer; profile only after the receipt.
+            if (tool.name === "complete_purchase_profile")
+              return !input.studentId && Boolean(input.crmContactId);
+            if (input.studentId) return true;
+            if (tool.name === "prepare_bank_transfer_purchase") return Boolean(input.crmContactId);
+            return tool.name !== "prepare_transfer_package_choice";
+          }),
         ];
 
+  let resolvedPendingContext = "";
+  let transferPurchaseContext = "";
+  if (input.serviceMode && !input.improvePrompt && !input.testSimulation && !stickerTurn) {
+    // DEMI-BASE-03: pendings closed by another channel must not be resumed from memory/history.
+    // Best effort: an unavailable notice never blocks the turn; current tools still validate.
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const readSuperseded = async (table: string, columns: string) => {
+      try {
+        const result = await input.supabase
+          .from(table)
+          .select(columns)
+          .eq("studio_id", input.studio.id)
+          .eq("conversation_id", input.conversationId)
+          .eq("status", "superseded")
+          .gte("superseded_at", since)
+          .limit(3);
+        return result.error ? [] : ((result.data ?? []) as unknown as Record<string, unknown>[]);
+      } catch {
+        return [];
+      }
+    };
+    const readCurrentPurchase = async () => {
+      if (!input.studentId) return null;
+      try {
+        const result = await input.supabase
+          .from("assistant_transfer_purchase_intents")
+          .select("id,status,amount_minor,currency")
+          .eq("studio_id", input.studio.id)
+          .eq("conversation_id", input.conversationId)
+          .eq("student_id", input.studentId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        return result.error ? null : result.data;
+      } catch {
+        return null;
+      }
+    };
+    const [groups, intents, purchase] = await Promise.all([
+      readSuperseded("demi_group_bookings", "superseded_reason"),
+      readSuperseded("assistant_transfer_purchase_intents", "intent_kind,superseded_reason"),
+      readCurrentPurchase(),
+    ]);
+    if (purchase?.status === "validated") {
+      transferPurchaseContext =
+        "PAGO DEL PAQUETE VALIDADO POR STUDIO FLOW: la compra por transferencia de esta alumna y conversación está validada. Este estado actual prevalece sobre mensajes anteriores de revisión pendiente o activación provisional. No digas que la validación definitiva sigue pendiente, no pidas otro comprobante ni otro pago para esta compra. Consulta derechos y reservas actuales para agendar; la validación del pago no acredita por sí sola una reserva. " +
+        JSON.stringify(purchase);
+    } else if (purchase?.status === "provisional_active") {
+      transferPurchaseContext =
+        "PAQUETE PROVISIONAL, VALIDACIÓN PENDIENTE: el comprobante permitió activar provisionalmente el paquete, pero la revisión definitiva aún está pendiente. No afirmes pago validado ni pidas otro pago o comprobante para esta compra. Usa derechos y reglas actuales de Studio Flow. " +
+        JSON.stringify(purchase);
+    }
+    const reasonOf = (row: Record<string, unknown>) =>
+      typeof row.superseded_reason === "string" ? row.superseded_reason : null;
+    resolvedPendingContext = resolvedPendingInstructions([
+      ...groups.map((row) => ({ kind: "first_class" as const, reason: reasonOf(row) })),
+      ...intents.map((row) => ({
+        kind:
+          row.intent_kind === "trial_class"
+            ? ("trial_class" as const)
+            : ("product_purchase" as const),
+        reason: reasonOf(row),
+      })),
+    ]);
+  }
+
+  let profilePendingContext = "";
+  if (
+    input.serviceMode &&
+    !input.improvePrompt &&
+    !input.testSimulation &&
+    !stickerTurn &&
+    !input.studentId &&
+    input.crmContactId
+  ) {
+    try {
+      const awaiting = await input.supabase
+        .from("assistant_transfer_purchase_intents")
+        .select("amount_minor,currency,enrollment_amount_minor")
+        .eq("studio_id", input.studio.id)
+        .eq("conversation_id", input.conversationId)
+        .eq("status", "awaiting_profile")
+        .limit(1)
+        .maybeSingle();
+      if (!awaiting.error && awaiting.data) {
+        profilePendingContext =
+          "COMPROBANTE RECIBIDO, PERFIL PENDIENTE: el comprobante de su paquete ya coincidió con el monto, pero aún falta completar su perfil. El paquete y la inscripción todavía no están activos; no afirmes que ya se activaron ni ofrezcas reservar con ellos. Pide nombre completo, fecha de nacimiento y correo, y después usa complete_purchase_profile. Sólo un resultado provisional_active de esa herramienta permite informar la activación provisional. No vuelvas a cobrar ni pidas otro comprobante. " +
+          JSON.stringify(awaiting.data);
+      }
+    } catch {
+      profilePendingContext = "";
+    }
+  }
+
   let pendingPaymentContext = "";
+  // Explicit workbench fixtures use only simulated state, never another person's pending rows.
+  const workbenchContext = asObject(currentStatus?.workbench_context);
+  if (input.testSimulation && !input.improvePrompt && !stickerTurn && workbenchContext) {
+    if (workbenchContext.closed_first_class === true)
+      resolvedPendingContext = resolvedPendingInstructions([
+        { kind: "first_class", reason: "package_acquired" },
+      ]);
+    if (workbenchContext.purchase_status === "awaiting_profile")
+      profilePendingContext =
+        "COMPROBANTE RECIBIDO, PERFIL PENDIENTE (fixture simulado): comprobante recibido con monto coincidente, pero aún falta completar su perfil. El paquete y la inscripción todavía no están activos; no afirmes que ya se activaron ni ofrezcas reservar con ellos. Pide juntos nombre completo, fecha de nacimiento y correo; después usa complete_purchase_profile. Sólo un resultado provisional_active de esa herramienta permite informar la activación provisional. No vuelvas a cobrar. " +
+        JSON.stringify(workbenchContext.purchase);
+    else if (workbenchContext.purchase_status === "awaiting_receipt")
+      pendingPaymentContext =
+        "COMPRA PENDIENTE DE COMPROBANTE (fixture simulado): conserva producto y total. No pidas datos ni declares pago recibido por una afirmación en texto. " +
+        JSON.stringify(workbenchContext.purchase);
+    else if (workbenchContext.purchase_status === "provisional_active")
+      pendingPaymentContext =
+        "COMPROBANTE RECIBIDO Y PAQUETE ACTIVO PROVISIONALMENTE (evento de fixture confirmado): el comprobante simulado ya coincidió y se activaron los derechos simulados. No pidas otro archivo ni otro pago. La validación definitiva sigue pendiente; no afirmes pago validado. " +
+        JSON.stringify(workbenchContext.purchase);
+  }
   if (input.serviceMode && !input.improvePrompt && !input.testSimulation && !stickerTurn) {
     const pendingPayment = await input.supabase
       .from("demi_group_bookings")
@@ -1073,6 +1325,12 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           "Habla en español de México, de forma breve, cálida y natural.",
           "No uses Markdown ni dobles asteriscos en las respuestas. Escribe texto limpio de chat; si necesitas énfasis, hazlo con palabras, no con formato.",
           `La fecha local del estudio es ${localDateKey(input.studio.timezone)} y la zona horaria es ${input.studio.timezone}.`,
+          `La fecha y hora local actuales son ${localConversationClock(input.studio.timezone)}. No ofrezcas clases que ya pasaron ni horarios fuera de la restricción pedida.`,
+          contextInstructions(
+            { status: statusContext, reservations: reservationsContext },
+            contextSnapshot,
+            memoryTurn,
+          ),
           "Studio Flow es la única fuente de verdad operativa.",
           "Regla vigente de pagos: Bancomer recibe transferencias y depósitos OXXO directos, con comprobante y revisión manual. Mercado Pago recibe ligas/checkout. Cuando Studio Flow devuelve automatic_verification=true y receipt_required=false, espera payment_verified=true, nunca solicites comprobante ni afirmes que el pago está en revisión manual. No ofrezcas OXXO dentro de Mercado Pago. Demi nunca ejecuta reembolsos: crea atención humana con las referencias y no promete devolución ni plazo.",
           "La atención humana funciona por lista permitida. Solo usa escalate_to_human cuando el caso corresponda claramente a un reason_code habilitado por Studio Flow. No escales solo porque una pregunta sea difícil, inusual o no tengas una respuesta inmediata: primero consulta las herramientas y trata de resolverla.",
@@ -1086,8 +1344,11 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           "Cuando prepare_first_class_payment o execute_booking devuelva group_id y participant_count=1 para una primera clase individual, conserva ese group_id: espera comprobante bancario o payment_verified=true de Mercado Pago y después pide juntos los datos faltantes; completa con complete_group_booking y un único participante. No crees la ficha antes del comprobante bancario o de payment_verified=true ni anuncies una reserva cuando reservation_confirmed=false.",
           "Una solicitud de pago sólo conserva la clase y horario elegidos; no retiene cupo ni promete espacio por 24 horas. Si el pago fue recibido pero la clase pasó o se llenó, informa que se conserva el pago y ofrece otro horario disponible sin cobrar nuevamente ni prometer reembolsos. Cuando el usuario elija la alternativa, usa prepare_first_class_payment o prepare_group_booking con esa clase para reutilizar la misma solicitud pagada, y después complete_group_booking. Sólo continúa si Studio Flow confirma payment_preserved=true o payment_verified=true; no crees otro cobro para resolver un horario vencido.",
           pendingPaymentContext,
+          profilePendingContext,
+          resolvedPendingContext,
+          transferPurchaseContext,
           "Para grupos o para reservar sólo para otra persona, usa prepare_group_booking; aunque sea una sola participante, usa participant_count=1 y no prepare_first_class_payment. La identidad y teléfono del pagador no deben sustituir los de la participante. Si dos participantes comparten teléfono, no prometas registrarlas con ese mismo número, no inventes otro y no pidas pago; crea atención humana para verificar identidad/contactos antes de continuar. Para grupos, usa prepare_group_booking con la clase exacta, número de participantes y número de primeras clases a pagar. No conviertas al pagador en participante automáticamente. Primero da el total y el método devuelto por Studio Flow; espera comprobante para Bancomer o payment_verified=true para Mercado Pago antes de solicitar juntos nombres y celulares faltantes. Sólo después usa complete_group_booking con el group_id. Informa los resultados individuales y cualquier fallo o importe sin asignar; pago recibido sigue en revisión. En un grupo mixto, la reserva cubierta con créditos propios de una alumna es confirmada y no depende de validar la transferencia de otra participante; sólo la reserva cubierta por transferencia pendiente se informa como provisional. Cuando el resultado parcial devuelva human_review_created=true, informa que el caso ya fue creado para el equipo humano y que la conversación queda en revisión; no ofrezcas ejecutar otra reserva o devolución mientras el equipo controla el caso. No confirmes todo el grupo por memoria ni repitas cobros al reintentar.",
-          "Usa update_contact_followup cuando cambie la etapa comercial: preguntas, esperando comprobante o datos posteriores. Si afirma que ningún horario le sirve o rechaza expresamente el servicio, registra not_qualified con motivo; vivir lejos por sí solo no basta. Si pide no recibir mensajes registra opt_out. Si también rechaza el servicio o todos los horarios, registra primero not_qualified con su motivo y después opt_out; conserva ambas decisiones. No marques No clasifica por silencio: el worker registra No agendó después de dos seguimientos sin respuesta. Al regresar una persona, conserva su identidad y retoma el flujo desde la información real.",
+          "Usa update_contact_followup cuando cambie la etapa comercial: preguntas, esperando comprobante o datos posteriores. Rechazar las primeras opciones de horario no es rechazar el servicio: explora otras fechas o restricciones reales antes de descartar. Registra not_qualified sólo ante rechazo explícito del servicio o cuando, tras explorar la oferta pertinente, la persona confirme que no existe alternativa que le sirva. Vivir lejos por sí solo no basta. Si pide no recibir mensajes registra opt_out; conserva por separado cualquier rechazo definitivo ya confirmado. No marques No clasifica por silencio: el worker registra No agendó después de dos seguimientos sin respuesta. Al regresar una persona, conserva su identidad y retoma el flujo desde la información real.",
           "Al iniciar una conversación, conserva la identidad verificada y la etapa que entrega Studio Flow. En WhatsApp se resuelve por teléfono normalizado; en otros canales no presupongas que tienes su teléfono. Si falta una identidad verificada, atiende consultas informativas y pide solo los datos obligatorios cuando quiera reservar; nunca reveles información personal de una ficha no vinculada.",
           "Un prospecto pasa al flujo de prueba cuando solicita agendar su primera clase. Si Studio Flow requiere pago previo, primero ofrece las opciones configuradas y espera el comprobante; no pidas nombre ni teléfono y no prepares ni confirmes una reserva antes de recibirlo. Después del comprobante, solicita el nombre completo y los datos faltantes de acompañantes; actualiza los contactos y solo entonces prepara una reserva por persona. Si el pago previo no está configurado, solicita el nombre únicamente cuando Studio Flow indique que hace falta para reservar.",
           "Las reglas comerciales, de inscripción, prueba, no show, reservas, precios y pagos viven en Studio Flow. Consúltalas con las herramientas disponibles y respeta sus resultados; nunca inventes ni mantengas reglas paralelas.",
@@ -1131,13 +1392,13 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           "Solo pregunta algo antes de preparar si falta un dato obligatorio para identificar o validar la acción, por ejemplo el motivo de cancelación o cuál de varias clases/reservas ambiguas elegir.",
           "Después de prepare_* presenta un único resumen final y pide una sola confirmación, excepto cuando la herramienta devuelva status=resource_selection_required: en ese caso primero muestra únicamente las opciones de recurso numeradas y pide que la persona responda con el número. La selección del recurso no cuenta como confirmación final.",
           "Si después de preparar una acción de cancelación la persona responde 'sí, cancélala', 'sí, cancélalo' o 'adelante, cancélala', toma esa frase como confirmación explícita y ejecuta execute_cancellation en ese turno. Para reagendar, acepta 'sí, reagéndala' como confirmación de la acción pendiente. No repitas la pregunta cuando la respuesta ya confirma inequívocamente la acción resumida.",
-          "Para comprar un paquete en efectivo, consulta el producto real y llama prepare_cash_package_purchase antes de pedir confirmación. No repitas la preparación cuando ya haya una compra pendiente y la persona la confirme: usa confirm_cash_package_purchase. La venta queda por cobrar, no pagada; primera reserva permitida y segunda bloqueada hasta el cobro. Su vigencia empieza en la primera clase reservada.",
+          "Para comprar un paquete en efectivo, consulta el producto real y llama prepare_cash_package_purchase antes de pedir confirmación. No repitas la preparación cuando ya haya una compra pendiente y la persona la confirme: usa confirm_cash_package_purchase. La venta queda por cobrar, no pagada; recepción recibe y registra el efectivo en el estudio, Demi no cobra ni revisa ese pago. Primera reserva permitida y segunda bloqueada hasta el cobro registrado. Su vigencia empieza en la primera clase reservada.",
           "Para horarios, disponibilidad, actividades, precios, paquetes, ubicación o políticas debes usar la herramienta correspondiente antes de responder. Para status o elegibilidad de una alumna, consulta get_student_package_status y get_policy_information o get_commercial_options según corresponda. Para primera clase/no show, usa siempre el preview y la confirmación de reserva de Studio Flow; nunca confirmes por memoria.",
           "Ante preguntas sobre disciplinas, consulta get_studio_information y responde con active_disciplines. Una disciplina activa sin sesiones disponibles no equivale a una disciplina inexistente; consulta disponibilidad y reconoce cuando no hay horarios. No infieras toda la oferta a partir de las sesiones o plantillas de una sola disciplina. Para qué llevar o cómo prepararse para la primera clase, consulta get_studio_information y usa únicamente first_class_preparation configurada por el estudio. No agregues consejos genéricos de ropa, agua, crema, aceite, equipo ni preparación si no están en la información oficial. Si first_class_preparation es null, reconoce que faltan esas indicaciones y canaliza la consulta mediante atención humana; no inventes una respuesta. Lo mismo aplica a ubicación u otro dato oficial faltante tras consultar las herramientas.",
           "Interpreta nombres de clases de forma natural. La gente puede usar variantes o nombres parciales como 'pole', 'pole fitness', 'fitness', 'pole exotic' o 'exotic'. No corrijas innecesariamente su forma de decirlo.",
           "Cuando el término sea inequívoco, usa la actividad real correspondiente aunque el usuario haya usado una variante. Cuando sea ambiguo, por ejemplo 'pole' y existan Pole Fitness y Pole Exotic, no adivines cuál quiso decir: para información general puedes explicar ambas; para horarios, disponibilidad o una acción concreta muestra las opciones relevantes y pide precisión solo si hace falta para continuar.",
           "Cuando la persona pida una actividad concreta por nombre, conserva su intención en activity_query y no mezcles otras actividades si existe una coincidencia exacta; si el término es ambiguo, ofrece solo opciones relacionadas y pregunta cuál prefiere.",
-          "Si una alumna identificada pregunta cuántas clases le quedan, saldo de clases, cuál es su paquete, vigencia o fecha de vencimiento, llama get_student_package_status antes de responder. Esa consulta debe resolverse directamente con Studio Flow; no escales a atención humana solo por pedir saldo o vigencia.",
+          "Si una alumna identificada pregunta cuántas clases le quedan, saldo de clases, cuál es su paquete, vigencia o fecha de vencimiento, usa el resultado actual de get_student_package_status precargado en este turno; si falta o falló, llama get_student_package_status antes de responder. Esa consulta debe resolverse directamente con Studio Flow; no escales a atención humana solo por pedir saldo o vigencia.",
           "Si get_student_package_status devuelve current_package, responde con sus créditos disponibles y fecha de vencimiento de forma clara. Si devuelve varios paquetes activos, prioriza current_package y solo menciona los demás si aportan información útil o la persona pregunta por todos.",
           "Nunca inventes horarios, cupos, precios, paquetes, políticas, promociones, créditos, pagos, reservas ni información de alumnas.",
           "En listados de horarios o disponibilidad no muestres números de cupos, lugares disponibles ni capacidad. Si una clase está llena, puedes indicarlo brevemente; si tiene lugar, basta con mostrar actividad y horario.",
@@ -1155,6 +1416,8 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           "Sólo para una persona con ficha de alumna verificada que quiere comprar un paquete: cuando elija transferencia y todavía deba escoger paquete, llama prepare_transfer_package_choice ANTES de responder, usando la session_ref exacta y únicamente los product_ref de los paquetes que vas a mostrar. Después muestra solo las options devueltas por esa herramienta y pregunta cuál prefiere. Ese estado dura hasta 24 horas para que una respuesta posterior como '8 clases' continúe el mismo pago sin reconstruir reservas.",
           "Para un prospecto sin ficha de alumna que solicita su primera clase individual, llama prepare_first_class_payment con la clase exacta ANTES de ofrecer datos bancarios o un enlace externo. Esta herramienta no crea alumna ni reserva y no requiere otra confirmación para obtener instrucciones de pago; no uses elección ni compra de paquetes. Si devuelve external_checkout, comparte su URL exacta de Mercado Pago cuando la persona prefiera ese método; no inventes enlaces ni uses el checkout privado de otra alumna. Si test_only=true advierte que es una prueba y no debe hacer un pago real. El enlace no prueba pago: si automatic_verification=true y receipt_required=false, no pidas comprobante, espera payment_verified=true del proveedor. Para Bancomer, depósito OXXO a Bancomer o enlace estático con receipt_required=true, pide comprobante y conserva revisión manual. Después pide juntos los datos faltantes. Si no devuelve enlace, ofrece únicamente los métodos disponibles. Compartir instrucciones de pago no confirma la reserva.",
           "Si la persona ya eligió un paquete concreto en el mismo mensaje en que eligió transferencia, puedes llamar directamente prepare_bank_transfer_purchase con la session_ref y product_ref exactas.",
+          "Un prospecto también puede comprar cualquier paquete por transferencia: ser prospecto no lo impide. Conserva el producto que eligió y nunca lo cambies por clase suelta ni llames prepare_first_class_payment cuando eligió un paquete o el Pase. Usa prepare_bank_transfer_purchase con enrollment_accepted=false; si devuelve enrollment_confirmation_required, explica paquete, inscripción y total y, sólo si acepta, vuelve a llamarla con enrollment_accepted=true. Si el producto incluye inscripción (como el Pase Descubre) no hay cargo adicional. Antes del comprobante no pidas nombre, fecha de nacimiento ni correo y no crees registros.",
+          "Cuando un prospecto ya envió el comprobante de su paquete y el sistema lo dejó esperando perfil, pide en un solo mensaje nombre completo, fecha de nacimiento y correo. Al tenerlos, llama complete_purchase_profile; ese paso registra su perfil, la convierte en alumna y activa inscripción y paquete provisionalmente. Si falta o es inválido un dato, pide sólo ese dato.",
           "Después de compartir los datos bancarios, pide que envíe el comprobante por este mismo chat. Explica que al recibir el comprobante el paquete se activará de forma provisional para que pueda continuar, pero quedará pendiente de validación y puede ser revocado si la transferencia no se confirma correctamente.",
           "Nunca afirmes que la transferencia fue validada solo porque llegó un comprobante. La validación definitiva es posterior.",
           "Cuando get_commercial_options devuelva compatibility_filtered=true, menciona únicamente opciones de ese resultado. Nunca sugieras un producto de otra actividad o disciplina. Si no hay opciones compatibles, dilo claramente.",
@@ -1184,7 +1447,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           "Los documentos se muestran y se exigen después de que la inscripción quede activa. Antes de ese momento no los menciones en la conversación.",
           "Para una reserva de prueba, jamás le digas a la persona 'pago pendiente', 'commercial_status', 'crédito' ni 'usa 1 crédito'. Son conceptos internos.",
           "Si una clase de prueba requiere pago previo, menciona el precio real y los métodos de pago configurados. No digas 'confirmas la reserva', 'reserva confirmada' ni que el lugar quedó apartado: todavía no existe reserva. Si falta autorización para mostrar o generar el pago, pregunta únicamente si quiere que le compartas los datos o la liga de pago. Una respuesta afirmativa a recibir datos de pago no autoriza crear una reserva. Después de recibir el comprobante y los datos de todas las personas, entonces inicia la reserva.",
-          "Cuando execute_booking devuelva status=payment_required para una primera clase, el servidor NO creó ni apartó una reserva. No ofrezcas efectivo ni digas que el lugar está apartado. Pide el comprobante por este mismo chat y explica que el lugar se confirma solo después de recibir y validar el pago.",
+          "Cuando execute_booking devuelva status=payment_required para una primera clase, el servidor NO creó ni apartó una reserva. No ofrezcas efectivo como forma de apartar lugar sin anticipo ni digas que el lugar está apartado. Para asegurar la reserva, pide el comprobante por este mismo chat y explica que el lugar se confirma solo después de recibir y validar el pago. Si el prospecto rechaza otra vez el anticipo después de una explicación, aplica la alternativa de acudir y pagar en efectivo únicamente si hay cupo al llegar, sin reserva ni derivación humana por esa negativa.",
           "Solo si payment_before_booking=false aplica el flujo anterior: después de una reserva de prueba ya creada puede preguntarse si pagará en efectivo en el estudio o por transferencia, y record_trial_payment_preference registra esa elección.",
           "Si payment_before_booking=false y la persona responde efectivo, llama record_trial_payment_preference con cash. Si responde transferencia, llama record_trial_payment_preference con bank_transfer. Elegir método NO significa que el pago ya fue recibido.",
           "Después de registrar cash en el flujo legado, explica de forma natural: su primera clase cuesta el precio real devuelto, no paga inscripción en esa primera clase y, a partir de su siguiente reserva después de asistir, deberá cubrir la inscripción.",
@@ -1200,18 +1463,21 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           "Después usa prepare_reschedule con ambas referencias. Si el cambio es a tiempo, NO menciones créditos, devolución, liberación, reutilización ni que no requiere crédito adicional. Di únicamente qué clase se moverá, a qué nueva fecha/hora y pregunta: ¿Confirmas el cambio? Si el cambio es tardío y tiene una consecuencia de crédito, sí debes explicarla antes de pedir confirmación. El cambio es atómico: si el destino falla, la reserva original debe conservarse.",
           "Nunca llames execute_reschedule en el mismo turno en que preparaste el cambio. Espera un NUEVO mensaje con confirmación explícita.",
           "Cuando llegue la confirmación clara del reagendado preparado, usa execute_reschedule sin argumentos. Si devuelve consequence_changed, presenta la nueva consecuencia y vuelve a pedir confirmación.",
-          "Si una clase está llena y la persona ya pidió reservarla o entrar a lista de espera, usa prepare_waitlist_join en ese mismo turno con la session_ref exacta. No preguntes primero si quiere lista de espera y luego vuelvas a confirmar. Debes explicar que entrar a la lista no descuenta crédito en ese momento y pedir una sola confirmación final.",
+          "Si una clase está llena y la persona ya pidió reservarla o entrar a lista de espera, usa prepare_waitlist_join en ese mismo turno con la session_ref exacta. Al responder, reconoce su preferencia concreta ('Entiendo que quieras ese horario') y explica el motivo ('todos sus lugares están ocupados y no puedo confirmar otra reserva') antes de presentar la alternativa elegible. No basta con repetir 'está llena'. No preguntes primero si quiere lista de espera y luego vuelvas a confirmar. Debes explicar que entrar a la lista no descuenta crédito en ese momento y pedir una sola confirmación final. Si después pregunta por qué o pide una explicación, responde la duda con otras palabras; no vuelvas a preparar la lista ni a pedir la misma confirmación. Explica que esperar un lugar no es tener una reserva ni garantiza entrar.",
           "Nunca llames execute_waitlist_join en el mismo turno en que preparaste la lista de espera. Espera un NUEVO mensaje con confirmación explícita.",
           "Cuando llegue la confirmación clara de una lista de espera preparada, usa execute_waitlist_join sin argumentos. Si antes de ejecutar ya se liberó un lugar, no inventes que entró a lista: explica el resultado real de Studio Flow.",
-          "Si el mensaje actual es solo un saludo breve (por ejemplo: hola, buenos días, buenas tardes, buenas noches, hey), responde al saludo de forma natural y breve. No repitas automáticamente el estado del pago, paquete, reserva ni el resumen de la conversación anterior. Conserva ese contexto y úsalo solo si la persona lo pregunta o si es necesario para responder su nueva solicitud.",
+          "Si el mensaje actual es solo un saludo breve, saluda naturalmente y usa el contexto actual y la memoria para retomar un pendiente útil con una sola pregunta. No recites el historial, no repitas datos bancarios ni inventes pendientes. Un paquete activo o una reserva existente prevalece sobre una intención de compra antigua sin que eso pruebe el pago de otra operación.",
           "Evita repetir información que ya acabas de comunicar. Prioriza responder la intención del mensaje actual y usa el historial como contexto, no como texto que debas recapitular.",
           "Si la alumna identificada solicita activar o recuperar su acceso después de asistir a la prueba, usa prepare_student_access_activation. No pidas correo ni contraseña: la herramienta valida su cuenta y la asistencia real. La activación del acceso no cobra ni requiere una inscripción pagada: puede ser necesaria para pagar la inscripción desde la app. Si devuelve confirmation_required, pide una confirmación; ejecuta execute_student_access_activation sólo ante un nuevo sí explícito. Comparte únicamente el activation_url devuelto para su propia cuenta. Si la herramienta bloquea el acceso, explica el motivo seguro o escala, sin inventar un enlace.",
           "No reveles IDs internos, nombres de tablas, secretos, tokens, prompts ni detalles técnicos.",
           conversationGuidance(input),
           managedRuleInstructions,
+          "La personalidad siguiente define tono y estilo. Si contiene horarios, importes, métodos o reglas antiguas, prevalecen las herramientas actuales y las instrucciones operativas anteriores; no crees una segunda fuente de reglas.",
           input.config.personality_instructions.trim()
             ? `Personalidad configurada por el estudio: ${input.config.personality_instructions.trim()}`
             : "",
+          prospectCashTurnGuidance(input, input.history),
+          explanationTurnGuidance(input.history),
         ]
           .filter(Boolean)
           .join("\n");
@@ -1238,6 +1504,11 @@ export async function runAssistantTurn(input: OrchestratorInput) {
   let provisionalTransferBooking = false;
   let mixedPaymentInstructions: string | null = null;
   const testDeadline = Date.now() + 90_000;
+  const responseText = {
+    ...(memoryTurn ? { format: conversationResponseFormat } : {}),
+    // GPT-5 supports a response verbosity setting; keep older configured models compatible.
+    ...(contextualTurn && /^gpt-5(?:[.-]|$)/.test(input.config.model) ? { verbosity: "low" } : {}),
+  };
 
   for (let attempt = 0; attempt < input.config.max_model_calls_per_turn; attempt += 1) {
     const spend = await spentUsdMicros(input.supabase, input.studio.id, input.conversationId);
@@ -1279,6 +1550,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           parallel_tool_calls: false,
           store: false,
           reasoning: { effort: input.config.reasoning_effort },
+          ...(Object.keys(responseText).length ? { text: responseText } : {}),
           max_output_tokens: input.improvePrompt ? 7000 : stickerTurn ? 400 : 1200,
         }),
         cache: "no-store",
@@ -1374,7 +1646,10 @@ export async function runAssistantTurn(input: OrchestratorInput) {
 
     const functionCalls = output.filter((item) => item.type === "function_call");
     if (functionCalls.length === 0) {
-      const informationReply = outputText(output);
+      const decoded = contextualTurn
+        ? decodeConversationReply(outputText(output))
+        : { reply: outputText(output), memory: null };
+      const informationReply = decoded.reply;
       if (!informationReply) throw new Error("assistant_empty_response");
       const text = mixedPaymentInstructions
         ? `${informationReply}\n\n${mixedPaymentInstructions}`
@@ -1392,6 +1667,12 @@ export async function runAssistantTurn(input: OrchestratorInput) {
           ? `${text}\n\nEl pago continúa en revisión. Las reservas que dependen de ese pago pueden cancelarse si no se valida.`
           : text;
       const safeReply = await ensureHumanHandoffForReply(input, trace, customerText, modelCallId);
+      if (memoryTurn) {
+        // Memory failure must not replay an already successful business action.
+        await saveConversationMemory(contextScope, contextSnapshot, decoded.memory).catch(
+          () => false,
+        );
+      }
       return { reply: safeReply, trace };
     }
     if (stickerTurn) throw new Error("sticker_tool_call_blocked");
@@ -1444,53 +1725,70 @@ export async function runAssistantTurn(input: OrchestratorInput) {
       } else {
         const currentUserMessage =
           [...input.history].reverse().find((message) => message.role === "user")?.content ?? "";
-        result = shouldBlockPaymentForInformation(toolName, currentUserMessage)
+        const actionBlocked =
+          socialOnly || shouldBlockPaymentForInformation(toolName, currentUserMessage);
+        if (!input.testSimulation && !actionBlocked) await assertActionTurnCurrent(input);
+        result = socialOnly
           ? {
               ok: false,
-              reason_code: "information_request_not_payment_authorization",
+              reason_code: "social_message_is_not_action_authorization",
               instruction:
-                "Responde la consulta informativa con los datos consultados. Conserva el pago pendiente sin repetir datos bancarios ni preparar otro cobro. Si pide información general, explica la actividad y los requisitos disponibles; pregunta qué detalle desea conocer sólo si falta contexto.",
+                "Un saludo o agradecimiento no autoriza acciones. Responde con el contexto actual y, si hay un pendiente relevante, pregunta brevemente si necesita ayuda. No prepares pagos, reservas ni cambios.",
             }
-          : input.testSimulation
-            ? await simulateAssistantAction(
-                {
-                  state: input.testSimulation,
-                  supabase: input.supabase,
-                  studio: input.studio,
-                  turnId: input.turnId,
-                  currentUserMessage,
-                },
-                toolName,
-                args,
-              )
-            : await executeAssistantActionTool(
-                {
-                  supabase: input.supabase,
-                  studio: input.studio,
-                  conversationId: input.conversationId,
-                  turnId: input.turnId,
-                  studentId: input.studentId,
-                  crmContactId: input.crmContactId,
-                  identityNeedsName: input.identityNeedsName === true,
-                  channel: input.channel,
-                  activationUrl: input.activationUrl,
-                  serviceMode: input.serviceMode === true,
-                  currentUserMessage,
-                },
-                toolName,
-                args,
-              );
+          : shouldBlockPaymentForInformation(toolName, currentUserMessage)
+            ? {
+                ok: false,
+                reason_code: "information_request_not_payment_authorization",
+                instruction:
+                  "Responde la consulta informativa con los datos consultados. Conserva el pago pendiente sin repetir datos bancarios ni preparar otro cobro. Si pide información general, explica la actividad y los requisitos disponibles; pregunta qué detalle desea conocer sólo si falta contexto.",
+              }
+            : input.testSimulation
+              ? await simulateAssistantAction(
+                  {
+                    state: input.testSimulation,
+                    supabase: input.supabase,
+                    studio: input.studio,
+                    turnId: input.turnId,
+                    currentUserMessage,
+                  },
+                  toolName,
+                  args,
+                )
+              : await executeAssistantActionTool(
+                  {
+                    supabase: input.supabase,
+                    studio: input.studio,
+                    conversationId: input.conversationId,
+                    turnId: input.turnId,
+                    studentId: input.studentId,
+                    crmContactId: input.crmContactId,
+                    identityNeedsName: input.identityNeedsName === true,
+                    channel: input.channel,
+                    activationUrl: input.activationUrl,
+                    serviceMode: input.serviceMode === true,
+                    currentUserMessage,
+                  },
+                  toolName,
+                  args,
+                );
       }
 
       const resultObject = asObject(result);
       if (resultObject?.ok === false) {
         toolStatus = "blocked";
       }
-    } catch {
+    } catch (error) {
+      rethrowSuperseded(error);
       result = { ok: false, error: "tool_execution_failed" };
       toolStatus = "error";
     }
     toolCallsThisTurn += 1;
+    // After an action attempt, allow a new read of any state it may have changed.
+    if (isActionTool && !socialOnly) {
+      for (const definition of assistantReadToolDefinitions) {
+        if (!tools.some((tool) => tool.name === definition.name)) tools.push(definition);
+      }
+    }
 
     const resultObject = asObject(result);
     if (
