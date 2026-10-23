@@ -148,3 +148,38 @@
     font-size: 16px;
   }
 }
+
+.booking-rules-row.is-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.booking-rules-fieldset {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #e2e8ee;
+  border-radius: 16px;
+  background: #fbfcfd;
+}
+
+.booking-rules-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--booking-rules-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.booking-rules-check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--booking-rules-accent);
+}
+
+@media (max-width: 640px) {
+  .booking-rules-row.is-three {
+    grid-template-columns: 1fr;
+  }
+}

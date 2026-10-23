@@ -121,3 +121,64 @@ export async function saveBookingWindowsAction(formData: FormData) {
   revalidatePath("/admin/configuracion/reservas");
   redirect(reservationsPath({ saved: "windows" }));
 }
+
+// NEB-01-41 · Penalizaciones para alumnas regulares (pausa de reservas y cargo en paquetes).
+export async function savePenaltyPolicyAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+
+  if (ctx.membership.role !== "owner") {
+    redirect("/admin?error=access");
+  }
+
+  const lateCharge = moneyToMinor(formData.get("package_late_cancellation_penalty")) ?? 0;
+  const noShowCharge = moneyToMinor(formData.get("package_no_show_penalty")) ?? 0;
+  const pause = (prefix: "no_show" | "late_cancel") => {
+    if (!checkboxValue(formData, `${prefix}_block_enabled`)) {
+      return { threshold: null, windowDays: null, blockDays: null };
+    }
+    const threshold = Number(formData.get(`${prefix}_block_threshold`));
+    const windowDays = Number(formData.get(`${prefix}_block_window_days`));
+    const blockDays = Number(formData.get(`${prefix}_block_days`));
+    const valid =
+      Number.isInteger(threshold) &&
+      threshold >= 1 &&
+      threshold <= 20 &&
+      Number.isInteger(windowDays) &&
+      windowDays >= 1 &&
+      windowDays <= 365 &&
+      Number.isInteger(blockDays) &&
+      blockDays >= 1 &&
+      blockDays <= 90;
+    return valid ? { threshold, windowDays, blockDays } : null;
+  };
+  const noShow = pause("no_show");
+  const lateCancel = pause("late_cancel");
+  if (!noShow || !lateCancel) redirect(reservationsPath({ error: "pause" }));
+  if (lateCharge > 10_000_000 || noShowCharge > 10_000_000) {
+    redirect(reservationsPath({ error: "penalty" }));
+  }
+
+  const { error } = await ctx.supabase.rpc("owner_update_studio_penalty_policy", {
+    p_studio_id: ctx.studio.id,
+    p_package_late_cancellation_penalty_minor: lateCharge,
+    p_package_no_show_penalty_minor: noShowCharge,
+    p_pending_charge_blocks_booking: checkboxValue(formData, "pending_charge_blocks_booking"),
+    p_no_show_block_threshold: noShow.threshold,
+    p_no_show_block_window_days: noShow.windowDays,
+    p_no_show_block_days: noShow.blockDays,
+    p_late_cancel_block_threshold: lateCancel.threshold,
+    p_late_cancel_block_window_days: lateCancel.windowDays,
+    p_late_cancel_block_days: lateCancel.blockDays,
+  });
+
+  if (error) {
+    console.error("[studio.reservations] Penalty policy update failed", {
+      code: error.code,
+      message: error.message.slice(0, 160),
+    });
+    redirect(reservationsPath({ error: "save" }));
+  }
+
+  revalidatePath("/admin/configuracion/reservas");
+  redirect(reservationsPath({ saved: "penalties" }));
+}

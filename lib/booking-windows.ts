@@ -172,18 +172,10 @@ export function describeBookingOpen(values: BookingWindowValues): string {
   return "Sin límite";
 }
 
-/** Mensaje para la alumna cuando la clase aún no abre o ya cerró. */
-export function bookingWindowCopy(
-  reason: string | null | undefined,
-  opensAt: string | null | undefined,
-  timeZone: string,
-): string | null {
-  if (reason === "booking_closed") return "Reservas cerradas";
-  if (reason !== "booking_not_open") return null;
-  if (!opensAt) return "Todavía no abre";
-  const date = new Date(opensAt);
-  if (Number.isNaN(date.getTime())) return "Todavía no abre";
-  const label = new Intl.DateTimeFormat("es-MX", {
+function shortDateTime(value: string, timeZone: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat("es-MX", {
     timeZone,
     weekday: "short",
     day: "numeric",
@@ -191,7 +183,26 @@ export function bookingWindowCopy(
     hour: "numeric",
     minute: "2-digit",
   }).format(date);
-  return `Abre ${label}`;
+}
+
+/**
+ * Mensaje para la alumna cuando la clase aún no abre, ya cerró (NEB-01-40) o ella tiene una
+ * pausa de reservas o un adeudo (NEB-01-41). `at` es booking_opens_at o blocked_until.
+ */
+export function bookingWindowCopy(
+  reason: string | null | undefined,
+  at: string | null | undefined,
+  timeZone: string,
+): string | null {
+  if (reason === "booking_closed") return "Reservas cerradas";
+  if (reason === "student_charge_pending") return "Tienes un adeudo pendiente";
+  if (reason === "student_booking_blocked") {
+    const label = at ? shortDateTime(at, timeZone) : null;
+    return label ? `Reservas en pausa hasta ${label}` : "Reservas en pausa";
+  }
+  if (reason !== "booking_not_open") return null;
+  const label = at ? shortDateTime(at, timeZone) : null;
+  return label ? `Abre ${label}` : "Todavía no abre";
 }
 
 /** Estado de la ventana de reserva de una clase (misma regla que usa Demi). */

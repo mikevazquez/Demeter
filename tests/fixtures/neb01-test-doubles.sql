@@ -10,7 +10,7 @@ create function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 grant execute on function auth.uid() to anon, authenticated;
 
-create table public.studios (id uuid primary key default gen_random_uuid(), name text not null, slug text unique, timezone text not null default 'America/Mexico_City');
+create table public.studios (id uuid primary key default gen_random_uuid(), name text not null, slug text unique, timezone text not null default 'America/Mexico_City', currency text not null default 'MXN');
 create table public.studio_memberships (studio_id uuid references public.studios(id), user_id uuid references auth.users(id), role text, active boolean default true, primary key (studio_id, user_id));
 create table public.role_capabilities (role text, capability_key text);
 insert into public.role_capabilities values ('owner', 'settings.write'), ('admin', 'settings.write');
@@ -121,3 +121,14 @@ $$;
 grant execute on function public.booking_eligibility(uuid,uuid), public.cancel_reservation(uuid,text), public.check_in_reservation(text) to authenticated;
 alter table public.students add column user_id uuid;
 insert into auth.users (id) values ('00000000-0000-0000-0000-0000000000d1');
+
+-- NEB-01-41 · stand-ins for penalties.
+insert into public.role_capabilities values ('owner', 'students.write');
+alter table public.product_acquisitions add column unlimited boolean not null default false;
+alter table public.reservations add column acquisition_id uuid references public.product_acquisitions(id), add column cancelled_at timestamptz;
+create table public.student_operating_charges (
+  id uuid primary key default gen_random_uuid(), studio_id uuid not null, student_id uuid not null,
+  reservation_id uuid not null, acquisition_id uuid, charge_type text not null, amount_minor integer not null,
+  currency text not null, status text not null default 'pending', created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(), resolved_at timestamptz, resolved_by_user_id uuid, resolution_note text,
+  unique (reservation_id, charge_type));

@@ -182,22 +182,44 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 - Cambio para Demeter: la app de la alumna ya no reserva en los últimos 30 minutos (antes solo
   Demi lo respetaba). Mike confirma ese valor en la demo; se cambia en Configuración › Reservas.
 
+### NEB-01-41 · Penalizaciones para alumnas regulares (`20261022218000`)
+
+- Por estudio y por separado para faltas (no-show) y cancelaciones tardías; todo apagado por
+  defecto (Demeter no cambia):
+  - Pausa de reservas: tras N eventos en D días, la alumna no puede reservar por X días aunque
+    tenga paquete activo. Se quita sola al vencer. (Decisión de Mike: reemplaza el «pago
+    adelantado».)
+  - Cargo en dinero por evento en paquetes con créditos, además de gastar el crédito (los
+    ilimitados ya tenían el suyo). Queda como adeudo en `student_operating_charges`.
+  - «Un cargo pendiente no deja reservar», activado por defecto.
+- `student_booking_penalties` guarda cada pausa; no se enciman pausas del mismo tipo y los
+  eventos que ya generaron una pausa no vuelven a contar.
+- La alumna y Demi no pueden reservar ni unirse a la lista de espera con pausa o adeudo
+  (`student_booking_blocked`, `student_charge_pending`). El equipo del estudio sí puede reservar
+  por ella y las promociones desde lista de espera no se frenan.
+- Pantallas: Configuración › Reservas › «Penalizaciones por faltas y cancelaciones tardías».
+  En la ficha de la alumna, «Reservas en pausa y adeudos» con «Quitar pausa» (queda quién y por
+  qué) y «Marcar pagado / Condonar» para los cargos. En el portal, aviso con la fecha de fin de la
+  pausa o el monto del adeudo, y «Reservas en pausa hasta …» en cada clase.
+- Pendiente: avisar por notificación Push o WhatsApp cuando empieza una pausa (hoy la alumna lo
+  ve en el portal y Demi lo explica).
+
 ## Pruebas
 
 - SQL local, nunca contra Sandbox ni producción:
   `PGHOST=… PGPORT=… PGUSER=postgres scripts/neb01-sql-tests.sh`. Corre 18 controles de plataforma
-  13 de bloqueos y solicitudes, 3 de marca, 12 de la consola, 7 de zona horaria y 13 de reglas de reserva, y deshace todo al terminar.
+  13 de bloqueos y solicitudes, 3 de marca, 12 de la consola, 7 de zona horaria, 13 de reglas de reserva y 9 de penalizaciones, y deshace todo al terminar.
 - Vitest: `tests/neb01-catalog.test.ts`, `tests/neb01-guards.test.ts`, `tests/neb01-branding.test.ts`,
-  `tests/neb01-console.test.ts`, `tests/neb01-timezone.test.ts` y
-  `tests/neb01-booking-windows.test.ts`.
+  `tests/neb01-console.test.ts`, `tests/neb01-timezone.test.ts`,
+  `tests/neb01-booking-windows.test.ts` y `tests/neb01-penalties.test.ts`.
 
 ## Para Codex
 
 1. Aplicar en Sandbox, en orden, `20261022210000_neb01_platform_admins_audit` y
    `20261022211000_neb01_plans_modules_entitlements` y `20261022212000_neb01_entitlement_guards` y
    `20261022213000_neb01_module_activation_requests`, `20261022214000_neb01_studio_brand_name`,
-   `20261022215000_neb01_platform_console_reads`, `20261022216000_neb01_studio_local_time` y
-   `20261022217000_neb01_booking_windows`.
+   `20261022215000_neb01_platform_console_reads`, `20261022216000_neb01_studio_local_time`,
+   `20261022217000_neb01_booking_windows` y `20261022218000_neb01_student_penalties`.
 2. Insertar a Mike en `platform_admins` con su cuenta de Sandbox.
 3. Verificar que todos los estudios quedaron en `allaccess/internal` y correr QA.
 4. Con la cuenta de Mike, abrir `/plataforma` y la ficha de Demeter. Con una cuenta que no sea
@@ -210,5 +232,8 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
    apertura «domingo 20:00» y ver «Abre …» en el portal; poner a una actividad 12 h para cancelar
    y confirmar que la cancelación es tardía dentro de esas 12 h; revisar que el QR abre y cierra
    según la configuración; pedirle a Demi una clase que aún no abre.
+7. Penalizaciones: configurar «2 faltas en 30 días → 7 días» y $100 por falta en un estudio de
+   prueba; marcar dos faltas a una alumna de prueba y confirmar el cargo, la pausa, el aviso en el
+   portal, que Demi no reserva, que recepción sí y que «Quitar pausa» la libera.
 
 Producción no se toca sin la autorización explícita de Mike.

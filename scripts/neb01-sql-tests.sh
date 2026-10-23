@@ -16,9 +16,10 @@ for migration in \
   20261022214000_neb01_studio_brand_name \
   20261022215000_neb01_platform_console_reads \
   20261022216000_neb01_studio_local_time \
-  20261022217000_neb01_booking_windows; do
+  20261022217000_neb01_booking_windows \
+  20261022218000_neb01_student_penalties; do
   run "supabase/migrations/$migration.sql"
 done
-for test in tests/neb01-platform.sql tests/neb01-guards.sql tests/neb01-branding.sql tests/neb01-console.sql tests/neb01-timezone.sql tests/neb01-booking-windows.sql; do
+for test in tests/neb01-platform.sql tests/neb01-guards.sql tests/neb01-branding.sql tests/neb01-console.sql tests/neb01-timezone.sql tests/neb01-booking-windows.sql tests/neb01-penalties.sql; do
   psql -v ON_ERROR_STOP=1 -q -d "$DB" -At -f "$test" | tail -${NEB_TAIL:-1}
 done

@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import {
   bookingReasonCopyForStudent,
+  formatMoney,
   getStudentPortalContext,
   localDateKey,
   type StudentSession,
@@ -152,9 +153,39 @@ export default async function StudentReservePage({
       target_end: weekEnd,
     }),
   ]);
-  const globalRestrictions = (globalRestrictionData ?? []) as NonNullable<
+  const baseRestrictions = (globalRestrictionData ?? []) as NonNullable<
     StudentSession["eligibility"]["restrictions"]
   >;
+  // NEB-01-41 · pausa de reservas o adeudo por faltas y cancelaciones tardías.
+  const { data: penaltyData, error: penaltyError } = await supabase.rpc(
+    "student_booking_penalty_status",
+  );
+  const penalty = penaltyError
+    ? null
+    : (penaltyData as {
+        reason_code?: string;
+        blocked_until?: string;
+        pending_charge_minor?: number;
+      } | null);
+  const penaltyRestriction =
+    penalty?.reason_code === "student_booking_blocked"
+      ? {
+          code: "student_booking_blocked",
+          title: bookingWindowCopy(penalty.reason_code, penalty.blocked_until, studio.timezone) ?? "Reservas en pausa",
+          detail:
+            "Por faltas o cancelaciones tardías. Si fue un error, escríbele al estudio.",
+        }
+      : penalty?.reason_code === "student_charge_pending"
+        ? {
+            code: "student_charge_pending",
+            title: "Tienes un adeudo pendiente",
+            detail: `${formatMoney(Number(penalty.pending_charge_minor ?? 0), studio.currency)} por faltas o cancelaciones tardías. Págalo para volver a reservar.`,
+            action_kind: "payment",
+          }
+        : null;
+  const globalRestrictions = (
+    penaltyRestriction ? [penaltyRestriction, ...baseRestrictions] : baseRestrictions
+  ) as typeof baseRestrictions;
 
   const selectedHolidayBase = (selectedHolidayData as StudentHolidaySnapshot | null) ?? null;
   const selectedHoliday = selectedHolidayBase
@@ -403,8 +434,9 @@ export default async function StudentReservePage({
               // NEB-01-40 · "Abre el …" o "Reservas cerradas" según la ventana de la clase.
               const windowCopy = bookingWindowCopy(
                 session.eligibility?.reason_code,
-                (session.eligibility as { booking_opens_at?: string | null } | undefined)
-                  ?.booking_opens_at,
+                (session.eligibility as { booking_opens_at?: string | null; blocked_until?: string | null } | undefined)
+                  ?.booking_opens_at ??
+                  (session.eligibility as { blocked_until?: string | null } | undefined)?.blocked_until,
                 studio.timezone,
               );
               const eligibilityCopy =

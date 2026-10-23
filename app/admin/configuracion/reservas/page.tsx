@@ -11,6 +11,7 @@ import {
 } from "@/lib/booking-windows";
 
 import { BookingWindowsForm } from "./BookingWindowsForm";
+import { PenaltyPolicyForm, type PenaltyPolicyValues } from "./PenaltyPolicyForm";
 import { ReservationPolicyForm } from "./ReservationPolicyForm";
 import "./reservas-v2.css";
 import "../../components/booking-rules.css";
@@ -23,6 +24,7 @@ const errorCopy: Record<string, string> = {
   window_open: "Revisa cuándo se abren las reservas: de 1 hora a 90 días antes, o un día y hora.",
   window_checkin: "Revisa los minutos del registro con QR (0 a 240).",
   window_cancel: "Revisa las horas para cancelar.",
+  pause: "Revisa las pausas: de 1 a 20 eventos, en 1 a 365 días, por 1 a 90 días.",
 };
 
 function pickDefined(values: BookingWindowValues): Partial<BookingWindowValues> {
@@ -65,6 +67,32 @@ export default async function ReservationSettingsPage({
     ? null
     : { ...BOOKING_WINDOW_DEFAULTS, ...pickDefined(bookingWindowValuesFromRow(windowRow)) };
 
+  // NEB-01-41 · consulta aparte: si la migración aún no está aplicada, no se muestra la sección.
+  const { data: penaltyRow, error: penaltyError } = await ctx.supabase
+    .from("studio_operating_policies")
+    .select(
+      "package_late_cancellation_penalty_minor,package_no_show_penalty_minor,pending_charge_blocks_booking,no_show_block_threshold,no_show_block_window_days,no_show_block_days,late_cancel_block_threshold,late_cancel_block_window_days,late_cancel_block_days",
+    )
+    .eq("studio_id", ctx.studio.id)
+    .maybeSingle();
+  const penaltyValues: PenaltyPolicyValues | null = penaltyError
+    ? null
+    : {
+        packageLateCancellationPenaltyMinor: penaltyRow?.package_late_cancellation_penalty_minor ?? 0,
+        packageNoShowPenaltyMinor: penaltyRow?.package_no_show_penalty_minor ?? 0,
+        pendingChargeBlocksBooking: penaltyRow?.pending_charge_blocks_booking ?? true,
+        noShow: {
+          threshold: penaltyRow?.no_show_block_threshold ?? null,
+          windowDays: penaltyRow?.no_show_block_window_days ?? null,
+          blockDays: penaltyRow?.no_show_block_days ?? null,
+        },
+        lateCancel: {
+          threshold: penaltyRow?.late_cancel_block_threshold ?? null,
+          windowDays: penaltyRow?.late_cancel_block_window_days ?? null,
+          blockDays: penaltyRow?.late_cancel_block_days ?? null,
+        },
+      };
+
   return (
     <main className="reservations-v2">
       <header className="reservations-v2-header">
@@ -97,6 +125,10 @@ export default async function ReservationSettingsPage({
       />
 
       {windowValues ? <BookingWindowsForm values={windowValues} /> : null}
+
+      {penaltyValues ? (
+        <PenaltyPolicyForm values={penaltyValues} currency={ctx.studio.currency} />
+      ) : null}
     </main>
   );
 }
