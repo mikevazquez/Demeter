@@ -51,6 +51,34 @@ export async function createProgram(
   revalidatePath("/admin/productos");
   redirect(`/admin/actividades/programas/${id}`);
 }
+export async function deleteProgram(data: FormData) {
+  const ctx = await getAdminContext("schedule.write");
+  const programId = String(data.get("program_id") ?? "");
+  if (!programId) redirect("/admin/actividades?tipo=talleres");
+
+  const { data: result, error } = await ctx.supabase.rpc("admin_delete_activity_program", {
+    p_program_id: programId,
+  });
+
+  if (error) {
+    const code = error.message.includes("program_has_recorded_payments")
+      ? "payments"
+      : error.message.includes("program_not_found")
+        ? "missing"
+        : "delete";
+    redirect(`/admin/actividades/programas/${programId}?error=${code}`);
+  }
+
+  revalidatePath("/admin/actividades");
+  revalidatePath("/admin/agenda");
+  revalidatePath("/admin/alumnas");
+  redirect(
+    `/admin/actividades?tipo=talleres&deleted=${encodeURIComponent(
+      String(result?.program_name ?? "1"),
+    )}`,
+  );
+}
+
 export async function enrollProgram(
   _state: { error: string | null },
   data: FormData,
