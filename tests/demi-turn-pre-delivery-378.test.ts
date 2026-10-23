@@ -25,4 +25,14 @@ describe("DEMI-378 pre-delivery guard", () => {
       'outcome: "message_batch_pre_delivery_lookup_failed"',
     );
   });
+  it("guards cached text retries against newer inbound messages", () => {
+    const cachedBranch = route.indexOf("if (sendReplies && cachedReply)");
+    const cachedDelivery = route.indexOf("text: cachedReply,");
+    expect(cachedBranch).toBeGreaterThan(-1);
+    expect(cachedDelivery).toBeGreaterThan(cachedBranch);
+    const guardedPath = route.slice(cachedBranch, cachedDelivery);
+    expect(guardedPath).toContain("await findNewerConversationText({");
+    expect(guardedPath).toContain('outcome: "cached_reply_superseded"');
+    expect(guardedPath).toContain('outcome: "cached_reply_newer_text_lookup_failed"');
+  });
 });
