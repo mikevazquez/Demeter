@@ -1,15 +1,25 @@
 import "server-only";
 import type { AssistantToolContext } from "./read-tools";
+import { getActivityProgramInformation } from "./program-information";
 
 // Informational reads never accept a tenant, identity, price or bank account
 // supplied by the model. Context recovery is atomic and read-only in PostgreSQL.
 export async function getWorkshopInformation(ctx: AssistantToolContext) {
-  const response = await ctx.supabase.rpc("service_demi_workshop_context", {
-    p_studio: ctx.studio.id,
-    p_conversation: ctx.conversationId ?? null,
-  });
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: ctx.studio.timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(ctx.studio.temporaryInformationNow ?? Date.now()));
+  const [response, programs] = await Promise.all([
+    ctx.supabase.rpc("service_demi_workshop_context", {
+      p_studio: ctx.studio.id,
+      p_conversation: ctx.conversationId ?? null,
+    }),
+    getActivityProgramInformation(ctx, today),
+  ]);
   const data = response.data;
-  if (response.error || data?.ok !== true || !Array.isArray(data.workshops))
+  if (response.error || programs.error || data?.ok !== true || !Array.isArray(data.workshops))
     return { ok: false, reason_code: "workshop_catalog_unavailable" };
   const formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: ctx.studio.timezone,
@@ -41,6 +51,11 @@ export async function getWorkshopInformation(ctx: AssistantToolContext) {
     ...data,
     timezone: ctx.studio.timezone,
     workshops,
+    // Legacy programs have no workshop_offer reference and cannot enter its checkout.
+    registered_programs: programs.data.map((program) => ({
+      ...program,
+      demi_purchase_supported: false,
+    })),
     availability_is_guaranteed: false,
   };
 }

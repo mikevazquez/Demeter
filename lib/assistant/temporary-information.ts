@@ -73,21 +73,56 @@ const ignoredWords = new Set([
   "uno",
   "unos",
   "y",
+  "informacion",
+  "info",
+  "horario",
+  "horarios",
+  "precio",
+  "precios",
+  "costo",
+  "costos",
+  "hay",
+  "tienen",
+  "tienes",
+  "disponible",
+  "disponibles",
 ]);
 
-export function rankTemporaryInformation(items: TemporaryInformation[], topic: string) {
+export type StudioInformation = Omit<TemporaryInformation, "kind"> & {
+  kind: TemporaryInformation["kind"] | "masterclass";
+};
+
+const categoryWords: Record<StudioInformation["kind"], string[]> = {
+  workshop: ["taller", "talleres", "curso", "cursos", "workshop", "workshops"],
+  event: ["evento", "eventos"],
+  promotion: ["promocion", "promociones", "promo", "promos"],
+  masterclass: ["masterclass", "masterclasses", "clase magistral"],
+};
+
+export function rankTemporaryInformation<T extends StudioInformation>(items: T[], topic: string) {
   const terms = normalize(topic)
     .split(/[^a-z0-9]+/)
     .filter((term) => term.length > 1 && !ignoredWords.has(term));
+  const allCategoryWords = Object.values(categoryWords).flat();
+  const specificTerms = terms.filter((term) => !allCategoryWords.includes(term));
+  const categories = terms.filter((term) => allCategoryWords.includes(term));
   const ranked = items
     .map((item) => {
       const searchable = normalize(
         [item.title, item.kind, item.discipline ?? "", item.details].join(" "),
       );
-      const score = terms.reduce((total, term) => total + (searchable.includes(term) ? 1 : 0), 0);
-      return { item, score };
+      const score = specificTerms.reduce(
+        (total, term) => total + (searchable.includes(term) ? 1 : 0),
+        0,
+      );
+      const categoryMatch =
+        categories.length === 0 ||
+        categories.some((term) => categoryWords[item.kind].includes(term));
+      return { item, score, categoryMatch };
     })
-    .filter(({ score }) => terms.length === 0 || score > 0)
+    .filter(
+      ({ score, categoryMatch }) => categoryMatch && (specificTerms.length === 0 || score > 0),
+    )
     .sort(
       (a, b) => b.score - a.score || a.item.event_starts_on.localeCompare(b.item.event_starts_on),
     )
@@ -96,6 +131,8 @@ export function rankTemporaryInformation(items: TemporaryInformation[], topic: s
   return ranked;
 }
 
-export function answerUntil(item: TemporaryInformation) {
+export function answerUntil(
+  item: Pick<TemporaryInformation, "registration_deadline" | "event_ends_on">,
+) {
   return item.registration_deadline ?? item.event_ends_on;
 }

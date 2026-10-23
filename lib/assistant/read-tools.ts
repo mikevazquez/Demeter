@@ -9,6 +9,7 @@ import "server-only";
 import { loadDemiRuntimeConfig } from "./runtime-config";
 import { preparationFromStudioPrompt } from "./class-preparation";
 import { getWorkshopInformation } from "./workshop-information";
+import { getActivityProgramInformation, type ProgramInformation } from "./program-information";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CommercialOptionsArgs, SearchClassAvailabilityArgs } from "./tool-contracts";
@@ -679,25 +680,31 @@ export async function getTemporaryInformation(ctx: AssistantToolContext, args: {
     ctx.studio.temporaryInformationNow ?? new Date().toISOString(),
     ctx.studio.timezone,
   ).date;
-  const { data, error } = await ctx.supabase
-    .from("demi_temporary_information")
-    .select(
-      "id,title,kind,discipline,details,promotion_starts_on,event_starts_on,event_ends_on,registration_deadline,status",
-    )
-    .eq("studio_id", ctx.studio.id)
-    .eq("status", "published")
-    .lte("promotion_starts_on", today)
-    .gte("event_ends_on", today)
-    .or(`registration_deadline.is.null,registration_deadline.gte.${today}`)
-    .order("event_starts_on", { ascending: true })
-    .limit(100);
+  const [{ data, error }, programs] = await Promise.all([
+    ctx.supabase
+      .from("demi_temporary_information")
+      .select(
+        "id,title,kind,discipline,details,promotion_starts_on,event_starts_on,event_ends_on,registration_deadline,status",
+      )
+      .eq("studio_id", ctx.studio.id)
+      .eq("status", "published")
+      .lte("promotion_starts_on", today)
+      .gte("event_ends_on", today)
+      .or(`registration_deadline.is.null,registration_deadline.gte.${today}`)
+      .order("event_starts_on", { ascending: true })
+      .limit(100),
+    getActivityProgramInformation(ctx, today),
+  ]);
 
-  if (error) return { ok: false, error: "temporary_information_unavailable" };
+  if (error || programs.error) return { ok: false, error: "temporary_information_unavailable" };
 
-  const active = ((data ?? []) as TemporaryInformation[]).filter((item) =>
-    isTemporaryInformationAnswerable(item, today),
+  const active: (TemporaryInformation | ProgramInformation)[] = (
+    (data ?? []) as TemporaryInformation[]
+  ).filter((item) => isTemporaryInformationAnswerable(item, today));
+  const items = rankTemporaryInformation<TemporaryInformation | ProgramInformation>(
+    [...active, ...programs.data],
+    args.topic,
   );
-  const items = rankTemporaryInformation(active, args.topic);
   const studioDefaults = items.length ? await getTemporaryStudioDefaults(ctx) : null;
 
   return {
@@ -716,6 +723,15 @@ export async function getTemporaryInformation(ctx: AssistantToolContext, args: {
       event_ends_on: item.event_ends_on,
       registration_deadline: item.registration_deadline,
       answer_until_on: answerUntil(item),
+      ...("source" in item
+        ? {
+            source: item.source,
+            price_minor: item.price_minor,
+            currency: item.currency,
+            allow_single: item.allow_single,
+            sessions: item.sessions,
+          }
+        : {}),
     })),
   };
 }
