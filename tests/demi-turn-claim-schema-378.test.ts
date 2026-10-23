@@ -2,8 +2,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const migration = "supabase/migrations/20261023183000_demi378_atomic_send_claims.sql";
-const sql = readFileSync(join(process.cwd(), migration), "utf8");
+const migrationPath = join(
+  process.cwd(),
+  "supabase",
+  "migrations",
+  "20261023183000_demi378_atomic_send_claims.sql",
+);
+const sql = readFileSync(migrationPath, "utf8");
 
 describe("DEMI-378 claim schema contract", () => {
   it("uses the same advisory lock in capture and claim", () => {
