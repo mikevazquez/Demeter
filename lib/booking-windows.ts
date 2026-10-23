@@ -190,3 +190,18 @@ export function bookingWindowCopy(
   }).format(date);
   return `Abre ${label}`;
 }
+
+/** Estado de la ventana de reserva de una clase (misma regla que usa Demi). */
+export function sessionBookingState(
+  session: { status: string; starts_at: string },
+  window: { opensAt: string | null; closesAt: string } | null | undefined,
+  now = Date.now(),
+): "open" | "not_open" | "closed" {
+  if (session.status !== "scheduled") return "closed";
+  if (!window) {
+    return new Date(session.starts_at).getTime() > now + 30 * 60_000 ? "open" : "closed";
+  }
+  if (window.opensAt && now < new Date(window.opensAt).getTime()) return "not_open";
+  if (now >= new Date(window.closesAt).getTime()) return "closed";
+  return "open";
+}

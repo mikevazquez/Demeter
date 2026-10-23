@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { sessionBookingState } from "../lib/assistant/booking-windows";
 import {
   BOOKING_WINDOW_DEFAULTS,
   bookingWindowCopy,
   bookingWindowValuesFromRow,
   describeBookingOpen,
   parseBookingWindowForm,
+  sessionBookingState,
 } from "../lib/booking-windows";
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -147,7 +147,17 @@ describe("NEB-01-38/39/40 reglas de reserva", () => {
     expect(migration).toContain("public.class_waitlist_entries w");
   });
 
-  it("Demi ya no tiene los 30 minutos fijos", () => {
+  it("Demi ya no tiene los 30 minutos fijos y usa la misma regla en lectura y acciones", () => {
+    const block = (file: string) => {
+      const source = read(file);
+      const start = source.indexOf("// --- NEB-01-40");
+      const end = source.indexOf("// --- fin NEB-01-40 ---");
+      expect(start, file).toBeGreaterThan(-1);
+      return source.slice(start, end);
+    };
+    const readTools = block("lib/assistant/read-tools.ts");
+    expect(readTools).toBe(block("lib/assistant/action-tools.ts"));
+    expect(readTools).toContain('rpc("service_session_booking_windows"');
     expect(read("lib/assistant/read-tools.ts")).not.toContain("Date.now() + 30 * 60_000");
     expect(read("lib/assistant/action-tools.ts")).not.toContain("now + 30 * 60_000");
   });
