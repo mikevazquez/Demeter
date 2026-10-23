@@ -307,3 +307,19 @@ Arrancan en Sandbox: `config_review` y `support_requests`. Novedades en Más. Pr
 
 Paso para Codex (solo Sandbox): `insert into public.platform_environment (name) values ('sandbox');`
 Nunca en producción.
+
+## NEB-01-15 · Plantillas de arranque
+
+`lib/platform/starter-templates.ts` (Pole y aéreos, Yoga, Pilates mat, Baile) y migración
+`20261023165000_neb01_starter_templates.sql`. Consola › Plantillas: aplicar crea solo lo que falta; paquetes
+inactivos; no crea clases. **Precios de ejemplo: Mike los valida antes de usarlas con clientes.**
+
+## NEB-01-21 · Costo de Demi por estudio
+
+Migración `20261023166000_neb01_demi_usage.sql`. Consola › estudio › Demi: costo del periodo, por día,
+modelo y conversación. Falta sumar la transcripción de audios (se coordina con la rama de Demi).
+
+## NEB-01-43 · Aviso al pausar reservas
+
+Migración `20261023167000_neb01_booking_pause_notice.sql`. Evento `student.booking_paused` y regla
+`operations.booking_paused` (apagada) con bandeja y push. Se enciende desde Notificaciones cuando Mike lo decida.

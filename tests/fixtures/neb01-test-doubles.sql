@@ -491,3 +491,46 @@ alter table public.sales add column if not exists payment_due_on date;
 alter table public.assistant_model_calls add column if not exists conversation_id uuid,
   add column if not exists model text, add column if not exists cached_input_tokens integer not null default 0,
   add column if not exists status text not null default 'completed';
+
+-- NEB-01-43 · notification engine stand-ins (same shape as the birthday fixture).
+create table if not exists public.domain_events (
+  event_id uuid primary key default gen_random_uuid(), studio_id uuid not null, event_type text not null,
+  source_entity_type text, source_entity_id uuid, deduplication_key text not null, payload jsonb not null default '{}',
+  occurred_at timestamptz not null default now(), actor_user_id uuid, unique (studio_id, deduplication_key));
+create or replace function public.emit_domain_event(p_studio_id uuid, p_event_type text, p_source_entity_type text,
+  p_source_entity_id uuid, p_deduplication_key text, p_occurred_at timestamptz default now(),
+  p_actor_user_id uuid default null, p_payload jsonb default '{}', p_correlation_id uuid default null,
+  p_causation_event_id uuid default null, p_event_id uuid default null)
+returns uuid language plpgsql set search_path = '' as $$
+declare v uuid;
+begin
+  insert into public.domain_events(studio_id, event_type, source_entity_type, source_entity_id, deduplication_key, payload, occurred_at, actor_user_id)
+  values (p_studio_id, p_event_type, p_source_entity_type, p_source_entity_id, p_deduplication_key, p_payload, p_occurred_at, p_actor_user_id)
+  on conflict (studio_id, deduplication_key) do nothing returning event_id into v;
+  return v;
+end $$;
+create or replace function private.notification_try_emit_domain_event(p_studio_id uuid, p_event_type text, p_source_entity_type text,
+  p_source_entity_id uuid, p_deduplication_key text, p_payload jsonb default '{}', p_actor_user_id uuid default null,
+  p_occurred_at timestamptz default clock_timestamp())
+returns uuid language plpgsql security definer set search_path = '' as $$
+begin
+  return public.emit_domain_event(p_studio_id => p_studio_id, p_event_type => p_event_type,
+    p_source_entity_type => p_source_entity_type, p_source_entity_id => p_source_entity_id,
+    p_deduplication_key => p_deduplication_key, p_occurred_at => p_occurred_at,
+    p_actor_user_id => p_actor_user_id, p_payload => coalesce(p_payload, '{}'::jsonb));
+end $$;
+
+create table if not exists public.notification_rules (
+  id uuid primary key default gen_random_uuid(), studio_id uuid not null, rule_key text not null, event_type text not null,
+  enabled boolean not null default false, current_version_number integer not null default 1, archived_at timestamptz,
+  updated_at timestamptz not null default now(), unique (studio_id, rule_key));
+create table if not exists public.notification_rule_versions (
+  studio_id uuid not null, rule_id uuid not null, version_number integer not null, notification_type text not null,
+  communication_class text not null default 'P0', priority text not null, recipient_strategy_key text not null,
+  conditions jsonb not null default '{}', timing_strategy_key text not null, timing_config jsonb not null default '{}',
+  revalidation_strategy_key text, template_key text not null, expires_after_seconds integer, activated_at timestamptz,
+  primary key (rule_id, version_number));
+create table if not exists public.notification_rule_channels (
+  studio_id uuid not null, rule_id uuid not null, version_number integer not null, channel_key text not null,
+  is_required boolean not null default true, ordinal integer not null default 1, channel_policy jsonb not null default '{}');
+
