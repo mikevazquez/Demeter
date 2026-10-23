@@ -1,6 +1,6 @@
 import { withSupabase } from "npm:@supabase/server";
 
-import { sendAsistianWebhook } from "../_shared/asistian-messaging.ts";
+import { sendMetaWhatsAppTemplate } from "../_shared/meta-whatsapp.ts";
 
 type ProvisionRequest = {
   studentId?: unknown;
@@ -40,6 +40,33 @@ function buildStudentActivationLink(baseUrl: string, tokenHash: string) {
   activationLink.searchParams.set("token_hash", tokenHash);
   activationLink.searchParams.set("type", "recovery");
   return activationLink.toString();
+}
+
+function normalizePilotPhone(value: string) {
+  let digits = value.replace(/\D/g, "");
+  if (/^[0-9]{10}$/.test(digits)) digits = `52${digits}`;
+  else if (/^521[0-9]{10}$/.test(digits)) digits = `52${digits.slice(3)}`;
+  return /^[1-9][0-9]{7,14}$/.test(digits) ? digits : null;
+}
+
+async function sendActivationWhatsApp(input: {
+  adminClient: Parameters<typeof sendMetaWhatsAppTemplate>[0]["adminClient"];
+  studioId: string;
+  studentId: string;
+  userId: string;
+  phone: string;
+  name: string;
+  activationLink: string;
+}) {
+  return await sendMetaWhatsAppTemplate({
+    adminClient: input.adminClient,
+    studioId: input.studioId,
+    template: "student_welcome",
+    eventId: `student_welcome:${input.studentId}:${input.userId}:${crypto.randomUUID()}`,
+    recipient: input.phone,
+    variables: { recipient_name: input.name, activation_url: input.activationLink },
+    metaTemplateNameOverride: "bienvenida_alumna_portal",
+  });
 }
 
 const handler = {
@@ -255,7 +282,6 @@ const handler = {
         });
       }
 
-      const welcomeEventId = `student_welcome:${student.id}:${student.user_id}:${crypto.randomUUID()}`;
       const { data: welcomeRule } = await adminClient
         .from("notification_rules")
         .select("enabled")
@@ -264,28 +290,16 @@ const handler = {
         .is("archived_at", null)
         .maybeSingle();
       const welcomeDelivery = welcomeRule?.enabled
-        ? await sendAsistianWebhook({
+        ? await sendActivationWhatsApp({
             adminClient,
             studioId: student.studio_id,
-            template: "student_welcome",
-            eventId: welcomeEventId,
-            recipient: student.phone,
-            variables: {
-              nombre: student.full_name,
-              activation_url: activationLink,
-            },
-            metadata: {
-              source: "student_access_activation_resend",
-              student_id: student.id,
-              user_id: student.user_id,
-              must_change_password: true,
-            },
+            studentId: student.id,
+            userId: student.user_id,
+            phone: student.phone,
+            name: student.full_name,
+            activationLink,
           })
-        : {
-            status: "skipped" as const,
-            errorCode: "notification_process_paused",
-            retryable: false,
-          };
+        : { status: "skipped" as const, errorCode: "notification_process_paused" };
 
       return jsonResponse({
         ok: true,
@@ -436,7 +450,6 @@ const handler = {
       });
     }
 
-    const welcomeEventId = `student_welcome:${student.id}:${provisionedUser.id}:${crypto.randomUUID()}`;
     const { data: welcomeRule } = await adminClient
       .from("notification_rules")
       .select("enabled")
@@ -445,28 +458,16 @@ const handler = {
       .is("archived_at", null)
       .maybeSingle();
     const welcomeDelivery = welcomeRule?.enabled
-      ? await sendAsistianWebhook({
+      ? await sendActivationWhatsApp({
           adminClient,
           studioId: student.studio_id,
-          template: "student_welcome",
-          eventId: welcomeEventId,
-          recipient: student.phone,
-          variables: {
-            nombre: student.full_name,
-            activation_url: activationLink,
-          },
-          metadata: {
-            source: "student_access_provisioning",
-            student_id: student.id,
-            user_id: provisionedUser.id,
-            must_change_password: true,
-          },
+          studentId: student.id,
+          userId: provisionedUser.id,
+          phone: student.phone,
+          name: student.full_name,
+          activationLink,
         })
-      : {
-          status: "skipped" as const,
-          errorCode: "notification_process_paused",
-          retryable: false,
-        };
+      : { status: "skipped" as const, errorCode: "notification_process_paused" };
 
     return jsonResponse({
       ok: true,

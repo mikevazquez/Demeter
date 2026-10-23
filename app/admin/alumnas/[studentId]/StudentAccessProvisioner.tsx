@@ -97,8 +97,8 @@ function StudentActivationAction({
         <div className={delivered ? "notice success" : "notice error"}>
           {delivered
             ? mode === "provision"
-              ? "Cuenta creada y vinculada. El enlace para crear su contraseña fue entregado a Asistian para enviarlo por WhatsApp."
-              : "Nuevo enlace de activación entregado a Asistian para enviarlo por WhatsApp."
+              ? "Cuenta creada y vinculada. El enlace para crear su contraseña fue enviado por WhatsApp."
+              : "Nuevo enlace de activación enviado por WhatsApp."
             : "La cuenta quedó preparada, pero el enlace de activación no pudo entregarse por WhatsApp. Puedes intentar reenviarlo."}
         </div>
         <div className="student-row">

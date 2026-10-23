@@ -30,9 +30,10 @@ describe("F10 student self-password activation contracts", () => {
 
     expect(edgeFunction).toContain('type: "recovery"');
     expect(edgeFunction).toContain("adminClient.auth.admin.generateLink");
-    expect(edgeFunction).toContain("activation_url: activationLink");
+    expect(edgeFunction).toContain("sendActivationWhatsApp");
+    expect(edgeFunction).toContain("activationLink");
     expect(edgeFunction).toContain('template: "student_welcome"');
-    expect(edgeFunction).toContain('source: "student_access_provisioning"');
+    expect(edgeFunction).toContain("activation_url: input.activationLink");
   });
 
   it("allows activation-link resend only while the account is still pending activation", () => {
