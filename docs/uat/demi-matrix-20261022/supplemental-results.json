@@ -1,0 +1,35 @@
+{
+  "sourceSha": "42ea7bf4559ec14eb10ec1dac6e7de62aea0f258",
+  "runtimeSha": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+  "environment": "hedouonyhynuvwbckdlg",
+  "suites": [
+    {
+      "file": "tests/demi-resolved-pendings-uat.sql",
+      "actualRole": "service_role",
+      "rollback": true,
+      "status": "PASSED",
+      "results": [
+        {
+          "result": "passed",
+          "controls": 7,
+          "scope": "synthetic tenant; rollback; no external effects"
+        }
+      ]
+    },
+    {
+      "file": "tests/demi-transfer-enrollment-package-uat.sql",
+      "actualRole": "service_role",
+      "rollback": true,
+      "status": "PASSED",
+      "scriptAdjusted": true,
+      "adjustment": "Fixture selection called private.student_has_active_enrollment without privilege. Use named trial_payment_rejected fixture and assert no active enrollment, without changing grants or rules.",
+      "results": [
+        {
+          "result": "passed",
+          "controls": 4,
+          "scope": "synthetic tenant; rollback; activation with receipt to be checked in the WhatsApp/bank UAT"
+        }
+      ]
+    }
+  ]
+}

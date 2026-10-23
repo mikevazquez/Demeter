@@ -1,0 +1,8 @@
+{
+  "file": "tests/demi-transfer-enrollment-package-uat.sql",
+  "businessRulesChanged": false,
+  "reason": "UTC current_date differs from studio-local day after midnight; seed enrollment must be valid on the studio day",
+  "originalSha256": "0f283562a3c2c034f8d4ca717857edff1b882fa9a136255a27dfc50f149fccd8",
+  "fixedSha256": "77c0580ea9615507376185acbc1661ecfac1c9537e54835a6f092bbc71326218",
+  "initialFailurePreserved": "sql-results.json"
+}

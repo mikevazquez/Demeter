@@ -1,0 +1,240 @@
+[
+  {
+    "conversation_id": "12457c26-dc61-4ba7-9c54-95e310bd1878",
+    "turn_id": "20695e16-326f-422c-a5bd-c22248fbdf0c",
+    "tool_name": "search_class_availability",
+    "permission_class": "A",
+    "request_json": {
+      "limit": 10,
+      "offset": 0,
+      "date_to": "2026-11-04",
+      "date_from": "2026-10-22",
+      "after_time": "18:00",
+      "before_time": null,
+      "activity_query": "Pole Fitness"
+    },
+    "result_json": {
+      "ok": true,
+      "matches": [
+        {
+          "date": "2026-10-22",
+          "space": null,
+          "address": "Avenida San Gaspar #240, Tonalá, Jalisco",
+          "is_full": false,
+          "activity": "Pole Fitness UAT",
+          "currency": "MXN",
+          "location": "Principal",
+          "discipline": "Pole Fitness",
+          "credit_cost": 1,
+          "session_ref": "session:ce2b06ae-580b-4018-b56b-fe3224de98ce",
+          "ends_at_local": "19:00",
+          "starts_at_local": "18:00"
+        },
+        {
+          "date": "2026-10-22",
+          "space": null,
+          "address": "Avenida San Gaspar #240, Tonalá, Jalisco",
+          "is_full": true,
+          "activity": "Pole Fitness UAT",
+          "currency": "MXN",
+          "location": "Principal",
+          "discipline": "Pole Fitness",
+          "credit_cost": 1,
+          "session_ref": "session:0eddf167-f73e-4d2c-ab2d-0f78dfd15ec6",
+          "ends_at_local": "19:00",
+          "starts_at_local": "18:00"
+        },
+        {
+          "date": "2026-10-23",
+          "space": null,
+          "address": "Avenida San Gaspar #240, Tonalá, Jalisco",
+          "is_full": false,
+          "activity": "Pole Fitness UAT",
+          "currency": "MXN",
+          "location": "Principal",
+          "discipline": "Pole Fitness",
+          "credit_cost": 1,
+          "session_ref": "session:ca4980cf-5fcd-469c-9979-62b225d7eee7",
+          "ends_at_local": "19:00",
+          "starts_at_local": "18:00"
+        }
+      ],
+      "has_more": false,
+      "timezone": "America/Mexico_City",
+      "next_offset": null,
+      "searched_range": {
+        "date_to": "2026-11-04",
+        "date_from": "2026-10-22",
+        "after_time": "18:00",
+        "before_time": null
+      },
+      "query_truncated": false
+    },
+    "status": "executed",
+    "affected_entity_type": null,
+    "affected_entity_id": null,
+    "error_code": null,
+    "created_at": "2026-10-21 21:55:25.358899+00"
+  },
+  {
+    "conversation_id": "12457c26-dc61-4ba7-9c54-95e310bd1878",
+    "turn_id": "2a2019f3-7734-4ba4-bed6-a36add8aca9e",
+    "tool_name": "search_class_availability",
+    "permission_class": "A",
+    "request_json": {
+      "limit": 10,
+      "offset": 0,
+      "date_to": "2026-10-22",
+      "date_from": "2026-10-22",
+      "after_time": "18:00",
+      "before_time": null,
+      "activity_query": "Pole Fitness"
+    },
+    "result_json": {
+      "ok": true,
+      "matches": [
+        {
+          "date": "2026-10-22",
+          "space": null,
+          "address": "Avenida San Gaspar #240, Tonalá, Jalisco",
+          "is_full": false,
+          "activity": "Pole Fitness UAT",
+          "currency": "MXN",
+          "location": "Principal",
+          "discipline": "Pole Fitness",
+          "credit_cost": 1,
+          "session_ref": "session:ce2b06ae-580b-4018-b56b-fe3224de98ce",
+          "ends_at_local": "19:00",
+          "starts_at_local": "18:00"
+        },
+        {
+          "date": "2026-10-22",
+          "space": null,
+          "address": "Avenida San Gaspar #240, Tonalá, Jalisco",
+          "is_full": true,
+          "activity": "Pole Fitness UAT",
+          "currency": "MXN",
+          "location": "Principal",
+          "discipline": "Pole Fitness",
+          "credit_cost": 1,
+          "session_ref": "session:0eddf167-f73e-4d2c-ab2d-0f78dfd15ec6",
+          "ends_at_local": "19:00",
+          "starts_at_local": "18:00"
+        }
+      ],
+      "has_more": false,
+      "timezone": "America/Mexico_City",
+      "next_offset": null,
+      "searched_range": {
+        "date_to": "2026-10-22",
+        "date_from": "2026-10-22",
+        "after_time": "18:00",
+        "before_time": null
+      },
+      "query_truncated": false
+    },
+    "status": "executed",
+    "affected_entity_type": null,
+    "affected_entity_id": null,
+    "error_code": null,
+    "created_at": "2026-10-21 21:55:35.789843+00"
+  },
+  {
+    "conversation_id": "12457c26-dc61-4ba7-9c54-95e310bd1878",
+    "turn_id": "75506b9c-744f-4f6a-b30b-05b55c8984ae",
+    "tool_name": "search_class_availability",
+    "permission_class": "A",
+    "request_json": {
+      "limit": 10,
+      "offset": 0,
+      "date_to": "2026-11-05",
+      "date_from": "2026-10-23",
+      "after_time": "18:00",
+      "before_time": null,
+      "activity_query": "Pole Fitness"
+    },
+    "result_json": {
+      "ok": true,
+      "matches": [
+        {
+          "date": "2026-10-23",
+          "space": null,
+          "address": "Avenida San Gaspar #240, Tonalá, Jalisco",
+          "is_full": false,
+          "activity": "Pole Fitness UAT",
+          "currency": "MXN",
+          "location": "Principal",
+          "discipline": "Pole Fitness",
+          "credit_cost": 1,
+          "session_ref": "session:ca4980cf-5fcd-469c-9979-62b225d7eee7",
+          "ends_at_local": "19:00",
+          "starts_at_local": "18:00"
+        }
+      ],
+      "has_more": false,
+      "timezone": "America/Mexico_City",
+      "next_offset": null,
+      "searched_range": {
+        "date_to": "2026-11-05",
+        "date_from": "2026-10-23",
+        "after_time": "18:00",
+        "before_time": null
+      },
+      "query_truncated": false
+    },
+    "status": "executed",
+    "affected_entity_type": null,
+    "affected_entity_id": null,
+    "error_code": null,
+    "created_at": "2026-10-21 21:55:49.036506+00"
+  },
+  {
+    "conversation_id": "12457c26-dc61-4ba7-9c54-95e310bd1878",
+    "turn_id": "6e791092-1fa1-462d-96a1-3f9d6a342680",
+    "tool_name": "search_class_availability",
+    "permission_class": "A",
+    "request_json": {
+      "limit": 10,
+      "offset": 0,
+      "date_to": "2026-10-23",
+      "date_from": "2026-10-23",
+      "after_time": "18:00",
+      "before_time": null,
+      "activity_query": "Pole Fitness"
+    },
+    "result_json": {
+      "ok": true,
+      "matches": [
+        {
+          "date": "2026-10-23",
+          "space": null,
+          "address": "Avenida San Gaspar #240, Tonalá, Jalisco",
+          "is_full": false,
+          "activity": "Pole Fitness UAT",
+          "currency": "MXN",
+          "location": "Principal",
+          "discipline": "Pole Fitness",
+          "credit_cost": 1,
+          "session_ref": "session:ca4980cf-5fcd-469c-9979-62b225d7eee7",
+          "ends_at_local": "19:00",
+          "starts_at_local": "18:00"
+        }
+      ],
+      "has_more": false,
+      "timezone": "America/Mexico_City",
+      "next_offset": null,
+      "searched_range": {
+        "date_to": "2026-10-23",
+        "date_from": "2026-10-23",
+        "after_time": "18:00",
+        "before_time": null
+      },
+      "query_truncated": false
+    },
+    "status": "executed",
+    "affected_entity_type": null,
+    "affected_entity_id": null,
+    "error_code": null,
+    "created_at": "2026-10-21 21:56:04.403757+00"
+  }
+]

@@ -1,0 +1,46 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "24718f760cfd68087a41df6004c135bd982cbc40",
+  "method": "two existing pg_cron one-off jobs with a common wake-up time; role service_role; read-only RPC; jobs self-unscheduled",
+  "probes": [
+    {
+      "role": "service_role",
+      "label": "transfer",
+      "result": {
+        "eligible": true,
+        "unlimited": false,
+        "credit_cost": 1,
+        "reason_code": null,
+        "acquisition_id": "66f25d97-3019-4f9f-ad44-ffff6913939f",
+        "available_credits": 7
+      },
+      "endedAt": "2026-10-23T00:56:24.340062+00:00",
+      "elapsedMs": 329.802,
+      "startedAt": "2026-10-23T00:56:24.01026+00:00",
+      "runtimeSha": "24718f760cfd68087a41df6004c135bd982cbc40",
+      "statementTimeout": "8s"
+    },
+    {
+      "role": "service_role",
+      "label": "cash",
+      "result": {
+        "eligible": true,
+        "unlimited": false,
+        "credit_cost": 1,
+        "reason_code": null,
+        "acquisition_id": "30bc79c4-fa52-481c-ab32-85468ce724ed",
+        "available_credits": 6
+      },
+      "endedAt": "2026-10-23T00:56:24.341161+00:00",
+      "elapsedMs": 330.366,
+      "startedAt": "2026-10-23T00:56:24.010795+00:00",
+      "runtimeSha": "24718f760cfd68087a41df6004c135bd982cbc40",
+      "statementTimeout": "8s"
+    }
+  ],
+  "observedOverlapMs": 330,
+  "overlapObserved": true,
+  "jobsRemaining": 0,
+  "businessMutations": 0,
+  "historicalPhysicalRootCauseProven": false
+}

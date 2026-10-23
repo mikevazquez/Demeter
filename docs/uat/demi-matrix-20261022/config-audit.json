@@ -1,0 +1,186 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+  "config": [
+    {
+      "run_id": "653e43c0-05c4-4db5-95c2-556251efe7db",
+      "baseline": {
+        "commit": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+        "transport": "captured",
+        "snapshot_at": "2026-10-22T13:37:30.135202+00:00",
+        "source_config_hash": "392a5408ef5ad303ad9de724b9f3cff3",
+        "external_provider_verified": false
+      },
+      "studio_id": "01c855e3-5485-4cb6-9a74-9a6ad5ef241f",
+      "source_config_keys": [
+        "mode",
+        "model",
+        "studio_id",
+        "created_at",
+        "updated_at",
+        "assistant_key",
+        "assistant_name",
+        "auto_action_keys",
+        "reasoning_effort",
+        "escalation_action_keys",
+        "max_tool_calls_per_turn",
+        "confirmation_action_keys",
+        "max_model_calls_per_turn",
+        "personality_instructions",
+        "monthly_budget_usd_micros",
+        "conversation_budget_usd_micros"
+      ],
+      "source_config_sha256": "e9a3b98049ca5e780d028158a526a7258f96a0056a9a47957105c79a976e0b44"
+    },
+    {
+      "run_id": "17c22338-33ec-43e5-a452-6f12cbafbb63",
+      "baseline": {
+        "commit": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+        "transport": "captured",
+        "snapshot_at": "2026-10-22T13:38:47.322066+00:00",
+        "source_config_hash": "392a5408ef5ad303ad9de724b9f3cff3",
+        "external_provider_verified": false
+      },
+      "studio_id": "69190cff-f90c-4b89-849c-e18c65b2d338",
+      "source_config_keys": [
+        "mode",
+        "model",
+        "studio_id",
+        "created_at",
+        "updated_at",
+        "assistant_key",
+        "assistant_name",
+        "auto_action_keys",
+        "reasoning_effort",
+        "escalation_action_keys",
+        "max_tool_calls_per_turn",
+        "confirmation_action_keys",
+        "max_model_calls_per_turn",
+        "personality_instructions",
+        "monthly_budget_usd_micros",
+        "conversation_budget_usd_micros"
+      ],
+      "source_config_sha256": "e9a3b98049ca5e780d028158a526a7258f96a0056a9a47957105c79a976e0b44"
+    },
+    {
+      "run_id": "641a8f37-9d75-47b8-9f94-ac1a83af9202",
+      "baseline": {
+        "commit": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+        "transport": "captured",
+        "snapshot_at": "2026-10-22T13:37:33.802006+00:00",
+        "source_config_hash": "392a5408ef5ad303ad9de724b9f3cff3",
+        "external_provider_verified": false
+      },
+      "studio_id": "960676d8-520c-4396-9ee1-d45d39108044",
+      "source_config_keys": [
+        "mode",
+        "model",
+        "studio_id",
+        "created_at",
+        "updated_at",
+        "assistant_key",
+        "assistant_name",
+        "auto_action_keys",
+        "reasoning_effort",
+        "escalation_action_keys",
+        "max_tool_calls_per_turn",
+        "confirmation_action_keys",
+        "max_model_calls_per_turn",
+        "personality_instructions",
+        "monthly_budget_usd_micros",
+        "conversation_budget_usd_micros"
+      ],
+      "source_config_sha256": "e9a3b98049ca5e780d028158a526a7258f96a0056a9a47957105c79a976e0b44"
+    },
+    {
+      "run_id": "cc0a15a6-9a2f-4691-94ca-67da3eec14d2",
+      "baseline": {
+        "commit": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+        "transport": "captured",
+        "snapshot_at": "2026-10-22T13:38:47.489+00:00",
+        "source_config_hash": "392a5408ef5ad303ad9de724b9f3cff3",
+        "external_provider_verified": false
+      },
+      "studio_id": "e2e22355-27d4-49fb-9ce6-341d15d6aad6",
+      "source_config_keys": [
+        "mode",
+        "model",
+        "studio_id",
+        "created_at",
+        "updated_at",
+        "assistant_key",
+        "assistant_name",
+        "auto_action_keys",
+        "reasoning_effort",
+        "escalation_action_keys",
+        "max_tool_calls_per_turn",
+        "confirmation_action_keys",
+        "max_model_calls_per_turn",
+        "personality_instructions",
+        "monthly_budget_usd_micros",
+        "conversation_budget_usd_micros"
+      ],
+      "source_config_sha256": "e9a3b98049ca5e780d028158a526a7258f96a0056a9a47957105c79a976e0b44"
+    },
+    {
+      "run_id": "34611b0d-ce1d-4381-96df-d1b0d4d5da6d",
+      "baseline": {
+        "commit": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+        "transport": "captured",
+        "snapshot_at": "2026-10-22T13:37:31.551798+00:00",
+        "source_config_hash": "392a5408ef5ad303ad9de724b9f3cff3",
+        "external_provider_verified": false
+      },
+      "studio_id": "77a2813c-0d4d-4433-a3f0-53698fd8337f",
+      "source_config_keys": [
+        "mode",
+        "model",
+        "studio_id",
+        "created_at",
+        "updated_at",
+        "assistant_key",
+        "assistant_name",
+        "auto_action_keys",
+        "reasoning_effort",
+        "escalation_action_keys",
+        "max_tool_calls_per_turn",
+        "confirmation_action_keys",
+        "max_model_calls_per_turn",
+        "personality_instructions",
+        "monthly_budget_usd_micros",
+        "conversation_budget_usd_micros"
+      ],
+      "source_config_sha256": "e9a3b98049ca5e780d028158a526a7258f96a0056a9a47957105c79a976e0b44"
+    },
+    {
+      "run_id": "0a4a29f7-2320-4609-a4ae-8c954ca1a847",
+      "baseline": {
+        "commit": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+        "transport": "captured",
+        "snapshot_at": "2026-10-22T13:36:12.538683+00:00",
+        "source_config_hash": "392a5408ef5ad303ad9de724b9f3cff3",
+        "external_provider_verified": false
+      },
+      "studio_id": "307d6744-ae2d-4042-b78e-7cfa1e7b5b01",
+      "source_config_keys": [
+        "mode",
+        "model",
+        "studio_id",
+        "created_at",
+        "updated_at",
+        "assistant_key",
+        "assistant_name",
+        "auto_action_keys",
+        "reasoning_effort",
+        "escalation_action_keys",
+        "max_tool_calls_per_turn",
+        "confirmation_action_keys",
+        "max_model_calls_per_turn",
+        "personality_instructions",
+        "monthly_budget_usd_micros",
+        "conversation_budget_usd_micros"
+      ],
+      "source_config_sha256": "e9a3b98049ca5e780d028158a526a7258f96a0056a9a47957105c79a976e0b44"
+    }
+  ]
+}

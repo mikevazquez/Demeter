@@ -31,6 +31,13 @@ export const dynamic = "force-dynamic";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const META_MEDIA_MESSAGE_TYPES = new Set(["image", "document", "audio", "video", "sticker"]);
+// DEMI-BATCH-01: quiet window before answering a text, so consecutive texts become one turn.
+const META_WHATSAPP_BURST_QUIET_MS = (() => {
+  const configured = Number(process.env.DEMI_META_BURST_QUIET_MS ?? "2500");
+  return Number.isFinite(configured) && configured >= 0 && configured <= 10_000
+    ? Math.round(configured)
+    : 2500;
+})();
 
 type JsonObject = Record<string, unknown>;
 
@@ -79,6 +86,62 @@ async function markEvent(
     .eq("studio_id", studioId);
 }
 
+// Only a TEXT can be superseded, and only by a newer TEXT of the same contact and studio.
+// Media, documents, audio and payment receipts are never discarded by batching.
+async function findNewerConversationText(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  studioId: string;
+  eventId: string;
+  eventReceivedAt: string;
+  fromWaId: string;
+}) {
+  if (!input.eventReceivedAt) return null;
+  const { data, error } = await input.supabase
+    .from("assistant_whatsapp_events")
+    .select("id,provider_event_id,received_at")
+    .eq("studio_id", input.studioId)
+    .eq("provider", "meta_whatsapp")
+    .eq("contact_wa_id", input.fromWaId)
+    .eq("message_type", "text")
+    .neq("id", input.eventId)
+    .gt("received_at", input.eventReceivedAt)
+    .order("received_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error("meta_burst_lookup_failed");
+  return data;
+}
+
+async function markBurstSuperseded(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  studioId: string;
+  eventId: string;
+  providerMessageId: string;
+  newerProviderMessageId: string | null;
+  phase: "same_payload" | "debounce" | "before_action" | "post_assistant";
+}) {
+  const batchId = sha256Hex(
+    `${input.studioId}:${input.providerMessageId}:${input.newerProviderMessageId ?? "newer"}`,
+  ).slice(0, 20);
+  await markEvent(input.supabase, input.studioId, input.eventId, {
+    processing_status: "ignored",
+    processing_result: {
+      outcome: "superseded_by_newer_message",
+      batch_id: batchId,
+      newer_provider_message_id: input.newerProviderMessageId,
+      phase: input.phase,
+    },
+    last_error_code: null,
+    processed_at: new Date().toISOString(),
+  });
+  console.info("demi_meta_message_batch", {
+    outcome: "superseded_by_newer_message",
+    batch_id: batchId,
+    phase: input.phase,
+  });
+}
+
 async function captureEvent(input: {
   supabase: ReturnType<typeof createServiceClient>;
   studioId: string;
@@ -109,7 +172,7 @@ async function captureEvent(input: {
     .from("assistant_whatsapp_events")
     .insert(row)
     .select(
-      "id,processing_status,attempt_count,assistant_conversation_id,inbound_turn_id,outbound_turn_id,processing_result",
+      "id,processing_status,attempt_count,assistant_conversation_id,inbound_turn_id,outbound_turn_id,processing_result,received_at",
     )
     .single();
 
@@ -122,7 +185,7 @@ async function captureEvent(input: {
   const { data: existing, error: lookupError } = await input.supabase
     .from("assistant_whatsapp_events")
     .select(
-      "id,processing_status,attempt_count,assistant_conversation_id,inbound_turn_id,outbound_turn_id,processing_result",
+      "id,processing_status,attempt_count,assistant_conversation_id,inbound_turn_id,outbound_turn_id,processing_result,received_at",
     )
     .eq("studio_id", input.studioId)
     .eq("provider", "meta_whatsapp")
@@ -289,7 +352,7 @@ async function createReceiptValidationHandoff(input: {
   supabase: ReturnType<typeof createServiceClient>;
   studioId: string;
   conversationId: string;
-  studentId: string;
+  studentId: string | null;
   note: string;
 }) {
   const { data: policy } = await input.supabase
@@ -466,6 +529,7 @@ async function activateTransferReceiptIfPending(input: {
   studioId: string;
   conversationId: string;
   studentId: string | null;
+  crmContactId?: string | null;
   eventId: string;
   providerMessageId: string;
   mediaId: string | null;
@@ -474,22 +538,33 @@ async function activateTransferReceiptIfPending(input: {
   webhookConfig: MetaWhatsAppWebhookConfig;
   activationUrl: string;
 }) {
-  if (!input.studentId || !input.mediaId || !["image", "document"].includes(input.messageType)) {
+  // D-PAY-01: a prospect (no student yet) can have a package purchase waiting for its receipt.
+  const prospectContactId = !input.studentId ? (input.crmContactId ?? null) : null;
+  if (
+    (!input.studentId && !prospectContactId) ||
+    !input.mediaId ||
+    !["image", "document"].includes(input.messageType)
+  ) {
     return { handled: false as const };
   }
 
-  const { data: pendingIntent, error: pendingError } = await input.supabase
+  let intentQuery = input.supabase
     .from("assistant_transfer_purchase_intents")
     .select("id,amount_minor,currency,status,expires_at,intent_kind")
     .eq("studio_id", input.studioId)
-    .eq("conversation_id", input.conversationId)
-    .eq("student_id", input.studentId)
+    .eq("conversation_id", input.conversationId);
+  intentQuery = input.studentId
+    ? intentQuery.eq("student_id", input.studentId)
+    : intentQuery.is("student_id", null).eq("crm_contact_id", prospectContactId!);
+  const { data: pendingIntent, error: pendingError } = await intentQuery
     .eq("status", "awaiting_receipt")
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (pendingError) throw new Error("transfer_intent_lookup_failed");
+  // Prospects without a pending package purchase keep the existing media handling.
+  if (!input.studentId && !pendingIntent) return { handled: false as const };
 
   const media = await downloadMetaWhatsAppMedia({
     config: input.webhookConfig,
@@ -519,7 +594,8 @@ async function activateTransferReceiptIfPending(input: {
           ? "webp"
           : "jpg";
   const provisionalKey = pendingIntent?.id ?? sha256Hex(input.providerMessageId).slice(0, 24);
-  const storagePath = `${input.studioId}/${input.studentId}/${provisionalKey}/receipt.${extension}`;
+  const ownerKey = input.studentId ?? `prospect-${prospectContactId}`;
+  const storagePath = `${input.studioId}/${ownerKey}/${provisionalKey}/receipt.${extension}`;
   const { error: storageError } = await input.supabase.storage
     .from("transfer-receipts")
     .upload(storagePath, media.bytes, {
@@ -587,6 +663,33 @@ async function activateTransferReceiptIfPending(input: {
         handled: true as const,
         result: { ok: false, reason_code: "receipt_amount_mismatch" },
         reply: `Recibí tu comprobante, pero el monto que pude leer (${formatReceiptMoney(reading.amountMinor, expectedCurrency)}) no coincide con tu ${paymentSubject} pendiente (${formatReceiptMoney(expectedAmount, expectedCurrency)}). No confirmé nada. Puedes enviarme el comprobante correcto.`,
+      };
+    }
+
+    if (!input.studentId) {
+      // Nothing about the person changes until the profile arrives after this matching receipt.
+      const recorded = await input.supabase.rpc("service_record_prospect_transfer_receipt", {
+        p_studio: input.studioId,
+        p_conversation: input.conversationId,
+        p_contact: prospectContactId,
+        p_intent: pendingIntent.id,
+        p_event: input.eventId,
+        p_provider_message: input.providerMessageId,
+        p_media: input.mediaId,
+      });
+      const recordedResult = isObject(recorded.data) ? recorded.data : null;
+      if (recorded.error) throw new Error("prospect_receipt_record_failed");
+      if (!recordedResult || recordedResult.ok !== true) {
+        return {
+          handled: false as const,
+          reasonCode: String(recordedResult?.reason_code ?? "prospect_receipt_not_recorded"),
+        };
+      }
+      return {
+        handled: true as const,
+        result: recordedResult,
+        reply:
+          "¡Gracias! Recibí tu comprobante y el monto coincide. Para registrarte como alumna y activar tu paquete, compárteme en un solo mensaje tu nombre completo, tu fecha de nacimiento y tu correo electrónico.",
       };
     }
 
@@ -1184,7 +1287,7 @@ export async function POST(request: Request) {
     });
   }
 
-  for (const message of messages) {
+  for (const [messageIndex, message] of messages.entries()) {
     const rawWaId = message.fromWaId.replace(/\D/g, "");
     const canonicalWaId = /^521[0-9]{10}$/.test(rawWaId) ? `52${rawWaId.slice(3)}` : rawWaId;
     const pilotContactAllowed =
@@ -1443,6 +1546,62 @@ export async function POST(request: Request) {
       continue;
     }
 
+    const isBatchableText = message.messageType === "text";
+    const eventReceivedAt = String(event.received_at ?? "");
+    const newerTextScope = {
+      supabase,
+      studioId,
+      eventId: event.id,
+      eventReceivedAt,
+      fromWaId: message.fromWaId,
+    };
+    if (isBatchableText) {
+      // Same webhook payload: later texts of this contact are processed after this one, so they
+      // are not yet stored. This text is already in the conversation history; let the last answer.
+      const laterInPayload = messages
+        .slice(messageIndex + 1)
+        .find((item) => item.fromWaId === message.fromWaId && item.messageType === "text");
+      let newerText: { provider_event_id?: unknown } | null = laterInPayload
+        ? { provider_event_id: laterInPayload.providerMessageId }
+        : null;
+      let phase: "same_payload" | "debounce" = "same_payload";
+      if (!newerText) {
+        phase = "debounce";
+        try {
+          if (META_WHATSAPP_BURST_QUIET_MS > 0)
+            await new Promise<void>((done) => setTimeout(done, META_WHATSAPP_BURST_QUIET_MS));
+          newerText = await findNewerConversationText(newerTextScope);
+        } catch {
+          retryableFailure = true;
+          await markEvent(supabase, studioId, event.id, {
+            processing_status: "error",
+            processing_result: { outcome: "message_batch_lookup_failed" },
+            last_error_code: "message_batch_lookup_failed",
+          });
+          outcomes.push({
+            provider_message_id: message.providerMessageId,
+            outcome: "message_batch_lookup_failed",
+          });
+          continue;
+        }
+      }
+      if (newerText) {
+        await markBurstSuperseded({
+          supabase,
+          studioId,
+          eventId: event.id,
+          providerMessageId: message.providerMessageId,
+          newerProviderMessageId: String(newerText.provider_event_id ?? "") || null,
+          phase,
+        });
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "superseded_by_newer_message",
+        });
+        continue;
+      }
+    }
+
     if (message.messageType === "unsupported") {
       const isClickToWhatsApp =
         message.referralSourceType === "ad" || message.referralSourceType === "post";
@@ -1583,6 +1742,7 @@ export async function POST(request: Request) {
             studioId,
             conversationId,
             studentId,
+            crmContactId,
             eventId: event.id,
             providerMessageId: message.providerMessageId,
             mediaId: message.mediaId,
@@ -1886,8 +2046,27 @@ export async function POST(request: Request) {
         serviceMode: true,
         history,
         stickerImages,
+        // DEMI-BATCH-02: an action prepared from an old text must not run after a newer text.
+        isTurnCurrent: isBatchableText
+          ? async () => !(await findNewerConversationText(newerTextScope))
+          : undefined,
       });
     } catch (error) {
+      if (error instanceof Error && error.message === "assistant_turn_superseded") {
+        await markBurstSuperseded({
+          supabase,
+          studioId,
+          eventId: event.id,
+          providerMessageId: message.providerMessageId,
+          newerProviderMessageId: null,
+          phase: "before_action",
+        });
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "superseded_before_action",
+        });
+        continue;
+      }
       retryableFailure = true;
       await markEvent(supabase, studioId, event.id, {
         processing_status: "error",
@@ -1897,6 +2076,37 @@ export async function POST(request: Request) {
         last_error_code: error instanceof Error ? error.message : "assistant_failed",
       });
       continue;
+    }
+
+    // DEMI-BATCH-02: do not send an answer built before a newer text arrived.
+    if (isBatchableText) {
+      let newerAfterAssistant;
+      try {
+        newerAfterAssistant = await findNewerConversationText(newerTextScope);
+      } catch {
+        retryableFailure = true;
+        await markEvent(supabase, studioId, event.id, {
+          processing_status: "error",
+          processing_result: { outcome: "message_batch_recheck_failed" },
+          last_error_code: "message_batch_recheck_failed",
+        });
+        continue;
+      }
+      if (newerAfterAssistant) {
+        await markBurstSuperseded({
+          supabase,
+          studioId,
+          eventId: event.id,
+          providerMessageId: message.providerMessageId,
+          newerProviderMessageId: String(newerAfterAssistant.provider_event_id ?? "") || null,
+          phase: "post_assistant",
+        });
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "superseded_after_assistant",
+        });
+        continue;
+      }
     }
 
     if (!sendReplies) {

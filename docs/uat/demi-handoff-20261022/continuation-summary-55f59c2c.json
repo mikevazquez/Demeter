@@ -1,0 +1,25 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "commercialRuntimeSha": "55f59c2cef805908d45748a06c205dcc8ad60a67",
+  "cancellationRuntimeSha": "80e5ada6a8f426b243c4b35e4c24bbe8d7ce345e",
+  "checks": {
+    "ten_valid_turns": true,
+    "quote_before_acceptance": true,
+    "receipt_requires_three_fields_without_activation": true,
+    "seeded_receipt_requires_three_fields_without_activation": true,
+    "profiles_activated_only_by_successful_simulated_tool": true,
+    "no_unsupported_tool": true,
+    "no_student_followup": true,
+    "prospect_followup_still_simulated": true,
+    "both_database_cancellation_cases_pass": true
+  },
+  "status": "PASS",
+  "supersededFailure": {
+    "sha": "b98d14eea7640753023082331630529830928626",
+    "status": "FAIL",
+    "issues": ["S12 premature activation before profile", "S14 unsupported transfer choice"],
+    "evidence": "bank-live-b98d14ee.json"
+  },
+  "functionalUat": "PENDING",
+  "pilot": "BLOCKED_INACTIVE"
+}

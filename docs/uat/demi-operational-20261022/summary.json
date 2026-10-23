@@ -1,0 +1,165 @@
+{
+  "sourceSha": "0d3020e73d49afbf998be717583761b3edfb54f5",
+  "runtimeSha": "55f59c2cef805908d45748a06c205dcc8ad60a67",
+  "environment": "hedouonyhynuvwbckdlg",
+  "deployment": "dpl_Es8n4iWdKMW1xZpfAx3eE8urq7E2",
+  "transport": "captured",
+  "status": "PARTIAL_WITH_FAILURE",
+  "checks": {
+    "sandbox_only": true,
+    "all_snapshot_queries_succeeded": true,
+    "prepare_does_not_book_or_debit": true,
+    "short_confirmation_creates_one_reservation_and_debit": true,
+    "cancellation_returns_one_credit": true,
+    "new_date_prepared_without_booking": true,
+    "failure_before_effect_is_real_and_atomic": true,
+    "unknown_outcome_has_one_persisted_booking": true,
+    "retry_uses_same_persisted_reservation_once": true,
+    "cancelled_old_and_reserved_new_both_correct": true,
+    "old_event_replay_has_no_new_turn_delivery_or_effect": true,
+    "all_three_business_negatives_preserve_commercial_state": true,
+    "full_class_waitlist_only": true,
+    "expired_package_not_consumed": true,
+    "no_credits_not_booked": true,
+    "sql_36_passed_with_rollback": true,
+    "known_failure_preserved": true,
+    "waitlist_persisted_once_without_promotion": true,
+    "twelve_events_and_captured_replies": true,
+    "worker_deliveries_captured_only": true,
+    "access_revoked_and_flags_restored": true,
+    "old_session_and_new_login_denied": true,
+    "failed_bank_case_not_approved": true
+  },
+  "sqlChecksPassed": 36,
+  "runs": ["01ed1730-11bd-43ac-b685-134ddd22ba52", "cf463ea9-be76-41a0-a763-562bc3334e83"],
+  "bookingSteps": [
+    {
+      "message": "Hola, quiero reservar Pole Fitness el jueves 22 de octubre a las 18:00 usando mi paquete.",
+      "providerId": "uat-inbound-1e051356-058f-4a8b-ac68-5dce91850b8a",
+      "balance": 8,
+      "reservations": []
+    },
+    {
+      "message": "Sí, confirmo la reserva del jueves 22 de octubre a las 18:00 con mi paquete.",
+      "providerId": "uat-inbound-3b923273-34db-46f0-8c7a-88c4d23a74a2",
+      "balance": 8,
+      "reservations": []
+    },
+    {
+      "message": "Sí, confirmo.",
+      "providerId": "uat-inbound-4519c0db-4f2a-47a1-9133-54a95c20deae",
+      "balance": 7,
+      "reservations": [
+        {
+          "id": "b06b7363-bb55-4755-a3c7-536ff94716c6",
+          "status": "reserved",
+          "sessionId": "17ae337b-5a64-4a38-89e2-cbace16eeeb8"
+        }
+      ]
+    },
+    {
+      "message": "Cancela mi reserva de Pole Fitness del jueves 22 de octubre a las 18:00 porque no puedo asistir.",
+      "providerId": "uat-inbound-bd37e265-fc9b-4959-828b-8006c3247c59",
+      "balance": 8,
+      "reservations": [
+        {
+          "id": "b06b7363-bb55-4755-a3c7-536ff94716c6",
+          "status": "cancelled_on_time",
+          "sessionId": "17ae337b-5a64-4a38-89e2-cbace16eeeb8"
+        }
+      ]
+    },
+    {
+      "message": "Ahora quiero reservar Pole Fitness el viernes 23 de octubre a las 18:00 con mi paquete.",
+      "providerId": "uat-inbound-fa91cb5a-8e60-4604-84ec-60a01e12e081",
+      "balance": 8,
+      "reservations": [
+        {
+          "id": "b06b7363-bb55-4755-a3c7-536ff94716c6",
+          "status": "cancelled_on_time",
+          "sessionId": "17ae337b-5a64-4a38-89e2-cbace16eeeb8"
+        }
+      ]
+    },
+    {
+      "message": "Sí, confirmo.",
+      "providerId": "uat-inbound-1a290a94-d730-45d9-8c15-ab342a03ea14",
+      "balance": 8,
+      "reservations": [
+        {
+          "id": "b06b7363-bb55-4755-a3c7-536ff94716c6",
+          "status": "cancelled_on_time",
+          "sessionId": "17ae337b-5a64-4a38-89e2-cbace16eeeb8"
+        }
+      ]
+    },
+    {
+      "message": "Sí, confirmo.",
+      "providerId": "uat-inbound-faf09118-a377-4731-93c1-943c5ad58c47",
+      "balance": 7,
+      "reservations": [
+        {
+          "id": "b06b7363-bb55-4755-a3c7-536ff94716c6",
+          "status": "cancelled_on_time",
+          "sessionId": "17ae337b-5a64-4a38-89e2-cbace16eeeb8"
+        },
+        {
+          "id": "cbd77d24-1db7-425b-8733-b06cbe755de0",
+          "status": "reserved",
+          "sessionId": "5a63bd05-7ae9-4ecd-8fba-99c26a911191"
+        }
+      ]
+    },
+    {
+      "message": "Sí, confirmo.",
+      "providerId": "uat-inbound-9fcbc325-09fc-4c19-a3f2-ca8450604f16",
+      "balance": 7,
+      "reservations": [
+        {
+          "id": "b06b7363-bb55-4755-a3c7-536ff94716c6",
+          "status": "cancelled_on_time",
+          "sessionId": "17ae337b-5a64-4a38-89e2-cbace16eeeb8"
+        },
+        {
+          "id": "cbd77d24-1db7-425b-8733-b06cbe755de0",
+          "status": "reserved",
+          "sessionId": "5a63bd05-7ae9-4ecd-8fba-99c26a911191"
+        }
+      ]
+    },
+    {
+      "message": "Sí, confirmo.",
+      "providerId": "uat-inbound-4519c0db-4f2a-47a1-9133-54a95c20deae",
+      "balance": 7,
+      "reservations": [
+        {
+          "id": "b06b7363-bb55-4755-a3c7-536ff94716c6",
+          "status": "cancelled_on_time",
+          "sessionId": "17ae337b-5a64-4a38-89e2-cbace16eeeb8"
+        },
+        {
+          "id": "cbd77d24-1db7-425b-8733-b06cbe755de0",
+          "status": "reserved",
+          "sessionId": "5a63bd05-7ae9-4ecd-8fba-99c26a911191"
+        }
+      ]
+    }
+  ],
+  "failures": [
+    {
+      "id": "F01",
+      "status": "FAILED",
+      "case": "A01 natural confirmation",
+      "message": "Sí, confirmo la reserva del jueves 22 de octubre a las 18:00 con mi paquete.",
+      "observed": "explicit_confirmation_required; prepared again",
+      "policyChanged": false
+    }
+  ],
+  "pending": [
+    "functional acceptance by Mike",
+    "complete remaining operational variants",
+    "A05/A06 conversations with persisted app/payment validation",
+    "A07 full integrated/separate package matrix",
+    "real WhatsApp pilot remains blocked"
+  ]
+}

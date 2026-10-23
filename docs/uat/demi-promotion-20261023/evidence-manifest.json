@@ -1,0 +1,144 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "appSha": "24718f760cfd68087a41df6004c135bd982cbc40",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 9041,
+      "sha256": "d97ff5c21e78284a4ff2d79ddde672ba93d98e5bbcd6bde06d038da76fc22c69"
+    },
+    {
+      "path": "REVIEW.md",
+      "bytes": 4996,
+      "sha256": "8c1ab09fba39c28ee19d1cca476979f0eb45c95e46c31ced0b2994ecad13346e"
+    },
+    {
+      "path": "access-cleanup.json",
+      "bytes": 354,
+      "sha256": "32626b8e553c3f58a053d2cf2bb6489f23592ceb65adfa246c820f1374207238"
+    },
+    {
+      "path": "business-checks.json",
+      "bytes": 2332,
+      "sha256": "6d941fe28d30176ab57b24d848544b4a15b896ef14c44ed44011ce4288c9cedb"
+    },
+    {
+      "path": "cash-engine.json",
+      "bytes": 1208,
+      "sha256": "4a84a86e0fdb45217a9c95ec212098d1c79a8f13e2bcd911848de795d979a926"
+    },
+    {
+      "path": "concurrent-eligibility.json",
+      "bytes": 1218,
+      "sha256": "6a20ef1e1c809d6eca0596230c19d2fd3c8bfe440562091e970c674e4c0fbea7"
+    },
+    {
+      "path": "config-audit.json",
+      "bytes": 352,
+      "sha256": "5fca3a9e7461ae1e1ef9ded1e1534e07cc1ad0b46cbefddaa2e0ba9efa8cfd11"
+    },
+    {
+      "path": "core.json",
+      "bytes": 498152,
+      "sha256": "8424a919393435cf3f28ae3e1bc8b969451af64418fff4d7390234a83ed4e4ba"
+    },
+    {
+      "path": "database-cleanup.json",
+      "bytes": 2366,
+      "sha256": "0e00e3aca03d4942f07741a29d72642226971323237fee71aede58d308a291e5"
+    },
+    {
+      "path": "eligibility-plan.json",
+      "bytes": 1271,
+      "sha256": "1e77e15bdae75358ec65957947ffb648223fbc0233d7f8beb7c9daac9aa14d7f"
+    },
+    {
+      "path": "empathy-final.json",
+      "bytes": 3963,
+      "sha256": "ce676f1f1b40ab46d072cc2649a2ec07ce921125228309629455b4a22865f06d"
+    },
+    {
+      "path": "export-attempts.json",
+      "bytes": 573,
+      "sha256": "70954a19ef773530f1e90bc0ab3f1807585b8c2487fb986efca09f2b3efb6e8d"
+    },
+    {
+      "path": "final-export.json",
+      "bytes": 766,
+      "sha256": "600e385e69ad614e2ea7bd97d9f337b91cd8893747605d31947e683bf58d2ff8"
+    },
+    {
+      "path": "fixture-adjustment.json",
+      "bytes": 444,
+      "sha256": "f7c5545daea9060eb196329a7079379586b95200ac35fce01d698c13d4a82d5a"
+    },
+    {
+      "path": "fixture.json",
+      "bytes": 14561,
+      "sha256": "62756ec223c1376450542e6734e64e80f144f7f2bf8f7d46bd042320d4114625"
+    },
+    {
+      "path": "full-evidence.json.gz",
+      "bytes": 1414121,
+      "sha256": "e074c590978972cb4e850b2c9c51b1c62cded5f400bb3cca3f52bd28d3604394"
+    },
+    {
+      "path": "human-control-ui.json",
+      "bytes": 917,
+      "sha256": "68290b45dfe2584f9267431da000bbba48ccefaa77fdb29505650dbecbd37d2d"
+    },
+    {
+      "path": "matrix-sql.json",
+      "bytes": 13398,
+      "sha256": "c63985a5642762d544f153bd73949a2d031d359abe1177492a61a720008a86a5"
+    },
+    {
+      "path": "overlapping-eligibility.json",
+      "bytes": 1467,
+      "sha256": "fba36476904876ac2daa418b804c520d8c230872bc1908c892a49e8e9c3c9e5b"
+    },
+    {
+      "path": "preview-access-revocation.json",
+      "bytes": 92,
+      "sha256": "44ac6654f9a7d603c454a7896e1df819f5cdff38f6d358cfdb50d30b516825b6"
+    },
+    {
+      "path": "promotion-manifest.json",
+      "bytes": 6308,
+      "sha256": "fde583d4b865415cfa80df998eb40d4e0cbad2cce21176b4a2f264788ba012b7"
+    },
+    {
+      "path": "reception-collection.json",
+      "bytes": 774,
+      "sha256": "aef854d15e78594de5e26213803d6280de45dc46a64f02b8b2257b87bdc9ba9c"
+    },
+    {
+      "path": "replay-check.json",
+      "bytes": 767,
+      "sha256": "dbdd6838a7232cf025eb446dac2fa6fbfd3a8f3eb0570dbe8755be634b6f36e6"
+    },
+    {
+      "path": "sql-results.json",
+      "bytes": 5027,
+      "sha256": "aa6d3ad0e8bcba0aad8d62eef3455bc02e49759a069bcffdcfc3c378dae444ad"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 2130,
+      "sha256": "f891bea35bc1e2d08eaa0643ab24b8082fd03f499166d5edde16a12a882c25a0"
+    },
+    {
+      "path": "timeout-diagnosis.json",
+      "bytes": 5850,
+      "sha256": "6d92e0d527364611e728c044ab6d3fc2e9bb0af30c9eaf476209a88652693368"
+    },
+    {
+      "path": "workbench.json",
+      "bytes": 6114,
+      "sha256": "752225885f08851b916405c3377f8b1b0ecf249ffc37f3f1883845911c7cb1b5"
+    }
+  ],
+  "integrityChecksPassed": true,
+  "functionalApprovalByMike": false,
+  "productionAuthorization": false
+}

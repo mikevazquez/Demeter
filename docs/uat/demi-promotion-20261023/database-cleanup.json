@@ -1,0 +1,42 @@
+[
+  {
+    "cleanup": {
+      "cases": [
+        {
+          "case": "M13",
+          "scope": "24718f760cfd68087a41df6004c135bd982cbc40; Sandbox hedouonyhynuvwbckdlg. Capturado: fecha confirmada una vez, 1venta/alta sin cobro por Demi; primera reserva8→7 y segunda bloqueada; recepción por API authenticated registra1pago600 y siguiente reserva7→6 sin reiniciar vigencia. No_show/replay también pasan en suite SQL real rollback. No dinero externo ni aprobación Mike.",
+          "status": "passed"
+        },
+        {
+          "case": "M05",
+          "scope": "24718f760cfd68087a41df6004c135bd982cbc40; Sandbox hedouonyhynuvwbckdlg. Desglose600+200 aceptado antes de intención; recibo sintético RPC real/replay antes de nombre/DOB/correo, tres datos persistidos; revisión administrativa, una reserva/unpago/saldo7; duplicado de proveedor no añade modelos/reserva/débito. No banco/OCR externo certificados ni aprobación Mike.",
+          "status": "passed"
+        },
+        {
+          "case": "M17",
+          "scope": "24718f760cfd68087a41df6004c135bd982cbc40; Sandbox hedouonyhynuvwbckdlg. Handoff refund_request, claim/resolve desde botones reales y retorno automático, una resolución sin reembolso. Más14MBdehistoria, respuestas259KB, exportcompleto16.6MBconbefore/after;0erroresUI. No Meta externo ni aprobación Mike.",
+          "status": "passed"
+        },
+        {
+          "case": "M10",
+          "scope": "24718f760cfd68087a41df6004c135bd982cbc40; Sandbox hedouonyhynuvwbckdlg. Motor vigente:12controles reales/rollback de deduplicación y suite operativa de cancelación/asistencia pasan. Captura de entrega y concurrencia del mismo código DBaf412c40 ya consta en evidencia previa; este bloque no cambia ese motor ni vuelve a certificar puntualidad ni Meta. PASS técnico de alcance acotado; aprobación funcional pendiente.",
+          "status": "passed"
+        }
+      ],
+      "banned": true,
+      "userId": "6fbc05f1-69ef-430b-88fc-b4ce9432c999",
+      "sessions": 0,
+      "environment": "hedouonyhynuvwbckdlg",
+      "expiry_jobs": 0,
+      "pending_jobs": 0,
+      "account_status": "disabled",
+      "pending_engine": 0,
+      "refresh_tokens": 0,
+      "pending_followups": 0,
+      "active_memberships": 0,
+      "pending_deliveries": 0,
+      "uncaptured_attempts": 0,
+      "notification_attempts": 20
+    }
+  }
+]

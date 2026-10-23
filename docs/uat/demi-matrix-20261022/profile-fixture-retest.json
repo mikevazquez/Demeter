@@ -1,0 +1,18 @@
+{
+  "sourceSha": "42ea7bf4559ec14eb10ec1dac6e7de62aea0f258",
+  "runtimeSha": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+  "environment": "hedouonyhynuvwbckdlg",
+  "file": "tests/demi-prospect-transfer-purchase-uat.sql",
+  "harnessWorkingTree": true,
+  "rollback": true,
+  "scriptAdjusted": true,
+  "adjustment": "UAT builder did not copy birth_date profile definition. Copied the existing active source definition into rollback-only fixture; added persisted DOB assertion. No live profile or rules rewritten.",
+  "liveLimitation": "Earlier captured fixture collected DOB but had no field definition, so did not persist DOB. Its result remains partial; SQL retest does not replace captured conversation.",
+  "results": [
+    {
+      "result": "passed",
+      "controls": 8,
+      "scope": "synthetic prospect; birth-date fixture copied; rollback; no real payment or message"
+    }
+  ]
+}

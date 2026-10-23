@@ -1,0 +1,461 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "24718f760cfd68087a41df6004c135bd982cbc40",
+  "rollback": true,
+  "results": [
+    {
+      "path": "tests/demi-2-identity-uat.sql",
+      "passed": true,
+      "durationMs": 2802,
+      "rows": [
+        {
+          "results": [
+            {
+              "passed": true,
+              "variant": "payment_paths_require_minimal_identity"
+            },
+            {
+              "passed": true,
+              "variant": "invalid_rejected_mexican_number_normalized_unverified_claim_only"
+            },
+            {
+              "passed": true,
+              "variant": "cross_studio_denied"
+            },
+            {
+              "passed": true,
+              "variant": "existing_phone_real_human_no_pii_no_auto_link"
+            },
+            {
+              "passed": true,
+              "variant": "staff_claim_candidate_evidence_required_verified_link_audit_once_history_preserved"
+            },
+            {
+              "passed": true,
+              "variant": "verified_identity_case_resolves_and_resumes"
+            },
+            {
+              "passed": true,
+              "variant": "facebook_instagram_prospect_without_phone_idempotent_separate_namespaces"
+            },
+            {
+              "passed": true,
+              "variant": "student_sales_reservations_acquisitions_unchanged"
+            },
+            {
+              "passed": true,
+              "variant": "subsequent_native_channel_message_recognizes_same_student"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "tests/demi-2-operational-uat.sql",
+      "passed": true,
+      "durationMs": 1828,
+      "rows": [
+        {
+          "results": [
+            {
+              "case": "M13",
+              "passed": true,
+              "variant": "booking_and_duplicate"
+            },
+            {
+              "case": "M10",
+              "passed": true,
+              "variant": "exact_5_hours_credit_restored"
+            },
+            {
+              "case": "M10",
+              "passed": true,
+              "variant": "late_consumed_once"
+            },
+            {
+              "case": "M15",
+              "passed": true,
+              "result": {
+                "eligible": false,
+                "credit_cost": 1,
+                "reason_code": "enrollment_required",
+                "enrollment_requirement": {
+                  "mode": "package_booking",
+                  "missing": true,
+                  "required": true
+                }
+              },
+              "variant": "expired_enrollment_preserves_package"
+            },
+            {
+              "case": "M16",
+              "passed": true,
+              "variant": "rights_after_renewal"
+            },
+            {
+              "case": "M17",
+              "passed": true,
+              "variant": "persistent_human_case"
+            },
+            {
+              "case": "M09",
+              "passed": true,
+              "variant": "three_captured_delivery_failures"
+            },
+            {
+              "case": "M13",
+              "passed": true,
+              "variant": "no_show_consumed_once"
+            },
+            {
+              "case": "M11",
+              "passed": true,
+              "variant": "attended_stays_trial"
+            },
+            {
+              "case": "M12",
+              "passed": true,
+              "variant": "trial_receipt_rejected_reservation_revoked"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "tests/demi-2-group-uat.sql",
+      "passed": true,
+      "durationMs": 1932,
+      "rows": [
+        {
+          "results": [
+            {
+              "case": "M06",
+              "passed": true,
+              "variant": "payment_first_no_profiles"
+            },
+            {
+              "case": "M05",
+              "passed": true,
+              "variant": "unreadable_document_preserved_no_profiles"
+            },
+            {
+              "case": "M06",
+              "passed": true,
+              "variant": "partial_amount_blocked"
+            },
+            {
+              "case": "M06",
+              "passed": true,
+              "variant": "partial_receipt_replay_no_profiles_or_recount"
+            },
+            {
+              "case": "M06",
+              "passed": true,
+              "variant": "same_document_amount_immutable"
+            },
+            {
+              "case": "M06",
+              "passed": true,
+              "variant": "separate_proofs_retained_sum_to_total"
+            },
+            {
+              "case": "M06",
+              "passed": true,
+              "variant": "shared_phone_blocks_identity_merge"
+            },
+            {
+              "case": "M06",
+              "passed": true,
+              "variant": "two_profiles_reservations_single_allocation"
+            },
+            {
+              "case": "M09",
+              "passed": true,
+              "variant": "provisional_group_quote_replay_no_new_charge"
+            },
+            {
+              "case": "M06",
+              "passed": true,
+              "variant": "completion_idempotent"
+            },
+            {
+              "case": "M06",
+              "passed": true,
+              "variant": "review_allocations_once"
+            },
+            {
+              "case": "M09",
+              "passed": true,
+              "variant": "validated_group_quote_replay_no_new_charge"
+            },
+            {
+              "case": "M09",
+              "passed": true,
+              "variant": "cancelled_group_reservation_stays_cancelled_on_replay"
+            },
+            {
+              "case": "M06",
+              "passed": true,
+              "variant": "mixed_existing_credit_and_one_paid_trial"
+            },
+            {
+              "case": "M06",
+              "passed": true,
+              "variant": "partial_proof_cannot_fund_another_group"
+            },
+            {
+              "case": "M06",
+              "passed": true,
+              "variant": "joint_receipt_two_reservations_manual_review_once"
+            },
+            {
+              "case": "M06",
+              "passed": true,
+              "variant": "capacity_changed_partial_success_no_oversell_human_review"
+            },
+            {
+              "case": "M06",
+              "passed": true,
+              "variant": "failed_participant_rolls_back_trial_profile"
+            },
+            {
+              "case": "M09",
+              "passed": true,
+              "variant": "partial_retry_preserves_cancelled_slot_and_counts_only_active_reservation"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "tests/demi-2-group-followup-uat.sql",
+      "passed": true,
+      "durationMs": 1252,
+      "rows": [
+        {
+          "results": [
+            {
+              "case": "M04",
+              "passed": true,
+              "variant": "group_booking_cancels_pending_and_claimed_payer_followups_without_enrolling_payer"
+            },
+            {
+              "case": "M08",
+              "passed": true,
+              "variant": "group_confirmation_reply_does_not_restart_prospect_recovery"
+            },
+            {
+              "case": "M04",
+              "passed": true,
+              "variant": "explicit_crm_schedule_and_worker_cannot_send_group_payer_recovery"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "tests/demi-2-return-renewal-uat.sql",
+      "passed": true,
+      "durationMs": 2366,
+      "rows": [
+        {
+          "results": [
+            {
+              "case": "M16",
+              "passed": true,
+              "variant": "valid",
+              "no_new_trial": true,
+              "manual_renewal": true,
+              "recovery_cancelled_immediately": true,
+              "packages_and_credit_ledger_unchanged": true
+            },
+            {
+              "case": "M16",
+              "passed": true,
+              "variant": "expired",
+              "no_new_trial": true,
+              "manual_renewal": true,
+              "recovery_cancelled_immediately": true,
+              "packages_and_credit_ledger_unchanged": true
+            },
+            {
+              "case": "M16",
+              "passed": true,
+              "variant": "exhausted",
+              "no_new_trial": true,
+              "manual_renewal": true,
+              "recovery_cancelled_immediately": true,
+              "packages_and_credit_ledger_unchanged": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "tests/demi-2-rejection-scope-uat.sql",
+      "passed": true,
+      "durationMs": 1444,
+      "rows": [
+        {
+          "results": [
+            {
+              "case": "M12",
+              "passed": true,
+              "variant": "individual_rejection_retires_parent_context_keeps_history"
+            },
+            {
+              "case": "M12",
+              "passed": true,
+              "variant": "package_rejection_revokes_only_linked_reservation_preserves_legitimate_package_and_regular_type"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "tests/demi-2-followup-content-uat.sql",
+      "passed": true,
+      "durationMs": 927,
+      "rows": [
+        {
+          "results": [
+            {
+              "text": "¿Te quedó alguna duda sobre los horarios o cómo empezar? Si quieres continuar, revisamos las opciones disponibles.",
+              "passed": true,
+              "variant": "information",
+              "template_key": "prospect_information_1"
+            },
+            {
+              "text": "¿Pudiste realizar la transferencia o depósito a Bancomer? Si ya pagaste, envía el comprobante para que el equipo lo revise. Aún no hay una reserva confirmada.",
+              "passed": true,
+              "variant": "awaiting_receipt",
+              "template_key": "prospect_awaiting_receipt_1"
+            },
+            {
+              "text": "Para continuar faltan: celular de diez dígitos de la persona 2. ¿Puedes compartirlos? Todavía debemos verificar el cupo antes de confirmar.",
+              "passed": true,
+              "variant": "awaiting_participants",
+              "template_key": "prospect_awaiting_participants_1"
+            },
+            {
+              "passed": true,
+              "variant": "wrong_lease_cannot_read_message_context"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "tests/demi-booking-failure-tracking-uat.sql",
+      "passed": true,
+      "durationMs": 882,
+      "rows": [
+        {
+          "result": "passed",
+          "scope": "actual service_role; configured limit 3; deduplicated attempts; scope; human resolution retains audit"
+        }
+      ]
+    },
+    {
+      "path": "tests/demi-payment-flow-uat.sql",
+      "passed": true,
+      "durationMs": 2698,
+      "rows": [
+        {
+          "results": [
+            {
+              "passed": true,
+              "variant": "normal"
+            },
+            {
+              "passed": true,
+              "variant": "late_without_hold"
+            },
+            {
+              "passed": true,
+              "variant": "class_past"
+            },
+            {
+              "passed": true,
+              "variant": "class_full"
+            },
+            {
+              "passed": true,
+              "variant": "prospect_alternative"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "tests/demi-reminder-deduplication-uat.sql",
+      "passed": true,
+      "durationMs": 1147,
+      "rows": [
+        {
+          "results": [
+            {
+              "step": 1,
+              "passed": true,
+              "variant": "first_rule_creates_one_reminder"
+            },
+            {
+              "step": 2,
+              "passed": true,
+              "variant": "second_rule_reuses_same_reminder"
+            },
+            {
+              "step": 3,
+              "passed": true,
+              "variant": "replay_and_equivalent_utc_timestamp"
+            },
+            {
+              "step": 4,
+              "passed": true,
+              "variant": "missing_configured_channel_added_once"
+            },
+            {
+              "step": 5,
+              "passed": true,
+              "variant": "real_reschedule_replaces_old_reminder"
+            },
+            {
+              "step": 6,
+              "passed": true,
+              "variant": "replayed_reschedule_keeps_current_reminder"
+            },
+            {
+              "step": 7,
+              "passed": true,
+              "variant": "delayed_booking_event_reuses_current_slot"
+            },
+            {
+              "step": 8,
+              "passed": true,
+              "variant": "stale_snapshot_cannot_create_delivery"
+            },
+            {
+              "step": 9,
+              "passed": true,
+              "variant": "other_reservation_is_independent"
+            },
+            {
+              "step": 10,
+              "passed": true,
+              "variant": "reschedule_notice_remains_independent"
+            },
+            {
+              "step": 11,
+              "passed": true,
+              "variant": "existing_timing_suppression_preserved"
+            },
+            {
+              "passed": true,
+              "variant": "one_active_reminder_one_job_per_channel"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

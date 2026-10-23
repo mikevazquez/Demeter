@@ -7,6 +7,8 @@ import {
   promptWorkbenchError,
   type PromptVersion,
   type TestPersona,
+  type WorkbenchCase,
+  WORKBENCH_CASES,
 } from "@/lib/assistant/prompt-workbench";
 import {
   saveDemiPrompt,
@@ -89,6 +91,8 @@ export default function DemiWorkbench({
   const [proposal, setProposal] = useState<string | null>(null);
   const [proposalSource, setProposalSource] = useState("");
   const [persona, setPersona] = useState<TestPersona>("prospect");
+  const [workbenchCase, setWorkbenchCase] = useState<WorkbenchCase>("standard");
+  const [canSimulateReceipt, setCanSimulateReceipt] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -114,12 +118,14 @@ export default function DemiWorkbench({
     setConversationId(null);
     setMessages([]);
     setMessage("");
+    setCanSimulateReceipt(false);
   }
 
   function clearTest() {
     setConversationId(null);
     setMessages([]);
     setMessage("");
+    setCanSimulateReceipt(false);
   }
   function edit(value: string) {
     setDraft(value);
@@ -143,6 +149,27 @@ export default function DemiWorkbench({
   }
   const hasSavedDraft = saved?.instructions === draft;
   const changed = draft !== activeInstructions;
+
+  async function sendTestMessage(content: string, simulationEvent?: "matching_transfer_receipt") {
+    if (!content.trim()) return;
+    const result = await testDemiPrompt({
+      conversationId,
+      instructions: draft,
+      message: content,
+      persona,
+      workbenchCase,
+      simulationEvent,
+    });
+    if (!result.ok) return setError(promptWorkbenchError(result.error));
+    setMessages((rows) => [
+      ...rows,
+      { role: "user", content },
+      { role: "assistant", content: result.reply },
+    ]);
+    setMessage("");
+    setConversationId(result.conversationId);
+    setCanSimulateReceipt(result.canSimulateReceipt);
+  }
 
   return (
     <section className="demi-workbench">
@@ -669,6 +696,33 @@ export default function DemiWorkbench({
             <p>Conversa usando el borrador del editor y el mismo motor de Demi.</p>
           </header>
           <div className="dw-test-controls">
+            {sandbox && (
+              <label htmlFor="demi-workbench-case">
+                Caso de prueba
+                <select
+                  id="demi-workbench-case"
+                  value={workbenchCase}
+                  disabled={busy}
+                  onChange={(event) => {
+                    const selected = event.target.value as WorkbenchCase;
+                    clearTest();
+                    setWorkbenchCase(selected);
+                    const fixture = WORKBENCH_CASES.find((item) => item.id === selected);
+                    if (fixture) {
+                      setPersona(fixture.persona);
+                      setMessage(fixture.message);
+                    }
+                  }}
+                >
+                  <option value="standard">Conversación libre</option>
+                  {WORKBENCH_CASES.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.id} · {item.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <label htmlFor="demi-persona">
               Probar como
               <select
@@ -677,6 +731,7 @@ export default function DemiWorkbench({
                 disabled={busy}
                 onChange={(event) => {
                   setPersona(event.target.value as TestPersona);
+                  setWorkbenchCase("standard");
                   clearTest();
                 }}
               >
@@ -700,6 +755,34 @@ export default function DemiWorkbench({
             acciones y los datos de la alumna se simulan. La elegibilidad y las consecuencias de
             crédito requieren UAT operativo separado.
           </p>
+          {sandbox && workbenchCase === "S13" && (
+            <p className="dw-test-notice">
+              Este caso comienza con un comprobante ficticio de monto coincidente. No se recibió
+              dinero ni se creó una compra real.
+            </p>
+          )}
+          {sandbox && workbenchCase === "S15" && (
+            <p className="dw-test-notice">
+              La persona tiene un paquete ficticio y el pendiente de primera clase ya está cerrado
+              por una compra en la app.
+            </p>
+          )}
+          {sandbox && canSimulateReceipt && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() =>
+                perform(() =>
+                  sendTestMessage(
+                    "Envío el comprobante de prueba por el monto acordado.",
+                    "matching_transfer_receipt",
+                  ),
+                )
+              }
+            >
+              Simular comprobante coincidente
+            </button>
+          )}
           <div className="dw-chat" role="log" aria-label="Conversación de prueba">
             {!messages.length && (
               <div className="dw-empty">
@@ -739,20 +822,7 @@ export default function DemiWorkbench({
               perform(async () => {
                 const content = message.trim();
                 if (!content) return;
-                const result = await testDemiPrompt({
-                  conversationId,
-                  instructions: draft,
-                  message: content,
-                  persona,
-                });
-                if (!result.ok) return setError(promptWorkbenchError(result.error));
-                setMessages((rows) => [
-                  ...rows,
-                  { role: "user", content },
-                  { role: "assistant", content: result.reply },
-                ]);
-                setMessage("");
-                setConversationId(result.conversationId);
+                await sendTestMessage(content);
               });
             }}
           >

@@ -1,0 +1,56 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "80e5ada6a8f426b243c4b35e4c24bbe8d7ce345e",
+  "receiverSha": "8575eec3d4aa100c929508ba8b02bff9a16f45fd",
+  "transport": "capture_only",
+  "cases": [
+    {
+      "scenario": "stale_cancellation",
+      "status": "PASS",
+      "runId": "09a8f7b4-f70e-4bc2-8b7e-26a54abbd702",
+      "studioId": "85047764-1dfa-46c5-8d5e-fb6a51f0b36b",
+      "reservationId": "e749e932-9d8d-426b-9584-e65c1dd2e943",
+      "beforeReservationStatus": "reserved",
+      "afterReservationStatus": "reserved",
+      "newLedgerIds": [],
+      "checks": {
+        "no_action_error": true,
+        "one_capture": true,
+        "replay_ignored": true,
+        "no_sales_or_payments": true,
+        "other_reservation_unchanged": true,
+        "observed_model_during_first_request": true,
+        "before_action_exercised": true,
+        "reservation_unchanged": true,
+        "ledger_unchanged": true,
+        "no_cancellation_executor": true
+      },
+      "outcomes": ["superseded_before_action", "replied", "duplicate_already_handled"],
+      "capturedReply": "Claro, no haré ninguna cancelación. Tu reserva de Pole Fitness se mantiene activa. 💜",
+      "modelCalls": 3
+    },
+    {
+      "scenario": "cancellation_control",
+      "status": "PASS",
+      "runId": "637ac31b-367e-46aa-8a28-c71824688026",
+      "studioId": "e14e57ec-52c7-436f-a353-5c622080cd65",
+      "reservationId": "26a95a8e-230d-40b3-93fc-01d01b7d4c71",
+      "beforeReservationStatus": "reserved",
+      "afterReservationStatus": "cancelled_on_time",
+      "newLedgerIds": ["f964b327-bc8c-4917-938b-45a5c6272d21"],
+      "checks": {
+        "no_action_error": true,
+        "one_capture": true,
+        "replay_ignored": true,
+        "no_sales_or_payments": true,
+        "other_reservation_unchanged": true,
+        "cancelled_on_time": true,
+        "one_credit_release": true,
+        "executed_real_tool": true
+      },
+      "outcomes": ["replied", "duplicate_already_handled"],
+      "capturedReply": "Listo, cancelé tu clase de Pole Fitness del 22 de octubre a las 3:06 a. m. Como fue con más de 5 horas de anticipación, tu crédito regresó. 💜",
+      "modelCalls": 3
+    }
+  ]
+}

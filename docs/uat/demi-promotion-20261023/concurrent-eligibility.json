@@ -1,0 +1,44 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "24718f760cfd68087a41df6004c135bd982cbc40",
+  "readOnly": true,
+  "rollback": true,
+  "probes": [
+    {
+      "role": "service_role",
+      "label": "cash",
+      "result": {
+        "eligible": true,
+        "unlimited": false,
+        "credit_cost": 1,
+        "reason_code": null,
+        "acquisition_id": "30bc79c4-fa52-481c-ab32-85468ce724ed",
+        "available_credits": 6
+      },
+      "endedAt": "2026-10-23T00:55:08.02392+00:00",
+      "elapsedMs": 366.876,
+      "startedAt": "2026-10-23T00:55:07.657044+00:00",
+      "statementTimeout": "8s"
+    },
+    {
+      "role": "service_role",
+      "label": "transfer",
+      "result": {
+        "eligible": true,
+        "unlimited": false,
+        "credit_cost": 1,
+        "reason_code": null,
+        "acquisition_id": "66f25d97-3019-4f9f-ad44-ffff6913939f",
+        "available_credits": 7
+      },
+      "endedAt": "2026-10-23T00:55:08.56457+00:00",
+      "elapsedMs": 36.491,
+      "startedAt": "2026-10-23T00:55:08.528079+00:00",
+      "statementTimeout": "8s"
+    }
+  ],
+  "observedOverlapMs": 0,
+  "overlapObserved": false,
+  "allEligible": true,
+  "historicalPhysicalRootCauseProven": false
+}

@@ -1,0 +1,271 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+  "auditQueryAdjustment": "notification_events was nonexistent; corrected read-only audit to domain_events.",
+  "audit": {
+    "rule_versions": [
+      {
+        "rule_id": "401d5938-28d2-4497-9f4f-716b49f27ab9",
+        "priority": "normal",
+        "studio_id": "960676d8-520c-4396-9ee1-d45d39108044",
+        "conditions": {
+          "all": [
+            {
+              "field": "reservation.status",
+              "value": "reserved",
+              "operator": "eq"
+            },
+            {
+              "field": "session.status",
+              "value": "scheduled",
+              "operator": "eq"
+            },
+            {
+              "field": "student.active",
+              "value": true,
+              "operator": "eq"
+            },
+            {
+              "field": "student.lifecycle_status",
+              "value": "active",
+              "operator": "eq"
+            }
+          ]
+        },
+        "created_at": "2026-10-22T13:37:33.533065+00:00",
+        "activated_at": "2026-10-22T13:37:33.664537+00:00",
+        "template_key": "class_reminder",
+        "timing_config": {
+          "late_policy": "skip",
+          "minutes_before": 300
+        },
+        "version_number": 1,
+        "notification_type": "class_reminder_5h",
+        "created_by_user_id": null,
+        "communication_class": "P0",
+        "timing_strategy_key": "before_session_start",
+        "expires_after_seconds": null,
+        "recipient_strategy_key": "reservation_student",
+        "revalidation_strategy_key": "reservation_active_session_active"
+      },
+      {
+        "rule_id": "401d5938-28d2-4497-9f4f-716b49f27ab9",
+        "priority": "normal",
+        "studio_id": "960676d8-520c-4396-9ee1-d45d39108044",
+        "conditions": {
+          "all": [
+            {
+              "field": "reservation.status",
+              "value": "reserved",
+              "operator": "eq"
+            },
+            {
+              "field": "session.status",
+              "value": "scheduled",
+              "operator": "eq"
+            },
+            {
+              "field": "student.active",
+              "value": true,
+              "operator": "eq"
+            },
+            {
+              "field": "student.lifecycle_status",
+              "value": "active",
+              "operator": "eq"
+            }
+          ]
+        },
+        "created_at": "2026-09-24T14:52:44.389839+00:00",
+        "activated_at": "2026-09-24T14:52:44.389839+00:00",
+        "template_key": "class_reminder",
+        "timing_config": {
+          "late_policy": "skip",
+          "minutes_before": 360
+        },
+        "version_number": 2,
+        "notification_type": "class_reminder_5h",
+        "created_by_user_id": "7d2ba6d7-f133-46b3-832c-7c338a4b8924",
+        "communication_class": "P0",
+        "timing_strategy_key": "before_session_start",
+        "expires_after_seconds": null,
+        "recipient_strategy_key": "reservation_student",
+        "revalidation_strategy_key": "reservation_active_session_active"
+      },
+      {
+        "rule_id": "401d5938-28d2-4497-9f4f-716b49f27ab9",
+        "priority": "normal",
+        "studio_id": "960676d8-520c-4396-9ee1-d45d39108044",
+        "conditions": {
+          "all": [
+            {
+              "field": "reservation.status",
+              "value": "reserved",
+              "operator": "eq"
+            },
+            {
+              "field": "session.status",
+              "value": "scheduled",
+              "operator": "eq"
+            },
+            {
+              "field": "student.active",
+              "value": true,
+              "operator": "eq"
+            },
+            {
+              "field": "student.lifecycle_status",
+              "value": "active",
+              "operator": "eq"
+            }
+          ]
+        },
+        "created_at": "2026-10-03T04:35:34.379722+00:00",
+        "activated_at": "2026-10-03T04:35:34.379722+00:00",
+        "template_key": "class_reminder",
+        "timing_config": {
+          "late_policy": "skip",
+          "minutes_before": 360
+        },
+        "version_number": 3,
+        "notification_type": "class_reminder_5h",
+        "created_by_user_id": null,
+        "communication_class": "P0",
+        "timing_strategy_key": "before_session_start",
+        "expires_after_seconds": null,
+        "recipient_strategy_key": "reservation_student",
+        "revalidation_strategy_key": "reservation_active_session_active"
+      },
+      {
+        "rule_id": "401d5938-28d2-4497-9f4f-716b49f27ab9",
+        "priority": "normal",
+        "studio_id": "960676d8-520c-4396-9ee1-d45d39108044",
+        "conditions": {
+          "all": [
+            {
+              "field": "reservation.status",
+              "value": "reserved",
+              "operator": "eq"
+            },
+            {
+              "field": "session.status",
+              "value": "scheduled",
+              "operator": "eq"
+            },
+            {
+              "field": "student.active",
+              "value": true,
+              "operator": "eq"
+            },
+            {
+              "field": "student.lifecycle_status",
+              "value": "active",
+              "operator": "eq"
+            }
+          ]
+        },
+        "created_at": "2026-10-03T04:39:03.110778+00:00",
+        "activated_at": "2026-10-03T04:39:03.110778+00:00",
+        "template_key": "class_reminder",
+        "timing_config": {
+          "late_policy": "skip",
+          "minutes_before": 360
+        },
+        "version_number": 4,
+        "notification_type": "class_reminder_5h",
+        "created_by_user_id": null,
+        "communication_class": "P0",
+        "timing_strategy_key": "before_session_start",
+        "expires_after_seconds": null,
+        "recipient_strategy_key": "reservation_student",
+        "revalidation_strategy_key": "reservation_active_session_active"
+      },
+      {
+        "rule_id": "401d5938-28d2-4497-9f4f-716b49f27ab9",
+        "priority": "normal",
+        "studio_id": "960676d8-520c-4396-9ee1-d45d39108044",
+        "conditions": {
+          "all": [
+            {
+              "field": "reservation.status",
+              "value": "reserved",
+              "operator": "eq"
+            },
+            {
+              "field": "session.status",
+              "value": "scheduled",
+              "operator": "eq"
+            },
+            {
+              "field": "student.active",
+              "value": true,
+              "operator": "eq"
+            },
+            {
+              "field": "student.lifecycle_status",
+              "value": "active",
+              "operator": "eq"
+            }
+          ]
+        },
+        "created_at": "2026-10-03T05:36:12.976296+00:00",
+        "activated_at": "2026-10-03T05:36:12.976297+00:00",
+        "template_key": "class_reminder",
+        "timing_config": {
+          "late_policy": "skip",
+          "minutes_before": 360
+        },
+        "version_number": 5,
+        "notification_type": "class_reminder_5h",
+        "created_by_user_id": null,
+        "communication_class": "P0",
+        "timing_strategy_key": "before_session_start",
+        "expires_after_seconds": null,
+        "recipient_strategy_key": "reservation_student",
+        "revalidation_strategy_key": "reservation_active_session_active"
+      }
+    ],
+    "domain_event_counts": [
+      {
+        "count": 1,
+        "event_type": "attendance.cancelled"
+      },
+      {
+        "count": 2,
+        "event_type": "booking.cancelled"
+      },
+      {
+        "count": 1,
+        "event_type": "booking.created"
+      },
+      {
+        "count": 12,
+        "event_type": "contact.created"
+      },
+      {
+        "count": 1,
+        "event_type": "conversation.started"
+      },
+      {
+        "count": 5,
+        "event_type": "loyalty.changed"
+      },
+      {
+        "count": 5,
+        "event_type": "package.activated"
+      },
+      {
+        "count": 1,
+        "event_type": "package.expired_due"
+      },
+      {
+        "count": 2,
+        "event_type": "session.rescheduled"
+      },
+      {
+        "count": 11,
+        "event_type": "student.created"
+      }
+    ]
+  }
+}

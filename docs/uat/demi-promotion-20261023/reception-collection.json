@@ -1,0 +1,30 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "actorId": "6fbc05f1-69ef-430b-88fc-b4ce9432c999",
+  "actorRole": "authenticated",
+  "represents": "reception-admin, never Demi",
+  "saleId": "656922b9-2d33-4a33-ab4c-ecda2256fbb6",
+  "synthetic": true,
+  "moneyTransferred": false,
+  "paymentsBefore": [],
+  "callStarted": true,
+  "httpStatus": 200,
+  "result": {
+    "ok": true,
+    "sale_id": "656922b9-2d33-4a33-ab4c-ecda2256fbb6",
+    "total_minor": 60000,
+    "balance_minor": 0,
+    "refunded_minor": 0,
+    "gross_paid_minor": 60000,
+    "net_collected_minor": 60000,
+    "collectible_total_minor": 60000
+  },
+  "paymentsAfter": [
+    {
+      "id": "3860d840-3025-4b29-8287-d8949c0f0864",
+      "amount_minor": 60000,
+      "kind": "payment"
+    }
+  ],
+  "passed": true
+}

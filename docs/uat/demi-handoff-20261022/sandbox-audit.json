@@ -1,0 +1,107 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "migrationFile": "20261022022254_demi_whatsapp_events_contact_received_index.sql",
+  "remoteMigration": "20261022022315",
+  "index": "assistant_whatsapp_events_contact_received_idx",
+  "definition": "(studio_id,contact_wa_id,received_at)",
+  "valid": true,
+  "explain": "Index Scan with enable_seqscan=off in BEGIN/ROLLBACK; verifies applicability only, no claimed latency gain",
+  "advisors": {
+    "securityBefore": [
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO"
+      },
+      {
+        "name": "anon_security_definer_function_executable",
+        "level": "WARN"
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN"
+      },
+      {
+        "name": "auth_leaked_password_protection",
+        "level": "WARN"
+      }
+    ],
+    "securityAfter": [
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO"
+      },
+      {
+        "name": "anon_security_definer_function_executable",
+        "level": "WARN"
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN"
+      },
+      {
+        "name": "auth_leaked_password_protection",
+        "level": "WARN"
+      }
+    ],
+    "performanceBefore": [
+      {
+        "name": "unindexed_foreign_keys",
+        "level": "INFO"
+      },
+      {
+        "name": "auth_rls_initplan",
+        "level": "WARN"
+      },
+      {
+        "name": "unused_index",
+        "level": "INFO"
+      },
+      {
+        "name": "multiple_permissive_policies",
+        "level": "WARN"
+      },
+      {
+        "name": "auth_db_connections_absolute",
+        "level": "INFO"
+      }
+    ],
+    "performanceAfter": [
+      {
+        "name": "unindexed_foreign_keys",
+        "level": "INFO"
+      },
+      {
+        "name": "auth_rls_initplan",
+        "level": "WARN"
+      },
+      {
+        "name": "unused_index",
+        "level": "INFO"
+      },
+      {
+        "name": "multiple_permissive_policies",
+        "level": "WARN"
+      },
+      {
+        "name": "auth_db_connections_absolute",
+        "level": "INFO"
+      }
+    ]
+  },
+  "temporaryAccess": [
+    {
+      "id": "edfdfe25-5df1-40f1-bfee-a1a8f136a62f",
+      "status": "disabled",
+      "banned": true,
+      "active_memberships": 0,
+      "sessions": 0,
+      "refresh_tokens": 0
+    }
+  ],
+  "followupNoSendAudit": [
+    {
+      "demi_followups_created": 0,
+      "crm_followups_updated": 0
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+  "attempts": [
+    {
+      "case": "failures",
+      "runId": "34611b0d-ce1d-4381-96df-d1b0d4d5da6d",
+      "message": "Entonces quiero reservar la clase de mañana 23 de octubre a las 18:00 con mi paquete.",
+      "providerId": "uat-inbound-1225dea4-047b-43c0-a08e-52a0459c0bda",
+      "clientOutcome": "TIMEOUT",
+      "clientTimeoutMs": 180000,
+      "persistedBeforeAt": "2026-10-22T13:42:25.691232+00:00",
+      "persistedAfterAt": "2026-10-22T13:44:43.6277+00:00",
+      "reconciledAfterArtifactId": "2fe4dca2-d98d-4901-bf12-5406d0a7b7c8",
+      "result": {
+        "ok": true,
+        "accepted": true,
+        "messages": 1,
+        "outcomes": [
+          {
+            "outcome": "replied",
+            "provider_message_id": "uat-inbound-1225dea4-047b-43c0-a08e-52a0459c0bda"
+          }
+        ]
+      },
+      "blindlyResent": false
+    },
+    {
+      "case": "cancellation",
+      "runId": "641a8f37-9d75-47b8-9f94-ac1a83af9202",
+      "message": "Entonces quiero reservar la clase de mañana 23 de octubre a las 18:00 con mi paquete.",
+      "providerId": "uat-inbound-8cace373-4c9d-46c9-8c5b-3e9bfe3b8738",
+      "clientOutcome": "TIMEOUT",
+      "clientTimeoutMs": 180000,
+      "persistedBeforeAt": "2026-10-22T13:41:55.738702+00:00",
+      "persistedAfterAt": "2026-10-22T13:44:42.697389+00:00",
+      "reconciledAfterArtifactId": "aea81c14-edbe-4fc0-a9c6-f8cb505a0927",
+      "result": {
+        "ok": true,
+        "accepted": true,
+        "messages": 1,
+        "outcomes": [
+          {
+            "outcome": "replied",
+            "provider_message_id": "uat-inbound-8cace373-4c9d-46c9-8c5b-3e9bfe3b8738"
+          }
+        ]
+      },
+      "blindlyResent": false
+    },
+    {
+      "case": "purchase",
+      "runId": "0a4a29f7-2320-4609-a4ae-8c954ca1a847",
+      "message": "Mi nombre completo es Ana Matriz Sintética, nací el 10 de mayo de 1995 y mi correo es ana.matriz.20261022@example.test.",
+      "providerId": "uat-inbound-c2ec8e1c-c754-4827-a213-576b7dc48817",
+      "clientOutcome": "TIMEOUT",
+      "clientTimeoutMs": 180000,
+      "persistedBeforeAt": "2026-10-22T13:41:57.74818+00:00",
+      "persistedAfterAt": "2026-10-22T13:44:07.944938+00:00",
+      "reconciledAfterArtifactId": "f751e710-cd3b-49f6-8ec6-08aad9cab960",
+      "result": {
+        "ok": true,
+        "accepted": true,
+        "messages": 1,
+        "outcomes": [
+          {
+            "outcome": "replied",
+            "provider_message_id": "uat-inbound-c2ec8e1c-c754-4827-a213-576b7dc48817"
+          }
+        ]
+      },
+      "blindlyResent": false
+    },
+    {
+      "case": "resolution",
+      "runId": "653e43c0-05c4-4db5-95c2-556251efe7db",
+      "message": "Elijo mañana viernes 23 a las 18:00. Quiero pagar la primera clase por transferencia.",
+      "providerId": "uat-inbound-3e97b80e-f5ba-481a-a8f4-bbbee7e2d85d",
+      "clientOutcome": "TIMEOUT",
+      "clientTimeoutMs": 180000,
+      "persistedBeforeAt": "2026-10-22T13:42:56.998269+00:00",
+      "persistedAfterAt": "2026-10-22T13:46:02.757194+00:00",
+      "reconciledAfterArtifactId": "a4215f2e-9a87-409f-a73b-c8f2613999d5",
+      "result": {
+        "ok": true,
+        "accepted": true,
+        "messages": 1,
+        "outcomes": [
+          {
+            "outcome": "replied",
+            "provider_message_id": "uat-inbound-3e97b80e-f5ba-481a-a8f4-bbbee7e2d85d"
+          }
+        ]
+      },
+      "blindlyResent": false
+    },
+    {
+      "case": "cash",
+      "runId": "17c22338-33ec-43e5-a452-6f12cbafbb63",
+      "message": "Sí, confirmo la compra en efectivo del paquete de 8 clases por 600 pesos.",
+      "providerId": "uat-inbound-2d70fe9c-c87e-4bd1-b51c-59fb66353ed8",
+      "clientOutcome": "TIMEOUT",
+      "clientTimeoutMs": 180000,
+      "persistedBeforeAt": "2026-10-22T13:44:39.937578+00:00",
+      "persistedAfterAt": "2026-10-22T13:46:03.052561+00:00",
+      "reconciledAfterArtifactId": "4ec4fc28-37bf-4439-aeee-60f2c26826e6",
+      "result": {
+        "ok": true,
+        "accepted": true,
+        "messages": 1,
+        "outcomes": [
+          {
+            "outcome": "replied",
+            "provider_message_id": "uat-inbound-2d70fe9c-c87e-4bd1-b51c-59fb66353ed8"
+          }
+        ]
+      },
+      "blindlyResent": false
+    }
+  ]
+}

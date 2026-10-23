@@ -1,0 +1,29 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "actorId": "0fd86d7b-f7ea-410a-8fc6-8017cbeb8a81",
+  "actorRole": "authenticated",
+  "saleId": "7fe6a818-f1dd-479b-bc73-f9fb1048548b",
+  "synthetic": true,
+  "moneyTransferred": false,
+  "paymentsBefore": [],
+  "callStarted": true,
+  "httpStatus": 200,
+  "result": {
+    "ok": true,
+    "sale_id": "7fe6a818-f1dd-479b-bc73-f9fb1048548b",
+    "total_minor": 60000,
+    "balance_minor": 0,
+    "refunded_minor": 0,
+    "gross_paid_minor": 60000,
+    "net_collected_minor": 60000,
+    "collectible_total_minor": 60000
+  },
+  "paymentsAfter": [
+    {
+      "id": "605320aa-47d3-4064-ac48-51102f27b71d",
+      "amount_minor": 60000,
+      "kind": "payment"
+    }
+  ],
+  "passed": true
+}

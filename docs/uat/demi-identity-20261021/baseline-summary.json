@@ -1,0 +1,49 @@
+{
+  "sampleCount": 30,
+  "medianMs": 7914.0,
+  "p95Ms": 14714,
+  "errors": 0,
+  "costUsdMicros": 32690,
+  "byCase": {
+    "S01": {
+      "medianMs": 5092,
+      "samples": 3
+    },
+    "S02": {
+      "medianMs": 3867,
+      "samples": 3
+    },
+    "S03": {
+      "medianMs": 13901,
+      "samples": 3
+    },
+    "S04": {
+      "medianMs": 7713,
+      "samples": 3
+    },
+    "S05": {
+      "medianMs": 8006,
+      "samples": 3
+    },
+    "S06": {
+      "medianMs": 6409,
+      "samples": 3
+    },
+    "S07": {
+      "medianMs": 12281,
+      "samples": 3
+    },
+    "S08": {
+      "medianMs": 6759,
+      "samples": 3
+    },
+    "S09": {
+      "medianMs": 10300,
+      "samples": 3
+    },
+    "S10": {
+      "medianMs": 12028,
+      "samples": 3
+    }
+  }
+}

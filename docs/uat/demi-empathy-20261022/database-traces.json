@@ -1,0 +1,481 @@
+[
+  {
+    "data": {
+      "cases": [
+        {
+          "case": "E02-explain-why",
+          "tools": [],
+          "models": {
+            "calls": 2,
+            "errors": 0,
+            "blocked": 0,
+            "outputTokens": 389
+          },
+          "runtimeSha": "971c2e0cc852f746cd9ab2f68839b2a5a72dbd32",
+          "conversationId": "57e42a99-3ffd-495d-8791-38cf348dcab0"
+        },
+        {
+          "case": "E01-cash-refusal",
+          "tools": [],
+          "models": {
+            "calls": 0,
+            "errors": 0,
+            "blocked": 0,
+            "outputTokens": 0
+          },
+          "runtimeSha": "971c2e0cc852f746cd9ab2f68839b2a5a72dbd32",
+          "conversationId": "73142da6-3141-45aa-b735-db5edbcc0e2a"
+        },
+        {
+          "case": "E04-full-class",
+          "tools": [
+            {
+              "name": "search_class_availability",
+              "result": {
+                "ok": true,
+                "matches": [
+                  {
+                    "date": "2026-10-23",
+                    "space": null,
+                    "address": "Avenida San Gaspar #240, Tonalá, Jalisco",
+                    "is_full": true,
+                    "activity": "Pole Fitness UAT",
+                    "currency": "MXN",
+                    "location": "Principal",
+                    "discipline": "Pole Fitness",
+                    "credit_cost": 1,
+                    "session_ref": "session:ec7e9fd8-d727-4e1d-8802-ca6f756fde57",
+                    "ends_at_local": "20:00",
+                    "starts_at_local": "19:00"
+                  }
+                ],
+                "has_more": false,
+                "timezone": "America/Mexico_City",
+                "next_offset": null,
+                "searched_range": {
+                  "date_to": "2026-10-23",
+                  "date_from": "2026-10-23",
+                  "after_time": "19:00",
+                  "before_time": "19:00"
+                },
+                "query_truncated": false
+              },
+              "status": "executed"
+            },
+            {
+              "name": "search_class_availability",
+              "result": {
+                "ok": true,
+                "matches": [
+                  {
+                    "date": "2026-10-23",
+                    "space": null,
+                    "address": "Avenida San Gaspar #240, Tonalá, Jalisco",
+                    "is_full": true,
+                    "activity": "Pole Fitness UAT",
+                    "currency": "MXN",
+                    "location": "Principal",
+                    "discipline": "Pole Fitness",
+                    "credit_cost": 1,
+                    "session_ref": "session:ec7e9fd8-d727-4e1d-8802-ca6f756fde57",
+                    "ends_at_local": "20:00",
+                    "starts_at_local": "19:00"
+                  }
+                ],
+                "has_more": false,
+                "timezone": "America/Mexico_City",
+                "next_offset": null,
+                "searched_range": {
+                  "date_to": "2026-10-23",
+                  "date_from": "2026-10-23",
+                  "after_time": "19:00",
+                  "before_time": "19:00"
+                },
+                "query_truncated": false
+              },
+              "status": "executed"
+            },
+            {
+              "name": "prepare_waitlist_join",
+              "result": {
+                "ok": true,
+                "status": "confirmation_required",
+                "summary": {
+                  "date": "2026-10-23",
+                  "activity": "Pole Fitness UAT",
+                  "session_ref": "session:ec7e9fd8-d727-4e1d-8802-ca6f756fde57",
+                  "ends_at_local": "20:00",
+                  "starts_at_local": "19:00"
+                },
+                "simulated": true,
+                "reason_message": "Es una simulación: no valida elegibilidad ni descuenta créditos reales. Pide confirmación para continuar la prueba."
+              },
+              "status": "prepared"
+            },
+            {
+              "name": "search_class_availability",
+              "result": {
+                "ok": true,
+                "matches": [
+                  {
+                    "date": "2026-10-23",
+                    "space": null,
+                    "address": "Avenida San Gaspar #240, Tonalá, Jalisco",
+                    "is_full": true,
+                    "activity": "Pole Fitness UAT",
+                    "currency": "MXN",
+                    "location": "Principal",
+                    "discipline": "Pole Fitness",
+                    "credit_cost": 1,
+                    "session_ref": "session:ec7e9fd8-d727-4e1d-8802-ca6f756fde57",
+                    "ends_at_local": "20:00",
+                    "starts_at_local": "19:00"
+                  }
+                ],
+                "has_more": false,
+                "timezone": "America/Mexico_City",
+                "next_offset": null,
+                "searched_range": {
+                  "date_to": "2026-10-23",
+                  "date_from": "2026-10-23",
+                  "after_time": "19:00",
+                  "before_time": "19:00"
+                },
+                "query_truncated": false
+              },
+              "status": "executed"
+            }
+          ],
+          "models": {
+            "calls": 7,
+            "errors": 0,
+            "blocked": 0,
+            "outputTokens": 717
+          },
+          "runtimeSha": "971c2e0cc852f746cd9ab2f68839b2a5a72dbd32",
+          "conversationId": "840ca216-edec-4d59-84a9-e6800a14d612"
+        },
+        {
+          "case": "E03-reception",
+          "tools": [],
+          "models": {
+            "calls": 3,
+            "errors": 0,
+            "blocked": 0,
+            "outputTokens": 295
+          },
+          "runtimeSha": "971c2e0cc852f746cd9ab2f68839b2a5a72dbd32",
+          "conversationId": "b428f894-06ec-4226-a57b-d86cadc7a5d0"
+        },
+        {
+          "case": "E05-close",
+          "tools": [],
+          "models": {
+            "calls": 1,
+            "errors": 0,
+            "blocked": 0,
+            "outputTokens": 40
+          },
+          "runtimeSha": "971c2e0cc852f746cd9ab2f68839b2a5a72dbd32",
+          "conversationId": "ebbd4a26-22e3-4d2f-9b01-67ab83d10919"
+        },
+        {
+          "case": "E05-close",
+          "tools": [],
+          "models": {
+            "calls": 1,
+            "errors": 0,
+            "blocked": 0,
+            "outputTokens": 64
+          },
+          "runtimeSha": "8c54cf162524aa78b7fda691fec8ef210e3d70c9",
+          "conversationId": "3bd83ad5-148c-4b8d-a254-9c1dde17f5c4"
+        },
+        {
+          "case": "E04-full-class",
+          "tools": [
+            {
+              "name": "search_class_availability",
+              "result": {
+                "ok": true,
+                "matches": [
+                  {
+                    "date": "2026-10-23",
+                    "space": null,
+                    "address": "Avenida San Gaspar #240, Tonalá, Jalisco",
+                    "is_full": true,
+                    "activity": "Pole Fitness UAT",
+                    "currency": "MXN",
+                    "location": "Principal",
+                    "discipline": "Pole Fitness",
+                    "credit_cost": 1,
+                    "session_ref": "session:ec7e9fd8-d727-4e1d-8802-ca6f756fde57",
+                    "ends_at_local": "20:00",
+                    "starts_at_local": "19:00"
+                  }
+                ],
+                "has_more": false,
+                "timezone": "America/Mexico_City",
+                "next_offset": null,
+                "searched_range": {
+                  "date_to": "2026-10-23",
+                  "date_from": "2026-10-23",
+                  "after_time": "19:00",
+                  "before_time": "19:00"
+                },
+                "query_truncated": false
+              },
+              "status": "executed"
+            },
+            {
+              "name": "search_class_availability",
+              "result": {
+                "ok": true,
+                "matches": [
+                  {
+                    "date": "2026-10-23",
+                    "space": null,
+                    "address": "Avenida San Gaspar #240, Tonalá, Jalisco",
+                    "is_full": true,
+                    "activity": "Pole Fitness UAT",
+                    "currency": "MXN",
+                    "location": "Principal",
+                    "discipline": "Pole Fitness",
+                    "credit_cost": 1,
+                    "session_ref": "session:ec7e9fd8-d727-4e1d-8802-ca6f756fde57",
+                    "ends_at_local": "20:00",
+                    "starts_at_local": "19:00"
+                  }
+                ],
+                "has_more": false,
+                "timezone": "America/Mexico_City",
+                "next_offset": null,
+                "searched_range": {
+                  "date_to": "2026-10-23",
+                  "date_from": "2026-10-23",
+                  "after_time": "19:00",
+                  "before_time": "19:00"
+                },
+                "query_truncated": false
+              },
+              "status": "executed"
+            },
+            {
+              "name": "prepare_waitlist_join",
+              "result": {
+                "ok": true,
+                "status": "confirmation_required",
+                "summary": {
+                  "date": "2026-10-23",
+                  "activity": "Pole Fitness UAT",
+                  "session_ref": "session:ec7e9fd8-d727-4e1d-8802-ca6f756fde57",
+                  "ends_at_local": "20:00",
+                  "starts_at_local": "19:00"
+                },
+                "simulated": true,
+                "reason_message": "Es una simulación: no valida elegibilidad ni descuenta créditos reales. Pide confirmación para continuar la prueba."
+              },
+              "status": "prepared"
+            }
+          ],
+          "models": {
+            "calls": 6,
+            "errors": 0,
+            "blocked": 0,
+            "outputTokens": 600
+          },
+          "runtimeSha": "8c54cf162524aa78b7fda691fec8ef210e3d70c9",
+          "conversationId": "97f4fa97-51ff-4963-9404-e30075217079"
+        },
+        {
+          "case": "E03-reception",
+          "tools": [],
+          "models": {
+            "calls": 3,
+            "errors": 0,
+            "blocked": 0,
+            "outputTokens": 259
+          },
+          "runtimeSha": "8c54cf162524aa78b7fda691fec8ef210e3d70c9",
+          "conversationId": "9d35200e-f493-4428-8489-4b9978f2b074"
+        },
+        {
+          "case": "E01-cash-refusal",
+          "tools": [],
+          "models": {
+            "calls": 0,
+            "errors": 0,
+            "blocked": 0,
+            "outputTokens": 0
+          },
+          "runtimeSha": "8c54cf162524aa78b7fda691fec8ef210e3d70c9",
+          "conversationId": "cc2a93d1-20ce-478a-878f-748c93b1f1de"
+        },
+        {
+          "case": "E02-explain-why",
+          "tools": [],
+          "models": {
+            "calls": 0,
+            "errors": 0,
+            "blocked": 0,
+            "outputTokens": 0
+          },
+          "runtimeSha": "8c54cf162524aa78b7fda691fec8ef210e3d70c9",
+          "conversationId": "cf86005a-3419-424a-9f7f-8756dff6e429"
+        },
+        {
+          "case": "E05-close",
+          "tools": [],
+          "models": {
+            "calls": 1,
+            "errors": 0,
+            "blocked": 0,
+            "outputTokens": 37
+          },
+          "runtimeSha": "8812da6bf89b2dc6e5b1b2fd6d8828b52b8f8ad1",
+          "conversationId": "2e80b62f-ee94-44a8-be24-c6715cda993a"
+        },
+        {
+          "case": "E01-cash-refusal",
+          "tools": [],
+          "models": {
+            "calls": 0,
+            "errors": 0,
+            "blocked": 0,
+            "outputTokens": 0
+          },
+          "runtimeSha": "8812da6bf89b2dc6e5b1b2fd6d8828b52b8f8ad1",
+          "conversationId": "384fdd2e-be10-40ea-9175-f2dc03807e10"
+        },
+        {
+          "case": "E04-full-class",
+          "tools": [
+            {
+              "name": "search_class_availability",
+              "result": {
+                "ok": true,
+                "matches": [
+                  {
+                    "date": "2026-10-23",
+                    "space": null,
+                    "address": "Avenida San Gaspar #240, Tonalá, Jalisco",
+                    "is_full": true,
+                    "activity": "Pole Fitness UAT",
+                    "currency": "MXN",
+                    "location": "Principal",
+                    "discipline": "Pole Fitness",
+                    "credit_cost": 1,
+                    "session_ref": "session:ec7e9fd8-d727-4e1d-8802-ca6f756fde57",
+                    "ends_at_local": "20:00",
+                    "starts_at_local": "19:00"
+                  }
+                ],
+                "has_more": false,
+                "timezone": "America/Mexico_City",
+                "next_offset": null,
+                "searched_range": {
+                  "date_to": "2026-10-23",
+                  "date_from": "2026-10-23",
+                  "after_time": "19:00",
+                  "before_time": "19:00"
+                },
+                "query_truncated": false
+              },
+              "status": "executed"
+            },
+            {
+              "name": "search_class_availability",
+              "result": {
+                "ok": true,
+                "matches": [
+                  {
+                    "date": "2026-10-23",
+                    "space": null,
+                    "address": "Avenida San Gaspar #240, Tonalá, Jalisco",
+                    "is_full": true,
+                    "activity": "Pole Fitness UAT",
+                    "currency": "MXN",
+                    "location": "Principal",
+                    "discipline": "Pole Fitness",
+                    "credit_cost": 1,
+                    "session_ref": "session:ec7e9fd8-d727-4e1d-8802-ca6f756fde57",
+                    "ends_at_local": "20:00",
+                    "starts_at_local": "19:00"
+                  }
+                ],
+                "has_more": false,
+                "timezone": "America/Mexico_City",
+                "next_offset": null,
+                "searched_range": {
+                  "date_to": "2026-10-23",
+                  "date_from": "2026-10-23",
+                  "after_time": "19:00",
+                  "before_time": "19:00"
+                },
+                "query_truncated": false
+              },
+              "status": "executed"
+            },
+            {
+              "name": "prepare_waitlist_join",
+              "result": {
+                "ok": true,
+                "status": "confirmation_required",
+                "summary": {
+                  "date": "2026-10-23",
+                  "activity": "Pole Fitness UAT",
+                  "session_ref": "session:ec7e9fd8-d727-4e1d-8802-ca6f756fde57",
+                  "ends_at_local": "20:00",
+                  "starts_at_local": "19:00"
+                },
+                "simulated": true,
+                "reason_message": "Es una simulación: no valida elegibilidad ni descuenta créditos reales. Pide confirmación para continuar la prueba."
+              },
+              "status": "prepared"
+            }
+          ],
+          "models": {
+            "calls": 6,
+            "errors": 0,
+            "blocked": 0,
+            "outputTokens": 602
+          },
+          "runtimeSha": "8812da6bf89b2dc6e5b1b2fd6d8828b52b8f8ad1",
+          "conversationId": "8d5053b9-68a9-4273-bc61-dd91aeacab05"
+        },
+        {
+          "case": "E02-explain-why",
+          "tools": [],
+          "models": {
+            "calls": 0,
+            "errors": 0,
+            "blocked": 0,
+            "outputTokens": 0
+          },
+          "runtimeSha": "8812da6bf89b2dc6e5b1b2fd6d8828b52b8f8ad1",
+          "conversationId": "991b5e5e-1cdc-415b-ad16-f1b85dfdd85a"
+        },
+        {
+          "case": "E03-reception",
+          "tools": [],
+          "models": {
+            "calls": 3,
+            "errors": 0,
+            "blocked": 0,
+            "outputTokens": 350
+          },
+          "runtimeSha": "8812da6bf89b2dc6e5b1b2fd6d8828b52b8f8ad1",
+          "conversationId": "c1630bde-10a8-4948-8f7c-8878397c6b8b"
+        }
+      ],
+      "environment": "hedouonyhynuvwbckdlg",
+      "afterBankBusinessCounts": {
+        "sales": 0,
+        "payments": 0,
+        "students": 11,
+        "acquisitions": 5,
+        "reservations": 2
+      }
+    }
+  }
+]

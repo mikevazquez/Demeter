@@ -22,6 +22,45 @@ export const TEST_PERSONAS = [
 
 export type TestPersona = (typeof TEST_PERSONAS)[number];
 
+// Explicit Sandbox fixtures. The default keeps the existing benchmark/personas unchanged.
+export const WORKBENCH_CASES = [
+  {
+    id: "S11",
+    persona: "prospect",
+    label: "Prospecto: Pase Descubre",
+    message: "Quiero el Pase Descubre y pagarlo por transferencia.",
+  },
+  {
+    id: "S12",
+    persona: "prospect",
+    label: "Prospecto: paquete de 8",
+    message: "Quiero el paquete de 8 clases por transferencia.",
+  },
+  {
+    id: "S13",
+    persona: "prospect",
+    label: "Prospecto: comprobante recibido",
+    message: "Ya envié el comprobante, ¿qué sigue?",
+  },
+  {
+    id: "S14",
+    persona: "student",
+    label: "Alumna sin inscripción: paquete de 8",
+    message: "Quiero el paquete de 8 clases por transferencia.",
+  },
+  { id: "S15", persona: "student", label: "Compra en app: pendiente cerrado", message: "hola" },
+] as const satisfies readonly {
+  id: string;
+  persona: TestPersona;
+  label: string;
+  message: string;
+}[];
+export type WorkbenchCase = "standard" | (typeof WORKBENCH_CASES)[number]["id"];
+
+export function isWorkbenchCase(value: unknown): value is WorkbenchCase {
+  return value === "standard" || WORKBENCH_CASES.some((item) => item.id === value);
+}
+
 export function isTestPersona(value: unknown): value is TestPersona {
   return typeof value === "string" && TEST_PERSONAS.includes(value as TestPersona);
 }
@@ -60,6 +99,10 @@ export function promptWorkbenchError(code: string) {
   const messages: Record<string, string> = {
     invalid_prompt: "Escribe las instrucciones de Demi (máximo 24,000 caracteres).",
     invalid_message: "Escribe un mensaje de hasta 2,000 caracteres.",
+    invalid_workbench_case: "Selecciona un caso y perfil de prueba compatibles.",
+    workbench_fixture_unavailable:
+      "Falta un paquete visible de 8 clases para preparar este caso en Sandbox.",
+    purchase_not_pending: "Primero prepara una compra en esta conversación de prueba.",
     assistant_not_configured: "Demi todavía no está configurada.",
     prompt_storage_unavailable: "No se pudo guardar. Tu texto sigue aquí; inténtalo de nuevo.",
     active_prompt_changed: "La versión activa cambió. Recarga y revisa antes de activar.",

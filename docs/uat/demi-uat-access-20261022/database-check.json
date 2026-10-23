@@ -1,0 +1,56 @@
+{
+  "database": {
+    "expiry_job": {
+      "id": 37,
+      "active": true,
+      "schedule": "18 0 23 10 *",
+      "timezone": "GMT",
+      "matches_only_new_user": true
+    },
+    "old_access": [
+      {
+        "id": "efe87ea5-2b5e-416e-9239-50156c5497d0",
+        "banned": true,
+        "status": "disabled",
+        "sessions": 0,
+        "active_memberships": 0
+      },
+      {
+        "id": "67aade3a-3ac1-4186-85d1-06ba3a217c84",
+        "banned": true,
+        "status": "disabled",
+        "sessions": 0,
+        "active_memberships": 0
+      },
+      {
+        "id": "449b502f-4112-49fe-879b-f54cea779b36",
+        "banned": true,
+        "status": "disabled",
+        "sessions": 0,
+        "active_memberships": 0
+      }
+    ],
+    "new_account": {
+      "active": true,
+      "sessions": 2,
+      "not_banned": true,
+      "memberships": 1
+    }
+  },
+  "revocationDryRun": {
+    "banned": true,
+    "sessions": 0,
+    "expiry_jobs": 0,
+    "refresh_tokens": 0,
+    "account_disabled": true,
+    "active_memberships": 0,
+    "rolled_back_after_assertion": true
+  },
+  "afterRollback": {
+    "active": true,
+    "expires_at": "2026-10-23T00:18:00+00:00",
+    "sessions_restored": 3,
+    "expiry_job_restored": true,
+    "membership_restored": true
+  }
+}

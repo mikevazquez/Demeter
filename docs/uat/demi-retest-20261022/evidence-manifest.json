@@ -1,0 +1,58 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "app_sha": "d41135aab10670c3a0bcbab0ee77a8a5dea2ad80",
+  "files": {
+    "README.md": {
+      "sha256": "e2fdfd50229272903ce1656d9612c963bad79deb6f772fa840738ad808c761a9",
+      "bytes": 9373
+    },
+    "access-cleanup.json": {
+      "sha256": "81963b70e92d5a0177aaa886d356382d1c1b2ebb35214700df9071c589a6df0d",
+      "bytes": 964
+    },
+    "bank-traces.json": {
+      "sha256": "076d81cada364780bebbe3a63843bd51f3eaa7b975d7762af352896705b664ba",
+      "bytes": 129839
+    },
+    "c07-bank-v2.json": {
+      "sha256": "25d34ef7784e33ad016eca8238d129a065e8f46bbf2be15e98a9fc8a3b9728b7",
+      "bytes": 12199
+    },
+    "c07-bank-v3.json": {
+      "sha256": "2141e172879d5dce70b3f608b3f0b48b809689bd699091ddd002a60e6d4d5671",
+      "bytes": 12056
+    },
+    "c07-bank.json": {
+      "sha256": "0a2259c199bae53f0a2c9aa60eba1070ecec5bed8e1c6a2d36a4550d605e48f3",
+      "bytes": 12012
+    },
+    "c07-operational.json": {
+      "sha256": "6de63d9c1c76df96f27b646f3d02565f6cd61cbf8ff3894da7a3bc445d13af05",
+      "bytes": 4626
+    },
+    "cash-collection.json": {
+      "sha256": "680c559b45318bb12b7ced937e2efc8ad9c63d4761ccbc98a24902301a35abf5",
+      "bytes": 727
+    },
+    "compression.json": {
+      "sha256": "b2777c4f90f511520bde0bcf2c6df802499fafb8981408bd06ab6428f4110c2d",
+      "bytes": 250
+    },
+    "core.json.gz": {
+      "sha256": "de69640401c033475152b2288a46121e89e9b1ec98b3c660a1e597b9701f2ec2",
+      "bytes": 2521537
+    },
+    "database-checks.json": {
+      "sha256": "a6f80dc580b2a62e2b1036bf80f3e3467b64dc03db493d557814105ef7bff99d",
+      "bytes": 21010
+    },
+    "preview-access-revocations.json": {
+      "sha256": "082a3a0111d112ae1632c7843d3b7921a5e393759973abf1763d5d508489c3b1",
+      "bytes": 647
+    },
+    "summary.json": {
+      "sha256": "6bce5914c650109c1ea11ff29cf6cb6a2da2aca89fab1a707b55b5bb1b4059b0",
+      "bytes": 2305
+    }
+  }
+}

@@ -6,8 +6,10 @@ import {
   configureDemiUatFailures,
   createDemiUatRun,
   getDemiUatRun,
+  getDemiUatArtifactBatch,
   moveDemiUatSession,
   sendDemiUatMessage,
+  runDemiUatBurst,
   runDemiUatNotifications,
   runDemiUatFollowups,
   reviewDemiUatGroup,
@@ -56,6 +58,7 @@ export default function Bank({
   const [session, setSession] = useState("timely");
   const [metaRecipient, setMetaRecipient] = useState("");
   const [hours, setHours] = useState(6);
+  const [burstScenario, setBurstScenario] = useState("burst");
   async function perform(action: () => Promise<Data>) {
     setBusy(true);
     setError("");
@@ -72,16 +75,33 @@ export default function Bank({
       ["whatsapp_reply", "facebook_reply", "notification_delivery"].includes(a.kind),
     ) ?? [];
   const inbound = data?.artifacts.filter((a) => a.kind === "after_message") ?? [];
-  function exportEvidence() {
+  async function exportEvidence() {
     if (!data) return;
-    const url = URL.createObjectURL(
-      new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
-    );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `demi-uat-${data.run.id}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    setBusy(true);
+    setError("");
+    try {
+      const artifacts: Awaited<ReturnType<typeof getDemiUatArtifactBatch>> = [];
+      for (let offset = 0; offset < data.artifacts.length; offset += 3) {
+        artifacts.push(
+          ...(await getDemiUatArtifactBatch(
+            data.run.id,
+            data.artifacts.slice(offset, offset + 3).map((artifact) => artifact.id),
+          )),
+        );
+      }
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify({ ...data, artifacts }, null, 2)], { type: "application/json" }),
+      );
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `demi-uat-${data.run.id}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo descargar la evidencia");
+    } finally {
+      setBusy(false);
+    }
   }
   return (
     <>
@@ -198,6 +218,37 @@ export default function Bank({
       {busy && <p role="status">Procesando y guardando evidencia…</p>}
       {data && (
         <>
+          <section>
+            <h2>Ráfagas sintéticas</h2>
+            <p>
+              Crea una ejecución nueva para cada variante. Las respuestas quedan capturadas en la
+              evidencia; revisa también los turnos, eventos y cambios de estado.
+            </p>
+            <select
+              aria-label="Variante de ráfaga"
+              value={burstScenario}
+              disabled={busy}
+              onChange={(event) => setBurstScenario(event.target.value)}
+            >
+              <option value="burst">Tres textos consecutivos</option>
+              <option value="same_payload">Tres textos en un webhook</option>
+              <option value="contacts">Dos contactos intercalados</option>
+              <option value="media">Texto e imagen</option>
+              <option value="stale">Texto nuevo durante la generación</option>
+              <option value="stale_cancellation">Retractar cancelación durante ejecución</option>
+              <option value="cancellation_control">Cancelar y repetir el mismo evento</option>
+              <option value="replay">Repetir el mismo evento</option>
+              <option value="outside">Dos mensajes fuera de la ventana</option>
+              <option value="tenant_guard">Aislamiento entre estudios</option>
+              <option value="signature_guard">Rechazar firma inválida</option>
+            </select>
+            <button
+              disabled={busy || !modelReady}
+              onClick={() => perform(() => runDemiUatBurst(data.run.id, burstScenario))}
+            >
+              Ejecutar variante y guardar evidencia
+            </button>
+          </section>
           <section>
             <h2>2. Conversar con Demi</h2>
             <form
@@ -342,7 +393,9 @@ export default function Bank({
               <button disabled={busy} onClick={() => perform(() => getDemiUatRun(data.run.id))}>
                 Actualizar evidencia
               </button>
-              <button onClick={exportEvidence}>Descargar evidencia</button>
+              <button disabled={busy} onClick={exportEvidence}>
+                Descargar evidencia
+              </button>
             </div>
             <pre className="uat-state">{JSON.stringify(data.state[tab], null, 2)}</pre>
           </section>

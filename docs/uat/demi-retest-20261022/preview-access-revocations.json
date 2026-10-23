@@ -1,0 +1,27 @@
+[
+  {
+    "deployment": "dpl_9tcVnNRtoZNtyHNoiGiT3cTAwBCo",
+    "file": "demi-uat-preview-access.json",
+    "revoked": true
+  },
+  {
+    "deployment": "dpl_5eMWMV1oAdi8GYd3H2ghsUutiyTb",
+    "file": "demi-c07-preview-access.json",
+    "revoked": true
+  },
+  {
+    "deployment": "dpl_2xfs4U12uuzhy1UiGKGwxYRsx92S",
+    "file": "demi-c07-v3-preview-access.json",
+    "revoked": true
+  },
+  {
+    "deployment": "dpl_7R6QoNDaw1yjsYJHUC4BLi5ASzCr",
+    "file": "demi-c07-v4-preview-access.json",
+    "revoked": true
+  },
+  {
+    "deployment": "dpl_5D6c9zLYKUWrUmPLjs2whUErJLYG",
+    "file": "demi-c07-v5-preview-access.json",
+    "revoked": true
+  }
+]

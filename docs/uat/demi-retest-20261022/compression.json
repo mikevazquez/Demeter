@@ -1,0 +1,8 @@
+{
+  "source": "core.json",
+  "raw_sha256": "a170bb4668a7b47eed9f399575d5fc3c58697b8ec8b62c5c4a365a7de82a334f",
+  "raw_bytes": 22757968,
+  "compressed_bytes": 2521537,
+  "lossless": true,
+  "runtime_last": "d41135aab10670c3a0bcbab0ee77a8a5dea2ad80"
+}

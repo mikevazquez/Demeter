@@ -1,0 +1,73 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "995f4466411051e752f1cb97c90215af0e67c5c2",
+  "deployment": "dpl_9tcVnNRtoZNtyHNoiGiT3cTAwBCo",
+  "preview": "https://demeterbueno-9e8kcq7sw-demeter3.vercel.app",
+  "userId": "0fd86d7b-f7ea-410a-8fc6-8017cbeb8a81",
+  "sourceStudioId": "54dd112f-12ab-4e77-928c-877b12276eb2",
+  "role": "admin",
+  "expiresAt": "2026-10-23T00:18:00+00:00",
+  "loginPassed": true,
+  "workbenchAccessible": true,
+  "workbenchCaseOptions": [
+    "Conversación libre",
+    "S11 · Prospecto: Pase Descubre",
+    "S12 · Prospecto: paquete de 8",
+    "S13 · Prospecto: comprobante recibido",
+    "S14 · Alumna sin inscripción: paquete de 8",
+    "S15 · Compra en app: pendiente cerrado"
+  ],
+  "operationalUatAccessible": true,
+  "syntheticStudioShown": true,
+  "browserObservedSupabaseHosts": [],
+  "businessActionsExecuted": 0,
+  "externalMessagesSent": 0,
+  "conversationUatApproved": false,
+  "privateSessionSaved": true,
+  "actualUserRlsChecks": {
+    "source_membership": {
+      "httpStatus": 200,
+      "rowCount": 1,
+      "onlyExpectedAdmin": true
+    },
+    "source_config": {
+      "httpStatus": 200,
+      "rowCount": 1,
+      "onlyExpectedDemi": true
+    },
+    "foreign_config": {
+      "httpStatus": 200,
+      "rowCount": 0
+    },
+    "other_owned_runs": {
+      "httpStatus": 200,
+      "rowCount": 0
+    }
+  },
+  "roleBoundaryPassed": true,
+  "authApiHost": "hedouonyhynuvwbckdlg.supabase.co",
+  "accessTokenRole": "authenticated",
+  "preliminaryBoundaryCheck": {
+    "checks": {
+      "source_membership": {
+        "httpStatus": 200,
+        "rowCount": 1,
+        "onlyExpectedAdmin": true
+      },
+      "source_config": {
+        "httpStatus": 200,
+        "rowCount": 2
+      },
+      "foreign_config": {
+        "httpStatus": 200,
+        "rowCount": 0
+      },
+      "other_owned_runs": {
+        "httpStatus": 200,
+        "rowCount": 0
+      }
+    },
+    "passed": false,
+    "harnessAdjustment": "Original source_config count included Demi and Polina; filter assistant_key=demi after schema/data inspection. No policies or business rules changed."
+  }
+}
