@@ -12,6 +12,10 @@ import StudentPackageCard from "./StudentPackageCard";
 import StudentPortalAccessSection from "./StudentPortalAccessSection";
 import StudentEvaluationsPanel from "./StudentEvaluationsPanel";
 import StudentDocumentsPanel from "./StudentDocumentsPanel";
+import StudentPenaltiesPanel, {
+  type PendingChargeRow,
+  type StudentPenaltyRow,
+} from "./StudentPenaltiesPanel";
 import { notFound } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
@@ -158,6 +162,7 @@ export default async function StudentProfilePage({
     document_error?: string;
     transfer_review?: string;
     view?: string;
+    penalizacion?: string;
   }>;
 }) {
   const [{ studentId }, query, { supabase, studio, can }] = await Promise.all([
@@ -454,6 +459,20 @@ export default async function StudentProfilePage({
   const pendingOperatingCharges = (operatingCharges ?? []).filter(
     (charge) => charge.status === "pending",
   );
+  // NEB-01-41 · pausas de reserva vigentes (consulta aparte: sin la migración no aparece nada).
+  const { data: activePenaltyRows, error: activePenaltyError } = canReadSchedule
+    ? await supabase
+        .from("student_booking_penalties")
+        .select("id,kind,events_count,window_days,ends_at")
+        .eq("studio_id", studio.id)
+        .eq("student_id", student.id)
+        .eq("status", "active")
+        .gt("ends_at", new Date().toISOString())
+        .order("ends_at", { ascending: false })
+    : { data: [], error: null };
+  const activePenalties = activePenaltyError
+    ? []
+    : ((activePenaltyRows ?? []) as StudentPenaltyRow[]);
   const { data: transferPurchases } = canReadSales
     ? await supabase
         .from("assistant_transfer_purchase_intents")
@@ -1637,6 +1656,18 @@ export default async function StudentProfilePage({
               )}
             </div>
           ) : null}
+
+          <StudentPenaltiesPanel
+            studentId={student.id}
+            penalties={activePenalties}
+            pendingCharges={(canReadSales ? pendingOperatingCharges : []) as PendingChargeRow[]}
+            canWaive={canEdit || can(CAPABILITIES.SCHEDULE_WRITE)}
+            canResolveCharges={canManageSales}
+            timeZone={timeZone}
+            locale={locale}
+            currency={currency}
+            notice={query.penalizacion}
+          />
 
           {canReadSales ? (
             <div className="profile360-package-group">

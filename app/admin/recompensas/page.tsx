@@ -266,7 +266,7 @@ export default async function RewardsControlCenterPage() {
                             : "Actualización de progreso"}
                     </strong>
                     <p className="mt-1 text-xs text-zinc-500">
-                      {formatDateTime(event.occurred_at)}
+                      {formatDateTime(event.occurred_at, ctx.studio.timezone)}
                     </p>
                   </div>
                   <StatusBadge
@@ -308,7 +308,7 @@ export default async function RewardsControlCenterPage() {
                   </div>
                   <p className="mt-1 text-xs text-zinc-500">
                     {reward.expires_at
-                      ? `Vence ${formatDateTime(reward.expires_at)}`
+                      ? `Vence ${formatDateTime(reward.expires_at, ctx.studio.timezone)}`
                       : "Sin vencimiento fijo"}
                   </p>
                 </Link>

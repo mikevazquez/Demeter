@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { normalizeMexicanPhone } from "@/lib/phone";
+import { resolveStudioTimeZone } from "@/lib/studio-time";
 
 const structuralFieldKeys = new Set(["first_name", "last_name", "phone", "email"]);
 
@@ -186,7 +187,7 @@ async function getAcquisitionEditContext(studentId: string, acquisitionId: strin
 
   if (!acquisition) redirect(`/admin/alumnas/${studentId}?error=acquisition_not_found`);
 
-  const timeZone = ctx.studio.timezone ?? "America/Mexico_City";
+  const timeZone = resolveStudioTimeZone(ctx.studio.timezone);
   const dateParts = Object.fromEntries(
     new Intl.DateTimeFormat("en-US", {
       timeZone,

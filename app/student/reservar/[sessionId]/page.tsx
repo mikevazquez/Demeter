@@ -17,6 +17,7 @@ import { calculateSingleClassCheckout } from "@/lib/student/checkout-pricing";
 import PurchaseSingleClassButton from "../PurchaseSingleClassButton";
 import WaitlistControl from "../WaitlistControl";
 import { BookingRestrictionCard } from "../BookingRestrictionCard";
+import { bookingWindowCopy } from "@/lib/booking-windows";
 
 const DROP_IN_REASONS = new Set([
   "no_active_product",
@@ -93,7 +94,17 @@ export default async function StudentSessionDetailPage({
     reason === "enrollment_required" &&
     (enrollmentMode === "single_class_booking" || enrollmentMode === "single_class_next_purchase");
   const sessionDate = localDateKey(new Date(session.starts_at), studio.timezone);
-  const eligibilityCopy = bookingReasonCopyForStudent(reason, snapshot.acquisitions, sessionDate);
+  // NEB-01-40 · "Abre el …" o "Reservas cerradas" según la ventana de la clase.
+  const eligibilityCopy =
+    bookingWindowCopy(
+      reason,
+      (
+        session.eligibility as
+          { booking_opens_at?: string | null; blocked_until?: string | null } | undefined
+      )?.booking_opens_at ??
+        (session.eligibility as { blocked_until?: string | null } | undefined)?.blocked_until,
+      studio.timezone,
+    ) ?? bookingReasonCopyForStudent(reason, snapshot.acquisitions, sessionDate);
   const returnDate =
     query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date) ? query.date : sessionDate;
   const showDropIn =

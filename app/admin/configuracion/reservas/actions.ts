@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { parseBookingWindowForm } from "@/lib/booking-windows";
 
 function checkboxValue(formData: FormData, key: string) {
   return formData.get(key) === "on";
@@ -85,4 +86,145 @@ export async function saveReservationPolicyAction(formData: FormData) {
   revalidatePath("/admin/configuracion");
   revalidatePath("/admin/configuracion/reservas");
   redirect(reservationsPath({ saved: "1" }));
+}
+
+// NEB-01-39/40 · Apertura y cierre de reservas y ventana del registro con QR del estudio.
+export async function saveBookingWindowsAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+
+  if (ctx.membership.role !== "owner") {
+    redirect("/admin?error=access");
+  }
+  const parsed = parseBookingWindowForm(formData, "studio");
+  if (!parsed.ok) redirect(reservationsPath({ error: `window_${parsed.error}` }));
+  const values = parsed.values;
+
+  const { error } = await ctx.supabase.rpc("owner_update_studio_booking_windows", {
+    p_studio_id: ctx.studio.id,
+    p_booking_close_minutes_before: values.bookingCloseMinutesBefore,
+    p_booking_open_mode: values.bookingOpenMode ?? "none",
+    p_booking_open_minutes_before: values.bookingOpenMinutesBefore,
+    p_booking_open_weekday: values.bookingOpenWeekday,
+    p_booking_open_time: values.bookingOpenTime,
+    p_checkin_opens_minutes_before: values.checkinOpensMinutesBefore,
+    p_checkin_closes_minutes_after: values.checkinClosesMinutesAfter,
+  });
+
+  if (error) {
+    console.error("[studio.reservations] Booking windows update failed", {
+      code: error.code,
+      message: error.message.slice(0, 160),
+    });
+    redirect(reservationsPath({ error: "save" }));
+  }
+
+  revalidatePath("/admin/configuracion/reservas");
+  redirect(reservationsPath({ saved: "windows" }));
+}
+
+// NEB-01-41 · Penalizaciones para alumnas regulares (pausa de reservas y cargo en paquetes).
+export async function savePenaltyPolicyAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+
+  if (ctx.membership.role !== "owner") {
+    redirect("/admin?error=access");
+  }
+
+  const lateCharge = moneyToMinor(formData.get("package_late_cancellation_penalty")) ?? 0;
+  const noShowCharge = moneyToMinor(formData.get("package_no_show_penalty")) ?? 0;
+  const pause = (prefix: "no_show" | "late_cancel") => {
+    if (!checkboxValue(formData, `${prefix}_block_enabled`)) {
+      return { threshold: null, windowDays: null, blockDays: null };
+    }
+    const threshold = Number(formData.get(`${prefix}_block_threshold`));
+    const windowDays = Number(formData.get(`${prefix}_block_window_days`));
+    const blockDays = Number(formData.get(`${prefix}_block_days`));
+    const valid =
+      Number.isInteger(threshold) &&
+      threshold >= 1 &&
+      threshold <= 20 &&
+      Number.isInteger(windowDays) &&
+      windowDays >= 1 &&
+      windowDays <= 365 &&
+      Number.isInteger(blockDays) &&
+      blockDays >= 1 &&
+      blockDays <= 90;
+    return valid ? { threshold, windowDays, blockDays } : null;
+  };
+  const noShow = pause("no_show");
+  const lateCancel = pause("late_cancel");
+  if (!noShow || !lateCancel) redirect(reservationsPath({ error: "pause" }));
+  if (lateCharge > 10_000_000 || noShowCharge > 10_000_000) {
+    redirect(reservationsPath({ error: "penalty" }));
+  }
+
+  const { error } = await ctx.supabase.rpc("owner_update_studio_penalty_policy", {
+    p_studio_id: ctx.studio.id,
+    p_package_late_cancellation_penalty_minor: lateCharge,
+    p_package_no_show_penalty_minor: noShowCharge,
+    p_pending_charge_blocks_booking: checkboxValue(formData, "pending_charge_blocks_booking"),
+    p_no_show_block_threshold: noShow.threshold,
+    p_no_show_block_window_days: noShow.windowDays,
+    p_no_show_block_days: noShow.blockDays,
+    p_late_cancel_block_threshold: lateCancel.threshold,
+    p_late_cancel_block_window_days: lateCancel.windowDays,
+    p_late_cancel_block_days: lateCancel.blockDays,
+  });
+
+  if (error) {
+    console.error("[studio.reservations] Penalty policy update failed", {
+      code: error.code,
+      message: error.message.slice(0, 160),
+    });
+    redirect(reservationsPath({ error: "save" }));
+  }
+
+  revalidatePath("/admin/configuracion/reservas");
+  redirect(reservationsPath({ saved: "penalties" }));
+}
+
+// NEB-01-36 · Precio de la primera clase y abono a la inscripción.
+export async function saveTrialCreditAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+
+  if (ctx.membership.role !== "owner") {
+    redirect("/admin?error=access");
+  }
+
+  const price = moneyToMinor(formData.get("trial_price"));
+  const credit = moneyToMinor(formData.get("credit_amount"));
+  const minEnrollment = moneyToMinor(formData.get("min_enrollment")) ?? 0;
+  const validDays = Number(formData.get("valid_days"));
+  if (
+    !price ||
+    price > 10_000_000 ||
+    !credit ||
+    credit > 10_000_000 ||
+    minEnrollment > 10_000_000 ||
+    !Number.isInteger(validDays) ||
+    validDays < 0 ||
+    validDays > 30
+  ) {
+    redirect(reservationsPath({ error: "trial" }));
+  }
+
+  const { error } = await ctx.supabase.rpc("owner_update_studio_trial_credit", {
+    p_studio_id: ctx.studio.id,
+    p_trial_price_minor: price,
+    p_credit_enabled: checkboxValue(formData, "credit_enabled"),
+    p_enrollment_credit_minor: credit,
+    p_enrollment_credit_min_enrollment_minor: minEnrollment,
+    p_enrollment_credit_valid_days: validDays,
+  });
+
+  if (error) {
+    console.error("[studio.reservations] Trial credit update failed", {
+      code: error.code,
+      message: error.message.slice(0, 160),
+    });
+    redirect(reservationsPath({ error: "save" }));
+  }
+
+  revalidatePath("/admin/configuracion/reservas");
+  redirect(reservationsPath({ saved: "trial" }));
 }

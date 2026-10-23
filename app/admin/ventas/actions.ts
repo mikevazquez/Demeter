@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { studioLocalDateKey } from "@/lib/studio-time";
 
 function moneyToMinor(value: string) {
   const normalized = value.trim().replace(",", ".");
@@ -81,7 +82,9 @@ export async function createEnrollmentOnlySaleAction(formData: FormData) {
     redirect(errorUrl("/admin/ventas/nueva", "sale_invalid"));
   }
 
-  const { supabase } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SALES_WRITE);
+  // NEB-01-35 · "hoy" es la fecha local del estudio, no la de UTC.
+  const today = studioLocalDateKey(studio.timezone);
   const [{ data: product }, { data: activeEnrollment }] = await Promise.all([
     supabase
       .from("product_templates")
@@ -95,8 +98,8 @@ export async function createEnrollmentOnlySaleAction(formData: FormData) {
       .select("id")
       .eq("student_id", studentId)
       .eq("status", "active")
-      .lte("starts_on", new Date().toISOString().slice(0, 10))
-      .or("expires_on.is.null,expires_on.gte." + new Date().toISOString().slice(0, 10))
+      .lte("starts_on", today)
+      .or("expires_on.is.null,expires_on.gte." + today)
       .limit(1)
       .maybeSingle(),
   ]);
@@ -113,7 +116,7 @@ export async function createEnrollmentOnlySaleAction(formData: FormData) {
     payment_method: paymentMethod,
     payment_reference: paymentReference || null,
     payment_notes: paymentNotes || null,
-    target_starts_on: new Date().toISOString().slice(0, 10),
+    target_starts_on: today,
   });
   if (error) redirect(errorUrl("/admin/ventas/nueva", error.message));
   const result = (data ?? {}) as { sale_id?: string };

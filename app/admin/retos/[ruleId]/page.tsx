@@ -164,6 +164,7 @@ export default async function ChallengeDetailPage({
       ) : null}
 
       <RuleEditorForm
+        timeZone={ctx.studio.timezone}
         mode="challenge"
         rule={rule}
         version={version}

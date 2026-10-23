@@ -712,7 +712,7 @@ export default async function NotificationProcessPage({
                     <div className="notification-message-preview">
                       <strong>Plantilla administrada en Meta</strong>
                       <p>
-                        Clave enviada por Demeter:{" "}
+                        Clave enviada por el estudio:{" "}
                         <code>
                           {policyText(policy, "provider_template_key") || rules[0]?.template_key}
                         </code>

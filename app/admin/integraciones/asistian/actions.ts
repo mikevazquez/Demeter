@@ -81,7 +81,7 @@ export async function sendAsistianMappingProbe(formData: FormData) {
     phone: "+5213300000000",
     data: {
       nombre: "Marco",
-      disciplina: "Pole Fitness",
+      disciplina: "Clase de prueba",
       fecha: "22/09/2026",
       hora: "19:30",
       coach: "Mike",
@@ -152,7 +152,7 @@ export async function sendAsistianHandshake(formData: FormData) {
     phone: "+5213300000000",
     data: {
       nombre: "Prueba Studio Flow",
-      disciplina: "Pole Fitness",
+      disciplina: "Clase de prueba",
       fecha: "23/09/2026",
       hora: "18:00",
       coach: "Coach de prueba",

@@ -131,9 +131,7 @@ export function CreateRestrictedPackageForm({
               name="name"
               required
               placeholder={
-                scope === "disciplina"
-                  ? "Ej. Pole Fitness · 8 clases"
-                  : "Ej. Fin de semana · 8 clases"
+                scope === "disciplina" ? "Ej. Yoga · 8 clases" : "Ej. Fin de semana · 8 clases"
               }
             />
           </label>

@@ -2,16 +2,24 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
+import {
+  BOOKING_WINDOW_DEFAULTS,
+  bookingWindowValuesFromRow,
+  type BookingWindowValues,
+} from "@/lib/booking-windows";
+import { studioLocalDateKey } from "@/lib/studio-time";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
+import { ActivityBookingRulesForm } from "../ActivityBookingRulesForm";
 import { ActivityWizard, type ActivityDraft } from "../ActivityWizard";
+import "../../components/booking-rules.css";
 
 export default async function ActivityDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ activityId: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; reglas?: string }>;
 }) {
   const [{ activityId }, query, { supabase, studio }] = await Promise.all([
     params,
@@ -59,6 +67,7 @@ export default async function ActivityDetailPage({
   ]);
 
   if (!activity) notFound();
+  const bookingRules = await loadBookingRules(supabase, studio.id, activity.id);
 
   const personMap = new Map(
     (persons ?? []).map((item) => [
@@ -79,7 +88,7 @@ export default async function ActivityDetailPage({
     requiresResource: activity.requires_resource,
     defaultInstructorId: firstSchedule?.instructor_id ?? "",
     defaultSpaceId: firstSchedule?.space_id ?? "",
-    startsOn: firstSchedule?.starts_on ?? new Date().toISOString().slice(0, 10),
+    startsOn: firstSchedule?.starts_on ?? studioLocalDateKey(studio.timezone),
     endsOn: firstSchedule?.ends_on ?? "",
     schedules: (schedules ?? []).map((schedule) => ({
       id: schedule.id,
@@ -122,6 +131,7 @@ export default async function ActivityDetailPage({
       </header>
 
       <ActivityWizard
+        timeZone={studio.timezone}
         locale={studio.locale}
         currency={studio.currency}
         mode="edit"
@@ -137,6 +147,51 @@ export default async function ActivityDetailPage({
           label: item.capacity ? `${item.name} · máx. ${item.capacity}` : item.name,
         }))}
       />
+
+      {bookingRules ? (
+        <ActivityBookingRulesForm
+          activityId={activity.id}
+          values={bookingRules.activity}
+          studio={bookingRules.studio}
+          notice={query.reglas}
+        />
+      ) : null}
     </main>
   );
+}
+
+// NEB-01-38/39/40 · Consultas aparte: si la migración aún no está aplicada, la sección no aparece.
+async function loadBookingRules(
+  supabase: Awaited<ReturnType<typeof getAdminContext>>["supabase"],
+  studioId: string,
+  activityId: string,
+) {
+  const [templateResult, policyResult] = await Promise.all([
+    supabase
+      .from("class_templates")
+      .select(
+        "cancellation_cutoff_minutes,booking_close_minutes_before,booking_open_mode,booking_open_minutes_before,booking_open_weekday,booking_open_time,checkin_opens_minutes_before,checkin_closes_minutes_after",
+      )
+      .eq("id", activityId)
+      .eq("studio_id", studioId)
+      .maybeSingle(),
+    supabase
+      .from("studio_operating_policies")
+      .select(
+        "cancellation_cutoff_minutes,booking_close_minutes_before,booking_open_mode,booking_open_minutes_before,booking_open_weekday,booking_open_time,checkin_opens_minutes_before,checkin_closes_minutes_after",
+      )
+      .eq("studio_id", studioId)
+      .maybeSingle(),
+  ]);
+  if (templateResult.error || policyResult.error) return null;
+  const studioValues = bookingWindowValuesFromRow(policyResult.data);
+  return {
+    activity: bookingWindowValuesFromRow(templateResult.data),
+    studio: Object.fromEntries(
+      Object.entries(BOOKING_WINDOW_DEFAULTS).map(([key, fallback]) => [
+        key,
+        studioValues[key as keyof BookingWindowValues] ?? fallback,
+      ]),
+    ) as BookingWindowValues,
+  };
 }

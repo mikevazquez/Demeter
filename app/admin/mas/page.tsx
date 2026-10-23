@@ -2,6 +2,12 @@ import Link from "next/link";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
+import { modulePriceLabel, type PlatformModuleKey } from "@/lib/platform/catalog";
+import { configIssuesSummary, parseConfigIssues } from "@/lib/platform/config-issues";
+import { loadStudioFeatureFlags, parseFeatureNews } from "@/lib/platform/features";
+
+import { dismissFeatureNewsAction } from "./actions";
+import "./more-news.css";
 
 type MoreItem = {
   title: string;
@@ -9,6 +15,10 @@ type MoreItem = {
   href: string;
   capability?: Capability;
   ownerOnly?: boolean;
+  /** NEB-01-03 · módulo de Nébora que debe estar contratado. */
+  requiresModule?: PlatformModuleKey;
+  /** NEB-01-20 · función de Nébora que debe estar lanzada en el estudio. */
+  feature?: string;
 };
 
 const items: MoreItem[] = [
@@ -17,6 +27,7 @@ const items: MoreItem[] = [
     description: "Personalidad, objetivos, reglas, pruebas y atención del asistente del estudio.",
     href: "/admin/mas/demi",
     ownerOnly: true,
+    requiresModule: "demi",
   },
   {
     title: "Actividades",
@@ -40,6 +51,7 @@ const items: MoreItem[] = [
     title: "Evaluaciones",
     description: "Configura disciplinas, niveles y criterios técnicos.",
     href: "/admin/evaluaciones",
+    requiresModule: "catalogo",
     capability: CAPABILITIES.EVALUATIONS_READ,
   },
   {
@@ -64,12 +76,14 @@ const items: MoreItem[] = [
     title: "Retos",
     description: "Crea retos individuales y competencias con ranking, premios y progreso.",
     href: "/admin/retos",
+    requiresModule: "recompensas",
     capability: CAPABILITIES.REWARDS_READ,
   },
   {
     title: "Rewards",
     description: "Programas, logros, medallas, seguimiento y recompensas generadas.",
     href: "/admin/recompensas",
+    requiresModule: "recompensas",
     capability: CAPABILITIES.REWARDS_READ,
   },
   {
@@ -106,7 +120,22 @@ const items: MoreItem[] = [
     title: "Recursos y espacios",
     description: "Recursos físicos, mapas y distribución de los espacios.",
     href: "/admin/configuracion/recursos",
+    requiresModule: "recursos",
     ownerOnly: true,
+  },
+  {
+    title: "Ayuda de Nébora",
+    description: "Pide soporte y consulta las respuestas.",
+    href: "/admin/mas/ayuda",
+    capability: CAPABILITIES.SETTINGS_WRITE,
+    feature: "support_requests",
+  },
+  {
+    title: "Revisión de configuración",
+    description: "Lo que conviene corregir para vender y reservar sin trabas.",
+    href: "/admin/configuracion/revision",
+    capability: CAPABILITIES.SETTINGS_WRITE,
+    feature: "config_review",
   },
   {
     title: "Plan y suscripción",
@@ -118,10 +147,24 @@ const items: MoreItem[] = [
 
 export default async function MorePage() {
   const ctx = await getAdminContext();
+  const [features, news] = await Promise.all([
+    loadStudioFeatureFlags(ctx.supabase, ctx.studio.id),
+    ctx.supabase
+      .rpc("studio_feature_news", { p_studio: ctx.studio.id })
+      .then(({ data, error }) => (error ? [] : parseFeatureNews(data))),
+  ]);
   const visibleItems = items.filter((item) => {
+    if (item.feature && !features.has(item.feature)) return false;
     if (item.ownerOnly) return ctx.membership.role === "owner";
     return item.capability ? ctx.can(item.capability) : false;
   });
+  // NEB-01-18 · contador de la revisión de configuración.
+  const reviewSummary =
+    ctx.can(CAPABILITIES.SETTINGS_WRITE) && features.has("config_review")
+      ? await ctx.supabase
+          .rpc("studio_config_issues", { p_studio: ctx.studio.id })
+          .then(({ data, error }) => (error ? null : configIssuesSummary(parseConfigIssues(data))))
+      : null;
 
   return (
     <main className="dashboard-shell admin-module-page more-page admin-ux04-secondary">
@@ -132,6 +175,26 @@ export default async function MorePage() {
         </div>
       </header>
 
+      {news.length ? (
+        <section className="more-news" aria-label="Novedades">
+          {news.map((item) => (
+            <article key={item.key} className="more-news-item">
+              <div>
+                <span className="more-news-badge">Novedad</span>
+                <strong>{item.name}</strong>
+                {item.description ? <p>{item.description}</p> : null}
+              </div>
+              <form action={dismissFeatureNewsAction}>
+                <input type="hidden" name="feature" value={item.key} />
+                <button type="submit" aria-label={`Cerrar novedad ${item.name}`}>
+                  Entendido
+                </button>
+              </form>
+            </article>
+          ))}
+        </section>
+      ) : null}
+
       {visibleItems.length ? (
         <section className="more-list">
           {visibleItems.map((item) => (
@@ -141,7 +204,13 @@ export default async function MorePage() {
               </span>
               <span className="more-row-copy">
                 <strong>{item.title}</strong>
-                <small>{item.description}</small>
+                <small>
+                  {item.requiresModule && !ctx.hasModule(item.requiresModule)
+                    ? "Bloqueado · " + modulePriceLabel(item.requiresModule)
+                    : item.href === "/admin/configuracion/revision" && reviewSummary
+                      ? reviewSummary
+                      : item.description}
+                </small>
               </span>
               <span className="module-chevron" aria-hidden="true">
                 ›

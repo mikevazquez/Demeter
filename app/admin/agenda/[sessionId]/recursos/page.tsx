@@ -6,6 +6,7 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { reassignReservationResourceAction, saveSessionResourcesAction } from "./actions";
 import styles from "./session-resources.module.css";
+import { resolveStudioTimeZone } from "@/lib/studio-time";
 
 type MapElement = {
   id: string;
@@ -178,7 +179,7 @@ export default async function SessionResourcesPage({
   };
 
   const dateLabel = new Intl.DateTimeFormat("es-MX", {
-    timeZone: studio.timezone ?? "America/Mexico_City",
+    timeZone: resolveStudioTimeZone(studio.timezone),
     weekday: "long",
     day: "numeric",
     month: "long",

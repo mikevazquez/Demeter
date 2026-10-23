@@ -1,4 +1,5 @@
 import PendingActionButton from "@/app/admin/components/PendingActionButton";
+import { resolveStudioTimeZone } from "@/lib/studio-time";
 
 import { ConditionsBuilder, type ConditionInput } from "./ConditionsBuilder";
 import { OutcomeFields } from "./OutcomeFields";
@@ -42,12 +43,12 @@ type RuleVersionValue = {
   communication_definition?: unknown;
 };
 
-function datetimeLocal(value: string | null | undefined) {
+function datetimeLocal(value: string | null | undefined, timeZone: string) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   return new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "America/Mexico_City",
+    timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -91,12 +92,12 @@ function challengeTieLabel(value: string) {
   return value === "shared" ? "Premio compartido" : "Primera en alcanzar la marca";
 }
 
-function challengeDateLabel(value: string | null | undefined) {
+function challengeDateLabel(value: string | null | undefined, timeZone: string) {
   if (!value) return "Sin fecha";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Sin fecha";
   return new Intl.DateTimeFormat("es-MX", {
-    timeZone: "America/Mexico_City",
+    timeZone,
     dateStyle: "medium",
   }).format(date);
 }
@@ -108,6 +109,7 @@ export function RuleEditorForm({
   canManage,
   copyOverride,
   enrollmentCount,
+  timeZone,
 }: {
   mode: "achievement" | "challenge";
   rule?: RuleValue | null;
@@ -115,7 +117,10 @@ export function RuleEditorForm({
   canManage: boolean;
   copyOverride?: CopyOverrideValue | null;
   enrollmentCount?: number | null;
+  /** NEB-01-35 · zona del estudio para mostrar y capturar fechas. */
+  timeZone?: string | null;
 }) {
+  const zone = resolveStudioTimeZone(timeZone);
   const isAchievement = mode === "achievement";
   const locked = Boolean(
     rule && ["active", "paused", "finished", "cancelled"].includes(rule.status),
@@ -230,8 +235,8 @@ export function RuleEditorForm({
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                 <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Periodo</p>
                 <p className="mt-2 text-sm text-white">
-                  {challengeDateLabel(rule?.scheduled_start_at)} →{" "}
-                  {challengeDateLabel(rule?.scheduled_end_at)}
+                  {challengeDateLabel(rule?.scheduled_start_at, zone)} →{" "}
+                  {challengeDateLabel(rule?.scheduled_end_at, zone)}
                 </p>
               </div>
               {competitionMode === "leaderboard" ? (
@@ -492,7 +497,7 @@ export function RuleEditorForm({
                     type="datetime-local"
                     name="scheduled_start_at"
                     required
-                    defaultValue={datetimeLocal(rule?.scheduled_start_at)}
+                    defaultValue={datetimeLocal(rule?.scheduled_start_at, zone)}
                     className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
                   />
                 </label>
@@ -502,7 +507,7 @@ export function RuleEditorForm({
                     type="datetime-local"
                     name="scheduled_end_at"
                     required
-                    defaultValue={datetimeLocal(rule?.scheduled_end_at)}
+                    defaultValue={datetimeLocal(rule?.scheduled_end_at, zone)}
                     className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-white"
                   />
                 </label>

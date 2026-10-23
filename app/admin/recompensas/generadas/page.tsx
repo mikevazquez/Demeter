@@ -190,7 +190,7 @@ export default async function GeneratedRewardsPage({
                       : originType === "achievement"
                         ? "Logro"
                         : "Otro"}{" "}
-                  · {formatDateTime(reward.created_at)}
+                  · {formatDateTime(reward.created_at, ctx.studio.timezone)}
                 </p>
               </div>
               <StatusBadge status={reward.status} />

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import "./subscription-v2.css";
+import SupportAccessHistory from "@/app/admin/components/SupportAccessHistory";
 
 function formatDate(value: string | null, locale: string, timeZone: string) {
   if (!value) return "No configurado";
@@ -157,6 +158,12 @@ export default async function SubscriptionPage() {
           </div>
         </article>
       </section>
+
+      <SupportAccessHistory
+        supabase={ctx.supabase}
+        studioId={ctx.studio.id}
+        timeZone={ctx.studio.timezone}
+      />
     </main>
   );
 }

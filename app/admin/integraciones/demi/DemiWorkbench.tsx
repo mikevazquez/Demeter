@@ -363,7 +363,7 @@ export default function DemiWorkbench({
             onChange={(event) => edit(event.target.value)}
             maxLength={MAX_PROMPT_LENGTH}
             disabled={busy}
-            placeholder="Eres Demi, asistente de Demeter…"
+            placeholder="Eres Demi, asistente del estudio…"
           />
           <div className="dw-meta">
             <span>{draft.length.toLocaleString("es-MX")} / 24,000</span>

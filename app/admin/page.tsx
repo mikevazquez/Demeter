@@ -104,7 +104,7 @@ export default async function AdminPage({
   const timeZone = studio.timezone;
   const locale = studio.locale;
   const now = new Date();
-  const todayKey = mexicoToday(now);
+  const todayKey = mexicoToday(now, timeZone);
   const selectedDate = parseDateKey(params.date) ?? parseDateKey(todayKey)!;
   const selectedKey = utcDateKey(selectedDate);
   const weekStart = weekStartMonday(selectedDate);

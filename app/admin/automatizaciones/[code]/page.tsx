@@ -101,7 +101,7 @@ function ConfigurationFields({
                 name={`config_${key}`}
                 defaultValue={value}
                 rows={3}
-                placeholder='Ej. {"disciplina":"Pole Fitness"}'
+                placeholder='Ej. {"disciplina":"Yoga"}'
                 className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-white outline-none focus:border-fuchsia-500/60"
               />
             </label>

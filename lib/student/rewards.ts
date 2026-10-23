@@ -349,7 +349,7 @@ export function rewardAppliesTo(definitionValue: unknown) {
   if (typeof definition.applies_to === "string" && definition.applies_to) {
     return definition.applies_to;
   }
-  return "Compras elegibles en Demeter";
+  return "Compras elegibles en el estudio";
 }
 
 export function rewardStackability(definitionValue: unknown) {

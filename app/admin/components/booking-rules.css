@@ -1,0 +1,185 @@
+/* NEB-01-38/39/40 · Reglas de reserva (Configuración › Reservas y ficha de actividad). */
+.booking-rules-card {
+  --booking-rules-text: #10203a;
+  --booking-rules-muted: #687891;
+  --booking-rules-line: #dce4eb;
+  --booking-rules-accent: #17a878;
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid #e3eaf1;
+  border-radius: 22px;
+  background: #fff;
+  color: var(--booking-rules-text);
+  box-shadow: 0 10px 30px rgba(44, 64, 86, 0.06);
+}
+
+.booking-rules-card h2 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.booking-rules-card > p,
+.booking-rules-card header p {
+  margin: 4px 0 0;
+  color: var(--booking-rules-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.booking-rules-fields {
+  display: grid;
+  gap: 16px;
+}
+
+.booking-rules-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.booking-rules-field > span {
+  color: #52637a;
+  font-size: 13px;
+  font-weight: 780;
+}
+
+.booking-rules-field small,
+.booking-rules-note {
+  color: #8290a3;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.booking-rules-field > select,
+.booking-rules-field > input,
+.booking-rules-unit {
+  width: 100%;
+  min-height: 50px;
+  border: 1px solid var(--booking-rules-line);
+  border-radius: 13px;
+  background: #fbfcfd;
+  color: var(--booking-rules-text);
+  font: inherit;
+  font-size: 15px;
+}
+
+.booking-rules-field > select,
+.booking-rules-field > input {
+  padding: 0 13px;
+}
+
+.booking-rules-unit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  overflow: hidden;
+}
+
+.booking-rules-unit input,
+.booking-rules-unit select {
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 13px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--booking-rules-text);
+  font: inherit;
+  font-size: 15px;
+}
+
+.booking-rules-unit b {
+  padding-right: 13px;
+  color: var(--booking-rules-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.booking-rules-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.booking-rules-row .booking-rules-note {
+  grid-column: 1 / -1;
+}
+
+.booking-rules-save {
+  min-height: 50px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--booking-rules-accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.booking-rules-notice {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.booking-rules-notice.is-success {
+  background: #e7f8f1;
+  color: #0f8f66;
+}
+
+.booking-rules-notice.is-error {
+  background: #fdecea;
+  color: #b42318;
+}
+
+@media (max-width: 640px) {
+  .booking-rules-card {
+    padding: 16px;
+    border-radius: 19px;
+  }
+
+  .booking-rules-field > select,
+  .booking-rules-field > input,
+  .booking-rules-unit input,
+  .booking-rules-unit select {
+    font-size: 16px;
+  }
+}
+
+.booking-rules-row.is-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.booking-rules-fieldset {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #e2e8ee;
+  border-radius: 16px;
+  background: #fbfcfd;
+}
+
+.booking-rules-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--booking-rules-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.booking-rules-check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--booking-rules-accent);
+}
+
+@media (max-width: 640px) {
+  .booking-rules-row.is-three {
+    grid-template-columns: 1fr;
+  }
+}

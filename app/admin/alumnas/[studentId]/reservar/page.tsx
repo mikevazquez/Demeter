@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { reserveStudentFromOnboarding } from "./actions";
+import { resolveStudioTimeZone } from "@/lib/studio-time";
 
 type Eligibility = {
   eligible?: boolean;
@@ -90,7 +91,7 @@ export default async function StudentFirstReservationPage({
       item.eligibility,
     ]),
   );
-  const timeZone = studio.timezone ?? "America/Mexico_City";
+  const timeZone = resolveStudioTimeZone(studio.timezone);
 
   return (
     <main className="dashboard-shell">

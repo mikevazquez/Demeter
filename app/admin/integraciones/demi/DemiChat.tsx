@@ -288,7 +288,7 @@ export default function DemiChat({
                   "¿Cuánto cuesta?",
                   "¿Qué clases tienen mañana?",
                   "¿Dónde están?",
-                  "Quiero reservar Pole Fitness mañana a las 5",
+                  "Quiero reservar una clase mañana a las 5",
                 ].map((prompt) => (
                   <button key={prompt} type="button" onClick={() => setMessage(prompt)}>
                     {prompt}

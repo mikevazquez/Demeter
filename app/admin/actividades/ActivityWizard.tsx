@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 
+import { studioLocalDateKey } from "@/lib/studio-time";
+
 import { saveActivity } from "./actions";
 
 type Option = { id: string; label: string };
@@ -55,8 +57,9 @@ const STEPS = [
   { key: "confirm", label: "Revisar" },
 ] as const;
 
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
+// NEB-01-35 · "hoy" en la hora del estudio (antes: fecha UTC, que en la noche ya era mañana).
+function todayKey(timeZone?: string | null) {
+  return studioLocalDateKey(timeZone);
 }
 
 function createSchedule(weekday: number): ActivityScheduleDraft {
@@ -75,6 +78,7 @@ export function ActivityWizard({
   operatingDefaults,
   locale,
   currency,
+  timeZone,
   resourcesEnabled = true,
 }: {
   instructors: Option[];
@@ -84,6 +88,7 @@ export function ActivityWizard({
   saveError?: boolean;
   locale: string;
   currency: string;
+  timeZone?: string | null;
   resourcesEnabled?: boolean;
   operatingDefaults?: {
     minimumReservationsEnabled: boolean;
@@ -117,7 +122,7 @@ export function ActivityWizard({
       requiresResource: false,
       defaultInstructorId: "",
       defaultSpaceId: "",
-      startsOn: todayKey(),
+      startsOn: todayKey(timeZone),
       endsOn: "",
       schedules: [createSchedule(2)],
       allowIndividualPurchase: false,
@@ -311,7 +316,7 @@ export function ActivityWizard({
               <input
                 value={draft.name}
                 maxLength={80}
-                placeholder="Ej. Pole Fitness"
+                placeholder="Ej. Yoga Flow"
                 onChange={(event) => patch({ name: event.target.value })}
               />
             </label>

@@ -5,7 +5,9 @@ import { signOut } from "@/app/auth/actions";
 import PwaBrandingSync from "@/app/components/PwaBrandingSync";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { subscriptionNotice } from "@/lib/platform/entitlements";
 import { AdminMobileNavigation, AdminNavigation } from "./admin-navigation";
+import SupportAccessNotice from "./components/SupportAccessNotice";
 import "./hoy.css";
 import "./roster-uat.css";
 import "./mobile-nav-overrides.css";
@@ -86,7 +88,14 @@ const roleLabels: Record<string, string> = {
 };
 
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const { supabase, studio, membership, can, user, profile } = await getCachedAdminContext();
+  const { supabase, studio, membership, can, hasModule, entitlements, user, profile } =
+    await getCachedAdminContext();
+  const billingNotice = subscriptionNotice(entitlements);
+  // NEB-01-03 · lo no contratado se muestra con candado (self-service, NEB-01-34).
+  const lockedHrefs = [
+    ...(hasModule("recompensas") ? [] : ["/admin/retos", "/admin/recompensas"]),
+    ...(hasModule("catalogo") ? [] : ["/admin/evaluaciones"]),
+  ];
   const pwaQuery = pwaBrandQuery(studio);
   const instructorOnly = can(CAPABILITIES.INSTRUCTOR_PORTAL) && !can(CAPABILITIES.ADMIN_PORTAL);
   const brandLogoUrl = studio.logo_path
@@ -244,7 +253,12 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           </div>
         </div>
 
-        <AdminNavigation items={desktopNavItems} />
+        <AdminNavigation
+          items={desktopNavItems.map((item) => ({
+            ...item,
+            locked: lockedHrefs.includes(item.href),
+          }))}
+        />
 
         <div className="sidebar-footer">
           <div className="sidebar-user">
@@ -299,6 +313,18 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
               </div>
             </header>
           </>
+        ) : null}
+        {billingNotice ? (
+          <p className="admin-billing-notice" role="status">
+            {billingNotice}
+          </p>
+        ) : null}
+        {can(CAPABILITIES.SETTINGS_WRITE) ? (
+          <SupportAccessNotice
+            supabase={supabase}
+            studioId={studio.id}
+            timeZone={studio.timezone}
+          />
         ) : null}
         {children}
       </div>

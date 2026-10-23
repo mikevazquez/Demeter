@@ -1,5 +1,7 @@
+import AdminModuleGuard from "@/app/admin/module-guard";
+
 import "./evaluaciones.css";
 
 export default function EvaluationsLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return children;
+  return <AdminModuleGuard module="catalogo">{children}</AdminModuleGuard>;
 }

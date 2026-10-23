@@ -17,6 +17,7 @@ import {
 
 import { ProgressBar, RewardsEmpty, SectionHeading, StateChip, SummaryTile } from "./components";
 import { MedalsAccessUnlocked, RewardsOnboardingActivation } from "./OnboardingActivation";
+import { loadStudioBrandName } from "@/lib/platform/branding";
 
 function rewardLabelFromDefinition(value: unknown) {
   const definition = rewardObject(value);
@@ -56,7 +57,12 @@ export default async function StudentProgressPage() {
     !ctx.onboarding.access_acknowledged_at &&
     ctx.onboarding.access_method !== "legacy"
   ) {
-    return <MedalsAccessUnlocked />;
+    const brandName = await loadStudioBrandName(
+      ctx.supabase,
+      ctx.membership.studio_id,
+      ctx.studio.name,
+    );
+    return <MedalsAccessUnlocked brandName={brandName} />;
   }
 
   const activePrograms = ctx.programParticipations

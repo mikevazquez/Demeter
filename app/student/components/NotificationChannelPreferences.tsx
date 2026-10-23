@@ -292,16 +292,16 @@ export default function NotificationChannelPreferences({
     : deviceState === "connected"
       ? "Activo en este dispositivo"
       : deviceState === "blocked"
-        ? "Activo en Demeter · bloqueado por iPhone"
+        ? `Activo en ${studioName} · bloqueado por iPhone`
         : deviceState === "permission_needed"
-          ? "Activo en Demeter · falta permitirlo en este dispositivo"
+          ? `Activo en ${studioName} · falta permitirlo en este dispositivo`
           : deviceState === "needs_install"
-            ? "Activo en Demeter · abre la app instalada para conectarlo"
+            ? `Activo en ${studioName} · abre la app instalada para conectarlo`
             : deviceState === "unsupported"
-              ? "Activo en Demeter · este navegador no admite Push"
+              ? `Activo en ${studioName} · este navegador no admite Push`
               : deviceState === "error"
-                ? "Activo en Demeter · reconexión pendiente"
-                : "Activo en Demeter";
+                ? `Activo en ${studioName} · reconexión pendiente`
+                : `Activo en ${studioName}`;
 
   return (
     <section className="overflow-hidden rounded-3xl border border-fuchsia-500/20 bg-[radial-gradient(circle_at_100%_0%,rgba(236,72,153,0.1),transparent_34%),rgba(255,255,255,0.025)]">

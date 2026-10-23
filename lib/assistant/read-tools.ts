@@ -12,6 +12,72 @@ import { preparationFromStudioPrompt } from "./class-preparation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CommercialOptionsArgs, SearchClassAvailabilityArgs } from "./tool-contracts";
 
+// --- NEB-01-40 · ventana de reserva (copia idéntica en read-tools.ts y action-tools.ts: los
+// arneses de prueba de Demi cargan estos archivos con dependencias fijas) ---
+// NEB-01-40 · Ventana de reserva de cada clase para Demi. Si la migración todavía no está
+// aplicada (o falla la consulta), se regresa null y Demi usa su regla anterior: no reservar en
+// los últimos 30 minutos.
+
+const DEMI_FALLBACK_CLOSE_MS = 30 * 60_000;
+
+type SessionBookingWindow = {
+  opensAt: string | null;
+  closesAt: string;
+  /** Tiempo para cancelar de la actividad (o del estudio). */
+  cancellationCutoffMinutes: number | null;
+};
+
+async function loadSessionBookingWindows(
+  supabase: SupabaseClient,
+  studioId: string,
+  sessionIds: string[],
+): Promise<Map<string, SessionBookingWindow> | null> {
+  if (!sessionIds.length) return new Map();
+  try {
+    let result = await supabase.rpc("service_session_booking_windows", {
+      p_studio_id: studioId,
+      p_session_ids: sessionIds,
+    });
+    if (result?.error) {
+      result = await supabase.rpc("session_booking_windows", { p_session_ids: sessionIds });
+    }
+    if (!result || result.error || !Array.isArray(result.data)) return null;
+    const map = new Map<string, SessionBookingWindow>();
+    for (const row of result.data as Record<string, unknown>[]) {
+      if (typeof row?.session_id !== "string" || typeof row.booking_closes_at !== "string")
+        continue;
+      map.set(row.session_id, {
+        opensAt: typeof row.booking_opens_at === "string" ? row.booking_opens_at : null,
+        closesAt: row.booking_closes_at,
+        cancellationCutoffMinutes:
+          typeof row.cancellation_cutoff_minutes === "number"
+            ? row.cancellation_cutoff_minutes
+            : null,
+      });
+    }
+    return map;
+  } catch {
+    return null;
+  }
+}
+
+type SessionBookingState = "open" | "not_open" | "closed";
+
+function sessionBookingState(
+  session: { status: string; starts_at: string },
+  window: SessionBookingWindow | null | undefined,
+  now = Date.now(),
+): SessionBookingState {
+  if (session.status !== "scheduled") return "closed";
+  if (!window) {
+    return new Date(session.starts_at).getTime() > now + DEMI_FALLBACK_CLOSE_MS ? "open" : "closed";
+  }
+  if (window.opensAt && now < new Date(window.opensAt).getTime()) return "not_open";
+  if (now >= new Date(window.closesAt).getTime()) return "closed";
+  return "open";
+}
+// --- fin NEB-01-40 ---
+
 export type AssistantStudioContext = {
   id: string;
   name: string;
@@ -211,14 +277,18 @@ export async function searchClassAvailability(
     requestedActivity && !hasLiteralActivity
       ? requestedActivity.replace(/\bpaul\b/g, "pole")
       : requestedActivity;
-  const earliestBookableStart = Date.now() + 30 * 60_000;
+  // NEB-01-40 · ventana de reserva de cada clase (sin migración: no reservar en los últimos 30 min).
+  const bookingWindows = await loadSessionBookingWindows(ctx.supabase, ctx.studio.id, sessionIds);
+  const nowMs = Date.now();
   const exactTemplateMatchExists = activityNeedle
     ? templates.some((item) => activityWords(item.name) === activityWords(activityNeedle))
     : false;
   const matches = [];
 
   for (const session of sessions ?? []) {
-    if (new Date(session.starts_at).getTime() <= earliestBookableStart) continue;
+    const bookingWindow = bookingWindows?.get(session.id) ?? null;
+    const bookingState = sessionBookingState(session, bookingWindow, nowMs);
+    if (bookingState === "closed") continue;
     const template = templateMap.get(session.template_id);
     if (!template?.active) continue;
     const discipline = template.discipline_id
@@ -261,6 +331,15 @@ export async function searchClassAvailability(
       space: session.space_id ? (spaceMap.get(session.space_id) ?? null) : null,
       currency: ctx.studio.currency,
       credit_cost: template.credit_cost,
+      ...(bookingState === "not_open" && bookingWindow?.opensAt
+        ? {
+            bookable_now: false,
+            booking_opens_at_local: (() => {
+              const opens = localParts(bookingWindow.opensAt, ctx.studio.timezone);
+              return `${opens.date} ${opens.time}`;
+            })(),
+          }
+        : {}),
     });
   }
 

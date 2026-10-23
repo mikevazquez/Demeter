@@ -24,6 +24,8 @@ import {
   extractMetaDeliveryStatuses,
   persistMetaDeliveryStatuses,
 } from "@/lib/assistant/meta-delivery-status";
+import { loadStudioBrandName } from "@/lib/platform/branding";
+import { loadStudioEntitlementsService } from "@/lib/platform/entitlements";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
@@ -1195,6 +1197,13 @@ export async function POST(request: Request) {
     return json({ error: "invalid_json" }, 400);
   }
 
+  // NEB-01-03 · Si el estudio no tiene Demi contratada, se confirma a Meta y no se procesa.
+  const entitlements = await loadStudioEntitlementsService(supabase, studioId);
+  if (entitlements && !entitlements.modules.demi) {
+    console.info("demi_meta_webhook", { stage: "entitlements", outcome: "module_not_contracted" });
+    return json({ ok: true, skipped: "module_not_contracted" });
+  }
+
   const messages = extractMetaInboundMessages(body);
   const pilotTarget = pilotForwardTarget({
     messages,
@@ -1607,11 +1616,13 @@ export async function POST(request: Request) {
         message.referralSourceType === "ad" || message.referralSourceType === "post";
       const referralCopy = `${message.referralHeadline ?? ""} ${message.referralBody ?? ""}`.trim();
       const isPoleReferral = /\bpole\b/i.test(referralCopy);
+      // NEB-01-05 · saludo con la marca del estudio (antes «Demeter» fijo).
+      const brandName = await loadStudioBrandName(supabase, studioId, runtimeContext.studio.name);
       const reply = isClickToWhatsApp
         ? isPoleReferral
-          ? "¡Hola! 👋 Gracias por escribir a Demeter. Claro, te ayudo a agendar tu primera clase de Pole. Puedes empezar desde cero. ¿Qué día u horario te acomoda?"
-          : "¡Hola! 👋 Gracias por escribir a Demeter. Claro, te ayudo a agendar tu primera clase. ¿Qué disciplina te interesa y qué día u horario te acomoda?"
-        : "¡Hola! Soy Demi, de Demeter Fitness. ¿Buscas información sobre las clases o quieres agendar? Dime qué necesitas y te ayudo.";
+          ? `¡Hola! 👋 Gracias por escribir a ${brandName}. Claro, te ayudo a agendar tu primera clase de Pole. Puedes empezar desde cero. ¿Qué día u horario te acomoda?`
+          : `¡Hola! 👋 Gracias por escribir a ${brandName}. Claro, te ayudo a agendar tu primera clase. ¿Qué disciplina te interesa y qué día u horario te acomoda?`
+        : `¡Hola! Soy Demi, de ${brandName}. ¿Buscas información sobre las clases o quieres agendar? Dime qué necesitas y te ayudo.`;
       const deterministicOutcome = isClickToWhatsApp
         ? "unsupported_ad_lead"
         : "unsupported_message";

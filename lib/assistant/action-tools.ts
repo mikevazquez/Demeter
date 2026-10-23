@@ -22,6 +22,72 @@ import type {
   PrepareTransferPackageChoiceArgs,
 } from "./tool-contracts";
 
+// --- NEB-01-40 · ventana de reserva (copia idéntica en read-tools.ts y action-tools.ts: los
+// arneses de prueba de Demi cargan estos archivos con dependencias fijas) ---
+// NEB-01-40 · Ventana de reserva de cada clase para Demi. Si la migración todavía no está
+// aplicada (o falla la consulta), se regresa null y Demi usa su regla anterior: no reservar en
+// los últimos 30 minutos.
+
+const DEMI_FALLBACK_CLOSE_MS = 30 * 60_000;
+
+type SessionBookingWindow = {
+  opensAt: string | null;
+  closesAt: string;
+  /** Tiempo para cancelar de la actividad (o del estudio). */
+  cancellationCutoffMinutes: number | null;
+};
+
+async function loadSessionBookingWindows(
+  supabase: SupabaseClient,
+  studioId: string,
+  sessionIds: string[],
+): Promise<Map<string, SessionBookingWindow> | null> {
+  if (!sessionIds.length) return new Map();
+  try {
+    let result = await supabase.rpc("service_session_booking_windows", {
+      p_studio_id: studioId,
+      p_session_ids: sessionIds,
+    });
+    if (result?.error) {
+      result = await supabase.rpc("session_booking_windows", { p_session_ids: sessionIds });
+    }
+    if (!result || result.error || !Array.isArray(result.data)) return null;
+    const map = new Map<string, SessionBookingWindow>();
+    for (const row of result.data as Record<string, unknown>[]) {
+      if (typeof row?.session_id !== "string" || typeof row.booking_closes_at !== "string")
+        continue;
+      map.set(row.session_id, {
+        opensAt: typeof row.booking_opens_at === "string" ? row.booking_opens_at : null,
+        closesAt: row.booking_closes_at,
+        cancellationCutoffMinutes:
+          typeof row.cancellation_cutoff_minutes === "number"
+            ? row.cancellation_cutoff_minutes
+            : null,
+      });
+    }
+    return map;
+  } catch {
+    return null;
+  }
+}
+
+type SessionBookingState = "open" | "not_open" | "closed";
+
+function sessionBookingState(
+  session: { status: string; starts_at: string },
+  window: SessionBookingWindow | null | undefined,
+  now = Date.now(),
+): SessionBookingState {
+  if (session.status !== "scheduled") return "closed";
+  if (!window) {
+    return new Date(session.starts_at).getTime() > now + DEMI_FALLBACK_CLOSE_MS ? "open" : "closed";
+  }
+  if (window.opensAt && now < new Date(window.opensAt).getTime()) return "not_open";
+  if (now >= new Date(window.closesAt).getTime()) return "closed";
+  return "open";
+}
+// --- fin NEB-01-40 ---
+
 type AssistantActionToolContext = {
   supabase: SupabaseClient;
   studio: AssistantStudioContext;
@@ -773,10 +839,14 @@ async function getDemiTrialPrepaymentRequirement(ctx: AssistantActionToolContext
   };
 }
 
-function isSessionBookableNow(session: { status: string; starts_at: string }, now = Date.now()) {
-  return (
-    session.status === "scheduled" && new Date(session.starts_at).getTime() > now + 30 * 60_000
-  );
+// NEB-01-40 · Demi respeta la apertura y el cierre de reservas de la clase. Sin la migración,
+// conserva su regla anterior (no reservar en los últimos 30 minutos).
+async function isSessionBookableForDemi(
+  ctx: AssistantActionToolContext,
+  session: { id: string; status: string; starts_at: string },
+) {
+  const windows = await loadSessionBookingWindows(ctx.supabase, ctx.studio.id, [session.id]);
+  return sessionBookingState(session, windows?.get(session.id) ?? null) === "open";
 }
 
 async function prepareCashPackage(ctx: AssistantActionToolContext, args: Record<string, unknown>) {
@@ -972,7 +1042,7 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
   if (!sessionInfo) {
     return { ok: false, error: "session_not_found" };
   }
-  if (!isSessionBookableNow(sessionInfo.session)) {
+  if (!(await isSessionBookableForDemi(ctx, sessionInfo.session))) {
     return {
       ok: false,
       error: "booking_not_eligible",
@@ -1465,7 +1535,7 @@ async function prepareFirstClassPayment(
   if (!policy.ok) return policy;
   if (!policy.effectiveRequiresPayment) return { ok: false, reason_code: "use_prepare_booking" };
   const info = await getSessionSummary(ctx, sessionId);
-  if (!info || !isSessionBookableNow(info.session))
+  if (!info || !(await isSessionBookableForDemi(ctx, info.session)))
     return { ok: false, ...safeBookingReason("session_not_bookable") };
   if (info.session.requires_resource && !resourceId) {
     const resources = await getAvailableResourceOptions(ctx, sessionId);
@@ -1795,7 +1865,7 @@ async function executeBookingOperation(ctx: AssistantActionToolContext, args: Ex
   if (!sessionInfo) {
     return { ok: false, error: "session_not_found" };
   }
-  if (!isSessionBookableNow(sessionInfo.session)) {
+  if (!(await isSessionBookableForDemi(ctx, sessionInfo.session))) {
     return {
       ok: false,
       error: "booking_not_eligible",
@@ -2370,7 +2440,18 @@ async function getCancellationSnapshot(
     return null;
   }
 
-  const cutoffMinutes = Math.max(Number(policyResult.data?.cancellation_cutoff_minutes ?? 0), 0);
+  // NEB-01-38 · el tiempo para cancelar puede ser propio de la actividad.
+  const sessionWindows = await loadSessionBookingWindows(ctx.supabase, ctx.studio.id, [
+    reservation.session_id,
+  ]);
+  const cutoffMinutes = Math.max(
+    Number(
+      sessionWindows?.get(reservation.session_id)?.cancellationCutoffMinutes ??
+        policyResult.data?.cancellation_cutoff_minutes ??
+        0,
+    ),
+    0,
+  );
   const late = Date.now() > new Date(session.starts_at).getTime() - cutoffMinutes * 60_000;
   const usesCredits = Boolean(reservation.acquisition_id);
   const unlimited = usesCredits && Boolean(acquisitionResult.data?.unlimited);

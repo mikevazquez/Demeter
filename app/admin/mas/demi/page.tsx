@@ -3,6 +3,7 @@ import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { resolveStudioTimeZone } from "@/lib/studio-time";
 
 import DemiWorkbench from "@/app/admin/integraciones/demi/DemiWorkbench";
 import DemiLayers from "./DemiLayers";
@@ -54,8 +55,9 @@ function money(value: number | null, usdToMxn: number) {
   }).format((value / 1_000_000) * usdToMxn);
 }
 
-function monthStartIso() {
-  const timeZone = "America/Mexico_City";
+function monthStartIso(studioTimeZone: string | null | undefined) {
+  // NEB-01-35 · el mes se cuenta en la hora del estudio.
+  const timeZone = resolveStudioTimeZone(studioTimeZone);
   const now = new Date();
   const monthParts = new Intl.DateTimeFormat("en-US", {
     timeZone,
@@ -106,7 +108,7 @@ export default async function DemiDemoPage() {
       .from("assistant_model_calls")
       .select("estimated_cost_usd_micros,input_tokens,output_tokens")
       .eq("studio_id", studio.id)
-      .gte("created_at", monthStartIso()),
+      .gte("created_at", monthStartIso(studio.timezone)),
     supabase
       .from("assistant_prompt_versions")
       .select("id,kind,instructions,note,created_at")

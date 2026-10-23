@@ -135,7 +135,7 @@ export default async function InstructorsPage({
 
               <label className="team-v2-create-bio">
                 <span>Especialidad o nota</span>
-                <textarea name="bio" placeholder="Ej. Pole Fitness, Flexibilidad…" />
+                <textarea name="bio" placeholder="Ej. Yoga, Pilates, Flexibilidad…" />
               </label>
 
               <button className="team-v2-primary" type="submit">

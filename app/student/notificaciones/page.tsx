@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { loadStudioBrandName } from "@/lib/platform/branding";
 import { formatDateTime, getStudentShellContext } from "@/lib/student/portal";
 
 function notificationLabel(type: string) {
@@ -28,7 +29,8 @@ function notificationLabel(type: string) {
 }
 
 export default async function StudentNotificationsPage() {
-  const { supabase, student, studio } = await getStudentShellContext();
+  const { supabase, student, studio, membership } = await getStudentShellContext();
+  const brandName = await loadStudioBrandName(supabase, membership.studio_id, studio.name);
 
   const { data: notifications } = await supabase
     .from("app_notifications")
@@ -52,7 +54,7 @@ export default async function StudentNotificationsPage() {
             Tus avisos
           </h1>
           <p className="mt-1.5 text-sm text-zinc-400">
-            Consulta aquí los mensajes importantes que te ha enviado Demeter.
+            Consulta aquí los mensajes importantes que te ha enviado {brandName}.
           </p>
         </div>
         {unread > 0 ? (
@@ -118,7 +120,7 @@ export default async function StudentNotificationsPage() {
             Todavía no tienes notificaciones
           </h2>
           <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-zinc-400">
-            Cuando Demeter te envíe una confirmación, recordatorio o aviso importante aparecerá
+            Cuando {brandName} te envíe una confirmación, recordatorio o aviso importante aparecerá
             aquí.
           </p>
         </section>
