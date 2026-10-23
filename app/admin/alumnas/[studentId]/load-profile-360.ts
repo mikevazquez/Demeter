@@ -277,7 +277,7 @@ export async function loadProfile360(studentId: string, query: Profile360Query) 
     balanceMap.set(row.acquisition_id, (balanceMap.get(row.acquisition_id) ?? 0) + row.quantity);
   }
 
-  const phone = contacts?.find((item) => item.kind === "phone")?.value ?? student.phone;
+  const phone = contacts?.find((item) => item.kind === "phone")?.value ?? student.phone ?? "";
   const email = contacts?.find((item) => item.kind === "email")?.value ?? student.email ?? "";
   const firstName = person?.first_name ?? student.full_name.split(" ")[0] ?? "";
   const lastName = person?.last_name ?? student.full_name.split(" ").slice(1).join(" ");

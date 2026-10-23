@@ -128,3 +128,10 @@ describe("P360-V2-02 · pendientes del Resumen", () => {
     expect(birthdayState(null, "2026-10-23")).toBeNull();
   });
 });
+
+describe("P360-V2 · perfiles con datos incompletos", () => {
+  it("no falla cuando la persona no tiene teléfono registrado", () => {
+    const code = profile360Source();
+    expect(code).toContain('?? student.phone ?? ""');
+  });
+});
