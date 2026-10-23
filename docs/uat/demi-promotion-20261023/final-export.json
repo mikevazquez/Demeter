@@ -1,0 +1,24 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "24718f760cfd68087a41df6004c135bd982cbc40",
+  "runId": "d29196b3-6a39-4faa-a7ae-4275ad4f884f",
+  "httpStatus": 200,
+  "normalResponseBytes": 414629,
+  "fullEvidenceBytes": 25223438,
+  "fullEvidenceSha256": "5ebebab38881185f7da17415ffbfc605683175d57e2993e0cd61e39e8a03ff48",
+  "compressedBytes": 1414121,
+  "compressedSha256": "e074c590978972cb4e850b2c9c51b1c62cded5f400bb3cca3f52bd28d3604394",
+  "artifacts": 92,
+  "stressArtifacts": 24,
+  "humanControlSnapshots": 2,
+  "businessCounts": {
+    "sales": 2,
+    "payments": 2,
+    "reservations": 5,
+    "students": 12,
+    "product_acquisitions": 7
+  },
+  "pageErrors": [],
+  "businessEffectsCertifiedBySnapshot": true,
+  "functionalApprovalByMike": false
+}

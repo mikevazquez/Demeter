@@ -1,0 +1,114 @@
+{
+  "runtimeSha": "24718f760cfd68087a41df6004c135bd982cbc40",
+  "environment": "hedouonyhynuvwbckdlg",
+  "deployment": "dpl_9M7dKsibsxjiy2NpaX4efXBuoaJD",
+  "studioId": "9e6a1186-07f6-437f-821a-bdb721a50313",
+  "surface": "authenticated-workbench-simulation-real-model",
+  "model": "gpt-5.6-luna",
+  "reasoning": "medium",
+  "promptPath": "docs/uat/demi-identity-20261021/candidate-personality.md",
+  "promptSha256": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+  "businessEffectsCertified": false,
+  "functionalApproval": false,
+  "samples": [
+    {
+      "case": "C07-E4",
+      "turn": 1,
+      "message": "Quiero tomar mi primera clase de Pole Fitness el viernes 23 de octubre de 2026 a las 18:00. ¿Cómo aseguro mi lugar?",
+      "httpStatus": 200,
+      "durationMs": 6147,
+      "ok": true,
+      "conversationId": "bc267a85-5a46-41cc-abc7-0981905dae67",
+      "reply": "El importe de tu primera clase es $150.00.\n\nTransferencia o depósito OXXO directamente a la cuenta bancaria:\nBanco ficticio de prueba\nSimulación sin pago real\nNo realices transferencias ni depósitos. Estos datos son sólo una simulación de los métodos habilitados.\n\nEnvíame el comprobante por este mismo chat. Al recibirlo te pediré juntos los datos faltantes para crear la reserva, según disponibilidad. El equipo validará el pago manualmente; la reserva quedará sujeta a esa validación y puede cancelarse si el comprobante no es válido. Todavía no hay una reserva confirmada ni un lugar retenido.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "C07-E4",
+      "turn": 2,
+      "message": "¿Puedo pagar en efectivo en el estudio?",
+      "httpStatus": 200,
+      "durationMs": 1925,
+      "ok": true,
+      "conversationId": "bc267a85-5a46-41cc-abc7-0981905dae67",
+      "reply": "Entiendo que prefieras pagar en efectivo. Como los lugares se reservan con anticipación, el pago por adelantado nos permite confirmar un lugar para tu primera clase. Sin ese pago, el lugar sigue disponible para otras personas y no queda reservado a tu nombre. Puedes hacerlo por alguno de los métodos habilitados.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "C07-E4",
+      "turn": 3,
+      "message": "Mejor sí, pásame cómo depositar en OXXO para esa clase.",
+      "httpStatus": 200,
+      "durationMs": 5453,
+      "ok": true,
+      "conversationId": "bc267a85-5a46-41cc-abc7-0981905dae67",
+      "reply": "El importe de tu primera clase es $150.00.\n\nTransferencia o depósito OXXO directamente a la cuenta bancaria:\nBanco ficticio de prueba\nSimulación sin pago real\nNo realices transferencias ni depósitos. Estos datos son sólo una simulación de los métodos habilitados.\n\nEnvíame el comprobante por este mismo chat. Al recibirlo te pediré juntos los datos faltantes para crear la reserva, según disponibilidad. El equipo validará el pago manualmente; la reserva quedará sujeta a esa validación y puede cancelarse si el comprobante no es válido. Todavía no hay una reserva confirmada ni un lugar retenido.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "C07-E4",
+      "turn": 4,
+      "message": "¿Qué datos necesitas de mí antes de pagar?",
+      "httpStatus": 200,
+      "durationMs": 5212,
+      "ok": true,
+      "conversationId": "bc267a85-5a46-41cc-abc7-0981905dae67",
+      "reply": "Antes de pagar no necesito ningún dato. Después de enviar el comprobante, te pediré tu nombre completo y celular para continuar con la reserva de Pole Fitness del viernes 23 de octubre a las 18:00. El pago no aparta el lugar hasta validar disponibilidad y el comprobante.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "S11",
+      "turn": 1,
+      "message": "Quiero el Pase Descubre y pagarlo por transferencia.",
+      "httpStatus": 200,
+      "durationMs": 8983,
+      "ok": true,
+      "conversationId": "e6359a20-1ef0-4eb6-acd5-809c1ee230dc",
+      "reply": "El Pase Descubre cuesta $499 MXN e incluye 4 clases, con inscripción incluida. En esta demo no realices una transferencia real: el comprobante se simula desde este chat. Después del comprobante te pediré nombre completo, fecha de nacimiento y correo para activar el pase de forma provisional.",
+      "canSimulateReceipt": true
+    },
+    {
+      "case": "S12",
+      "turn": 1,
+      "message": "Quiero el paquete de 8 clases por transferencia.",
+      "httpStatus": 200,
+      "durationMs": 8514,
+      "ok": true,
+      "conversationId": "2a655924-35f7-42be-abe3-312a0179768e",
+      "reply": "El Paquete de 8 clases cuesta $600 y requiere la inscripción anual de $200. El total por transferencia sería de $800. ¿Aceptas pagar ambos juntos?",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "S13",
+      "turn": 1,
+      "message": "Ya envié el comprobante, ¿qué sigue?",
+      "httpStatus": 200,
+      "durationMs": 6592,
+      "ok": true,
+      "conversationId": "69af03b3-394b-48a8-b11f-ccf50a6337a5",
+      "reply": "¡Gracias! El siguiente paso es completar tu perfil. Envíame juntos tu nombre completo, fecha de nacimiento y correo electrónico; después activamos provisionalmente tu inscripción y paquete, sujetos a la validación del comprobante.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "S14",
+      "turn": 1,
+      "message": "Quiero el paquete de 8 clases por transferencia.",
+      "httpStatus": 200,
+      "durationMs": 7363,
+      "ok": true,
+      "conversationId": "f06434cf-562d-46c9-bfd9-807bf27460e9",
+      "reply": "El paquete UAT de 8 clases cuesta $600 y requiere inscripción anual de $200. El total por transferencia sería de $800. ¿Aceptas pagar ambos juntos?",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "S15",
+      "turn": 1,
+      "message": "hola",
+      "httpStatus": 200,
+      "durationMs": 3004,
+      "ok": true,
+      "conversationId": "00a9d5cf-d0a0-419f-9db8-3bdb511442e2",
+      "reply": "¡Hola! 😊 Tienes un paquete activo con 8 clases disponibles. ¿Quieres que te ayude a reservar una?",
+      "canSimulateReceipt": false
+    }
+  ]
+}

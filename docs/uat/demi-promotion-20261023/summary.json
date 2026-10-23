@@ -1,0 +1,62 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "24718f760cfd68087a41df6004c135bd982cbc40",
+  "status": "TECHNICAL_BLOCK_COMPLETE_FUNCTIONAL_ACCEPTANCE_PENDING",
+  "functionalApprovalByMike": false,
+  "productionAuthorization": false,
+  "productionReady": false,
+  "release": "No listo",
+  "sourceCI": {
+    "id": 39878034665,
+    "conclusion": "SUCCESS",
+    "supervisorId": 39878034697,
+    "supervisorConclusion": "SUCCESS"
+  },
+  "localTests": {
+    "files": 10,
+    "passed": 212,
+    "types": "PASS",
+    "format": "PASS",
+    "lint": "PASS"
+  },
+  "sql": {
+    "functionalSuitesPassed": 16,
+    "explicitControlsAtLeast": 111,
+    "diagnosticSuites": 1,
+    "initialFixtureFailurePreserved": true,
+    "fixtureFixOnly": true
+  },
+  "workbench": {
+    "conversations": 8,
+    "turns": 15,
+    "simulationLimitsPreserved": true
+  },
+  "fixes": {
+    "F07": "VERIFIED_OPERATIVE_ONE_CASH_PACKAGE_WITH_DUE_DATE",
+    "F04": "BOUNDED_READ_RETRY_VERIFIED_PHYSICAL_CAUSE_OPEN_OBSERVATION",
+    "SIM01": "VERIFIED_READ_ONLY_SYNTHETIC_FIRST_CLASS_INSTRUCTIONS",
+    "HANDOFF_UI": "VERIFIED_BROWSER_CLAIM_RESOLVE_BOUNDED_RESPONSE_FULL_DOWNLOAD"
+  },
+  "currentOperational": {
+    "cashBalanceBeforeCleanup": 6,
+    "transferBalanceBeforeCleanup": 7,
+    "sales": 2,
+    "payments": 2,
+    "reservedRows": 5,
+    "providerReplayNoNewEffects": true,
+    "modelErrors": 0,
+    "externalMoneyOrMessagesCertified": false
+  },
+  "residualObservations": [
+    "Historical physical infrastructure cause of SQLSTATE57014 is not proven; mitigation and fail-closed behavior verified",
+    "First automated read-only export attempt failed without captured detail; fresh-browser retry passed; history preserved",
+    "M10 captured delivery is prior evidence of unchanged DB code; current engine SQL re-run passes; no renewed punctuality/Meta certification"
+  ],
+  "remainingGates": [
+    "Mike functional acceptance of REVIEW.md",
+    "Explicit production authorization for the identified candidate and migration scope"
+  ],
+  "pilot": "BLOCKED_INACTIVE",
+  "productionTouched": false,
+  "channelsOrAdaptersChangedInThisBlock": false
+}
