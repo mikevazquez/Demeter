@@ -30,7 +30,7 @@ create or replace function public.assistant_whatsapp_lock_inbound_text()
 returns trigger
 language plpgsql
 set search_path = ''
-as $
+as $demi_lock$
 begin
   if new.provider = 'meta_whatsapp' and new.message_type = 'text' then
     perform pg_advisory_xact_lock(
@@ -39,7 +39,7 @@ begin
   end if;
   return new;
 end;
-$;
+$demi_lock$;
 
 drop trigger if exists assistant_whatsapp_lock_inbound_text
   on public.assistant_whatsapp_events;
