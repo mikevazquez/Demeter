@@ -6,6 +6,7 @@ import {
   configureDemiUatFailures,
   createDemiUatRun,
   getDemiUatRun,
+  getDemiUatArtifactBatch,
   moveDemiUatSession,
   sendDemiUatMessage,
   runDemiUatBurst,
@@ -74,16 +75,33 @@ export default function Bank({
       ["whatsapp_reply", "facebook_reply", "notification_delivery"].includes(a.kind),
     ) ?? [];
   const inbound = data?.artifacts.filter((a) => a.kind === "after_message") ?? [];
-  function exportEvidence() {
+  async function exportEvidence() {
     if (!data) return;
-    const url = URL.createObjectURL(
-      new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
-    );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `demi-uat-${data.run.id}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    setBusy(true);
+    setError("");
+    try {
+      const artifacts: Awaited<ReturnType<typeof getDemiUatArtifactBatch>> = [];
+      for (let offset = 0; offset < data.artifacts.length; offset += 3) {
+        artifacts.push(
+          ...(await getDemiUatArtifactBatch(
+            data.run.id,
+            data.artifacts.slice(offset, offset + 3).map((artifact) => artifact.id),
+          )),
+        );
+      }
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify({ ...data, artifacts }, null, 2)], { type: "application/json" }),
+      );
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `demi-uat-${data.run.id}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo descargar la evidencia");
+    } finally {
+      setBusy(false);
+    }
   }
   return (
     <>
@@ -375,7 +393,9 @@ export default function Bank({
               <button disabled={busy} onClick={() => perform(() => getDemiUatRun(data.run.id))}>
                 Actualizar evidencia
               </button>
-              <button onClick={exportEvidence}>Descargar evidencia</button>
+              <button disabled={busy} onClick={exportEvidence}>
+                Descargar evidencia
+              </button>
             </div>
             <pre className="uat-state">{JSON.stringify(data.state[tab], null, 2)}</pre>
           </section>

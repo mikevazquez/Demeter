@@ -338,6 +338,118 @@ export async function simulateAssistantAction(
 ) {
   const { state } = input;
   const result = (data: Summary): Summary & { simulated: true } => ({ simulated: true, ...data });
+  if (tool === "prepare_first_class_payment") {
+    if (!isFirstVisitPersona(state.persona) || state.reservations.length)
+      return result({ ok: false, reason_code: "trial_active_booking_exists" });
+    if (state.paymentBeforeBooking !== true)
+      return result({ ok: false, reason_code: "use_prepare_booking" });
+    if (args.recipient_mode === "other")
+      return result({ ok: false, reason_code: "use_prepare_group_booking_for_other_person" });
+    const sessionRef = String(args.session_ref ?? "");
+    if (!/^session:[0-9a-f-]{36}$/i.test(sessionRef))
+      return result({ ok: false, error: "invalid_session_ref" });
+    const { data: session, error } = await input.supabase
+      .from("class_sessions")
+      .select("id,template_id,status,starts_at,capacity,drop_in_price_minor,requires_resource")
+      .eq("studio_id", input.studio.id)
+      .eq("id", sessionRef.slice(8))
+      .maybeSingle();
+    if (
+      error ||
+      !session ||
+      session.status !== "scheduled" ||
+      new Date(session.starts_at).getTime() <= Date.now() + 30 * 60_000
+    )
+      return result({ ok: false, reason_code: "session_not_bookable" });
+    if (session.requires_resource)
+      return result({ ok: false, reason_code: "resource_selection_required" });
+    const occupied = await input.supabase
+      .from("reservations")
+      .select("id", { count: "exact", head: true })
+      .eq("studio_id", input.studio.id)
+      .eq("session_id", session.id)
+      .in("status", ["reserved", "attended"]);
+    if (occupied.error || occupied.count == null)
+      return result({ ok: false, reason_code: "availability_unavailable" });
+    if (occupied.count >= session.capacity)
+      return result({ ok: false, reason_code: "session_full" });
+    const [template, method, bank, automatic] = await Promise.all([
+      input.supabase
+        .from("class_templates")
+        .select("name,drop_in_price_minor")
+        .eq("studio_id", input.studio.id)
+        .eq("id", session.template_id)
+        .maybeSingle(),
+      input.supabase
+        .from("studio_payment_methods")
+        .select("code")
+        .eq("studio_id", input.studio.id)
+        .eq("code", "bank_transfer")
+        .eq("active", true)
+        .maybeSingle(),
+      input.supabase
+        .from("studio_bank_transfer_settings")
+        .select("bank_name,account_holder,clabe,account_number,card_number")
+        .eq("studio_id", input.studio.id)
+        .eq("enabled", true)
+        .maybeSingle(),
+      input.supabase
+        .from("demi_mercadopago_settings")
+        .select("enabled")
+        .eq("studio_id", input.studio.id)
+        .maybeSingle(),
+    ]);
+    const amount = session.drop_in_price_minor ?? template.data?.drop_in_price_minor;
+    if (template.error || !Number.isInteger(amount) || amount <= 0)
+      return result({ ok: false, reason_code: "trial_price_unavailable" });
+    const bankEnabled =
+      !method.error &&
+      Boolean(method.data) &&
+      !bank.error &&
+      Boolean(
+        bank.data?.bank_name &&
+        bank.data?.account_holder &&
+        (bank.data?.clabe || bank.data?.account_number || bank.data?.card_number),
+      );
+    const automaticEnabled = !automatic.error && automatic.data?.enabled === true;
+    const bankRequested = /transferencia|bancomer|bbva|oxxo|dep[oó]sito/i.test(
+      input.currentUserMessage,
+    );
+    if ((!bankEnabled && !automaticEnabled) || (bankRequested && !bankEnabled))
+      return result({ ok: false, reason_code: "transfer_details_unavailable" });
+    return result({
+      ok: true,
+      status: "payment_required",
+      amount_minor: amount,
+      currency: input.studio.currency,
+      reservation_confirmed: false,
+      payment_verified: false,
+      receipt_required: !automaticEnabled || bankRequested,
+      bank_details: bankEnabled
+        ? {
+            bank_name: "Banco ficticio de prueba",
+            account_holder: "Simulación sin pago real",
+            instructions:
+              "No realices transferencias ni depósitos. Estos datos son sólo una simulación de los métodos habilitados.",
+          }
+        : null,
+      external_checkout:
+        automaticEnabled && !bankRequested
+          ? {
+              url: "https://example.invalid/demi-workbench-payment",
+              test_only: true,
+              automatic_verification: true,
+              receipt_required: false,
+            }
+          : null,
+      summary: {
+        session_ref: sessionRef,
+        activity: template.data?.name,
+        trial_booking: true,
+        payment_before_booking: true,
+      },
+    });
+  }
   if (
     state.workbenchCase &&
     state.workbenchCase !== "standard" &&

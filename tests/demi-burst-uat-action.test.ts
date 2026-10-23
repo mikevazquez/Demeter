@@ -6,7 +6,11 @@ vi.mock("../lib/auth/admin-context", () => ({ getAdminContext: mocks.admin }));
 vi.mock("../lib/supabase/service", () => ({ createServiceClient: mocks.service }));
 vi.mock("../app/api/integrations/meta-whatsapp/webhook/route", () => ({ POST: mocks.receiver }));
 vi.mock("../app/api/integrations/meta-inbox/webhook/route", () => ({ POST: vi.fn() }));
-import { runDemiUatBurst } from "../app/admin/mas/demi/uat/actions";
+import {
+  runDemiUatBurst,
+  getDemiUatRun,
+  getDemiUatArtifactBatch,
+} from "../app/admin/mas/demi/uat/actions";
 import { demiUatScope } from "../lib/assistant/uat-scope";
 
 const run = {
@@ -23,6 +27,7 @@ let busyRun = false;
 let records: Array<{ kind: string; payload: Record<string, unknown> }>;
 let filters: Array<[string, unknown]>;
 let released: boolean;
+let artifactRows: Array<Record<string, unknown>>;
 
 beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://hedouonyhynuvwbckdlg.supabase.co");
@@ -33,18 +38,30 @@ beforeEach(() => {
   busyRun = false;
   released = false;
   records = [];
+  artifactRows = [];
   filters = [];
   mocks.admin.mockResolvedValue({ studio: { id: "source" }, user: { id: "admin" } });
   const db = {
     rpc: vi.fn(async () => ({ data: !busyRun, error: null })),
     from(table: string) {
       const result = () => ({
-        data: table === "demi_uat_runs" ? (missingRun ? null : run) : [],
+        data:
+          table === "demi_uat_runs"
+            ? missingRun
+              ? null
+              : run
+            : table === "demi_uat_artifacts"
+              ? artifactRows
+              : [],
         error: null,
       });
       const query = {
         select: () => query,
         eq: (key: string, value: unknown) => {
+          filters.push([key, value]);
+          return query;
+        },
+        in: (key: string, value: unknown) => {
           filters.push([key, value]);
           return query;
         },
@@ -82,6 +99,47 @@ afterEach(() => {
 });
 
 describe("authenticated burst UAT harness", () => {
+  it("bounds normal responses while keeping full owned evidence separately downloadable", async () => {
+    const id = "11111111-1111-4111-8111-111111111111";
+    const payload = {
+      before: { historical: "x".repeat(5_000_000) },
+      after: {},
+      result: { ok: true },
+    };
+    artifactRows = [
+      {
+        id,
+        kind: "human_control",
+        created_at: "2026-10-23T00:00:00Z",
+        payload,
+        result: payload.result,
+      },
+    ];
+    const current = await getDemiUatRun("owned-run");
+    expect(JSON.stringify(current).length).toBeLessThan(10000);
+    expect(current.artifacts[0].payload).toMatchObject({
+      full_artifact_id: id,
+      result: { ok: true },
+    });
+    expect((await getDemiUatArtifactBatch("owned-run", [id]))[0].payload).toEqual(payload);
+    expect(filters).toContainEqual(["owner_id", "admin"]);
+    expect(filters).toContainEqual(["source_studio_id", "source"]);
+    expect(filters).toContainEqual(["run_id", "owned-run"]);
+    expect(records).toEqual([]);
+  });
+  it("denies evidence from another owner and invalid or oversized batches", async () => {
+    missingRun = true;
+    await expect(
+      getDemiUatArtifactBatch("other-run", ["11111111-1111-4111-8111-111111111111"]),
+    ).rejects.toThrow("demi_uat_run_not_found");
+    missingRun = false;
+    await expect(getDemiUatArtifactBatch("owned-run", ["invalid"])).rejects.toThrow(
+      "demi_uat_artifact_batch_invalid",
+    );
+    await expect(
+      getDemiUatArtifactBatch("owned-run", Array(4).fill("11111111-1111-4111-8111-111111111111")),
+    ).rejects.toThrow("demi_uat_artifact_batch_invalid");
+  });
   it("executes signed messages only within the owned child capture scope and records evidence", async () => {
     await runDemiUatBurst("owned-run", "same_payload");
     expect(filters).toContainEqual(["owner_id", "admin"]);

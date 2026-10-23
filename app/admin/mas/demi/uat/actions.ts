@@ -178,9 +178,41 @@ export async function createDemiUatRun() {
 }
 export async function getDemiUatRun(id: string) {
   const ctx = await ownedRun(id);
+  // Snapshot history is retained in DB and downloaded one small batch at a time.
+  // Returning all before/after snapshots made every action response grow to MBs.
+  const fields = [
+    "text",
+    "recipient",
+    "captured",
+    "failed",
+    "result",
+    "error",
+    "case_id",
+    "status",
+    "evidence",
+    "reviewer_id",
+    "recorded_at",
+    "commit",
+    "persona",
+    "channel",
+    "provider_id",
+    "decision",
+    "handoff_id",
+    "intent_id",
+    "group_id",
+    "session_id",
+    "make_due",
+    "days",
+    "faults",
+    "http_status",
+    "delivery_verified",
+    "error_code",
+    "template",
+    "language",
+  ];
   const { data: artifacts, error } = await ctx.service
     .from("demi_uat_artifacts")
-    .select("id,kind,payload,created_at")
+    .select("id,kind,created_at," + fields.map((key) => `${key}:payload->${key}`).join(","))
     .eq("run_id", id)
     .order("created_at", { ascending: false })
     .limit(150);
@@ -188,8 +220,35 @@ export async function getDemiUatRun(id: string) {
   return {
     run: ctx.run,
     state: await snapshot(ctx),
-    artifacts: artifacts ?? [],
+    artifacts: ((artifacts ?? []) as unknown as Array<Record<string, unknown>>).map((artifact) => ({
+      id: String(artifact.id),
+      kind: String(artifact.kind),
+      created_at: String(artifact.created_at),
+      payload: Object.fromEntries([
+        ...fields.filter((key) => artifact[key] != null).map((key) => [key, artifact[key]]),
+        ["full_artifact_id", artifact.id],
+      ]) as Json,
+    })),
   };
+}
+
+export async function getDemiUatArtifactBatch(id: string, artifactIds: string[]) {
+  const ctx = await ownedRun(id);
+  if (
+    !Array.isArray(artifactIds) ||
+    artifactIds.length < 1 ||
+    artifactIds.length > 3 ||
+    artifactIds.some((key) => typeof key !== "string" || !/^[0-9a-f-]{36}$/i.test(key))
+  )
+    throw new Error("demi_uat_artifact_batch_invalid");
+  const { data, error } = await ctx.service
+    .from("demi_uat_artifacts")
+    .select("id,kind,payload,created_at")
+    .eq("run_id", id)
+    .in("id", artifactIds);
+  if (error || data?.length !== new Set(artifactIds).size)
+    throw new Error("demi_uat_evidence_unavailable");
+  return data;
 }
 export async function sendDemiUatMessage(form: FormData) {
   const id = String(form.get("runId") ?? "");

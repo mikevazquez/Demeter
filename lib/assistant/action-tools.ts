@@ -331,11 +331,64 @@ export function isExplicitAssistantConfirmation(
 
 export function isExplicitCashPurchaseConfirmation(
   value: string,
-  summary?: { amount_minor?: number; product_name?: string },
+  summary?: {
+    amount_minor?: number;
+    product_name?: string;
+    payment_due_on?: string | null;
+    local_date?: string;
+  },
 ) {
-  if (isExplicitAssistantConfirmation(value)) return true;
   if (!value.trim() || /[?¿]/.test(value)) return false;
   const normalized = normalizeConfirmation(value);
+  const dated = normalized.match(/^(.*?) (?:lo )?(?:pagare|pago) (.+)$/);
+  if (dated) {
+    if (!isExplicitCashPurchaseConfirmation(dated[1], summary)) return false;
+    const relative = dated[2].match(/^(pasado manana|manana|hoy)(?: (.+))?$/);
+    const explicit = (relative ? (relative[2] ?? "") : dated[2]).replace(/^el /, "");
+    const iso = explicit.match(/^(\d{4}) (\d{2}) (\d{2})$/);
+    const written = explicit.match(/^(\d{1,2}) de ([a-z]+)(?: de (\d{4}))?$/);
+    const months = [
+      "enero",
+      "febrero",
+      "marzo",
+      "abril",
+      "mayo",
+      "junio",
+      "julio",
+      "agosto",
+      "septiembre",
+      "octubre",
+      "noviembre",
+      "diciembre",
+    ];
+    if ((!relative && !iso && !written) || (explicit && !iso && !written)) return false;
+    if (written && !months.includes(written[2])) return false;
+    // Without a summary this is a syntax prefilter only. The mutation checks the
+    // actual pending, identity, new turn, price, product and agreed due date.
+    if (!summary) return true;
+    const due = summary.payment_due_on ?? "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(due)) return false;
+    if (relative) {
+      const local = summary.local_date ?? "";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(local)) return false;
+      const date = new Date(`${local}T12:00:00Z`);
+      date.setUTCDate(
+        date.getUTCDate() + (relative[1] === "hoy" ? 0 : relative[1] === "manana" ? 1 : 2),
+      );
+      if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== due) return false;
+    }
+    if (iso && `${iso[1]}-${iso[2]}-${iso[3]}` !== due) return false;
+    if (
+      written &&
+      (Number(written[1]) !== Number(due.slice(8)) ||
+        months.indexOf(written[2]) + 1 !== Number(due.slice(5, 7)) ||
+        (written[3] && written[3] !== due.slice(0, 4)))
+    )
+      return false;
+    return true;
+  }
+  if (isExplicitAssistantConfirmation(value) && !/cancel|reagend|muev|reserv/.test(normalized))
+    return true;
   const match = normalized.match(
     /^(?:si )?confirmo la compra del paquete(?: de (\d+) clases)?(?: por (\d+)(?: (\d{1,2}))?(?: mxn| pesos)?)? en efectivo$/,
   );
@@ -846,6 +899,8 @@ async function confirmCashPackage(ctx: AssistantActionToolContext) {
     !isExplicitCashPurchaseConfirmation(ctx.currentUserMessage, {
       amount_minor: Number(summary?.amount_minor ?? payload.expected_amount),
       product_name: String(summary?.product_name ?? ""),
+      payment_due_on: typeof payload.payment_due_on === "string" ? payload.payment_due_on : null,
+      local_date: localParts(new Date().toISOString(), ctx.studio.timezone).date,
     })
   )
     return { ok: false, reason_code: "explicit_confirmation_required" };
@@ -869,6 +924,28 @@ async function confirmCashPackage(ctx: AssistantActionToolContext) {
       .eq("id", pending.id)
       .eq("studio_id", ctx.studio.id);
   return result;
+}
+
+// This RPC is a read. Only a transient statement cancellation may be retried;
+// business denials and every write keep their existing single-attempt boundaries.
+export async function readBookingEligibility(
+  ctx: Pick<AssistantActionToolContext, "supabase" | "studio" | "serviceMode">,
+  sessionId: string,
+  studentId: string | null,
+) {
+  const read = () =>
+    ctx.serviceMode
+      ? ctx.supabase.rpc("service_booking_eligibility", {
+          target_studio_id: ctx.studio.id,
+          target_session_id: sessionId,
+          target_student_id: studentId,
+        })
+      : ctx.supabase.rpc("booking_eligibility", {
+          target_session_id: sessionId,
+          target_student_id: studentId,
+        });
+  const first = await read();
+  return first.error?.code === "57014" ? await read() : first;
 }
 
 async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBookingArgs) {
@@ -927,16 +1004,7 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
       .limit(1);
     if (paidCreditError) return { ok: false, error: "trial_credit_unavailable" };
     if (paidTrials?.length) {
-      const creditEligibility = ctx.serviceMode
-        ? await ctx.supabase.rpc("service_booking_eligibility", {
-            target_studio_id: ctx.studio.id,
-            target_session_id: sessionId,
-            target_student_id: studentId,
-          })
-        : await ctx.supabase.rpc("booking_eligibility", {
-            target_session_id: sessionId,
-            target_student_id: studentId,
-          });
+      const creditEligibility = await readBookingEligibility(ctx, sessionId, studentId);
       if (creditEligibility.error) return { ok: false, error: "trial_credit_unavailable" };
       hasPaidTrialCredit = asObject(creditEligibility.data)?.eligible === true;
     }
@@ -1189,16 +1257,7 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
     return { ok: false, error: "identity_required" };
   }
 
-  const eligibilityRequest = ctx.serviceMode
-    ? await ctx.supabase.rpc("service_booking_eligibility", {
-        target_studio_id: ctx.studio.id,
-        target_session_id: sessionId,
-        target_student_id: studentId,
-      })
-    : await ctx.supabase.rpc("booking_eligibility", {
-        target_session_id: sessionId,
-        target_student_id: studentId,
-      });
+  const eligibilityRequest = await readBookingEligibility(ctx, sessionId, studentId);
   const { data: eligibility, error: eligibilityError } = eligibilityRequest;
 
   if (eligibilityError) {
@@ -2062,16 +2121,7 @@ async function executeBookingOperation(ctx: AssistantActionToolContext, args: Ex
 
     const eligibilityRequest = reservationId
       ? { data: { eligible: true }, error: null }
-      : ctx.serviceMode
-        ? await ctx.supabase.rpc("service_booking_eligibility", {
-            target_studio_id: ctx.studio.id,
-            target_session_id: sessionId,
-            target_student_id: studentId,
-          })
-        : await ctx.supabase.rpc("booking_eligibility", {
-            target_session_id: sessionId,
-            target_student_id: studentId,
-          });
+      : await readBookingEligibility(ctx, sessionId, studentId);
     const { data: eligibility, error: eligibilityError } = eligibilityRequest;
     if (eligibilityError) {
       return { ok: false, error: "booking_eligibility_unavailable" };
@@ -2642,16 +2692,7 @@ async function prepareReschedule(ctx: AssistantActionToolContext, args: PrepareR
 
   const target = await getSessionSummary(ctx, targetSessionId);
   if (!target) return { ok: false, error: "session_not_found" };
-  const eligibilityRequest = ctx.serviceMode
-    ? await ctx.supabase.rpc("service_booking_eligibility", {
-        target_studio_id: ctx.studio.id,
-        target_session_id: targetSessionId,
-        target_student_id: ctx.studentId,
-      })
-    : await ctx.supabase.rpc("booking_eligibility", {
-        target_session_id: targetSessionId,
-        target_student_id: ctx.studentId,
-      });
+  const eligibilityRequest = await readBookingEligibility(ctx, targetSessionId, ctx.studentId);
   const { data: eligibility, error: eligibilityError } = eligibilityRequest;
   if (eligibilityError) {
     return { ok: false, error: "booking_eligibility_unavailable" };
@@ -2856,16 +2897,7 @@ async function executeReschedule(ctx: AssistantActionToolContext, args: ExecuteR
     };
   }
 
-  const eligibilityRequest = ctx.serviceMode
-    ? await ctx.supabase.rpc("service_booking_eligibility", {
-        target_studio_id: ctx.studio.id,
-        target_session_id: targetSessionId,
-        target_student_id: studentId,
-      })
-    : await ctx.supabase.rpc("booking_eligibility", {
-        target_session_id: targetSessionId,
-        target_student_id: studentId,
-      });
+  const eligibilityRequest = await readBookingEligibility(ctx, targetSessionId, studentId);
   const { data: eligibility, error: eligibilityError } = eligibilityRequest;
   if (eligibilityError) {
     return { ok: false, error: "booking_eligibility_unavailable" };
