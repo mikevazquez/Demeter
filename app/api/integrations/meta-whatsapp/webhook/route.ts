@@ -1,3 +1,4 @@
+import { claimDemiTextSend, finishDemiTextSend } from "@/lib/assistant/demi-text-send-claim";
 import { demiDeliveryRetryPolicy } from "@/lib/assistant/delivery-retry-policy";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
@@ -88,6 +89,41 @@ async function markEvent(
 
 // Only a TEXT can be superseded, and only by a newer TEXT of the same contact and studio.
 // Media, documents, audio and payment receipts are never discarded by batching.
+async function reserveTextDelivery(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  studioId: string;
+  eventId: string;
+  enabled: boolean;
+}) {
+  if (!input.enabled) return { status: "disabled" as const, token: "" };
+  const token = crypto.randomUUID();
+  const result = await claimDemiTextSend(
+    (name, args) => input.supabase.rpc(name, args),
+    input.studioId,
+    input.eventId,
+    token,
+  );
+  return result.status === "claimed"
+    ? { status: "claimed" as const, token }
+    : { status: result.status, token: "" };
+}
+
+async function completeTextDelivery(input: {
+  supabase: ReturnType<typeof createServiceClient>;
+  token: string;
+  status: "accepted" | "uncertain" | "failed_final";
+}) {
+  if (!input.token) return;
+  const completed = await finishDemiTextSend(
+    (name, args) => input.supabase.rpc(name, args),
+    input.token,
+    input.status,
+  );
+  if (!completed) {
+    console.error("demi_text_send_claim_finalize_failed", { status: input.status });
+  }
+}
+
 async function findNewerConversationText(input: {
   supabase: ReturnType<typeof createServiceClient>;
   studioId: string;
@@ -1521,10 +1557,44 @@ export async function POST(request: Request) {
           continue;
         }
       }
-      const delivery = await sendMetaWhatsAppText({
+      const textClaim = await reserveTextDelivery({
+        supabase,
+        studioId,
+        eventId: event.id,
+        enabled: message.messageType === "text" && process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS === "true",
+      });
+      if (textClaim.status === "stale" || textClaim.status === "unavailable") {
+        retryableFailure = retryableFailure || textClaim.status === "unavailable";
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: textClaim.status === "stale" ? "text_claim_rejected" : "text_claim_unavailable",
+        });
+        continue;
+      }
+      let delivery;
+      try {
+        const delivery = await sendMetaWhatsAppText({
         config: webhookConfig,
         recipientWaId: message.fromWaId,
         text: cachedReply,
+        });
+      } catch {
+        await completeTextDelivery({
+          supabase,
+          token: textClaim.token,
+          status: "uncertain",
+        });
+        retryableFailure = true;
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "text_delivery_uncertain",
+        });
+        continue;
+      }
+      await completeTextDelivery({
+        supabase,
+        token: textClaim.token,
+        status: delivery.status === "error" ? "uncertain" : "accepted",
       });
       if (delivery.status === "error") {
         const failurePolicy = await recordFailedDelivery({
@@ -2193,10 +2263,44 @@ export async function POST(request: Request) {
       }
     }
 
-    const delivery = await sendMetaWhatsAppText({
+    const textClaim = await reserveTextDelivery({
+      supabase,
+      studioId,
+      eventId: event.id,
+      enabled: message.messageType === "text" && process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS === "true",
+    });
+    if (textClaim.status === "stale" || textClaim.status === "unavailable") {
+      retryableFailure = retryableFailure || textClaim.status === "unavailable";
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: textClaim.status === "stale" ? "text_claim_rejected" : "text_claim_unavailable",
+      });
+      continue;
+    }
+    let delivery;
+    try {
+      const delivery = await sendMetaWhatsAppText({
       config: webhookConfig,
       recipientWaId: message.fromWaId,
       text: assistantResult.reply,
+      });
+    } catch {
+      await completeTextDelivery({
+        supabase,
+        token: textClaim.token,
+        status: "uncertain",
+      });
+      retryableFailure = true;
+      outcomes.push({
+        provider_message_id: message.providerMessageId,
+        outcome: "text_delivery_uncertain",
+      });
+      continue;
+    }
+    await completeTextDelivery({
+      supabase,
+      token: textClaim.token,
+      status: delivery.status === "error" ? "uncertain" : "accepted",
     });
 
     if (delivery.status === "error") {
