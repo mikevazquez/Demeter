@@ -99,7 +99,6 @@ Los resultados observados se registran en la issue/PR. El [contrato de aceptaci�
 - [Eventos y schedule de GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule): el schedule depende de la rama predeterminada y puede retrasarse. Los 15 minutos son cadencia solicitada, no SLA.
 - [Codex no interactivo](https://learn.chatgpt.com/docs/non-interactive-mode): salida JSONL y reanudación por sesión explícita. La sintaxis se debe contrastar con la versión instalada en cada host.
 
-
 ## GPT Governance Gateway
 
 El punto de entrada para trabajo nuevo no debe ser un worker escaso. La secuencia canónica es:
