@@ -284,7 +284,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     name: "prepare_cash_package_purchase",
     strict: true,
     description:
-      "Prepara compra de paquete en efectivo para una alumna regular identificada. Usa product_ref real consultada. Explica el precio, deuda pendiente y que se permite una primera reserva; una segunda requiere cobrar el adeudo. La vigencia inicia en la primera clase reservada. Pide confirmación explícita antes de crear venta o créditos.",
+      "Prepara compra de paquete en efectivo para una alumna regular identificada. Usa product_ref real consultada. Explica el precio, activación provisional y deuda pendiente: aunque no asista, debe pagar el paquete completo. Se permite una primera reserva; una segunda requiere cobrar el adeudo. La vigencia inicia en la primera clase reservada. Pide confirmación explícita antes de crear venta o créditos.",
     parameters: {
       type: "object",
       properties: {
