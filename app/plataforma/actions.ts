@@ -16,6 +16,7 @@ const KNOWN_ERRORS = [
   "module_invalid",
   "status_invalid",
   "studio_not_found",
+  "cut_day_invalid",
 ];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const STATUSES = ["invited", "active", "grace", "read_only", "suspended"];
@@ -40,7 +41,8 @@ export async function setStudioPlanAction(formData: FormData) {
   const plan = String(formData.get("plan") ?? "");
   const cutDayRaw = String(formData.get("cut_day") ?? "").trim();
   const cutDay = cutDayRaw === "" ? null : Number(cutDayRaw);
-  if (!PLATFORM_PLANS.some((entry) => entry.key === plan)) finish(studioId, { message: "plan_invalid" }, "");
+  if (!PLATFORM_PLANS.some((entry) => entry.key === plan))
+    finish(studioId, { message: "plan_invalid" }, "");
   if (cutDay !== null && (!Number.isInteger(cutDay) || cutDay < 1 || cutDay > 28)) {
     finish(studioId, { message: "cut_day_invalid" }, "");
   }

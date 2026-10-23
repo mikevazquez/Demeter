@@ -72,7 +72,9 @@ export default async function PlataformaEstudioPage({
         ← Estudios
       </Link>
       <section className="neb-hero">
-        <p className="neb-eyebrow">{detail.studio.slug ? `${detail.studio.slug}.nebora.mx` : "Estudio"}</p>
+        <p className="neb-eyebrow">
+          {detail.studio.slug ? `${detail.studio.slug}.nebora.mx` : "Estudio"}
+        </p>
         <h1>{detail.studio.brandName}</h1>
         {ent ? (
           <div className="neb-studio-meta">
@@ -127,14 +129,22 @@ function NumbersTab({ detail }: { detail: PlatformStudioDetail }) {
     <>
       <h2 className="neb-subtitle">Alumnas</h2>
       <section className="neb-kpis">
-        <Stat label="Activas" value={detail.students.active} hint={`${detail.students.total} registradas`} />
+        <Stat
+          label="Activas"
+          value={detail.students.active}
+          hint={`${detail.students.total} registradas`}
+        />
         <Stat label="Con paquete vigente" value={detail.studentsWithPackage} />
         <Stat label="Nuevas este mes" value={detail.students.newThisMonth} />
       </section>
 
       <h2 className="neb-subtitle">Operación del mes</h2>
       <section className="neb-kpis">
-        <Stat label="Clases esta semana" value={detail.classes.thisWeek} hint={`${detail.classes.thisMonth} en el mes`} />
+        <Stat
+          label="Clases esta semana"
+          value={detail.classes.thisWeek}
+          hint={`${detail.classes.thisMonth} en el mes`}
+        />
         <Stat
           label="Reservas"
           value={detail.reservationsMonth.booked}
@@ -149,14 +159,26 @@ function NumbersTab({ detail }: { detail: PlatformStudioDetail }) {
 
       <h2 className="neb-subtitle">Demi este mes</h2>
       <section className="neb-kpis">
-        <Stat label="Tokens" value={demiTokens.toLocaleString("es-MX")} hint={`${detail.demiMonth.calls} llamadas a la IA`} />
-        <Stat label="Costo de IA" value={formatUsdMicros(detail.demiMonth.costUsdMicros)} hint="estimado, lo paga Nébora" />
+        <Stat
+          label="Tokens"
+          value={demiTokens.toLocaleString("es-MX")}
+          hint={`${detail.demiMonth.calls} llamadas a la IA`}
+        />
+        <Stat
+          label="Costo de IA"
+          value={formatUsdMicros(detail.demiMonth.costUsdMicros)}
+          hint="estimado, lo paga Nébora"
+        />
         <Stat label="Demi" value={ent?.modules.demi ? "Activa" : "No contratada"} />
       </section>
 
       <h2 className="neb-subtitle">Cuenta</h2>
       <section className="neb-kpis">
-        <Stat label="Paquete" value={ent?.planLabel ?? "—"} hint={ent ? `${formatMxn(ent.monthlyPriceMxn)} al mes` : undefined} />
+        <Stat
+          label="Paquete"
+          value={ent?.planLabel ?? "—"}
+          hint={ent ? `${formatMxn(ent.monthlyPriceMxn)} al mes` : undefined}
+        />
         <Stat
           label="Fecha de corte"
           value={ent?.cutDay ? `Día ${ent.cutDay}` : "Sin definir"}
@@ -164,7 +186,13 @@ function NumbersTab({ detail }: { detail: PlatformStudioDetail }) {
         />
         <Stat
           label="Founding"
-          value={ent?.plan === "founding" ? `Hasta ${formatDateMx(ent.foundingEndsOn)}` : ent?.foundingAlumni ? "Ex-Founding · 30 %" : "No"}
+          value={
+            ent?.plan === "founding"
+              ? `Hasta ${formatDateMx(ent.foundingEndsOn)}`
+              : ent?.foundingAlumni
+                ? "Ex-Founding · 30 %"
+                : "No"
+          }
         />
         <Stat label="Último acceso del dueño" value={formatDateMx(detail.ownerLastSignInAt)} />
       </section>
@@ -222,8 +250,8 @@ function PlanTab({ detail }: { detail: PlatformStudioDetail }) {
           </button>
         </form>
         <p className="neb-muted">
-          Al pasar de Founding a otro plan, el estudio queda como ex-Founding con 30 % para
-          siempre. Founding tiene 5 lugares.
+          Al pasar de Founding a otro plan, el estudio queda como ex-Founding con 30 % para siempre.
+          Founding tiene 5 lugares.
         </p>
       </section>
 
@@ -274,7 +302,11 @@ function PlanTab({ detail }: { detail: PlatformStudioDetail }) {
           <label>
             Estado
             <select name="status" defaultValue={ent.status}>
-              {ent.status === "internal" ? <option value="internal" disabled>Interno</option> : null}
+              {ent.status === "internal" ? (
+                <option value="internal" disabled>
+                  Interno
+                </option>
+              ) : null}
               {statusOptions.map((status) => (
                 <option key={status} value={status}>
                   {STATUS_LABEL[status]}
@@ -305,7 +337,9 @@ function BillingTab({ detail }: { detail: PlatformStudioDetail }) {
         {detail.nextCutOn ? ` · siguiente corte ${formatDateMx(detail.nextCutOn)}` : ""}
       </p>
       {detail.graceStartedAt ? (
-        <p className="neb-notice is-error">En gracia desde {formatDateMx(detail.graceStartedAt)}.</p>
+        <p className="neb-notice is-error">
+          En gracia desde {formatDateMx(detail.graceStartedAt)}.
+        </p>
       ) : null}
       <p className="neb-muted">
         Los pagos, facturas y reintentos aparecen aquí cuando se conecte Stripe (NEB-01-07).

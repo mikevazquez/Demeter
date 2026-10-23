@@ -9,7 +9,11 @@ const migration = read("supabase/migrations/20261022215000_neb01_platform_consol
 
 describe("NEB-01-10/11/12 consola de Nébora", () => {
   it("cada lectura pública exige ser plataforma y no se abre a anon", () => {
-    for (const fn of ["platform_overview()", "platform_list_studios()", "platform_studio_detail(uuid)"]) {
+    for (const fn of [
+      "platform_overview()",
+      "platform_list_studios()",
+      "platform_studio_detail(uuid)",
+    ]) {
       expect(migration).toContain(`revoke all on function public.${fn} from public, anon;`);
       expect(migration).toContain(`grant execute on function public.${fn} to authenticated;`);
     }
@@ -40,7 +44,11 @@ describe("NEB-01-10/11/12 consola de Nébora", () => {
   it("las acciones solo llaman a las funciones auditadas de plataforma", () => {
     const actions = read("app/plataforma/actions.ts");
     expect(actions).toContain('"use server"');
-    for (const rpc of ["platform_set_studio_plan", "platform_set_studio_module", "platform_set_studio_status"]) {
+    for (const rpc of [
+      "platform_set_studio_plan",
+      "platform_set_studio_module",
+      "platform_set_studio_status",
+    ]) {
       expect(actions).toContain(`rpc("${rpc}"`);
     }
     expect(actions).not.toMatch(/\.from\(/);
@@ -60,21 +68,55 @@ describe("NEB-01-10/11/12 consola de Nébora", () => {
         students_active: 3,
         pending_requests: 2,
       }),
-    ).toMatchObject({ studiosTotal: 2, mrrMxn: 899, studiosByStatus: { active: 1 }, pendingRequests: 2 });
+    ).toMatchObject({
+      studiosTotal: 2,
+      mrrMxn: 899,
+      studiosByStatus: { active: 1 },
+      pendingRequests: 2,
+    });
 
     expect(parseStudioRows("x")).toEqual([]);
     expect(
-      parseStudioRows([{ id: "a", name: "Aurora Pilates", brand_name: "Aurora", plan: "core", status: "active", monthly_price_mxn: 899, founding_month: null, cut_day: 5 }])[0],
+      parseStudioRows([
+        {
+          id: "a",
+          name: "Aurora Pilates",
+          brand_name: "Aurora",
+          plan: "core",
+          status: "active",
+          monthly_price_mxn: 899,
+          founding_month: null,
+          cut_day: 5,
+        },
+      ])[0],
     ).toMatchObject({ brandName: "Aurora", monthlyPriceMxn: 899, foundingMonth: null, cutDay: 5 });
 
     const detail = parseStudioDetail({
       studio: { id: "a", name: "Aurora Pilates", brand_name: "Aurora", slug: "aurora" },
-      entitlements: { studio_id: "a", plan: "core", plan_label: "Core", status: "active", brand_level: "powered", can_operate: true, monthly_price_mxn: 899, founding_alumni: false, founding_started_on: null, founding_ends_on: null, cut_day: 5, modules: { catalogo: true } },
+      entitlements: {
+        studio_id: "a",
+        plan: "core",
+        plan_label: "Core",
+        status: "active",
+        brand_level: "powered",
+        can_operate: true,
+        monthly_price_mxn: 899,
+        founding_alumni: false,
+        founding_started_on: null,
+        founding_ends_on: null,
+        cut_day: 5,
+        modules: { catalogo: true },
+      },
       students: { total: 3, active: 2, new_this_month: 1 },
       demi_month: { calls: 2, input_tokens: 1500, output_tokens: 300, cost_usd_micros: 4500 },
       pending_requests: [{ module: "recursos", requested_at: "2026-10-22T10:00:00Z" }],
     });
-    expect(detail?.entitlements?.modules).toEqual({ recompensas: false, recursos: false, catalogo: true, demi: false });
+    expect(detail?.entitlements?.modules).toEqual({
+      recompensas: false,
+      recursos: false,
+      catalogo: true,
+      demi: false,
+    });
     expect(detail?.students.active).toBe(2);
     expect(detail?.salesMonth).toEqual({ count: 0, totalMinor: 0 });
     expect(detail?.pendingRequests[0].module).toBe("recursos");

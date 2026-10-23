@@ -51,8 +51,8 @@ export default async function PlataformaInicioPage() {
           <span>Estudios</span>
           <strong>{overview.studiosTotal}</strong>
           <small>
-            {overview.studiosByStatus.active ?? 0} activos · {overview.studiosByStatus.internal ?? 0}{" "}
-            internos
+            {overview.studiosByStatus.active ?? 0} activos ·{" "}
+            {overview.studiosByStatus.internal ?? 0} internos
           </small>
         </article>
         <article className="neb-kpi">
