@@ -5,16 +5,16 @@ Rama consolidada: `claude/cumpleanos-v1` = main + #355 (WhatsApp del día) + #34
 
 ## Qué hace
 
-| Tarea | Qué ve cada quien |
-| --- | --- |
-| CUMP-01-01 | Equipo: cumpleaños en Hoy (en producción desde #338). |
-| CUMP-01-02 | Alumna: WhatsApp de felicitación el día de su cumpleaños (`marketing.birthday`, apagada). |
-| CUMP-01-03/04 | Alumna: saludo privado el día exacto y tarjeta «Regalo de cumpleaños» todo su mes. |
-| CUMP-01-06 | Alumna: «Usar mi pase de cumpleaños» en el detalle de la clase → para mí / para una amiga (nombre + WhatsApp). |
-| CUMP-01-07 | Si cancela a tiempo o el estudio cancela la clase, el pase regresa. Cancelación tardía o falta: se pierde. |
-| CUMP-01-08 | Equipo: estado del pase en la ficha de la alumna; en la lista de la clase, «Pase de cumpleaños» / «Invitada · pase de cumpleaños». |
-| CUMP-01-09 | Dueño: Notificaciones › Marketing › Cumpleaños › «Regalo de cumpleaños» (activo sí/no, regalar a amiga sí/no). |
-| CUMP-01-10 | Alumna: WhatsApp el día 1 de su mes avisando del regalo (`marketing.birthday_month`, apagada). |
+| Tarea         | Qué ve cada quien                                                                                                                  |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| CUMP-01-01    | Equipo: cumpleaños en Hoy (en producción desde #338).                                                                              |
+| CUMP-01-02    | Alumna: WhatsApp de felicitación el día de su cumpleaños (`marketing.birthday`, apagada).                                          |
+| CUMP-01-03/04 | Alumna: saludo privado el día exacto y tarjeta «Regalo de cumpleaños» todo su mes.                                                 |
+| CUMP-01-06    | Alumna: «Usar mi pase de cumpleaños» en el detalle de la clase → para mí / para una amiga (nombre + WhatsApp).                     |
+| CUMP-01-07    | Si cancela a tiempo o el estudio cancela la clase, el pase regresa. Cancelación tardía o falta: se pierde.                         |
+| CUMP-01-08    | Equipo: estado del pase en la ficha de la alumna; en la lista de la clase, «Pase de cumpleaños» / «Invitada · pase de cumpleaños». |
+| CUMP-01-09    | Dueño: Notificaciones › Marketing › Cumpleaños › «Regalo de cumpleaños» (activo sí/no, regalar a amiga sí/no).                     |
+| CUMP-01-10    | Alumna: WhatsApp el día 1 de su mes avisando del regalo (`marketing.birthday_month`, apagada).                                     |
 
 Reglas: 1 pase por alumna por año; vale del día 1 al último día de su mes (hora del estudio); no suma ni
 descuenta créditos (también con ilimitado); no aplica a talleres ni a clases con lugar a elegir; respeta
