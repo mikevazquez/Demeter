@@ -91,6 +91,70 @@ describe("Demi workshop application boundary", () => {
       p_turn: "inbound-turn",
     });
   });
+  it("registers only the name actually supplied and delegates identity to the owned conversation", async () => {
+    mocks.rpc.mockResolvedValue({
+      data: {
+        ok: true,
+        student_id: id,
+        profile_registered: true,
+        payment_verified: false,
+        reservation_confirmed: false,
+      },
+      error: null,
+    });
+    const result = await workshopPurchaseAction(
+      { ...context(), studentId: null, currentUserMessage: "Me llamo Luna Pérez" },
+      "register_workshop_participant",
+      {
+        workshop_ref: `workshop:${id}`,
+        full_name: "Luna Pérez",
+        student_id: "forged",
+        contact_id: "forged",
+        phone: "forged",
+      },
+    );
+    expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith(
+      "service_register_demi_workshop_participant",
+      {
+        p_studio: "verified-studio",
+        p_conversation: "verified-conversation",
+        p_offer: id,
+        p_turn: "inbound-turn",
+        p_full_name: "Luna Pérez",
+      },
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      payment_verified: false,
+      reservation_confirmed: false,
+    });
+  });
+  it("a name invented by the model never creates a participant", async () => {
+    expect(
+      await workshopPurchaseAction(
+        { ...context(), studentId: null, currentUserMessage: "Quiero información" },
+        "register_workshop_participant",
+        {
+          workshop_ref: `workshop:${id}`,
+          full_name: "Luna Pérez",
+        },
+      ),
+    ).toMatchObject({ ok: false, reason_code: "full_name_required" });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it("an unknown registration result never claims that a profile was linked", async () => {
+    mocks.rpc.mockResolvedValue({ data: null, error: null });
+    expect(
+      await workshopPurchaseAction(
+        { ...context(), studentId: null, currentUserMessage: "Me llamo Luna Pérez" },
+        "register_workshop_participant",
+        {
+          workshop_ref: `workshop:${id}`,
+          full_name: "Luna Pérez",
+        },
+      ),
+    ).toMatchObject({ ok: false, reason_code: "participant_registration_unknown" });
+  });
   it.each(["workshop_receipt_pending", "another_receipt_pending"])(
     "recovers a pending payment instead of requesting a second transfer: %s",
     async (message) => {

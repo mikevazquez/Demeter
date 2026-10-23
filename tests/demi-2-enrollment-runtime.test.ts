@@ -59,17 +59,24 @@ describe("Demi 2.0 enrollment and natural confirmation", () => {
   );
 
   it.each([
-    ["active", "2020-01-01", "student"],
-    ["expired", null, "former_student"],
+    ["active", "2020-01-01", "student", "regular", null],
+    ["expired", null, "former_student", "regular", null],
+    ["expired", null, "workshop_guest", "trial", "demi_workshop_guest"],
+    ["active", null, "student", "regular", "demi_workshop_guest"],
   ])(
     "reads enrollment without deriving identity from package: %s",
-    async (status, packageExpiry, expected) => {
+    async (status, packageExpiry, expected, studentType, acquisitionSource) => {
       const scopes: string[] = [];
       const fake = {
         from(table: string) {
           const data =
             table === "students"
-              ? { lifecycle_status: "active", student_type: "regular", trial_status: null }
+              ? {
+                  lifecycle_status: "active",
+                  student_type: studentType,
+                  trial_status: null,
+                  acquisition_source: acquisitionSource,
+                }
               : table === "student_enrollments"
                 ? [
                     {

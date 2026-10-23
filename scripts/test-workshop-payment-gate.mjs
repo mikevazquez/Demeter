@@ -2175,6 +2175,178 @@ try {
       );
     }
   });
+  // Reduced CRM/profile host contracts; the workshop registration and existing
+  // ensure-trial bridge below are the real SQL implementations, not doubles.
+  query(`alter table public.students alter column id set default gen_random_uuid(),
+    add column phone text,add column email text,add column student_type text default 'regular',
+    add column trial_status text,add column profile_status text default 'incomplete',
+    add column acquisition_source text,add column created_at timestamptz default now(),add column updated_at timestamptz;
+    alter table public.persons add column updated_at timestamptz;
+    alter table public.crm_contacts add primary key(id),add column converted_student_id uuid,
+      add column lifecycle_status text default 'prospect',add column source text,add column updated_at timestamptz;
+    alter table public.assistant_conversations add column external_thread_ref text,add column crm_conversation_id uuid,add column updated_at timestamptz;
+    create table public.person_contacts(id uuid primary key default gen_random_uuid(),studio_id uuid,person_id uuid,kind text,value text,is_primary boolean,created_at timestamptz default now());
+    create table public.crm_conversations(id uuid primary key,studio_id uuid,crm_contact_id uuid,student_id uuid);
+    create table public.assistant_channel_identities(id uuid primary key,studio_id uuid,provider text,provider_account_id text,provider_contact_id text,person_id uuid,crm_contact_id uuid,student_id uuid,metadata jsonb default '{}',updated_at timestamptz);
+    create function private.student_profile_status(uuid) returns text language sql as $$select 'incomplete'::text$$;`);
+  const trialBridge = source(
+    "supabase/migrations/20261003170400_demi_native_trial_booking_bridge.sql",
+  );
+  query(
+    trialBridge.slice(
+      trialBridge.indexOf("create or replace function public.assistant_ensure_trial_student("),
+      trialBridge.indexOf("create or replace function public.assistant_book_payment_pending("),
+    ),
+  );
+  query(
+    `begin; ${source("supabase/migrations/20261023140144_demi_workshop_guest_registration.sql")}; commit;`,
+  );
+  function guestFixture() {
+    const w = offer({ deposit: true }),
+      c = conversation(null),
+      person = randomUUID(),
+      contact = randomUUID(),
+      crm = randomUUID();
+    const phone = `+5299${String(BigInt(`0x${person.replaceAll("-", "").slice(0, 10)}`) % 100000000n).padStart(8, "0")}`;
+    const name = "UAT Nueva Participante",
+      turn = accept(c, `Me llamo ${name}`).turn;
+    query(`update public.workshop_offers set requires_enrollment=false where id=${sqlString(w.offerId)};
+      insert into public.persons(id,studio_id,first_name,last_name) values(${sqlString(person)},${sqlString(studio)},'UAT','Contacto');
+      insert into public.person_contacts(studio_id,person_id,kind,value,is_primary) values(${sqlString(studio)},${sqlString(person)},'phone',${sqlString(phone)},true);
+      insert into public.crm_contacts(id,studio_id,person_id) values(${sqlString(contact)},${sqlString(studio)},${sqlString(person)});
+      insert into public.crm_conversations values(${sqlString(crm)},${sqlString(studio)},${sqlString(contact)},null);
+      update public.assistant_conversations set crm_conversation_id=${sqlString(crm)},external_thread_ref=${sqlString(phone.slice(1))},
+        context=jsonb_build_object('crm_contact_id',${sqlString(contact)},'contact_phone',${sqlString(phone)},'provider','meta_whatsapp') where id=${sqlString(c.id)}`);
+    return { w, c, person, contact, phone, turn, name };
+  }
+  const registerGuestSql = (g) =>
+    `select public.service_register_demi_workshop_participant(${sqlString(studio)},${sqlString(g.c.id)},${sqlString(g.w.offerId)},${sqlString(g.turn)},${sqlString(g.name)})`;
+  await test("new workshop participant has no enrollment, package, trial credit, Auth, payment or reservation until checkout", () => {
+    const g = guestFixture(),
+      registered = service(registerGuestSql(g));
+    assert.equal(registered.profile_registered, true);
+    assert.equal(registered.reservation_confirmed, false);
+    assert.equal(registered.payment_verified, false);
+    const sid = registered.student_id;
+    assert.deepEqual(
+      json(
+        `select jsonb_build_object('type',student_type,'trial_status',trial_status,'source',acquisition_source,'user_id',user_id) from public.students where id=${sqlString(sid)}`,
+      ),
+      { type: "trial", trial_status: null, source: "demi_workshop_guest", user_id: null },
+    );
+    for (const table of ["student_enrollments", "product_acquisitions", "reservations", "sales"])
+      assert.equal(
+        query(`select count(*) from public.${table} where student_id=${sqlString(sid)}`),
+        "0",
+      );
+    assert.equal(service(registerGuestSql(g)).student_id, sid);
+    const intent = service(prepareSql(g.w, g.c));
+    service(accept(g.c).sql);
+    const held = service(receipt(intent, g.c).sql);
+    const bought = json(
+      asRole(
+        "authenticated",
+        admin,
+        `select public.admin_confirm_workshop_provisional_hold(${sqlString(studio)},${sqlString(held.hold_id)},true)`,
+      ),
+    );
+    assert.equal(
+      query(
+        `select student_id from public.workshop_purchases where id=${sqlString(bought.purchase_id)}`,
+      ),
+      sid,
+    );
+    assert.equal(
+      query(`select count(*) from public.payments where sale_id=${sqlString(bought.sale_id)}`),
+      "1",
+    );
+  });
+  await test("concurrent participant registration creates exactly one profile and one audit record", async () => {
+    const g = guestFixture(),
+      sql = asRole("service_role", null, registerGuestSql(g));
+    const results = await Promise.all([concurrent(sql), concurrent(sql)]);
+    assert.ok(
+      results.every((r) => r.status === 0),
+      JSON.stringify(results),
+    );
+    const sid = service(registerGuestSql(g)).student_id;
+    assert.equal(
+      query(`select count(*) from public.students where person_id=${sqlString(g.person)}`),
+      "1",
+    );
+    assert.equal(
+      query(
+        `select count(*) from private.demi_workshop_participant_registrations where student_id=${sqlString(sid)}`,
+      ),
+      "1",
+    );
+    denied(
+      asRole("service_role", null, registerGuestSql({ ...g, name: "Otro Nombre" })),
+      "idempotency_conflict",
+    );
+  });
+  await test("participant registration rejects client authority, invented names, foreign turns and required enrollment", () => {
+    const g = guestFixture();
+    for (const role of ["anon", "authenticated"])
+      denied(asRole(role, admin, registerGuestSql(g)), "permission denied");
+    denied(
+      asRole("service_role", null, registerGuestSql({ ...g, name: "Nombre Inventado" })),
+      "full_name_required",
+    );
+    denied(
+      asRole("service_role", null, registerGuestSql({ ...g, turn: randomUUID() })),
+      "full_name_required",
+    );
+    query(
+      `update public.workshop_offers set requires_enrollment=true where id=${sqlString(g.w.offerId)}`,
+    );
+    denied(asRole("service_role", null, registerGuestSql(g)), "guest_offer_unavailable");
+    assert.equal(
+      query(`select count(*) from public.students where person_id=${sqlString(g.person)}`),
+      "0",
+    );
+  });
+  await test("a phone belonging to another person cannot create or claim a workshop participant", () => {
+    const g = guestFixture(),
+      otherPerson = randomUUID();
+    query(`insert into public.persons(id,studio_id,first_name) values(${sqlString(otherPerson)},${sqlString(studio)},'Other');
+      insert into public.person_contacts(studio_id,person_id,kind,value,is_primary) values(${sqlString(studio)},${sqlString(otherPerson)},'phone',${sqlString(g.phone)},true)`);
+    denied(asRole("service_role", null, registerGuestSql(g)), "identity_verification_required");
+    assert.equal(
+      query(`select count(*) from public.students where person_id=${sqlString(g.person)}`),
+      "0",
+    );
+  });
+  await test("Meta guest uses only its bound channel identity and does not authenticate a claimed phone", () => {
+    const g = guestFixture(),
+      identity = randomUUID();
+    query(`delete from public.person_contacts where person_id=${sqlString(g.person)};
+      insert into public.assistant_channel_identities(id,studio_id,provider,provider_account_id,provider_contact_id,person_id,crm_contact_id,metadata)
+        values(${sqlString(identity)},${sqlString(studio)},'facebook_messenger','page','sender',${sqlString(g.person)},${sqlString(g.contact)},
+          jsonb_build_object('claimed_phone',${sqlString(g.phone)},'minimal_identification_completed',true,'phone_authentication_verified',false));
+      update public.assistant_conversations set channel='facebook_messenger',external_thread_ref='page:sender',context=context||
+        jsonb_build_object('identity_id',${sqlString(identity)},'provider_account_id','page','provider_contact_id','wrong') where id=${sqlString(g.c.id)}`);
+    denied(
+      asRole("service_role", null, registerGuestSql(g)),
+      "minimal_phone_identification_required",
+    );
+    query(
+      `update public.assistant_conversations set context=context||'{"provider_contact_id":"sender"}'::jsonb where id=${sqlString(g.c.id)}`,
+    );
+    const registered = service(registerGuestSql(g));
+    assert.equal(
+      query(
+        `select student_id from public.assistant_channel_identities where id=${sqlString(identity)}`,
+      ),
+      registered.student_id,
+    );
+    assert.equal(
+      query(
+        `select metadata->>'phone_authentication_verified' from public.assistant_channel_identities where id=${sqlString(identity)}`,
+      ),
+      "false",
+    );
+  });
   console.log(
     `${passed}/${passed} local PostgreSQL integration scenarios passed. No remote database used.`,
   );

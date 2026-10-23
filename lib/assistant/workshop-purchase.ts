@@ -33,7 +33,60 @@ export async function workshopPurchaseAction(
   tool: string,
   args: Record<string, unknown>,
 ) {
-  if (!ctx.serviceMode || !ctx.studentId)
+  if (!ctx.serviceMode) return { ok: false, reason_code: "verified_student_required" };
+  if (tool === "register_workshop_participant") {
+    const offer = /^workshop:([0-9a-f-]{36})$/i.exec(String(args.workshop_ref ?? ""));
+    const name = String(args.full_name ?? "")
+      .trim()
+      .replace(/\s+/g, " ");
+    const normalize = (value: string) =>
+      value
+        .normalize("NFD")
+        .replace(/\p{Diacritic}/gu, "")
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+    if (!offer || !workshopUuid.test(offer[1]))
+      return { ok: false, reason_code: "invalid_selection" };
+    if (
+      name.length > 160 ||
+      !/\S+\s+\S+/.test(name) ||
+      /[?¿]/.test(ctx.currentUserMessage) ||
+      !normalize(ctx.currentUserMessage).includes(normalize(name))
+    )
+      return { ok: false, reason_code: "full_name_required" };
+    const response = await ctx.supabase.rpc("service_register_demi_workshop_participant", {
+      p_studio: ctx.studio.id,
+      p_conversation: ctx.conversationId,
+      p_offer: offer[1],
+      p_turn: ctx.turnId,
+      p_full_name: name,
+    });
+    if (response.error)
+      return {
+        ok: false,
+        reason_code: "participant_registration_blocked",
+        reason_message: /identity|profile_exists/.test(response.error.message)
+          ? "Se requiere verificar la identidad antes de crear o vincular una ficha. No reveles datos de otra persona ni crees una ficha duplicada."
+          : response.error.message.includes("guest_offer_unavailable")
+            ? "Este taller no permite registrar una invitada sin inscripción vigente. Consulta sus requisitos antes de continuar."
+            : workshopConversationError(response.error.message),
+      };
+    if (response.data?.ok !== true || !workshopUuid.test(String(response.data.student_id ?? "")))
+      return {
+        ok: false,
+        reason_code: "participant_registration_unknown",
+        reason_message:
+          "No pude verificar el resultado del registro. Consulta la identidad actual antes de reintentar; no afirmes que ya existe una ficha o reserva.",
+      };
+    return {
+      ...response.data,
+      instruction:
+        "La ficha de participante está vinculada; todavía no hay compra, pago ni reserva. Continúa con prepare_workshop_purchase para las fechas elegidas. No vendas una primera clase de prueba ni un paquete regular por este registro.",
+    };
+  }
+  // The preceding tool may have linked the participant in this same model turn.
+  // Preparation resolves identity in PostgreSQL; no student supplied by the model.
+  if (!ctx.studentId && tool !== "prepare_workshop_purchase")
     return { ok: false, reason_code: "verified_student_required" };
   if (tool === "record_workshop_continuation") {
     const purchase = /^purchase:([0-9a-f-]{36})$/i.exec(String(args.purchase_ref ?? ""));

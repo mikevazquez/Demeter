@@ -9,6 +9,9 @@ declare
  prepared uuid:=gen_random_uuid(); accepted uuid:=gen_random_uuid(); event uuid:=gen_random_uuid();
  intent jsonb; held jsonb; purchase jsonb; result jsonb; h uuid; reservation uuid;
  tested integer:=0;
+ guest_person uuid:=gen_random_uuid(); guest_contact uuid:=gen_random_uuid(); guest_crm uuid:=gen_random_uuid();
+ guest_c uuid:=gen_random_uuid(); guest_request uuid:=gen_random_uuid(); guest_name_turn uuid:=gen_random_uuid();
+ guest_accept uuid:=gen_random_uuid(); guest_event uuid:=gen_random_uuid(); guest_student uuid;
 begin
  select id into actor from public.user_accounts where status='active' order by id limit 1;
  if actor is null then raise exception 'active_account_fixture_required'; end if;
@@ -117,11 +120,62 @@ begin
   if result#>>'{current_purchase,status}'<>'cancelled' or result#>>'{current_purchase,paid_minor}'<>'40000' or result#>>'{current_purchase,balance_minor}'<>'20000' or result#>>'{current_purchase,reservation_confirmed}'<>'false' then raise exception 'context_withdrawal_mismatch'; end if;
   execute 'reset role';
   tested:=tested+1;
+  -- New guest profile: owned synthetic WhatsApp/CRM identity; no Auth or transport.
+  insert into public.persons(id,studio_id,first_name,last_name) values(guest_person,st,'UAT','Contacto nuevo');
+  insert into public.person_contacts(studio_id,person_id,kind,value,is_primary) values(st,guest_person,'phone','+529999999991',true);
+  insert into public.crm_contacts(id,studio_id,person_id,lifecycle_status,source) values(guest_contact,st,guest_person,'prospect','synthetic_workshop_rollback');
+  insert into public.crm_conversations(id,studio_id,crm_contact_id,provider,channel,started_at,last_activity_at,contact_phone)
+    values(guest_crm,st,guest_contact,'meta_whatsapp','whatsapp',now(),now(),'+529999999991');
+  insert into public.assistant_conversations(id,studio_id,channel,external_thread_ref,crm_conversation_id,context)
+    values(guest_c,st,'whatsapp','529999999991',guest_crm,jsonb_build_object('crm_contact_id',guest_contact,'contact_phone','+529999999991','provider','meta_whatsapp'));
+  insert into public.assistant_turns(id,studio_id,conversation_id,direction,role,content)
+    values(guest_request,st,guest_c,'inbound','user','Quiero inscribirme en el taller'),
+      (guest_name_turn,st,guest_c,'inbound','user','Me llamo UAT Nueva Participante');
+  execute 'set local role service_role';
+  result:=public.service_register_demi_workshop_participant(st,guest_c,offer,guest_name_turn,'UAT Nueva Participante');
+  guest_student:=(result->>'student_id')::uuid;
+  if guest_student is null or result->>'reservation_confirmed'<>'false' or result->>'payment_verified'<>'false' then raise exception 'guest_registration_mismatch'; end if;
+  tested:=tested+1;
+  if public.service_register_demi_workshop_participant(st,guest_c,offer,guest_name_turn,'UAT Nueva Participante')->>'student_id' is distinct from guest_student::text then raise exception 'guest_replay_mismatch'; end if;
+  execute 'reset role';
+  if (select count(*) from public.students where studio_id=st and person_id=guest_person)<>1
+    or not exists(select 1 from public.students where id=guest_student and user_id is null and student_type='trial' and trial_status is null and acquisition_source='demi_workshop_guest')
+    or exists(select 1 from public.student_enrollments where studio_id=st and student_id=guest_student)
+    or exists(select 1 from public.product_acquisitions where studio_id=st and student_id=guest_student)
+    or exists(select 1 from public.sales where studio_id=st and student_id=guest_student)
+    or exists(select 1 from public.reservations where studio_id=st and student_id=guest_student)
+  then raise exception 'guest_unintended_rights_or_duplicates'; end if;
+  tested:=tested+1;
+  execute 'set local role service_role';
+  intent:=public.service_prepare_demi_workshop_purchase(st,guest_c,offer,sessions,'full',guest_name_turn);
+  execute 'reset role';
+  insert into public.assistant_turns(id,studio_id,conversation_id,direction,role,content) values(guest_accept,st,guest_c,'inbound','user','Sí acepto');
+  insert into public.assistant_whatsapp_events(id,studio_id,assistant_conversation_id,provider_event_id,phone_number_id,message_type,payload_fingerprint)
+    values(guest_event,st,guest_c,'synthetic:'||guest_event,'synthetic-no-provider','image','synthetic-no-transport');
+  execute 'set local role service_role';
+  result:=public.service_accept_demi_workshop_purchase(st,guest_c,guest_accept);
+  if result->>'reservation_confirmed'<>'false' or result->>'payment_verified'<>'false' then raise exception 'guest_acceptance_mismatch'; end if;
+  tested:=tested+1;
+  held:=public.service_record_demi_workshop_receipt(st,guest_c,(intent->>'intent_id')::uuid,guest_event,'synthetic:'||guest_event,st||'/workshop/'||(intent->>'intent_id')||'/'||repeat('b',64),repeat('b',64),30000,'MXN',0.99);
+  execute 'reset role';
+  if held->>'payment_verified'<>'false' or exists(select 1 from public.sales where studio_id=st and student_id=guest_student) then raise exception 'guest_premature_income'; end if;
+  tested:=tested+1;
+  perform set_config('request.jwt.claim.role','authenticated',true);
+  perform set_config('request.jwt.claim.sub',actor::text,true);
+  perform set_config('request.jwt.claims',jsonb_build_object('role','authenticated','sub',actor)::text,true);
+  execute 'set local role authenticated';
+  purchase:=public.admin_confirm_workshop_provisional_hold(st,(held->>'hold_id')::uuid,true);
+  execute 'reset role';
+  if not exists(select 1 from public.workshop_purchases where id=(purchase->>'purchase_id')::uuid and student_id=guest_student and paid_minor=30000)
+    or (select count(*) from public.payments where sale_id=(purchase->>'sale_id')::uuid)<>1
+    or not exists(select 1 from public.students where id=guest_student and student_type='trial' and acquisition_source='demi_workshop_guest')
+  then raise exception 'guest_checkout_mismatch'; end if;
+  tested:=tested+1;
   raise exception using errcode='P0002',message='synthetic_fixture_rollback';
  exception when no_data_found then
   if sqlerrm<>'synthetic_fixture_rollback' then raise; end if;
  end;
  if exists(select 1 from public.studios where id=st) or exists(select 1 from public.workshop_offers where id=offer) then raise exception 'fixture_leaked'; end if;
- perform set_config('uat.demi_workshop_context_20261023',jsonb_build_object('checks',tested,'result','PASS','fixture_rolled_back',true,'real_db_roles',true,'browser_authenticated',false,'model_ocr_transport_invoked',false,'real_money',false)::text,false);
+ perform set_config('uat.demi_workshop_context_20261023',jsonb_build_object('checks',tested,'result','PASS','fixture_rolled_back',true,'real_db_roles',true,'browser_authenticated',false,'model_ocr_transport_invoked',false,'real_money',false,'guest_profile_and_checkout',true)::text,false);
 end $test$;
 select current_setting('uat.demi_workshop_context_20261023')::jsonb as evidence;

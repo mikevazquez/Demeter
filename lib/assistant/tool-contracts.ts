@@ -271,6 +271,19 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
   },
   {
     type: "function",
+    name: "register_workshop_participant",
+    strict: true,
+    description:
+      "Sólo después de que una persona nueva solicite inscribirse en un taller y dé su nombre completo, registra su ficha no regular vinculada al contacto propio del canal. No la uses para consultas informativas ni para otra persona. Usa el workshop_ref exacto del catálogo; el taller debe permitir invitadas sin inscripción. No crea compra, pago, reserva, inscripción regular, paquete ni cuenta de acceso. Después cotiza con prepare_workshop_purchase. Si hace falta identificar el celular en Meta usa primero identify_meta_contact; un teléfono escrito no autentica una ficha existente.",
+    parameters: {
+      type: "object",
+      properties: { workshop_ref: { type: "string" }, full_name: { type: "string" } },
+      required: ["workshop_ref", "full_name"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
     name: "prepare_workshop_purchase",
     strict: true,
     description:

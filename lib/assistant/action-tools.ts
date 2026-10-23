@@ -4347,6 +4347,7 @@ export async function executeAssistantActionTool(
   args: Record<string, unknown>,
 ) {
   switch (toolName) {
+    case "register_workshop_participant":
     case "record_workshop_continuation":
     case "prepare_workshop_purchase":
     case "confirm_workshop_purchase":

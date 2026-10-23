@@ -733,7 +733,7 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
   ] = await Promise.all([
     ctx.supabase
       .from("students")
-      .select("lifecycle_status,student_type,trial_status")
+      .select("lifecycle_status,student_type,trial_status,acquisition_source")
       .eq("studio_id", ctx.studio.id)
       .eq("id", ctx.studentId)
       .maybeSingle(),
@@ -797,7 +797,9 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
   }
 
   let studentCategory = "student";
-  if (student.student_type === "trial") {
+  if (student.student_type === "trial" && student.acquisition_source === "demi_workshop_guest") {
+    studentCategory = "workshop_guest";
+  } else if (student.student_type === "trial") {
     if (student.trial_status === "no_show") studentCategory = "trial_no_show";
     else if (student.trial_status === "attended") studentCategory = "trial_attended";
     else if (student.trial_status === "cancelled") studentCategory = "trial_cancelled";
