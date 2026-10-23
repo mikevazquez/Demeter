@@ -18,7 +18,8 @@ const errorCopy: Record<string, string> = {
   booking_closed: "Las reservas de esta clase ya cerraron. Escríbele al estudio.",
   student_booking_blocked:
     "Tus reservas están en pausa por faltas o cancelaciones tardías. Escríbele al estudio.",
-  student_charge_pending: "Tienes un adeudo pendiente con el estudio. Págalo para volver a reservar.",
+  student_charge_pending:
+    "Tienes un adeudo pendiente con el estudio. Págalo para volver a reservar.",
   studio_read_only:
     "El estudio no está tomando reservas en línea por ahora. Escríbele directamente.",
   booking_failed: "No se pudo realizar la reserva. Intenta de nuevo.",

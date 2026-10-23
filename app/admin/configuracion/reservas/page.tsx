@@ -78,7 +78,8 @@ export default async function ReservationSettingsPage({
   const penaltyValues: PenaltyPolicyValues | null = penaltyError
     ? null
     : {
-        packageLateCancellationPenaltyMinor: penaltyRow?.package_late_cancellation_penalty_minor ?? 0,
+        packageLateCancellationPenaltyMinor:
+          penaltyRow?.package_late_cancellation_penalty_minor ?? 0,
         packageNoShowPenaltyMinor: penaltyRow?.package_no_show_penalty_minor ?? 0,
         pendingChargeBlocksBooking: penaltyRow?.pending_charge_blocks_booking ?? true,
         noShow: {

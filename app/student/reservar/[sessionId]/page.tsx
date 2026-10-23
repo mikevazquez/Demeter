@@ -98,8 +98,11 @@ export default async function StudentSessionDetailPage({
   const eligibilityCopy =
     bookingWindowCopy(
       reason,
-      (session.eligibility as { booking_opens_at?: string | null; blocked_until?: string | null } | undefined)?.booking_opens_at ??
-                  (session.eligibility as { blocked_until?: string | null } | undefined)?.blocked_until,
+      (
+        session.eligibility as
+          { booking_opens_at?: string | null; blocked_until?: string | null } | undefined
+      )?.booking_opens_at ??
+        (session.eligibility as { blocked_until?: string | null } | undefined)?.blocked_until,
       studio.timezone,
     ) ?? bookingReasonCopyForStudent(reason, snapshot.acquisitions, sessionDate);
   const returnDate =

@@ -171,15 +171,16 @@ export default async function StudentReservePage({
     penalty?.reason_code === "student_booking_blocked"
       ? {
           code: "student_booking_blocked",
-          title: bookingWindowCopy(penalty.reason_code, penalty.blocked_until, studio.timezone) ?? "Reservas en pausa",
-          detail:
-            "Por faltas o cancelaciones tardías. Si fue un error, escríbele al estudio.",
+          title:
+            bookingWindowCopy(penalty.reason_code, penalty.blocked_until, studio.timezone) ??
+            "Reservas en pausa",
+          detail: "Por faltas o cancelaciones tardías. Si fue un error, escríbele al estudio.",
         }
       : penalty?.reason_code === "student_charge_pending"
         ? {
             code: "student_charge_pending",
             title: "Tienes un adeudo pendiente",
-            detail: `${formatMoney(Number(penalty.pending_charge_minor ?? 0), studio.currency)} por faltas o cancelaciones tardías. Págalo para volver a reservar.`,
+            detail: `${formatMoney(Number(penalty.pending_charge_minor ?? 0))} por faltas o cancelaciones tardías. Págalo para volver a reservar.`,
             action_kind: "payment",
           }
         : null;
@@ -434,9 +435,12 @@ export default async function StudentReservePage({
               // NEB-01-40 · "Abre el …" o "Reservas cerradas" según la ventana de la clase.
               const windowCopy = bookingWindowCopy(
                 session.eligibility?.reason_code,
-                (session.eligibility as { booking_opens_at?: string | null; blocked_until?: string | null } | undefined)
-                  ?.booking_opens_at ??
-                  (session.eligibility as { blocked_until?: string | null } | undefined)?.blocked_until,
+                (
+                  session.eligibility as
+                    { booking_opens_at?: string | null; blocked_until?: string | null } | undefined
+                )?.booking_opens_at ??
+                  (session.eligibility as { blocked_until?: string | null } | undefined)
+                    ?.blocked_until,
                 studio.timezone,
               );
               const eligibilityCopy =

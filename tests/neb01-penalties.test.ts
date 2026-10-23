@@ -9,7 +9,9 @@ describe("NEB-01-41 penalizaciones para alumnas regulares", () => {
   const migration = read("supabase/migrations/20261022218000_neb01_student_penalties.sql");
 
   it("todo apagado por defecto y por separado para faltas y cancelaciones tardías", () => {
-    expect(migration).toContain("package_late_cancellation_penalty_minor integer not null default 0");
+    expect(migration).toContain(
+      "package_late_cancellation_penalty_minor integer not null default 0",
+    );
     expect(migration).toContain("package_no_show_penalty_minor integer not null default 0");
     expect(migration).toContain("add column if not exists no_show_block_threshold integer,");
     expect(migration).toContain("add column if not exists late_cancel_block_threshold integer,");
