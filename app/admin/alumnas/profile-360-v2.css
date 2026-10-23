@@ -582,3 +582,27 @@
 .sendero-alumnas .crm-page.p360v2 .profile360-approved-contact span {
   color: var(--p360v2-muted) !important;
 }
+
+/* 9 · Piezas heredadas que traían su propio fondo: se integran a la superficie única. */
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(.profile360-package-edit-body, .profile360-evaluations-view form) {
+  padding: 14px 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--p360v2-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--p360v2-text) !important;
+}
+.sendero-alumnas .crm-page.p360v2 :is(.profile360-evaluation-card, .profile360-evaluation-history) {
+  border: 1px solid var(--p360v2-line) !important;
+  border-radius: 18px !important;
+  background: var(--p360v2-surface) !important;
+  color: var(--p360v2-text) !important;
+}
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(.student-row, .profile360-detail, .panel, .profile360-package-edit-body)
+  :is(span:not([class]), label > span, small) {
+  color: var(--p360v2-muted) !important;
+}
