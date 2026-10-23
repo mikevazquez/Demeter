@@ -8,7 +8,7 @@ const experience = readFileSync(
   "utf8",
 );
 const snapshotMigration = readFileSync(
-  join(process.cwd(), "supabase/migrations/20261020022500_birthday_pass_snapshot_day.sql"),
+  join(process.cwd(), "supabase/migrations/20261023100500_birthday_pass_snapshot_day.sql"),
   "utf8",
 );
 
