@@ -17,6 +17,11 @@ function validateWorker(worker) {
     `default quality required for ${worker.workerId}`,
   );
   assert(Number.isFinite(worker.relativeCost), `relativeCost required for ${worker.workerId}`);
+  assert(
+    worker.scarcityWeight === undefined ||
+      (Number.isFinite(worker.scarcityWeight) && worker.scarcityWeight >= 0),
+    `scarcityWeight must be non-negative for ${worker.workerId}`,
+  );
   return worker;
 }
 
@@ -96,17 +101,20 @@ export function evaluateWorker(task, gatedWorker) {
     specialtyScore,
     contextScore,
     relativeCost: worker.relativeCost,
+    scarcityWeight: worker.scarcityWeight ?? 0,
+    effectiveCost: worker.relativeCost + (worker.scarcityWeight ?? 0),
     source: gatedWorker.source ?? worker.stateSource ?? "registry",
     observedAt: gatedWorker.observedAt ?? worker.stateObservedAt ?? null,
   };
 }
 
 function compareEligible(a, b) {
-  // Quality and fit first; resource cost only breaks ties after sufficiency.
+  // Eligibility already enforces quality floor, permissions and risk.
+  // Preserve specialist/context fit, then reserve scarce workers by effective cost.
   if (a.specialtyScore !== b.specialtyScore) return b.specialtyScore - a.specialtyScore;
   if (a.contextScore !== b.contextScore) return b.contextScore - a.contextScore;
+  if (a.effectiveCost !== b.effectiveCost) return a.effectiveCost - b.effectiveCost;
   if (a.quality !== b.quality) return b.quality - a.quality;
-  if (a.relativeCost !== b.relativeCost) return a.relativeCost - b.relativeCost;
   return a.workerId.localeCompare(b.workerId);
 }
 
