@@ -225,6 +225,15 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 - `service_schedule_demi_followups` se ajusta sobre su definición vigente; el apartado usa la
   configuración. Pantalla: Demi › Seguimientos › «Tiempos de los recordatorios» (dueño).
 
+### NEB-01-42 · Ejemplos genéricos
+
+- Placeholders del admin (actividades, instructores, productos, automatizaciones), la frase de
+  ejemplo del chat de Demi, el simulador de Demi y el evento de prueba de Asistian ya no dicen
+  «Pole Fitness» ni «Estudio Demeter».
+- Se quedan a propósito: los ejemplos de nombres de clase dentro de las instrucciones de Demi
+  (están afinados para Demeter; la personalización por estudio va con NEB-01-25 y Demi por
+  estudio) y el guion de UAT de Demi, que corre sobre el estudio de pruebas de Demeter.
+
 ## Pruebas
 
 - SQL local, nunca contra Sandbox ni producción:

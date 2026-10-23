@@ -74,11 +74,11 @@ export function createTestSimulation(
       ? [
           {
             reservation_ref: `reservation:test-${persona}`,
-            activity: "Pole Fitness",
+            activity: "Clase de prueba",
             date: reservationDate,
             starts_at_local: "18:00",
             ends_at_local: "19:00",
-            location: "Estudio Demeter",
+            location: "Estudio de prueba",
             space: null,
             credit_cost: 1,
             status: "reserved",

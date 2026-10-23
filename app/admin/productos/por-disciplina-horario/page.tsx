@@ -129,7 +129,7 @@ export default async function DisciplineSchedulePackagesPage() {
           </span>
           <span className="package-category-copy">
             <strong>Por disciplina</strong>
-            <span>Ej. Solo Pole Fitness, Exotic o Aro.</span>
+            <span>Ej. Solo Yoga, Pilates o Barre.</span>
             <small className="package-period-count">
               {disciplineCount} {disciplineCount === 1 ? "paquete activo" : "paquetes activos"}
             </small>

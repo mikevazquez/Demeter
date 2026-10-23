@@ -316,7 +316,7 @@ export function ActivityWizard({
               <input
                 value={draft.name}
                 maxLength={80}
-                placeholder="Ej. Pole Fitness"
+                placeholder="Ej. Yoga Flow"
                 onChange={(event) => patch({ name: event.target.value })}
               />
             </label>
