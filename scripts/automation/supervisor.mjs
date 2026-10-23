@@ -550,7 +550,8 @@ export async function tickSupervisor({
             "receipt:write",
           ],
           qualityFloor: eligible.contract.quality_floor ?? 0.8,
-          riskTier: eligible.contract.read_only ? 0 : 1,
+          riskTier:
+            eligible.contract.risk_tier ?? (eligible.contract.read_only ? 0 : 1),
         },
         workers,
       )
