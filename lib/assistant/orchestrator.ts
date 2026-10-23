@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   conversationGuidance,
+  explanationTurnGuidance,
   needsFirstVisitGuidance,
   prospectCashTurnGuidance,
   prospectCashTurnReply,
@@ -1476,6 +1477,7 @@ export async function runAssistantTurn(input: OrchestratorInput) {
             ? `Personalidad configurada por el estudio: ${input.config.personality_instructions.trim()}`
             : "",
           prospectCashTurnGuidance(input, input.history),
+          explanationTurnGuidance(input.history),
         ]
           .filter(Boolean)
           .join("\n");

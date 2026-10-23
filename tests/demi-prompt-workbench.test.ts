@@ -11,6 +11,7 @@ import { transformSync } from "esbuild";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   conversationGuidance,
+  explanationTurnGuidance,
   needsFirstVisitGuidance,
   prospectCashTurnGuidance,
   prospectCashTurnReply,
@@ -116,6 +117,7 @@ function orchestratorHarness(
       "./read-tools": { executeAssistantReadTool: read },
       "./conversation-guidance": {
         conversationGuidance,
+        explanationTurnGuidance,
         needsFirstVisitGuidance,
         prospectCashTurnGuidance,
         prospectCashTurnReply,

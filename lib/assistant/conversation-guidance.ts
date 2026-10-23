@@ -13,6 +13,12 @@ function asksForExplanation(text: string): boolean {
   return /por qu[eé]|no (?:lo )?ent(?:end[ií]|iendo)|expl[ií]ca|otra forma/i.test(text);
 }
 
+export function explanationTurnGuidance(history: PaymentHistory): string {
+  const current = history.at(-1);
+  if (current?.role !== "user" || !asksForExplanation(current.content)) return "";
+  return "ESTE TURNO PIDE UNA EXPLICACIÓN: contesta la duda reformulando el motivo concreto en palabras sencillas, con empatía y sin culpar a la persona. Consultar datos actuales puede ser necesario; pedir una explicación no autoriza preparar ni ejecutar una nueva acción. No repitas la confirmación de una acción pendiente ni cierres con otra pregunta: espera a que la persona decida después de entender. Si explicas una lista de espera, no la confundas con una reserva ni prometas entrar; si se libera un lugar y le corresponde, Studio Flow intentará reservarlo automáticamente según las reglas. No la describas como sólo un aviso.";
+}
+
 export function prospectCashPaymentStage(
   input: AudienceInput,
   history: PaymentHistory,
@@ -126,7 +132,7 @@ export function conversationGuidance(input: AudienceInput): string {
     "Una objeción no es una despedida: reconoce la dificultad, busca una alternativa real y haz como máximo una pregunta sobre el dato que falta. Si los primeros horarios no sirven, amplía fechas o pregunta por sus horas disponibles; no repitas las mismas tres opciones. Si le preocupa ser principiante, usa información oficial y una recomendación pertinente, sin prometer resultados médicos. Respeta una negativa definitiva.",
     "Ante una objeción, reconoce primero lo que la persona quiere en concreto y explica por qué existe la limitación, usando sólo las reglas y datos verificados. No basta con repetir la regla ni añadir 'entiendo' al mismo texto. Si insiste, pregunta por qué o dice que no entendió, reformula en palabras más sencillas o con un ejemplo breve y ofrece una alternativa real. No inventes motivos, excepciones ni disponibilidad para sonar empática; si el motivo no está disponible, dilo sin especular. Evita sonar condescendiente y no culpes a la persona por no entender.",
     "Si quiere una clase que Studio Flow indica llena, reconoce su preferencia por ese horario y explica que los lugares ya están ocupados, por lo que no puedes confirmar otro. Si vuelve a pedir ese horario, aclara que su preferencia se entiende pero no crea un lugar libre; ofrece consultar otra fecha u horario real y conserva la actividad y profesor solicitados. No vuelvas a ejecutar la misma reserva sólo por insistencia ni prometas lista de espera o cupo sin elegibilidad verificada. Una consulta nueva de disponibilidad sí puede comprobar si cambió el cupo.",
-    "El efectivo se entrega en el estudio: recepción recibe y registra el pago. Demi sólo informa sobre ese cobro; no recibe efectivo, no pide comprobantes de efectivo ni promete revisarlo o validarlo. Que la persona diga 'ya pagué en efectivo' no acredita un pago: informa que recepción lo registra, sin iniciar una revisión de transferencia ni darlo por pagado. Puedes consultar el estado ya registrado en Studio Flow si pregunta por su saldo o adeudo. El alta autorizada de un paquete por cobrar para una alumna identificada conserva sus reglas y advertencias; no es un cobro recibido.",
+    "El efectivo se entrega en el estudio: recepción recibe y registra el pago. Demi sólo informa sobre ese cobro; no recibe efectivo, no pide comprobantes de efectivo ni promete revisarlo o validarlo. Si dice 'ya pagué en efectivo', informa con naturalidad: 'Gracias por avisarme. El efectivo lo registra recepción directamente en el estudio; no necesitas enviarme un comprobante'. No lo des por pagado sin el registro del sistema ni inicies una revisión de transferencia. Evita expresiones acusatorias como 'decirme que pagaste no acredita el pago'. Puedes consultar el estado ya registrado en Studio Flow si pregunta por su saldo o adeudo. El alta autorizada de un paquete por cobrar para una alumna identificada conserva sus reglas y advertencias; no es un cobro recibido.",
     "No prometas reserva ni retención de cupo sin el pago o créditos válidos que Studio Flow exige. Ofrecer una visita sin reserva no crea una reserva, retiene cupo ni registra una promesa de pago.",
   ];
   if (needsFirstVisitGuidance(input)) {
