@@ -132,23 +132,47 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 - Fuera de este alcance: entrar al estudio para corregir datos (NEB-01-13) y el alta guiada de
   estudios (NEB-01-14).
 
+### NEB-01-35 · Hora de cada estudio (`20261022216000`)
+
+- Nébora v1 es solo para México, pero cada estudio puede estar en otra zona horaria.
+  `lib/studio-time.ts` calcula «hoy», la conversión de horas escritas y los valores de
+  formulario con la zona del estudio (`studios.timezone`); sin zona válida usa la del centro.
+- Configuración › Región: la zona se elige de una lista de zonas de México. Moneda y formato se
+  muestran fijos (pesos y es-MX).
+- App: ya no hay hora de CDMX ni desfase `-06:00` fijos en cumpleaños, retos y recompensas,
+  consumo de Demi del mes, ventas (fecha de inicio de la inscripción) y el asistente de
+  actividades (fecha de inicio por defecto).
+- Base de datos (la base corre en UTC; después de las 18:00 en el centro, `current_date` ya es
+  mañana):
+  - `private.studio_timezone()` y `private.studio_local_today()`.
+  - `payments.effective_on` sin valor por defecto; un trigger le pone la fecha local del
+    estudio. `register_sale_payment` también usa la fecha local.
+  - El paso a ex-alumna por inactividad (CRM) y la validación de fecha de nacimiento usan la
+    fecha local del estudio.
+  - La consola cuenta mes, semana, «hoy» y fecha de corte en la zona de cada estudio.
+- Pendiente de bajo impacto: `student_is_minor` y la fecha por defecto de evaluaciones técnicas
+  siguen con `current_date`. El simulador de Demi se ajusta en NEB-01-42.
+
 ## Pruebas
 
 - SQL local, nunca contra Sandbox ni producción:
   `PGHOST=… PGPORT=… PGUSER=postgres scripts/neb01-sql-tests.sh`. Corre 18 controles de plataforma
-  13 de bloqueos y solicitudes, 3 de marca y 12 de la consola, y deshace todo al terminar.
-- Vitest: `tests/neb01-catalog.test.ts`, `tests/neb01-guards.test.ts`, `tests/neb01-branding.test.ts` y
-  `tests/neb01-console.test.ts`.
+  13 de bloqueos y solicitudes, 3 de marca, 12 de la consola y 7 de zona horaria, y deshace todo al terminar.
+- Vitest: `tests/neb01-catalog.test.ts`, `tests/neb01-guards.test.ts`, `tests/neb01-branding.test.ts`,
+  `tests/neb01-console.test.ts` y `tests/neb01-timezone.test.ts`.
 
 ## Para Codex
 
 1. Aplicar en Sandbox, en orden, `20261022210000_neb01_platform_admins_audit` y
    `20261022211000_neb01_plans_modules_entitlements` y `20261022212000_neb01_entitlement_guards` y
-   `20261022213000_neb01_module_activation_requests`, `20261022214000_neb01_studio_brand_name` y
-   `20261022215000_neb01_platform_console_reads`.
+   `20261022213000_neb01_module_activation_requests`, `20261022214000_neb01_studio_brand_name`,
+   `20261022215000_neb01_platform_console_reads` y `20261022216000_neb01_studio_local_time`.
 2. Insertar a Mike en `platform_admins` con su cuenta de Sandbox.
 3. Verificar que todos los estudios quedaron en `allaccess/internal` y correr QA.
 4. Con la cuenta de Mike, abrir `/plataforma` y la ficha de Demeter. Con una cuenta que no sea
    plataforma, confirmar que `/plataforma` da 404.
+5. Zona horaria: registrar un pago después de las 18:00 (hora del centro) y confirmar que queda
+   con la fecha de hoy. En un estudio de prueba con zona `America/Tijuana`, revisar Hoy,
+   cumpleaños y fechas de retos.
 
 Producción no se toca sin la autorización explícita de Mike.
