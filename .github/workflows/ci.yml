@@ -35,16 +35,6 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Format GOV-ROUTER sources for diagnostic
-        if: ${{ github.event_name == 'pull_request' && github.head_ref == 'feat/gov-router-gpt-gateway-20261023' }}
-        run: |
-          npx prettier --write scripts/automation/governance-gateway.mjs tests/automation/supervisor-gateway.node.mjs
-          echo '===GOVERNANCE_GATEWAY_FORMATTED==='
-          cat scripts/automation/governance-gateway.mjs
-          echo '===SUPERVISOR_GATEWAY_TEST_FORMATTED==='
-          cat tests/automation/supervisor-gateway.node.mjs
-          echo '===END_GOV_ROUTER_FORMATTED==='
-
       - name: Format check
         run: npm run format:check
         continue-on-error: ${{ github.event_name == 'pull_request' && github.head_ref == 'promote/inteligencia-13-prod' }}
