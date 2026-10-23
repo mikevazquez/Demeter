@@ -123,13 +123,18 @@ export default function StudentOnboardingForm({
     return 0;
   }, [discountMode, discountValue, selectedPackage]);
 
+  // NEB-01-36 · monto del abono e inscripción mínima vienen de la configuración del estudio.
+  const trialCreditMinEnrollment = Math.max(
+    trialCredits[0]?.min_enrollment_minor ?? 0,
+    trialCredits[0]?.amount_minor ?? 0,
+  );
   const trialCredit =
     useTrialCredit &&
     enrollmentResolution === "paid" &&
     enrollmentRequired &&
     !currentEnrollment &&
     selectedEnrollment &&
-    selectedEnrollment.priceMinor >= 15000
+    selectedEnrollment.priceMinor >= trialCreditMinEnrollment
       ? (trialCredits[0] ?? null)
       : null;
   const enrollmentNetMinor =
@@ -397,7 +402,7 @@ export default function StudentOnboardingForm({
                 </p>
               ) : trialCredits.length > 0 &&
                 enrollmentResolution === "paid" &&
-                selectedEnrollment.priceMinor >= 15000 ? (
+                selectedEnrollment.priceMinor >= trialCreditMinEnrollment ? (
                 <label>
                   <input
                     type="checkbox"
@@ -410,16 +415,20 @@ export default function StudentOnboardingForm({
                       }
                     }}
                   />
-                  <span>Aplicar $150 de la primera clase a inscripción</span>
+                  <span>
+                    Aplicar {money(trialCredits[0]?.amount_minor ?? 0)} de la primera clase a
+                    inscripción
+                  </span>
                   <small>
-                    Pago validado; clase de hoy. Se cobra el resto de inscripción más el paquete
+                    Pago validado de la primera clase. Se cobra el resto de inscripción más el paquete
                     completo. El pago original se conserva y sólo puede aplicarse una vez.
                   </small>
                 </label>
               ) : null}
               {trialCredit ? (
                 <p>
-                  Inscripción: {money(selectedEnrollment.priceMinor)} − $150 ya cobrados ={" "}
+                  Inscripción: {money(selectedEnrollment.priceMinor)} −{" "}
+                  {money(trialCredit.amount_minor)} ya cobrados ={" "}
                   {money(enrollmentNetMinor)}. Liquida {money(totalMinor)} para completar esta
                   compra.
                 </p>

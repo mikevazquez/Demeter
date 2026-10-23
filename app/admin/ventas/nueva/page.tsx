@@ -23,13 +23,13 @@ function localDate(timeZone: string) {
 
 const errorCopy: Record<string, string> = {
   trial_credit_unavailable:
-    "El pago de primera clase ya no puede abonarse: debe estar validado, sin devolución, sin uso previo y corresponder a la clase de hoy.",
+    "El pago de primera clase ya no puede abonarse: debe estar validado, sin devolución, sin uso previo y dentro del plazo que configuró el estudio.",
   trial_credit_enrollment_invalid:
-    "Este abono sólo aplica a inscripción de al menos $150, con paquete a precio completo.",
+    "Este abono sólo aplica a una inscripción del monto mínimo que configuró el estudio, con paquete a precio completo.",
   trial_credit_full_payment_required:
     "Para aplicar el abono, cobra el resto de inscripción más el paquete completo.",
   trial_credit_same_day_required:
-    "El abono y la compra deben registrarse el mismo día local de la primera clase.",
+    "La compra con abono debe registrarse con fecha de hoy.",
   trial_credit_replay_mismatch:
     "La operación ya existe con otros datos. Revisa el historial antes de continuar.",
   invalid_request: "Faltan datos para registrar la venta.",

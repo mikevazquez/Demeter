@@ -182,3 +182,49 @@ export async function savePenaltyPolicyAction(formData: FormData) {
   revalidatePath("/admin/configuracion/reservas");
   redirect(reservationsPath({ saved: "penalties" }));
 }
+
+// NEB-01-36 · Precio de la primera clase y abono a la inscripción.
+export async function saveTrialCreditAction(formData: FormData) {
+  const ctx = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+
+  if (ctx.membership.role !== "owner") {
+    redirect("/admin?error=access");
+  }
+
+  const price = moneyToMinor(formData.get("trial_price"));
+  const credit = moneyToMinor(formData.get("credit_amount"));
+  const minEnrollment = moneyToMinor(formData.get("min_enrollment")) ?? 0;
+  const validDays = Number(formData.get("valid_days"));
+  if (
+    !price ||
+    price > 10_000_000 ||
+    !credit ||
+    credit > 10_000_000 ||
+    minEnrollment > 10_000_000 ||
+    !Number.isInteger(validDays) ||
+    validDays < 0 ||
+    validDays > 30
+  ) {
+    redirect(reservationsPath({ error: "trial" }));
+  }
+
+  const { error } = await ctx.supabase.rpc("owner_update_studio_trial_credit", {
+    p_studio_id: ctx.studio.id,
+    p_trial_price_minor: price,
+    p_credit_enabled: checkboxValue(formData, "credit_enabled"),
+    p_enrollment_credit_minor: credit,
+    p_enrollment_credit_min_enrollment_minor: minEnrollment,
+    p_enrollment_credit_valid_days: validDays,
+  });
+
+  if (error) {
+    console.error("[studio.reservations] Trial credit update failed", {
+      code: error.code,
+      message: error.message.slice(0, 160),
+    });
+    redirect(reservationsPath({ error: "save" }));
+  }
+
+  revalidatePath("/admin/configuracion/reservas");
+  redirect(reservationsPath({ saved: "trial" }));
+}

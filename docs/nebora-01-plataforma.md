@@ -204,14 +204,27 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 - Pendiente: avisar por notificación Push o WhatsApp cuando empieza una pausa (hoy la alumna lo
   ve en el portal y Demi lo explica).
 
+### NEB-01-36 · Primera clase y abono configurables (`20261022219000`)
+
+- En `trial_booking_policies`: precio de la primera clase, monto del abono, inscripción mínima
+  para aplicarlo y días para usarlo (0 = mismo día). Arranque = Demeter hoy ($150, $150, $150,
+  mismo día). El interruptor sigue siendo la regla de Demi `trial_payment_towards_enrollment`.
+- Se ajustan sobre su definición vigente: opciones de abono (monto configurado, nunca más de lo
+  pagado; plazo en días), compra con abono, y el cobro de primera clase de Demi (precio
+  configurado). Si alguna no tiene el texto esperado, la migración se detiene.
+- `trial_enrollment_credits` ya no exige 15000.
+- Pantallas: Configuración › Reservas › «Primera clase». El alta de alumna muestra el monto real
+  del abono.
+
 ## Pruebas
 
 - SQL local, nunca contra Sandbox ni producción:
   `PGHOST=… PGPORT=… PGUSER=postgres scripts/neb01-sql-tests.sh`. Corre 18 controles de plataforma
-  13 de bloqueos y solicitudes, 3 de marca, 12 de la consola, 7 de zona horaria, 13 de reglas de reserva y 9 de penalizaciones, y deshace todo al terminar.
+  13 de bloqueos y solicitudes, 3 de marca, 12 de la consola, 7 de zona horaria, 13 de reglas de reserva, 9 de penalizaciones y 6 de primera clase, y deshace todo al terminar.
 - Vitest: `tests/neb01-catalog.test.ts`, `tests/neb01-guards.test.ts`, `tests/neb01-branding.test.ts`,
   `tests/neb01-console.test.ts`, `tests/neb01-timezone.test.ts`,
-  `tests/neb01-booking-windows.test.ts` y `tests/neb01-penalties.test.ts`.
+  `tests/neb01-booking-windows.test.ts`, `tests/neb01-penalties.test.ts` y
+  `tests/neb01-trial-credit.test.ts`.
 
 ## Para Codex
 
@@ -219,7 +232,8 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
    `20261022211000_neb01_plans_modules_entitlements` y `20261022212000_neb01_entitlement_guards` y
    `20261022213000_neb01_module_activation_requests`, `20261022214000_neb01_studio_brand_name`,
    `20261022215000_neb01_platform_console_reads`, `20261022216000_neb01_studio_local_time`,
-   `20261022217000_neb01_booking_windows` y `20261022218000_neb01_student_penalties`.
+   `20261022217000_neb01_booking_windows`, `20261022218000_neb01_student_penalties` y
+   `20261022219000_neb01_trial_enrollment_credit`.
 2. Insertar a Mike en `platform_admins` con su cuenta de Sandbox.
 3. Verificar que todos los estudios quedaron en `allaccess/internal` y correr QA.
 4. Con la cuenta de Mike, abrir `/plataforma` y la ficha de Demeter. Con una cuenta que no sea
@@ -235,5 +249,8 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 7. Penalizaciones: configurar «2 faltas en 30 días → 7 días» y $100 por falta en un estudio de
    prueba; marcar dos faltas a una alumna de prueba y confirmar el cargo, la pausa, el aviso en el
    portal, que Demi no reserva, que recepción sí y que «Quitar pausa» la libera.
+8. Primera clase: en un estudio de prueba poner precio $200, abono $100, inscripción mínima $500
+   y 3 días; confirmar que Demi cobra $200, que el alta ofrece abonar $100 hasta 3 días después y
+   que en Demeter todo sigue en $150 el mismo día.
 
 Producción no se toca sin la autorización explícita de Mike.

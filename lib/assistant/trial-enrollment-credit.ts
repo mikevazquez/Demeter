@@ -5,6 +5,8 @@ export type TrialEnrollmentCredit = {
   source_sale_id: string;
   reservation_id: string;
   amount_minor: number;
+  /** NEB-01-36 · inscripción mínima configurada por el estudio para aplicar el abono. */
+  min_enrollment_minor?: number;
   currency: string;
   class_on: string;
 };
