@@ -82,7 +82,14 @@ export function studioLocalDateTimeToIso(raw: string, timeZone: string | null | 
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(value);
   if (!match) return null;
   const [, y, mo, d, h, mi, s] = match;
-  const wallUtc = Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s ?? 0));
+  const wallUtc = Date.UTC(
+    Number(y),
+    Number(mo) - 1,
+    Number(d),
+    Number(h),
+    Number(mi),
+    Number(s ?? 0),
+  );
   if (Number.isNaN(wallUtc)) return null;
   const zone = resolveStudioTimeZone(timeZone);
   // Dos pasadas para cubrir zonas con horario de verano (frontera norte).

@@ -20,8 +20,7 @@ export default async function NewAchievementPage() {
         <p className="mt-4 eyebrow">CONFIGURAR LOGRO</p>
         <h1 className="dashboard-title">Nuevo logro</h1>
       </header>
-      <RuleEditorForm
-        timeZone={ctx.studio.timezone} mode="achievement" canManage />
+      <RuleEditorForm timeZone={ctx.studio.timezone} mode="achievement" canManage />
     </RewardsShell>
   );
 }

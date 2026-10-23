@@ -30,7 +30,7 @@ function integerValue(formData: FormData, key: string, fallback: number) {
   return value;
 }
 
-// NEB-01-35 · la hora que escribe el estudio es su hora local (antes: -06:00 fijo).
+// NEB-01-35 · la hora que escribe el estudio es su hora local (antes: desfase fijo de CDMX).
 function optionalDateTime(formData: FormData, key: string, timeZone: string | null | undefined) {
   const raw = textValue(formData, key);
   if (!raw) return null;

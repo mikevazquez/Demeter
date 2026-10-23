@@ -18,7 +18,8 @@ describe("NEB-01-35 hora del estudio", () => {
     expect(resolveStudioTimeZone("")).toBe(DEFAULT_STUDIO_TIME_ZONE);
     expect(resolveStudioTimeZone(null)).toBe(DEFAULT_STUDIO_TIME_ZONE);
     expect(resolveStudioTimeZone("Marte/Olympus")).toBe(DEFAULT_STUDIO_TIME_ZONE);
-    for (const zone of MEXICO_TIME_ZONES) expect(resolveStudioTimeZone(zone.value)).toBe(zone.value);
+    for (const zone of MEXICO_TIME_ZONES)
+      expect(resolveStudioTimeZone(zone.value)).toBe(zone.value);
   });
 
   it("'hoy' de noche sigue siendo hoy en México aunque en UTC ya sea mañana", () => {
@@ -68,16 +69,23 @@ describe("NEB-01-35 hora del estudio", () => {
       expect(source, file).not.toContain('"America/Mexico_City"');
       expect(source, file).not.toContain("-06:00");
     }
-    for (const file of ["app/admin/ventas/actions.ts", "app/admin/actividades/ActivityWizard.tsx"]) {
+    for (const file of [
+      "app/admin/ventas/actions.ts",
+      "app/admin/actividades/ActivityWizard.tsx",
+    ]) {
       expect(read(file), file).not.toContain("new Date().toISOString().slice(0, 10)");
     }
   });
 
   it("la base guarda pagos con la fecha local del estudio", () => {
     const migration = read("supabase/migrations/20261022216000_neb01_studio_local_time.sql");
-    expect(migration).toContain("alter table public.payments alter column effective_on drop default;");
+    expect(migration).toContain(
+      "alter table public.payments alter column effective_on drop default;",
+    );
     expect(migration).toContain("before insert on public.payments");
-    expect(migration).toContain("private.studio_local_today(v_sale.studio_id),(select auth.uid()));");
+    expect(migration).toContain(
+      "private.studio_local_today(v_sale.studio_id),(select auth.uid()));",
+    );
     expect(migration).not.toMatch(/^\s+current_date,\(select auth\.uid\(\)\)\);/m);
   });
 });

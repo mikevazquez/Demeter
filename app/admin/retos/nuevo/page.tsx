@@ -19,8 +19,7 @@ export default async function NewChallengePage() {
           Define objetivo, modalidad, participantes, recompensa y notificaciones antes de publicar.
         </p>
       </header>
-      <RuleEditorForm
-        timeZone={ctx.studio.timezone} mode="challenge" canManage />
+      <RuleEditorForm timeZone={ctx.studio.timezone} mode="challenge" canManage />
     </main>
   );
 }

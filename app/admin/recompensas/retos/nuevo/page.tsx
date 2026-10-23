@@ -20,8 +20,7 @@ export default async function NewChallengePage() {
         <p className="mt-4 eyebrow">CONSTRUCTOR DE RETO</p>
         <h1 className="dashboard-title">Nuevo reto especial</h1>
       </header>
-      <RuleEditorForm
-        timeZone={ctx.studio.timezone} mode="challenge" canManage />
+      <RuleEditorForm timeZone={ctx.studio.timezone} mode="challenge" canManage />
     </RewardsShell>
   );
 }
