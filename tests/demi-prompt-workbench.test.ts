@@ -39,6 +39,10 @@ function serverModule<T>(path: string, dependencies: Record<string, unknown>) {
             throw new Error("Unexpected workshop payment in legacy flow");
           },
         };
+      if (name === "./program-information" && !(name in dependencies))
+        return {
+          getActivityProgramInformation: async () => ({ data: [], error: null }),
+        };
       if (!(name in dependencies)) throw new Error(`Unexpected dependency: ${name}`);
       return dependencies[name];
     },
