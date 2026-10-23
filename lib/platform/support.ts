@@ -181,6 +181,12 @@ export function supportAuditLabel(action: string, detail: Record<string, unknown
       return "Sesión de soporte terminada por tiempo";
     case "support.read":
       return `Soporte consultó ${SUPPORT_TAB_LABEL[String(detail.tab ?? "")] ?? String(detail.tab ?? "")}`;
+    case "feature.stage.set":
+      return `Lanzamiento ${String(detail.feature ?? "")}: ${String(detail.from ?? "")} → ${String(detail.to ?? "")}`;
+    case "feature.beta.on":
+      return `Beta encendida: ${String(detail.feature ?? "")}`;
+    case "feature.beta.off":
+      return `Beta apagada: ${String(detail.feature ?? "")}`;
     case "support.request.created":
       return `El estudio pidió ayuda: ${String(detail.subject ?? "")}`;
     case "support.request.resolved":

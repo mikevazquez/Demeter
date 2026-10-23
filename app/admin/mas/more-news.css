@@ -1,0 +1,43 @@
+/* NEB-01-20 · Novedades de Nébora en Más. */
+.more-news {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.more-news-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(143, 230, 200, 0.4);
+  background: rgba(143, 230, 200, 0.07);
+}
+
+.more-news-item strong {
+  display: block;
+  margin-top: 2px;
+}
+
+.more-news-item p {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.more-news-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.more-news-item button {
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+}

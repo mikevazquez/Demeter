@@ -172,3 +172,57 @@ export async function resolveSupportRequestAction(formData: FormData) {
     `/plataforma/soporte?estado=${error ? supportRequestErrorCode(error.message) : "resuelta"}`,
   );
 }
+
+// NEB-01-20 · Lanzamientos por estudio.
+const FEATURE_KEY = /^[a-z][a-z0-9_]{2,40}$/;
+
+function finishFeature(error: { message?: string } | null, ok: string): never {
+  const state = error
+    ? (["feature_confirm_required", "feature_not_found", "forbidden"].find((code) =>
+        error.message?.includes(code),
+      ) ?? "error")
+    : ok;
+  revalidatePath("/plataforma/lanzamientos");
+  redirect(`/plataforma/lanzamientos?estado=${state}`);
+}
+
+export async function setFeatureStageAction(formData: FormData) {
+  const feature = String(formData.get("feature") ?? "");
+  const stage = String(formData.get("stage") ?? "");
+  if (!FEATURE_KEY.test(feature) || !["sandbox", "beta", "all"].includes(stage)) {
+    finishFeature({ message: "feature_not_found" }, "");
+  }
+  const supabase = await createClient("admin");
+  const { error } = await supabase.rpc("platform_set_feature_stage", {
+    p_key: feature,
+    p_stage: stage,
+    p_confirm_all: formData.get("confirm_all") === "on",
+  });
+  finishFeature(error, "etapa_guardada");
+}
+
+export async function setFeatureBetaStudioAction(formData: FormData) {
+  const feature = String(formData.get("feature") ?? "");
+  if (!FEATURE_KEY.test(feature)) finishFeature({ message: "feature_not_found" }, "");
+  const chosen = new Set(formData.getAll("studios").map(String).filter((id) => UUID.test(id)));
+  const supabase = await createClient("admin");
+  const { data } = await supabase.rpc("platform_features_list");
+  const current = new Set<string>(
+    ((data?.features ?? []) as Array<{ key: string; beta_studios?: string[] }>).find(
+      (item) => item.key === feature,
+    )?.beta_studios ?? [],
+  );
+  const { data: studios } = await supabase.rpc("platform_list_studios");
+  const allIds = ((studios ?? []) as Array<{ id: string }>).map((studio) => studio.id);
+  for (const studioId of allIds) {
+    const on = chosen.has(studioId);
+    if (on === current.has(studioId)) continue;
+    const { error } = await supabase.rpc("platform_set_feature_beta_studio", {
+      p_key: feature,
+      p_studio: studioId,
+      p_on: on,
+    });
+    if (error) finishFeature(error, "");
+  }
+  finishFeature(null, "beta_guardada");
+}

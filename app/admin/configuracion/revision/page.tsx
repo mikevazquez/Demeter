@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { loadStudioFeatureFlags } from "@/lib/platform/features";
 import { SEVERITY_LABEL, parseConfigIssues } from "@/lib/platform/config-issues";
 
 import "../reservas/reservas-v2.css";
@@ -12,6 +13,8 @@ import "./revision.css";
 export default async function ConfigReviewPage() {
   const ctx = await getAdminContext();
   if (!ctx.can(CAPABILITIES.SETTINGS_WRITE)) redirect("/admin?error=access");
+  // NEB-01-20 · solo donde la función ya está lanzada.
+  if (!(await loadStudioFeatureFlags(ctx.supabase, ctx.studio.id)).has("config_review")) redirect("/admin/mas");
   const { data, error } = await ctx.supabase.rpc("studio_config_issues", {
     p_studio: ctx.studio.id,
   });

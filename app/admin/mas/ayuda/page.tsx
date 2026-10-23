@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
+import { loadStudioFeatureFlags } from "@/lib/platform/features";
 import { SUPPORT_REQUEST_ERRORS, parseSupportRequests } from "@/lib/platform/support-requests";
 
 import "../../configuracion/reservas/reservas-v2.css";
@@ -17,6 +18,8 @@ export default async function SupportHelpPage({
 }) {
   const [query, ctx] = await Promise.all([searchParams, getAdminContext()]);
   if (!ctx.can(CAPABILITIES.SETTINGS_WRITE)) redirect("/admin?error=access");
+  // NEB-01-20 · solo donde la función ya está lanzada.
+  if (!(await loadStudioFeatureFlags(ctx.supabase, ctx.studio.id)).has("support_requests")) redirect("/admin/mas");
   const { data, error } = await ctx.supabase.rpc("studio_support_requests", {
     p_studio: ctx.studio.id,
   });

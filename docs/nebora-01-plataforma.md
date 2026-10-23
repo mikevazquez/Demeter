@@ -287,3 +287,23 @@ Pruebas: `tests/neb01-support.sql` (11) y `tests/neb01-support.test.ts`.
 Producción: bloqueada por NEB-01-24 (el contrato debe autorizar el acceso de soporte).
 
 Paso para Codex (Sandbox): aplicar después de `20261023160000`. Para probar, Mike debe estar en `platform_admins`.
+
+## NEB-01-18 · Revisión de configuración
+
+Migración `20261023162000_neb01_config_issues.sql`: 9 reglas con gravedad y corrección guiada. Se ve en
+Más › Revisión de configuración (dueña), en el Diagnóstico del modo soporte y como «errores de configuración»
+por estudio en el inicio de la consola. Pruebas: `tests/neb01-config-issues.sql` (5).
+
+## NEB-01-19 · Ayuda de Nébora
+
+Migración `20261023163000_neb01_support_requests.sql`: la dueña pide ayuda en Más › Ayuda de Nébora; la consola
+tiene Soporte (abiertas/resueltas/todas) y resuelve con respuesta. Pruebas: `tests/neb01-support-requests.sql` (7).
+
+## NEB-01-20 · Lanzamientos
+
+Migración `20261023164000_neb01_feature_releases.sql`: funciones con etapa Sandbox → Beta → Todos; pasar a
+Todos exige confirmar. `public.platform_environment` dice si la base es Sandbox (sin renglón = producción).
+Arrancan en Sandbox: `config_review` y `support_requests`. Novedades en Más. Pruebas: `tests/neb01-feature-releases.sql` (8).
+
+Paso para Codex (solo Sandbox): `insert into public.platform_environment (name) values ('sandbox');`
+Nunca en producción.
