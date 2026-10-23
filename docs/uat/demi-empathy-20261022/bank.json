@@ -1,0 +1,180 @@
+{
+  "runtimeSha": "971c2e0cc852f746cd9ab2f68839b2a5a72dbd32",
+  "environment": "hedouonyhynuvwbckdlg",
+  "deployment": "dpl_Fz4RxUxsRpW92NMi3aGk9sKkrPvc",
+  "studioId": "5d9f9367-5be6-4504-9010-76b18da0baf5",
+  "surface": "authenticated-workbench-simulation-real-model",
+  "model": "gpt-5.6-luna",
+  "reasoning": "medium",
+  "promptPath": "docs/uat/demi-identity-20261021/candidate-personality.md",
+  "promptSha256": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+  "businessEffectsCertified": false,
+  "functionalApproval": false,
+  "samples": [
+    {
+      "case": "E01-cash-refusal",
+      "turn": 1,
+      "message": "Quiero pagar mi primera clase en efectivo.",
+      "httpStatus": 200,
+      "durationMs": 2026,
+      "ok": true,
+      "conversationId": "73142da6-3141-45aa-b735-db5edbcc0e2a",
+      "reply": "Entiendo que prefieras pagar en efectivo. Como los lugares se reservan con anticipación, el pago por adelantado nos permite confirmar un lugar para tu primera clase. Sin ese pago, el lugar sigue disponible para otras personas y no queda reservado a tu nombre. Puedes hacerlo por alguno de los métodos habilitados.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "E01-cash-refusal",
+      "turn": 2,
+      "message": "No gracias, no puedo.",
+      "httpStatus": 200,
+      "durationMs": 1103,
+      "ok": true,
+      "conversationId": "73142da6-3141-45aa-b735-db5edbcc0e2a",
+      "reply": "Entiendo que el pago anticipado no sea una opción para ti. Puedes acercarte al estudio y pagar la clase ese día en efectivo, únicamente si hay lugar al llegar; recepción recibe y registra el pago. Como las clases se agendan con anticipación, irías sin reserva y no podemos garantizarte que haya espacio para tomarla.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "E01-cash-refusal",
+      "turn": 3,
+      "message": "Pero sólo puedo pagar en efectivo.",
+      "httpStatus": 200,
+      "durationMs": 1462,
+      "ok": true,
+      "conversationId": "73142da6-3141-45aa-b735-db5edbcc0e2a",
+      "reply": "Claro, te lo explico de otra forma: pagarías en efectivo directamente con recepción al llegar al estudio. Si en ese momento hay un lugar libre, puedes tomar la clase; si todos los lugares ya están reservados, no podrías entrar a esa clase. Por eso la visita sería sin reserva y no puedo asegurarte un lugar.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "E02-explain-why",
+      "turn": 1,
+      "message": "Quiero pagar mi primera clase en efectivo.",
+      "httpStatus": 200,
+      "durationMs": 1739,
+      "ok": true,
+      "conversationId": "57e42a99-3ffd-495d-8791-38cf348dcab0",
+      "reply": "Entiendo que prefieras pagar en efectivo. Como los lugares se reservan con anticipación, el pago por adelantado nos permite confirmar un lugar para tu primera clase. Sin ese pago, el lugar sigue disponible para otras personas y no queda reservado a tu nombre. Puedes hacerlo por alguno de los métodos habilitados.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "E02-explain-why",
+      "turn": 2,
+      "message": "¿Por qué necesito pagar antes? No entendí.",
+      "httpStatus": 200,
+      "durationMs": 4533,
+      "ok": true,
+      "conversationId": "57e42a99-3ffd-495d-8791-38cf348dcab0",
+      "reply": "El pago anticipado es necesario para asegurar tu lugar en la primera clase, porque los grupos tienen cupo limitado. Pagar en efectivo no permite apartarlo antes; podrías pagar en el estudio únicamente si todavía hay espacio al llegar, pero no tendrías reserva garantizada.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "E02-explain-why",
+      "turn": 3,
+      "message": "¿Me lo explicas de otra forma?",
+      "httpStatus": 200,
+      "durationMs": 4248,
+      "ok": true,
+      "conversationId": "57e42a99-3ffd-495d-8791-38cf348dcab0",
+      "reply": "Claro: pagar antes funciona como confirmar tu lugar en la clase. Si esperas a llegar con efectivo, solo podrás entrar si queda espacio disponible; podrías ir y que la clase ya esté llena. Con el pago anticipado sí se puede asegurar tu lugar.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "E03-reception",
+      "turn": 1,
+      "message": "Quiero pagar en efectivo en el estudio. ¿Quién recibe el dinero?",
+      "httpStatus": 200,
+      "durationMs": 2812,
+      "ok": true,
+      "conversationId": "b428f894-06ec-4226-a57b-d86cadc7a5d0",
+      "reply": "El efectivo lo recibe y registra recepción directamente en el estudio. Demi no recibe pagos en efectivo ni necesitas enviar comprobante.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "E03-reception",
+      "turn": 2,
+      "message": "¿Tengo que enviarte un comprobante de ese efectivo?",
+      "httpStatus": 200,
+      "durationMs": 4601,
+      "ok": true,
+      "conversationId": "b428f894-06ec-4226-a57b-d86cadc7a5d0",
+      "reply": "No, para el efectivo no necesitas enviarme comprobante. Recepción lo recibe y registra directamente en el estudio.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "E03-reception",
+      "turn": 3,
+      "message": "Ya pagué en efectivo, ¿lo puedes validar?",
+      "httpStatus": 200,
+      "durationMs": 4204,
+      "ok": true,
+      "conversationId": "b428f894-06ec-4226-a57b-d86cadc7a5d0",
+      "reply": "No puedo validar un pago en efectivo desde aquí. Recepción debe registrarlo directamente en el estudio; hasta entonces no puedo marcarlo como pagado.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "E04-full-class",
+      "turn": 1,
+      "message": "¿Tiene lugar la clase de Pole Fitness del viernes 23 de octubre de 2026 a las 19:00?",
+      "httpStatus": 200,
+      "durationMs": 5448,
+      "ok": true,
+      "conversationId": "840ca216-edec-4d59-84a9-e6800a14d612",
+      "reply": "Sí hay clase de Pole Fitness el viernes 23 de octubre a las 19:00, pero está llena. Es en la sede Principal, Avenida San Gaspar #240, Tonalá. ¿Quieres que revise otra fecha u horario?",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "E04-full-class",
+      "turn": 2,
+      "message": "Pero yo quiero agendar a las siete ese viernes.",
+      "httpStatus": 200,
+      "durationMs": 9056,
+      "ok": true,
+      "conversationId": "840ca216-edec-4d59-84a9-e6800a14d612",
+      "reply": "La clase de Pole Fitness del viernes 23 de octubre a las 19:00 está llena. Puedo inscribirte a la lista de espera; entrar no descuenta ninguna clase. ¿Confirmas?",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "E04-full-class",
+      "turn": 3,
+      "message": "No entiendo, ¿por qué no me puedes agendar a esa hora?",
+      "httpStatus": 200,
+      "durationMs": 6571,
+      "ok": true,
+      "conversationId": "840ca216-edec-4d59-84a9-e6800a14d612",
+      "reply": "Porque esa clase ya está llena: todos los lugares están ocupados y no puedo crear una reserva sin cupo. Sí puedo agregarte a la lista de espera; no descuenta ninguna clase. ¿Confirmas?",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "E05-close",
+      "turn": 1,
+      "message": "Quiero pagar mi primera clase en efectivo.",
+      "httpStatus": 200,
+      "durationMs": 1218,
+      "ok": true,
+      "conversationId": "ebbd4a26-22e3-4d2f-9b01-67ab83d10919",
+      "reply": "Entiendo que prefieras pagar en efectivo. Como los lugares se reservan con anticipación, el pago por adelantado nos permite confirmar un lugar para tu primera clase. Sin ese pago, el lugar sigue disponible para otras personas y no queda reservado a tu nombre. Puedes hacerlo por alguno de los métodos habilitados.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "E05-close",
+      "turn": 2,
+      "message": "No gracias, no puedo.",
+      "httpStatus": 200,
+      "durationMs": 1668,
+      "ok": true,
+      "conversationId": "ebbd4a26-22e3-4d2f-9b01-67ab83d10919",
+      "reply": "Entiendo que el pago anticipado no sea una opción para ti. Puedes acercarte al estudio y pagar la clase ese día en efectivo, únicamente si hay lugar al llegar; recepción recibe y registra el pago. Como las clases se agendan con anticipación, irías sin reserva y no podemos garantizarte que haya espacio para tomarla.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "E05-close",
+      "turn": 3,
+      "message": "No, mejor ya no voy. Gracias.",
+      "httpStatus": 200,
+      "durationMs": 4647,
+      "ok": true,
+      "conversationId": "ebbd4a26-22e3-4d2f-9b01-67ab83d10919",
+      "reply": "De acuerdo, gracias por avisarme. Cuando quieras volver, aquí estaremos. ¡Que estés muy bien!",
+      "canSimulateReceipt": false
+    }
+  ]
+}

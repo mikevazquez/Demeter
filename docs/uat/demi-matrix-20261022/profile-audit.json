@@ -1,0 +1,13 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+  "profile": {
+    "student": {
+      "id": "1e0896af-a2a7-4552-89ce-e6522f89a137",
+      "email": "ana.matriz.20261022@example.test",
+      "full_name": "Ana Matriz Sintética",
+      "person_id": "80a7c117-7b04-42fb-b44e-c5846c2d9761"
+    },
+    "birth_date": null
+  }
+}

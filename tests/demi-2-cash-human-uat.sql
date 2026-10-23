@@ -1,4 +1,6 @@
 begin;
+-- JWT claims alone do not exercise runtime database privileges.
+set local role service_role;
 set local request.jwt.claim.role='service_role';
 set local request.jwt.claims='{"role":"service_role"}';
 do $uat$

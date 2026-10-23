@@ -1,0 +1,632 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runId": "d1bce540-dd74-4cb8-b3c4-2f709517940f",
+  "initialRuntimeSha": "995f4466411051e752f1cb97c90215af0e67c5c2",
+  "continuedRuntimeSha": "18e0e291aee0c3536af09c99b194a9e2eb5c19c2",
+  "functionalApproval": false,
+  "checks": {
+    "cash_live_verified": [
+      {
+        "cash_verified": {
+          "cash": {
+            "due_on": "2026-10-23",
+            "status": "confirmed",
+            "sale_id": "7fe6a818-f1dd-479b-bc73-f9fb1048548b",
+            "total_minor": 60000,
+            "payment_count": 0
+          },
+          "acquisition": {
+            "id": "5cd21801-e857-48da-89c6-3e74db07f013",
+            "balance": 7,
+            "starts_on": "2026-10-23",
+            "expires_on": "2026-11-22"
+          },
+          "cash_booking_count": 1
+        }
+      }
+    ],
+    "retest_rights_handoff": [
+      {
+        "rights_and_handoff": {
+          "handoff": {
+            "reason": "refund_request",
+            "status": "resolved",
+            "resolved_note": "Resuelto en UAT; no se realizó reembolso ni se movió dinero.",
+            "human_takeover": null
+          },
+          "purchase": {
+            "status": "validated",
+            "balance": 7,
+            "payments": 1,
+            "grant_count": 1,
+            "amount_minor": 80000,
+            "reserve_count": 1,
+            "reservation_count": 1
+          }
+        }
+      }
+    ],
+    "retest_reminder_before": [
+      {
+        "reminder_before": {
+          "jobs": [
+            {
+              "id": "e1d844fa-73e0-49eb-8bca-704625b9dfcf",
+              "state": "scheduled",
+              "channel": "inbox",
+              "notification": "414824e4-ab49-4893-96cb-a922f05ca82a"
+            },
+            {
+              "id": "2517a640-b051-44df-89a8-38ce73e0d392",
+              "state": "scheduled",
+              "channel": "whatsapp",
+              "notification": "414824e4-ab49-4893-96cb-a922f05ca82a"
+            }
+          ],
+          "reminders": [
+            {
+              "id": "414824e4-ab49-4893-96cb-a922f05ca82a",
+              "state": "active",
+              "session_at": "2026-10-24T00:00:00+00:00",
+              "reservation": "9eee654f-cae4-45eb-bbde-4917709e3d35",
+              "scheduled_for": "2026-10-23T18:00:00+00:00"
+            }
+          ]
+        }
+      }
+    ],
+    "retest_reminder_after_move": [
+      {
+        "reschedule": {
+          "reminders": [
+            {
+              "id": "84e95f07-0904-4459-9d67-028e28b18162",
+              "state": "cancelled",
+              "student": "5a4de647-7806-4ec9-9f5c-41af2d79f10e",
+              "session_at": "2026-10-24T00:00:00+00:00",
+              "reservation": "bec3b87f-1070-4dd6-9449-db146776c90c",
+              "scheduled_for": "2026-10-23T18:00:00+00:00"
+            },
+            {
+              "id": "414824e4-ab49-4893-96cb-a922f05ca82a",
+              "state": "cancelled",
+              "student": "328b7aab-bf08-4b4c-aa23-9a4f52e2e2dd",
+              "session_at": "2026-10-24T00:00:00+00:00",
+              "reservation": "9eee654f-cae4-45eb-bbde-4917709e3d35",
+              "scheduled_for": "2026-10-23T18:00:00+00:00"
+            }
+          ],
+          "processing": [
+            {
+              "count": 47,
+              "state": "processed"
+            },
+            {
+              "count": 1,
+              "state": "processing"
+            }
+          ]
+        }
+      }
+    ],
+    "retest_reminder_after_materialization": [
+      {
+        "materialized": {
+          "reminders": [
+            {
+              "id": "84e95f07-0904-4459-9d67-028e28b18162",
+              "state": "cancelled",
+              "student": "5a4de647-7806-4ec9-9f5c-41af2d79f10e",
+              "session_at": "2026-10-24T00:00:00+00:00",
+              "reservation": "bec3b87f-1070-4dd6-9449-db146776c90c",
+              "scheduled_for": "2026-10-23T18:00:00+00:00"
+            },
+            {
+              "id": "414824e4-ab49-4893-96cb-a922f05ca82a",
+              "state": "cancelled",
+              "student": "328b7aab-bf08-4b4c-aa23-9a4f52e2e2dd",
+              "session_at": "2026-10-24T00:00:00+00:00",
+              "reservation": "9eee654f-cae4-45eb-bbde-4917709e3d35",
+              "scheduled_for": "2026-10-23T18:00:00+00:00"
+            },
+            {
+              "id": "5e3068fb-4f4e-442b-958b-3a5eb2e2d166",
+              "state": "active",
+              "student": "328b7aab-bf08-4b4c-aa23-9a4f52e2e2dd",
+              "session_at": "2026-10-23T04:50:42.173+00:00",
+              "reservation": "9eee654f-cae4-45eb-bbde-4917709e3d35",
+              "scheduled_for": "2026-10-22T22:50:42.173+00:00"
+            },
+            {
+              "id": "6dc2fdcd-1ccf-4579-881f-3a13de8ee722",
+              "state": "active",
+              "student": "5a4de647-7806-4ec9-9f5c-41af2d79f10e",
+              "session_at": "2026-10-23T04:50:42.173+00:00",
+              "reservation": "bec3b87f-1070-4dd6-9449-db146776c90c",
+              "scheduled_for": "2026-10-22T22:50:42.173+00:00"
+            }
+          ],
+          "pending_processing": 0,
+          "active_per_reservation": [
+            {
+              "count": 1,
+              "reservation": "9eee654f-cae4-45eb-bbde-4917709e3d35"
+            },
+            {
+              "count": 1,
+              "reservation": "bec3b87f-1070-4dd6-9449-db146776c90c"
+            }
+          ]
+        }
+      }
+    ],
+    "retest_reminder_dispatch": [
+      {
+        "dispatch": {
+          "attempts": [
+            {
+              "state": "delivered",
+              "channel": "inbox",
+              "captured": true,
+              "response": {
+                "failed": false,
+                "run_id": "d1bce540-dd74-4cb8-b3c4-2f709517940f",
+                "captured": true,
+                "artifact_id": "6b7a275e-56cd-4c1a-9a22-67de62fdad4f"
+              },
+              "notification": "5e3068fb-4f4e-442b-958b-3a5eb2e2d166",
+              "provider_message_id": "uat:6b7a275e-56cd-4c1a-9a22-67de62fdad4f"
+            },
+            {
+              "state": "delivered",
+              "channel": "whatsapp",
+              "captured": true,
+              "response": {
+                "failed": false,
+                "run_id": "d1bce540-dd74-4cb8-b3c4-2f709517940f",
+                "captured": true,
+                "artifact_id": "226c05c7-7757-425d-be35-ee4258b67892"
+              },
+              "notification": "5e3068fb-4f4e-442b-958b-3a5eb2e2d166",
+              "provider_message_id": "uat:226c05c7-7757-425d-be35-ee4258b67892"
+            },
+            {
+              "state": "delivered",
+              "channel": "inbox",
+              "captured": true,
+              "response": {
+                "failed": false,
+                "run_id": "d1bce540-dd74-4cb8-b3c4-2f709517940f",
+                "captured": true,
+                "artifact_id": "82fa5dc3-7a16-439f-9592-3045bbc541b6"
+              },
+              "notification": "6dc2fdcd-1ccf-4579-881f-3a13de8ee722",
+              "provider_message_id": "uat:82fa5dc3-7a16-439f-9592-3045bbc541b6"
+            },
+            {
+              "state": "delivered",
+              "channel": "whatsapp",
+              "captured": true,
+              "response": {
+                "failed": false,
+                "run_id": "d1bce540-dd74-4cb8-b3c4-2f709517940f",
+                "captured": true,
+                "artifact_id": "5ecc5ef7-f8a5-470d-bd78-ce0b484d2d45"
+              },
+              "notification": "6dc2fdcd-1ccf-4579-881f-3a13de8ee722",
+              "provider_message_id": "uat:5ecc5ef7-f8a5-470d-bd78-ce0b484d2d45"
+            }
+          ],
+          "per_notification_channel": [
+            {
+              "channel": "whatsapp",
+              "deliveries": 1,
+              "notification": "5e3068fb-4f4e-442b-958b-3a5eb2e2d166"
+            },
+            {
+              "channel": "inbox",
+              "deliveries": 1,
+              "notification": "6dc2fdcd-1ccf-4579-881f-3a13de8ee722"
+            },
+            {
+              "channel": "whatsapp",
+              "deliveries": 1,
+              "notification": "6dc2fdcd-1ccf-4579-881f-3a13de8ee722"
+            },
+            {
+              "channel": "inbox",
+              "deliveries": 1,
+              "notification": "5e3068fb-4f4e-442b-958b-3a5eb2e2d166"
+            }
+          ]
+        }
+      }
+    ],
+    "retest_reminder_replay": [
+      {
+        "replay": {
+          "workers": [
+            {
+              "at": "2026-10-22T20:53:55.777333+00:00",
+              "result": {
+                "ok": true,
+                "workerId": "notification-delivery-worker:283c04d6-0bdf-45e2-988d-1e2583c0a896",
+                "handoffClaimed": 0,
+                "handoffResults": [],
+                "deliveryClaimed": 0,
+                "deliveryResults": [],
+                "handoffSucceeded": 0,
+                "deliverySucceeded": 0
+              },
+              "make_due": false,
+              "http_status": 200
+            },
+            {
+              "at": "2026-10-22T20:52:45.153248+00:00",
+              "result": {
+                "ok": true,
+                "workerId": "notification-delivery-worker:1eacd728-afad-4970-bcfb-930a9529a991",
+                "handoffClaimed": 4,
+                "handoffResults": [
+                  {
+                    "ok": true,
+                    "jobId": "e1b5f0b3-1a52-4f83-bbed-40690a3ddab9",
+                    "created": true,
+                    "deliveryId": "d7ca284f-9d30-4761-8c19-e5b9d7ac96c1"
+                  },
+                  {
+                    "ok": true,
+                    "jobId": "c75722ae-d352-4054-89e7-8ba8debb87fc",
+                    "created": true,
+                    "deliveryId": "1b3f7337-04f2-4077-95b5-8e4fde6c70c8"
+                  },
+                  {
+                    "ok": true,
+                    "jobId": "44c8b9d9-588d-4266-a922-8edfc93a66d3",
+                    "created": true,
+                    "deliveryId": "021b5eb6-fa03-4e0a-a6d0-cf01b9d16d16"
+                  },
+                  {
+                    "ok": true,
+                    "jobId": "a726e8e5-73ed-47fd-9385-b0a471f97cf3",
+                    "created": true,
+                    "deliveryId": "be6d3ba2-f203-49ff-bf67-14d5c1269e9d"
+                  }
+                ],
+                "deliveryClaimed": 4,
+                "deliveryResults": [
+                  {
+                    "ok": true,
+                    "channel": "inbox",
+                    "outcome": "delivered",
+                    "deliveryId": "d7ca284f-9d30-4761-8c19-e5b9d7ac96c1"
+                  },
+                  {
+                    "ok": true,
+                    "channel": "whatsapp",
+                    "outcome": "delivered",
+                    "deliveryId": "1b3f7337-04f2-4077-95b5-8e4fde6c70c8"
+                  },
+                  {
+                    "ok": true,
+                    "channel": "inbox",
+                    "outcome": "delivered",
+                    "deliveryId": "021b5eb6-fa03-4e0a-a6d0-cf01b9d16d16"
+                  },
+                  {
+                    "ok": true,
+                    "channel": "whatsapp",
+                    "outcome": "delivered",
+                    "deliveryId": "be6d3ba2-f203-49ff-bf67-14d5c1269e9d"
+                  }
+                ],
+                "handoffSucceeded": 4,
+                "deliverySucceeded": 4
+              },
+              "make_due": true,
+              "http_status": 200
+            }
+          ],
+          "reminder_attempt_count": 4
+        }
+      }
+    ],
+    "retest_footprint": [
+      {
+        "footprint": {
+          "role": "admin",
+          "attempt_totals": {
+            "total": 21,
+            "captured": 21,
+            "not_captured": 0
+          },
+          "before_cleanup": {
+            "sales": 2,
+            "payments": 1,
+            "students": 12,
+            "reservations": 4,
+            "pending_followups": 0,
+            "active_notifications": 15
+          }
+        }
+      }
+    ],
+    "retest_receipt_fixture": [
+      {
+        "receipt": {
+          "replay": {
+            "ok": true,
+            "status": "awaiting_profile",
+            "intent_id": "47596ec3-c747-4ccd-a53e-d9c390dcfb19",
+            "idempotent": true
+          },
+          "result": {
+            "ok": true,
+            "status": "awaiting_profile",
+            "intent_id": "47596ec3-c747-4ccd-a53e-d9c390dcfb19",
+            "profile_fields": ["full_name", "birth_date", "email"]
+          },
+          "students_unchanged": true
+        }
+      }
+    ],
+    "retest_control_delivery_reconcile": [
+      {
+        "reconcile": {
+          "run": {
+            "faults": {},
+            "lease_until": null
+          },
+          "controls": [
+            {
+              "at": "2026-10-22T20:52:02.13151+00:00",
+              "id": "b256bebb-5665-4cf0-a752-d5cb1f7117af",
+              "kind": "human_control",
+              "error": null,
+              "result": {
+                "ok": true,
+                "status": "resolved",
+                "automatic_control_returned": true
+              },
+              "decision": "resolve"
+            },
+            {
+              "at": "2026-10-22T20:51:35.547459+00:00",
+              "id": "a36b2f9d-18e0-4974-84cc-7e1ec988beae",
+              "kind": "human_control",
+              "error": null,
+              "result": {
+                "ok": true,
+                "status": "human_control",
+                "assigned_to": "0fd86d7b-f7ea-410a-8fc6-8017cbeb8a81"
+              },
+              "decision": "claim"
+            },
+            {
+              "at": "2026-10-22T20:52:45.153248+00:00",
+              "id": "fce9f4b8-2acc-4d40-abfc-5b19e351a64a",
+              "kind": "notification_worker",
+              "error": null,
+              "result": {
+                "ok": true,
+                "workerId": "notification-delivery-worker:1eacd728-afad-4970-bcfb-930a9529a991",
+                "handoffClaimed": 4,
+                "handoffResults": [
+                  {
+                    "ok": true,
+                    "jobId": "e1b5f0b3-1a52-4f83-bbed-40690a3ddab9",
+                    "created": true,
+                    "deliveryId": "d7ca284f-9d30-4761-8c19-e5b9d7ac96c1"
+                  },
+                  {
+                    "ok": true,
+                    "jobId": "c75722ae-d352-4054-89e7-8ba8debb87fc",
+                    "created": true,
+                    "deliveryId": "1b3f7337-04f2-4077-95b5-8e4fde6c70c8"
+                  },
+                  {
+                    "ok": true,
+                    "jobId": "44c8b9d9-588d-4266-a922-8edfc93a66d3",
+                    "created": true,
+                    "deliveryId": "021b5eb6-fa03-4e0a-a6d0-cf01b9d16d16"
+                  },
+                  {
+                    "ok": true,
+                    "jobId": "a726e8e5-73ed-47fd-9385-b0a471f97cf3",
+                    "created": true,
+                    "deliveryId": "be6d3ba2-f203-49ff-bf67-14d5c1269e9d"
+                  }
+                ],
+                "deliveryClaimed": 4,
+                "deliveryResults": [
+                  {
+                    "ok": true,
+                    "channel": "inbox",
+                    "outcome": "delivered",
+                    "deliveryId": "d7ca284f-9d30-4761-8c19-e5b9d7ac96c1"
+                  },
+                  {
+                    "ok": true,
+                    "channel": "whatsapp",
+                    "outcome": "delivered",
+                    "deliveryId": "1b3f7337-04f2-4077-95b5-8e4fde6c70c8"
+                  },
+                  {
+                    "ok": true,
+                    "channel": "inbox",
+                    "outcome": "delivered",
+                    "deliveryId": "021b5eb6-fa03-4e0a-a6d0-cf01b9d16d16"
+                  },
+                  {
+                    "ok": true,
+                    "channel": "whatsapp",
+                    "outcome": "delivered",
+                    "deliveryId": "be6d3ba2-f203-49ff-bf67-14d5c1269e9d"
+                  }
+                ],
+                "handoffSucceeded": 4,
+                "deliverySucceeded": 4
+              },
+              "decision": null
+            }
+          ],
+          "reminder_delivery": [
+            {
+              "state": "cancelled",
+              "channel": "inbox",
+              "provider": null,
+              "job_state": "cancelled",
+              "notification": "414824e4-ab49-4893-96cb-a922f05ca82a",
+              "delivery_state": null
+            },
+            {
+              "state": "cancelled",
+              "channel": "whatsapp",
+              "provider": null,
+              "job_state": "cancelled",
+              "notification": "414824e4-ab49-4893-96cb-a922f05ca82a",
+              "delivery_state": null
+            },
+            {
+              "state": "active",
+              "channel": "inbox",
+              "provider": "studio_flow",
+              "job_state": "handed_off",
+              "notification": "5e3068fb-4f4e-442b-958b-3a5eb2e2d166",
+              "delivery_state": "delivered"
+            },
+            {
+              "state": "active",
+              "channel": "whatsapp",
+              "provider": "asistian",
+              "job_state": "handed_off",
+              "notification": "5e3068fb-4f4e-442b-958b-3a5eb2e2d166",
+              "delivery_state": "delivered"
+            },
+            {
+              "state": "active",
+              "channel": "inbox",
+              "provider": "studio_flow",
+              "job_state": "handed_off",
+              "notification": "6dc2fdcd-1ccf-4579-881f-3a13de8ee722",
+              "delivery_state": "delivered"
+            },
+            {
+              "state": "active",
+              "channel": "whatsapp",
+              "provider": "asistian",
+              "job_state": "handed_off",
+              "notification": "6dc2fdcd-1ccf-4579-881f-3a13de8ee722",
+              "delivery_state": "delivered"
+            },
+            {
+              "state": "cancelled",
+              "channel": "inbox",
+              "provider": null,
+              "job_state": "cancelled",
+              "notification": "84e95f07-0904-4459-9d67-028e28b18162",
+              "delivery_state": null
+            },
+            {
+              "state": "cancelled",
+              "channel": "whatsapp",
+              "provider": null,
+              "job_state": "cancelled",
+              "notification": "84e95f07-0904-4459-9d67-028e28b18162",
+              "delivery_state": null
+            }
+          ]
+        }
+      }
+    ],
+    "retest_profile_verified": [
+      {
+        "profile": {
+          "email": "ana.retest.sandbox@example.test",
+          "full_name": "Ana Retest Sintética",
+          "birth_date": "1995-05-10",
+          "person_last": "Retest Sintética",
+          "person_first": "Ana",
+          "intent_status": "validated"
+        }
+      }
+    ],
+    "retest_cash_no_show": [
+      {
+        "no_show_check": {
+          "balance": 7,
+          "sale_due": "2026-10-23",
+          "attendance": "no_show",
+          "payment_count": 0
+        }
+      }
+    ],
+    "retest_cash_after_collection": [
+      {
+        "collected": {
+          "attendance": "no_show",
+          "cash_payments": 1,
+          "cash_acquisition": {
+            "balance": 7,
+            "starts_on": "2026-10-23",
+            "expires_on": "2026-11-22"
+          }
+        }
+      }
+    ],
+    "retest_cash_collected_eligibility": [
+      {
+        "db_role": "service_role",
+        "eligibility": {
+          "eligible": true,
+          "unlimited": false,
+          "credit_cost": 1,
+          "reason_code": null,
+          "acquisition_id": "5cd21801-e857-48da-89c6-3e74db07f013",
+          "available_credits": 7
+        }
+      }
+    ],
+    "retest_final_rights": [
+      {
+        "final_rights": {
+          "starts_on": "2026-10-23",
+          "expires_on": "2026-11-22",
+          "cash_balance": 6,
+          "transfer_balance": 7,
+          "cash_reservations": [
+            {
+              "id": "9eee654f-cae4-45eb-bbde-4917709e3d35",
+              "status": "no_show",
+              "session_id": "a8a52161-a1ba-497d-9d50-9609969ecbc0"
+            },
+            {
+              "id": "2ee15e68-926d-4fb5-a6e5-dd4712cba6fb",
+              "status": "reserved",
+              "session_id": "74238fec-2512-4cdb-8e1f-3083eda4091b"
+            }
+          ],
+          "cash_payment_count": 1
+        }
+      }
+    ],
+    "retest_cleanup": [
+      {
+        "cleanup": {
+          "banned": true,
+          "sessions": 0,
+          "expiry_jobs": 0,
+          "pending_jobs": 0,
+          "account_status": "disabled",
+          "pending_engine": 0,
+          "refresh_tokens": 0,
+          "pending_followups": 0,
+          "active_memberships": 0,
+          "pending_deliveries": 0,
+          "uncaptured_attempts": 0,
+          "notification_attempts": 28
+        }
+      }
+    ]
+  }
+}

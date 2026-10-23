@@ -1,0 +1,114 @@
+{
+  "sha": "b98d14eea7640753023082331630529830928626",
+  "environment": "hedouonyhynuvwbckdlg",
+  "studioId": "54dd112f-12ab-4e77-928c-877b12276eb2",
+  "surface": "authenticated-workbench-server-action",
+  "model": "gpt-5.6-luna",
+  "reasoning": "medium",
+  "samples": [
+    {
+      "id": "S12",
+      "turn": 1,
+      "message": "Quiero el paquete de 8 clases por transferencia.",
+      "simulationEvent": null,
+      "httpStatus": 200,
+      "durationMs": 10584,
+      "ok": true,
+      "conversationId": "ec514ecd-2ffb-4773-8c3d-857f2b49d34f",
+      "reply": "El Paquete UAT de 8 clases cuesta $600 y requiere inscripción de $200. El total por transferencia sería de $800, con vigencia de 30 días para las 8 clases. ¿Aceptas pagar ambos juntos?",
+      "canSimulateReceipt": false
+    },
+    {
+      "id": "S12",
+      "turn": 2,
+      "message": "No, todavía no acepto el cobro de inscripción y paquete.",
+      "simulationEvent": null,
+      "httpStatus": 200,
+      "durationMs": 6982,
+      "ok": true,
+      "conversationId": "ec514ecd-2ffb-4773-8c3d-857f2b49d34f",
+      "reply": "Entendido, no se procesa ningún cobro ni compra. Si después quieres revisar otra opción, aquí estoy.",
+      "canSimulateReceipt": false
+    },
+    {
+      "id": "S12",
+      "turn": 3,
+      "message": "Sí, acepto pagar los 200 de inscripción y 600 del paquete, total 800 por transferencia.",
+      "simulationEvent": null,
+      "httpStatus": 200,
+      "durationMs": 10753,
+      "ok": true,
+      "conversationId": "ec514ecd-2ffb-4773-8c3d-857f2b49d34f",
+      "reply": "Listo: total de $800 por transferencia ($200 de inscripción + $600 del paquete de 8 clases). En esta demo no realices una transferencia real; usa el botón de comprobante simulado para continuar. Después te pediré nombre completo, fecha de nacimiento y correo.",
+      "canSimulateReceipt": true
+    },
+    {
+      "id": "S12",
+      "turn": 4,
+      "message": "Envío el comprobante de prueba por el monto acordado.",
+      "simulationEvent": "matching_transfer_receipt",
+      "httpStatus": 200,
+      "durationMs": 4422,
+      "ok": true,
+      "conversationId": "ec514ecd-2ffb-4773-8c3d-857f2b49d34f",
+      "reply": "Recibí el comprobante por $800. El paquete queda activado provisionalmente, sujeto a validación. Para completar tu perfil, compárteme tu nombre completo, fecha de nacimiento y correo electrónico.",
+      "canSimulateReceipt": false
+    },
+    {
+      "id": "S12",
+      "turn": 5,
+      "message": "Mi nombre completo es Ana Prueba Sintética, nací el 10 de mayo de 1995 y mi correo es ana.prueba.s12@example.test.",
+      "simulationEvent": null,
+      "httpStatus": 200,
+      "durationMs": 5644,
+      "ok": true,
+      "conversationId": "ec514ecd-2ffb-4773-8c3d-857f2b49d34f",
+      "reply": "Tu perfil y el paquete de 8 clases quedaron activados provisionalmente. La transferencia sigue pendiente de validación definitiva y podría revocarse si no se confirma. Ya puedes elegir una clase para reservar.",
+      "canSimulateReceipt": false
+    },
+    {
+      "id": "S14",
+      "turn": 1,
+      "message": "Quiero el paquete de 8 clases por transferencia.",
+      "simulationEvent": null,
+      "httpStatus": 200,
+      "durationMs": 9020,
+      "ok": true,
+      "conversationId": "e95765f3-aa33-454a-9aa4-cb3b3adb12f4",
+      "reply": "El paquete de 8 clases cuesta $600 y requiere inscripción anual de $200. El total por transferencia sería de $800. ¿Aceptas pagar ambos juntos?",
+      "canSimulateReceipt": false
+    },
+    {
+      "id": "S14",
+      "turn": 2,
+      "message": "Sí, acepto pagar la inscripción de 200 y el paquete de 600, total 800.",
+      "simulationEvent": null,
+      "httpStatus": 200,
+      "durationMs": 7673,
+      "ok": true,
+      "conversationId": "e95765f3-aa33-454a-9aa4-cb3b3adb12f4",
+      "reply": "Listo: quedó preparado el paquete de 8 clases más la inscripción, por $800. En esta demo no realices una transferencia; usa el botón de comprobante simulado para continuar. Aún no se ha creado la compra ni activado el paquete.",
+      "canSimulateReceipt": true
+    },
+    {
+      "id": "S14",
+      "turn": 3,
+      "message": "Envío el comprobante de prueba por el monto acordado.",
+      "simulationEvent": "matching_transfer_receipt",
+      "httpStatus": 200,
+      "durationMs": 4853,
+      "ok": true,
+      "conversationId": "e95765f3-aa33-454a-9aa4-cb3b3adb12f4",
+      "reply": "Recibido. Tu paquete quedó activo provisionalmente con 8 clases; la validación definitiva sigue pendiente. Ya puedes reservar una clase. ¿Qué actividad y fecha te interesan?",
+      "canSimulateReceipt": false
+    }
+  ],
+  "uiCaseOptions": [
+    "Conversación libre",
+    "S11 · Prospecto: Pase Descubre",
+    "S12 · Prospecto: paquete de 8",
+    "S13 · Prospecto: comprobante recibido",
+    "S14 · Alumna sin inscripción: paquete de 8",
+    "S15 · Compra en app: pendiente cerrado"
+  ]
+}

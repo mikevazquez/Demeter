@@ -1,0 +1,20 @@
+[
+  {
+    "cleanup": {
+      "banned": true,
+      "userId": "336a7b3d-b107-4f19-bfec-d3531b585f98",
+      "sessions": 0,
+      "environment": "hedouonyhynuvwbckdlg",
+      "expiry_jobs": 0,
+      "pending_jobs": 0,
+      "account_status": "disabled",
+      "pending_engine": 0,
+      "refresh_tokens": 0,
+      "pending_followups": 0,
+      "active_memberships": 0,
+      "pending_deliveries": 0,
+      "uncaptured_attempts": 0,
+      "notification_attempts": 8
+    }
+  }
+]

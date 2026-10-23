@@ -1,0 +1,19 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "55f59c2cef805908d45748a06c205dcc8ad60a67",
+  "entries": [
+    {
+      "id": "77a96a55-9e03-442e-b520-bc02b0f90224",
+      "status": "active",
+      "joined_at": "2026-10-22T04:32:13.566013+00:00",
+      "studio_id": "5622a67b-a35c-40ea-89ad-5add48e1cd50",
+      "created_at": "2026-10-22T04:32:13.566013+00:00",
+      "session_id": "0ce2bc6d-0f63-4600-817f-cb6c70dc72c3",
+      "student_id": "fbb3e7d4-b18d-44b4-9902-a6cc2bd3c63f",
+      "updated_at": "2026-10-22T04:32:13.566013+00:00",
+      "resolved_at": null,
+      "resolution_reason": null,
+      "promoted_reservation_id": null
+    }
+  ]
+}

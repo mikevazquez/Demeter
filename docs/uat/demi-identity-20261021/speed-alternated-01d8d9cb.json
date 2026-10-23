@@ -1,0 +1,1447 @@
+{
+  "surface": "authenticated-sandbox-workbench",
+  "environment": "hedouonyhynuvwbckdlg",
+  "studioId": "d0357e3d-f962-4628-8ba8-a401708b6157",
+  "runId": "f476451f-bc32-4139-a7c3-7a6dbcd18c60",
+  "baseRuntimeSha": "bfd395e11e6bb54f2841a3c3c1f3b6a0d8863cd9",
+  "baseDeploymentSha": "8c551473f6ffdcca07e57741bf74a0cc4bf416e5",
+  "candidateSha": "01d8d9cba024bc7bb4c254c96eb4c8d5f15b256b",
+  "model": "gpt-5.6-luna",
+  "reasoning": "medium",
+  "ordering": "AB/BA alternating paired by case and repetition; sequential; no samples discarded",
+  "samples": [
+    {
+      "id": "S01",
+      "rep": 0,
+      "variant": "base",
+      "conversationId": "dee27ab1-db21-4aa9-8f39-0e4d7e41ebb8",
+      "persona": "student",
+      "message": "Hola",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 4124,
+      "ok": true,
+      "reply": "¡Hola! Soy Demi de Demeter Fitness Studio 💜 ¿En qué te ayudo?",
+      "modelCalls": 1,
+      "outputTokens": 23,
+      "inputTokens": 16016,
+      "reasoningTokens": 0,
+      "modelLatencyMs": 1667,
+      "tools": []
+    },
+    {
+      "id": "S01",
+      "rep": 0,
+      "variant": "candidate",
+      "conversationId": "c7d0893f-2cf4-4ccb-bee7-ec6a5be01be2",
+      "persona": "student",
+      "message": "Hola",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 4969,
+      "ok": true,
+      "reply": "¡Hola! 😊 Tienes 8 clases disponibles. ¿Te ayudo a reservar una?",
+      "modelCalls": 1,
+      "outputTokens": 68,
+      "inputTokens": 9721,
+      "reasoningTokens": 28,
+      "modelLatencyMs": 2997,
+      "tools": []
+    },
+    {
+      "id": "S02",
+      "rep": 0,
+      "variant": "candidate",
+      "conversationId": "9576b976-2de1-4f0f-a537-51a010f9d18b",
+      "persona": "prospect",
+      "message": "Hola",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 7246,
+      "ok": true,
+      "reply": "¡Hola! Seguimos con tu primera clase de Pole Fitness mañana a las 18:00. Para avanzar, ¿quieres que te comparta las opciones de pago disponibles?",
+      "modelCalls": 1,
+      "outputTokens": 346,
+      "inputTokens": 10596,
+      "reasoningTokens": 289,
+      "modelLatencyMs": 5334,
+      "tools": []
+    },
+    {
+      "id": "S02",
+      "rep": 0,
+      "variant": "base",
+      "conversationId": "38008335-8a70-430b-a274-321231748a69",
+      "persona": "prospect",
+      "message": "Hola",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 3496,
+      "ok": true,
+      "reply": "¡Hola! 😊 ¿En qué te ayudo?",
+      "modelCalls": 1,
+      "outputTokens": 34,
+      "inputTokens": 16878,
+      "reasoningTokens": 17,
+      "modelLatencyMs": 1575,
+      "tools": []
+    },
+    {
+      "id": "S03",
+      "rep": 0,
+      "variant": "base",
+      "conversationId": "d8b21fe5-4b99-4ae3-bc37-8d509eebddda",
+      "persona": "student",
+      "message": "¿Cuántas clases me quedan y hasta cuándo puedo usarlas?",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 5973,
+      "ok": true,
+      "reply": "Te quedan 8 clases disponibles. En este momento no me aparece la fecha de vencimiento del paquete, así que prefiero no inventarla.",
+      "modelCalls": 2,
+      "outputTokens": 235,
+      "inputTokens": 32144,
+      "reasoningTokens": 182,
+      "modelLatencyMs": 4199,
+      "tools": [
+        {
+          "name": "get_student_package_status",
+          "status": "executed",
+          "simulated": true
+        }
+      ]
+    },
+    {
+      "id": "S03",
+      "rep": 0,
+      "variant": "candidate",
+      "conversationId": "601e0b16-9921-4dc5-a8c8-a9903c51adb9",
+      "persona": "student",
+      "message": "¿Cuántas clases me quedan y hasta cuándo puedo usarlas?",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 4427,
+      "ok": true,
+      "reply": "Te quedan 8 clases disponibles en tu paquete de prueba. No tengo visible la fecha de vencimiento en este momento, así que prefiero no inventarla.",
+      "modelCalls": 1,
+      "outputTokens": 171,
+      "inputTokens": 13265,
+      "reasoningTokens": 119,
+      "modelLatencyMs": 2824,
+      "tools": []
+    },
+    {
+      "id": "S04",
+      "rep": 0,
+      "variant": "candidate",
+      "conversationId": "2d9e1522-12fa-4d9a-8bfe-3e6f102ea705",
+      "persona": "prospect",
+      "message": "¿Cuáles son los horarios de Pole Fitness para mañana?",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 7283,
+      "ok": true,
+      "reply": "Mañana, jueves 22 de octubre, hay Pole Fitness a las 18:00 en la sede Principal, Avenida San Gaspar #240, Tonalá. Hay una sesión con lugar disponible y otra llena. ¿Quieres que te ayude a reservar la disponible?",
+      "modelCalls": 2,
+      "outputTokens": 276,
+      "inputTokens": 28565,
+      "reasoningTokens": 103,
+      "modelLatencyMs": 5230,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S04",
+      "rep": 0,
+      "variant": "base",
+      "conversationId": "923a7340-88ee-44b8-b6b4-5ea5f967f50d",
+      "persona": "prospect",
+      "message": "¿Cuáles son los horarios de Pole Fitness para mañana?",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 7500,
+      "ok": true,
+      "reply": "Mañana, jueves 22 de octubre, hay Pole Fitness a las 6:00 pm en la sede Principal, Avenida San Gaspar #240, Tonalá. Hay disponibilidad en una de las sesiones. 💜",
+      "modelCalls": 2,
+      "outputTokens": 136,
+      "inputTokens": 34014,
+      "reasoningTokens": 28,
+      "modelLatencyMs": 5101,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "rep": 0,
+      "variant": "base",
+      "conversationId": "9de75b70-3357-40b6-9bc9-3c589c0e7af5",
+      "persona": "prospect",
+      "message": "Muéstrame todos los horarios de Pole Fitness de los próximos siete días, no sólo hoy.",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 8577,
+      "ok": true,
+      "reply": "Estos son todos los horarios disponibles de Pole Fitness del 21 al 27 de octubre:\n\nMiércoles 21: 4:22 a 5:22 pm  \nJueves 22: 6:00 a 7:00 pm — hay una clase disponible y otra está llena  \nViernes 23: 6:00 a 7:00 pm  \n\nNo hay más horarios publicados del 24 al 27 de octubre. Todas son en la sede Principal: Avenida San Gaspar #240, Tonalá, Jalisco.",
+      "modelCalls": 2,
+      "outputTokens": 317,
+      "inputTokens": 34257,
+      "reasoningTokens": 143,
+      "modelLatencyMs": 6319,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "rep": 0,
+      "variant": "candidate",
+      "conversationId": "d8c0ab8b-6776-4f1a-a3a2-c240d1474117",
+      "persona": "prospect",
+      "message": "Muéstrame todos los horarios de Pole Fitness de los próximos siete días, no sólo hoy.",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 7211,
+      "ok": true,
+      "reply": "Estos son todos los horarios de Pole Fitness del 21 al 27 de octubre:\n\n• Miércoles 21: 16:22–17:22 — disponible\n• Jueves 22: 18:00–19:00 — disponible\n• Jueves 22: 18:00–19:00 — llena\n• Viernes 23: 18:00–19:00 — disponible\n\nNo hay más horarios publicados en ese periodo. Todas son en la sede Principal, Avenida San Gaspar #240, Tonalá, Jalisco.",
+      "modelCalls": 2,
+      "outputTokens": 369,
+      "inputTokens": 28803,
+      "reasoningTokens": 141,
+      "modelLatencyMs": 5084,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "rep": 0,
+      "variant": "candidate",
+      "conversationId": "62ed9085-6c6c-41ac-99f2-933a6e28ea9d",
+      "persona": "prospect",
+      "message": "Quiero Pole Fitness hoy, sólo puedo después de las 6 de la tarde.",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 7577,
+      "ok": true,
+      "reply": "Hoy no hay clases de Pole Fitness disponibles después de las 6:00 p. m. ¿Quieres que revise mañana después de esa hora?",
+      "modelCalls": 2,
+      "outputTokens": 234,
+      "inputTokens": 28358,
+      "reasoningTokens": 86,
+      "modelLatencyMs": 5429,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "rep": 0,
+      "variant": "base",
+      "conversationId": "97445398-aa7a-4e58-9c00-00dd3fb2dc0f",
+      "persona": "prospect",
+      "message": "Quiero Pole Fitness hoy, sólo puedo después de las 6 de la tarde.",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 5956,
+      "ok": true,
+      "reply": "Hoy no hay clases de Pole Fitness disponibles después de las 6:00 p. m. Puedes revisar otra fecha o una actividad diferente. 🌸",
+      "modelCalls": 2,
+      "outputTokens": 118,
+      "inputTokens": 33811,
+      "reasoningTokens": 24,
+      "modelLatencyMs": 3600,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S07",
+      "rep": 0,
+      "variant": "base",
+      "conversationId": "46f42611-fe5d-44da-84bc-926f3cbe21ad",
+      "persona": "prospect",
+      "message": "Ninguno de esos tres horarios me sirve. ¿Hay otros días por la tarde?",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 6360,
+      "ok": true,
+      "reply": "Sí, hay por la tarde:\n\nJueves 22 de octubre a las 6:00 pm  \nViernes 23 de octubre a las 6:00 pm\n\n¿Cuál te funciona mejor? 💜",
+      "modelCalls": 2,
+      "outputTokens": 266,
+      "inputTokens": 34354,
+      "reasoningTokens": 155,
+      "modelLatencyMs": 4041,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S07",
+      "rep": 0,
+      "variant": "candidate",
+      "conversationId": "b24d24da-f55f-43e0-9261-1ad88ebe2aa4",
+      "persona": "prospect",
+      "message": "Ninguno de esos tres horarios me sirve. ¿Hay otros días por la tarde?",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 9035,
+      "ok": true,
+      "reply": "Sí. Encontré estas opciones de Pole Fitness por la tarde:\n\n• Jueves 22 de octubre, 6:00 a 7:00 p. m.\n• Viernes 23 de octubre, 6:00 a 7:00 p. m.\n\nAmbas son en la sede Principal, Avenida San Gaspar #240, Tonalá. ¿Cuál te funciona?",
+      "modelCalls": 2,
+      "outputTokens": 461,
+      "inputTokens": 28833,
+      "reasoningTokens": 258,
+      "modelLatencyMs": 6702,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S08",
+      "rep": 0,
+      "variant": "candidate",
+      "conversationId": "3385df21-56e6-4fef-8d92-646da97814b4",
+      "persona": "prospect",
+      "message": "No puedo transferir ni usar ningún método de pago anticipado. ¿Puedo ir y pagar en efectivo?",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 5978,
+      "ok": true,
+      "reply": "Sí, puedes llegar y pagar en efectivo en el estudio, pero no tendrías una reserva ni el lugar asegurado; podrás tomar la clase únicamente si hay cupo al llegar.",
+      "modelCalls": 1,
+      "outputTokens": 287,
+      "inputTokens": 14101,
+      "reasoningTokens": 190,
+      "modelLatencyMs": 4046,
+      "tools": []
+    },
+    {
+      "id": "S08",
+      "rep": 0,
+      "variant": "base",
+      "conversationId": "411a7599-686f-437a-80bc-20d38c1c1a31",
+      "persona": "prospect",
+      "message": "No puedo transferir ni usar ningún método de pago anticipado. ¿Puedo ir y pagar en efectivo?",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 6989,
+      "ok": true,
+      "reply": "Para la primera clase sí se requiere pago anticipado; por ahora Studio Flow solo tiene habilitada la transferencia, no el pago en efectivo en el estudio. La primera clase cuesta $150.\n\nSi no puedes usar transferencia, no podría confirmarse la reserva todavía. Si más adelante habilitan otra opción, con gusto te orientamos.",
+      "modelCalls": 2,
+      "outputTokens": 165,
+      "inputTokens": 34174,
+      "reasoningTokens": 72,
+      "modelLatencyMs": 4823,
+      "tools": [
+        {
+          "name": "get_commercial_options",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S09",
+      "rep": 0,
+      "variant": "base",
+      "conversationId": "a4656bbb-8953-4adf-9334-14ab951aef4c",
+      "persona": "student",
+      "message": "Quiero reservar la clase Pole Fitness UAT de mañana a las 18:00. Ya elegí esta opción: session:ce2b06ae-580b-4018-b56b-fe3224de98ce.",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 6461,
+      "ok": true,
+      "reply": "Te preparé la reserva de Pole Fitness UAT para mañana, jueves 22 de octubre, de 18:00 a 19:00. ¿Confirmas la reserva?",
+      "modelCalls": 2,
+      "outputTokens": 175,
+      "inputTokens": 32314,
+      "reasoningTokens": 91,
+      "modelLatencyMs": 4161,
+      "tools": [
+        {
+          "name": "prepare_booking",
+          "status": "prepared",
+          "simulated": true
+        }
+      ]
+    },
+    {
+      "id": "S09",
+      "rep": 0,
+      "variant": "candidate",
+      "conversationId": "6605b238-a1f3-47b9-9b4e-f0f06c768e52",
+      "persona": "student",
+      "message": "Quiero reservar la clase Pole Fitness UAT de mañana a las 18:00. Ya elegí esta opción: session:ce2b06ae-580b-4018-b56b-fe3224de98ce.",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 9323,
+      "ok": true,
+      "reply": "Tengo lista la reserva de Pole Fitness UAT para mañana, jueves 22 de octubre, de 18:00 a 19:00, en Principal: Avenida San Gaspar #240, Tonalá, Jalisco. ¿Confirmas la reserva?",
+      "modelCalls": 3,
+      "outputTokens": 327,
+      "inputTokens": 41016,
+      "reasoningTokens": 103,
+      "modelLatencyMs": 6766,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        },
+        {
+          "name": "prepare_booking",
+          "status": "prepared",
+          "simulated": true
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "rep": 0,
+      "variant": "candidate",
+      "conversationId": "15533d03-a64e-4ce0-8554-6926a9d9b7ee",
+      "persona": "student_reserved",
+      "message": "Quiero cancelar mi reserva de Pole Fitness de mañana a las 18:00 porque no podré asistir.",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 5282,
+      "ok": true,
+      "reply": "Tu cancelación está lista: Pole Fitness del jueves 22 de octubre a las 18:00 en Estudio Demeter. El crédito regresará para usarlo en otra clase. ¿Confirmas la cancelación?",
+      "modelCalls": 2,
+      "outputTokens": 186,
+      "inputTokens": 26976,
+      "reasoningTokens": 54,
+      "modelLatencyMs": 3547,
+      "tools": [
+        {
+          "name": "prepare_cancellation",
+          "status": "prepared",
+          "simulated": true
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "rep": 0,
+      "variant": "base",
+      "conversationId": "267be481-bf6a-4fb7-b682-a67be9c68409",
+      "persona": "student_reserved",
+      "message": "Quiero cancelar mi reserva de Pole Fitness de mañana a las 18:00 porque no podré asistir.",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 8471,
+      "ok": true,
+      "reply": "Tu cancelación está dentro del tiempo permitido y tu crédito regresaría para usarlo en otra clase. ¿Confirmas cancelar Pole Fitness de mañana, jueves 22 de octubre, de 18:00 a 19:00?",
+      "modelCalls": 3,
+      "outputTokens": 128,
+      "inputTokens": 48529,
+      "reasoningTokens": 28,
+      "modelLatencyMs": 6544,
+      "tools": [
+        {
+          "name": "get_student_reservations",
+          "status": "executed",
+          "simulated": true
+        },
+        {
+          "name": "prepare_cancellation",
+          "status": "prepared",
+          "simulated": true
+        }
+      ]
+    },
+    {
+      "id": "S01",
+      "rep": 1,
+      "variant": "base",
+      "conversationId": "1629f915-40c5-4881-81b0-2e45b783089f",
+      "persona": "student",
+      "message": "Hola",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 2683,
+      "ok": true,
+      "reply": "¡Hola! Soy Demi de Demeter Fitness Studio 💜 ¿En qué te ayudo?",
+      "modelCalls": 1,
+      "outputTokens": 23,
+      "inputTokens": 16016,
+      "reasoningTokens": 0,
+      "modelLatencyMs": 1238,
+      "tools": []
+    },
+    {
+      "id": "S01",
+      "rep": 1,
+      "variant": "candidate",
+      "conversationId": "9fda5dde-281b-4ae9-ab0d-83380196d277",
+      "persona": "student",
+      "message": "Hola",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 3353,
+      "ok": true,
+      "reply": "¡Hola! 😊 Tienes un paquete activo con 8 clases disponibles. ¿Qué actividad te gustaría reservar?",
+      "modelCalls": 1,
+      "outputTokens": 69,
+      "inputTokens": 9721,
+      "reasoningTokens": 26,
+      "modelLatencyMs": 1567,
+      "tools": []
+    },
+    {
+      "id": "S02",
+      "rep": 1,
+      "variant": "candidate",
+      "conversationId": "934f5330-897e-4992-b453-603e6c3e9ea1",
+      "persona": "prospect",
+      "message": "Hola",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 5167,
+      "ok": true,
+      "reply": "¡Hola! Seguimos con tu primera clase de Pole Fitness mañana a las 18:00. ¿Quieres que te comparta las opciones de pago para continuar?",
+      "modelCalls": 1,
+      "outputTokens": 259,
+      "inputTokens": 10596,
+      "reasoningTokens": 205,
+      "modelLatencyMs": 3611,
+      "tools": []
+    },
+    {
+      "id": "S02",
+      "rep": 1,
+      "variant": "base",
+      "conversationId": "7de91be9-f753-4ffc-8582-823b221581d9",
+      "persona": "prospect",
+      "message": "Hola",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 3489,
+      "ok": true,
+      "reply": "¡Hola! 😊 ¿En qué te ayudo?",
+      "modelCalls": 1,
+      "outputTokens": 34,
+      "inputTokens": 16878,
+      "reasoningTokens": 17,
+      "modelLatencyMs": 1831,
+      "tools": []
+    },
+    {
+      "id": "S03",
+      "rep": 1,
+      "variant": "base",
+      "conversationId": "5e12e69f-0aae-4487-86dd-b4f156dd9a74",
+      "persona": "student",
+      "message": "¿Cuántas clases me quedan y hasta cuándo puedo usarlas?",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 5382,
+      "ok": true,
+      "reply": "Te quedan 8 clases disponibles. En la consulta no aparece la fecha de vencimiento, así que no puedo confirmarte hasta cuándo puedes usarlas.",
+      "modelCalls": 2,
+      "outputTokens": 181,
+      "inputTokens": 32144,
+      "reasoningTokens": 127,
+      "modelLatencyMs": 3675,
+      "tools": [
+        {
+          "name": "get_student_package_status",
+          "status": "executed",
+          "simulated": true
+        }
+      ]
+    },
+    {
+      "id": "S03",
+      "rep": 1,
+      "variant": "candidate",
+      "conversationId": "5c3b029c-c822-448a-a7a7-cb55cb5b75de",
+      "persona": "student",
+      "message": "¿Cuántas clases me quedan y hasta cuándo puedo usarlas?",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 3412,
+      "ok": true,
+      "reply": "Te quedan 8 clases de tu paquete de prueba. No tengo visible aquí la fecha de vencimiento; déjame consultarla para decirte hasta cuándo puedes usarlas.",
+      "modelCalls": 1,
+      "outputTokens": 53,
+      "inputTokens": 13265,
+      "reasoningTokens": 0,
+      "modelLatencyMs": 1570,
+      "tools": []
+    },
+    {
+      "id": "S04",
+      "rep": 1,
+      "variant": "candidate",
+      "conversationId": "7f11c45f-fd2c-40d7-a15c-8d30c1c37ba1",
+      "persona": "prospect",
+      "message": "¿Cuáles son los horarios de Pole Fitness para mañana?",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 12005,
+      "ok": true,
+      "reply": "Mañana, jueves 22 de octubre, hay Pole Fitness de 18:00 a 19:00 en la sede Principal: Avenida San Gaspar #240, Tonalá, Jalisco. Hay una sesión disponible. ¿Quieres que revisemos cómo reservarla?",
+      "modelCalls": 2,
+      "outputTokens": 260,
+      "inputTokens": 28550,
+      "reasoningTokens": 85,
+      "modelLatencyMs": 4826,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S04",
+      "rep": 1,
+      "variant": "base",
+      "conversationId": "30f95e27-8a64-424b-8be1-c6de0ca28bfa",
+      "persona": "prospect",
+      "message": "¿Cuáles son los horarios de Pole Fitness para mañana?",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 6768,
+      "ok": true,
+      "reply": "Mañana, jueves 22 de octubre, hay Pole Fitness a las 6:00 pm. Hay disponibilidad en una de las sesiones; la otra está llena.\n\nEs en Avenida San Gaspar #240, Tonalá, Jalisco.",
+      "modelCalls": 2,
+      "outputTokens": 137,
+      "inputTokens": 34011,
+      "reasoningTokens": 25,
+      "modelLatencyMs": 3747,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "rep": 1,
+      "variant": "base",
+      "conversationId": "5ade0992-c294-4c6b-848a-e758684d3845",
+      "persona": "prospect",
+      "message": "Muéstrame todos los horarios de Pole Fitness de los próximos siete días, no sólo hoy.",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 8549,
+      "ok": true,
+      "reply": "Estos son todos los horarios disponibles de Pole Fitness del 21 al 27 de octubre:\n\nMiércoles 21 de octubre: 4:22 pm a 5:22 pm  \nJueves 22 de octubre: 6:00 pm a 7:00 pm  \nViernes 23 de octubre: 6:00 pm a 7:00 pm  \n\nEl jueves también aparece otra sesión a las 6:00 pm, pero está llena. No hay horarios publicados del sábado 24 al martes 27. Todos son en Principal, Avenida San Gaspar #240, Tonalá.",
+      "modelCalls": 2,
+      "outputTokens": 320,
+      "inputTokens": 34247,
+      "reasoningTokens": 134,
+      "modelLatencyMs": 6162,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "rep": 1,
+      "variant": "candidate",
+      "conversationId": "47cde658-711c-4773-a435-f8fc4e027fdc",
+      "persona": "prospect",
+      "message": "Muéstrame todos los horarios de Pole Fitness de los próximos siete días, no sólo hoy.",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 9627,
+      "ok": true,
+      "reply": "Estos son todos los horarios de Pole Fitness del 21 al 27 de octubre:\n\nHoy, miércoles 21: 16:22 a 17:22 — disponible\nJueves 22: 18:00 a 19:00 — disponible\nJueves 22: 18:00 a 19:00 — lleno\nViernes 23: 18:00 a 19:00 — disponible\n\nNo hay más horarios publicados en ese periodo. Todas son en la sede Principal: Avenida San Gaspar #240, Tonalá, Jalisco.",
+      "modelCalls": 2,
+      "outputTokens": 351,
+      "inputTokens": 28807,
+      "reasoningTokens": 118,
+      "modelLatencyMs": 6198,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "rep": 1,
+      "variant": "candidate",
+      "conversationId": "eaa1e67f-f350-42c3-9f0e-08c04a0ccaf5",
+      "persona": "prospect",
+      "message": "Quiero Pole Fitness hoy, sólo puedo después de las 6 de la tarde.",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 6991,
+      "ok": true,
+      "reply": "Hoy no encontré clases de Pole Fitness después de las 6:00 pm. ¿Quieres que revise otro día con ese mismo horario?",
+      "modelCalls": 2,
+      "outputTokens": 207,
+      "inputTokens": 28369,
+      "reasoningTokens": 58,
+      "modelLatencyMs": 4737,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "rep": 1,
+      "variant": "base",
+      "conversationId": "411b028f-1952-4e94-ad6e-1fc453550d27",
+      "persona": "prospect",
+      "message": "Quiero Pole Fitness hoy, sólo puedo después de las 6 de la tarde.",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 7616,
+      "ok": true,
+      "reply": "Hoy no hay clases de Pole Fitness disponibles después de las 6:00 pm. ¿Quieres que revise otro día? 🌸",
+      "modelCalls": 2,
+      "outputTokens": 118,
+      "inputTokens": 33815,
+      "reasoningTokens": 28,
+      "modelLatencyMs": 5052,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S07",
+      "rep": 1,
+      "variant": "base",
+      "conversationId": "66085358-1841-4856-a31f-1a092b1fce1a",
+      "persona": "prospect",
+      "message": "Ninguno de esos tres horarios me sirve. ¿Hay otros días por la tarde?",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 8451,
+      "ok": true,
+      "reply": "Sí 😊 Encontré estos horarios de Pole Fitness por la tarde:\n\n• Hoy, miércoles 21 de octubre, de 4:22 a 5:22 pm\n• Jueves 22 de octubre, de 6:00 a 7:00 pm\n• Viernes 23 de octubre, de 6:00 a 7:00 pm\n\n¿Cuál te funciona mejor?",
+      "modelCalls": 2,
+      "outputTokens": 294,
+      "inputTokens": 34344,
+      "reasoningTokens": 146,
+      "modelLatencyMs": 5559,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S07",
+      "rep": 1,
+      "variant": "candidate",
+      "conversationId": "a47faed0-0871-4dbc-b396-5c12f9afb29a",
+      "persona": "prospect",
+      "message": "Ninguno de esos tres horarios me sirve. ¿Hay otros días por la tarde?",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 10117,
+      "ok": true,
+      "reply": "Sí, hay estas opciones por la tarde para Pole Fitness:\n\n• Jueves 22 de octubre, 18:00\n• Viernes 23 de octubre, 18:00\n\nAmbas son en la sede Principal, Avenida San Gaspar #240, Tonalá. ¿Cuál te funciona mejor?",
+      "modelCalls": 2,
+      "outputTokens": 296,
+      "inputTokens": 28791,
+      "reasoningTokens": 106,
+      "modelLatencyMs": 7441,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S08",
+      "rep": 1,
+      "variant": "candidate",
+      "conversationId": "7feac17c-ccb8-49fe-84f0-c2355fa3bde5",
+      "persona": "prospect",
+      "message": "No puedo transferir ni usar ningún método de pago anticipado. ¿Puedo ir y pagar en efectivo?",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 6511,
+      "ok": true,
+      "reply": "Sí, puedes ir y pagar en efectivo en el estudio. Solo toma en cuenta que no tendrías una reserva ni el lugar asegurado; podrías tomar la clase únicamente si hay cupo al llegar.",
+      "modelCalls": 1,
+      "outputTokens": 298,
+      "inputTokens": 14101,
+      "reasoningTokens": 198,
+      "modelLatencyMs": 4319,
+      "tools": []
+    },
+    {
+      "id": "S08",
+      "rep": 1,
+      "variant": "base",
+      "conversationId": "2640dff8-0004-4190-8b6b-4ab1082c3388",
+      "persona": "prospect",
+      "message": "No puedo transferir ni usar ningún método de pago anticipado. ¿Puedo ir y pagar en efectivo?",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 6374,
+      "ok": true,
+      "reply": "Para la primera clase sí se requiere pago anticipado; por ahora Studio Flow solo tiene habilitada la transferencia. No puedo confirmarte el lugar para pagar en efectivo al llegar. La primera clase cuesta $150.",
+      "modelCalls": 2,
+      "outputTokens": 140,
+      "inputTokens": 34173,
+      "reasoningTokens": 71,
+      "modelLatencyMs": 4029,
+      "tools": [
+        {
+          "name": "get_commercial_options",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S09",
+      "rep": 1,
+      "variant": "base",
+      "conversationId": "d02b9311-46c2-47af-b45e-d02a438c7fec",
+      "persona": "student",
+      "message": "Quiero reservar la clase Pole Fitness UAT de mañana a las 18:00. Ya elegí esta opción: session:ce2b06ae-580b-4018-b56b-fe3224de98ce.",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 5941,
+      "ok": true,
+      "reply": "Te preparé la reserva de Pole Fitness UAT para mañana, jueves 22 de octubre, de 18:00 a 19:00.\n\n¿Confirmas la reserva?",
+      "modelCalls": 2,
+      "outputTokens": 185,
+      "inputTokens": 32335,
+      "reasoningTokens": 101,
+      "modelLatencyMs": 3743,
+      "tools": [
+        {
+          "name": "prepare_booking",
+          "status": "prepared",
+          "simulated": true
+        }
+      ]
+    },
+    {
+      "id": "S09",
+      "rep": 1,
+      "variant": "candidate",
+      "conversationId": "677a1700-db68-4eae-8da0-7c707fb72bc2",
+      "persona": "student",
+      "message": "Quiero reservar la clase Pole Fitness UAT de mañana a las 18:00. Ya elegí esta opción: session:ce2b06ae-580b-4018-b56b-fe3224de98ce.",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 9645,
+      "ok": true,
+      "reply": "Tengo lista la reserva de Pole Fitness UAT para mañana, jueves 22 de octubre, de 18:00 a 19:00, en Principal: Avenida San Gaspar #240, Tonalá, Jalisco. ¿Confirmas la reserva?",
+      "modelCalls": 3,
+      "outputTokens": 290,
+      "inputTokens": 40980,
+      "reasoningTokens": 66,
+      "modelLatencyMs": 6416,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        },
+        {
+          "name": "prepare_booking",
+          "status": "prepared",
+          "simulated": true
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "rep": 1,
+      "variant": "candidate",
+      "conversationId": "7e12b539-4e72-414a-8411-729de2e7dedc",
+      "persona": "student_reserved",
+      "message": "Quiero cancelar mi reserva de Pole Fitness de mañana a las 18:00 porque no podré asistir.",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 5590,
+      "ok": true,
+      "reply": "La cancelación de Pole Fitness de mañana, 22 de octubre, a las 18:00 en Estudio Demeter está lista. El crédito regresaría para usarlo en otra clase. ¿Confirmas la cancelación?",
+      "modelCalls": 2,
+      "outputTokens": 176,
+      "inputTokens": 26962,
+      "reasoningTokens": 42,
+      "modelLatencyMs": 3822,
+      "tools": [
+        {
+          "name": "prepare_cancellation",
+          "status": "prepared",
+          "simulated": true
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "rep": 1,
+      "variant": "base",
+      "conversationId": "eaf9c6ee-6333-43b3-8d54-0c2f5da0d0e8",
+      "persona": "student_reserved",
+      "message": "Quiero cancelar mi reserva de Pole Fitness de mañana a las 18:00 porque no podré asistir.",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 8218,
+      "ok": true,
+      "reply": "Tu reserva de Pole Fitness del jueves 22 de octubre a las 18:00 en Estudio Demeter está lista para cancelarse. El crédito se devolverá para usarlo en otra clase. ¿Confirmas la cancelación?",
+      "modelCalls": 3,
+      "outputTokens": 221,
+      "inputTokens": 48557,
+      "reasoningTokens": 116,
+      "modelLatencyMs": 5566,
+      "tools": [
+        {
+          "name": "get_student_reservations",
+          "status": "executed",
+          "simulated": true
+        },
+        {
+          "name": "prepare_cancellation",
+          "status": "prepared",
+          "simulated": true
+        }
+      ]
+    },
+    {
+      "id": "S01",
+      "rep": 2,
+      "variant": "base",
+      "conversationId": "d1100261-4ff4-49a3-bf6b-51f9a961ccc8",
+      "persona": "student",
+      "message": "Hola",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 4011,
+      "ok": true,
+      "reply": "¡Hola! Soy Demi de Demeter Fitness Studio 💜 ¿En qué te ayudo?",
+      "modelCalls": 1,
+      "outputTokens": 23,
+      "inputTokens": 16016,
+      "reasoningTokens": 0,
+      "modelLatencyMs": 2272,
+      "tools": []
+    },
+    {
+      "id": "S01",
+      "rep": 2,
+      "variant": "candidate",
+      "conversationId": "909e7322-ef52-43a6-9036-6137b4ca3d84",
+      "persona": "student",
+      "message": "Hola",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 4358,
+      "ok": true,
+      "reply": "¡Hola! 😊 Tienes un paquete activo con 8 clases disponibles. ¿Te ayudo a reservar una clase?",
+      "modelCalls": 1,
+      "outputTokens": 69,
+      "inputTokens": 9721,
+      "reasoningTokens": 0,
+      "modelLatencyMs": 2202,
+      "tools": []
+    },
+    {
+      "id": "S02",
+      "rep": 2,
+      "variant": "candidate",
+      "conversationId": "2381595f-933c-450e-b4e3-004d3961383e",
+      "persona": "prospect",
+      "message": "Hola",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 4965,
+      "ok": true,
+      "reply": "¡Hola! Seguimos con tu primera clase de Pole Fitness mañana a las 18:00. ¿Quieres que te comparta las opciones de pago?",
+      "modelCalls": 1,
+      "outputTokens": 237,
+      "inputTokens": 10596,
+      "reasoningTokens": 185,
+      "modelLatencyMs": 2877,
+      "tools": []
+    },
+    {
+      "id": "S02",
+      "rep": 2,
+      "variant": "base",
+      "conversationId": "dd793778-9821-47ad-901e-d706f2c1ecd9",
+      "persona": "prospect",
+      "message": "Hola",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 5286,
+      "ok": true,
+      "reply": "¡Hola! 😊 ¿En qué te ayudo?",
+      "modelCalls": 1,
+      "outputTokens": 35,
+      "inputTokens": 16878,
+      "reasoningTokens": 18,
+      "modelLatencyMs": 2114,
+      "tools": []
+    },
+    {
+      "id": "S03",
+      "rep": 2,
+      "variant": "base",
+      "conversationId": "7328ee49-282c-4de6-acc1-a6e95aa1e9a8",
+      "persona": "student",
+      "message": "¿Cuántas clases me quedan y hasta cuándo puedo usarlas?",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 14068,
+      "ok": true,
+      "reply": "Te quedan 8 clases disponibles. Studio Flow no me mostró la fecha de vencimiento, así que ya pasé la consulta a atención humana dentro de este chat para que te confirmen hasta cuándo puedes usarlas.",
+      "modelCalls": 3,
+      "outputTokens": 171,
+      "inputTokens": 48402,
+      "reasoningTokens": 46,
+      "modelLatencyMs": 6279,
+      "tools": [
+        {
+          "name": "get_student_package_status",
+          "status": "executed",
+          "simulated": true
+        },
+        {
+          "name": "escalate_to_human",
+          "status": "executed",
+          "simulated": true
+        }
+      ]
+    },
+    {
+      "id": "S03",
+      "rep": 2,
+      "variant": "candidate",
+      "conversationId": "857b60a9-a136-4f5f-a3c7-5ae0a8783c29",
+      "persona": "student",
+      "message": "¿Cuántas clases me quedan y hasta cuándo puedo usarlas?",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 5739,
+      "ok": true,
+      "reply": "Te quedan 8 clases disponibles en tu paquete de prueba. La fecha de vencimiento no aparece en la información actual, así que no quiero inventártela.",
+      "modelCalls": 1,
+      "outputTokens": 162,
+      "inputTokens": 13265,
+      "reasoningTokens": 110,
+      "modelLatencyMs": 3466,
+      "tools": []
+    },
+    {
+      "id": "S04",
+      "rep": 2,
+      "variant": "candidate",
+      "conversationId": "dc646fae-6c2b-42b6-a9c0-5381b55222d5",
+      "persona": "prospect",
+      "message": "¿Cuáles son los horarios de Pole Fitness para mañana?",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 7623,
+      "ok": true,
+      "reply": "Mañana, jueves 22 de octubre, hay Pole Fitness de 18:00 a 19:00 en la sede Principal: Avenida San Gaspar #240, Tonalá. Hay una sesión con lugar disponible; otra sesión al mismo horario está llena. ¿Quieres que revisemos la disponible?",
+      "modelCalls": 2,
+      "outputTokens": 285,
+      "inputTokens": 28564,
+      "reasoningTokens": 108,
+      "modelLatencyMs": 4672,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S04",
+      "rep": 2,
+      "variant": "base",
+      "conversationId": "59823601-6542-44af-b5b2-9ee6a1bb23d1",
+      "persona": "prospect",
+      "message": "¿Cuáles son los horarios de Pole Fitness para mañana?",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 11673,
+      "ok": true,
+      "reply": "Mañana, jueves 22 de octubre, hay Pole Fitness a las 6:00 pm en la sede Principal, Avenida San Gaspar #240, Tonalá. Hay lugar disponible 💜",
+      "modelCalls": 2,
+      "outputTokens": 128,
+      "inputTokens": 34011,
+      "reasoningTokens": 25,
+      "modelLatencyMs": 9013,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "rep": 2,
+      "variant": "base",
+      "conversationId": "1e2926bd-5da7-4041-93f8-b47afa78867f",
+      "persona": "prospect",
+      "message": "Muéstrame todos los horarios de Pole Fitness de los próximos siete días, no sólo hoy.",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 6262,
+      "ok": true,
+      "reply": "Estos son todos los horarios de Pole Fitness del 21 al 27 de octubre:\n\nMiércoles 21 de octubre: 4:22 a 5:22 pm — disponible\n\nJueves 22 de octubre: 6:00 a 7:00 pm — un grupo disponible y otro lleno\n\nViernes 23 de octubre: 6:00 a 7:00 pm — disponible\n\nNo hay más horarios de Pole Fitness del 24 al 27 de octubre. Todas las clases son en Principal, Avenida San Gaspar #240, Tonalá, Jalisco.",
+      "modelCalls": 2,
+      "outputTokens": 323,
+      "inputTokens": 34255,
+      "reasoningTokens": 140,
+      "modelLatencyMs": 4590,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "rep": 2,
+      "variant": "candidate",
+      "conversationId": "45500fe0-88e9-43fc-831c-f135369e79f3",
+      "persona": "prospect",
+      "message": "Muéstrame todos los horarios de Pole Fitness de los próximos siete días, no sólo hoy.",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 7814,
+      "ok": true,
+      "reply": "Estos son todos los horarios de Pole Fitness del 21 al 27 de octubre:\n\n• Miércoles 21: 16:22–17:22 · disponible\n• Jueves 22: 18:00–19:00 · una clase disponible y otra llena\n• Viernes 23: 18:00–19:00 · disponible\n\nTodas son en la sede Principal, Avenida San Gaspar #240, Tonalá, Jalisco.",
+      "modelCalls": 2,
+      "outputTokens": 336,
+      "inputTokens": 28800,
+      "reasoningTokens": 127,
+      "modelLatencyMs": 5117,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "rep": 2,
+      "variant": "candidate",
+      "conversationId": "9a170e52-94da-438d-9823-2f6065a4e29f",
+      "persona": "prospect",
+      "message": "Quiero Pole Fitness hoy, sólo puedo después de las 6 de la tarde.",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 7613,
+      "ok": true,
+      "reply": "Hoy no hay clases de Pole Fitness después de las 6:00 p. m. ¿Qué otro día te funciona para buscarte opciones?",
+      "modelCalls": 2,
+      "outputTokens": 255,
+      "inputTokens": 28362,
+      "reasoningTokens": 106,
+      "modelLatencyMs": 4999,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "rep": 2,
+      "variant": "base",
+      "conversationId": "67dd1d38-38f8-4394-8c87-fb54ef2e4ddc",
+      "persona": "prospect",
+      "message": "Quiero Pole Fitness hoy, sólo puedo después de las 6 de la tarde.",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 5819,
+      "ok": true,
+      "reply": "Hoy no hay clases de Pole Fitness disponibles después de las 6:00 pm 😔 ¿Quieres que revise otro día?",
+      "modelCalls": 2,
+      "outputTokens": 123,
+      "inputTokens": 33821,
+      "reasoningTokens": 34,
+      "modelLatencyMs": 3450,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S07",
+      "rep": 2,
+      "variant": "base",
+      "conversationId": "d3f9e769-2b04-4e17-a27e-cf2a41669d48",
+      "persona": "prospect",
+      "message": "Ninguno de esos tres horarios me sirve. ¿Hay otros días por la tarde?",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 7501,
+      "ok": true,
+      "reply": "Sí 😊 Por la tarde hay estas opciones de Pole Fitness:\n\n• Hoy, miércoles 21 de octubre, 4:22 a 5:22 pm\n• Jueves 22 de octubre, 6:00 a 7:00 pm\n• Viernes 23 de octubre, 6:00 a 7:00 pm\n\n¿Cuál te funciona mejor?",
+      "modelCalls": 2,
+      "outputTokens": 295,
+      "inputTokens": 34359,
+      "reasoningTokens": 151,
+      "modelLatencyMs": 5274,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S07",
+      "rep": 2,
+      "variant": "candidate",
+      "conversationId": "40d6e175-c170-427f-a40f-3fb7d34282ac",
+      "persona": "prospect",
+      "message": "Ninguno de esos tres horarios me sirve. ¿Hay otros días por la tarde?",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 8113,
+      "ok": true,
+      "reply": "Sí, encontré estas opciones por la tarde para Pole Fitness:\n\n• Jueves 22 de octubre, 18:00 a 19:00\n• Viernes 23 de octubre, 18:00 a 19:00\n\n¿Cuál te funciona mejor?",
+      "modelCalls": 2,
+      "outputTokens": 298,
+      "inputTokens": 28791,
+      "reasoningTokens": 120,
+      "modelLatencyMs": 4940,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S08",
+      "rep": 2,
+      "variant": "candidate",
+      "conversationId": "b5a28b63-5963-4074-bfce-3ad64ff749b4",
+      "persona": "prospect",
+      "message": "No puedo transferir ni usar ningún método de pago anticipado. ¿Puedo ir y pagar en efectivo?",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 6102,
+      "ok": true,
+      "reply": "Sí, puedes ir a intentar pagar en efectivo en el estudio, pero no tendrás una reserva ni el lugar asegurado; podrás tomar la clase únicamente si hay cupo al llegar. El precio de la primera clase es de $150.00 MXN.",
+      "modelCalls": 2,
+      "outputTokens": 134,
+      "inputTokens": 28644,
+      "reasoningTokens": 42,
+      "modelLatencyMs": 4174,
+      "tools": [
+        {
+          "name": "get_commercial_options",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S08",
+      "rep": 2,
+      "variant": "base",
+      "conversationId": "f22a4d64-1655-4437-bc6c-84d937dc9286",
+      "persona": "prospect",
+      "message": "No puedo transferir ni usar ningún método de pago anticipado. ¿Puedo ir y pagar en efectivo?",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 6951,
+      "ok": true,
+      "reply": "Para la primera clase sí se requiere pago anticipado; por ahora Studio Flow solo tiene habilitada la transferencia, así que no puedo confirmarte una reserva pagando en efectivo al llegar. La primera clase cuesta $150.\n\nSi más adelante se habilita otra forma de pago, con gusto te ayudo a agendar 💜",
+      "modelCalls": 2,
+      "outputTokens": 132,
+      "inputTokens": 34143,
+      "reasoningTokens": 41,
+      "modelLatencyMs": 4877,
+      "tools": [
+        {
+          "name": "get_commercial_options",
+          "status": "executed",
+          "simulated": false
+        }
+      ]
+    },
+    {
+      "id": "S09",
+      "rep": 2,
+      "variant": "base",
+      "conversationId": "354fc274-e0cb-4ab6-8b44-09bf396cee50",
+      "persona": "student",
+      "message": "Quiero reservar la clase Pole Fitness UAT de mañana a las 18:00. Ya elegí esta opción: session:ce2b06ae-580b-4018-b56b-fe3224de98ce.",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 6216,
+      "ok": true,
+      "reply": "Tengo lista la reserva de Pole Fitness UAT para mañana, jueves 22 de octubre, de 18:00 a 19:00. ¿Confirmas la reserva? 💜",
+      "modelCalls": 2,
+      "outputTokens": 119,
+      "inputTokens": 32317,
+      "reasoningTokens": 36,
+      "modelLatencyMs": 4292,
+      "tools": [
+        {
+          "name": "prepare_booking",
+          "status": "prepared",
+          "simulated": true
+        }
+      ]
+    },
+    {
+      "id": "S09",
+      "rep": 2,
+      "variant": "candidate",
+      "conversationId": "2c563d43-e0b9-4764-8dd6-8702b3777277",
+      "persona": "student",
+      "message": "Quiero reservar la clase Pole Fitness UAT de mañana a las 18:00. Ya elegí esta opción: session:ce2b06ae-580b-4018-b56b-fe3224de98ce.",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 9247,
+      "ok": true,
+      "reply": "Preparé tu reserva para Pole Fitness UAT mañana, jueves 22 de octubre, de 18:00 a 19:00, en Principal: Avenida San Gaspar #240, Tonalá, Jalisco. ¿Confirmas la reserva?",
+      "modelCalls": 3,
+      "outputTokens": 296,
+      "inputTokens": 40978,
+      "reasoningTokens": 73,
+      "modelLatencyMs": 6197,
+      "tools": [
+        {
+          "name": "search_class_availability",
+          "status": "executed",
+          "simulated": false
+        },
+        {
+          "name": "prepare_booking",
+          "status": "prepared",
+          "simulated": true
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "rep": 2,
+      "variant": "candidate",
+      "conversationId": "3412ef1e-19d4-423d-9ffb-b31c2d19ccb4",
+      "persona": "student_reserved",
+      "message": "Quiero cancelar mi reserva de Pole Fitness de mañana a las 18:00 porque no podré asistir.",
+      "promptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+      "httpStatus": 200,
+      "durationMs": 6643,
+      "ok": true,
+      "reply": "La cancelación de tu clase de Pole Fitness de mañana, 22 de octubre, de 18:00 a 19:00, está lista para confirmarse. El crédito regresaría para usarlo en otra clase. ¿Confirmas la cancelación?",
+      "modelCalls": 2,
+      "outputTokens": 216,
+      "inputTokens": 26970,
+      "reasoningTokens": 76,
+      "modelLatencyMs": 4557,
+      "tools": [
+        {
+          "name": "prepare_cancellation",
+          "status": "prepared",
+          "simulated": true
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "rep": 2,
+      "variant": "base",
+      "conversationId": "3f2cdc8c-6647-4e8e-b186-5be266a5b6e9",
+      "persona": "student_reserved",
+      "message": "Quiero cancelar mi reserva de Pole Fitness de mañana a las 18:00 porque no podré asistir.",
+      "promptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+      "httpStatus": 200,
+      "durationMs": 8067,
+      "ok": true,
+      "reply": "Encontré tu reserva de Pole Fitness para mañana, jueves 22 de octubre, a las 18:00 en Estudio Demeter. Al cancelarla, el crédito regresará para que puedas usarlo en otra clase. ¿Confirmas la cancelación?",
+      "modelCalls": 3,
+      "outputTokens": 226,
+      "inputTokens": 48566,
+      "reasoningTokens": 116,
+      "modelLatencyMs": 5670,
+      "tools": [
+        {
+          "name": "get_student_reservations",
+          "status": "executed",
+          "simulated": true
+        },
+        {
+          "name": "prepare_cancellation",
+          "status": "prepared",
+          "simulated": true
+        }
+      ]
+    }
+  ]
+}

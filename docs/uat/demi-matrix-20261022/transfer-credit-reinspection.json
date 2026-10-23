@@ -1,0 +1,56 @@
+{
+  "checked_at": "2026-10-22T14:37:08Z",
+  "environment": "Studio Flow Sandbox",
+  "project_id": "hedouonyhynuvwbckdlg",
+  "runtime_sha": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+  "historical_evidence_sha": "f5f9c056fd9a331017643d5744966ea7eb674d43",
+  "run_id": "0a4a29f7-2320-4609-a4ae-8c954ca1a847",
+  "method": "Read-only reinspection of existing captured UAT; synthetic receipt and administrative validation; no real bank transfer or OCR.",
+  "intent": {
+    "id": "14bbb6ce-06cf-4986-a8c1-9dcebaef4201",
+    "status": "validated",
+    "amount_minor": 80000
+  },
+  "ledger": [
+    {
+      "id": "5d34134a-d5cc-4cb0-93af-631b0a5c4a2f",
+      "quantity": 8,
+      "movement_type": "grant",
+      "reservation_id": null
+    },
+    {
+      "id": "792c965a-aeab-4b0c-8465-892b0ca7fc43",
+      "quantity": -1,
+      "movement_type": "reserve",
+      "reservation_id": "78d34736-9cbf-4571-9a75-801af2786dbc"
+    }
+  ],
+  "balance": 7,
+  "payments": [
+    {
+      "id": "f7371dc2-0aae-4e6f-afb7-40a6491122f5",
+      "amount_minor": 80000
+    }
+  ],
+  "acquisition": {
+    "id": "3cbec8c3-268c-4745-aab7-4c55a5f8a707",
+    "status": "active",
+    "starts_on": "2026-10-22",
+    "expires_on": "2026-11-21",
+    "credit_limit": 8
+  },
+  "reservations": [
+    {
+      "id": "78d34736-9cbf-4571-9a75-801af2786dbc",
+      "status": "reserved",
+      "credits_held": 1,
+      "commercial_status": "package_covered"
+    }
+  ],
+  "result": "PASS_OBSERVED_CREDIT_DEDUCTION",
+  "not_verified": [
+    "Real bank transfer/OCR",
+    "Full current acceptance by Mike",
+    "Cash retry threshold X"
+  ]
+}

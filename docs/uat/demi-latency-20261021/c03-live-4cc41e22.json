@@ -1,0 +1,123 @@
+{
+  "case": "C03",
+  "sha": "4cc41e2247e60f6e01ddb81f5946bf3f4bdc3288",
+  "environment": "hedouonyhynuvwbckdlg",
+  "studioId": "d0357e3d-f962-4628-8ba8-a401708b6157",
+  "surface": "authenticated-sandbox-workbench",
+  "fillerRowsAreSynthetic": true,
+  "samples": [
+    {
+      "turn": 1,
+      "message": "Quiero Pole Fitness. Solo puedo los jueves después de las 18:00; ayúdame a encontrar una clase.",
+      "syntheticFillerRowsBeforeTurn": 0,
+      "httpStatus": 200,
+      "durationMs": 10152,
+      "ok": true,
+      "conversationId": "12457c26-dc61-4ba7-9c54-95e310bd1878",
+      "reply": "Encontré una clase de Pole Fitness disponible el jueves 22 de octubre, de 18:00 a 19:00, en Principal: Avenida San Gaspar #240, Tonalá, Jalisco. ¿Quieres que te ayude a reservarla?",
+      "canSimulateReceipt": false,
+      "memoryAfter": {
+        "intent": "Encontrar clase",
+        "subject": "unresolved",
+        "turn_id": "20695e16-326f-422c-a5bd-c22248fbdf0c",
+        "version": 1,
+        "activity": "Pole Fitness",
+        "next_step": "Confirmar si desea reservar",
+        "availability": "Jueves después de 18:00",
+        "selected_option": "Jueves 22 de octubre, 18:00",
+        "turn_started_at": 1792619722043
+      }
+    },
+    {
+      "turn": 2,
+      "message": "Retomemos mis horarios. ¿Qué opciones me sirven?",
+      "syntheticFillerRowsBeforeTurn": 16,
+      "httpStatus": 200,
+      "durationMs": 13059,
+      "ok": true,
+      "conversationId": "12457c26-dc61-4ba7-9c54-95e310bd1878",
+      "reply": "Para Pole Fitness, te sirve el jueves 22 de octubre a las 18:00, en sede Principal, Avenida San Gaspar #240, Tonalá. Hay una clase disponible. ¿Quieres iniciar el proceso para reservarla?",
+      "canSimulateReceipt": false,
+      "memoryAfter": {
+        "intent": "Encontrar clase",
+        "subject": "unresolved",
+        "turn_id": "2a2019f3-7734-4ba4-bed6-a36add8aca9e",
+        "version": 1,
+        "activity": "Pole Fitness",
+        "next_step": "Iniciar pago para reservar",
+        "availability": "Jueves después de 18:00",
+        "selected_option": "Jueves 22 de octubre, 18:00",
+        "turn_started_at": 1792619732596
+      }
+    },
+    {
+      "turn": 3,
+      "message": "Cambio de plan: ahora solo puedo los viernes después de las 18:00.",
+      "syntheticFillerRowsBeforeTurn": 0,
+      "httpStatus": 200,
+      "durationMs": 9859,
+      "ok": true,
+      "conversationId": "12457c26-dc61-4ba7-9c54-95e310bd1878",
+      "reply": "Para Pole Fitness, hay una opción disponible: viernes 23 de octubre a las 18:00, en Principal. ¿Quieres reservarla?",
+      "canSimulateReceipt": false,
+      "memoryAfter": {
+        "intent": "Encontrar clase",
+        "subject": "unresolved",
+        "turn_id": "75506b9c-744f-4f6a-b30b-05b55c8984ae",
+        "version": 1,
+        "activity": "Pole Fitness",
+        "next_step": "Reservar clase",
+        "availability": "Viernes después de 18:00",
+        "selected_option": "Viernes 23 de octubre, 18:00",
+        "turn_started_at": 1792619745836
+      }
+    },
+    {
+      "turn": 4,
+      "message": "Gracias.",
+      "syntheticFillerRowsBeforeTurn": 0,
+      "httpStatus": 200,
+      "durationMs": 3835,
+      "ok": true,
+      "conversationId": "12457c26-dc61-4ba7-9c54-95e310bd1878",
+      "reply": "¡De nada! Cuando quieras, te ayudo con esa clase de Pole Fitness del viernes.",
+      "canSimulateReceipt": false,
+      "memoryAfter": {
+        "intent": "Encontrar clase",
+        "subject": "unresolved",
+        "turn_id": "75506b9c-744f-4f6a-b30b-05b55c8984ae",
+        "version": 1,
+        "activity": "Pole Fitness",
+        "next_step": "Reservar clase",
+        "availability": "Viernes después de 18:00",
+        "selected_option": "Viernes 23 de octubre, 18:00",
+        "turn_started_at": 1792619745836
+      }
+    },
+    {
+      "turn": 5,
+      "message": "¿Qué horario me sirve ahora?",
+      "syntheticFillerRowsBeforeTurn": 16,
+      "httpStatus": 200,
+      "durationMs": 8065,
+      "ok": true,
+      "conversationId": "12457c26-dc61-4ba7-9c54-95e310bd1878",
+      "reply": "Para Pole Fitness, el viernes 23 de octubre hay clase de 18:00 a 19:00 en la sede Principal, Avenida San Gaspar #240, Tonalá. ¿Quieres reservarla?",
+      "canSimulateReceipt": false,
+      "memoryAfter": {
+        "intent": "Encontrar clase",
+        "subject": "unresolved",
+        "turn_id": "75506b9c-744f-4f6a-b30b-05b55c8984ae",
+        "version": 1,
+        "activity": "Pole Fitness",
+        "next_step": "Reservar clase",
+        "availability": "Viernes después de 18:00",
+        "selected_option": "Viernes 23 de octubre, 18:00",
+        "turn_started_at": 1792619745836
+      }
+    }
+  ],
+  "continuityStatus": "PASSED",
+  "socialMemoryPreserved": true,
+  "dateRangeBlockedCalls": 0
+}

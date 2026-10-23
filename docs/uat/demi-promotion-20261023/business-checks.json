@@ -1,0 +1,79 @@
+[
+  {
+    "data": {
+      "cash": {
+        "saleId": "656922b9-2d33-4a33-ab4c-ecda2256fbb6",
+        "balance": 6,
+        "dueDate": null,
+        "payments": [
+          {
+            "id": "3860d840-3025-4b29-8287-d8949c0f0864",
+            "kind": "payment",
+            "amount": 60000,
+            "method": "cash"
+          }
+        ],
+        "startsOn": "2026-10-23",
+        "expiresOn": "2026-11-22",
+        "saleTotal": 60000,
+        "studentId": "5d39b369-4177-439e-8538-1ea2b0cf81f4",
+        "reservations": [
+          {
+            "id": "72305f71-2be7-47be-9fe7-e46236d0ffbc",
+            "status": "reserved",
+            "sessionId": "6e0e0de4-8068-4c08-a680-5a1f08f0e0c7"
+          },
+          {
+            "id": "a77d7e68-0102-4c12-b2ce-c5fbccb74690",
+            "status": "reserved",
+            "sessionId": "782b9f87-2461-4846-ab8f-3853a3065e16"
+          }
+        ],
+        "acquisitionId": "30bc79c4-fa52-481c-ab32-85468ce724ed"
+      },
+      "human": [
+        {
+          "id": "a6806b92-cfa4-4037-b13d-1cd93fc4e823",
+          "reason": "refund_request",
+          "status": "resolved"
+        }
+      ],
+      "transfer": {
+        "email": "ana.cierre.uat@example.test",
+        "amount": 80000,
+        "saleId": "ac62b913-7546-4e5a-9769-8aced9452738",
+        "status": "validated",
+        "intentId": "1ffcba16-3dd4-40a9-9cf1-767189f7d4b2",
+        "payments": [
+          {
+            "id": "dbe075a7-0017-4710-8c2c-f95ea7d9f275",
+            "kind": "payment",
+            "amount": 80000,
+            "method": "bank_transfer"
+          }
+        ],
+        "birthDate": "1995-05-10",
+        "studentId": "b40685fe-fcf5-41d2-8c48-73d823fe372f",
+        "studentName": "Ana Cierre Sintética",
+        "acquisitions": [
+          {
+            "id": "66f25d97-3019-4f9f-ad44-ffff6913939f",
+            "balance": 7
+          }
+        ],
+        "reservations": [
+          {
+            "id": "52d33439-843e-43cb-8346-363b0e128838",
+            "status": "reserved",
+            "sessionId": "782b9f87-2461-4846-ab8f-3853a3065e16"
+          }
+        ]
+      },
+      "runtimeSha": "24718f760cfd68087a41df6004c135bd982cbc40",
+      "toolErrors": null,
+      "environment": "hedouonyhynuvwbckdlg",
+      "modelErrors": 0,
+      "snapshotPhase": "before_fixture_cleanup"
+    }
+  }
+]

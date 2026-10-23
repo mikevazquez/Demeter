@@ -21,6 +21,7 @@ concurrency:
 
 jobs:
   dispatch:
+    if: vars.GOVERNANCE_SUPERVISOR_ENABLED != 'true'
     runs-on: ubuntu-latest
     env:
       CLAUDE_ROUTINE_FIRE_URL: ${{ secrets.CLAUDE_ROUTINE_FIRE_URL }}

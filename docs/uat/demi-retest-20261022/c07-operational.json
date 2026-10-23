@@ -1,0 +1,101 @@
+{
+  "runtimeSha": "d41135aab10670c3a0bcbab0ee77a8a5dea2ad80",
+  "environment": "hedouonyhynuvwbckdlg",
+  "samples": [
+    {
+      "completedAt": "2026-10-22T21:06:58.594509+00:00",
+      "afterArtifactId": "e0e9251a-e974-48e0-bf3f-1b9cf0b1dd51",
+      "message": "Quiero tomar mi primera clase de Pole Fitness UAT hoy jueves 22 de octubre a las 20:35. ¿Cómo aseguro mi lugar?",
+      "reply": [
+        "El importe de tu primera clase es $150.00.\n\nTransferencia o depósito OXXO directamente a la cuenta bancaria:\nBANCO FICTICIO UAT — NO TRANSFERIR\nPRUEBA SIN VALOR\nCuenta: 0000\nNo realizar pagos reales.\n\nEnvíame el comprobante por este mismo chat. Al recibirlo te pediré juntos los datos faltantes para crear la reserva, según disponibilidad. El equipo validará el pago manualmente; la reserva quedará sujeta a esa validación y puede cancelarse si el comprobante no es válido. Todavía no hay una reserva confirmada ni un lugar retenido."
+      ],
+      "delta": {
+        "students": 0,
+        "reservations": 0,
+        "sales": 0,
+        "payments": 0,
+        "product_acquisitions": 0,
+        "assistant_handoffs": 0,
+        "demi_group_bookings": 1,
+        "assistant_model_calls": 2,
+        "assistant_tool_executions": 2
+      }
+    },
+    {
+      "completedAt": "2026-10-22T21:07:32.965692+00:00",
+      "afterArtifactId": "84cb03ef-79c8-4c21-a5af-acdcf95abbb9",
+      "message": "¿Puedo pagar en efectivo en el estudio?",
+      "reply": [
+        "Entiendo. Para asegurar tu lugar en esta primera clase necesitamos el pago por adelantado, por alguno de los métodos habilitados. Pagar en efectivo al llegar no confirma una reserva."
+      ],
+      "delta": {
+        "students": 0,
+        "reservations": 0,
+        "sales": 0,
+        "payments": 0,
+        "product_acquisitions": 0,
+        "assistant_handoffs": 0,
+        "demi_group_bookings": 0,
+        "assistant_model_calls": 0,
+        "assistant_tool_executions": 0
+      }
+    },
+    {
+      "completedAt": "2026-10-22T21:07:54.641664+00:00",
+      "afterArtifactId": "5873dcd1-1a20-421b-a9f2-d566531cde3c",
+      "message": "No gracias, sólo puedo pagar en efectivo, no puedo hacer el pago anticipado.",
+      "reply": [
+        "Entiendo. Puedes acercarte al estudio y pagar la clase ese día en efectivo, únicamente si hay lugar al llegar. Las clases se agendan con anticipación, así que irías sin reserva y no podemos garantizarte que haya espacio para tomarla."
+      ],
+      "delta": {
+        "students": 0,
+        "reservations": 0,
+        "sales": 0,
+        "payments": 0,
+        "product_acquisitions": 0,
+        "assistant_handoffs": 0,
+        "demi_group_bookings": 0,
+        "assistant_model_calls": 0,
+        "assistant_tool_executions": 0
+      }
+    },
+    {
+      "completedAt": "2026-10-22T21:08:40.994568+00:00",
+      "afterArtifactId": "6d1857d3-52e4-4e7b-9c50-ec1d94edfadc",
+      "message": "Mejor sí puedo pagar por adelantado. Pásame cómo depositar en OXXO para esa clase.",
+      "reply": [
+        "El importe de tu primera clase es $150.00.\n\nTransferencia o depósito OXXO directamente a la cuenta bancaria:\nBANCO FICTICIO UAT — NO TRANSFERIR\nPRUEBA SIN VALOR\nCuenta: 0000\nNo realizar pagos reales.\n\nEnvíame el comprobante por este mismo chat. Al recibirlo te pediré juntos los datos faltantes para crear la reserva, según disponibilidad. El equipo validará el pago manualmente; la reserva quedará sujeta a esa validación y puede cancelarse si el comprobante no es válido. Todavía no hay una reserva confirmada ni un lugar retenido."
+      ],
+      "delta": {
+        "students": 0,
+        "reservations": 0,
+        "sales": 0,
+        "payments": 0,
+        "product_acquisitions": 0,
+        "assistant_handoffs": 0,
+        "demi_group_bookings": 0,
+        "assistant_model_calls": 2,
+        "assistant_tool_executions": 2
+      }
+    },
+    {
+      "completedAt": "2026-10-22T21:09:16.236436+00:00",
+      "afterArtifactId": "c92c584e-4ca4-4f5b-a160-5b031177a2d4",
+      "message": "¿Puedo pagar en efectivo en el estudio?",
+      "reply": [
+        "Entiendo. Para asegurar tu lugar en esta primera clase necesitamos el pago por adelantado, por alguno de los métodos habilitados. Pagar en efectivo al llegar no confirma una reserva."
+      ],
+      "delta": {
+        "students": 0,
+        "reservations": 0,
+        "sales": 0,
+        "payments": 0,
+        "product_acquisitions": 0,
+        "assistant_handoffs": 0,
+        "demi_group_bookings": 0,
+        "assistant_model_calls": 0,
+        "assistant_tool_executions": 0
+      }
+    }
+  ]
+}

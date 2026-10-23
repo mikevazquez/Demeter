@@ -1,0 +1,91 @@
+{
+  "sourceSha": "42ea7bf4559ec14eb10ec1dac6e7de62aea0f258",
+  "runtimeSha": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+  "environment": "hedouonyhynuvwbckdlg",
+  "script": "tests/demi-a07-engine-probe-uat.sql",
+  "rollback": true,
+  "fixtureAdjustments": [
+    "First attempt used service_role for admin review and was denied; transaction rolled back. Corrected script to switch to actual authenticated role for review and sale."
+  ],
+  "results": [
+    {
+      "results": [
+        {
+          "status": "PASSED_ENGINE",
+          "variant": "only_class",
+          "paid_minor": 15000,
+          "package_count": 0,
+          "enrollment_count": 0
+        },
+        {
+          "status": "PASSED_ENGINE",
+          "variant": "same_utc_day_previous_local_day",
+          "timezone": "America/Mexico_City",
+          "class_utc": "2026-10-22T00:30:00+00:00",
+          "actual_options": 0,
+          "class_local_date": "2026-10-21",
+          "expected_options": 0
+        },
+        {
+          "status": "PASSED_ENGINE",
+          "variant": "next_utc_day_same_local_day",
+          "timezone": "America/Mexico_City",
+          "class_utc": "2026-10-23T02:30:00+00:00",
+          "actual_options": 1,
+          "class_local_date": "2026-10-22",
+          "expected_options": 1
+        },
+        {
+          "status": "PASSED_ENGINE",
+          "variant": "local_previous_235959",
+          "timezone": "America/Mexico_City",
+          "class_utc": "2026-10-22T05:59:59+00:00",
+          "actual_options": 0,
+          "class_local_date": "2026-10-21",
+          "expected_options": 0
+        },
+        {
+          "status": "PASSED_ENGINE",
+          "variant": "local_today_midnight",
+          "timezone": "America/Mexico_City",
+          "class_utc": "2026-10-22T06:00:00+00:00",
+          "actual_options": 1,
+          "class_local_date": "2026-10-22",
+          "expected_options": 1
+        },
+        {
+          "status": "BLOCKED_ENGINE_DEPENDENCY",
+          "variant": "A_integrated",
+          "starts_on": null,
+          "dependency": "DEMI-PROS-02",
+          "expires_on": null,
+          "package_balance": 8,
+          "expected_A_start": "2026-10-22",
+          "expected_balance": 7,
+          "total_paid_minor": 80000,
+          "reservation_count": 1,
+          "additional_paid_minor": 65000,
+          "commercial_credit_rows": 1,
+          "original_payment_unchanged": true,
+          "first_class_linked_to_package": false
+        },
+        {
+          "status": "PASSED_ENGINE",
+          "variant": "B_separate",
+          "starts_on": null,
+          "dependency": null,
+          "expires_on": null,
+          "package_balance": 8,
+          "expected_A_start": "2026-10-22",
+          "expected_balance": 8,
+          "total_paid_minor": 95000,
+          "reservation_count": 1,
+          "additional_paid_minor": 80000,
+          "commercial_credit_rows": 0,
+          "original_payment_unchanged": true,
+          "first_class_linked_to_package": false
+        }
+      ]
+    }
+  ]
+}

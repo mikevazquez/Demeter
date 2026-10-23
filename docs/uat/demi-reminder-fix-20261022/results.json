@@ -1,0 +1,298 @@
+{
+  "date": "2026-10-22",
+  "project_id": "hedouonyhynuvwbckdlg",
+  "environment": "Studio Flow Sandbox",
+  "base_sha": "fb18cc826de534960285fdc43a25144aebf23fe6",
+  "source_sha": "af412c40629253ea297d9618a28141abe854f213",
+  "migration": {
+    "version": "20261022183659",
+    "name": "demi_class_reminder_deduplication",
+    "applied": true,
+    "filename_alignment": "CLI created 20261022152828; filename aligned with the actual MCP migration version, SQL unchanged."
+  },
+  "result": "DATABASE_CORRECTION_VERIFIED_UAT_STILL_BLOCKED",
+  "baseline": {
+    "error": {
+      "name": "HttpException",
+      "message": "Failed to run sql query: ERROR:  P0001: step_2_expected_f_jobs_0:{\"created\": true, \"jobs_created\": 1, \"notification_id\": \"a606f6fc-539a-44de-96b2-9683beb0ef3c\"}\nCONTEXT:  PL/pgSQL function inline_code_block line 89 at RAISE\n"
+    }
+  },
+  "regression": [
+    {
+      "step": 1,
+      "passed": true,
+      "variant": "first_rule_creates_one_reminder"
+    },
+    {
+      "step": 2,
+      "passed": true,
+      "variant": "second_rule_reuses_same_reminder"
+    },
+    {
+      "step": 3,
+      "passed": true,
+      "variant": "replay_and_equivalent_utc_timestamp"
+    },
+    {
+      "step": 4,
+      "passed": true,
+      "variant": "missing_configured_channel_added_once"
+    },
+    {
+      "step": 5,
+      "passed": true,
+      "variant": "real_reschedule_replaces_old_reminder"
+    },
+    {
+      "step": 6,
+      "passed": true,
+      "variant": "replayed_reschedule_keeps_current_reminder"
+    },
+    {
+      "step": 7,
+      "passed": true,
+      "variant": "delayed_booking_event_reuses_current_slot"
+    },
+    {
+      "step": 8,
+      "passed": true,
+      "variant": "stale_snapshot_cannot_create_delivery"
+    },
+    {
+      "step": 9,
+      "passed": true,
+      "variant": "other_reservation_is_independent"
+    },
+    {
+      "step": 10,
+      "passed": true,
+      "variant": "reschedule_notice_remains_independent"
+    },
+    {
+      "step": 11,
+      "passed": true,
+      "variant": "existing_timing_suppression_preserved"
+    },
+    {
+      "passed": true,
+      "variant": "one_active_reminder_one_job_per_channel"
+    }
+  ],
+  "serial_attempt": {
+    "a": {
+      "txid": 1718522,
+      "worker": "a",
+      "created": true,
+      "started_at": "2026-10-22T18:40:05.614779+00:00",
+      "returned_at": "2026-10-22T18:40:05.782238+00:00",
+      "completed_at": "2026-10-22T18:40:08.788271+00:00",
+      "jobs_created": 2,
+      "notification_id": "c6208fd7-af79-4464-903f-a95636dafe55"
+    },
+    "b": {
+      "txid": 1718523,
+      "worker": "b",
+      "created": false,
+      "started_at": "2026-10-22T18:40:09.457941+00:00",
+      "returned_at": "2026-10-22T18:40:09.51476+00:00",
+      "completed_at": "2026-10-22T18:40:12.524019+00:00",
+      "jobs_created": 0,
+      "notification_id": "c6208fd7-af79-4464-903f-a95636dafe55"
+    },
+    "concurrency_certified": false,
+    "reason": "Connector serialized the requests; database intervals did not overlap.",
+    "cleanup": {
+      "jobs": 2,
+      "run_id": "219c9c65-36a8-42dc-8012-cb74986c845c",
+      "studio_id": "d0bfc3f2-9385-4b8e-97b6-baf69ebd4117",
+      "deliveries": 0,
+      "active_reminders": 1,
+      "active_jobs_after": 0,
+      "duplicate_channels": 0,
+      "active_notifications_after": 0,
+      "pending_event_processing_after": 0
+    }
+  },
+  "concurrent_attempt": {
+    "calls": [
+      {
+        "txid": 1718785,
+        "worker": "a",
+        "created": true,
+        "started_at": "2026-10-22T18:45:00.287118+00:00",
+        "returned_at": "2026-10-22T18:45:00.641111+00:00",
+        "completed_at": "2026-10-22T18:45:10.666743+00:00",
+        "jobs_created": 2,
+        "database_role": "service_role",
+        "notification_id": "ef04233f-165f-4869-bdfa-ea19526e0bdd",
+        "lock_observations": [
+          {
+            "pid": 400297,
+            "wait_event": "advisory",
+            "wait_event_type": "Lock"
+          },
+          {
+            "pid": 400297,
+            "wait_event": "advisory",
+            "wait_event_type": "Lock"
+          },
+          {
+            "pid": 400297,
+            "wait_event": "advisory",
+            "wait_event_type": "Lock"
+          },
+          {
+            "pid": 400297,
+            "wait_event": "advisory",
+            "wait_event_type": "Lock"
+          },
+          {
+            "pid": 400297,
+            "wait_event": "advisory",
+            "wait_event_type": "Lock"
+          }
+        ]
+      },
+      {
+        "txid": 1718837,
+        "worker": "b",
+        "created": false,
+        "started_at": "2026-10-22T18:45:02.251406+00:00",
+        "returned_at": "2026-10-22T18:45:10.720874+00:00",
+        "completed_at": "2026-10-22T18:45:13.722076+00:00",
+        "jobs_created": 0,
+        "database_role": "service_role",
+        "notification_id": "ef04233f-165f-4869-bdfa-ea19526e0bdd",
+        "lock_observations": []
+      }
+    ],
+    "cron_run": [
+      {
+        "jobid": 36,
+        "status": "succeeded",
+        "end_time": "2026-10-22T18:45:10.763701+00:00",
+        "start_time": "2026-10-22T18:45:00.254134+00:00"
+      }
+    ],
+    "cron_jobs_remaining": 0,
+    "observed_overlap": true,
+    "second_call_wait_seconds": 8.469,
+    "same_notification": true,
+    "one_created": true,
+    "one_pair_of_jobs": true,
+    "distinct_transactions": true,
+    "actual_roles": ["service_role", "service_role"],
+    "method": "Existing pg_cron supplied a separate one-off background session; next-minute job removed itself. Background held the transaction for ten seconds and sampled the foreground advisory lock. No extension installed, credentials extracted, worker/adaptor dispatched or external message sent.",
+    "cleanup": {
+      "jobs": 2,
+      "run_id": "d8247ab6-6c10-485c-ac42-7e773bb654bd",
+      "studio_id": "7451b61c-d26b-4d3e-befb-fa6365f931d8",
+      "deliveries": 0,
+      "active_reminders": 1,
+      "active_jobs_after": 0,
+      "duplicate_channels": 0,
+      "active_notifications_after": 0,
+      "pending_event_processing_after": 0
+    }
+  },
+  "privilege_before": [
+    {
+      "signature": "system_cancel_pending_notifications_for_session(uuid,uuid,text,text)",
+      "prosecdef": false,
+      "service_execute": true,
+      "authenticated_execute": false,
+      "anon_execute": false
+    },
+    {
+      "signature": "system_materialize_notification(uuid,uuid,uuid,integer,text,text,text,uuid,uuid,jsonb,text,timestamp with time zone,timestamp with time zone,text,jsonb,text,jsonb,boolean,text,text)",
+      "prosecdef": false,
+      "service_execute": true,
+      "authenticated_execute": false,
+      "anon_execute": false
+    }
+  ],
+  "audit_after": {
+    "migration": [
+      {
+        "name": "demi_class_reminder_deduplication",
+        "version": "20261022183659"
+      }
+    ],
+    "privileges": [
+      {
+        "prosecdef": false,
+        "signature": "system_cancel_pending_notifications_for_session(uuid,uuid,text,text)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      },
+      {
+        "prosecdef": false,
+        "signature": "system_materialize_notification(uuid,uuid,uuid,integer,text,text,text,uuid,uuid,jsonb,text,timestamp with time zone,timestamp with time zone,text,jsonb,text,jsonb,boolean,text,text)",
+        "anon_execute": false,
+        "service_execute": true,
+        "authenticated_execute": false
+      }
+    ],
+    "cron_jobs_left": 0,
+    "unclosed_races": 0,
+    "rollback_test_runs": 0
+  },
+  "security_advisors": {
+    "before_findings": 313,
+    "after_findings": 313,
+    "new_findings": 0
+  },
+  "performance_advisors": {
+    "before_findings": 483,
+    "after_findings": 482,
+    "new_findings": 0
+  },
+  "local_tests": {
+    "files": 5,
+    "passed": 27,
+    "surface": "Existing notification contract regressions; twelve SQL controls and concurrent RPCs are the direct validation of this change."
+  },
+  "limits": [
+    "No full notification-engine/delivery-worker/Meta rerun in this block.",
+    "No current administrative UAT browser session available; conversation retests remain blocked pending secure access.",
+    "Cash attempt count X and meaning remain pending; manual A07 stays outside Demi.",
+    "Eligibility errors/timeouts and full live profile/Mike acceptance remain open."
+  ],
+  "safety": {
+    "production_touched": false,
+    "pilot_activated": false,
+    "channels_adapters_or_rule_configuration_changed": false,
+    "new_accounts": 0,
+    "external_deliveries": 0,
+    "temporary_cron_jobs_remaining": 0,
+    "committed_synthetic_race_fixtures": 2,
+    "fixtures_closed": true,
+    "sql_regression_rolled_back": true
+  },
+  "ci": {
+    "source_sha": "af412c40629253ea297d9618a28141abe854f213",
+    "main": {
+      "id": 39834623014,
+      "conclusion": "success"
+    },
+    "supervisor": {
+      "id": 39834623075,
+      "conclusion": "success"
+    }
+  },
+  "preview": {
+    "id": "dpl_EaJNeHBSLFNi63iU8uPyNZ5kKCAB",
+    "url": "https://demeterbueno-mpyak4czw-demeter3.vercel.app",
+    "state": "READY",
+    "source_sha": "af412c40629253ea297d9618a28141abe854f213"
+  },
+  "sha256": {
+    "supabase/migrations/20261022183659_demi_class_reminder_deduplication.sql": "162873f795dd1a0ecc2220c322878843b3c705b0cf39abd0f895eb943f216c30",
+    "tests/demi-reminder-deduplication-uat.sql": "4d7f9ea16012bbcb555af2c89ba19eb94425e4de677c9413b7dcfe72ce841703",
+    "tests/demi-reminder-race-setup.sql": "441a4951b1a28d0f821c11eaa2262abd3ca1333588c99fb020dd584b77baa92f",
+    "tests/demi-reminder-race-call.sql": "4448c0763c9f59d153d1a7c98f3787a2d18b95198d94549fcfe8d7e96147f647",
+    "tests/demi-reminder-race-cleanup.sql": "ba4a4c3c3bd269d012a506d59ae030417c6563c5dea54ba4bc3274077267c454",
+    "tests/demi-booking-timeout-diagnostic-uat.sql": "5251d1716f83a6e9d4d4ff7f18473510b262f6016fe5f41adbf15152e1b64231"
+  }
+}

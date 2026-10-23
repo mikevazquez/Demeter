@@ -1,0 +1,37 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "24718f760cfd68087a41df6004c135bd982cbc40",
+  "runId": "d29196b3-6a39-4faa-a7ae-4275ad4f884f",
+  "handoffId": "a6806b92-cfa4-4037-b13d-1cd93fc4e823",
+  "surface": "real-browser-buttons",
+  "externalMessagesSent": 0,
+  "requests": [
+    {
+      "step": "open-run",
+      "httpStatus": 200,
+      "responseBytes": 258192
+    },
+    {
+      "step": "claim",
+      "httpStatus": 200,
+      "responseBytes": 258702,
+      "resolvedResultPresent": null
+    },
+    {
+      "step": "resolve",
+      "httpStatus": 200,
+      "responseBytes": 259124,
+      "resolvedResultPresent": true
+    }
+  ],
+  "visibleErrors": [],
+  "download": {
+    "bytes": 16636212,
+    "sha256": "fa851c03ae3fcd275cb0aba1fe90a14dba0c94e481b610e633cf26c892ca0dc8",
+    "artifacts": 54,
+    "stressArtifacts": 24,
+    "fullSnapshotsRetained": true
+  },
+  "pageErrors": [],
+  "passed": true
+}

@@ -5,12 +5,16 @@ import {
 } from "../lib/assistant/information-intent";
 import { resolveEnrollmentStatus } from "../lib/assistant/enrollment-state";
 import * as temporaryInformation from "../lib/assistant/temporary-information";
+import * as conversationContext from "../lib/assistant/conversation-context";
 import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   conversationGuidance,
+  explanationTurnGuidance,
   needsFirstVisitGuidance,
+  prospectCashTurnGuidance,
+  prospectCashTurnReply,
 } from "../lib/assistant/conversation-guidance";
 import {
   isActiveStudentPersona,
@@ -47,6 +51,7 @@ function serverModule<T>(path: string, dependencies: Record<string, unknown>) {
 function fakeDatabase(
   pendingAction: Record<string, unknown> | null = null,
   pendingPayment: Record<string, unknown> | null = null,
+  transferPurchase: Record<string, unknown> | null = null,
 ) {
   const writes: string[] = [];
   const reads: string[] = [];
@@ -72,7 +77,9 @@ function fakeDatabase(
               ? pendingAction
               : table === "demi_group_bookings"
                 ? pendingPayment
-                : null,
+                : table === "assistant_transfer_purchase_intents"
+                  ? transferPurchase
+                  : null,
           error: null,
         }),
         then: (resolve: (value: unknown) => unknown) =>
@@ -87,11 +94,13 @@ function fakeDatabase(
 function orchestratorHarness(
   pendingAction: Record<string, unknown> | null = null,
   pendingPayment: Record<string, unknown> | null = null,
+  transferPurchase: Record<string, unknown> | null = null,
 ) {
   const action = vi.fn().mockRejectedValue(new Error("Real actions must never execute in a test"));
   const simulate = vi.fn().mockResolvedValue({ ok: true, simulated: true });
+  const simulatedRead = vi.fn<(state: unknown, name: string) => unknown>(() => null);
   const read = vi.fn().mockResolvedValue({ ok: true, activities: [] });
-  const db = fakeDatabase(pendingAction, pendingPayment);
+  const db = fakeDatabase(pendingAction, pendingPayment, transferPurchase);
   const actionModule = serverModule<typeof import("../lib/assistant/action-tools")>(
     "lib/assistant/action-tools.ts",
     {
@@ -114,7 +123,7 @@ function orchestratorHarness(
         }),
       },
       "./costs": { estimateModelCostUsdMicros: () => ({ usdMicros: 10 }) },
-      "./test-simulation": { simulateAssistantAction: simulate, simulatedReadTool: () => null },
+      "./test-simulation": { simulateAssistantAction: simulate, simulatedReadTool: simulatedRead },
       "./action-tools": {
         executeAssistantActionTool: action,
         isExplicitAssistantConfirmation: actionModule.isExplicitAssistantConfirmation,
@@ -123,7 +132,14 @@ function orchestratorHarness(
           message.toLocaleLowerCase("es-MX").includes("efectivo") ? "cash" : null,
       },
       "./read-tools": { executeAssistantReadTool: read },
-      "./conversation-guidance": { conversationGuidance, needsFirstVisitGuidance },
+      "./conversation-guidance": {
+        conversationGuidance,
+        explanationTurnGuidance,
+        needsFirstVisitGuidance,
+        prospectCashTurnGuidance,
+        prospectCashTurnReply,
+      },
+      "./conversation-context": conversationContext,
       "./prompt-workbench": { testPersonaLabel },
       "./first-class-payment-instructions": { firstClassPaymentInstructions },
       "./information-intent": { isMixedInformationActionRequest, shouldBlockPaymentForInformation },
@@ -134,7 +150,9 @@ function orchestratorHarness(
           "prepare_first_class_payment",
           "prepare_transfer_package_choice",
           "prepare_bank_transfer_purchase",
+          "complete_purchase_profile",
           "complete_group_booking",
+          "update_contact_followup",
         ].map((name) => ({ name, type: "function" })),
         assistantReadToolNames: new Set(["get_activity_catalog"]),
         assistantActionToolNames: new Set([
@@ -142,6 +160,9 @@ function orchestratorHarness(
           "execute_booking",
           "complete_group_booking",
           "prepare_student_access_activation",
+          "prepare_bank_transfer_purchase",
+          "complete_purchase_profile",
+          "update_contact_followup",
         ]),
       },
     },
@@ -176,6 +197,7 @@ function orchestratorHarness(
     ...db,
     action,
     simulate,
+    simulatedRead,
     read,
     input: input as unknown as Parameters<typeof mod.runAssistantTurn>[0],
     run: mod.runAssistantTurn,
@@ -186,12 +208,463 @@ const reply = (text: string) => ({
   output: [{ type: "message", content: [{ type: "output_text", text }] }],
   usage: { input_tokens: 10, output_tokens: 5 },
 });
+
+describe("F01 server confirmation routes", () => {
+  const summary = {
+    date: "2026-10-22",
+    starts_at_local: "18:00",
+    commercial_status: "package_covered",
+  };
+  const message = "Sí, confirmo la reserva del jueves 22 de octubre a las 18:00 con mi paquete.";
+  it("confirms a matching booking without consulting the model or preparing again", async () => {
+    const h = orchestratorHarness({
+      id: "pending",
+      action_type: "booking.create",
+      confirmation_summary: summary,
+    });
+    h.input.testSimulation = undefined;
+    h.input.history = [{ role: "user", content: message }];
+    h.action.mockResolvedValue({ ok: true, status: "executed", summary });
+    const fetcher = vi.fn();
+    vi.stubGlobal("fetch", fetcher);
+    const result = await h.run(h.input);
+    expect(h.action).toHaveBeenCalledOnce();
+    expect(h.action).toHaveBeenCalledWith(
+      expect.objectContaining({ currentUserMessage: message }),
+      "execute_booking",
+      {},
+    );
+    expect(result.reply).toContain("confirmada");
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+  it.each([
+    "booking.cancel",
+    "booking.reschedule",
+    "waitlist.join",
+    "commerce.cash_purchase",
+    "account.activate",
+  ])("does not route booking details to pending %s", async (action_type) => {
+    const h = orchestratorHarness({ id: "pending", action_type, confirmation_summary: summary });
+    h.input.testSimulation = undefined;
+    h.input.history = [{ role: "user", content: message }];
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify(reply("Revisemos la reserva.")))),
+    );
+    await h.run(h.input);
+    expect(h.action).not.toHaveBeenCalled();
+  });
+});
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
 });
 
 describe("Demi prompt workbench", () => {
+  it.each([
+    ["standard", true],
+    ["S11", false],
+    ["S12", false],
+    ["S13", false],
+    ["S14", false],
+    ["S15", false],
+  ] as const)(
+    "keeps transfer-choice availability consistent with fixture %s",
+    async (workbenchCase, offered) => {
+      const h = orchestratorHarness();
+      h.input.testSimulation!.workbenchCase = workbenchCase;
+      h.input.history = [
+        { role: "user", content: "Quiero el paquete de ocho clases por transferencia." },
+      ];
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (_url, init) => {
+          const body = JSON.parse(String(init?.body));
+          expect(
+            body.tools.some(
+              (tool: { name: string }) => tool.name === "prepare_transfer_package_choice",
+            ),
+          ).toBe(offered);
+          expect(
+            body.tools.some(
+              (tool: { name: string }) => tool.name === "prepare_bank_transfer_purchase",
+            ),
+          ).toBe(true);
+          return new Response(JSON.stringify(reply("Revisemos el paquete elegido.")));
+        }),
+      );
+      await h.run(h.input);
+      expect(h.action).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    ["student", false],
+    ["former_student", false],
+    ["prospect", true],
+    ["trial_pending_reserved", true],
+  ] as const)(
+    "offers simulated follow-up only for applicable persona %s",
+    async (persona, allowed) => {
+      const h = orchestratorHarness();
+      h.input.testSimulation!.persona = persona;
+      h.input.history = [
+        { role: "user", content: "Quiero el paquete de ocho clases por transferencia." },
+      ];
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (_url, init) => {
+          const body = JSON.parse(String(init?.body));
+          expect(
+            body.tools.some((tool: { name: string }) => tool.name === "update_contact_followup"),
+          ).toBe(allowed);
+          return new Response(JSON.stringify(reply("Revisemos las opciones del paquete.")));
+        }),
+      );
+      await h.run(h.input);
+      expect(h.action).not.toHaveBeenCalled();
+      expect(h.simulate).not.toHaveBeenCalled();
+    },
+  );
+  it.each([false, true])(
+    "executes the real orchestrator action barrier after generation (current=%s)",
+    async (current) => {
+      const h = orchestratorHarness();
+      h.input.testSimulation = undefined;
+      h.input.history = [{ role: "user", content: "Sí, reserva la clase elegida." }];
+      let turnCurrent = true;
+      h.input.isTurnCurrent = vi.fn(async () => turnCurrent);
+      h.action.mockResolvedValue({ ok: true });
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      let releaseModel!: (response: Response) => void;
+      const modelPending = new Promise<Response>((resolve) => {
+        releaseModel = resolve;
+      });
+      const fetcher = vi
+        .fn()
+        .mockReturnValueOnce(modelPending)
+        .mockResolvedValueOnce(new Response(JSON.stringify(reply("Resultado sintético."))));
+      vi.stubGlobal("fetch", fetcher);
+      const pending = h.run(h.input);
+      // Attach the rejection assertion before resolving the model to avoid unhandled rejection.
+      const assertion = current
+        ? expect(pending).resolves.toMatchObject({ reply: "Resultado sintético." })
+        : expect(pending).rejects.toThrow("assistant_turn_superseded");
+      await vi.waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
+      turnCurrent = current;
+      releaseModel(
+        new Response(
+          JSON.stringify({
+            output: [
+              {
+                type: "function_call",
+                name: "execute_booking",
+                call_id: "delayed-action",
+                arguments: "{}",
+              },
+            ],
+          }),
+        ),
+      );
+      await assertion;
+      expect(h.input.isTurnCurrent).toHaveBeenCalledOnce();
+      expect(h.action).toHaveBeenCalledTimes(current ? 1 : 0);
+      expect(h.simulate).not.toHaveBeenCalled();
+      expect(
+        h.writes.every((table) =>
+          ["assistant_model_calls", "assistant_tool_executions"].includes(table),
+        ),
+      ).toBe(true);
+    },
+  );
+
+  it.each(["booking.create", "booking.cancel", "booking.reschedule", "commerce.cash_purchase"])(
+    "rejects a superseded server confirmation before %s can execute",
+    async (action_type) => {
+      const h = orchestratorHarness({ id: "pending-action", action_type });
+      h.input.testSimulation = undefined;
+      h.input.isTurnCurrent = vi.fn(async () => false);
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      const fetcher = vi.fn();
+      vi.stubGlobal("fetch", fetcher);
+      await expect(h.run(h.input)).rejects.toThrow("assistant_turn_superseded");
+      expect(h.action).not.toHaveBeenCalled();
+      expect(fetcher).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["Hola", "Gracias.", "Entendido"])(
+    "preserves stored memory for social message %s even if the model returns a replacement",
+    async (message) => {
+      const save = vi.spyOn(conversationContext, "saveConversationMemory");
+      try {
+        const h = orchestratorHarness();
+        h.input.history = [{ role: "user", content: message }];
+        vi.stubEnv("OPENAI_API_KEY", "test");
+        vi.stubGlobal(
+          "fetch",
+          vi.fn(async (_url, init) => {
+            const body = JSON.parse(String(init?.body));
+            expect(body.text).toBeUndefined();
+            expect(body.tools).toEqual([]);
+            return new Response(
+              JSON.stringify(
+                reply(
+                  JSON.stringify({
+                    reply: "Con gusto.",
+                    memory: {
+                      intent: null,
+                      activity: null,
+                      availability: null,
+                      selected_option: null,
+                      next_step: null,
+                    },
+                  }),
+                ),
+              ),
+            );
+          }),
+        );
+        expect((await h.run(h.input)).reply).toBe("Con gusto.");
+        expect(save).not.toHaveBeenCalled();
+        expect(h.action).not.toHaveBeenCalled();
+        expect(h.simulate).not.toHaveBeenCalled();
+      } finally {
+        save.mockRestore();
+      }
+    },
+  );
+
+  it.each([
+    ["gpt-5.6-luna", "low"],
+    ["gpt-4.1", undefined],
+  ])("retains structured memory for preference changes on %s", async (model, verbosity) => {
+    const h = orchestratorHarness();
+    h.input.config.model = model!;
+    h.input.history = [{ role: "user", content: "Ahora sólo puedo los viernes a las 18:00." }];
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url, init) => {
+        const body = JSON.parse(String(init?.body));
+        expect(body.text.format.name).toBe("demi_conversation_reply");
+        expect(body.text.verbosity).toBe(verbosity);
+        expect(body.instructions).toContain("aplica correcciones recientes");
+        return new Response(JSON.stringify(reply("Revisamos los viernes.")));
+      }),
+    );
+    expect((await h.run(h.input)).reply).toBe("Revisamos los viernes.");
+  });
+
+  it.each([
+    [{ closed_first_class: true }, "PENDIENTES CERRADOS", "hola"],
+    [
+      { purchase_status: "awaiting_profile", purchase: { total_amount_minor: 80000 } },
+      "COMPROBANTE RECIBIDO, PERFIL PENDIENTE",
+      "¿Qué sigue?",
+    ],
+    [
+      { purchase_status: "awaiting_receipt", purchase: { total_amount_minor: 49900 } },
+      "COMPRA PENDIENTE DE COMPROBANTE",
+      "Ya pagué",
+    ],
+    [
+      { purchase_status: "provisional_active", purchase: { total_amount_minor: 80000 } },
+      "COMPROBANTE RECIBIDO Y PAQUETE ACTIVO PROVISIONALMENTE",
+      "Envío el comprobante de prueba por el monto acordado.",
+    ],
+  ])(
+    "passes simulated current payment context to the model without operational reads",
+    async (context, marker, message) => {
+      const h = orchestratorHarness();
+      h.input.history = [{ role: "user", content: message }];
+      h.simulatedRead.mockImplementation((_state, name) =>
+        name === "get_student_package_status"
+          ? { ok: true, student_state: { category: "prospect" }, workbench_context: context }
+          : { ok: true, reservations: [] },
+      );
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (_url, init) => {
+          const body = JSON.parse(String(init?.body));
+          expect(body.instructions).toContain(marker);
+          if ("purchase_status" in context && context.purchase_status === "awaiting_profile") {
+            expect(body.instructions).toContain(
+              "El paquete y la inscripción todavía no están activos",
+            );
+            expect(body.instructions).toContain("Sólo un resultado provisional_active");
+          }
+          if (message === "hola") expect(body.tools).toEqual([]);
+          return new Response(JSON.stringify(reply("Respuesta sintética, no UAT del modelo.")));
+        }),
+      );
+      await h.run(h.input);
+      expect(h.read).not.toHaveBeenCalled();
+      expect(h.action).not.toHaveBeenCalled();
+      expect(h.reads).not.toContain("assistant_transfer_purchase_intents");
+      expect(h.reads).not.toContain("demi_group_bookings");
+    },
+  );
+
+  it.each(["prepare_bank_transfer_purchase", "complete_purchase_profile"])(
+    "intercepts %s before its real executor",
+    async (name) => {
+      const h = orchestratorHarness();
+      h.input.history = [{ role: "user", content: "Quiero continuar con el paquete elegido." }];
+      h.simulate.mockResolvedValue({ ok: false, simulated: true, reason_code: "fixture_test" });
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      vi.stubGlobal(
+        "fetch",
+        vi
+          .fn()
+          .mockResolvedValueOnce(
+            new Response(
+              JSON.stringify({
+                output: [{ type: "function_call", name, call_id: "fixture", arguments: "{}" }],
+              }),
+            ),
+          )
+          .mockResolvedValueOnce(new Response(JSON.stringify(reply("Seguimos con la prueba.")))),
+      );
+      await h.run(h.input);
+      expect(h.simulate).toHaveBeenCalledOnce();
+      expect(h.action).not.toHaveBeenCalled();
+    },
+  );
+
+  it("loads current rights and reservations before responding to a greeting", async () => {
+    const h = orchestratorHarness();
+    h.input.testSimulation = undefined;
+    h.input.studentId = "verified-student";
+    h.input.studentCategory = "trial_pending";
+    h.input.history = [{ role: "user", content: "Hola" }];
+    h.read.mockImplementation(async (_ctx, name) =>
+      name === "get_student_package_status"
+        ? {
+            ok: true,
+            student_state: { category: "student", enrollment_status: "active" },
+            current_package: { available_credits: 8 },
+          }
+        : { ok: true, reservations: [] },
+    );
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    const fetcher = vi.fn(async (_url, init) => {
+      expect(h.read).toHaveBeenCalledTimes(2);
+      const body = JSON.parse(String(init?.body));
+      expect(body.instructions).toContain('"available_credits":8');
+      expect(body.instructions).toContain("Para alumnas, resuelve primero su solicitud concreta");
+      expect(body.text).toBeUndefined();
+      expect(body.instructions).toContain("La memoria existente se conserva automáticamente");
+      expect(body.tools).toEqual([]);
+      return new Response(
+        JSON.stringify(
+          reply(
+            JSON.stringify({
+              reply: "¡Hola! ¿Te ayudo a reservar?",
+              memory: {
+                intent: null,
+                activity: null,
+                availability: null,
+                selected_option: null,
+                next_step: null,
+              },
+            }),
+          ),
+        ),
+      );
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const result = await h.run(h.input);
+    expect(result.reply).toBe("¡Hola! ¿Te ayudo a reservar?");
+    expect(result.reply).not.toContain("memory");
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(h.action).not.toHaveBeenCalled();
+  });
+
+  it("keeps a failed initial rights lookup unknown instead of using a stale lifecycle", async () => {
+    const h = orchestratorHarness();
+    h.input.testSimulation = undefined;
+    h.input.studentId = "verified-student";
+    h.input.studentCategory = "trial_pending";
+    h.input.history = [{ role: "user", content: "Hola" }];
+    h.read.mockRejectedValue(new Error("unavailable"));
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url, init) => {
+        const body = JSON.parse(String(init?.body));
+        expect(body.instructions).toContain("context_unavailable");
+        expect(body.instructions).toContain("no pudo determinar su etapa actual");
+        return new Response(JSON.stringify(reply("Hola, ¿en qué te ayudo?")));
+      }),
+    );
+    expect((await h.run(h.input)).reply).toBe("Hola, ¿en qué te ayudo?");
+    expect(h.action).not.toHaveBeenCalled();
+  });
+
+  it("never authorizes a payment action from a greeting, even if a model requests it", async () => {
+    const h = orchestratorHarness();
+    h.input.history = [{ role: "user", content: "Hola" }];
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              output: [
+                {
+                  type: "function_call",
+                  name: "prepare_first_class_payment",
+                  call_id: "unrequested",
+                  arguments: "{}",
+                },
+              ],
+            }),
+          ),
+        )
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify(reply("Hola, ¿necesitas ayuda con el pago?"))),
+        ),
+    );
+    const result = await h.run(h.input);
+    expect(h.action).not.toHaveBeenCalled();
+    expect(h.simulate).not.toHaveBeenCalled();
+    expect(result.trace.toolCalls).toContainEqual({
+      name: "prepare_first_class_payment",
+      status: "blocked",
+    });
+  });
+
+  it.each([false, true])("blocks actions during payment objection (second=%s)", async (second) => {
+    const h = orchestratorHarness();
+    h.input.history = [
+      { role: "assistant", content: "El anticipo asegura tu primera clase." },
+      { role: "user", content: "¿Puedo pagar en efectivo?" },
+      ...(second
+        ? [
+            { role: "assistant" as const, content: "Para asegurar lugar se necesita anticipo." },
+            { role: "user" as const, content: "No gracias, sólo puedo en efectivo." },
+          ]
+        : []),
+    ];
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    const fetcher = vi.fn().mockRejectedValue(new Error("Payment objections need no model call"));
+    vi.stubGlobal("fetch", fetcher);
+    const result = await h.run(h.input);
+    expect(h.action).not.toHaveBeenCalled();
+    expect(h.simulate).not.toHaveBeenCalled();
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(result.trace.toolCalls).toEqual([]);
+    expect(result.reply).toContain(second ? "únicamente si hay lugar" : "pago por adelantado");
+    expect(result.reply).toContain(second ? "recepción recibe y registra el pago" : "Sin ese pago");
+  });
+
   it("answers a mixed information request while retaining exact payment instructions", async () => {
     const h = orchestratorHarness();
     h.input.history = [{ role: "user", content: "¿Dónde están? También quiero reservar." }];
@@ -1066,7 +1539,206 @@ describe("cash purchases require a separate explicit confirmation", () => {
   }
 });
 
+describe("current package transfer validation reaches the model", () => {
+  it.each([
+    { status: "validated", marker: "PAGO DEL PAQUETE VALIDADO POR STUDIO FLOW" },
+    { status: "provisional_active", marker: "PAQUETE PROVISIONAL, VALIDACIÓN PENDIENTE" },
+  ])("uses current $status instead of stale conversation history", async ({ status, marker }) => {
+    const h = orchestratorHarness(null, null, {
+      id: "purchase",
+      status,
+      amount_minor: 80000,
+      currency: "MXN",
+    });
+    h.input.testSimulation = undefined;
+    h.input.serviceMode = true;
+    h.input.studentId = "student";
+    h.input.history = [
+      { role: "assistant", content: "La validación definitiva está pendiente." },
+      { role: "user", content: "¿Mi pago ya está validado?" },
+    ];
+    const from = h.input.supabase.from.bind(h.input.supabase);
+    const filters: unknown[][] = [];
+    h.input.supabase.from = ((table: string) => {
+      const query = from(table) as never as { eq: (...args: unknown[]) => unknown };
+      const eq = query.eq.bind(query);
+      query.eq = (...args: unknown[]) => {
+        if (table === "assistant_transfer_purchase_intents") filters.push(args);
+        return eq(...args);
+      };
+      return query;
+    }) as unknown as typeof h.input.supabase.from;
+    vi.stubEnv("OPENAI_API_KEY", "test");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url, init) => {
+        const body = JSON.parse(String(init?.body));
+        expect(body.instructions).toContain(marker);
+        if (status === "validated")
+          expect(body.instructions).toContain(
+            "No digas que la validación definitiva sigue pendiente",
+          );
+        else expect(body.instructions).toContain("No afirmes pago validado");
+        return new Response(JSON.stringify(reply("Respuesta de prueba, sin modelo real.")));
+      }),
+    );
+    await h.run(h.input);
+    expect(filters).toContainEqual(["studio_id", "studio"]);
+    expect(filters).toContainEqual(["conversation_id", "conversation"]);
+    expect(filters).toContainEqual(["student_id", "student"]);
+    expect(h.action).not.toHaveBeenCalled();
+  });
+
+  it.each(["awaiting_receipt", "rejected", "cancelled"])(
+    "does not call a $status purchase validated",
+    async (status) => {
+      const h = orchestratorHarness(null, null, { id: "purchase", status });
+      h.input.testSimulation = undefined;
+      h.input.serviceMode = true;
+      h.input.studentId = "student";
+      h.input.history = [{ role: "user", content: "¿Mi pago ya está validado?" }];
+      vi.stubEnv("OPENAI_API_KEY", "test");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (_url, init) => {
+          const body = JSON.parse(String(init?.body));
+          expect(body.instructions).not.toContain("PAGO DEL PAQUETE VALIDADO POR STUDIO FLOW");
+          return new Response(JSON.stringify(reply("Respuesta de prueba.")));
+        }),
+      );
+      await h.run(h.input);
+      expect(h.action).not.toHaveBeenCalled();
+    },
+  );
+});
+
 describe("handoff reasons match configured operational policies", () => {
+  it.each([
+    { demi: true, polina: false, legacy: false, expected: true },
+    { demi: false, polina: true, legacy: false, expected: false },
+    { demi: true, polina: true, legacy: false, expected: true },
+    { demi: true, polina: false, legacy: true, expected: true },
+    { demi: false, polina: true, legacy: true, expected: false },
+  ])(
+    "isolates Demi policies from another assistant, including legacy=$legacy, demi=$demi, polina=$polina",
+    async ({ demi, polina, legacy, expected }) => {
+      const mod = serverModule<typeof import("../lib/assistant/action-tools")>(
+        "lib/assistant/action-tools.ts",
+        { "node:crypto": {}, "./read-tools": {}, "./group-booking": {} },
+      );
+      const rows = [
+        {
+          studio_id: "studio",
+          assistant_key: "demi",
+          reason_code: "refund_request",
+          enabled: demi,
+          blocking: true,
+        },
+        ...(!legacy
+          ? [
+              {
+                studio_id: "studio",
+                assistant_key: "polina",
+                reason_code: "refund_request",
+                enabled: polina,
+                blocking: false,
+              },
+            ]
+          : []),
+        {
+          studio_id: "other",
+          assistant_key: "demi",
+          reason_code: "refund_request",
+          enabled: true,
+          blocking: true,
+        },
+      ];
+      const from = vi.fn(() => {
+        const filters: Record<string, unknown> = {};
+        const query = {
+          select: () => query,
+          eq: (key: string, value: unknown) => {
+            filters[key] = value;
+            return query;
+          },
+          maybeSingle: async () => {
+            if (legacy && "assistant_key" in filters) {
+              return {
+                data: null,
+                error: {
+                  code: "42703",
+                  message: "column assistant_handoff_policies.assistant_key does not exist",
+                },
+              };
+            }
+            const matching = rows.filter((row) =>
+              Object.entries(filters).every(([k, v]) => row[k as keyof typeof row] === v),
+            );
+            return matching.length > 1
+              ? { data: null, error: { code: "PGRST116", message: "multiple rows" } }
+              : { data: matching[0] ?? null, error: null };
+          },
+        };
+        return query;
+      });
+      const rpc = vi.fn(async () => ({ data: { ok: true }, error: null }));
+      const result = await mod.executeAssistantActionTool(
+        {
+          supabase: { from, rpc } as never,
+          studio: { id: "studio" } as never,
+          conversationId: "conversation",
+          turnId: "turn",
+          studentId: "student",
+          crmContactId: null,
+          activationUrl: null,
+          serviceMode: true,
+          currentUserMessage: "Solicito reembolso",
+        },
+        "escalate_to_human",
+        { reason_code: "refund_request" },
+      );
+      expect(result).toMatchObject({ ok: expected });
+      expect(rpc).toHaveBeenCalledTimes(expected ? 1 : 0);
+      expect(from).toHaveBeenCalledTimes(legacy ? 2 : 1);
+    },
+  );
+
+  it.each([
+    { code: "42501", message: "permission denied" },
+    { code: "42703", message: "column unrelated_field does not exist" },
+    { code: "PGRST116", message: "multiple rows" },
+  ])("does not bypass policy errors ($code)", async (error) => {
+    const mod = serverModule<typeof import("../lib/assistant/action-tools")>(
+      "lib/assistant/action-tools.ts",
+      { "node:crypto": {}, "./read-tools": {}, "./group-booking": {} },
+    );
+    const query = {
+      select: () => query,
+      eq: () => query,
+      maybeSingle: async () => ({ data: null, error }),
+    };
+    const from = vi.fn(() => query);
+    const rpc = vi.fn();
+    const result = await mod.executeAssistantActionTool(
+      {
+        supabase: { from, rpc } as never,
+        studio: { id: "studio" } as never,
+        conversationId: "conversation",
+        turnId: "turn",
+        studentId: "student",
+        crmContactId: null,
+        activationUrl: null,
+        serviceMode: true,
+        currentUserMessage: "Necesito ayuda",
+      },
+      "escalate_to_human",
+      { reason_code: "technical_block" },
+    );
+    expect(result).toMatchObject({ ok: false, error: "handoff_reason_not_enabled" });
+    expect(from).toHaveBeenCalledTimes(1);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it.each([
     { requested: "user_requested_human", canonical: "human_requested", enabled: true },
     { requested: "refund_request", canonical: "refund_request", enabled: true },

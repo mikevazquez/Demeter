@@ -1,0 +1,29 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "syntheticUserId": "a0aa9418-4244-4898-b45f-96ea17c158e2",
+  "activeMemberships": 0,
+  "accountStatus": "disabled",
+  "authBanned": true,
+  "authSessions": 0,
+  "authRefreshTokens": 0,
+  "passwordSignInAfterCleanup": {
+    "httpStatus": 400,
+    "errorCode": "user_banned"
+  },
+  "businessNewRowsSince20261021T2104Z": 0,
+  "checkedBusinessTables": [
+    "product_acquisitions",
+    "sales",
+    "students",
+    "student_enrollments",
+    "assistant_transfer_purchase_intents",
+    "assistant_enrollment_intents",
+    "demi_group_bookings"
+  ],
+  "note": "Scoped to the two synthetic UAT studios. Conversation fixtures and demo catalog retained. Production not accessed.",
+  "staleBrowserAfterCleanup": {
+    "httpStatus": 200,
+    "path": "/login/studio"
+  },
+  "localCredentialSessionAndShareFilesRemoved": 9
+}

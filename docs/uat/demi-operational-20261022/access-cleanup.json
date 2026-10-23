@@ -1,0 +1,17 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "userId": "efe87ea5-2b5e-416e-9239-50156c5497d0",
+  "preview": "https://demeterbueno-1cg95i7da-demeter3.vercel.app",
+  "staleSessionUrl": "https://demeterbueno-1cg95i7da-demeter3.vercel.app/login/studio",
+  "staleSessionDenied": true,
+  "loginHttpStatus": 400,
+  "loginError": "user_banned",
+  "deletedPrivateFiles": [
+    "demi-uat-temporary-auth.json",
+    "demi-burst-preview-access.json",
+    "demi-operational-browser-state.json",
+    "demi-operational-action-ids.json",
+    "demi-operational-wire.txt"
+  ],
+  "privateFilesAbsent": true
+}

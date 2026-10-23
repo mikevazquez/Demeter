@@ -1,0 +1,44 @@
+# Demi · cierre técnico para revisión de promoción · 23 oct 2026
+
+**Implementación y verificación técnica del bloque completadas. Aceptación funcional de Mike y autorización de producción pendientes.** La causa física del timeout histórico sigue sin demostrarse; se verificó su mitigación funcional, no se declara eliminada.
+
+Fuente de aplicación única:24718f760cfd68087a41df6004c135bd982cbc40. Rama codex/demi-handoff-uat-20261022, [PR#367](https://github.com/mikevazquez/Demeter/pull/367). Preview demeterbueno-479vne56u-demeter3.vercel.app READY, deployment dpl_9M7dKsibsxjiy2NpaX4efXBuoaJD. Backend exclusivo hedouonyhynuvwbckdlg. [Revisión de conversaciones para Mike](REVIEW.md).
+
+## Correcciones verificadas
+
+| Pendiente                                | Resultado y evidencia                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F07 · confirmación con fecha             | La frase completa con «Lo pagaré mañana,23deoctubre» ejecuta una vez, sin pedir otro sí. Compara fecha local, importe/producto y conserva nueva confirmación/identidad/vencimiento. Una venta/alta sin pago por Demi; primera reserva8→7, siguiente bloqueada por adeudo. Recepción registra un cobro sintético aparte mediante API authenticated; segunda reserva7→6, vigencia23oct–22nov conservada. La fecha pendiente se limpia al saldar; fecha acordada23oct queda en el pendiente auditado. |
+| F04 · cancelación transitoria de lectura | Un máximo de un reintento, sólo del RPC de elegibilidad ante SQLSTATE57014. Denegaciones comerciales y otros errores no se reintentan; no se repiten escrituras ni se amplían timeouts. Siete regresiones de fallo/recuperación/límite pasan. Dos lecturas service_role realmente solapadas330ms responden elegible en330ms bajo8s; jobs se retiran.0nuevos statement timeouts en ventana00:24–00:55UTC. Causa física histórica no probada, continúa observación.                                  |
+| SIM01 · primera clase en workbench       | Precio/configuración/cupo se leen del estudio; datos de pago son ficticios y ningún RPC de pago/proveedor se invoca. C07-E4 ya devuelve instrucciones y retoma OXXO tras objeción, sin simulation_not_supported ni datos personales antes del recibo. Ocho regresiones cubren ausencia de datos, método deshabilitado, otra identidad/estudio, cupo lleno y reintento.                                                                                                                             |
+| HANDOFF-UI · cierre humano               | Claim/resolve desde botones reales, una resolución persistida y retorno automático, sin reembolso ni error visible/de página. Historia artificial explícita de24snapshots llevó el almacenamiento a14,34MB; respuestas normales258–259KB. Descarga íntegra16,64MB conserva before/after. El error histórico no se atribuye a un código exacto sin log.                                                                                                                                             |
+
+La respuesta habitual del banco usa una proyección de artifacts y referencias; la descarga recupera payloads completos por lotes de3 con ownership intacto. Exportación posterior:25,22MB/92artifacts, comprimidos sin pérdida en full-evidence.json.gz; respuesta normal414KB. Ese corte incluye todos los movimientos funcionales. Dos probes de lectura y cuatro resultados de caso posteriores se conservan aparte/en core.json. Un primer intento automatizado de exportación falló con Playwright.Error sin detalle; una sesión nueva pasó. export-attempts.json conserva ambos; no se repitieron mutaciones.
+
+## Regresión conjunta y límites
+
+212pruebas locales de10archivos, tipos, formato y lint afectados pasan. [CI39878034665](https://github.com/mikevazquez/Demeter/actions/runs/39878034665) y [Supervisor39878034697](https://github.com/mikevazquez/Demeter/actions/runs/39878034697) SUCCESS para24718f76; PR MERGEABLE/CLEAN, aún borrador. La cabeza posterior de evidencia y ajuste de script tiene checks separados; no cambia el código de aplicación probado.
+
+16suites SQL funcionales con roles reales/rollback, al menos111controles explícitos y un diagnóstico adicional de elegibilidad. Los tres scripts pedidos originalmente vuelven a pasar. Fallo inicial C3 de inscripción preservado: current_dateUTC era23oct y el estudio seguía en22oct; se corrigió sólo la fecha del seed del script a la fecha local. fixture-adjustment.json registra hashes antes/después. Sin cambios de reglas.
+
+15turnos de8conversaciones nuevas del workbench: C07-E4, S11–S15, efectivo con explicación e insistencia en clase llena. Pase499sin inscripción extra ni datos previos; paquete600+inscripción200 antes de aceptación; tres datos después del recibo; saludo sin perseguir pendiente cerrado; explicación reformulada sin nueva confirmación. Las listas del workbench son simuladas y no validan elegibilidad operativa.
+
+Run operativo d29196b3-6a39-4faa-a7ae-4275ad4f884f, estudio9e6a1186-07f6-437f-821a-bdb721a50313. Transferencia:800aceptados antes de intención; recibo sintético RPC/replay antes del perfil; nombre completo, nacimiento1995-05-10 y correo persistidos. Validación administrativa real, un pago/alta y reserva8→7. Replay del proveedor mantiene52modelos,14entregas,5reservas,2ventas/2pagos;0efectos adicionales.
+
+M13/M05/M17 se registran como PASA técnico capturado; M10 PASA técnico de motor con12controles actuales, cancelación/asistencia y captura previa del mismo código DBaf412c40 sin cambio en este bloque. No se presenta esa captura antigua como una nueva entrega de24718f76. No se vuelve a certificar puntualidad ni Meta externo. No se declaró aprobación funcional ni una corrida conversacional completa de18casos.
+
+Todos los comprobantes, medios de pago y datos personales son sintéticos. No se certifican OCR, banco, Mercado Pago o Meta externos. A07 continúa manual fuera de Demi. Velocidad previamente aceptada no se repitió; duraciones del banco incluyen snapshots y no son un nuevo benchmarkP01.
+
+## Fixtures, evidencia y cierre
+
+Se copió sólo la definición oficial de birth_date y el Pase oficial499/4clases al nuevo estudio sintético. Se movió sólo la sesión llena a23oct19:00 para distinguirla de una sesión libre18:00; capacidad1/reserva1.24snapshots de padding son fixtures de tamaño etiquetados, nunca resultados comerciales.
+
+business-checks.json conserva saldos y movimientos antes del cierre. Después se cancelaron clases y colas de esta fixture y se deshabilitaron sus seguimientos; la cancelación de clases es limpieza y puede liberar sus créditos sintéticos. Cuenta temporal nueva6fbc05f1 revocada, sin reactivar ninguna anterior. Los registros financieros/auditorías se conservan. database-cleanup.json y access-cleanup.json documentan estado y denegación HTTP. Sin producción, cambios de canales/adapters ni secretos publicados; piloto bloqueado/inactivo.
+
+## Revisión y promoción pendiente
+
+[REVIEW.md](REVIEW.md) contiene mensajes reales y escenarios para aprobar el trato. promotion-manifest.json identifica versión, stack, seis migraciones, hashes, orden y rollback. Los timestamps registrados en Sandbox difieren de los nombres de archivo en cuatro migraciones: comparar nombre/contenido antes de aplicar, sin empujar migraciones a ciegas. Este bloque no aplica nada a producción.
+
+La promoción requiere aceptación funcional explícita y autorización del alcance. Después de esa autorización se verificará la versión productiva vigente, se integrará el stack completo ya incluido en la candidata como una única versión y se construirá un despliegue nuevo con la configuración productiva existente, conservando variables/canales/adapters y el piloto inactivo. Rollback: despliegue anterior verificado, esquema aditivo conservado y restauración de funciones si procede, sin borrar datos financieros.
+
+Estado: Validación manual / ReleaseNo listo hasta esa aceptación. La observación de infraestructura F04 queda visible; no se transforma una mitigación en una afirmación de causa eliminada.

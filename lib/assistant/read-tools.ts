@@ -40,6 +40,10 @@ function validDate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+function activityWords(value: string) {
+  return normalize(value).split(/\s+/).filter(Boolean).sort().join(" ");
+}
+
 function validTime(value: string | null) {
   return value == null || /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
 }
@@ -108,6 +112,7 @@ export async function searchClassAvailability(
   }
 
   const limit = Math.max(1, Math.min(Number(rawArgs.limit) || 10, 20));
+  const offset = Math.max(0, Math.floor(Number(rawArgs.offset) || 0));
   const coarseStart = `${addUtcDays(rawArgs.date_from, -1)}T00:00:00.000Z`;
   const coarseEnd = `${addUtcDays(rawArgs.date_to, 2)}T00:00:00.000Z`;
 
@@ -197,10 +202,19 @@ export async function searchClassAvailability(
     reservationCount.set(item.session_id, (reservationCount.get(item.session_id) ?? 0) + 1);
   }
 
-  const activityNeedle = rawArgs.activity_query ? normalize(rawArgs.activity_query) : null;
+  const requestedActivity = rawArgs.activity_query ? normalize(rawArgs.activity_query) : null;
+  // Keep an actual exact name. Only resolve the known speech variant against the real catalog.
+  const hasLiteralActivity = requestedActivity
+    ? templates.some((item) => normalize(item.name) === requestedActivity) ||
+      (disciplines ?? []).some((item) => normalize(item.name) === requestedActivity)
+    : false;
+  const activityNeedle =
+    requestedActivity && !hasLiteralActivity
+      ? requestedActivity.replace(/\bpaul\b/g, "pole")
+      : requestedActivity;
   const earliestBookableStart = Date.now() + 30 * 60_000;
   const exactTemplateMatchExists = activityNeedle
-    ? templates.some((item) => normalize(item.name) === activityNeedle)
+    ? templates.some((item) => activityWords(item.name) === activityWords(activityNeedle))
     : false;
   const matches = [];
 
@@ -215,9 +229,12 @@ export async function searchClassAvailability(
       const templateName = normalize(template.name);
       const disciplineName = normalize(discipline ?? "");
       const matchesActivity = exactTemplateMatchExists
-        ? templateName === activityNeedle
+        ? templateName === activityNeedle ||
+          activityWords(templateName) === activityWords(activityNeedle)
         : templateName.includes(activityNeedle) ||
+          activityWords(templateName) === activityWords(activityNeedle) ||
           disciplineName === activityNeedle ||
+          activityWords(disciplineName) === activityWords(activityNeedle) ||
           disciplineName.includes(activityNeedle);
       if (!matchesActivity) continue;
     }
@@ -246,15 +263,23 @@ export async function searchClassAvailability(
       currency: ctx.studio.currency,
       credit_cost: template.credit_cost,
     });
-
-    if (matches.length >= limit) break;
   }
+
+  const hasMore = matches.length > offset + limit;
 
   return {
     ok: true,
     timezone: ctx.studio.timezone,
-    matches,
-    has_more: matches.length >= limit,
+    matches: matches.slice(offset, offset + limit),
+    has_more: hasMore,
+    next_offset: hasMore ? offset + limit : null,
+    query_truncated: (sessions ?? []).length >= 250,
+    searched_range: {
+      date_from: rawArgs.date_from,
+      date_to: rawArgs.date_to,
+      after_time: rawArgs.after_time,
+      before_time: rawArgs.before_time,
+    },
   };
 }
 

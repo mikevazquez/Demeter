@@ -1,0 +1,135 @@
+{
+  "sourceSha": "0d3020e73d49afbf998be717583761b3edfb54f5",
+  "runtimeSha": "55f59c2cef805908d45748a06c205dcc8ad60a67",
+  "environment": "hedouonyhynuvwbckdlg",
+  "dateUTC": "2026-10-22",
+  "scope": "PostgreSQL real; SQL fixtures rolled back. Does not certify conversation or Meta delivery.",
+  "suites": [
+    {
+      "script": "tests/demi-2-operational-uat.sql",
+      "rollback": true,
+      "scriptAdjustments": [],
+      "results": [
+        {
+          "case": "M13",
+          "passed": true,
+          "variant": "booking_and_duplicate"
+        },
+        {
+          "case": "M10",
+          "passed": true,
+          "variant": "exact_5_hours_credit_restored"
+        },
+        {
+          "case": "M10",
+          "passed": true,
+          "variant": "late_consumed_once"
+        },
+        {
+          "case": "M15",
+          "passed": true,
+          "result": {
+            "eligible": false,
+            "credit_cost": 1,
+            "reason_code": "enrollment_required",
+            "enrollment_requirement": {
+              "mode": "package_booking",
+              "missing": true,
+              "required": true
+            }
+          },
+          "variant": "expired_enrollment_preserves_package"
+        },
+        {
+          "case": "M16",
+          "passed": true,
+          "variant": "rights_after_renewal"
+        },
+        {
+          "case": "M17",
+          "passed": true,
+          "variant": "persistent_human_case"
+        },
+        {
+          "case": "M09",
+          "passed": true,
+          "variant": "three_captured_delivery_failures"
+        },
+        {
+          "case": "M13",
+          "passed": true,
+          "variant": "no_show_consumed_once"
+        },
+        {
+          "case": "M11",
+          "passed": true,
+          "variant": "attended_stays_trial"
+        },
+        {
+          "case": "M12",
+          "passed": true,
+          "variant": "trial_receipt_rejected_reservation_revoked"
+        }
+      ]
+    },
+    {
+      "script": "tests/demi-trial-enrollment-credit-uat.sql",
+      "rollback": true,
+      "scriptAdjustments": [],
+      "results": [
+        {
+          "passed": true,
+          "variant": "unvalidated_blocked"
+        },
+        {
+          "passed": true,
+          "variant": "paid_same_day_eligible"
+        },
+        {
+          "passed": true,
+          "variant": "refunded_source_blocked"
+        },
+        {
+          "passed": true,
+          "variant": "unauthorized_actor_blocked"
+        },
+        {
+          "passed": true,
+          "variant": "other_day_blocked"
+        },
+        {
+          "passed": true,
+          "variant": "tenant_rule_gate"
+        },
+        {
+          "passed": true,
+          "variant": "cross_student_payment_blocked"
+        },
+        {
+          "passed": true,
+          "variant": "incomplete_payment_atomic_rejection"
+        },
+        {
+          "passed": true,
+          "variant": "backdated_purchase_blocked"
+        },
+        {
+          "passed": true,
+          "variant": "enrollment_50_full_package_original_receipt_preserved"
+        },
+        {
+          "passed": true,
+          "variant": "replay_once"
+        },
+        {
+          "passed": true,
+          "variant": "second_application_blocked"
+        },
+        {
+          "passed": true,
+          "variant": "source_refund_requires_linked_resolution"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,174 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "studioId": "d0357e3d-f962-4628-8ba8-a401708b6157",
+  "runId": "f476451f-bc32-4139-a7c3-7a6dbcd18c60",
+  "baseRuntimeSha": "bfd395e11e6bb54f2841a3c3c1f3b6a0d8863cd9",
+  "baseDeploymentSha": "8c551473f6ffdcca07e57741bf74a0cc4bf416e5",
+  "candidateSha": "4cc41e2247e60f6e01ddb81f5946bf3f4bdc3288",
+  "candidateDeploymentId": "dpl_7FYTcF92YNCk12f6ry3oZ9kcL8P4",
+  "model": "gpt-5.6-luna",
+  "reasoning": "medium",
+  "candidateTextVerbosity": "low",
+  "basePromptHash": "b52a02c38f1a8210c2afebb057c690aaad9183ed03452b8739774a8bf26c1047",
+  "candidatePromptHash": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+  "method": "Same authenticated workbench server action; S01-S10 x3/version; sequential paired AB/BA alternation; no parallel model tests; one explicit warm-up/version before the 60 samples; no discards",
+  "p95": "nearest rank ceil(0.95*n)",
+  "acceptance": "Candidate total median and p95 must both be <= the paired base; zero critical identity/payment/capacity errors or real business actions",
+  "evidenceLimitations": [
+    "Synthetic standard package status has no expiry date; S03 expiry criterion remains blocked",
+    "S02 payment history is seeded and does not certify a real operational pending",
+    "Not WhatsApp or functional UAT"
+  ],
+  "cases": [
+    {
+      "id": "S01",
+      "persona": "student",
+      "message": "Hola",
+      "seedHistory": [],
+      "simulationState": {
+        "persona": "student",
+        "identityNeedsName": false,
+        "reservations": [],
+        "credits": 8
+      }
+    },
+    {
+      "id": "S02",
+      "persona": "prospect",
+      "message": "Hola",
+      "seedHistory": [
+        {
+          "role": "user",
+          "content": "Quiero tomar mi primera clase de Pole Fitness mañana a las 18:00."
+        },
+        {
+          "role": "assistant",
+          "content": "Para confirmar tu lugar falta completar el pago anticipado de 150. Si tienes alguna duda, dime."
+        }
+      ],
+      "simulationState": {
+        "persona": "prospect",
+        "identityNeedsName": true,
+        "reservations": [],
+        "credits": 0
+      }
+    },
+    {
+      "id": "S03",
+      "persona": "student",
+      "message": "¿Cuántas clases me quedan y hasta cuándo puedo usarlas?",
+      "seedHistory": [],
+      "simulationState": {
+        "persona": "student",
+        "identityNeedsName": false,
+        "reservations": [],
+        "credits": 8
+      }
+    },
+    {
+      "id": "S04",
+      "persona": "prospect",
+      "message": "¿Cuáles son los horarios de Pole Fitness para mañana?",
+      "seedHistory": [],
+      "simulationState": {
+        "persona": "prospect",
+        "identityNeedsName": true,
+        "reservations": [],
+        "credits": 0
+      }
+    },
+    {
+      "id": "S05",
+      "persona": "prospect",
+      "message": "Muéstrame todos los horarios de Pole Fitness de los próximos siete días, no sólo hoy.",
+      "seedHistory": [],
+      "simulationState": {
+        "persona": "prospect",
+        "identityNeedsName": true,
+        "reservations": [],
+        "credits": 0
+      }
+    },
+    {
+      "id": "S06",
+      "persona": "prospect",
+      "message": "Quiero Pole Fitness hoy, sólo puedo después de las 6 de la tarde.",
+      "seedHistory": [],
+      "simulationState": {
+        "persona": "prospect",
+        "identityNeedsName": true,
+        "reservations": [],
+        "credits": 0
+      }
+    },
+    {
+      "id": "S07",
+      "persona": "prospect",
+      "message": "Ninguno de esos tres horarios me sirve. ¿Hay otros días por la tarde?",
+      "seedHistory": [
+        {
+          "role": "user",
+          "content": "Quiero comenzar con Pole Fitness"
+        },
+        {
+          "role": "assistant",
+          "content": "Podemos revisar hoy a las 11:00, 12:00 o 13:00."
+        }
+      ],
+      "simulationState": {
+        "persona": "prospect",
+        "identityNeedsName": true,
+        "reservations": [],
+        "credits": 0
+      }
+    },
+    {
+      "id": "S08",
+      "persona": "prospect",
+      "message": "No puedo transferir ni usar ningún método de pago anticipado. ¿Puedo ir y pagar en efectivo?",
+      "seedHistory": [],
+      "simulationState": {
+        "persona": "prospect",
+        "identityNeedsName": true,
+        "reservations": [],
+        "credits": 0
+      }
+    },
+    {
+      "id": "S09",
+      "persona": "student",
+      "message": "Quiero reservar la clase Pole Fitness UAT de mañana a las 18:00. Ya elegí esta opción: session:ce2b06ae-580b-4018-b56b-fe3224de98ce.",
+      "seedHistory": [],
+      "simulationState": {
+        "persona": "student",
+        "identityNeedsName": false,
+        "reservations": [],
+        "credits": 8
+      }
+    },
+    {
+      "id": "S10",
+      "persona": "student_reserved",
+      "message": "Quiero cancelar mi reserva de Pole Fitness de mañana a las 18:00 porque no podré asistir.",
+      "seedHistory": [],
+      "simulationState": {
+        "persona": "student_reserved",
+        "identityNeedsName": false,
+        "reservations": [
+          {
+            "reservation_ref": "reservation:test-student_reserved",
+            "activity": "Pole Fitness",
+            "date": "2026-10-22",
+            "starts_at_local": "18:00",
+            "ends_at_local": "19:00",
+            "location": "Estudio Demeter",
+            "space": null,
+            "credit_cost": 1,
+            "status": "reserved"
+          }
+        ],
+        "credits": 8
+      }
+    }
+  ]
+}

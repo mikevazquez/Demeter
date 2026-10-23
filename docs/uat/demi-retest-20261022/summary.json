@@ -1,0 +1,57 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "latest_app_sha": "d41135aab10670c3a0bcbab0ee77a8a5dea2ad80",
+  "run_id": "d1bce540-dd74-4cb8-b3c4-2f709517940f",
+  "mixed_runtime_continuation": true,
+  "functional_approval": false,
+  "release": "No listo",
+  "overall_status": "FAILED_WITH_OPEN_ITEMS",
+  "results": {
+    "C07_main_cash_objection_sequence": "VERIFIED_CAPTURED_ON_D41135AA",
+    "C07_accept_advance_then_reset": "VERIFIED_CAPTURED_ON_D41135AA",
+    "C07_E4_workbench_simulation": "BLOCKED_SIMULATION_NOT_SUPPORTED",
+    "C07_E4_operational_synthetic_payment_instructions": "VERIFIED_CAPTURED_NO_REAL_PAYMENT",
+    "MATRIX_F01_cash_runtime_permission_and_debt": "VERIFIED_SQL_AND_CAPTURED_WITH_LIMITS",
+    "MATRIX_F02_handoff_scope": "VERIFIED_CAPTURED_AND_RPC_CLIENT_RESOLVE_ERROR_RECONCILED",
+    "MATRIX_F03_validated_payment_text_and_credit_debit": "VERIFIED_CAPTURED",
+    "MATRIX_F04_historical_eligibility_timeout": "OPEN_NOT_REPRODUCED_NOT_CLEARED",
+    "MATRIX_F06_reminder_deduplication_and_dispatch": "VERIFIED_CAPTURED_NOT_PUNCTUALITY_OR_EXTERNAL_META",
+    "MATRIX_F07_cash_confirmation_with_due_date": "FAILED_REPREPARES_AND_REQUESTS_ANOTHER_CONFIRMATION"
+  },
+  "bank_case_statuses": {
+    "M05": "partial",
+    "M10": "partial",
+    "M13": "failed",
+    "M17": "partial"
+  },
+  "local_regression": {
+    "files": 4,
+    "tests": 118,
+    "passed": true,
+    "typecheck": "passed",
+    "format": "passed",
+    "lint_errors": 0,
+    "preexisting_lint_warnings": 1
+  },
+  "source_ci": {
+    "ci_run": 39854293624,
+    "ci_conclusion": "success",
+    "supervisor_run": 39854293699,
+    "supervisor_conclusion": "success"
+  },
+  "cleanup": {
+    "temporary_account_revoked": true,
+    "private_files_removed": 18,
+    "preview_share_links_revoked": 5,
+    "notification_attempts": 28,
+    "uncaptured_attempts": 0,
+    "pending_jobs": 0,
+    "pending_deliveries": 0,
+    "pending_engine": 0,
+    "pending_followups": 0
+  },
+  "external_provider_verified": false,
+  "pilot_active": false,
+  "production_touched": false,
+  "next_action": "Correct F07 with strict amount/product/date and new-turn checks, repeat the variant; investigate F04 with realistic traces; complete first-class simulation and prepare Mike functional acceptance. Keep A07 manual and WhatsApp pilot inactive."
+}

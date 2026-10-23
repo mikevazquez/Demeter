@@ -1,0 +1,22 @@
+{
+  "purpose": "two explicit warm-up/smoke turns, one per version, before the 60 benchmark samples",
+  "samples": [
+    {
+      "variant": "base",
+      "httpStatus": 200,
+      "durationMs": 4502,
+      "ok": true,
+      "conversationId": "ae7ae53b-86f0-485c-bcdc-dd62e479efcf",
+      "reply": "¡Hola! Soy Demi de Demeter Fitness Studio 💜 ¿En qué te ayudo?"
+    },
+    {
+      "variant": "candidate",
+      "httpStatus": 200,
+      "durationMs": 3717,
+      "ok": true,
+      "conversationId": "a29359a6-1cf9-4ead-b773-4da107f2618d",
+      "reply": "¡Hola! 😊 Tienes un paquete activo con 8 clases disponibles. ¿Te ayudo a reservar una?",
+      "canSimulateReceipt": false
+    }
+  ]
+}

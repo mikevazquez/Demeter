@@ -1,0 +1,81 @@
+{
+  "runtimeSha": "24718f760cfd68087a41df6004c135bd982cbc40",
+  "environment": "hedouonyhynuvwbckdlg",
+  "deployment": "dpl_9M7dKsibsxjiy2NpaX4efXBuoaJD",
+  "studioId": "9e6a1186-07f6-437f-821a-bdb721a50313",
+  "surface": "authenticated-workbench-simulation-real-model",
+  "model": "gpt-5.6-luna",
+  "reasoning": "medium",
+  "promptPath": "docs/uat/demi-identity-20261021/candidate-personality.md",
+  "promptSha256": "c194bffd2ae14111805ddef8ad841854078eabe8cd954bc5c119dd88f4b6ffb2",
+  "businessEffectsCertified": false,
+  "functionalApproval": false,
+  "samples": [
+    {
+      "case": "C07-empathy",
+      "turn": 1,
+      "message": "Quiero pagar mi primera clase en efectivo.",
+      "httpStatus": 200,
+      "durationMs": 1780,
+      "ok": true,
+      "conversationId": "08dc5eff-6077-4b19-9a75-1cedd51b33ac",
+      "reply": "Entiendo que prefieras pagar en efectivo. Como los lugares se reservan con anticipación, el pago por adelantado nos permite confirmar un lugar para tu primera clase. Sin ese pago, el lugar sigue disponible para otras personas y no queda reservado a tu nombre. Puedes hacerlo por alguno de los métodos habilitados.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "C07-empathy",
+      "turn": 2,
+      "message": "¿Por qué tengo que pagar antes? No entendí.",
+      "httpStatus": 200,
+      "durationMs": 1249,
+      "ok": true,
+      "conversationId": "08dc5eff-6077-4b19-9a75-1cedd51b33ac",
+      "reply": "Claro: la clase tiene un límite de lugares. El pago anticipado es el paso que permite confirmar uno para ti; mientras no se complete ese paso, otras personas pueden reservarlo. Por eso, sin el pago por adelantado no se confirma una reserva a tu nombre.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "C07-empathy",
+      "turn": 3,
+      "message": "No gracias, no puedo.",
+      "httpStatus": 200,
+      "durationMs": 1082,
+      "ok": true,
+      "conversationId": "08dc5eff-6077-4b19-9a75-1cedd51b33ac",
+      "reply": "Entiendo que el pago anticipado no sea una opción para ti. Puedes acercarte al estudio y pagar la clase ese día en efectivo, únicamente si hay lugar al llegar; recepción recibe y registra el pago. Como las clases se agendan con anticipación, irías sin reserva y no podemos garantizarte que haya espacio para tomarla.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "Full-empathy",
+      "turn": 1,
+      "message": "¿Tiene lugar la clase de Pole Fitness del viernes 23 de octubre de 2026 a las 19:00?",
+      "httpStatus": 200,
+      "durationMs": 5469,
+      "ok": true,
+      "conversationId": "a0f2ea01-63f8-432b-9f2d-df21d342818e",
+      "reply": "Sí hay clase de Pole Fitness el viernes 23 de octubre a las 19:00, en la sede Principal, pero está llena y ya no hay lugar disponible.",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "Full-empathy",
+      "turn": 2,
+      "message": "Pero yo quiero agendar a las siete ese viernes.",
+      "httpStatus": 200,
+      "durationMs": 8318,
+      "ok": true,
+      "conversationId": "a0f2ea01-63f8-432b-9f2d-df21d342818e",
+      "reply": "Entiendo que quieres ese horario, pero la clase está llena y no puedo confirmar una reserva. Puedo agregarte a la lista de espera de Pole Fitness del viernes 23 de octubre a las 19:00; entrar no descuenta crédito ni garantiza un lugar. ¿Confirmas?",
+      "canSimulateReceipt": false
+    },
+    {
+      "case": "Full-empathy",
+      "turn": 3,
+      "message": "No entendí, ¿por qué no me puedes agendar a esa hora?",
+      "httpStatus": 200,
+      "durationMs": 5296,
+      "ok": true,
+      "conversationId": "a0f2ea01-63f8-432b-9f2d-df21d342818e",
+      "reply": "Porque todos los lugares de esa clase ya están ocupados. Por eso no puedo crear una reserva adicional a las 19:00. La lista de espera es la opción para ese horario, pero no equivale a una reserva ni garantiza entrar.",
+      "canSimulateReceipt": false
+    }
+  ]
+}

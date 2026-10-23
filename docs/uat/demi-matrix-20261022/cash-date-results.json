@@ -1,0 +1,33 @@
+{
+  "sourceSha": "42ea7bf4559ec14eb10ec1dac6e7de62aea0f258",
+  "environment": "hedouonyhynuvwbckdlg",
+  "file": "tests/demi-cash-promised-date-uat.sql",
+  "rollback": true,
+  "scriptAdjusted": false,
+  "results": [
+    {
+      "results": [
+        {
+          "case": "C01",
+          "passed": true,
+          "variant": "promised_date_persisted"
+        },
+        {
+          "case": "C02",
+          "passed": true,
+          "variant": "debt_visible_without_reservation_or_fake_collection"
+        },
+        {
+          "case": "C03",
+          "passed": true,
+          "variant": "replay_preserves_original_promise"
+        },
+        {
+          "case": "C04",
+          "passed": true,
+          "variant": "past_date_rejected_before_sale"
+        }
+      ]
+    }
+  ]
+}

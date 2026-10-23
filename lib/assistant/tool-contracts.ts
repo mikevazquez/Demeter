@@ -9,6 +9,7 @@ export type SearchClassAvailabilityArgs = {
   after_time: string | null;
   before_time: string | null;
   limit: number;
+  offset?: number;
 };
 
 export type CommercialOptionsArgs = {
@@ -46,7 +47,7 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
     type: "function",
     name: "search_class_availability",
     description:
-      "Consulta clases reales y lugares disponibles en Studio Flow. Úsala siempre para preguntas de horarios, fechas, 'hoy', 'mañana', horas concretas o disponibilidad. No devuelve precios comerciales; para precios usa get_commercial_options. Nunca inventes una clase. Si la persona nombra una actividad concreta, conserva ese nombre exacto en activity_query; no lo abrevies a una categoría más amplia.",
+      "Consulta clases reales y lugares disponibles en Studio Flow. Úsala siempre para preguntas de horarios, fechas, 'hoy', 'mañana', horas concretas o disponibilidad. Cada llamada admite como máximo 14 días inclusivos (date_to menos date_from <= 13 días). Para un día de semana concreto, empieza por su próxima fecha; amplía por tramos sólo si hace falta. Si pide todo un período, recórrelo por tramos de hasta 14 días y pagina con next_offset sin omitir resultados. No devuelve precios comerciales; para precios usa get_commercial_options. Nunca inventes una clase. Si la persona nombra una actividad concreta, conserva ese nombre exacto en activity_query; no lo abrevies a una categoría más amplia.",
     strict: true,
     parameters: {
       type: "object",
@@ -62,7 +63,8 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
         },
         date_to: {
           type: "string",
-          description: "Fecha final local del estudio en formato YYYY-MM-DD.",
+          description:
+            "Fecha final local YYYY-MM-DD, inclusiva y como máximo 13 días después de date_from (14 días en total).",
         },
         after_time: {
           type: ["string", "null"],
@@ -76,8 +78,22 @@ export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
           type: "integer",
           description: "Máximo de resultados. Usa normalmente 10 y nunca más de 20.",
         },
+        offset: {
+          type: "integer",
+          minimum: 0,
+          description:
+            "Empieza en 0. Para continuar la misma búsqueda usa next_offset del resultado anterior; conserva los mismos filtros.",
+        },
       },
-      required: ["activity_query", "date_from", "date_to", "after_time", "before_time", "limit"],
+      required: [
+        "activity_query",
+        "date_from",
+        "date_to",
+        "after_time",
+        "before_time",
+        "limit",
+        "offset",
+      ],
       additionalProperties: false,
     },
   },
@@ -213,6 +229,14 @@ export type PrepareWaitlistJoinArgs = {
 export type PrepareBankTransferPurchaseArgs = {
   session_ref: string | null;
   product_ref: string;
+  /** D-PAY-03: the person accepted paying the required enrollment together with the package. */
+  enrollment_accepted?: boolean | null;
+};
+
+export type CompletePurchaseProfileArgs = {
+  full_name: string;
+  birth_date: string;
+  email: string;
 };
 
 export type PrepareTransferPackageChoiceArgs = {
@@ -611,7 +635,7 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
     type: "function",
     name: "prepare_bank_transfer_purchase",
     description:
-      "Prepara una compra por transferencia después de que la persona eligió un paquete concreto. Puede vincularse a una clase o hacerse sin reservar ninguna clase. Guarda la intención pendiente y devuelve monto y datos bancarios reales. No activa créditos todavía; la activación provisional ocurre cuando llega un comprobante cuyo monto coincide.",
+      "Prepara una compra por transferencia después de que la persona eligió un paquete concreto. Puede vincularse a una clase o hacerse sin reservar ninguna clase. Si el paquete requiere inscripción y la persona no la tiene vigente, la primera llamada con enrollment_accepted=false no crea nada y devuelve enrollment_confirmation_required con paquete, inscripción y total: explícalo y, sólo si acepta, vuelve a llamar con enrollment_accepted=true para cobrar inscripción y paquete en una sola transferencia. Si el paquete incluye inscripción no hay cargo adicional. Guarda la intención pendiente y devuelve monto total y datos bancarios reales. No activa créditos todavía; la activación provisional ocurre cuando llega un comprobante cuyo monto coincide.",
     strict: true,
     parameters: {
       type: "object",
@@ -626,8 +650,13 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
           description:
             "Referencia product:<uuid> exacta del paquete seleccionado de get_commercial_options.",
         },
+        enrollment_accepted: {
+          type: "boolean",
+          description:
+            "true sólo si la persona ya aceptó pagar la inscripción requerida junto con el paquete después de conocer el total.",
+        },
       },
-      required: ["session_ref", "product_ref"],
+      required: ["session_ref", "product_ref", "enrollment_accepted"],
       additionalProperties: false,
     },
   },
@@ -665,6 +694,26 @@ export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
         },
       },
       required: ["reason_code", "note"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "complete_purchase_profile",
+    description:
+      "Sólo para un prospecto cuya compra de paquete por transferencia ya tiene comprobante con monto coincidente (estado awaiting_profile). Registra nombre completo, fecha de nacimiento y correo, crea su ficha de alumna y activa inscripción y paquete provisionalmente. Nunca la uses antes del comprobante.",
+    strict: true,
+    parameters: {
+      type: "object",
+      properties: {
+        full_name: {
+          type: "string",
+          description: "Nombre y apellidos tal como los dio la persona.",
+        },
+        birth_date: { type: "string", description: "Fecha de nacimiento en formato YYYY-MM-DD." },
+        email: { type: "string", description: "Correo electrónico de la persona." },
+      },
+      required: ["full_name", "birth_date", "email"],
       additionalProperties: false,
     },
   },

@@ -10,7 +10,8 @@ st:=(r#>>'{fixtures,people,trial_reserved,student_id}')::uuid;
 select jsonb_build_object('student_type',student_type,'trial_status',trial_status) into states from public.students where id=st;
 perform set_config('request.jwt.claim.sub',owner::text,true);
 perform set_config('request.jwt.claims',jsonb_build_object('role','service_role','sub',owner)::text,true);
-for policy in select reason_code from public.assistant_handoff_policies where studio_id=s and enabled order by reason_code loop
+-- Sandbox also has Polina policies; this suite exercises the nine Demi reasons.
+for policy in select reason_code from public.assistant_handoff_policies where studio_id=s and assistant_key='demi' and enabled order by reason_code loop
  c:=gen_random_uuid();
  insert into public.assistant_conversations(id,studio_id,student_id,channel) values(c,s,st,'internal_demo');
  result:=public.assistant_create_handoff(s,c,st,policy.reason_code,'UAT: resumen y dato pendiente para revisión manual.');

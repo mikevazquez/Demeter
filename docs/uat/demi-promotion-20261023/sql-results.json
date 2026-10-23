@@ -1,0 +1,170 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "24718f760cfd68087a41df6004c135bd982cbc40",
+  "rollback": true,
+  "fixtureAdjustments": [
+    "Enrollment C3 used current_date UTC after midnight while eligibility uses studio-local day. Script alone now seeds enrollment with studio-local day; initial failure preserved."
+  ],
+  "results": [
+    {
+      "path": "tests/demi-resolved-pendings-uat.sql",
+      "passed": true,
+      "durationMs": 2811,
+      "rows": [
+        {
+          "result": "passed",
+          "controls": 7,
+          "scope": "synthetic tenant; rollback; no external effects"
+        }
+      ]
+    },
+    {
+      "path": "tests/demi-transfer-enrollment-package-uat.sql",
+      "passed": false,
+      "error": {
+        "error": {
+          "name": "HttpException",
+          "message": "Failed to run sql query: ERROR:  P0001: C3_active_enrollment:{\"ok\": true, \"package\": {\"name\": \"Paquete UAT 8 clases\", \"currency\": \"MXN\", \"amount_minor\": 60000}, \"enrollment\": {\"name\": \"Inscripción UAT\", \"currency\": \"MXN\", \"amount_minor\": 20000}, \"total_amount_minor\": 80000, \"enrollment_required\": true}\nCONTEXT:  PL/pgSQL function inline_code_block line 39 at RAISE\n"
+        }
+      }
+    },
+    {
+      "path": "tests/demi-transfer-enrollment-package-uat.sql",
+      "passed": true,
+      "durationMs": 1981,
+      "rows": [
+        {
+          "result": "passed",
+          "controls": 4,
+          "scope": "synthetic tenant; rollback; activation with receipt to be checked in the WhatsApp/bank UAT"
+        }
+      ]
+    },
+    {
+      "path": "tests/demi-prospect-transfer-purchase-uat.sql",
+      "passed": true,
+      "durationMs": 1067,
+      "rows": [
+        {
+          "result": "passed",
+          "controls": 8,
+          "scope": "synthetic prospect; birth-date fixture copied; rollback; no real payment or message"
+        }
+      ]
+    },
+    {
+      "path": "tests/demi-cash-promised-date-uat.sql",
+      "passed": true,
+      "durationMs": 962,
+      "rows": [
+        {
+          "results": [
+            {
+              "case": "C01",
+              "passed": true,
+              "variant": "promised_date_persisted"
+            },
+            {
+              "case": "C02",
+              "passed": true,
+              "variant": "debt_visible_without_reservation_or_fake_collection"
+            },
+            {
+              "case": "C03",
+              "passed": true,
+              "variant": "replay_preserves_original_promise"
+            },
+            {
+              "case": "C04",
+              "passed": true,
+              "variant": "past_date_rejected_before_sale"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "tests/demi-cash-eligibility-boundary-uat.sql",
+      "passed": true,
+      "durationMs": 2592,
+      "rows": [
+        {
+          "results": [
+            {
+              "passed": true,
+              "variant": "invoker_and_private_helper_boundary_preserved"
+            },
+            {
+              "passed": true,
+              "variant": "cross_studio_student_rejected"
+            },
+            {
+              "passed": true,
+              "variant": "conversation_identity_preserved"
+            },
+            {
+              "passed": true,
+              "variant": "cross_studio_product_rejected"
+            },
+            {
+              "passed": true,
+              "variant": "inactive_student_rejected"
+            },
+            {
+              "passed": true,
+              "variant": "price_revalidated"
+            },
+            {
+              "passed": true,
+              "variant": "disabled_cash_rejected"
+            },
+            {
+              "passed": true,
+              "variant": "included_enrollment_restriction_preserved"
+            },
+            {
+              "passed": true,
+              "variant": "purchase_limit_enforced_by_existing_eligibility"
+            },
+            {
+              "passed": true,
+              "variant": "replay_preserves_sale_despite_reached_limit"
+            },
+            {
+              "passed": true,
+              "variant": "new_customer_only_enforced"
+            },
+            {
+              "passed": true,
+              "variant": "one_debt_no_payment_reservation_or_automatic_handoff"
+            },
+            {
+              "passed": true,
+              "variant": "authenticated_denied_even_with_service_claim"
+            },
+            {
+              "passed": true,
+              "variant": "anonymous_denied_even_with_service_claim"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "tests/demi-booking-timeout-diagnostic-uat.sql",
+      "passed": true,
+      "durationMs": 1368,
+      "rows": [
+        {
+          "diagnostic": {
+            "eligible": true,
+            "database_role": "service_role",
+            "rpc_elapsed_ms": 117.416,
+            "statement_timeout": "8s",
+            "historical_failure_cleared": false
+          }
+        }
+      ]
+    }
+  ]
+}

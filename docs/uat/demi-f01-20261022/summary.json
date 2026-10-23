@@ -1,0 +1,146 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "5feefafb38a98e57a91b749e514a52c0a1212a8b",
+  "deployment": "dpl_C9X83NHvNyoGqRYQ8LAxf5BrpPhP",
+  "status": "PASS",
+  "closureChecks": {
+    "twelve_new_events_and_captured_replies": true,
+    "worker_attempts_captured_only": true,
+    "bank_keeps_integral_cases_partial": true,
+    "temporary_account_revoked": true,
+    "leases_released": true,
+    "old_browser_and_new_login_denied": true,
+    "private_access_files_removed": true
+  },
+  "cases": [
+    {
+      "case": "matching",
+      "runId": "78e6c9a9-76ed-4207-9210-165f92b3f0a4",
+      "studioId": "6d6f8a2d-4acc-4918-ac10-2f275a40e18c",
+      "status": "PASS",
+      "checks": {
+        "exact_sandbox_and_runtime": true,
+        "all_snapshots_checked_and_retained_tables_present": true,
+        "http_and_receiver_succeeded": true,
+        "preparation_has_no_commercial_effect": true,
+        "all_replies_captured": true,
+        "one_reservation_one_credit": true,
+        "confirmation_uses_no_model_or_preparation": true,
+        "confirmation_reply_does_not_ask_again": true,
+        "replay_is_ignored_without_effect_or_response": true
+      },
+      "balance": 7,
+      "reservationIds": ["4f74429e-9dc9-440c-a641-94ecb16c3807"],
+      "confirmationMessage": "Sí, confirmo la reserva del jueves 22 de octubre a las 18:00 con mi paquete.",
+      "confirmationReply": "Listo. Tu reserva de Pole Fitness UAT quedó confirmada para el jueves, 22 de octubre, de 6:00 p. m. a 7:00 p. m.."
+    },
+    {
+      "case": "changed_date",
+      "runId": "b6b0ba98-8736-430d-b6fd-b56827037ba7",
+      "studioId": "88baadd6-c382-4ee1-b302-fc7f49c9656b",
+      "status": "PASS",
+      "checks": {
+        "exact_sandbox_and_runtime": true,
+        "all_snapshots_checked_and_retained_tables_present": true,
+        "http_and_receiver_succeeded": true,
+        "preparation_has_no_commercial_effect": true,
+        "all_replies_captured": true,
+        "negative_preserves_all_six_commercial_tables": true,
+        "negative_does_not_book_or_debit": true,
+        "negative_never_executes_booking_successfully": true
+      },
+      "balance": 8,
+      "reservationIds": [],
+      "confirmationMessage": "Sí, confirmo la reserva del sábado 24 de octubre a las 18:00 con mi paquete.",
+      "confirmationReply": "Perfecto, tu paquete cubre Pole Fitness del sábado 24 de octubre, de 18:00 a 19:00, en Principal: Avenida San Gaspar #240, Tonalá. ¿Confirmas esta reserva?"
+    },
+    {
+      "case": "changed_time",
+      "runId": "89ff0258-355d-4860-9ebf-36671650a1eb",
+      "studioId": "e2f98871-73f5-43e6-85c1-5079dfcb1047",
+      "status": "PASS",
+      "checks": {
+        "exact_sandbox_and_runtime": true,
+        "all_snapshots_checked_and_retained_tables_present": true,
+        "http_and_receiver_succeeded": true,
+        "preparation_has_no_commercial_effect": true,
+        "all_replies_captured": true,
+        "negative_preserves_all_six_commercial_tables": true,
+        "negative_does_not_book_or_debit": true,
+        "negative_never_executes_booking_successfully": true
+      },
+      "balance": 8,
+      "reservationIds": [],
+      "confirmationMessage": "Sí, confirmo la reserva del viernes 23 de octubre a las 19:00 con mi paquete.",
+      "confirmationReply": "A las 19:00 no hay Pole Fitness disponible. Te preparé la de 18:00 a 19:00 usando 1 clase de tu paquete, en Principal, Avenida San Gaspar #240. ¿Confirmas ese horario?"
+    },
+    {
+      "case": "negation",
+      "runId": "be377b53-2ab7-4646-aa24-dcde7fd5180a",
+      "studioId": "dfaaf27f-f14a-4236-a977-2970d6d9acb4",
+      "status": "PASS",
+      "checks": {
+        "exact_sandbox_and_runtime": true,
+        "all_snapshots_checked_and_retained_tables_present": true,
+        "http_and_receiver_succeeded": true,
+        "preparation_has_no_commercial_effect": true,
+        "all_replies_captured": true,
+        "negative_preserves_all_six_commercial_tables": true,
+        "negative_does_not_book_or_debit": true,
+        "negative_never_executes_booking_successfully": true
+      },
+      "balance": 8,
+      "reservationIds": [],
+      "confirmationMessage": "No confirmo la reserva del viernes 23 de octubre a las 18:00 con mi paquete. No reserves.",
+      "confirmationReply": "Entendido, no reservaré esa clase. Tu paquete queda sin cambios."
+    },
+    {
+      "case": "conditional",
+      "runId": "f3b810a9-1d0c-432c-bef8-8b70b9453d04",
+      "studioId": "5cd819ed-95aa-4ba3-ad42-eeeb6dd48dbe",
+      "status": "PASS",
+      "checks": {
+        "exact_sandbox_and_runtime": true,
+        "all_snapshots_checked_and_retained_tables_present": true,
+        "http_and_receiver_succeeded": true,
+        "preparation_has_no_commercial_effect": true,
+        "all_replies_captured": true,
+        "negative_preserves_all_six_commercial_tables": true,
+        "negative_does_not_book_or_debit": true,
+        "negative_never_executes_booking_successfully": true
+      },
+      "balance": 8,
+      "reservationIds": [],
+      "confirmationMessage": "Si hay lugar, confirmo la reserva del viernes 23 de octubre a las 18:00 con mi paquete.",
+      "confirmationReply": "Listo, tu paquete cubre la clase de Pole Fitness del viernes 23 de octubre a las 18:00, en Principal. ¿Confirmas la reserva?"
+    },
+    {
+      "case": "short_confirmation",
+      "runId": "a64edba7-b1b2-4078-a3a2-d3c6632da749",
+      "studioId": "6da9089a-32c4-49fa-86c5-1fe0814f55b6",
+      "status": "PASS",
+      "checks": {
+        "exact_sandbox_and_runtime": true,
+        "all_snapshots_checked_and_retained_tables_present": true,
+        "http_and_receiver_succeeded": true,
+        "preparation_has_no_commercial_effect": true,
+        "all_replies_captured": true,
+        "one_reservation_one_credit": true,
+        "confirmation_uses_no_model_or_preparation": true,
+        "confirmation_reply_does_not_ask_again": true
+      },
+      "balance": 7,
+      "reservationIds": ["81302d3f-c178-4a11-8152-af79b72ea661"],
+      "confirmationMessage": "Sí, confirmo.",
+      "confirmationReply": "Listo. Tu reserva de Pole Fitness UAT quedó confirmada para el viernes, 23 de octubre, de 6:00 p. m. a 7:00 p. m.."
+    }
+  ],
+  "functionalUat": "PENDING",
+  "pilot": "BLOCKED_INACTIVE",
+  "supersededFailure": {
+    "runtimeSha": "55f59c2cef805908d45748a06c205dcc8ad60a67",
+    "evidenceSha": "daa32acebfa4b7cdef92fb6145991c761ee0628a",
+    "status": "FAILED",
+    "case": "F01 detailed confirmation"
+  }
+}

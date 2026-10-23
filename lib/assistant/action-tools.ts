@@ -19,6 +19,7 @@ import type {
   PrepareStudentAccessActivationArgs,
   SelectResourceOptionArgs,
   PrepareBankTransferPurchaseArgs,
+  CompletePurchaseProfileArgs,
   PrepareTransferPackageChoiceArgs,
 } from "./tool-contracts";
 
@@ -215,8 +216,68 @@ function normalizeConfirmation(value: string) {
     .trim();
 }
 
-export function isExplicitAssistantConfirmation(value: string) {
-  if (!value.trim() || value.includes("?")) return false;
+function matchesDetailedBookingConfirmation(
+  value: string,
+  summary: Record<string, unknown> | null | undefined,
+) {
+  if (!summary || /[?¿]/.test(value)) return false;
+  // Parse a complete, bounded statement. Extra clauses (including conditions or
+  // negations) must not authorize an action merely because they contain "confirmo".
+  const statement = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-MX")
+    .trim()
+    .replace(/[.!]$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const match = statement.match(
+    /^(?:si,? )?confirmo (?:la|esa|esta) reserva del (?:(domingo|lunes|martes|miercoles|jueves|viernes|sabado) )?(\d{1,2}) de ([a-z]+)(?: de (\d{4}))? a las (\d{1,2}):(\d{2})( con mi paquete)?$/,
+  );
+  if (!match) return false;
+  const date = String(summary.date ?? "");
+  const time = String(summary.starts_at_local ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) return false;
+  const instant = new Date(`${date}T12:00:00Z`);
+  if (!Number.isFinite(instant.getTime()) || instant.toISOString().slice(0, 10) !== date)
+    return false;
+  const months = [
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+  ];
+  const weekdays = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
+  const [, weekday, day, month, year, hour, minute, withPackage] = match;
+  if (weekday && weekday !== weekdays[instant.getUTCDay()]) return false;
+  if (
+    Number(day) !== Number(date.slice(8)) ||
+    months.indexOf(month) + 1 !== Number(date.slice(5, 7))
+  )
+    return false;
+  if (year && year !== date.slice(0, 4)) return false;
+  if (`${hour.padStart(2, "0")}:${minute}` !== time) return false;
+  if (
+    withPackage &&
+    (summary.commercial_status !== "package_covered" || summary.trial_booking === true)
+  )
+    return false;
+  return true;
+}
+
+export function isExplicitAssistantConfirmation(
+  value: string,
+  bookingSummary?: Record<string, unknown> | null,
+) {
+  if (!value.trim() || /[?¿]/.test(value)) return false;
 
   const normalized = normalizeConfirmation(value);
   if (!normalized) return false;
@@ -266,16 +327,69 @@ export function isExplicitAssistantConfirmation(value: string) {
     "correcto",
   ]);
 
-  return accepted.has(normalized);
+  return accepted.has(normalized) || matchesDetailedBookingConfirmation(value, bookingSummary);
 }
 
 export function isExplicitCashPurchaseConfirmation(
   value: string,
-  summary?: { amount_minor?: number; product_name?: string },
+  summary?: {
+    amount_minor?: number;
+    product_name?: string;
+    payment_due_on?: string | null;
+    local_date?: string;
+  },
 ) {
-  if (isExplicitAssistantConfirmation(value)) return true;
   if (!value.trim() || /[?¿]/.test(value)) return false;
   const normalized = normalizeConfirmation(value);
+  const dated = normalized.match(/^(.*?) (?:lo )?(?:pagare|pago) (.+)$/);
+  if (dated) {
+    if (!isExplicitCashPurchaseConfirmation(dated[1], summary)) return false;
+    const relative = dated[2].match(/^(pasado manana|manana|hoy)(?: (.+))?$/);
+    const explicit = (relative ? (relative[2] ?? "") : dated[2]).replace(/^el /, "");
+    const iso = explicit.match(/^(\d{4}) (\d{2}) (\d{2})$/);
+    const written = explicit.match(/^(\d{1,2}) de ([a-z]+)(?: de (\d{4}))?$/);
+    const months = [
+      "enero",
+      "febrero",
+      "marzo",
+      "abril",
+      "mayo",
+      "junio",
+      "julio",
+      "agosto",
+      "septiembre",
+      "octubre",
+      "noviembre",
+      "diciembre",
+    ];
+    if ((!relative && !iso && !written) || (explicit && !iso && !written)) return false;
+    if (written && !months.includes(written[2])) return false;
+    // Without a summary this is a syntax prefilter only. The mutation checks the
+    // actual pending, identity, new turn, price, product and agreed due date.
+    if (!summary) return true;
+    const due = summary.payment_due_on ?? "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(due)) return false;
+    if (relative) {
+      const local = summary.local_date ?? "";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(local)) return false;
+      const date = new Date(`${local}T12:00:00Z`);
+      date.setUTCDate(
+        date.getUTCDate() + (relative[1] === "hoy" ? 0 : relative[1] === "manana" ? 1 : 2),
+      );
+      if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== due) return false;
+    }
+    if (iso && `${iso[1]}-${iso[2]}-${iso[3]}` !== due) return false;
+    if (
+      written &&
+      (Number(written[1]) !== Number(due.slice(8)) ||
+        months.indexOf(written[2]) + 1 !== Number(due.slice(5, 7)) ||
+        (written[3] && written[3] !== due.slice(0, 4)))
+    )
+      return false;
+    return true;
+  }
+  if (isExplicitAssistantConfirmation(value) && !/cancel|reagend|muev|reserv/.test(normalized))
+    return true;
   const match = normalized.match(
     /^(?:si )?confirmo la compra del paquete(?: de (\d+) clases)?(?: por (\d+)(?: (\d{1,2}))?(?: mxn| pesos)?)? en efectivo$/,
   );
@@ -303,7 +417,8 @@ const BOOKING_REASON_MESSAGES: Record<string, string> = {
   no_active_product: "No hay un paquete o membresía vigente que cubra la clase.",
   outside_product: "El paquete vigente no aplica para esta actividad.",
   outside_product_schedule: "El paquete vigente no aplica para este horario.",
-  session_full: "La clase ya está llena.",
+  session_full:
+    "Entiendo que quieras ese horario. La clase ya está llena: todos sus lugares están ocupados y no puedo confirmar otra reserva. Puedo ayudarte a buscar otra fecha u horario.",
   no_credits: "No hay créditos suficientes para reservar.",
   resource_required: "Esta clase requiere seleccionar un recurso.",
   resource_not_available: "El recurso seleccionado ya no está disponible.",
@@ -785,6 +900,8 @@ async function confirmCashPackage(ctx: AssistantActionToolContext) {
     !isExplicitCashPurchaseConfirmation(ctx.currentUserMessage, {
       amount_minor: Number(summary?.amount_minor ?? payload.expected_amount),
       product_name: String(summary?.product_name ?? ""),
+      payment_due_on: typeof payload.payment_due_on === "string" ? payload.payment_due_on : null,
+      local_date: localParts(new Date().toISOString(), ctx.studio.timezone).date,
     })
   )
     return { ok: false, reason_code: "explicit_confirmation_required" };
@@ -808,6 +925,28 @@ async function confirmCashPackage(ctx: AssistantActionToolContext) {
       .eq("id", pending.id)
       .eq("studio_id", ctx.studio.id);
   return result;
+}
+
+// This RPC is a read. Only a transient statement cancellation may be retried;
+// business denials and every write keep their existing single-attempt boundaries.
+export async function readBookingEligibility(
+  ctx: Pick<AssistantActionToolContext, "supabase" | "studio" | "serviceMode">,
+  sessionId: string,
+  studentId: string | null,
+) {
+  const read = () =>
+    ctx.serviceMode
+      ? ctx.supabase.rpc("service_booking_eligibility", {
+          target_studio_id: ctx.studio.id,
+          target_session_id: sessionId,
+          target_student_id: studentId,
+        })
+      : ctx.supabase.rpc("booking_eligibility", {
+          target_session_id: sessionId,
+          target_student_id: studentId,
+        });
+  const first = await read();
+  return first.error?.code === "57014" ? await read() : first;
 }
 
 async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBookingArgs) {
@@ -866,16 +1005,7 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
       .limit(1);
     if (paidCreditError) return { ok: false, error: "trial_credit_unavailable" };
     if (paidTrials?.length) {
-      const creditEligibility = ctx.serviceMode
-        ? await ctx.supabase.rpc("service_booking_eligibility", {
-            target_studio_id: ctx.studio.id,
-            target_session_id: sessionId,
-            target_student_id: studentId,
-          })
-        : await ctx.supabase.rpc("booking_eligibility", {
-            target_session_id: sessionId,
-            target_student_id: studentId,
-          });
+      const creditEligibility = await readBookingEligibility(ctx, sessionId, studentId);
       if (creditEligibility.error) return { ok: false, error: "trial_credit_unavailable" };
       hasPaidTrialCredit = asObject(creditEligibility.data)?.eligible === true;
     }
@@ -1128,16 +1258,7 @@ async function prepareBooking(ctx: AssistantActionToolContext, args: PrepareBook
     return { ok: false, error: "identity_required" };
   }
 
-  const eligibilityRequest = ctx.serviceMode
-    ? await ctx.supabase.rpc("service_booking_eligibility", {
-        target_studio_id: ctx.studio.id,
-        target_session_id: sessionId,
-        target_student_id: studentId,
-      })
-    : await ctx.supabase.rpc("booking_eligibility", {
-        target_session_id: sessionId,
-        target_student_id: studentId,
-      });
+  const eligibilityRequest = await readBookingEligibility(ctx, sessionId, studentId);
   const { data: eligibility, error: eligibilityError } = eligibilityRequest;
 
   if (eligibilityError) {
@@ -1648,7 +1769,9 @@ async function executeBookingOperation(ctx: AssistantActionToolContext, args: Ex
     return { ok: false, error: "confirmation_requires_new_turn" };
   }
 
-  if (!isExplicitAssistantConfirmation(ctx.currentUserMessage)) {
+  if (
+    !isExplicitAssistantConfirmation(ctx.currentUserMessage, asObject(pending.confirmation_summary))
+  ) {
     return { ok: false, error: "explicit_confirmation_required" };
   }
 
@@ -1999,16 +2122,7 @@ async function executeBookingOperation(ctx: AssistantActionToolContext, args: Ex
 
     const eligibilityRequest = reservationId
       ? { data: { eligible: true }, error: null }
-      : ctx.serviceMode
-        ? await ctx.supabase.rpc("service_booking_eligibility", {
-            target_studio_id: ctx.studio.id,
-            target_session_id: sessionId,
-            target_student_id: studentId,
-          })
-        : await ctx.supabase.rpc("booking_eligibility", {
-            target_session_id: sessionId,
-            target_student_id: studentId,
-          });
+      : await readBookingEligibility(ctx, sessionId, studentId);
     const { data: eligibility, error: eligibilityError } = eligibilityRequest;
     if (eligibilityError) {
       return { ok: false, error: "booking_eligibility_unavailable" };
@@ -2579,16 +2693,7 @@ async function prepareReschedule(ctx: AssistantActionToolContext, args: PrepareR
 
   const target = await getSessionSummary(ctx, targetSessionId);
   if (!target) return { ok: false, error: "session_not_found" };
-  const eligibilityRequest = ctx.serviceMode
-    ? await ctx.supabase.rpc("service_booking_eligibility", {
-        target_studio_id: ctx.studio.id,
-        target_session_id: targetSessionId,
-        target_student_id: ctx.studentId,
-      })
-    : await ctx.supabase.rpc("booking_eligibility", {
-        target_session_id: targetSessionId,
-        target_student_id: ctx.studentId,
-      });
+  const eligibilityRequest = await readBookingEligibility(ctx, targetSessionId, ctx.studentId);
   const { data: eligibility, error: eligibilityError } = eligibilityRequest;
   if (eligibilityError) {
     return { ok: false, error: "booking_eligibility_unavailable" };
@@ -2793,16 +2898,7 @@ async function executeReschedule(ctx: AssistantActionToolContext, args: ExecuteR
     };
   }
 
-  const eligibilityRequest = ctx.serviceMode
-    ? await ctx.supabase.rpc("service_booking_eligibility", {
-        target_studio_id: ctx.studio.id,
-        target_session_id: targetSessionId,
-        target_student_id: studentId,
-      })
-    : await ctx.supabase.rpc("booking_eligibility", {
-        target_session_id: targetSessionId,
-        target_student_id: studentId,
-      });
+  const eligibilityRequest = await readBookingEligibility(ctx, targetSessionId, studentId);
   const { data: eligibility, error: eligibilityError } = eligibilityRequest;
   if (eligibilityError) {
     return { ok: false, error: "booking_eligibility_unavailable" };
@@ -3958,11 +4054,133 @@ async function prepareTransferPackageChoice(
   };
 }
 
+// D-PAY-01 · A prospect may buy any package by transfer. Nothing about the person changes here:
+// only the pending purchase is recorded; profile and activation happen after the receipt.
+async function prepareProspectBankTransferPurchase(
+  ctx: AssistantActionToolContext,
+  args: PrepareBankTransferPurchaseArgs,
+) {
+  const rawSessionRef = args.session_ref?.trim() || null;
+  const sessionId = rawSessionRef ? parseOpaqueRef(rawSessionRef, "session") : null;
+  const productId = parseOpaqueRef(args.product_ref, "product");
+  if (rawSessionRef && !sessionId) return { ok: false, error: "invalid_session_ref" };
+  if (!productId) return { ok: false, error: "invalid_product_ref" };
+
+  if (args.enrollment_accepted !== true) {
+    const preview = await ctx.supabase.rpc("service_preview_prospect_transfer_purchase", {
+      p_studio: ctx.studio.id,
+      p_conversation: ctx.conversationId,
+      p_contact: ctx.crmContactId,
+      p_product: productId,
+    });
+    const previewResult = asObject(preview.data);
+    if (preview.error || !previewResult || previewResult.ok !== true) {
+      return {
+        ok: false,
+        error: "bank_transfer_purchase_prepare_failed",
+        reason_code: String(previewResult?.reason_code ?? "bank_transfer_purchase_preview_failed"),
+      };
+    }
+    if (previewResult.enrollment_required === true) {
+      return {
+        ok: false,
+        reason_code: "enrollment_confirmation_required",
+        package: previewResult.package,
+        enrollment: previewResult.enrollment,
+        total_amount_minor: previewResult.total_amount_minor,
+        instruction:
+          "Explica que este paquete requiere inscripción, muestra paquete, inscripción y total, y pregunta si desea pagar ambos en una sola transferencia. No compartas datos bancarios todavía ni pidas datos personales.",
+      };
+    }
+  }
+
+  const { data, error } = await ctx.supabase.rpc("service_prepare_prospect_transfer_purchase", {
+    p_studio: ctx.studio.id,
+    p_conversation: ctx.conversationId,
+    p_contact: ctx.crmContactId,
+    p_session: sessionId,
+    p_product: productId,
+  });
+  const result = asObject(data);
+  if (error || !result || result.ok !== true) {
+    return {
+      ok: false,
+      error: "bank_transfer_purchase_prepare_failed",
+      reason_code: String(result?.reason_code ?? "bank_transfer_purchase_prepare_failed"),
+    };
+  }
+  return {
+    ok: true,
+    status: "awaiting_receipt",
+    intent_id: result.intent_id,
+    package: result.package,
+    enrollment_required: result.enrollment_required === true,
+    enrollment: result.enrollment ?? null,
+    total_amount_minor: result.total_amount_minor ?? null,
+    bank_details: result.bank_details,
+    receipt_required: true,
+    profile_required_after_payment: true,
+    revocable_until_validated: true,
+    instruction:
+      "Comparte el total y los datos bancarios. No pidas nombre, fecha de nacimiento ni correo hasta que llegue el comprobante con el monto correcto.",
+  };
+}
+
+// After a matching receipt: register the profile and activate enrollment + package.
+async function completePurchaseProfile(
+  ctx: AssistantActionToolContext,
+  args: CompletePurchaseProfileArgs,
+) {
+  if (!ctx.serviceMode) return { ok: false, reason_code: "service_mode_required" };
+  if (ctx.studentId || !ctx.crmContactId)
+    return { ok: false, reason_code: "prospect_purchase_not_found" };
+  const birthDate = String(args.birth_date ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate))
+    return { ok: false, reason_code: "birth_date_invalid" };
+  const { data, error } = await ctx.supabase.rpc("service_complete_prospect_transfer_purchase", {
+    p_studio: ctx.studio.id,
+    p_conversation: ctx.conversationId,
+    p_contact: ctx.crmContactId,
+    p_full_name: String(args.full_name ?? ""),
+    p_birth_date: birthDate,
+    p_email: String(args.email ?? ""),
+  });
+  const result = asObject(data);
+  if (error) {
+    return {
+      ok: false,
+      reason_code: "purchase_activation_failed",
+      instruction:
+        "No se pudo completar el registro y la activación. No afirmes que el paquete está activo; crea atención humana con escalate_to_human usando technical_block.",
+    };
+  }
+  if (!result || result.ok !== true) {
+    return {
+      ok: false,
+      reason_code: String(result?.reason_code ?? "purchase_profile_failed"),
+      instruction:
+        "Pide solamente el dato que falta o es inválido. Si el correo ya está en uso, pide otro correo; no reveles a quién pertenece.",
+    };
+  }
+  const activation = asObject(result.activation);
+  return {
+    ok: true,
+    status: "provisional_active",
+    package_name: activation?.package_name ?? null,
+    enrollment_paid: activation?.enrollment_paid === true,
+    enrollment_included: Boolean(activation?.enrollment_id) && activation?.enrollment_paid !== true,
+    revocable_until_validated: true,
+    instruction:
+      "Confirma que ya quedó registrada como alumna y que su paquete está activo provisionalmente; el pago queda pendiente de validación y puede revocarse si la transferencia no se confirma. Ofrece ayuda para reservar.",
+  };
+}
+
 async function prepareBankTransferPurchase(
   ctx: AssistantActionToolContext,
   args: PrepareBankTransferPurchaseArgs,
 ) {
   if (!ctx.serviceMode) return { ok: false, error: "bank_transfer_purchase_requires_service_mode" };
+  if (!ctx.studentId && ctx.crmContactId) return prepareProspectBankTransferPurchase(ctx, args);
   if (!ctx.studentId) return { ok: false, error: "identity_required" };
 
   const rawSessionRef = args.session_ref?.trim() || null;
@@ -3970,6 +4188,34 @@ async function prepareBankTransferPurchase(
   const productId = parseOpaqueRef(args.product_ref, "product");
   if (rawSessionRef && !sessionId) return { ok: false, error: "invalid_session_ref" };
   if (!productId) return { ok: false, error: "invalid_product_ref" };
+
+  // D-PAY-03: never charge a required enrollment the person has not accepted yet.
+  if (args.enrollment_accepted !== true) {
+    const preview = await ctx.supabase.rpc("service_preview_transfer_purchase", {
+      target_studio_id: ctx.studio.id,
+      target_student_id: ctx.studentId,
+      target_product_template_id: productId,
+    });
+    const previewResult = asObject(preview.data);
+    if (preview.error || !previewResult || previewResult.ok !== true) {
+      return {
+        ok: false,
+        error: "bank_transfer_purchase_prepare_failed",
+        reason_code: String(previewResult?.reason_code ?? "bank_transfer_purchase_preview_failed"),
+      };
+    }
+    if (previewResult.enrollment_required === true) {
+      return {
+        ok: false,
+        reason_code: "enrollment_confirmation_required",
+        package: previewResult.package,
+        enrollment: previewResult.enrollment,
+        total_amount_minor: previewResult.total_amount_minor,
+        instruction:
+          "Explica que este paquete requiere inscripción vigente, muestra paquete, inscripción y total, y pregunta si desea pagar ambos en una sola transferencia. No compartas datos bancarios todavía.",
+      };
+    }
+  }
 
   const { data, error } = await ctx.supabase.rpc("service_prepare_transfer_purchase", {
     target_studio_id: ctx.studio.id,
@@ -3993,6 +4239,9 @@ async function prepareBankTransferPurchase(
     status: "awaiting_receipt",
     intent_id: result.intent_id,
     package: result.package,
+    enrollment_required: result.enrollment_required === true,
+    enrollment: result.enrollment ?? null,
+    total_amount_minor: result.total_amount_minor ?? null,
     bank_details: result.bank_details,
     receipt_required: result.receipt_required === true,
     revocable_until_validated: result.revocable_until_validated === true,
@@ -4012,12 +4261,22 @@ async function escalateToHuman(ctx: AssistantActionToolContext, args: Record<str
   const note = String(args.note ?? "").trim() || null;
   if (!reasonCode) return { ok: false, error: "handoff_reason_required" };
 
-  const { data: policy, error: policyError } = await ctx.supabase
-    .from("assistant_handoff_policies")
-    .select("reason_code,label,enabled,blocking")
-    .eq("studio_id", ctx.studio.id)
-    .eq("reason_code", reasonCode)
-    .maybeSingle();
+  const policyQuery = () =>
+    ctx.supabase
+      .from("assistant_handoff_policies")
+      .select("reason_code,label,enabled,blocking")
+      .eq("studio_id", ctx.studio.id)
+      .eq("reason_code", reasonCode);
+  let policyResult = await policyQuery().eq("assistant_key", "demi").maybeSingle();
+  // Legacy studios have one policy per reason and no assistant_key column.
+  // Permission errors and ambiguous rows must not bypass the assistant scope.
+  if (
+    policyResult.error?.code === "42703" &&
+    policyResult.error.message.includes("assistant_key")
+  ) {
+    policyResult = await policyQuery().maybeSingle();
+  }
+  const { data: policy, error: policyError } = policyResult;
 
   if (policyError || !policy || policy.enabled !== true) {
     return { ok: false, error: "handoff_reason_not_enabled", reason_code: reasonCode };
@@ -4180,6 +4439,8 @@ export async function executeAssistantActionTool(
       return prepareTransferPackageChoice(ctx, args as PrepareTransferPackageChoiceArgs);
     case "prepare_bank_transfer_purchase":
       return prepareBankTransferPurchase(ctx, args as PrepareBankTransferPurchaseArgs);
+    case "complete_purchase_profile":
+      return completePurchaseProfile(ctx, args as CompletePurchaseProfileArgs);
     case "record_trial_payment_preference":
       return recordTrialPaymentPreference(ctx, args as RecordTrialPaymentPreferenceArgs);
     case "prepare_student_access_activation":

@@ -1,0 +1,252 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "user": {
+    "id": "698199c9-6874-44fe-80fc-d839b394a353",
+    "status": "disabled",
+    "banned": true,
+    "active_memberships": 0,
+    "sessions": 0,
+    "refresh_tokens": 0
+  },
+  "futureFollowupsBefore": [
+    {
+      "id": "0352f010-3f9b-4d5a-b440-b4d27dbb1d71",
+      "owner_id": "edfdfe25-5df1-40f1-bfee-a1a8f136a62f",
+      "scheduled_followups": 2,
+      "processing_followups": 0
+    },
+    {
+      "id": "06bfa9e9-deb4-4db0-8723-8e131e468dba",
+      "owner_id": "edfdfe25-5df1-40f1-bfee-a1a8f136a62f",
+      "scheduled_followups": 0,
+      "processing_followups": 0
+    },
+    {
+      "id": "09a8f7b4-f70e-4bc2-8b7e-26a54abbd702",
+      "owner_id": "698199c9-6874-44fe-80fc-d839b394a353",
+      "scheduled_followups": 0,
+      "processing_followups": 0
+    },
+    {
+      "id": "4395766b-4680-40c8-a07c-57a77db5f1fa",
+      "owner_id": "edfdfe25-5df1-40f1-bfee-a1a8f136a62f",
+      "scheduled_followups": 0,
+      "processing_followups": 0
+    },
+    {
+      "id": "4460be29-adc1-45e1-9bc5-228daa48fc38",
+      "owner_id": "edfdfe25-5df1-40f1-bfee-a1a8f136a62f",
+      "scheduled_followups": 2,
+      "processing_followups": 0
+    },
+    {
+      "id": "4525ef71-fb48-4b9b-9fd0-2fb9eaecd343",
+      "owner_id": "edfdfe25-5df1-40f1-bfee-a1a8f136a62f",
+      "scheduled_followups": 2,
+      "processing_followups": 0
+    },
+    {
+      "id": "637ac31b-367e-46aa-8a28-c71824688026",
+      "owner_id": "698199c9-6874-44fe-80fc-d839b394a353",
+      "scheduled_followups": 2,
+      "processing_followups": 0
+    },
+    {
+      "id": "7f0b71a7-bc00-4c53-a1a0-276ba807564f",
+      "owner_id": "edfdfe25-5df1-40f1-bfee-a1a8f136a62f",
+      "scheduled_followups": 0,
+      "processing_followups": 0
+    },
+    {
+      "id": "aed2ded7-b5fc-4ff4-bb33-292f031a39d6",
+      "owner_id": "edfdfe25-5df1-40f1-bfee-a1a8f136a62f",
+      "scheduled_followups": 2,
+      "processing_followups": 0
+    },
+    {
+      "id": "c865ca9f-ee9b-484a-a1e2-003ad236aba1",
+      "owner_id": "edfdfe25-5df1-40f1-bfee-a1a8f136a62f",
+      "scheduled_followups": 2,
+      "processing_followups": 0
+    },
+    {
+      "id": "d53673b5-e06c-418d-9c4a-4c4bf219d1c4",
+      "owner_id": "edfdfe25-5df1-40f1-bfee-a1a8f136a62f",
+      "scheduled_followups": 0,
+      "processing_followups": 0
+    },
+    {
+      "id": "fd849557-687e-4944-87d6-3ba6857e5448",
+      "owner_id": "edfdfe25-5df1-40f1-bfee-a1a8f136a62f",
+      "scheduled_followups": 2,
+      "processing_followups": 0
+    }
+  ],
+  "cancelledFixtureFollowups": [
+    {
+      "id": "b95829a5-45e5-4f55-a905-ffc6c01932b2",
+      "run_id": "aed2ded7-b5fc-4ff4-bb33-292f031a39d6",
+      "studio_id": "d0aa500d-7d8b-45f4-a54f-84aad89f52ec",
+      "state": "cancelled",
+      "reason_code": "uat_complete"
+    },
+    {
+      "id": "999e0ea1-ed57-4248-bfa4-377f5aefa406",
+      "run_id": "aed2ded7-b5fc-4ff4-bb33-292f031a39d6",
+      "studio_id": "d0aa500d-7d8b-45f4-a54f-84aad89f52ec",
+      "state": "cancelled",
+      "reason_code": "uat_complete"
+    },
+    {
+      "id": "603161af-951d-451c-a451-30c6abe78818",
+      "run_id": "4525ef71-fb48-4b9b-9fd0-2fb9eaecd343",
+      "studio_id": "048eaa92-503d-487d-bb30-bbed4aced937",
+      "state": "cancelled",
+      "reason_code": "uat_complete"
+    },
+    {
+      "id": "b2a15678-47ee-4696-911d-999fdcece728",
+      "run_id": "4525ef71-fb48-4b9b-9fd0-2fb9eaecd343",
+      "studio_id": "048eaa92-503d-487d-bb30-bbed4aced937",
+      "state": "cancelled",
+      "reason_code": "uat_complete"
+    },
+    {
+      "id": "e10bd105-1920-4c7f-82d1-ab2d95f4cfd1",
+      "run_id": "fd849557-687e-4944-87d6-3ba6857e5448",
+      "studio_id": "da470017-aff5-46f8-9969-ee33ebfdde78",
+      "state": "cancelled",
+      "reason_code": "uat_complete"
+    },
+    {
+      "id": "7fb65cf8-e5c8-40fe-92d2-d1f9bb17abe5",
+      "run_id": "fd849557-687e-4944-87d6-3ba6857e5448",
+      "studio_id": "da470017-aff5-46f8-9969-ee33ebfdde78",
+      "state": "cancelled",
+      "reason_code": "uat_complete"
+    },
+    {
+      "id": "e2acfafa-8bf1-4c60-bea7-832d4a6127bc",
+      "run_id": "0352f010-3f9b-4d5a-b440-b4d27dbb1d71",
+      "studio_id": "63f0a2ca-651c-45ae-a7f4-729140ba7deb",
+      "state": "cancelled",
+      "reason_code": "uat_complete"
+    },
+    {
+      "id": "321c2dee-dd96-441f-b77a-921ba0fd5ed5",
+      "run_id": "0352f010-3f9b-4d5a-b440-b4d27dbb1d71",
+      "studio_id": "63f0a2ca-651c-45ae-a7f4-729140ba7deb",
+      "state": "cancelled",
+      "reason_code": "uat_complete"
+    },
+    {
+      "id": "92e8fdfa-4664-4825-aa0b-79ac2dfb30f5",
+      "run_id": "4460be29-adc1-45e1-9bc5-228daa48fc38",
+      "studio_id": "5e53a594-6ffc-4d70-a0c3-2dab44e6195c",
+      "state": "cancelled",
+      "reason_code": "uat_complete"
+    },
+    {
+      "id": "c277d6b3-0bf7-4dd2-ba6d-3691e169a995",
+      "run_id": "4460be29-adc1-45e1-9bc5-228daa48fc38",
+      "studio_id": "5e53a594-6ffc-4d70-a0c3-2dab44e6195c",
+      "state": "cancelled",
+      "reason_code": "uat_complete"
+    },
+    {
+      "id": "3536d797-a104-4af2-9000-b572ddbc46ba",
+      "run_id": "c865ca9f-ee9b-484a-a1e2-003ad236aba1",
+      "studio_id": "d923ccbe-71e6-414d-a770-46fd4f6edfbc",
+      "state": "cancelled",
+      "reason_code": "uat_complete"
+    },
+    {
+      "id": "f41f23fc-2fda-4bfb-9634-5620f8f68f4b",
+      "run_id": "c865ca9f-ee9b-484a-a1e2-003ad236aba1",
+      "studio_id": "d923ccbe-71e6-414d-a770-46fd4f6edfbc",
+      "state": "cancelled",
+      "reason_code": "uat_complete"
+    },
+    {
+      "id": "0cd52bd6-5226-4549-94b0-182c963e21d8",
+      "run_id": "637ac31b-367e-46aa-8a28-c71824688026",
+      "studio_id": "e14e57ec-52c7-436f-a353-5c622080cd65",
+      "state": "cancelled",
+      "reason_code": "uat_complete"
+    },
+    {
+      "id": "8102121a-d702-47b7-89ba-d6bbca3409f6",
+      "run_id": "637ac31b-367e-46aa-8a28-c71824688026",
+      "studio_id": "e14e57ec-52c7-436f-a353-5c622080cd65",
+      "state": "cancelled",
+      "reason_code": "uat_complete"
+    }
+  ],
+  "after": [
+    {
+      "id": "0352f010-3f9b-4d5a-b440-b4d27dbb1d71",
+      "runnable_followups": 0,
+      "notification_attempts": 6
+    },
+    {
+      "id": "06bfa9e9-deb4-4db0-8723-8e131e468dba",
+      "runnable_followups": 0,
+      "notification_attempts": 6
+    },
+    {
+      "id": "09a8f7b4-f70e-4bc2-8b7e-26a54abbd702",
+      "runnable_followups": 0,
+      "notification_attempts": 5
+    },
+    {
+      "id": "4395766b-4680-40c8-a07c-57a77db5f1fa",
+      "runnable_followups": 0,
+      "notification_attempts": 6
+    },
+    {
+      "id": "4460be29-adc1-45e1-9bc5-228daa48fc38",
+      "runnable_followups": 0,
+      "notification_attempts": 6
+    },
+    {
+      "id": "4525ef71-fb48-4b9b-9fd0-2fb9eaecd343",
+      "runnable_followups": 0,
+      "notification_attempts": 6
+    },
+    {
+      "id": "637ac31b-367e-46aa-8a28-c71824688026",
+      "runnable_followups": 0,
+      "notification_attempts": 5
+    },
+    {
+      "id": "7f0b71a7-bc00-4c53-a1a0-276ba807564f",
+      "runnable_followups": 0,
+      "notification_attempts": 6
+    },
+    {
+      "id": "aed2ded7-b5fc-4ff4-bb33-292f031a39d6",
+      "runnable_followups": 0,
+      "notification_attempts": 6
+    },
+    {
+      "id": "c865ca9f-ee9b-484a-a1e2-003ad236aba1",
+      "runnable_followups": 0,
+      "notification_attempts": 6
+    },
+    {
+      "id": "d53673b5-e06c-418d-9c4a-4c4bf219d1c4",
+      "runnable_followups": 0,
+      "notification_attempts": 6
+    },
+    {
+      "id": "fd849557-687e-4944-87d6-3ba6857e5448",
+      "runnable_followups": 0,
+      "notification_attempts": 6
+    }
+  ],
+  "notificationCapture": {
+    "attempts": 70,
+    "captured_attempts": 70,
+    "external_provider_ids": 0
+  }
+}
