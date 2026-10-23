@@ -325,7 +325,9 @@ export default async function StudentEvaluationsPanel({
     draftEvaluation: (typeof evaluations)[number] | undefined;
     latestPublished: (typeof evaluations)[number] | undefined;
     scheduledSession:
-      { id: string; template_id: string; starts_at: string; ends_at: string } | null | undefined;
+      | { id: string; template_id: string; starts_at: string; ends_at: string }
+      | null
+      | undefined;
     scheduledClassName: string | null;
     configured: boolean;
     configuredLevels: Array<{ id: string; title: string }>;

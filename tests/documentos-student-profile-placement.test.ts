@@ -2,14 +2,15 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
+import { profile360Source } from "./support/profile360-source";
 
 function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
 }
 
 describe("DOCUMENTOS-01 person-centric information architecture", () => {
-  const profile = source("app/admin/alumnas/[studentId]/page.tsx");
-  const overview = source("app/admin/alumnas/[studentId]/Profile360Overview.tsx");
+  const profile = profile360Source();
+  const overview = profile360Source();
   const panel = source("app/admin/alumnas/[studentId]/StudentDocumentsPanel.tsx");
   const documentDetail = source("app/admin/documentos/[documentId]/page.tsx");
   const trackingRedirect = source("app/admin/documentos/[documentId]/aceptaciones/page.tsx");

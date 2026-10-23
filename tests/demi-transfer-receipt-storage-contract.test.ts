@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { profile360Source } from "./support/profile360-source";
 
 function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
@@ -9,7 +10,7 @@ function source(path: string) {
 describe("Demi transfer receipt storage", () => {
   const webhook = source("app/api/integrations/meta-whatsapp/webhook/route.ts");
   const channel = source("lib/assistant/meta-whatsapp-channel.ts");
-  const profile = source("app/admin/alumnas/[studentId]/page.tsx");
+  const profile = profile360Source();
   const migration = source("supabase/migrations/20261003173300_demi_transfer_receipt_storage.sql");
 
   it("stores receipt media in a private dedicated bucket", () => {
