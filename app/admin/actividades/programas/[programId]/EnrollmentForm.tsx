@@ -25,7 +25,9 @@ export function EnrollmentForm({
 }) {
   const [state, action, pending] = useActionState(enrollProgram, { error: null });
   const [query, setQuery] = useState("");
-  const [selectedStudent, setSelectedStudent] = useState<{ id: string; name: string } | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<{ id: string; name: string } | null>(
+    null,
+  );
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const inputId = useId();
@@ -153,7 +155,9 @@ export function EnrollmentForm({
                     </button>
                   ))
                 ) : (
-                  <p className="activities-combobox-empty">No encontramos alumnas con ese nombre.</p>
+                  <p className="activities-combobox-empty">
+                    No encontramos alumnas con ese nombre.
+                  </p>
                 )}
               </div>
             ) : null}
