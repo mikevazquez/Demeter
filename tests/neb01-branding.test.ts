@@ -42,7 +42,7 @@ describe("NEB-01-05 sin «Demeter» fijo dentro del estudio", () => {
   });
 
   it("Demeter conserva su marca corta y la app tolera que falte la columna", () => {
-    expect(read("supabase/migrations/20261022214000_neb01_studio_brand_name.sql")).toContain(
+    expect(read("supabase/migrations/20261023154000_neb01_studio_brand_name.sql")).toContain(
       "set brand_name = 'Demeter'",
     );
     expect(read("lib/platform/branding.ts")).toContain("return brand || fallback;");

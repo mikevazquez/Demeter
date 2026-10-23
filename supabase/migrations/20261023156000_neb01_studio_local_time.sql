@@ -61,67 +61,32 @@ create trigger neb_payment_local_effective_on before insert on public.payments
 
 -- Mismas funciones que antes; solo cambia current_date por la fecha local del estudio.
 
-create or replace function public.register_sale_payment(
-  target_sale_id uuid,payment_amount_minor integer,payment_method text,
-  payment_reference text default null,payment_notes text default null
-)
-returns jsonb
-language plpgsql
-security definer
-set search_path=''
-as $$
+-- register_sale_payment: en algunas bases ya delega en admin_register_sale_payment (que ya usa la
+-- fecha del estudio). Solo se ajusta si todavía guarda current_date; así no se pisa una versión nueva.
+do $migration$
 declare
-  v_sale public.sales%rowtype;
-  v_gross_paid integer := 0;
-  v_total_refunded integer := 0;
-  v_net_collected integer := 0;
-  v_collectible_total integer := 0;
-  v_balance integer := 0;
+  v_sig text := 'public.register_sale_payment(uuid,integer,text,text,text)';
+  v_def text;
+  v_old constant text := 'nullif(trim(coalesce(payment_notes,'''')),''''),
+    current_date,(select auth.uid()));';
+  v_new constant text := 'nullif(trim(coalesce(payment_notes,'''')),''''),
+    private.studio_local_today(v_sale.studio_id),(select auth.uid()));';
 begin
-  if (select auth.uid()) is null then raise exception 'unauthenticated'; end if;
-  if coalesce(payment_amount_minor,0)<=0 then raise exception 'payment_invalid'; end if;
-  if nullif(trim(coalesce(payment_method,'')),'') is null then raise exception 'payment_method_required'; end if;
-
-  select * into v_sale from public.sales where id=target_sale_id for update;
-  if not found then raise exception 'sale_not_found'; end if;
-  if not private.has_capability(v_sale.studio_id,'sales.write') then raise exception 'forbidden'; end if;
-  if v_sale.status<>'confirmed' then raise exception 'sale_not_open'; end if;
-
-  select coalesce(sum(case when p.kind='payment' then p.amount_minor else 0 end),0)::integer,
-    coalesce(sum(case when p.kind='refund' then p.amount_minor else 0 end),0)::integer
-  into v_gross_paid,v_total_refunded from public.payments p where p.sale_id=v_sale.id;
-
-  v_net_collected:=v_gross_paid-v_total_refunded;
-  select coalesce(sum(sl.line_total_minor),0)::integer into v_collectible_total
-  from public.sale_lines sl where sl.sale_id=v_sale.id and sl.refunded_at is null;
-
-  v_balance:=greatest(v_collectible_total-v_net_collected,0);
-  if v_balance<=0 then raise exception 'sale_already_paid'; end if;
-  if payment_amount_minor>v_balance then raise exception 'payment_exceeds_balance'; end if;
-
-  insert into public.payments(studio_id,sale_id,kind,amount_minor,method,reference,notes,effective_on,created_by)
-  values(v_sale.studio_id,v_sale.id,'payment',payment_amount_minor,trim(payment_method),
-    nullif(trim(coalesce(payment_reference,'')),''),nullif(trim(coalesce(payment_notes,'')),''),
-    private.studio_local_today(v_sale.studio_id),(select auth.uid()));
-
-  v_gross_paid:=v_gross_paid+payment_amount_minor;
-  v_net_collected:=v_gross_paid-v_total_refunded;
-  v_balance:=greatest(v_collectible_total-v_net_collected,0);
-
-  if v_balance=0 then
-    update public.product_acquisitions pa
-    set access_blocked=false,updated_at=now()
-    from public.sale_lines sl
-    where sl.sale_id=v_sale.id and pa.sale_line_id=sl.id and pa.status='active' and pa.refunded_at is null;
-
-    update public.sales set payment_due_on=null,collection_note=null,updated_at=now() where id=v_sale.id;
+  if to_regprocedure(v_sig) is null then
+    raise notice 'NEB-01: % no existe en esta base; se omite', v_sig;
+    return;
   end if;
-
-  return jsonb_build_object('ok',true,'sale_id',v_sale.id,'total_minor',v_sale.total_minor,
-    'gross_paid_minor',v_gross_paid,'refunded_minor',v_total_refunded,
-    'net_collected_minor',v_net_collected,'collectible_total_minor',v_collectible_total,'balance_minor',v_balance);
-end;
-$$;
+  v_def := pg_get_functiondef(v_sig::regprocedure);
+  if position('public.admin_register_sale_payment(' in v_def) > 0 then
+    raise notice 'NEB-01: % ya delega en admin_register_sale_payment (fecha local); se omite', v_sig;
+    return;
+  end if;
+  if position(v_old in v_def) = 0 then
+    raise exception 'NEB-01: definición inesperada de % (fecha del pago)', v_sig;
+  end if;
+  execute replace(v_def, v_old, v_new);
+end
+$migration$;
 
 create or replace function private.refresh_crm_lifecycle_history()
 returns integer language plpgsql security definer set search_path = '' as $$

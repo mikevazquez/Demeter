@@ -6,7 +6,7 @@ import { bookingWindowCopy } from "../lib/booking-windows";
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 describe("NEB-01-41 penalizaciones para alumnas regulares", () => {
-  const migration = read("supabase/migrations/20261022218000_neb01_student_penalties.sql");
+  const migration = read("supabase/migrations/20261023158000_neb01_student_penalties.sql");
 
   it("todo apagado por defecto y por separado para faltas y cancelaciones tardías", () => {
     expect(migration).toContain(

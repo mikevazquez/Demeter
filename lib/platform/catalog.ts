@@ -1,5 +1,5 @@
 // NEB-01-02 · Catálogo comercial de Nébora (MXN, IVA incluido). Debe coincidir con la
-// migración 20261022211000_neb01_plans_modules_entitlements.sql; tests/neb01-catalog.test.ts lo vigila.
+// migración 20261023151000_neb01_plans_modules_entitlements.sql; tests/neb01-catalog.test.ts lo vigila.
 
 export type PlatformModuleKey = "recompensas" | "recursos" | "catalogo" | "demi";
 export type PlatformPlanKey = "core" | "growth" | "pro" | "founding" | "allaccess";

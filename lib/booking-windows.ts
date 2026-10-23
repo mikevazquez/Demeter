@@ -1,5 +1,5 @@
 // NEB-01-38/39/40 · Reglas de reserva por estudio y por actividad (cancelar, abrir, cerrar y
-// registro con QR). Coincide con la migración 20261022217000_neb01_booking_windows.sql.
+// registro con QR). Coincide con la migración 20261023157000_neb01_booking_windows.sql.
 
 export type BookingOpenMode = "none" | "relative" | "weekly";
 
@@ -22,7 +22,7 @@ export const BOOKING_WINDOW_DEFAULTS: BookingWindowValues = {
   bookingOpenMinutesBefore: null,
   bookingOpenWeekday: null,
   bookingOpenTime: null,
-  checkinOpensMinutesBefore: 20,
+  checkinOpensMinutesBefore: 210,
   checkinClosesMinutesAfter: 30,
 };
 

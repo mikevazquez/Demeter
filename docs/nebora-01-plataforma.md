@@ -7,7 +7,7 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 
 ## Entregado en esta rama
 
-### NEB-01-01 · Rol de plataforma y bitácora (`20261022210000`)
+### NEB-01-01 · Rol de plataforma y bitácora (`20261023150000`)
 
 - Tabla `platform_admins`. La migración no da de alta a nadie: Codex inserta el `user_id` de
   Mike después de aplicarla (en Sandbox, su cuenta de pruebas; en producción, solo con su
@@ -19,7 +19,7 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 - Funciones públicas `platform_is_admin()` y `platform_audit_list()`. La segunda solo la usa la
   plataforma.
 
-### NEB-01-02 · Planes, módulos y derechos (`20261022211000`)
+### NEB-01-02 · Planes, módulos y derechos (`20261023151000`)
 
 - Catálogo de planes y módulos:
   - `platform_plans`: Core, Growth, Pro, Founding y All Access.
@@ -48,7 +48,7 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
   - `lib/platform/entitlements.ts`. Si las tablas todavía no existen, `null` significa «no
     bloquear nada».
 
-### NEB-01-03 · Bloqueo de lo no contratado (`20261022212000`)
+### NEB-01-03 · Bloqueo de lo no contratado (`20261023152000`)
 
 - **Base de datos:** se bloquean las altas.
   - Si el estudio está en solo lectura o suspendido, no se pueden insertar ventas ni reservas
@@ -65,7 +65,7 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
     el precio, la nueva mensualidad, una sugerencia de plan cuando conviene y el botón
     «Activar». Lo ven dueño y administración (`settings.write`); los demás ven «Pídele a
     administración».
-  - La activación (`studio_request_module`, `20261022213000`) por ahora deja la solicitud en la
+  - La activación (`studio_request_module`, `20261023153000`) por ahora deja la solicitud en la
     bitácora para que Mike la active. El cobro proporcional con Stripe y la activación
     automática se hacen en NEB-01-34.
   - La página `/admin/modulos/[module]` muestra el resultado de la solicitud.
@@ -78,7 +78,7 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
   `service_role`.
 - Si la migración no está aplicada, `entitlements` es `null` y nada se bloquea.
 
-### NEB-01-05 · Sin «Demeter» fijo dentro del estudio (`20261022214000`)
+### NEB-01-05 · Sin «Demeter» fijo dentro del estudio (`20261023154000`)
 
 - Nueva columna `studios.brand_name`: es el nombre corto de marca. Para Demeter se llena con
   «Demeter»; si un estudio no lo tiene, se usa `studios.name`.
@@ -106,7 +106,7 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 - **Orden de despliegue:** aplicar la migración antes de publicar el código. Si no, Demeter
   mostraría su nombre completo en lugar de «Demeter».
 
-### NEB-01-10/11/12 · Consola de Nébora (`20261022215000`)
+### NEB-01-10/11/12 · Consola de Nébora (`20261023155000`)
 
 - Ruta `/plataforma`, fuera de `/admin`: es de la plataforma, no de un estudio. Usa la misma
   sesión del admin. Quien no está en `platform_admins` recibe 404.
@@ -132,7 +132,7 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 - Fuera de este alcance: entrar al estudio para corregir datos (NEB-01-13) y el alta guiada de
   estudios (NEB-01-14).
 
-### NEB-01-35 · Hora de cada estudio (`20261022216000`)
+### NEB-01-35 · Hora de cada estudio (`20261023156000`)
 
 - Nébora v1 es solo para México, pero cada estudio puede estar en otra zona horaria.
   `lib/studio-time.ts` calcula «hoy», la conversión de horas escritas y los valores de
@@ -153,7 +153,7 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 - Pendiente de bajo impacto: `student_is_minor` y la fecha por defecto de evaluaciones técnicas
   siguen con `current_date`. El simulador de Demi se ajusta en NEB-01-42.
 
-### NEB-01-38/39/40 · Reglas de reserva por estudio y por actividad (`20261022217000`)
+### NEB-01-38/39/40 · Reglas de reserva por estudio y por actividad (`20261023157000`)
 
 - Reglas nuevas en `studio_operating_policies` (estudio) y en `class_templates` (actividad; vacío
   = como el estudio):
@@ -182,7 +182,7 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 - Cambio para Demeter: la app de la alumna ya no reserva en los últimos 30 minutos (antes solo
   Demi lo respetaba). Mike confirma ese valor en la demo; se cambia en Configuración › Reservas.
 
-### NEB-01-41 · Penalizaciones para alumnas regulares (`20261022218000`)
+### NEB-01-41 · Penalizaciones para alumnas regulares (`20261023158000`)
 
 - Por estudio y por separado para faltas (no-show) y cancelaciones tardías; todo apagado por
   defecto (Demeter no cambia):
@@ -204,7 +204,7 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 - Pendiente: avisar por notificación Push o WhatsApp cuando empieza una pausa (hoy la alumna lo
   ve en el portal y Demi lo explica).
 
-### NEB-01-36 · Primera clase y abono configurables (`20261022219000`)
+### NEB-01-36 · Primera clase y abono configurables (`20261023159000`)
 
 - En `trial_booking_policies`: precio de la primera clase, monto del abono, inscripción mínima
   para aplicarlo y días para usarlo (0 = mismo día). Arranque = Demeter hoy ($150, $150, $150,
@@ -216,7 +216,7 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 - Pantallas: Configuración › Reservas › «Primera clase». El alta de alumna muestra el monto real
   del abono.
 
-### NEB-01-37 · Tiempos de los recordatorios de Demi (`20261022220000`)
+### NEB-01-37 · Tiempos de los recordatorios de Demi (`20261023160000`)
 
 - En `demi_followup_settings`: horas de recordatorio de pago, días de recuperación de paquete o
   inscripción, días para alumna inactiva, días antes de vencer el paquete y minutos de apartado
@@ -246,12 +246,12 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 
 ## Para Codex
 
-1. Aplicar en Sandbox, en orden, `20261022210000_neb01_platform_admins_audit` y
-   `20261022211000_neb01_plans_modules_entitlements` y `20261022212000_neb01_entitlement_guards` y
-   `20261022213000_neb01_module_activation_requests`, `20261022214000_neb01_studio_brand_name`,
-   `20261022215000_neb01_platform_console_reads`, `20261022216000_neb01_studio_local_time`,
-   `20261022217000_neb01_booking_windows`, `20261022218000_neb01_student_penalties`,
-   `20261022219000_neb01_trial_enrollment_credit` y `20261022220000_neb01_demi_reminder_timings`.
+1. Aplicar en Sandbox, en orden, `20261023150000_neb01_platform_admins_audit` y
+   `20261023151000_neb01_plans_modules_entitlements` y `20261023152000_neb01_entitlement_guards` y
+   `20261023153000_neb01_module_activation_requests`, `20261023154000_neb01_studio_brand_name`,
+   `20261023155000_neb01_platform_console_reads`, `20261023156000_neb01_studio_local_time`,
+   `20261023157000_neb01_booking_windows`, `20261023158000_neb01_student_penalties`,
+   `20261023159000_neb01_trial_enrollment_credit` y `20261023160000_neb01_demi_reminder_timings`.
 2. Insertar a Mike en `platform_admins` con su cuenta de Sandbox.
 3. Verificar que todos los estudios quedaron en `allaccess/internal` y correr QA.
 4. Con la cuenta de Mike, abrir `/plataforma` y la ficha de Demeter. Con una cuenta que no sea

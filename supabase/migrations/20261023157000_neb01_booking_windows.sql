@@ -19,7 +19,7 @@ alter table public.studio_operating_policies
   add column if not exists booking_open_minutes_before integer,
   add column if not exists booking_open_weekday smallint,
   add column if not exists booking_open_time time,
-  add column if not exists checkin_opens_minutes_before integer not null default 20,
+  add column if not exists checkin_opens_minutes_before integer not null default 210,
   add column if not exists checkin_closes_minutes_after integer not null default 30;
 
 alter table public.studio_operating_policies
@@ -103,7 +103,7 @@ begin
     v_policy.unlimited_no_show_penalty_minor := 0;
     v_policy.booking_close_minutes_before := 30;
     v_policy.booking_open_mode := 'none';
-    v_policy.checkin_opens_minutes_before := 20;
+    v_policy.checkin_opens_minutes_before := 210;
     v_policy.checkin_closes_minutes_after := 30;
     v_policy.updated_by_user_id := null;
     v_policy.updated_at := now();
@@ -149,7 +149,7 @@ begin
 
   v_cancel := coalesce(v_template.cancellation_cutoff_minutes, v_policy.cancellation_cutoff_minutes, 300);
   v_close := coalesce(v_template.booking_close_minutes_before, v_policy.booking_close_minutes_before, 30);
-  v_checkin_before := coalesce(v_template.checkin_opens_minutes_before, v_policy.checkin_opens_minutes_before, 20);
+  v_checkin_before := coalesce(v_template.checkin_opens_minutes_before, v_policy.checkin_opens_minutes_before, 210);
   v_checkin_after := coalesce(v_template.checkin_closes_minutes_after, v_policy.checkin_closes_minutes_after, 30);
 
   if v_template.booking_open_mode is not null then
@@ -495,9 +495,10 @@ from unnest(array[
   'public.service_apply_asistian_booking_event(uuid,uuid,text,text,text,timestamp with time zone,text)'
 ]) as sig;
 
--- 7b · Registro con QR: ventana del estudio o de la actividad (antes 20 min antes / 30 después).
+-- 7b · Registro con QR: ventana del estudio o de la actividad (antes fija: 20 min antes y, desde
+-- PR #371 / 20261023014456, 210 min antes; 30 min después). Acepta cualquiera de las dos.
 select pg_temp.neb_patch(sig,
-  'v_session\.starts_at\s*-\s*interval\s*''20 minutes''',
+  'v_session\.starts_at\s*-\s*interval\s*''(20|210) minutes''',
   'private.session_checkin_opens_at(v_session.id)',
   'apertura de registro')
 from unnest(array['public.check_in_reservation(text)', 'public.student_reservation_checkin_token(uuid)']) as sig;

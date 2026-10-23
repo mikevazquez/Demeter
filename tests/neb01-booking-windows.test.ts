@@ -23,7 +23,7 @@ describe("NEB-01-38/39/40 reglas de reserva", () => {
       cancellationCutoffMinutes: 300,
       bookingCloseMinutesBefore: 30,
       bookingOpenMode: "none",
-      checkinOpensMinutesBefore: 20,
+      checkinOpensMinutesBefore: 210,
       checkinClosesMinutesAfter: 30,
     });
   });
@@ -167,7 +167,7 @@ describe("NEB-01-38/39/40 reglas de reserva", () => {
   });
 
   it("la base aplica la regla en el insert y en las funciones con tiempos fijos", () => {
-    const migration = read("supabase/migrations/20261022217000_neb01_booking_windows.sql");
+    const migration = read("supabase/migrations/20261023157000_neb01_booking_windows.sql");
     expect(migration).toContain("before insert on public.reservations");
     expect(migration).toContain("private.reservation_cancellation_outcome_for_session(\\1.id)");
     expect(migration).toContain("private.session_checkin_opens_at(v_session.id)");

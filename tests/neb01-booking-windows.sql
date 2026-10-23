@@ -30,7 +30,7 @@ insert into public.class_sessions (id, studio_id, template_id, starts_at) values
 insert into results select 1, 'valores de arranque',
   (r ->> 'cancellation_cutoff_minutes')::int = 300 and (r ->> 'booking_close_minutes_before')::int = 30
   and r ->> 'booking_open_mode' = 'none' and r -> 'booking_opens_at' = 'null'::jsonb
-  and (r ->> 'checkin_opens_at')::timestamptz = (r ->> 'starts_at')::timestamptz - interval '20 minutes'
+  and (r ->> 'checkin_opens_at')::timestamptz = (r ->> 'starts_at')::timestamptz - interval '210 minutes'
   and (r ->> 'checkin_closes_at')::timestamptz = (r ->> 'starts_at')::timestamptz + interval '30 minutes'
   from (select private.session_booking_rules('d0000000-0000-0000-0000-000000000002') r) x;
 

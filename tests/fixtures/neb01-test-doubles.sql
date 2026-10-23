@@ -50,6 +50,19 @@ create table public.assistant_model_calls (id uuid primary key default gen_rando
 
 -- NEB-01-35 · stand-in for payments (only what the local-date trigger touches).
 create table public.payments (id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id), amount_minor integer not null default 0, effective_on date not null default current_date);
+-- Production shape of register_sale_payment around the payment date (the rest is irrelevant here).
+create function public.register_sale_payment(target_sale_id uuid, payment_amount_minor integer, payment_method text,
+  payment_reference text default null, payment_notes text default null)
+returns jsonb language plpgsql security definer set search_path = '' as $function$
+declare v_sale record;
+begin
+  insert into public.payments(studio_id,amount_minor,effective_on)
+  values(v_sale.studio_id,payment_amount_minor,
+    nullif(trim(coalesce(payment_notes,'')),''),
+    current_date,(select auth.uid()));
+  return '{}'::jsonb;
+end;
+$function$;
 
 -- NEB-01-38/39/40 · stand-ins for booking windows (only what the rules and patches touch).
 create function auth.role() returns text language sql stable as $$
@@ -97,8 +110,8 @@ declare
   v_session public.class_sessions%rowtype;
 begin
   select * into v_session from public.class_sessions where id = p_token::uuid;
-  if clock_timestamp() < v_session.starts_at - interval '20 minutes' then
-    return jsonb_build_object('status', 'too_early', 'available_at', v_session.starts_at - interval '20 minutes');
+  if clock_timestamp() < v_session.starts_at - interval '210 minutes' then
+    return jsonb_build_object('status', 'too_early', 'available_at', v_session.starts_at - interval '210 minutes');
   end if;
   if clock_timestamp() >= v_session.starts_at + interval '30 minutes' then
     return jsonb_build_object('status', 'closed');

@@ -5,7 +5,7 @@ vi.mock("server-only", () => ({}));
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-const migration = read("supabase/migrations/20261022215000_neb01_platform_console_reads.sql");
+const migration = read("supabase/migrations/20261023155000_neb01_platform_console_reads.sql");
 
 describe("NEB-01-10/11/12 consola de Nébora", () => {
   it("cada lectura pública exige ser plataforma y no se abre a anon", () => {

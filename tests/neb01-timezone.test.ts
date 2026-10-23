@@ -78,7 +78,7 @@ describe("NEB-01-35 hora del estudio", () => {
   });
 
   it("la base guarda pagos con la fecha local del estudio", () => {
-    const migration = read("supabase/migrations/20261022216000_neb01_studio_local_time.sql");
+    const migration = read("supabase/migrations/20261023156000_neb01_studio_local_time.sql");
     expect(migration).toContain(
       "alter table public.payments alter column effective_on drop default;",
     );

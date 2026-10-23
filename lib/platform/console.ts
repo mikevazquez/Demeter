@@ -6,7 +6,7 @@ import type { StudioEntitlements } from "@/lib/platform/entitlements";
 import { parseEntitlements } from "@/lib/platform/entitlements";
 import type { PlatformModuleKey, PlatformPlanKey, StudioSubscriptionStatus } from "./catalog";
 
-// NEB-01-10/11/12 · Lecturas de la consola de Nébora (migración 20261022215000).
+// NEB-01-10/11/12 · Lecturas de la consola de Nébora (migración 20261023155000).
 // Si la migración no está aplicada, las lecturas regresan null y la consola lo dice.
 
 export type PlatformOverview = {

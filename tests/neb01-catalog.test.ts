@@ -5,13 +5,13 @@ import { PLATFORM_MODULES, PLATFORM_PLANS, monthlyPriceMxn } from "../lib/platfo
 
 const plans = readFileSync(
   new URL(
-    "../supabase/migrations/20261022211000_neb01_plans_modules_entitlements.sql",
+    "../supabase/migrations/20261023151000_neb01_plans_modules_entitlements.sql",
     import.meta.url,
   ),
   "utf8",
 );
 const audit = readFileSync(
-  new URL("../supabase/migrations/20261022210000_neb01_platform_admins_audit.sql", import.meta.url),
+  new URL("../supabase/migrations/20261023150000_neb01_platform_admins_audit.sql", import.meta.url),
   "utf8",
 );
 

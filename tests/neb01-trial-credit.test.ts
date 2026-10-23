@@ -17,7 +17,7 @@ describe("NEB-01-36 primera clase y abono configurables", () => {
   });
 
   it("la migración arranca con los valores de Demeter y ajusta las cuatro funciones", () => {
-    const migration = read("supabase/migrations/20261022219000_neb01_trial_enrollment_credit.sql");
+    const migration = read("supabase/migrations/20261023159000_neb01_trial_enrollment_credit.sql");
     expect(migration).toContain("trial_price_minor integer not null default 15000");
     expect(migration).toContain("enrollment_credit_valid_days integer not null default 0");
     for (const signature of [

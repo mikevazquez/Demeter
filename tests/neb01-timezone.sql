@@ -44,6 +44,11 @@ insert into results select 7, 'helpers privados',
   not has_function_privilege('anon', 'private.studio_local_today(uuid)', 'execute')
   and not has_function_privilege('authenticated', 'private.neb_payment_local_effective_on()', 'execute');
 
+-- 8 · register_sale_payment (production shape) now saves the studio's local date.
+insert into results select 8, 'pago con fecha local',
+  position('private.studio_local_today(v_sale.studio_id),(select auth.uid())' in pg_get_functiondef('public.register_sale_payment(uuid,integer,text,text,text)'::regprocedure)) > 0
+  and position('current_date' in pg_get_functiondef('public.register_sale_payment(uuid,integer,text,text,text)'::regprocedure)) = 0;
+
 select n, name, ok from results order by n;
-select case when bool_and(coalesce(ok, false)) and count(*) = 7 then 'NEB01 TIMEZONE OK ' || count(*) else 'NEB01 TIMEZONE FAIL' end from results;
+select case when bool_and(coalesce(ok, false)) and count(*) = 8 then 'NEB01 TIMEZONE OK ' || count(*) else 'NEB01 TIMEZONE FAIL' end from results;
 rollback;

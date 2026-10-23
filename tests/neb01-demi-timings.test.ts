@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 describe("NEB-01-37 tiempos de recordatorios de Demi", () => {
-  const migration = read("supabase/migrations/20261022220000_neb01_demi_reminder_timings.sql");
+  const migration = read("supabase/migrations/20261023160000_neb01_demi_reminder_timings.sql");
 
   it("arranca con los tiempos que Demeter usa hoy", () => {
     expect(migration).toContain("payment_reminder_hours integer[] not null default '{2,6}'");

@@ -5,7 +5,7 @@ import { moduleActivationQuote, modulePriceLabel } from "../lib/platform/catalog
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-const guards = read("supabase/migrations/20261022212000_neb01_entitlement_guards.sql");
+const guards = read("supabase/migrations/20261023152000_neb01_entitlement_guards.sql");
 
 describe("NEB-01-03 bloqueo de lo no contratado", () => {
   it("la base bloquea vender y reservar en solo lectura", () => {
@@ -93,7 +93,7 @@ describe("NEB-01-03 módulos con candado y oferta self-service", () => {
 
   it("activan dueño y administración, y la solicitud queda en bitácora", () => {
     const requests = read(
-      "supabase/migrations/20261022213000_neb01_module_activation_requests.sql",
+      "supabase/migrations/20261023153000_neb01_module_activation_requests.sql",
     );
     expect(requests).toContain("private.has_capability(p_studio, 'settings.write')");
     expect(requests).toContain("'studio.module.requested'");
