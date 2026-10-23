@@ -181,6 +181,8 @@ export function supportAuditLabel(action: string, detail: Record<string, unknown
       return "Sesión de soporte terminada por tiempo";
     case "support.read":
       return `Soporte consultó ${SUPPORT_TAB_LABEL[String(detail.tab ?? "")] ?? String(detail.tab ?? "")}`;
+    case "studio.template.applied":
+      return `Plantilla ${String(detail.template ?? "")}: ${String(detail.activities ?? 0)} actividades, ${String(detail.products ?? 0)} paquetes`;
     case "feature.stage.set":
       return `Lanzamiento ${String(detail.feature ?? "")}: ${String(detail.from ?? "")} → ${String(detail.to ?? "")}`;
     case "feature.beta.on":

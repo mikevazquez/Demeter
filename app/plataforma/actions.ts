@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { PLATFORM_MODULES, PLATFORM_PLANS } from "@/lib/platform/catalog";
+import { starterTemplate, starterTemplatePayload } from "@/lib/platform/starter-templates";
 import { parsePriceMxnToMinor } from "@/lib/platform/support";
 import { supportRequestErrorCode } from "@/lib/platform/support-requests";
 import { createClient } from "@/lib/supabase/server";
@@ -225,4 +226,24 @@ export async function setFeatureBetaStudioAction(formData: FormData) {
     if (error) finishFeature(error, "");
   }
   finishFeature(null, "beta_guardada");
+}
+
+// NEB-01-15 · Aplicar una plantilla de arranque a un estudio.
+export async function applyStarterTemplateAction(formData: FormData) {
+  const template = starterTemplate(String(formData.get("template") ?? ""));
+  const studioId = String(formData.get("studio") ?? "");
+  if (!template || !UUID.test(studioId) || formData.get("confirm") !== "on") {
+    redirect("/plataforma/plantillas?estado=error");
+  }
+  const supabase = await createClient("admin");
+  const { data, error } = await supabase.rpc("platform_apply_starter_template", {
+    p_studio: studioId,
+    p_template: starterTemplatePayload(template),
+  });
+  if (error) redirect("/plataforma/plantillas?estado=error");
+  const result = (data ?? {}) as { disciplines?: number; activities?: number; products?: number };
+  revalidatePath(`/plataforma/estudios/${studioId}`);
+  redirect(
+    `/plataforma/plantillas?estado=aplicada&d=${Number(result.disciplines) || 0}&a=${Number(result.activities) || 0}&p=${Number(result.products) || 0}`,
+  );
 }

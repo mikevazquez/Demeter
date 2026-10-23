@@ -30,6 +30,7 @@ export default async function PlataformaLayout({ children }: { children: React.R
           <Link href="/plataforma#estudios">Estudios</Link>
           <Link href="/plataforma/soporte">Soporte</Link>
           <Link href="/plataforma/lanzamientos">Lanzamientos</Link>
+          <Link href="/plataforma/plantillas">Plantillas</Link>
           <Link href="/admin">Ir a mi estudio</Link>
         </nav>
       </header>
