@@ -266,9 +266,7 @@ export default async function AgendaPage({
         .in("id", programIds)
     : { data: [] as { id: string; kind: string; active: boolean }[] };
 
-  const programActiveMap = new Map(
-    (activityPrograms ?? []).map((item) => [item.id, item.active]),
-  );
+  const programActiveMap = new Map((activityPrograms ?? []).map((item) => [item.id, item.active]));
   const templateById = new Map(allTemplates.map((item) => [item.id, item]));
   const visibleSessions = (sessions ?? []).filter((session) => {
     const template = templateById.get(session.template_id);
