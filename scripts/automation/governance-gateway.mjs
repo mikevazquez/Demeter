@@ -25,9 +25,7 @@ function assertNoWorkerPinning(value, path = "plan") {
       `Worker selection is forbidden at intake: ${path}.${key}`,
     );
     if (Array.isArray(child))
-      child.forEach((entry, index) =>
-        assertNoWorkerPinning(entry, `${path}.${key}[${index}]`),
-      );
+      child.forEach((entry, index) => assertNoWorkerPinning(entry, `${path}.${key}[${index}]`));
     else assertNoWorkerPinning(child, `${path}.${key}`);
   }
 }
@@ -56,22 +54,15 @@ function validateBlock(block) {
     "Block category required",
   );
   ensure(
-    Number.isInteger(block.risk_tier) &&
-      block.risk_tier >= 0 &&
-      block.risk_tier <= 4,
+    Number.isInteger(block.risk_tier) && block.risk_tier >= 0 && block.risk_tier <= 4,
     "risk_tier must be 0-4",
   );
   ensure(
-    Number.isFinite(block.quality_floor) &&
-      block.quality_floor >= 0 &&
-      block.quality_floor <= 1,
+    Number.isFinite(block.quality_floor) && block.quality_floor >= 0 && block.quality_floor <= 1,
     "quality_floor must be 0-1",
   );
   ensure(typeof block.read_only === "boolean", "read_only must be explicit");
-  ensure(
-    typeof block.requires_uat === "boolean",
-    "requires_uat must be explicit",
-  );
+  ensure(typeof block.requires_uat === "boolean", "requires_uat must be explicit");
   stringArray(block.required_capabilities, "required_capabilities");
   stringArray(block.required_permissions, "required_permissions");
   stringArray(block.allowed_paths, "allowed_paths", { min: 1 });
@@ -102,9 +93,7 @@ export function validateGatewayPlan(plan) {
     "Plan objective required",
   );
   ensure(
-    Array.isArray(plan.blocks) &&
-      plan.blocks.length > 0 &&
-      plan.blocks.length <= 20,
+    Array.isArray(plan.blocks) && plan.blocks.length > 0 && plan.blocks.length <= 20,
     "Plan blocks required",
   );
   const ids = new Set();
@@ -118,11 +107,7 @@ export function validateGatewayPlan(plan) {
 
 export function createGatewayContracts(
   plan,
-  {
-    repo = "mikevazquez/Demeter",
-    baseSha,
-    branchPrefix = "governance2/gpt",
-  } = {},
+  { repo = "mikevazquez/Demeter", baseSha, branchPrefix = "governance2/gpt" } = {},
 ) {
   validateGatewayPlan(plan);
   ensure(repo === "mikevazquez/Demeter", "Unreviewed repository");
@@ -175,10 +160,7 @@ function dispatchShape(contract) {
 }
 
 export function routeGatewayContracts(contracts, workers, options = {}) {
-  ensure(
-    Array.isArray(contracts) && contracts.length > 0,
-    "Gateway contracts required",
-  );
+  ensure(Array.isArray(contracts) && contracts.length > 0, "Gateway contracts required");
   return contracts.map((contract) => ({
     contract,
     routing: dispatchTask(dispatchShape(contract), workers, options),
