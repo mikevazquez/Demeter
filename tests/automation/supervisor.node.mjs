@@ -564,7 +564,9 @@ test("a turn-completed event is activity, not receipt verification or permission
   assert.equal(calls.length, 1);
 });
 
-test("read-only silence releases the slot as stale capacity without inventing completion", async () => {
+test(
+  "read-only silence releases the slot as stale capacity without inventing completion",
+  async () => {
   const { store, options, calls } = await setup();
   await tickSupervisor(options);
   await tickSupervisor({
@@ -584,10 +586,13 @@ test("read-only silence releases the slot as stale capacity without inventing co
   assert.equal(silent.attempts[0].finished_at, after(31));
   assert.equal(silent.next_attempt_at, after(46));
   assert.equal((await store.read()).state.active_task_id, null);
-  assert.equal(calls.length, 1);
-});
+    assert.equal(calls.length, 1);
+  },
+);
 
-test("read-only stale capacity preserves task identity and prefers another eligible worker", async () => {
+test(
+  "read-only stale capacity preserves task identity and prefers another eligible worker",
+  async () => {
   const { store, options, calls, taskContract } = await setup();
   await tickSupervisor(options);
   await tickSupervisor({
@@ -618,10 +623,13 @@ test("read-only stale capacity preserves task identity and prefers another eligi
   assert.equal(task.attempts[1].worker_id, "gpt-routine-worker");
   assert.equal(calls[1].task.task_id, taskContract.task_id);
   assert.equal(calls[1].task.contract_sha256, supervisorContractSha256(taskContract));
-  assert.equal((await store.read()).state.active_task_id, taskContract.task_id);
-});
+    assert.equal((await store.read()).state.active_task_id, taskContract.task_id);
+  },
+);
 
-test("writable silence remains fail-closed until process closure or checkpoint is proven", async () => {
+test(
+  "writable silence remains fail-closed until process closure or checkpoint is proven",
+  async () => {
   const { store, options, calls } = await setup({
     read_only: false,
     recovery: { mode: "checkpoint", max_attempts: 3 },
@@ -635,8 +643,9 @@ test("writable silence remains fail-closed until process closure or checkpoint i
   assert.equal((await store.read()).state.active_task_id, silent.task_id);
   await tickSupervisor({ ...options, now: after(120) });
   assert.equal(calls.length, 1);
-  assert.equal((await taskOf(store)).attempts.length, 1);
-});
+    assert.equal((await taskOf(store)).attempts.length, 1);
+  },
+);
 
 test("staleness uses actual worker activity rather than the observer's latest tick", async () => {
   const { store, options } = await setup();
