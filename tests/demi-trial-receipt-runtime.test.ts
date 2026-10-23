@@ -79,6 +79,8 @@ function harness(
   const deps: Record<string, unknown> = {
     "@/lib/assistant/sticker-media": {},
     "@/lib/assistant/orchestrator": {},
+    "@/lib/assistant/whatsapp-turn-order": {},
+    "@/lib/assistant/tool-contracts": {},
     "@/lib/assistant/audio-transcription": { transcribeDemiAudio: vi.fn() },
     "@/lib/assistant/enrollment-payment": {
       handleDemiEnrollmentReceipt: vi.fn().mockResolvedValue({ handled: false }),
