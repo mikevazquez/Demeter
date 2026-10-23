@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { getStudentPortalContext } from "@/lib/student/portal";
+import { createServiceClient } from "@/lib/supabase/service";
 
 const CANCELLATION_REASON_CODES = new Set([
   "schedule_conflict",
@@ -726,4 +727,63 @@ export async function updateStudentProfileAction(formData: FormData) {
   revalidatePath("/student/perfil");
   revalidatePath("/student/recompensas");
   redirect("/student/perfil?updated=1");
+}
+
+export async function finalizeStudentPoleFigurePhotoAction(
+  figureElementId: string,
+  photoPath: string,
+) {
+  const normalizedElementId = figureElementId.trim();
+  const normalizedPhotoPath = photoPath.trim();
+
+  if (!normalizedElementId) {
+    return { ok: false as const, error: "figure_required" };
+  }
+
+  const { supabase, user, snapshot } = await getStudentPortalContext();
+  const expectedPhotoPath = `${user.id}/${normalizedElementId}/photo`;
+
+  if (normalizedPhotoPath !== expectedPhotoPath) {
+    return { ok: false as const, error: "invalid_photo_path" };
+  }
+
+  const { data: achievement, error: achievementError } = await supabase
+    .from("student_pole_figure_achievements")
+    .select("id")
+    .eq("studio_id", snapshot.profile.studio_id)
+    .eq("student_id", snapshot.profile.student_id)
+    .eq("figure_element_id", normalizedElementId)
+    .maybeSingle();
+
+  if (achievementError || !achievement) {
+    return { ok: false as const, error: "figure_not_achieved" };
+  }
+
+  const { data: uploadedObjects, error: storageError } = await supabase.storage
+    .from("pole-achievement-photos")
+    .list(`${user.id}/${normalizedElementId}`, {
+      limit: 10,
+      search: "photo",
+    });
+
+  if (storageError || !uploadedObjects?.some((object) => object.name === "photo")) {
+    return { ok: false as const, error: "photo_upload_missing" };
+  }
+
+  const service = createServiceClient();
+  const { error: updateError } = await service
+    .from("student_pole_figure_achievements")
+    .update({ photo_path: expectedPhotoPath })
+    .eq("id", achievement.id)
+    .eq("studio_id", snapshot.profile.studio_id)
+    .eq("student_id", snapshot.profile.student_id);
+
+  if (updateError) {
+    return { ok: false as const, error: "photo_update_failed" };
+  }
+
+  revalidatePath("/student/figuras");
+  revalidatePath("/student/perfil");
+
+  return { ok: true as const };
 }

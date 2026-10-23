@@ -47,6 +47,7 @@ export type TodayClassItem = {
   waitlist?: { id: string; studentName: string }[];
   waitlistUnavailable?: boolean;
   evaluationCount: number;
+  disciplineId?: string | null;
   returnTo: string;
   minimumReservationsEnabled: boolean;
   minimumReservations: number;
@@ -63,6 +64,7 @@ type TodayClassesProps = {
   timeZone: string;
   canCorrectCompleted?: boolean;
   serverNow: string;
+  poleFlows?: { sessionId: string; node: React.ReactNode }[];
 };
 
 export function TodayClasses({
@@ -75,6 +77,7 @@ export function TodayClasses({
   timeZone,
   canCorrectCompleted = true,
   serverNow,
+  poleFlows = [],
 }: TodayClassesProps) {
   const router = useRouter();
   const initialNow = useMemo(() => new Date(serverNow).getTime(), [serverNow]);
@@ -250,6 +253,9 @@ export function TodayClasses({
                   initiallyOpen
                   showToggle={false}
                 />
+                {phase === "live"
+                  ? (poleFlows.find((flow) => flow.sessionId === item.id)?.node ?? null)
+                  : null}
                 {item.waitlistUnavailable ? (
                   <p className="today-waitlist-error" role="alert">
                     No se pudo consultar la lista de espera.

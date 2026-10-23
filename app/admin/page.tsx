@@ -311,7 +311,7 @@ export default async function AdminPage({
     templateIds.length
       ? supabase
           .from("class_templates")
-          .select("id,name,color_hex,drop_in_price_minor")
+          .select("id,name,color_hex,drop_in_price_minor,discipline_id")
           .in("id", templateIds)
       : Promise.resolve({
           data: [] as {
@@ -319,6 +319,7 @@ export default async function AdminPage({
             name: string;
             color_hex: string | null;
             drop_in_price_minor: number | null;
+            discipline_id: string | null;
           }[],
         }),
     instructorIds.length
@@ -575,6 +576,7 @@ export default async function AdminPage({
       evaluationCount: sessionReservations.filter((reservation) =>
         evaluationByReservation.has(reservation.id),
       ).length,
+      disciplineId: template?.discipline_id ?? null,
       returnTo: `/admin?date=${selectedKey}#session-${session.id}`,
       minimumReservationsEnabled: session.minimum_reservations_enabled ?? false,
       minimumReservations: session.minimum_reservations ?? 2,
@@ -685,6 +687,16 @@ export default async function AdminPage({
     localHour < 12 ? "Buenos días" : localHour < 19 ? "Buenas tardes" : "Buenas noches";
   const pendingCount =
     cashDebts.length + (selectedKey === todayKey ? pendingTransferReviews.length : 0);
+  const effectiveServerNow = new Date(String(serverNow ?? now.toISOString())).getTime();
+  const livePoleClasses = classes.filter(
+    (item) =>
+      item.sessionStatus === "scheduled" &&
+      new Date(item.startsAt).getTime() <= effectiveServerNow &&
+      effectiveServerNow < new Date(item.endsAt).getTime(),
+  );
+  const PoleClassComboPanel = livePoleClasses.length
+    ? (await import("./agenda/[sessionId]/PoleClassComboPanel")).default
+    : null;
 
   return (
     <main className="dashboard-shell hoy-dashboard hoy-approved hoy-v2 hoy-sendero">
@@ -796,6 +808,25 @@ export default async function AdminPage({
             <TodayClasses
               key={selectedKey}
               classes={classes}
+              poleFlows={
+                PoleClassComboPanel
+                  ? livePoleClasses.map((item) => ({
+                      sessionId: item.id,
+                      node: (
+                        <PoleClassComboPanel
+                          sessionId={item.id}
+                          disciplineId={item.disciplineId ?? null}
+                          roster={item.roster.flatMap((rosterItem) =>
+                            rosterItem.studentId
+                              ? [{ studentId: rosterItem.studentId, name: rosterItem.studentName }]
+                              : [],
+                          )}
+                          canWrite={can(CAPABILITIES.EVALUATIONS_WRITE)}
+                        />
+                      ),
+                    }))
+                  : []
+              }
               returnDate={selectedKey}
               serverNow={String(serverNow ?? now.toISOString())}
               canAttendance={canWriteAttendance}
