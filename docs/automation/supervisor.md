@@ -136,3 +136,28 @@ alcance, checks, aceptación, DoD, recuperación y gates. El gateway rechaza cua
 preasignar proveedor o worker dentro de ese plan.
 
 Seguimiento del bloque: [GOV-ROUTER-001, issue #379](https://github.com/mikevazquez/Demeter/issues/379).
+
+
+## ChatGPT → Governance Admission Bridge
+
+`GOV-ROUTER-002` añade un canal durable para que una solicitud iniciada en ChatGPT llegue al
+supervisor sin abrir Codex ni seleccionar proveedor durante el intake.
+
+El canal revisado es el issue [#382](https://github.com/mikevazquez/Demeter/issues/382). ChatGPT,
+usando la conexión GitHub del owner, publica un comentario con marcador
+`GOVERNANCE_GPT_ADMISSION_V1` y un único bloque JSON. El supervisor:
+
+1. ignora comentarios sin marcador o de autores distintos de `mikevazquez`;
+2. valida schema, request ID, repositorio, sandbox, SHA exacto y prohibición de autorización productiva;
+3. valida el plan mediante el GPT Governance Gateway;
+4. convierte el plan en Task Contracts neutrales;
+5. admite cada contrato con la identidad y presupuesto normal del supervisor;
+6. sólo después ejecuta el Dispatcher y selecciona un worker.
+
+El comentario es datos, no instrucciones ejecutables. Texto libre, campos desconocidos de worker,
+proveedores o intento de autorización productiva no amplían permisos. Repetir el mismo comentario es
+idempotente por `task_id` + hash de contrato; reutilizar el ID con otro contrato falla cerrado.
+
+La rama de ejecución de cada contrato debe existir en el SHA declarado antes de que un worker con
+escritura pueda usarla. ChatGPT puede preparar esa rama con su conector GitHub antes de publicar la
+admisión; el supervisor no amplía sus permisos de registro para crear ramas de producto por sí mismo.
