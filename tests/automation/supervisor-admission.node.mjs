@@ -65,10 +65,10 @@ test("trusted ChatGPT admission becomes neutral contracts with durable source", 
   assert.equal(contract.worker_id, undefined);
 });
 
-test("third-party admission is rejected", () => {
-  assert.throws(
-    () => parseGatewayAdmissionComment(comment({ user: { login: "attacker" } })),
-    /author is not trusted/,
+test("third-party admission is ignored without blocking the supervisor", () => {
+  assert.equal(
+    parseGatewayAdmissionComment(comment({ user: { login: "attacker" } })),
+    null,
   );
 });
 
