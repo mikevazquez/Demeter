@@ -9,6 +9,7 @@ const actions = readFileSync("app/admin/actividades/programas/actions.ts", "utf8
 const programPage = readFileSync("app/admin/actividades/programas/[programId]/page.tsx", "utf8");
 const activitiesPage = readFileSync("app/admin/actividades/page.tsx", "utf8");
 const agendaPage = readFileSync("app/admin/agenda/page.tsx", "utf8");
+const salePage = readFileSync("app/admin/ventas/[saleId]/page.tsx", "utf8");
 
 describe("safe activity program deletion", () => {
   it("cancels generated sessions so the existing reservation cancellation trigger handles reservations", () => {
@@ -32,6 +33,22 @@ describe("safe activity program deletion", () => {
     expect(migration).toContain("assistant_visible = false");
     expect(activitiesPage).toContain("program.active &&");
     expect(agendaPage).toContain("visibleSessions");
+  });
+
+  it("records unreceived-payment corrections without deleting the original payment", () => {
+    expect(migration).toContain("private.payment_record_corrections");
+    expect(migration).toContain("admin_correct_unreceived_payment");
+    expect(migration).toContain("'correction'");
+    expect(migration).toContain("el dinero nunca se recibió");
+    expect(migration).not.toContain("delete from public.payments");
+    expect(salePage).toContain('"Corregida"');
+    expect(salePage).toContain('"Corrección"');
+  });
+
+  it("voids standalone zero-net program sales after reservations are cancelled", () => {
+    expect(migration).toContain("perform public.void_sale");
+    expect(migration).toContain("Venta sin ingreso neto");
+    expect(migration).toContain("'sales_voided'");
   });
 
   it("exposes a guarded admin action and confirmation UI", () => {
