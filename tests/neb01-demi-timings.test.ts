@@ -15,7 +15,9 @@ describe("NEB-01-37 tiempos de recordatorios de Demi", () => {
   });
 
   it("el programador de recordatorios y el apartado usan la configuración", () => {
-    expect(migration).toContain("public.service_schedule_demi_followups(uuid,uuid,text,text,timestamp with time zone)");
+    expect(migration).toContain(
+      "public.service_schedule_demi_followups(uuid,uuid,text,text,timestamp with time zone)",
+    );
     expect(migration).toContain("raise exception 'NEB-01: definición inesperada");
     expect(migration).toContain("s.trial_payment_hold_minutes");
   });
