@@ -48,6 +48,10 @@ function context(programs: unknown[] = [program], now = "2026-10-23T18:00:00Z", 
       temporaryInformationNow: now,
     },
     supabase: {
+      rpc: async () => ({
+        data: { ok: true, enabled: false, workshops: [], current_purchase: null },
+        error: null,
+      }),
       from(table: string) {
         let rows = tables[table] ?? [];
         const result = () => ({
@@ -94,6 +98,29 @@ function context(programs: unknown[] = [program], now = "2026-10-23T18:00:00Z", 
 }
 
 describe("Demi reads existing workshops from Cursos y talleres", () => {
+  it("includes earlier registered programs in the current workshop tool even when automatic enrollment is disabled", async () => {
+    const { ctx } = context();
+    const result = await executeAssistantReadTool(ctx, "get_workshop_options", {});
+    expect(result).toMatchObject({
+      ok: true,
+      enabled: false,
+      workshops: [],
+      current_purchase: null,
+      registered_programs: [
+        { title: program.name, price_minor: 60000, demi_purchase_supported: false },
+      ],
+      availability_is_guaranteed: false,
+    });
+    expect(result.registered_programs?.[0]).not.toHaveProperty("workshop_ref");
+  });
+
+  it("keeps masterclasses registered by the current app searchable", async () => {
+    const { ctx } = context([{ ...program, kind: "masterclass" }]);
+    expect(
+      await executeAssistantReadTool(ctx, "get_temporary_information", { topic: "masterclass" }),
+    ).toMatchObject({ items: [{ title: program.name, type: "masterclass" }] });
+  });
+
   it.each(["información de talleres", "Aparatos aéreos para principiantes"])(
     "finds the saved program without a temporary announcement: %s",
     async (topic) => {
@@ -113,6 +140,8 @@ describe("Demi reads existing workshops from Cursos y talleres", () => {
             allow_single: false,
             sessions: dates.map(({ session }) => ({
               starts_at: session.starts_at,
+              starts_at_local: "10:30",
+              ends_at_local: "12:00",
               single_price_minor: null,
             })),
           },

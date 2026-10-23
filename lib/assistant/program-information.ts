@@ -1,11 +1,11 @@
 import type { AssistantToolContext } from "./read-tools";
-import type { TemporaryInformation } from "./temporary-information";
+import type { StudioInformation } from "./temporary-information";
 
 type Price = { studio_id: string; active: boolean; price_minor: number; currency: string };
 type Program = {
   id: string;
   name: string;
-  kind: "workshop" | "event";
+  kind: "workshop" | "event" | "masterclass";
   description: string;
   active: boolean;
   created_at: string;
@@ -29,7 +29,7 @@ type Program = {
   }[];
 };
 
-export type ProgramInformation = TemporaryInformation & {
+export type ProgramInformation = StudioInformation & {
   source: "activity_programs";
   price_minor: number | null;
   currency: string | null;
@@ -38,6 +38,8 @@ export type ProgramInformation = TemporaryInformation & {
     date: string;
     starts_at: string;
     ends_at: string;
+    starts_at_local: string;
+    ends_at_local: string;
     discipline: string | null;
     location: { name: string; address: string | null } | null;
     single_price_minor: number | null;
@@ -80,6 +82,12 @@ export async function getActivityProgramInformation(ctx: AssistantToolContext, t
     day: "2-digit",
   });
   const localDate = (instant: string) => dateFormatter.format(new Date(instant));
+  const timeFormatter = new Intl.DateTimeFormat("en-GB", {
+    timeZone: ctx.studio.timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
   const price = (product: Price | null) =>
     product?.studio_id === ctx.studio.id && product.active ? product : null;
   const items: ProgramInformation[] = [];
@@ -108,6 +116,8 @@ export async function getActivityProgramInformation(ctx: AssistantToolContext, t
             date: localDate(session.starts_at),
             starts_at: session.starts_at,
             ends_at: session.ends_at,
+            starts_at_local: timeFormatter.format(new Date(session.starts_at)),
+            ends_at_local: timeFormatter.format(new Date(session.ends_at)),
             discipline,
             location: location ? { name: location.name, address: location.address } : null,
             single_price_minor: singlePrice?.price_minor ?? null,

@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
+vi.mock("@/lib/assistant/program-information", () => ({
+  getActivityProgramInformation: vi.fn().mockResolvedValue({ data: [], error: null }),
+}));
+import { getActivityProgramInformation } from "@/lib/assistant/program-information";
 import { getWorkshopInformation } from "@/lib/assistant/workshop-information";
 
 const rpc = vi.fn();
@@ -10,7 +14,10 @@ const context = {
 };
 
 describe("workshop information and conversation recovery", () => {
-  beforeEach(() => vi.resetAllMocks());
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.mocked(getActivityProgramInformation).mockResolvedValue({ data: [], error: null });
+  });
   it("uses the owned conversation and preserves payment state while presenting studio-local dates", async () => {
     rpc.mockResolvedValue({
       error: null,

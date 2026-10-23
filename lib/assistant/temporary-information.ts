@@ -88,16 +88,18 @@ const ignoredWords = new Set([
   "disponibles",
 ]);
 
-const categoryWords: Record<TemporaryInformation["kind"], string[]> = {
+export type StudioInformation = Omit<TemporaryInformation, "kind"> & {
+  kind: TemporaryInformation["kind"] | "masterclass";
+};
+
+const categoryWords: Record<StudioInformation["kind"], string[]> = {
   workshop: ["taller", "talleres", "curso", "cursos", "workshop", "workshops"],
   event: ["evento", "eventos"],
   promotion: ["promocion", "promociones", "promo", "promos"],
+  masterclass: ["masterclass", "masterclasses", "clase magistral"],
 };
 
-export function rankTemporaryInformation<T extends TemporaryInformation>(
-  items: T[],
-  topic: string,
-) {
+export function rankTemporaryInformation<T extends StudioInformation>(items: T[], topic: string) {
   const terms = normalize(topic)
     .split(/[^a-z0-9]+/)
     .filter((term) => term.length > 1 && !ignoredWords.has(term));
@@ -129,6 +131,8 @@ export function rankTemporaryInformation<T extends TemporaryInformation>(
   return ranked;
 }
 
-export function answerUntil(item: TemporaryInformation) {
+export function answerUntil(
+  item: Pick<TemporaryInformation, "registration_deadline" | "event_ends_on">,
+) {
   return item.registration_deadline ?? item.event_ends_on;
 }
