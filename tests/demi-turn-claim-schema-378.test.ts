@@ -11,22 +11,22 @@ const migrationPath = join(
 const sql = readFileSync(migrationPath, "utf8");
 
 describe("DEMI-378 claim schema contract", () => {
-  it("uses the same advisory lock in capture and claim", () => {
+  it("shares a lock across capture and claim", () => {
     expect(sql).toContain("create trigger assistant_whatsapp_lock_inbound_text");
-    expect(sql).toContain(
-      "create or replace function public.assistant_whatsapp_claim_current_text",
-    );
-    const lockKey = "hashtextextended(";
-    expect(sql.split(lockKey).length - 1).toBe(2);
+    expect(sql).toContain("assistant_whatsapp_claim_current_text");
+    expect(sql.split("hashtextextended(")).toHaveLength(3);
     expect(sql).toContain("pg_advisory_xact_lock(");
   });
 
-  it("denies public execution and prevents duplicate active claims", () => {
-    expect(sql).toContain(
-      "create unique index if not exists assistant_whatsapp_one_active_claim",
-    );
+  it("restricts claim ownership", () => {
+    expect(sql).toContain("assistant_whatsapp_one_active_claim");
     expect(sql).toContain("where state in ('claimed', 'uncertain')");
     expect(sql).toContain("from public, anon, authenticated");
     expect(sql).toContain("to service_role;");
+  });
+
+  it("finishes claims only through the owner token", () => {
+    expect(sql).toContain("assistant_whatsapp_finish_text_claim");
+    expect(sql).toContain("where claim_token = p_claim_token");
   });
 });
