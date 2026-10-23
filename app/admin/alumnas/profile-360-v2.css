@@ -361,3 +361,208 @@
   color: var(--p360v2-muted);
   font-size: 11px;
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   P360-V2 · Superficie única del Perfil 360 (UAT 23-oct).
+   Todo el perfil usa un solo tipo de bloque oscuro. Los contenedores que sólo
+   agrupan no dibujan caja, y lo que vive dentro de un bloque no dibuja otra
+   caja: se separa con líneas. Mismo texto, mismos controles, mismas etiquetas.
+   ─────────────────────────────────────────────────────────────────────────── */
+.sendero-alumnas .crm-page.p360v2 {
+  --p360v2-field: #1f2127;
+  --p360v2-field-line: #ffffff1f;
+  --p360v2-inner: #ffffff06;
+}
+
+/* 1 · Contenedores que sólo agrupan: sin fondo ni borde. */
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(
+    .profile360-packages-view,
+    .profile360-data-view,
+    .profile360-history-stack,
+    .profile360-evaluations-view
+  ) {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--p360v2-text);
+}
+
+/* 2 · Bloques: una sola superficie para todo el perfil. */
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(
+    .crm-card,
+    .panel,
+    .profile360-view-panel,
+    .profile360-detail,
+    .profile360-package-group,
+    .profile360-package-card,
+    .profile360-rewards-section
+  ) {
+  min-width: 0;
+  margin: 0;
+  padding: 18px;
+  border: 1px solid var(--p360v2-line);
+  border-radius: 22px;
+  background: var(--p360v2-surface);
+  box-shadow: none;
+  color: var(--p360v2-text);
+  color-scheme: dark;
+}
+
+/* 3 · Nada dibuja una caja dentro de otra: lo anidado se integra al bloque. */
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(
+    .crm-card,
+    .panel,
+    .profile360-view-panel,
+    .profile360-detail,
+    .profile360-package-group,
+    .profile360-package-card,
+    .profile360-rewards-section
+  )
+  :is(
+    .crm-card,
+    .panel,
+    .profile360-view-panel,
+    .profile360-detail,
+    .profile360-package-group,
+    .profile360-rewards-section
+  ) {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Un elemento dentro de un bloque (comprobante, cargo, fila) es una tarjeta tenue. */
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(.profile360-package-group, .profile360-view-panel, .profile360-rewards-section)
+  :is(article, .student-row, .profile360-reward-list > article) {
+  padding: 12px 14px;
+  border: 1px solid var(--p360v2-line);
+  border-radius: 14px;
+  background: var(--p360v2-inner);
+  color: var(--p360v2-text);
+}
+.sendero-alumnas .crm-page.p360v2 :is([class*="bg-white"], [class*="bg-black"]) {
+  background: var(--p360v2-inner);
+}
+
+/* 4 · Encabezados de bloque y colapsables con la misma forma. */
+.sendero-alumnas .crm-page.p360v2 .profile360-detail > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0;
+  cursor: pointer;
+  list-style: none;
+  color: var(--p360v2-text);
+}
+.sendero-alumnas .crm-page.p360v2 .profile360-detail > summary::-webkit-details-marker {
+  display: none;
+}
+.sendero-alumnas .crm-page.p360v2 .profile360-detail > summary > span:first-child {
+  display: grid;
+  gap: 2px;
+}
+.sendero-alumnas .crm-page.p360v2 .profile360-detail > summary > span[aria-hidden] {
+  color: var(--p360v2-muted);
+  transition: transform 0.15s;
+}
+.sendero-alumnas .crm-page.p360v2 .profile360-detail[open] > summary {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--p360v2-line);
+  margin-bottom: 14px;
+}
+.sendero-alumnas .crm-page.p360v2 .profile360-detail[open] > summary > span[aria-hidden] {
+  transform: rotate(90deg);
+}
+.sendero-alumnas .crm-page.p360v2 .profile360-view-heading {
+  margin: 0 0 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+/* 5 · Texto: claro sobre oscuro en todo el perfil. */
+.sendero-alumnas .crm-page.p360v2 :is(h1, h2, h3, h4, strong, b, .text-white, label, legend) {
+  color: var(--p360v2-text);
+}
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(
+    p,
+    small,
+    .eyebrow,
+    .crm-meta,
+    .crm-small,
+    .panel-heading p,
+    .profile360-view-heading p,
+    .text-zinc-300,
+    .text-zinc-400,
+    .text-zinc-500,
+    .text-zinc-600
+  ) {
+  color: var(--p360v2-muted);
+}
+.sendero-alumnas .crm-page.p360v2 .eyebrow {
+  letter-spacing: 0.08em;
+}
+.sendero-alumnas .crm-page.p360v2 .text-emerald-300 {
+  color: var(--p360v2-accent);
+}
+.sendero-alumnas .crm-page.p360v2 .text-amber-300 {
+  color: var(--p360v2-warn);
+}
+.sendero-alumnas .crm-page.p360v2 .text-rose-300 {
+  color: var(--p360v2-bad);
+}
+.sendero-alumnas .crm-page.p360v2 :is(.text-fuchsia-300, a:not(.crm-btn):not([class*="button"])) {
+  color: var(--p360v2-accent);
+}
+
+/* 6 · Controles de formulario con el mismo campo oscuro. */
+.sendero-alumnas
+  .crm-page.p360v2
+  :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  min-height: 44px;
+  border: 1px solid var(--p360v2-field-line);
+  border-radius: 14px;
+  padding: 11px 14px;
+  background: var(--p360v2-field);
+  color: var(--p360v2-text);
+  color-scheme: dark;
+  box-shadow: none;
+}
+.sendero-alumnas .crm-page.p360v2 :is(input, textarea)::placeholder {
+  color: var(--p360v2-muted);
+}
+.sendero-alumnas .crm-page.p360v2 :is(input[type="checkbox"], input[type="radio"]) {
+  accent-color: var(--p360v2-accent);
+}
+
+/* 7 · Etiquetas y contadores legibles. */
+.sendero-alumnas .crm-page.p360v2 :is(.status-pill, .count-badge, .role-pill) {
+  border: 1px solid var(--p360v2-line);
+  background: var(--p360v2-accent-soft);
+  color: var(--p360v2-accent);
+}
+.sendero-alumnas .crm-page.p360v2 .empty-state {
+  border: 1px dashed var(--p360v2-line);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--p360v2-muted);
+}
