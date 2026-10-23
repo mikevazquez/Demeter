@@ -1,3 +1,5 @@
+import { GiftIcon } from "@/app/admin/hoy/GiftIcon";
+import { BirthdayNotificationEditor } from "../BirthdayNotificationEditor";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -78,7 +80,7 @@ export default async function MarketingDetailPage({
   searchParams,
 }: {
   params: Promise<{ marketingKey: string }>;
-  searchParams: Promise<{ error?: string; saved?: string }>;
+  searchParams: Promise<{ error?: string; saved?: string; preview_date?: string }>;
 }) {
   const [{ marketingKey }, query] = await Promise.all([params, searchParams]);
   const item = getMarketingCommunication(marketingKey);
@@ -140,7 +142,8 @@ export default async function MarketingDetailPage({
     ? metaDiagnostics.templates.find(
         (template) =>
           template.name === whatsappTemplateName &&
-          template.language === metaDiagnostics.templateLanguage,
+          template.language === metaDiagnostics.templateLanguage &&
+          (item.key !== "birthday" || template.category === "MARKETING"),
       )
     : null;
   const readiness = getChannelReadiness({
@@ -159,6 +162,32 @@ export default async function MarketingDetailPage({
       whatsappTemplateKey && isMetaWhatsAppTemplateKey(whatsappTemplateKey)
         ? META_WHATSAPP_TEMPLATE_PARAMETERS[whatsappTemplateKey].length
         : null,
+    emailProviderConfigured: false,
+  });
+  // CUMP-01-10 · El aviso del día 1 usa su propia plantilla de Meta.
+  const birthdayMonthTemplateName =
+    item.key === "birthday" ? (metaDiagnostics.templateMappings.birthday_month ?? null) : null;
+  const birthdayMonthTemplate = birthdayMonthTemplateName
+    ? metaDiagnostics.templates.find(
+        (template) =>
+          template.name === birthdayMonthTemplateName &&
+          template.language === metaDiagnostics.templateLanguage &&
+          template.category === "MARKETING",
+      )
+    : null;
+  const birthdayMonthReadiness = getChannelReadiness({
+    globalEnabled: {
+      push: settings.push_enabled !== false,
+      whatsapp: settings.whatsapp_enabled === true,
+      email: settings.email_enabled === true,
+    },
+    pushProviderConfigured: !pushConfig.error,
+    whatsappConnected: metaDiagnostics.connected,
+    whatsappTemplateName: birthdayMonthTemplateName,
+    whatsappTemplateLanguage: birthdayMonthTemplate?.language ?? metaDiagnostics.templateLanguage,
+    whatsappTemplateStatus: birthdayMonthTemplate?.status ?? null,
+    whatsappTemplateVariables: birthdayMonthTemplate?.variableCount ?? null,
+    expectedWhatsappVariables: META_WHATSAPP_TEMPLATE_PARAMETERS.birthday_month.length,
     emailProviderConfigured: false,
   });
   const instanceRows = instances ?? [];
@@ -208,6 +237,14 @@ export default async function MarketingDetailPage({
     channel_not_ready_whatsapp:
       "No se puede seleccionar WhatsApp: conecta Meta y asigna una plantilla aprobada compatible.",
     channel_not_ready_email: "No se puede seleccionar Email: falta configurar un proveedor.",
+    birthday_whatsapp_required: "Selecciona WhatsApp antes de activar el disparador.",
+    birthday_gift_disabled: "Activa el regalo de cumpleaños antes de encender el aviso del día 1.",
+    birthday_settings_failed: "No se pudo guardar el regalo de cumpleaños. Intenta de nuevo.",
+    notification_whatsapp_template_not_approved:
+      "Asigna una plantilla de Marketing aprobada con las dos variables de cumpleaños.",
+    notification_whatsapp_template_invalid: "Usa el texto de cumpleaños y la categoría Marketing.",
+    meta_whatsapp_not_configured:
+      "Conecta Meta WhatsApp en Integraciones antes de registrar la plantilla.",
     package_recovery_delay_out_of_range: "El tiempo debe estar entre 1 y 90 días.",
     package_recovery_rules_not_seeded: "Las reglas de recuperación aún no están instaladas.",
     package_recovery_rule_not_seeded: "Esta regla aún no está instalada en el estudio.",
@@ -225,7 +262,11 @@ export default async function MarketingDetailPage({
         <Link href="/admin/notificaciones?tab=marketing">← Marketing</Link>
         <div className="notification-detail-title-row">
           <span className="notification-detail-icon" aria-hidden="true">
-            {NOTIFICATION_EMOJI_BY_KEY[item.key] ?? "✨"}
+            {item.key === "birthday" ? (
+              <GiftIcon size={24} />
+            ) : (
+              (NOTIFICATION_EMOJI_BY_KEY[item.key] ?? "✨")
+            )}
           </span>
           <div>
             <div className="notification-title-with-status">
@@ -247,7 +288,22 @@ export default async function MarketingDetailPage({
         </div>
       ) : null}
 
-      {item.eventDrivenRuleKeys?.length ? (
+      {item.key === "birthday" ? (
+        <BirthdayNotificationEditor
+          supabase={ctx.supabase}
+          studioId={ctx.studio.id}
+          studioName={ctx.studio.name}
+          studioTimeZone={ctx.studio.timezone}
+          rule={eventRules.find((rule) => rule.rule_key === "marketing.birthday")}
+          monthRule={eventRules.find((rule) => rule.rule_key === "marketing.birthday_month")}
+          diagnostics={metaDiagnostics}
+          readiness={readiness.whatsapp}
+          monthReadiness={birthdayMonthReadiness.whatsapp}
+          canManage={canManage}
+          canManageTemplates={ctx.can(CAPABILITIES.SETTINGS_WRITE)}
+          previewDate={query.preview_date}
+        />
+      ) : item.eventDrivenRuleKeys?.length ? (
         <section className="notification-detail-card package-recovery-runtime">
           <div className="notification-detail-card-heading">
             <div>

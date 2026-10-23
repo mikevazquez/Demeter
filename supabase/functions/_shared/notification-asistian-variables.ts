@@ -121,6 +121,13 @@ export function buildAsistianVariables(
   };
 
   switch (providerTemplateKey) {
+    case "birthday":
+    case "birthday_month":
+      return {
+        nombre: safeText(variables.recipient_name) ?? "Alumna",
+        estudio: safeText(variables.studio_name) ?? "Demeter Fitness Studio",
+      };
+
     case "reservation_confirmed":
     case "waitlist_promoted":
     case "class_reminder":

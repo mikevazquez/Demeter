@@ -263,6 +263,7 @@ export async function submitMetaWhatsAppTemplate(input: {
   category: "UTILITY" | "MARKETING";
   body: string;
   expectedVariables: number;
+  exampleValues?: string[];
 }) {
   const config = await loadConfig(input.studioId);
   const name = input.name.trim().toLowerCase();
@@ -271,6 +272,14 @@ export async function submitMetaWhatsAppTemplate(input: {
 
   const validationError = validateMetaWhatsAppTemplateDraft({ ...input, name, languageCode, body });
   if (validationError) throw new Error(validationError);
+  if (
+    input.exampleValues &&
+    (input.exampleValues.length !== input.expectedVariables ||
+      input.exampleValues.some(
+        (value) => typeof value !== "string" || !value.trim() || value.length > 200,
+      ))
+  )
+    throw new Error("meta_template_examples_invalid");
 
   const response = await graphRequest(config, `${config.wabaId}/message_templates`, {
     method: "POST",
@@ -278,7 +287,13 @@ export async function submitMetaWhatsAppTemplate(input: {
       name,
       language: languageCode,
       category: input.category,
-      components: [{ type: "BODY", text: body }],
+      components: [
+        {
+          type: "BODY",
+          text: body,
+          ...(input.exampleValues ? { example: { body_text: [input.exampleValues] } } : {}),
+        },
+      ],
     }),
   });
 
