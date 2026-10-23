@@ -132,7 +132,7 @@ export function dispatchTask(task, workers, options = {}) {
     evaluations,
     decision: eligible.length
       ? {
-          rule: "quality_floor_then_fit_then_cost",
+          rule: "quality_floor_then_fit_then_effective_cost",
           selected: eligible[0].workerId,
         }
       : {
