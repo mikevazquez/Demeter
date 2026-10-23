@@ -28,6 +28,7 @@ export default async function PlataformaLayout({ children }: { children: React.R
         <nav className="neb-top-nav" aria-label="Consola">
           <Link href="/plataforma">Inicio</Link>
           <Link href="/plataforma#estudios">Estudios</Link>
+          <Link href="/plataforma/soporte">Soporte</Link>
           <Link href="/admin">Ir a mi estudio</Link>
         </nav>
       </header>

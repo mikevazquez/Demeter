@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { PLATFORM_MODULES, PLATFORM_PLANS } from "@/lib/platform/catalog";
 import { parsePriceMxnToMinor } from "@/lib/platform/support";
+import { supportRequestErrorCode } from "@/lib/platform/support-requests";
 import { createClient } from "@/lib/supabase/server";
 
 // NEB-01-12 · Acciones de la consola. La base de datos valida que quien llama sea
@@ -153,4 +154,21 @@ export async function updateSupportPackageAction(formData: FormData) {
     p_active: formData.get("active") === "on",
   });
   finishSupport(studioId, "paquetes", error, "paquete_guardado");
+}
+
+// NEB-01-19 · Resolver una solicitud de soporte con respuesta para la dueña.
+export async function resolveSupportRequestAction(formData: FormData) {
+  const requestId = String(formData.get("request") ?? "");
+  if (!UUID.test(requestId)) redirect("/plataforma/soporte?estado=support_request_not_found");
+  const response = String(formData.get("response") ?? "").trim();
+  if (response.length > 2000) redirect("/plataforma/soporte?estado=support_body_too_long");
+  const supabase = await createClient("admin");
+  const { error } = await supabase.rpc("platform_resolve_support_request", {
+    p_request: requestId,
+    p_response: response,
+  });
+  revalidatePath("/plataforma/soporte");
+  redirect(
+    `/plataforma/soporte?estado=${error ? supportRequestErrorCode(error.message) : "resuelta"}`,
+  );
 }

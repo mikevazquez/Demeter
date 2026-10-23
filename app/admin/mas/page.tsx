@@ -118,6 +118,12 @@ const items: MoreItem[] = [
     ownerOnly: true,
   },
   {
+    title: "Ayuda de Nébora",
+    description: "Pide soporte y consulta las respuestas.",
+    href: "/admin/mas/ayuda",
+    capability: CAPABILITIES.SETTINGS_WRITE,
+  },
+  {
     title: "Revisión de configuración",
     description: "Lo que conviene corregir para vender y reservar sin trabas.",
     href: "/admin/configuracion/revision",
