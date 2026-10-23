@@ -4,6 +4,7 @@ import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { isSeatOccupyingReservation } from "@/lib/reservations/capacity";
 import { cancelSession, updateSession } from "./[sessionId]/actions";
+import { resolveSessionKind, sessionKindLabel } from "@/src/lib/sessions/session-kind";
 
 function formatMoney(minor: number, locale: string, currency: string) {
   return new Intl.NumberFormat(locale, { style: "currency", currency }).format(minor / 100);
@@ -192,7 +193,7 @@ export default async function AgendaPage({
     supabase
       .from("class_templates")
       .select(
-        "id,name,duration_minutes,capacity,discipline_id,credit_cost,drop_in_price_minor,color_hex",
+        "id,name,duration_minutes,capacity,discipline_id,credit_cost,drop_in_price_minor,color_hex,program_id,workshop_offer_id",
       )
       .eq("studio_id", studio.id)
       .eq("active", true)
@@ -238,6 +239,33 @@ export default async function AgendaPage({
     .lt("starts_at", weekAfterUtc.toISOString())
     .order("starts_at", { ascending: true });
 
+  const sessionTemplateIds = [
+    ...new Set((sessions ?? []).map((session) => session.template_id).filter(Boolean)),
+  ] as string[];
+  const activeTemplateIds = new Set((templates ?? []).map((template) => template.id));
+  const missingTemplateIds = sessionTemplateIds.filter((id) => !activeTemplateIds.has(id));
+  const { data: sessionOnlyTemplates } = missingTemplateIds.length
+    ? await supabase
+        .from("class_templates")
+        .select(
+          "id,name,duration_minutes,capacity,discipline_id,credit_cost,drop_in_price_minor,color_hex,program_id,workshop_offer_id",
+        )
+        .eq("studio_id", studio.id)
+        .in("id", missingTemplateIds)
+    : { data: [] as NonNullable<typeof templates> };
+  const allTemplates = [...(templates ?? []), ...(sessionOnlyTemplates ?? [])];
+
+  const programIds = [
+    ...new Set(allTemplates.map((template) => template.program_id).filter(Boolean)),
+  ] as string[];
+  const { data: activityPrograms } = programIds.length
+    ? await supabase
+        .from("activity_programs")
+        .select("id,kind")
+        .eq("studio_id", studio.id)
+        .in("id", programIds)
+    : { data: [] as { id: string; kind: string }[] };
+
   const sessionIds = (sessions ?? []).map((session) => session.id);
   const { data: reservations } = sessionIds.length
     ? await supabase
@@ -248,7 +276,8 @@ export default async function AgendaPage({
     : { data: [] as { id: string; session_id: string; status: string }[] };
 
   const disciplineMap = new Map((disciplines ?? []).map((item) => [item.id, item.name]));
-  const templateMap = new Map((templates ?? []).map((item) => [item.id, item]));
+  const templateMap = new Map(allTemplates.map((item) => [item.id, item]));
+  const programKindMap = new Map((activityPrograms ?? []).map((item) => [item.id, item.kind]));
   const spaceMap = new Map((spaces ?? []).map((item) => [item.id, item.name]));
   const personMap = new Map(
     (persons ?? []).map((item) => [
@@ -279,8 +308,14 @@ export default async function AgendaPage({
     );
     const startMinute = startParts.hour * 60 + startParts.minute;
     const template = templateMap.get(session.template_id);
+    const kind = resolveSessionKind({
+      workshopOfferId: template?.workshop_offer_id,
+      programKind: template?.program_id ? programKindMap.get(template.program_id) : null,
+    });
     return {
       ...session,
+      kind,
+      kindLabel: sessionKindLabel(kind),
       dateKey: startParts.dateKey,
       startMinute,
       durationMinutes,
@@ -498,6 +533,9 @@ export default async function AgendaPage({
                             {formatTime(session.starts_at, timeZone, locale)} –{" "}
                             {formatTime(session.ends_at, timeZone, locale)}
                           </span>
+                          {session.kindLabel !== "Clase" ? (
+                            <em className="agenda-session-kind">{session.kindLabel}</em>
+                          ) : null}
                           <strong>{session.name}</strong>
                           <small>
                             {session.instructor} · {session.space}
@@ -523,7 +561,7 @@ export default async function AgendaPage({
           <aside className="agenda-session-editor">
             <div className="agenda-editor-heading">
               <div>
-                <small>EDITAR SESIÓN</small>
+                <small>EDITAR {selectedSession.kindLabel.toUpperCase()}</small>
                 <h2>{selectedSession.name}</h2>
                 <p>
                   {selectedSession.instructor} · {selectedSession.space}

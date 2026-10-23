@@ -29,6 +29,22 @@ export type AssistantToolDefinition = {
 export const assistantReadToolDefinitions: AssistantToolDefinition[] = [
   {
     type: "function",
+    name: "get_workshop_purchases",
+    strict: true,
+    description:
+      "Consulta compras y saldos de talleres de la alumna verificada en esta conversación, incluida continuidad ya registrada y si se entregó una pregunta de seguimiento. No divulga compras de otra persona. No repitas preguntas si ya respondió o liquidó.",
+    parameters: { type: "object", properties: {}, required: [], additionalProperties: false },
+  },
+  {
+    type: "function",
+    name: "get_workshop_options",
+    strict: true,
+    description:
+      "Consulta talleres reales, fechas y horas locales, precios completo/individual, anticipo e inscripción. enabled=false indica que Demi no tiene habilitadas las altas, no que el estudio carezca de talleres. current_purchase recupera el estado real de la solicitud de esta conversación: consúltalo al retomar un pago o comprobante, antes de pedir otro. Usa referencias exactas para comprar; los paquetes regulares no cubren estas fechas. El contenido temporal no reemplaza catálogo ni confirma cupos.",
+    parameters: { type: "object", properties: {}, required: [], additionalProperties: false },
+  },
+  {
+    type: "function",
     name: "search_class_availability",
     description:
       "Consulta clases reales y lugares disponibles en Studio Flow. Úsala siempre para preguntas de horarios, fechas, 'hoy', 'mañana', horas concretas o disponibilidad. Cada llamada admite como máximo 14 días inclusivos (date_to menos date_from <= 13 días). Para un día de semana concreto, empieza por su próxima fecha; amplía por tramos sólo si hace falta. Si pide todo un período, recórrelo por tramos de hasta 14 días y pagina con next_offset sin omitir resultados. No devuelve precios comerciales; para precios usa get_commercial_options. Nunca inventes una clase. Si la persona nombra una actividad concreta, conserva ese nombre exacto en activity_query; no lo abrevies a una categoría más amplia.",
@@ -237,6 +253,60 @@ export type RecordTrialPaymentPreferenceArgs = {
 export type PrepareStudentAccessActivationArgs = EmptyArgs;
 
 export const assistantActionToolDefinitions: AssistantToolDefinition[] = [
+  {
+    type: "function",
+    name: "record_workshop_continuation",
+    strict: true,
+    description:
+      "Registra la respuesta explícita a una pregunta de continuidad del taller ya entregada por Demi. Consulta antes get_workshop_purchases y usa su referencia exacta. continue conserva reservas y seguimiento de saldo. withdraw exige que el mensaje actual diga «me retiro del taller» o «no quiero continuar con el taller»; un no aislado no basta. Libera solo reservas futuras de esa compra y conserva pagos, deuda y fechas pasadas. No devuelve dinero.",
+    parameters: {
+      type: "object",
+      properties: {
+        purchase_ref: { type: "string" },
+        decision: { type: "string", enum: ["continue", "withdraw"] },
+      },
+      required: ["purchase_ref", "decision"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "register_workshop_participant",
+    strict: true,
+    description:
+      "Sólo después de que una persona nueva solicite inscribirse en un taller y dé su nombre completo, registra su ficha no regular vinculada al contacto propio del canal. No la uses para consultas informativas ni para otra persona. Usa el workshop_ref exacto del catálogo; el taller debe permitir invitadas sin inscripción. No crea compra, pago, reserva, inscripción regular, paquete ni cuenta de acceso. Después cotiza con prepare_workshop_purchase. Si hace falta identificar el celular en Meta usa primero identify_meta_contact; un teléfono escrito no autentica una ficha existente.",
+    parameters: {
+      type: "object",
+      properties: { workshop_ref: { type: "string" }, full_name: { type: "string" } },
+      required: ["workshop_ref", "full_name"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "prepare_workshop_purchase",
+    strict: true,
+    description:
+      "Prepara una cotización de taller para la alumna identificada. Usa únicamente referencias de get_workshop_options, todas las fechas para full o las elegidas para sessions. Devuelve condiciones, anticipo y saldo: léelos y pide aceptación explícita en OTRO turno antes de confirmar. No cobra ni reserva ni solicita pagar todavía.",
+    parameters: {
+      type: "object",
+      properties: {
+        workshop_ref: { type: "string" },
+        session_refs: { type: "array", items: { type: "string" } },
+        purchase_mode: { type: "string", enum: ["full", "sessions"] },
+      },
+      required: ["workshop_ref", "session_refs", "purchase_mode"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "confirm_workshop_purchase",
+    strict: true,
+    description:
+      "Confirma exclusivamente la cotización pendiente cuando la alumna acaba de aceptar explícitamente sus condiciones en otro turno. Devuelve instrucciones bancarias y pide comprobante. No confirma pago ni retiene cupos; el comprobante posterior permite un apartado provisional sujeto a revisión autorizada.",
+    parameters: { type: "object", properties: {}, required: [], additionalProperties: false },
+  },
   {
     type: "function",
     name: "prepare_enrollment_payment",

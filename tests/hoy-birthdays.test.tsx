@@ -161,6 +161,7 @@ describe("Hoy birthday presentation", () => {
       startsAt: "2026-11-15T00:00:00Z",
       endsAt: "2026-11-15T01:00:00Z",
       name: "Pole",
+      kindLabel: "Clase",
       instructor: "Coach",
       space: "Principal",
       occupied: 1,
@@ -190,7 +191,7 @@ describe("Hoy birthday presentation", () => {
       <TodayClasses
         classes={[
           base,
-          { ...base, id: "flex", name: "Flex" },
+          { ...base, id: "flex", name: "Flex", kindLabel: "Taller" },
           { ...base, id: "yoga", name: "Yoga", roster: [{ ...base.roster[0], isBirthday: false }] },
         ]}
         returnDate={today}
@@ -204,6 +205,8 @@ describe("Hoy birthday presentation", () => {
     );
     expect(html.match(/aria-expanded="true"/g)).toHaveLength(2);
     expect(html.match(/today-class-birthday-tag/g)).toHaveLength(2);
+    expect(html.match(/class="today-class-kind"/g)).toHaveLength(1);
+    expect(html).toContain('class="today-class-kind">Taller</small>');
     expect(html.match(/today-student-card compact is-birthday/g)).toHaveLength(2);
     expect(html.match(/today-student-birthday-tag/g)).toHaveLength(2);
     expect(html).toContain('aria-controls="session-yoga"');

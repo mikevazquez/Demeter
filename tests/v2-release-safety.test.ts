@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const stableBlobs: Record<string, string> = {
+  // Release excludes paused studio recovery and preserves the current production Auth boundary.
   "app/auth/actions.ts": "90a3b8155c458303cdbb4ac9020bca29b52db354",
   "lib/auth/admin-context.ts": "a7f548fd68204521686dba09eeaed95d11f72254",
   "lib/auth/studio-context-cookie.ts": "ed8605c1d786a8b04b4cd6b799c1853621f3d7d0",
@@ -15,6 +16,7 @@ const stableBlobs: Record<string, string> = {
   "lib/supabase/client.ts": "877a8544a6dfbf0618242c861b07e07e6a943d02",
   "lib/supabase/session-policy.ts": "024e5bb64e8a3c85bcab52587a917fe7e02ed803",
   "proxy.ts": "b0f3d25849d1a875f5dbdfeede872d4734e90953",
+  // Login remains byte-for-byte equal to current production.
   "app/login/studio/page.tsx": "bcc5cc2c1ddc9292e5aea9913436a8687d93ddd6",
   "app/login/student/page.tsx": "05d70388462f4ab276552801992ed13b73951b65",
 };

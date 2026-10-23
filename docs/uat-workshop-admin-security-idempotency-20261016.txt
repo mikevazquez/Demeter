@@ -1,0 +1,41 @@
+Studio Flow — Workshop provisional hold security and idempotency UAT
+Date: 2026-10-16 Mexico / 2026-10-17 UTC
+Environment: Supabase Sandbox hedouonyhynuvwbckdlg ONLY
+Branch: design/workshop-payment-contract-20261016; PR #317 Draft
+
+Test 1 — Unauthorized administrative hold:
+- Simulated request.jwt.claims role=anon, no subject.
+- Called public.admin_create_workshop_provisional_hold on existing
+  one-seat synthetic workshop fixture.
+- PL/pgSQL assertion required error text "forbidden"; any successful
+  response or unexpected error would fail the test.
+- SQL returned [] without errors: PASS.
+- No hold was created.
+
+Test 2 — Administrative hold idempotency:
+- Simulated authenticated active staff subject
+  56b980cc-ecd7-4ef8-9e33-dc84ba009443.
+- Called public.admin_create_workshop_provisional_hold with fresh
+  request ID and transfer reference, full price 60000.
+- First response: state=reserved_provisionally, replayed=false.
+- Identical retry: replayed=true and same hold ID.
+- Retry with same request ID but different transfer reference:
+  idempotency_conflict.
+- All assertions ran inside a rollback-only SQL subtransaction.
+- SQL returned [] without errors: PASS.
+- No synthetic hold or payment persisted.
+
+CI context:
+- Official run 38994477832 failed format check solely for
+  docs/uat-workshop-parallel-sql-contention-20261016.md.
+- The document was reformatted in the isolated branch.
+- Subsequent official CI run 38994754284 passed format and lint;
+  remaining steps were in progress when this record was created.
+- Supplemental workflow run 38994754242 passed transfer-review tests
+  and lint/typecheck; full suite still running at that time.
+
+Limits:
+- These are SQL-simulated JWT UAT checks, not signed browser/HTTP UAT.
+- The two-client authenticated HTTP concurrency runner has NOT RUN.
+- PR #284 and PR #317 overlap; no merge without reconciliation.
+- Production unchanged and no promotion authorized.

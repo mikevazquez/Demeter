@@ -8,6 +8,7 @@ import {
 import "server-only";
 import { loadDemiRuntimeConfig } from "./runtime-config";
 import { preparationFromStudioPrompt } from "./class-preparation";
+import { getWorkshopInformation } from "./workshop-information";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CommercialOptionsArgs, SearchClassAvailabilityArgs } from "./tool-contracts";
@@ -25,6 +26,7 @@ export type AssistantToolContext = {
   supabase: SupabaseClient;
   studio: AssistantStudioContext;
   studentId?: string | null;
+  conversationId?: string;
 };
 
 function normalize(value: string) {
@@ -755,7 +757,7 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
   ] = await Promise.all([
     ctx.supabase
       .from("students")
-      .select("lifecycle_status,student_type,trial_status")
+      .select("lifecycle_status,student_type,trial_status,acquisition_source")
       .eq("studio_id", ctx.studio.id)
       .eq("id", ctx.studentId)
       .maybeSingle(),
@@ -819,7 +821,9 @@ export async function getStudentPackageStatus(ctx: AssistantToolContext) {
   }
 
   let studentCategory = "student";
-  if (student.student_type === "trial") {
+  if (student.student_type === "trial" && student.acquisition_source === "demi_workshop_guest") {
+    studentCategory = "workshop_guest";
+  } else if (student.student_type === "trial") {
     if (student.trial_status === "no_show") studentCategory = "trial_no_show";
     else if (student.trial_status === "attended") studentCategory = "trial_attended";
     else if (student.trial_status === "cancelled") studentCategory = "trial_cancelled";
@@ -1030,6 +1034,19 @@ export async function executeAssistantReadTool(
   args: Record<string, unknown>,
 ) {
   switch (toolName) {
+    case "get_workshop_purchases": {
+      if (!ctx.conversationId || !ctx.studentId)
+        return { ok: false, reason_code: "verified_student_required" };
+      const response = await ctx.supabase.rpc("service_student_workshops", {
+        p_studio: ctx.studio.id,
+        p_conversation: ctx.conversationId,
+      });
+      return response.error
+        ? { ok: false, reason_code: "workshop_purchases_unavailable" }
+        : { ok: true, purchases: response.data };
+    }
+    case "get_workshop_options":
+      return getWorkshopInformation(ctx);
     case "search_class_availability":
       return searchClassAvailability(ctx, args as SearchClassAvailabilityArgs);
     case "get_activity_catalog":

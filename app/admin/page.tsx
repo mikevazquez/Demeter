@@ -11,6 +11,7 @@ import {
 import { individualPaymentSummary } from "@/lib/reservations/individual-payment-summary";
 import { TodayClasses, type TodayClassItem } from "./hoy/TodayClasses";
 import QuickActions from "./hoy/QuickActions";
+import { resolveSessionKind, sessionKindLabel } from "@/src/lib/sessions/session-kind";
 import { birthdaysInMonth, birthdaysOn, mexicoToday, type BirthdayStudent } from "./hoy/birthdays";
 import { loadBirthdayStudents } from "./hoy/load-birthdays";
 import { GiftIcon } from "./hoy/GiftIcon";
@@ -311,7 +312,7 @@ export default async function AdminPage({
     templateIds.length
       ? supabase
           .from("class_templates")
-          .select("id,name,color_hex,drop_in_price_minor")
+          .select("id,name,color_hex,drop_in_price_minor,program_id,workshop_offer_id")
           .in("id", templateIds)
       : Promise.resolve({
           data: [] as {
@@ -319,6 +320,8 @@ export default async function AdminPage({
             name: string;
             color_hex: string | null;
             drop_in_price_minor: number | null;
+            program_id: string | null;
+            workshop_offer_id: string | null;
           }[],
         }),
     instructorIds.length
@@ -512,6 +515,18 @@ export default async function AdminPage({
     ),
   ];
 
+  const programIds = [
+    ...new Set((templates ?? []).map((template) => template.program_id).filter(Boolean)),
+  ] as string[];
+  const { data: activityPrograms } = programIds.length
+    ? await supabase
+        .from("activity_programs")
+        .select("id,kind")
+        .eq("studio_id", studio.id)
+        .in("id", programIds)
+    : { data: [] as { id: string; kind: string }[] };
+  const programKindMap = new Map((activityPrograms ?? []).map((item) => [item.id, item.kind]));
+
   const templateMap = new Map((templates ?? []).map((item) => [item.id, item]));
   const personMap = new Map(
     (persons ?? []).map((person) => [
@@ -540,12 +555,36 @@ export default async function AdminPage({
     reservationsBySession.set(reservation.session_id, list);
   }
 
+  const workshopBalances =
+    can(CAPABILITIES.STUDENTS_READ) && can(CAPABILITIES.SALES_READ) && reservationIds.length
+      ? await supabase.rpc("admin_workshop_reservation_balances", {
+          p_studio_id: studio.id,
+          p_reservation_ids: reservationIds,
+        })
+      : null;
+  const workshopByReservation = new Map<
+    string,
+    { saleId: string; title: string; balanceMinor: number }
+  >(
+    !workshopBalances?.error && Array.isArray(workshopBalances?.data)
+      ? workshopBalances.data.map(
+          (row: { reservationId: string; saleId: string; title: string; balanceMinor: number }) => [
+            row.reservationId,
+            row,
+          ],
+        )
+      : [],
+  );
   const classes: TodayClassItem[] = [];
 
   for (const session of selectedSessions ?? []) {
     const sessionReservations = reservationsBySession.get(session.id) ?? [];
     const template = templateMap.get(session.template_id);
     const reservationStatuses = sessionReservations.map((reservation) => reservation.status);
+    const sessionKind = resolveSessionKind({
+      workshopOfferId: template?.workshop_offer_id,
+      programKind: template?.program_id ? programKindMap.get(template.program_id) : null,
+    });
     const occupied = countSeatOccupyingReservations(reservationStatuses);
     const bookedReservations = countBookedReservations(reservationStatuses);
 
@@ -555,6 +594,7 @@ export default async function AdminPage({
       startsAt: session.starts_at,
       endsAt: session.ends_at,
       name: template?.name ?? "Clase",
+      kindLabel: sessionKindLabel(sessionKind),
       instructor: session.instructor_id
         ? (instructorMap.get(session.instructor_id) ?? "Instructor")
         : "Sin instructor",
@@ -589,7 +629,12 @@ export default async function AdminPage({
           : null;
 
         const individualPayment =
-          canReadSales && !reservationPaymentsError && !acquisition && !isGuest
+          canReadSales &&
+          !reservationPaymentsError &&
+          !workshopBalances?.error &&
+          !acquisition &&
+          !isGuest &&
+          !workshopByReservation.has(reservation.id)
             ? individualPaymentSummary({
                 commercialStatus: reservation.commercial_status,
                 classKind: reservation.class_kind ?? null,
@@ -603,6 +648,10 @@ export default async function AdminPage({
 
         return {
           id: reservation.id,
+          workshopSaleId: can(CAPABILITIES.SALES_WRITE)
+            ? workshopByReservation.get(reservation.id)?.saleId
+            : undefined,
+          workshopBalanceMinor: workshopByReservation.get(reservation.id)?.balanceMinor,
           isBirthday: Boolean(
             !isGuest && reservation.student_id && birthdayStudentIds.has(reservation.student_id),
           ),
@@ -612,23 +661,29 @@ export default async function AdminPage({
               ? (studentMap.get(reservation.student_id) ?? "Alumna")
               : "Alumna",
           status: reservation.status,
-          packageLabel: isGuest
-            ? "Invitación"
-            : acquisition
-              ? (productMap.get(acquisition.product_template_id) ?? "Producto activo")
-              : individualPayment
-                ? "Clase individual"
-                : "Sin producto vinculado",
-          creditsLabel: isGuest
-            ? "Beneficio por nivel"
-            : acquisition?.unlimited
-              ? "Ilimitado"
+          packageLabel: workshopByReservation.has(reservation.id)
+            ? workshopByReservation.get(reservation.id)!.title
+            : isGuest
+              ? "Invitación"
               : acquisition
-                ? `${balance ?? 0} créditos`
-                : (individualPayment ?? "—"),
-          expiresLabel: isGuest
-            ? "Misma clase"
-            : formatExpiry(acquisition?.expires_on ?? null, locale),
+                ? (productMap.get(acquisition.product_template_id) ?? "Producto activo")
+                : individualPayment
+                  ? "Clase individual"
+                  : "Sin producto vinculado",
+          creditsLabel: workshopByReservation.has(reservation.id)
+            ? "Compra de taller"
+            : isGuest
+              ? "Beneficio por nivel"
+              : acquisition?.unlimited
+                ? "Ilimitado"
+                : acquisition
+                  ? `${balance ?? 0} créditos`
+                  : (individualPayment ?? "—"),
+          expiresLabel: workshopByReservation.has(reservation.id)
+            ? "Fechas del taller"
+            : isGuest
+              ? "Misma clase"
+              : formatExpiry(acquisition?.expires_on ?? null, locale),
           studentId: reservation.student_id,
           evaluationInvitationId: evaluationInvitation?.id ?? null,
           evaluationStatus: evaluationInvitation?.status ?? null,
@@ -721,9 +776,29 @@ export default async function AdminPage({
         </div>
       </header>
 
+      {workshopBalances?.error ? (
+        <p role="alert">
+          No pudimos consultar los saldos de talleres. Revisa la venta antes de registrar un pago.
+        </p>
+      ) : null}
+      {params.created === "workshop-payment" ? (
+        <p role="status">Abono de taller registrado. El saldo se actualizó.</p>
+      ) : null}
       {params.error ? (
         <div className="notice error">
-          No se pudo completar la operación: {decodeURIComponent(params.error)}
+          {(
+            {
+              workshop_payment_invalid: "Revisa el importe, método y referencia del abono.",
+              workshop_payment_forbidden: "No tienes permisos para registrar este abono.",
+              workshop_payment_exceeds_balance:
+                "El importe supera el saldo pendiente. Actualiza el historial antes de continuar.",
+              workshop_payment_failed:
+                "No pudimos verificar el abono. Consulta los pagos de la venta antes de reintentar.",
+              workshop_payment_duplicate:
+                "Esa referencia ya está registrada. Consulta el historial de la venta.",
+            } as Record<string, string>
+          )[params.error] ??
+            "No se pudo completar la operación. Revisa el estado antes de reintentar."}
         </div>
       ) : null}
 

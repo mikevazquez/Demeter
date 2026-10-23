@@ -4,6 +4,7 @@ import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
 import { loadDemiSticker } from "@/lib/assistant/sticker-media";
 import { transcribeDemiAudio } from "@/lib/assistant/audio-transcription";
+import { handleDemiWorkshopReceipt } from "@/lib/assistant/workshop-purchase";
 import { handleDemiGroupReceipt } from "@/lib/assistant/group-booking";
 import { handleDemiEnrollmentReceipt } from "@/lib/assistant/enrollment-payment";
 import { readTransferReceipt, rejectedTransferReceiptReply } from "@/lib/assistant/receipt-reader";
@@ -1714,7 +1715,7 @@ export async function POST(request: Request) {
         null;
 
       try {
-        const groupReceipt = await handleDemiGroupReceipt({
+        const workshopReceipt = await handleDemiWorkshopReceipt({
           supabase,
           studioId,
           conversationId,
@@ -1724,6 +1725,18 @@ export async function POST(request: Request) {
           messageType: message.messageType,
           webhookConfig,
         });
+        const groupReceipt = workshopReceipt.handled
+          ? workshopReceipt
+          : await handleDemiGroupReceipt({
+              supabase,
+              studioId,
+              conversationId,
+              eventId: event.id,
+              providerMessageId: message.providerMessageId,
+              mediaId: message.mediaId,
+              messageType: message.messageType,
+              webhookConfig,
+            });
         transferReceipt = groupReceipt.handled
           ? groupReceipt
           : await handleDemiEnrollmentReceipt({

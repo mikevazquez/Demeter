@@ -1,0 +1,30 @@
+Studio Flow workshops - Sandbox access-denial UAT and formal-case mapping
+Date: 2026-10-16 Mexico / 2026-10-17 UTC
+Environment: Supabase Sandbox hedouonyhynuvwbckdlg ONLY
+Branch: design/workshop-payment-contract-20261016, Draft PR #317
+
+SQL test on public.admin_create_workshop_provisional_hold:
+1. Simulated anon JWT: function denied with exact 'forbidden'.
+2. Simulated authenticated, active studio staff JWT but requested an
+   unrelated studio UUID: function denied with exact 'forbidden'.
+3. The DO block raised an error for any other result, including success.
+   Supabase execute_sql returned [] with no error. No holds created.
+
+These negative checks support a narrow portion of TALL-18 (tenant
+authorization) and TALL-12 (role restrictions). They do NOT complete
+TALL-18, which requires a real second tenant, full RLS coverage,
+sales/payment isolation and authenticated client tests.
+
+Other current evidence:
+- TALL-04: two rounds of independently dispatched staff-RPC requests,
+  each one accepted and one rejected session_full; both holds cleaned.
+  Does NOT meet original full purchase/HTTP-concurrency UAT criterion.
+- TALL-07/TALL-08: confirmed transfer approval in rollback SQL generated
+  one sale, payment, reservation and idempotent replay. No live UI proof.
+- Expiry: scheduled Sandbox pg_cron job automatically expired a real
+  short-lived synthetic hold and freed its seat.
+- Latest previously complete CI run 38992518777 passed all official
+  checks. A newer CI run is being checked after evidence formatting.
+
+Formal 18-case matrix remains 0/18 fully approved until complete
+criterion-specific evidence is recorded. No merge, no production changes.

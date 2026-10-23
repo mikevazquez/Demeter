@@ -16,17 +16,17 @@ describe("ADMIN-UX-04 full session operation visual homologation", () => {
   it("scopes the session detail to the approved admin visual system", () => {
     expect(page).toContain("admin-ux04-session-detail");
     expect(page).toContain("admin-class-stats");
-    expect(page).toContain("<SessionOperations");
+    expect(page).not.toContain("<SessionOperations");
     expect(styles).toContain(".admin-ux04-session-detail");
     expect(styles).toContain("#ff0a8a");
   });
 
-  it("keeps the existing operational capabilities", () => {
-    expect(page).toContain("canAttendance");
-    expect(page).toContain("canBook");
-    expect(page).toContain("canCreateStudent");
-    expect(page).toContain("initiallyOpen");
-    expect(page).toContain("showToggle={false}");
+  it("keeps session configuration here and directs attendance and payments to the selected day in Hoy", () => {
+    expect(page).toContain("action={updateSession}");
+    expect(page).toContain("action={setMinimumOverride}");
+    expect(page).toContain("localInput.slice(0, 10)");
+    expect(page).not.toContain("canAttendance");
+    expect(page).not.toContain('from("product_acquisitions")');
   });
 
   it("uses a single scope selector for edit and cancellation", () => {

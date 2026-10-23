@@ -1,0 +1,11 @@
+# Conciliación de Talleres — PR #284 y #317
+
+Revisión de ambos parches completos: los 63 archivos del PR #284 aparecen en el PR #317. De ellos, 53 tienen el mismo parche respecto de main y 10 difieren.
+
+Los diez archivos distintos son: app/admin/actividades/page.tsx; app/admin/actividades/talleres/WorkshopEditorForm.tsx; app/admin/actividades/talleres/[offerId]/WorkshopPurchaseForm.tsx; app/admin/actividades/talleres/[offerId]/page.tsx; app/admin/agenda/[sessionId]/page.tsx; app/admin/hoy/SessionOperations.tsx; app/admin/hoy/workshop-abono-actions.ts; docs/uat-talleres-abonos-agenda-ejecucion-20261016.md; docs/uat-talleres-abonos-agenda-sandbox-20261016.md; docs/uat-talleres-validacion-mike-20261016.md.
+
+Se inspeccionaron en el PR #317 los recorridos de editor (5 pasos), cobros desde Hoy/Agenda, validaciones de compra, comprobantes y autorización. Las diferencias principales corresponden a reformateo y ampliaciones funcionales en #317. **La coincidencia de parches no constituye por sí sola una equivalencia funcional completa**: las diez diferencias deben permanecer sujetas a UAT y revisión de regresión antes de promover.
+
+Decisión de consolidación: PR #317 es el único PR activo de implementación. PR #284 se cierra como duplicado/sustituido, **sin merge**, sin eliminar la rama histórica. La matriz de 18 casos y los documentos del #284 se mantienen presentes en #317. No se declara UAT aprobado por este cierre.
+
+Evidencia: CI oficial #3543 (38994873571) terminó SUCCESS en la revisión. PR #317 mantiene estado Draft. Producción no se modificó.

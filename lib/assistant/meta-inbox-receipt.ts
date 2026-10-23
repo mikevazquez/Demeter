@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { MetaDownloadedMedia } from "./meta-whatsapp-channel";
 import { downloadMetaInboxAttachment, type MetaInboxInboundMessage } from "./meta-inbox-channel";
+import { handleDemiWorkshopReceipt } from "./workshop-purchase";
 import { handleDemiGroupReceipt } from "./group-booking";
 import { handleDemiEnrollmentReceipt } from "./enrollment-payment";
 
@@ -12,6 +13,16 @@ export async function handleDemiMetaInboxReceipt(input: {
   eventId: string;
   message: MetaInboxInboundMessage;
 }) {
+  const workshop = await input.supabase
+    .from("demi_workshop_purchase_intents")
+    .select("id")
+    .eq("studio_id", input.studioId)
+    .eq("conversation_id", input.conversationId)
+    .eq("status", "receipt_required")
+    .gt("expires_at", new Date().toISOString())
+    .limit(1)
+    .maybeSingle();
+  if (workshop.error) throw new Error("workshop_receipt_lookup_failed");
   const pending = await input.supabase
     .from("demi_group_bookings")
     .select("id")
@@ -35,7 +46,7 @@ export async function handleDemiMetaInboxReceipt(input: {
         .maybeSingle()
     : null;
   if (enrollment?.error) throw new Error("enrollment_receipt_lookup_failed");
-  if (!pending.data && !enrollment?.data) return { handled: false as const };
+  if (!workshop.data && !pending.data && !enrollment?.data) return { handled: false as const };
   if (!input.message.attachmentUrl) throw new Error("meta_attachment_unavailable");
   const source = await input.supabase
     .from("assistant_meta_inbox_events")
@@ -69,7 +80,11 @@ export async function handleDemiMetaInboxReceipt(input: {
     { onConflict: "id", ignoreDuplicates: true },
   );
   if (bridge.error) throw new Error("meta_receipt_bridge_failed");
-  const receiptHandler = pending.data ? handleDemiGroupReceipt : handleDemiEnrollmentReceipt;
+  const receiptHandler = workshop.data
+    ? handleDemiWorkshopReceipt
+    : pending.data
+      ? handleDemiGroupReceipt
+      : handleDemiEnrollmentReceipt;
   return receiptHandler({
     supabase: input.supabase,
     studioId: input.studioId,

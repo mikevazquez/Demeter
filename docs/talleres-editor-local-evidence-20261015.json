@@ -1,0 +1,108 @@
+{
+  "date": "2026-10-15",
+  "parentCommit": "a3e0260",
+  "scope": "Local workshop creation/editing, dedicated Agenda dates and revision-bound administrative purchase",
+  "routes": ["/admin/actividades/talleres/nuevo", "/admin/actividades/talleres/[offerId]/editar"],
+  "migration": "supabase/migrations/20261015134549_workshop_editor.sql",
+  "migrationSha256": "005cdc99c768562a87ce2439e9c9209c2e8d22f9961446129a1bc37c876737cf",
+  "integration": {
+    "command": "npm run test:workshops:db",
+    "passed": 41,
+    "failed": 0,
+    "cases": [
+      "six historical migrations reconstruct the exact Sandbox workshop catalog",
+      "all seven module tables enable RLS and deny direct client writes",
+      "replacement preserves historical authorization, purchase and payment records",
+      "both public and private historical review entrypoints are retired for all client roles",
+      "historical request IDs and received-payment references cannot be spent again",
+      "review preserves schedule permissions and active account/studio restrictions",
+      "only authenticated staff with sales/schedule permissions in this studio can attest",
+      "pending/absent confirmation and unsupported currency/method are rejected",
+      "review records the real actor and database quote without reserving or selling",
+      "cross-studio students/offers, duplicate selection and required enrollment fail closed",
+      "both unsafe RPCs and direct evidence writes are inaccessible",
+      "authorized individual checkout persists one sale/payment and every reservation",
+      "review replays reordered sessions but rejects changed amount, mode, student or reference",
+      "checkout rejects missing evidence, another tenant and a changed checkout key",
+      "overpayment, inadequate deposit and a missing balance date are rejected",
+      "deposit checkout preserves balance/policy and replay survives subsequent payments",
+      "price/deposit changes after review cannot silently change the authorized purchase",
+      "a full session after review leaves authorization and all financial rows untouched",
+      "induced second-reservation failure rolls back sale, payment, reservations and consumption",
+      "evidence cannot be edited/deleted, including by its database owner",
+      "two independent connections consume the same authorization exactly once",
+      "two independent buyers of the last seat produce one sale and one unconsumed authorization",
+      "expired sessions and disabled payment methods cannot be attested",
+      "authenticated context scopes offers, students, prices and cupos to this studio",
+      "read context hides student identities without students.read and refuses writes",
+      "admin action RPC atomically buys selected individual dates with a deposit and stable replay",
+      "admin RPC denies service/anonymous callers and cross-studio or inactive students",
+      "booking/enrollment domain blockers roll back even the received-payment authorization",
+      "admin transaction requires explicit receipt attestation and rejects altered replay parameters",
+      "two authenticated administrative buyers serialize the last seat with no losing authorization",
+      "editor context and save require active schedule/products permissions in this studio",
+      "creation creates dedicated Agenda dates with studio timezone and preserves inherited policy",
+      "creation and edits are idempotent, including simultaneous retries",
+      "invalid date, foreign discipline, insufficient space and conflicts roll back all authoring rows",
+      "unsold edit preserves existing session identity and retires removed dates without deletion",
+      "stale edits and cross-offer session reassignment are rejected",
+      "commercial history freezes prices/policy/dates while allowing an audited name-only edit",
+      "unconsumed reviewed payment and historical reservations also freeze configuration",
+      "changed prices reject stale checkout without recording an unexpected balance",
+      "concurrent purchase/edit yields either a frozen edit or a stale checkout, never a mixed contract",
+      "regular packages cannot enter owned or retired workshop dates; legacy/normal rules remain intact"
+    ],
+    "database": "Isolated PostgreSQL 17, networking disabled, no remote records; real workshop migrations over reduced external host fixture"
+  },
+  "vitest": {
+    "passed": 1323,
+    "failed": 0,
+    "files": 203
+  },
+  "editorBrowser": {
+    "scope": "Component smoke; action/Link doubles, no real login, Next transport or UAT",
+    "checks": [
+      "Conflict preserves name, exact decimal prices, policy and both selected dates",
+      "Create retry keeps request/payload and submits two dates, exact minor units and inherited enrollment",
+      "Successful response replaces form with saved workshop link",
+      "390px mobile creation form has no horizontal page overflow",
+      "Locked workshop disables configuration and submits only name plus optimistic revision",
+      "No browser page errors"
+    ],
+    "errors": []
+  },
+  "purchaseRegressionBrowser": {
+    "scope": "Component browser smoke with action/Next Link doubles; not real authentication, Next server-action transport or UAT",
+    "checks": [
+      "Explicit selection of every individual date keeps the individual total of 450 vs full price 600",
+      "Rejected action preserves student, selected dates, amount, reference and receipt attestation",
+      "Retry keeps the exact checkout key/payload and a successful response replaces the form with a receipt",
+      "390px mobile viewport has no page-level horizontal overflow",
+      "Required enrollment and missing write permissions keep checkout disabled",
+      "No browser page errors"
+    ],
+    "errors": []
+  },
+  "checks": {
+    "lintErrors": 0,
+    "existingLintWarnings": 19,
+    "typecheck": "passed",
+    "build": "passed with public dummy build values",
+    "format": "passed"
+  },
+  "limitations": [
+    "External auth/studio/Agenda/financial tables are reduced fixtures; external booking/enrollment engines are contract doubles.",
+    "Browser checks use real components/CSS with action and Link doubles, not real authentication, Next transport or PostgREST.",
+    "Full-schema integration, generic Agenda writer concurrency and real authenticated Sandbox UAT remain pending."
+  ],
+  "remoteMutation": false,
+  "pushed": false,
+  "deployed": false,
+  "uatApproved": 0,
+  "uatTotal": 18,
+  "pr": {
+    "number": 284,
+    "status": "Draft, paused",
+    "preservedHead": "90915734618b3e8e8071e823d4c7496c8878b9d4"
+  }
+}

@@ -83,6 +83,9 @@ function harness(
     "@/lib/assistant/enrollment-payment": {
       handleDemiEnrollmentReceipt: vi.fn().mockResolvedValue({ handled: false }),
     },
+    "@/lib/assistant/workshop-purchase": {
+      handleDemiWorkshopReceipt: vi.fn().mockResolvedValue({ handled: false }),
+    },
     "@/lib/assistant/group-booking": {
       handleDemiGroupReceipt: vi.fn().mockRejectedValue(new Error("Unexpected group receipt")),
     },

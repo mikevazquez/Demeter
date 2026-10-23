@@ -1,0 +1,58 @@
+{
+  "capturedDate": "2026-10-15",
+  "sourceProject": "hedouonyhynuvwbckdlg",
+  "source": "read-only supabase_migrations.schema_migrations; no remote mutations",
+  "normalization": "Ignore trailing file whitespace only; recovered SQL statements otherwise unchanged.",
+  "supersededLocalV2Version": "20261014064453",
+  "actualSandboxV2Version": "20261014064556",
+  "migrations": [
+    {
+      "version": "20261014045245",
+      "name": "workshop_configurable_offers_purchases_sandbox",
+      "path": "supabase/migrations/20261014045245_workshop_configurable_offers_purchases_sandbox.sql",
+      "statementCount": 1,
+      "sourceSha256": "77095ebe73670df0957e296f2e65b64046607f2d63962e3a6bec9a7b82f767d9",
+      "normalizedSha256": "f98294cf17dfe4a1cf7f701639b3b133b0875c93df653668aa9b997c1614c318"
+    },
+    {
+      "version": "20261014050801",
+      "name": "workshop_purchase_integrity_guards_sandbox",
+      "path": "supabase/migrations/20261014050801_workshop_purchase_integrity_guards_sandbox.sql",
+      "statementCount": 1,
+      "sourceSha256": "8c67a6991dd725645e5f4f812e1070b3eb8cf6d089a9cb8e9f54d2501d32f0be",
+      "normalizedSha256": "8c67a6991dd725645e5f4f812e1070b3eb8cf6d089a9cb8e9f54d2501d32f0be"
+    },
+    {
+      "version": "20261014054548",
+      "name": "workshop_checkout_preflight_sandbox",
+      "path": "supabase/migrations/20261014054548_workshop_checkout_preflight_sandbox.sql",
+      "statementCount": 1,
+      "sourceSha256": "3ab8612b435a1b9141782bd9c4a07ad434c41bc8903cc6d0f51b94aa10419561",
+      "normalizedSha256": "3ab8612b435a1b9141782bd9c4a07ad434c41bc8903cc6d0f51b94aa10419561"
+    },
+    {
+      "version": "20261014054633",
+      "name": "workshop_checkout_confirm_sandbox",
+      "path": "supabase/migrations/20261014054633_workshop_checkout_confirm_sandbox.sql",
+      "statementCount": 1,
+      "sourceSha256": "ba930e9541227b1dcc8fad7a207a8c87a813a112d556498f7348305ac1913048",
+      "normalizedSha256": "ba930e9541227b1dcc8fad7a207a8c87a813a112d556498f7348305ac1913048"
+    },
+    {
+      "version": "20261014064556",
+      "name": "workshop_explicit_purchase_mode",
+      "path": "supabase/migrations/20261014064556_workshop_explicit_purchase_mode.sql",
+      "statementCount": 1,
+      "sourceSha256": "4ad8390798699a348a20529936a3c420673478c3bf5649c04002f50181ac6387",
+      "normalizedSha256": "3acc15fa65b6e1d767bca6b2c96ed3b01cf1fdd2f727c27a3ddc113c8d77fbbc"
+    },
+    {
+      "version": "20261014143639",
+      "name": "workshop_trusted_admin_payment",
+      "path": "supabase/migrations/20261014143639_workshop_trusted_admin_payment.sql",
+      "statementCount": 1,
+      "sourceSha256": "0b196bf683e0fd95a05406257c5b7d355710825fbd8478a0428cddcd29d5bb79",
+      "normalizedSha256": "b03f7e34dccdfa600e4c5115bc4de4d679c082f784c445c1748ee2ba36021dfb"
+    }
+  ]
+}

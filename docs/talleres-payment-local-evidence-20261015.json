@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-15",
+  "scope": "local PostgreSQL integration; no remote writes, deployment or functional UAT",
+  "preservedPrHead": "90915734618b3e8e8071e823d4c7496c8878b9d4",
+  "migration": "supabase/migrations/20261015120000_workshop_verified_manual_payment.sql",
+  "migrationSha256": "ecc2d13637b0f8dccdbe091b957ae9e29459163d1244c5102daf3a495596f523",
+  "postgresImage": "postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+  "postgresNetwork": "none; no published ports",
+  "databaseCommand": "npm run test:workshops:db",
+  "databaseScenarios": {
+    "passed": 17,
+    "failed": 0,
+    "cases": [
+      "only authenticated staff with sales.write in this studio can attest",
+      "pending/absent confirmation and unsupported currency/method are rejected",
+      "review records the real actor and database quote without reserving or selling",
+      "cross-studio students/offers, duplicate selection and required enrollment fail closed",
+      "both unsafe RPCs and direct evidence writes are inaccessible",
+      "authorized individual checkout persists one sale/payment and every reservation",
+      "review replays reordered sessions but rejects changed amount, mode, student or reference",
+      "checkout rejects missing evidence, another tenant and a changed checkout key",
+      "overpayment, inadequate deposit and a missing balance date are rejected",
+      "deposit checkout preserves balance/policy and replay survives subsequent payments",
+      "price/deposit changes after review cannot silently change the authorized purchase",
+      "a full session after review leaves authorization and all financial rows untouched",
+      "induced second-reservation failure rolls back sale, payment, reservations and consumption",
+      "evidence cannot be edited/deleted, including by its database owner",
+      "two independent connections consume the same authorization exactly once",
+      "two independent buyers of the last seat produce one sale and one unconsumed authorization",
+      "expired sessions and disabled payment methods cannot be attested"
+    ]
+  },
+  "vitest": {
+    "passed": 1293,
+    "failed": 0,
+    "pending": 0
+  },
+  "format": "passed",
+  "typecheck": "passed",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 19
+  },
+  "uatApproved": 0,
+  "uatTotal": 18,
+  "remoteMigrationApplied": false,
+  "uiIntegrated": false,
+  "providerWebhookImplemented": false,
+  "limitations": [
+    "Reduced host fixtures; not a complete migration replay or full Supabase schema.",
+    "Workshop base schema and v1 RPCs still require versioned deployment reconciliation.",
+    "Manual staff attestation only; bank/provider verification is not automated.",
+    "UI/backend tenant resolution, real enrollment verification and functional UAT remain pending."
+  ]
+}
