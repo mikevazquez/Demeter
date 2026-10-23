@@ -24,6 +24,7 @@ import {
   extractMetaDeliveryStatuses,
   persistMetaDeliveryStatuses,
 } from "@/lib/assistant/meta-delivery-status";
+import { loadStudioBrandName } from "@/lib/platform/branding";
 import { loadStudioEntitlementsService } from "@/lib/platform/entitlements";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -1456,11 +1457,13 @@ export async function POST(request: Request) {
         message.referralSourceType === "ad" || message.referralSourceType === "post";
       const referralCopy = `${message.referralHeadline ?? ""} ${message.referralBody ?? ""}`.trim();
       const isPoleReferral = /\bpole\b/i.test(referralCopy);
+      // NEB-01-05 · saludo con la marca del estudio (antes «Demeter» fijo).
+      const brandName = await loadStudioBrandName(supabase, studioId, runtimeContext.studio.name);
       const reply = isClickToWhatsApp
         ? isPoleReferral
-          ? "¡Hola! 👋 Gracias por escribir a Demeter. Claro, te ayudo a agendar tu primera clase de Pole. Puedes empezar desde cero. ¿Qué día u horario te acomoda?"
-          : "¡Hola! 👋 Gracias por escribir a Demeter. Claro, te ayudo a agendar tu primera clase. ¿Qué disciplina te interesa y qué día u horario te acomoda?"
-        : "¡Hola! Soy Demi, de Demeter Fitness. ¿Buscas información sobre las clases o quieres agendar? Dime qué necesitas y te ayudo.";
+          ? `¡Hola! 👋 Gracias por escribir a ${brandName}. Claro, te ayudo a agendar tu primera clase de Pole. Puedes empezar desde cero. ¿Qué día u horario te acomoda?`
+          : `¡Hola! 👋 Gracias por escribir a ${brandName}. Claro, te ayudo a agendar tu primera clase. ¿Qué disciplina te interesa y qué día u horario te acomoda?`
+        : `¡Hola! Soy Demi, de ${brandName}. ¿Buscas información sobre las clases o quieres agendar? Dime qué necesitas y te ayudo.`;
       const deterministicOutcome = isClickToWhatsApp
         ? "unsupported_ad_lead"
         : "unsupported_message";
@@ -1877,7 +1880,10 @@ export async function POST(request: Request) {
           assistant_name: runtimeContext.config.assistant_name,
           model: runtimeContext.config.model,
           reasoning_effort: runtimeContext.config.reasoning_effort as
-            "none" | "low" | "medium" | "high",
+            | "none"
+            | "low"
+            | "medium"
+            | "high",
           personality_instructions: runtimeContext.config.personality_instructions,
           monthly_budget_usd_micros: runtimeContext.config.monthly_budget_usd_micros,
           conversation_budget_usd_micros: runtimeContext.config.conversation_budget_usd_micros,

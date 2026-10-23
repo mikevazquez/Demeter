@@ -88,7 +88,7 @@ async function browserClient() {
 
 export default function PushNotificationSettings({
   studioId,
-  studioName = "Demeter",
+  studioName = "tu estudio",
   onboardingMode = false,
 }: {
   studioId: string;

@@ -1,4 +1,5 @@
 import { getAdminContext } from "@/lib/auth/admin-context";
+import { loadStudioBrandName } from "@/lib/platform/branding";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 
 import { RewardsShell } from "../RewardsNav";
@@ -20,7 +21,7 @@ type MedalRow = {
   monthly_guest_invites: number;
 };
 
-function benefitCopy(level: MedalRow) {
+function benefitCopy(level: MedalRow, brandName: string) {
   const items: string[] = [
     level.waitlist_priority === 1
       ? "Prioridad básica en lista de espera"
@@ -42,13 +43,14 @@ function benefitCopy(level: MedalRow) {
     items.push("Acceso anticipado a inscripciones y promociones");
   }
   if (level.level_key === "diamond") {
-    items.push("Experiencias premium de Demeter");
+    items.push(`Experiencias premium de ${brandName}`);
   }
   return items;
 }
 
 export default async function AdminMedalsPage() {
   const ctx = await getAdminContext(CAPABILITIES.REWARDS_READ);
+  const brandName = await loadStudioBrandName(ctx.supabase, ctx.studio.id, ctx.studio.name);
   const { data } = await ctx.supabase
     .from("reward_status_level_definitions")
     .select(
@@ -137,7 +139,7 @@ export default async function AdminMedalsPage() {
             </p>
             <h2 className="mt-1 text-xl font-semibold text-white">{level.title}</h2>
             <div className="mt-4 space-y-2">
-              {benefitCopy(level).map((item) => (
+              {benefitCopy(level, brandName).map((item) => (
                 <p key={item} className="text-xs leading-5 text-zinc-400">
                   <span className="mr-2 text-emerald-300">✓</span>
                   {item}

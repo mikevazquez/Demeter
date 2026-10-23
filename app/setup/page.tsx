@@ -18,7 +18,7 @@ export default async function SetupPage({
         <h1 className="auth-title">Cuenta propietaria</h1>
         <p className="auth-copy">
           Crea la primera cuenta de administración. Después de crearla, se asignará manualmente como
-          propietaria de Demeter y esta ruta se retirará.
+          propietaria del estudio y esta ruta se retirará.
         </p>
 
         {created === "1" ? (

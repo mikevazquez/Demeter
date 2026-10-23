@@ -456,8 +456,8 @@ export default function StudentOnboardingForm({
         <p className="eyebrow">5 · HISTORIAL INICIAL</p>
         <h2>¿Ya consumió clases de este paquete?</h2>
         <p>
-          Si aplica, Demeter conserva la adquisición y registra un ajuste auditable de créditos; no
-          inventa asistencias.
+          Si aplica, el estudio conserva la adquisición y registra un ajuste auditable de créditos;
+          no inventa asistencias.
         </p>
         <div className="compact-form">
           <label>

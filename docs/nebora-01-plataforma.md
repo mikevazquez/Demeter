@@ -78,18 +78,46 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
   `service_role`.
 - Si la migración no está aplicada, `entitlements` es `null` y nada se bloquea.
 
+### NEB-01-05 · Sin «Demeter» fijo dentro del estudio (`20261022214000`)
+
+- Nueva columna `studios.brand_name`: es el nombre corto de marca. Para Demeter se llena con
+  «Demeter»; si un estudio no lo tiene, se usa `studios.name`.
+- `lib/platform/branding.ts` (`loadStudioBrandName`) lee ese nombre. Si la columna todavía no
+  existe, usa el nombre del estudio y no falla.
+- Ahora salen de la marca del estudio:
+  - En el portal: la marca del encabezado, avisos, notificaciones Push, la portada, el medallero
+    y la activación de medallas.
+  - En el admin: los beneficios de las medallas.
+  - En Demi: los saludos automáticos.
+- Textos que cambiaron a genéricos («el estudio», «tu estudio»): placeholders y descripciones del
+  admin, y la personalidad base de Demi.
+- **Se queda igual a propósito:**
+  - Cookies y encabezados de sesión (`session-policy.ts`, con contrato V2): renombrarlos cerraría
+    la sesión de todas las personas.
+  - Nombres de plantillas de WhatsApp `demeter_*`: están registradas en Meta para Demeter.
+    Cada estudio tendrá las suyas (NEB-01-23).
+  - Integración de Instagram de Demeter (`meta-inbox`).
+  - Lo que se ve antes de entrar (login, activación, acceso público, la página `/`): depende de
+    saber el estudio por el subdominio (NEB-01-04).
+  - Páginas legales de Demeter (`/privacidad`, `/eliminacion-datos`): las de Nébora van en
+    NEB-01-24.
+  - «Pole Fitness» en `main` solo aparece como ejemplo o placeholder. El catálogo de pole que
+    depende del nombre está en el PR 352 y se generaliza en NEB-01-25.
+- **Orden de despliegue:** aplicar la migración antes de publicar el código. Si no, Demeter
+  mostraría su nombre completo en lugar de «Demeter».
+
 ## Pruebas
 
 - SQL local, nunca contra Sandbox ni producción:
   `PGHOST=… PGPORT=… PGUSER=postgres scripts/neb01-sql-tests.sh`. Corre 18 controles de plataforma
-  y 13 de bloqueos y solicitudes, y deshace todo al terminar.
-- Vitest: `tests/neb01-catalog.test.ts` y `tests/neb01-guards.test.ts`.
+  13 de bloqueos y solicitudes y 3 de marca, y deshace todo al terminar.
+- Vitest: `tests/neb01-catalog.test.ts`, `tests/neb01-guards.test.ts` y `tests/neb01-branding.test.ts`.
 
 ## Para Codex
 
 1. Aplicar en Sandbox, en orden, `20261022210000_neb01_platform_admins_audit` y
    `20261022211000_neb01_plans_modules_entitlements` y `20261022212000_neb01_entitlement_guards` y
-   `20261022213000_neb01_module_activation_requests`.
+   `20261022213000_neb01_module_activation_requests` y `20261022214000_neb01_studio_brand_name`.
 2. Insertar a Mike en `platform_admins` con su cuenta de Sandbox.
 3. Verificar que todos los estudios quedaron en `allaccess/internal` y correr QA.
 

@@ -1,3 +1,4 @@
+import { loadStudioBrandName } from "@/lib/platform/branding";
 import { getStudentStudioContext } from "@/lib/student/portal";
 
 import NotificationChannelPreferences from "../../components/NotificationChannelPreferences";
@@ -12,6 +13,8 @@ export default async function StudentNotificationPreferencesPage() {
   const { supabase, studio, membership } = await getStudentStudioContext();
   const { data } = await supabase.rpc("student_get_notification_channel_preferences");
   const preferences = (data ?? {}) as PreferenceSnapshot;
+  // NEB-01-05 · el estado de Push muestra la marca del estudio (antes «Demeter» fijo).
+  const brandName = await loadStudioBrandName(supabase, membership.studio_id, studio.name);
 
   return (
     <main className="space-y-4 pb-6 sm:space-y-5">
@@ -29,7 +32,7 @@ export default async function StudentNotificationPreferencesPage() {
 
       <NotificationChannelPreferences
         studioId={membership.studio_id}
-        studioName={studio.name}
+        studioName={brandName}
         initialPreferences={{
           push_enabled: preferences.push_enabled ?? false,
           whatsapp_enabled: preferences.whatsapp_enabled ?? true,

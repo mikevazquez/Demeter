@@ -1,6 +1,11 @@
 export type NotificationChannelKey = "inbox" | "push" | "whatsapp" | "email";
 export type NotificationProcessCategory =
-  "reservas" | "paquetes" | "evaluaciones" | "documentos" | "cuenta" | "equipo";
+  | "reservas"
+  | "paquetes"
+  | "evaluaciones"
+  | "documentos"
+  | "cuenta"
+  | "equipo";
 
 export const NOTIFICATION_EMOJI_BY_KEY: Readonly<Record<string, string>> = {
   "reservation-confirmed": "✅",
@@ -226,7 +231,7 @@ export const NOTIFICATION_PROCESSES: readonly NotificationProcessDefinition[] = 
   {
     key: "credit-restored",
     name: "Crédito restaurado",
-    description: "Confirma cuando Demeter devuelve un crédito.",
+    description: "Confirma cuando el estudio devuelve un crédito.",
     category: "paquetes",
     ruleKeys: ["p0.credit.restored"],
     timingLabel: "Al restaurar el crédito · inmediata",
@@ -307,7 +312,7 @@ export const NOTIFICATION_PROCESSES: readonly NotificationProcessDefinition[] = 
   {
     key: "account-created",
     name: "Cuenta creada / bienvenida",
-    description: "Confirma el acceso inicial a Demeter.",
+    description: "Confirma el acceso inicial al portal del estudio.",
     category: "cuenta",
     ruleKeys: ["p0.account.created"],
     timingLabel: "Al crear el acceso · inmediata",
@@ -474,7 +479,7 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     category: "promociones",
     planned: true,
     defaultAudience: "all_eligible",
-    defaultTitle: "📨 Mensaje de Demeter Fitness",
+    defaultTitle: "📨 Mensaje de tu estudio",
     defaultBody: "Tenemos una novedad para ti. Consulta los detalles en Studio Flow.",
   },
 ];

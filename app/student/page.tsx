@@ -15,6 +15,7 @@ import { getStudentHomePackageState } from "@/lib/student/home-package-state";
 import { disciplineImage } from "@/lib/student/discipline-style";
 
 import StudentNoticeDialog from "./components/StudentNoticeDialog";
+import { loadStudioBrandName } from "@/lib/platform/branding";
 
 type RewardLevelView = {
   key?: string;
@@ -152,6 +153,8 @@ export default async function StudentHomePage({
     searchParams,
     getStudentPortalContext(),
   ]);
+  // NEB-01-05 · marca del estudio (en paralelo con el resto de lecturas).
+  const brandNamePromise = loadStudioBrandName(supabase, membership.studio_id, studio.name);
   const [
     rewardStatusResult,
     rewardMembershipResult,
@@ -190,6 +193,7 @@ export default async function StudentHomePage({
       .maybeSingle(),
     supabase.rpc("student_classes_feed"),
   ]);
+  const brandName = await brandNamePromise;
 
   const rewardStatus = (rewardStatusResult.data as RewardStatusSnapshot | null) ?? null;
   const invitationBalance =
@@ -410,7 +414,7 @@ export default async function StudentHomePage({
                   <p>Acceso anticipado · inscripciones y promociones especiales</p>
                 ) : null}
                 {currentLevel.key === "diamond" ? (
-                  <p>Experiencias premium · beneficios exclusivos de Demeter</p>
+                  <p>Experiencias premium · beneficios exclusivos de {brandName}</p>
                 ) : null}
               </div>
             </div>

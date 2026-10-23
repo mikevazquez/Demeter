@@ -181,6 +181,9 @@ function harness(httpStatus = 200, failOutboundPersistence = false) {
     "@/lib/assistant/meta-delivery-status": { extractMetaDeliveryStatuses: () => [] },
     // NEB-01-03 · sin datos de Nébora el webhook no bloquea nada.
     "@/lib/platform/entitlements": { loadStudioEntitlementsService: async () => null },
+    "@/lib/platform/branding": {
+      loadStudioBrandName: async (_client: unknown, _studio: string, fallback: string) => fallback,
+    },
     "@/lib/supabase/service": { createServiceClient: () => supabase },
     "@/lib/assistant/meta-whatsapp-channel": {
       ...channel,

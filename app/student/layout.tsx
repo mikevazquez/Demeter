@@ -4,6 +4,7 @@ import Link from "next/link";
 import { cache } from "react";
 
 import { signOut } from "@/app/auth/actions";
+import { loadStudioBrandName } from "@/lib/platform/branding";
 import { loadStudioEntitlements, studioHasModule } from "@/lib/platform/entitlements";
 import {
   getStudentAccessContext,
@@ -103,6 +104,8 @@ export default async function StudentLayout({ children }: { children: React.Reac
   const access = await getStudentAccessContext();
   const entitlements = await loadStudioEntitlements(supabase, access.membership.studio_id);
   const hiddenNavHrefs = studioHasModule(entitlements, "recompensas") ? [] : ["/student/retos"];
+  // NEB-01-05 · marca del estudio en lugar de «DEMETER» fijo.
+  const brandName = await loadStudioBrandName(supabase, access.membership.studio_id, studio.name);
   const query = pwaBrandQuery(brand);
   const { count: unreadNotificationCount } = await supabase
     .from("app_notifications")
@@ -122,7 +125,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
       <header className="sendero-topbar">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <Link href="/student" className="min-w-0">
-            <p className="sendero-brand">DEMETER</p>
+            <p className="sendero-brand">{brandName.toUpperCase()}</p>
             <p className="truncate text-sm font-semibold text-white">{studio.name}</p>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
