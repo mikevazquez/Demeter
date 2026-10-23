@@ -1,5 +1,7 @@
 "use server";
 
+import { BIRTHDAY_META_BODY } from "@/supabase/functions/_shared/birthday-notification";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -26,7 +28,9 @@ import {
 function processUrl(processKey: string, params: Record<string, string> = {}) {
   const search = new URLSearchParams(params);
   const suffix = search.toString() ? `?${search.toString()}` : "";
-  return `/admin/notificaciones/${encodeURIComponent(processKey)}${suffix}`;
+  return processKey === "birthday"
+    ? `/admin/notificaciones/marketing/birthday${suffix}`
+    : `/admin/notificaciones/${encodeURIComponent(processKey)}${suffix}`;
 }
 
 function listUrl(tab: string, params: Record<string, string> = {}) {
@@ -43,6 +47,11 @@ function requiredProcess(formData: FormData) {
   return process;
 }
 
+function requiredTemplateTarget(formData: FormData) {
+  if (formData.get("marketing_key") === "birthday") return { key: "birthday" };
+  return requiredProcess(formData);
+}
+
 function parseChannel(value: FormDataEntryValue | null): NotificationChannelKey {
   const channel = String(value ?? "").trim();
   if (channel === "inbox" || channel === "push" || channel === "whatsapp" || channel === "email")
@@ -52,7 +61,7 @@ function parseChannel(value: FormDataEntryValue | null): NotificationChannelKey 
 
 function refresh(processKey?: string) {
   revalidatePath("/admin/notificaciones");
-  if (processKey) revalidatePath(`/admin/notificaciones/${processKey}`);
+  if (processKey) revalidatePath(processUrl(processKey));
 }
 
 export async function toggleNotificationProcessAction(formData: FormData) {
@@ -174,13 +183,16 @@ export async function toggleNotificationChannelAction(formData: FormData) {
 export async function submitNotificationWhatsAppTemplateAction(formData: FormData) {
   let process;
   try {
-    process = requiredProcess(formData);
+    process = requiredTemplateTarget(formData);
   } catch (error) {
     const message = error instanceof Error ? error.message : "notification_process_unavailable";
     redirect(listUrl("procesos", { error: message }));
   }
 
   const templateKey = String(formData.get("template_key") ?? "").trim();
+  if (process.key === "birthday" && templateKey !== "birthday") {
+    redirect(processUrl(process.key, { error: "notification_whatsapp_template_unsupported" }));
+  }
   const name = String(formData.get("meta_template_name") ?? "")
     .trim()
     .toLowerCase();
@@ -197,6 +209,19 @@ export async function submitNotificationWhatsAppTemplateAction(formData: FormDat
   }
 
   const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  if (process.key === "birthday" && (category !== "MARKETING" || body !== BIRTHDAY_META_BODY)) {
+    redirect(processUrl(process.key, { error: "notification_whatsapp_template_invalid" }));
+  }
+  if (process.key === "birthday") {
+    const diagnostics = await getMetaWhatsAppAdminDiagnostics(studio.id);
+    if (
+      diagnostics.templates.some(
+        (template) => template.name === name && template.language === languageCode,
+      )
+    ) {
+      redirect(processUrl(process.key, { saved: "whatsapp_template_exists" }));
+    }
+  }
   try {
     await submitMetaWhatsAppTemplate({
       studioId: studio.id,
@@ -205,6 +230,9 @@ export async function submitNotificationWhatsAppTemplateAction(formData: FormDat
       category,
       body,
       expectedVariables: META_WHATSAPP_TEMPLATE_PARAMETERS[templateKey].length,
+      ...(process.key === "birthday"
+        ? { exampleValues: ["Camila", "Demeter Fitness Studio"] }
+        : {}),
     });
   } catch (error) {
     const code = error instanceof Error ? error.message : "meta_template_submission_failed";
@@ -224,13 +252,16 @@ export async function submitNotificationWhatsAppTemplateAction(formData: FormDat
 export async function mapApprovedNotificationWhatsAppTemplateAction(formData: FormData) {
   let process;
   try {
-    process = requiredProcess(formData);
+    process = requiredTemplateTarget(formData);
   } catch (error) {
     const message = error instanceof Error ? error.message : "notification_process_unavailable";
     redirect(listUrl("procesos", { error: message }));
   }
 
   const templateKey = String(formData.get("template_key") ?? "").trim();
+  if (process.key === "birthday" && templateKey !== "birthday") {
+    redirect(processUrl(process.key, { error: "notification_whatsapp_template_unsupported" }));
+  }
   const templateName = String(formData.get("meta_template_name") ?? "").trim();
   const languageCode = String(formData.get("language_code") ?? "").trim();
   if (!isMetaWhatsAppTemplateKey(templateKey) || !/^[a-z0-9_]+$/.test(templateName)) {
@@ -244,6 +275,7 @@ export async function mapApprovedNotificationWhatsAppTemplateAction(formData: Fo
       template.name === templateName &&
       template.language === languageCode &&
       template.status === "APPROVED" &&
+      (process.key !== "birthday" || template.category === "MARKETING") &&
       template.variableCount === META_WHATSAPP_TEMPLATE_PARAMETERS[templateKey].length,
   );
   if (!diagnostics.connected || languageCode !== diagnostics.templateLanguage || !approved) {
@@ -414,8 +446,20 @@ export async function savePackageRecoveryDelayAction(formData: FormData) {
 }
 
 export async function updatePackageRecoveryRuleAction(formData: FormData) {
+  return updateEventDrivenRule(formData, false);
+}
+
+export async function updateBirthdayNotificationAction(formData: FormData) {
+  return updateEventDrivenRule(formData, true);
+}
+
+async function updateEventDrivenRule(formData: FormData, birthday: boolean) {
   const ruleKey = String(formData.get("rule_key") ?? "").trim();
-  const marketingKey = PACKAGE_RECOVERY_RULES.get(ruleKey);
+  const marketingKey = birthday
+    ? ruleKey === "marketing.birthday"
+      ? "birthday"
+      : null
+    : PACKAGE_RECOVERY_RULES.get(ruleKey);
   const operation = String(formData.get("operation") ?? "").trim();
   if (!marketingKey || !["enabled", "channel"].includes(operation)) {
     redirect(listUrl("marketing", { error: "package_recovery_rule_invalid" }));
@@ -449,7 +493,9 @@ export async function updatePackageRecoveryRuleAction(formData: FormData) {
   const template = templateName
     ? diagnostics?.templates.find(
         (candidate) =>
-          candidate.name === templateName && candidate.language === diagnostics?.templateLanguage,
+          candidate.name === templateName &&
+          candidate.language === diagnostics?.templateLanguage &&
+          (!birthday || candidate.category === "MARKETING"),
       )
     : null;
   const readiness = getChannelReadiness({
@@ -472,11 +518,22 @@ export async function updatePackageRecoveryRuleAction(formData: FormData) {
   });
 
   if (operation === "channel") {
-    if (!(channel === "push" || channel === "whatsapp" || channel === "email")) {
+    if (
+      !(channel === "push" || channel === "whatsapp" || channel === "email") ||
+      (birthday && channel !== "whatsapp")
+    ) {
       redirect(marketingUrl(marketingKey, { error: "notification_channel_invalid" }));
     }
     if (enabled && !readiness[channel].ready) {
       redirect(marketingUrl(marketingKey, { error: `channel_not_ready_${channel}` }));
+    }
+    if (birthday && !enabled) {
+      const { error } = await supabase.rpc("admin_set_notification_rules_enabled", {
+        p_studio_id: studio.id,
+        p_rule_keys: [ruleKey],
+        p_enabled: false,
+      });
+      if (error) redirect(marketingUrl(marketingKey, { error: error.message }));
     }
     const { error } = await supabase.rpc("admin_set_notification_rules_channel", {
       p_studio_id: studio.id,
@@ -495,6 +552,9 @@ export async function updatePackageRecoveryRuleAction(formData: FormData) {
             : "",
         )
         .filter((item) => item && item !== "inbox");
+      if (birthday && !selected.includes("whatsapp")) {
+        redirect(marketingUrl(marketingKey, { error: "birthday_whatsapp_required" }));
+      }
       if (selected.some((item) => item === "push" && !readiness.push.ready)) {
         redirect(marketingUrl(marketingKey, { error: "channel_not_ready_push" }));
       }

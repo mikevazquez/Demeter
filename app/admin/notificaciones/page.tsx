@@ -1,3 +1,4 @@
+import { GiftIcon } from "@/app/admin/hoy/GiftIcon";
 import Link from "next/link";
 
 import { getAdminContext } from "@/lib/auth/admin-context";
@@ -372,8 +373,10 @@ export default async function NotificationsPage({
             {MARKETING_COMMUNICATIONS.map((item) => {
               const codes = item.automationCodes ?? [];
               const rows = automationRows.filter((row) => codes.includes(row.catalog_code));
-              const configured = rows.length > 0;
-              const active = rows.some((row) => row.status === "active");
+              const birthdayRule =
+                item.key === "birthday" ? rulesByKey.get("marketing.birthday") : null;
+              const configured = Boolean(birthdayRule) || rows.length > 0;
+              const active = birthdayRule?.enabled ?? rows.some((row) => row.status === "active");
 
               const draft = marketingConfigByKey.get(item.key);
               return (
@@ -383,17 +386,45 @@ export default async function NotificationsPage({
                   className="notification-process-row marketing-row"
                 >
                   <span className="notification-process-icon marketing" aria-hidden="true">
-                    {NOTIFICATION_EMOJI_BY_KEY[item.key] ?? "✨"}
+                    {item.key === "birthday" ? (
+                      <GiftIcon size={24} />
+                    ) : (
+                      (NOTIFICATION_EMOJI_BY_KEY[item.key] ?? "✨")
+                    )}
                   </span>
                   <span className="notification-process-copy">
                     <strong>{item.name}</strong>
                     <small>{item.description}</small>
                   </span>
                   <span className="notification-channel-chips">
-                    <span className={(draft?.push_enabled ?? active) ? "is-on" : undefined}>
+                    <span
+                      className={
+                        (
+                          birthdayRule
+                            ? birthdayRule.channels.some(
+                                (channel) => channel.channel_key === "push",
+                              )
+                            : (draft?.push_enabled ?? active)
+                        )
+                          ? "is-on"
+                          : undefined
+                      }
+                    >
                       Push
                     </span>
-                    <span className={(draft?.whatsapp_enabled ?? active) ? "is-on" : undefined}>
+                    <span
+                      className={
+                        (
+                          birthdayRule
+                            ? birthdayRule.channels.some(
+                                (channel) => channel.channel_key === "whatsapp",
+                              )
+                            : (draft?.whatsapp_enabled ?? active)
+                        )
+                          ? "is-on"
+                          : undefined
+                      }
+                    >
                       WhatsApp
                     </span>
                     <span className={draft?.email_enabled ? "is-on" : undefined}>Email</span>

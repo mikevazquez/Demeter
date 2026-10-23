@@ -1,3 +1,5 @@
+import { GiftIcon } from "@/app/admin/hoy/GiftIcon";
+import { BirthdayNotificationEditor } from "../BirthdayNotificationEditor";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -78,7 +80,7 @@ export default async function MarketingDetailPage({
   searchParams,
 }: {
   params: Promise<{ marketingKey: string }>;
-  searchParams: Promise<{ error?: string; saved?: string }>;
+  searchParams: Promise<{ error?: string; saved?: string; preview_date?: string }>;
 }) {
   const [{ marketingKey }, query] = await Promise.all([params, searchParams]);
   const item = getMarketingCommunication(marketingKey);
@@ -140,7 +142,8 @@ export default async function MarketingDetailPage({
     ? metaDiagnostics.templates.find(
         (template) =>
           template.name === whatsappTemplateName &&
-          template.language === metaDiagnostics.templateLanguage,
+          template.language === metaDiagnostics.templateLanguage &&
+          (item.key !== "birthday" || template.category === "MARKETING"),
       )
     : null;
   const readiness = getChannelReadiness({
@@ -208,6 +211,12 @@ export default async function MarketingDetailPage({
     channel_not_ready_whatsapp:
       "No se puede seleccionar WhatsApp: conecta Meta y asigna una plantilla aprobada compatible.",
     channel_not_ready_email: "No se puede seleccionar Email: falta configurar un proveedor.",
+    birthday_whatsapp_required: "Selecciona WhatsApp antes de activar el disparador.",
+    notification_whatsapp_template_not_approved:
+      "Asigna una plantilla de Marketing aprobada con las dos variables de cumpleaños.",
+    notification_whatsapp_template_invalid: "Usa el texto de cumpleaños y la categoría Marketing.",
+    meta_whatsapp_not_configured:
+      "Conecta Meta WhatsApp en Integraciones antes de registrar la plantilla.",
     package_recovery_delay_out_of_range: "El tiempo debe estar entre 1 y 90 días.",
     package_recovery_rules_not_seeded: "Las reglas de recuperación aún no están instaladas.",
     package_recovery_rule_not_seeded: "Esta regla aún no está instalada en el estudio.",
@@ -225,7 +234,11 @@ export default async function MarketingDetailPage({
         <Link href="/admin/notificaciones?tab=marketing">← Marketing</Link>
         <div className="notification-detail-title-row">
           <span className="notification-detail-icon" aria-hidden="true">
-            {NOTIFICATION_EMOJI_BY_KEY[item.key] ?? "✨"}
+            {item.key === "birthday" ? (
+              <GiftIcon size={24} />
+            ) : (
+              (NOTIFICATION_EMOJI_BY_KEY[item.key] ?? "✨")
+            )}
           </span>
           <div>
             <div className="notification-title-with-status">
@@ -247,7 +260,19 @@ export default async function MarketingDetailPage({
         </div>
       ) : null}
 
-      {item.eventDrivenRuleKeys?.length ? (
+      {item.key === "birthday" ? (
+        <BirthdayNotificationEditor
+          supabase={ctx.supabase}
+          studioId={ctx.studio.id}
+          studioName={ctx.studio.name}
+          rule={eventRules[0]}
+          diagnostics={metaDiagnostics}
+          readiness={readiness.whatsapp}
+          canManage={canManage}
+          canManageTemplates={ctx.can(CAPABILITIES.SETTINGS_WRITE)}
+          previewDate={query.preview_date}
+        />
+      ) : item.eventDrivenRuleKeys?.length ? (
         <section className="notification-detail-card package-recovery-runtime">
           <div className="notification-detail-card-heading">
             <div>

@@ -1,3 +1,4 @@
+import { birthdayMessage } from "../_shared/birthday-notification.ts";
 import { withSupabase } from "npm:@supabase/server@1.7.0";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.116.0";
 import { sendPushNotification, WebPushError } from "npm:@mmmike/web-push@1.3.0/send";
@@ -275,6 +276,15 @@ function renderMessageContent(delivery: DeliveryRow): RenderedMessage {
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: overrideProviderTemplate ?? "waitlist_promoted",
+      };
+
+    case "birthday":
+      return {
+        title: "¡Feliz cumpleaños!",
+        body: birthdayMessage(safeText(variables.recipient_name) ?? "Alumna", studioName),
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: "birthday",
       };
 
     case "student_welcome":
@@ -1227,6 +1237,37 @@ async function processDelivery(
         channel: delivery.channel_key,
         outcome: "skipped",
       };
+    }
+
+    if (delivery.template_key === "birthday") {
+      const { data: eligible, error: eligibilityError } = await adminClient.rpc(
+        "system_birthday_notification_eligible",
+        {
+          p_studio_id: delivery.studio_id,
+          p_student_id: delivery.recipient_entity_id,
+          p_birthday_on: safeText(delivery.template_variables?.birthday_on),
+        },
+      );
+      if (eligibilityError) throw new Error("birthday_delivery_eligibility_failed");
+      if (eligible !== true) {
+        const { data: skipped, error: skipError } = await adminClient.rpc(
+          "system_mark_notification_delivery_attempt_skipped",
+          {
+            p_attempt_id: attemptId,
+            p_reason_code: "birthday_no_longer_due",
+            p_reason_safe:
+              "El cumpleaños ya no corresponde al día o la alumna dejó de ser elegible.",
+            p_response_snapshot: { eligibility: "birthday_no_longer_due" },
+          },
+        );
+        if (skipError || skipped !== true) throw new Error("birthday_delivery_skip_failed");
+        return {
+          ok: true,
+          deliveryId: delivery.id,
+          channel: delivery.channel_key,
+          outcome: "skipped",
+        };
+      }
     }
 
     const message = renderMessage(delivery);
