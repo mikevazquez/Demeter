@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { SEVERITY_LABEL } from "@/lib/platform/config-issues";
 import { formatMinorMxn } from "@/lib/platform/console";
 import { loadSupportTab, type SupportState } from "@/lib/platform/support";
 
@@ -101,6 +102,7 @@ export async function SupportTab({
     const d = result.diagnostics;
     if (!d) return <p className="neb-muted">Sin datos.</p>;
     return (
+      <>
       <section className="neb-kpis">
         <article className="neb-kpi">
           <span>Clases próximos 7 días</span>
@@ -122,6 +124,23 @@ export async function SupportTab({
           <small>{d.productsInactive} inactivos</small>
         </article>
       </section>
+      <h2 className="neb-subtitle">Revisión de configuración</h2>
+      {d.issues.length ? (
+        <ol className="neb-audit">
+          {d.issues.map((issue) => (
+            <li key={issue.code}>
+              <time>{SEVERITY_LABEL[issue.severity]}</time>
+              <span>
+                {issue.title}
+                {issue.count > 1 ? ` (${issue.count})` : ""} · {issue.detail}
+              </span>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="neb-muted">Sin pendientes de configuración.</p>
+      )}
+      </>
     );
   }
 

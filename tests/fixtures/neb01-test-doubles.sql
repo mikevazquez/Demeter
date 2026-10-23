@@ -467,3 +467,22 @@ begin
  return jsonb_build_object('ok',true,'steps',array_length(delays,1));
 end; $function$;
 
+
+-- NEB-01-17/18 · stand-ins for the support reads and the configuration review.
+create table if not exists public.product_templates (
+  id uuid primary key default gen_random_uuid(), studio_id uuid not null references public.studios(id),
+  name text not null, product_type text not null default 'package', price_minor integer not null default 0,
+  credit_limit integer, validity_days integer, unlimited boolean not null default false,
+  active boolean not null default true, online_purchasable boolean not null default false,
+  updated_at timestamptz not null default now());
+alter table public.class_sessions add column if not exists ends_at timestamptz,
+  add column if not exists capacity integer not null default 10,
+  add column if not exists instructor_id uuid, add column if not exists coach_user_id uuid;
+alter table public.class_templates add column if not exists active boolean not null default true,
+  add column if not exists workshop_offer_id uuid, add column if not exists drop_in_price_minor integer;
+alter table public.students add column if not exists person_id uuid,
+  add column if not exists lifecycle_status text not null default 'active';
+create table if not exists public.studio_payment_methods (studio_id uuid not null, code text not null, active boolean not null default true);
+create table if not exists public.profile_field_definitions (id uuid primary key default gen_random_uuid(), studio_id uuid not null, entity_type text not null, key text not null, active boolean not null default true);
+create table if not exists public.profile_field_values (id uuid primary key default gen_random_uuid(), studio_id uuid not null, person_id uuid not null, definition_id uuid not null, value jsonb);
+alter table public.sales add column if not exists payment_due_on date;

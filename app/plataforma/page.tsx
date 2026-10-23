@@ -7,14 +7,19 @@ import {
   loadPlatformOverview,
   loadPlatformStudios,
 } from "@/lib/platform/console";
+import { parseConfigIssueCounts } from "@/lib/platform/config-issues";
 import { createClient } from "@/lib/supabase/server";
 
 // NEB-01-10 · Inicio: cuánto entra al mes, cuántos estudios y qué necesita atención.
 export default async function PlataformaInicioPage() {
   const supabase = await createClient("admin");
-  const [overview, studios] = await Promise.all([
+  const [overview, studios, issueCounts] = await Promise.all([
     loadPlatformOverview(supabase),
     loadPlatformStudios(supabase),
+    // NEB-01-18 · errores de configuración por estudio (vacío si falta la migración).
+    supabase
+      .rpc("platform_config_issue_counts")
+      .then(({ data, error }) => (error ? {} : parseConfigIssueCounts(data))),
   ]);
 
   if (!overview || !studios) {
@@ -100,6 +105,12 @@ export default async function PlataformaInicioPage() {
                       {studio.planLabel}
                       {studio.foundingMonth ? ` · mes ${studio.foundingMonth} de 12` : ""}
                     </span>
+                    {issueCounts[studio.id]?.errors ? (
+                      <span className="neb-pill is-grace">
+                        {issueCounts[studio.id].errors} error
+                        {issueCounts[studio.id].errors === 1 ? "" : "es"} de configuración
+                      </span>
+                    ) : null}
                     {studio.pendingRequests > 0 ? (
                       <span className="neb-pill is-accent">
                         {studio.pendingRequests} pedido{studio.pendingRequests === 1 ? "" : "s"}

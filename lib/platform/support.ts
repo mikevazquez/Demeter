@@ -2,6 +2,8 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { parseConfigIssues, type ConfigIssue } from "@/lib/platform/config-issues";
+
 // NEB-01-17 · Modo soporte de la consola (migración 20261023161000_neb01_support_sessions).
 // Si la migración no está aplicada, las lecturas regresan null y la consola no muestra el modo.
 
@@ -38,6 +40,7 @@ export type SupportDiagnostics = {
   salesWithDueDate: number;
   productsActive: number;
   productsInactive: number;
+  issues: ConfigIssue[];
 };
 
 export type StudioSupportAccess = {
@@ -100,6 +103,7 @@ export function parseSupportDiagnostics(raw: unknown): SupportDiagnostics | null
     salesWithDueDate: num(data.sales_with_due_date),
     productsActive: num(data.products_active),
     productsInactive: num(data.products_inactive),
+    issues: parseConfigIssues(data.issues),
   };
 }
 

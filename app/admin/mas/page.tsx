@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES, type Capability } from "@/lib/auth/capabilities";
 import { modulePriceLabel, type PlatformModuleKey } from "@/lib/platform/catalog";
+import { configIssuesSummary, parseConfigIssues } from "@/lib/platform/config-issues";
 
 type MoreItem = {
   title: string;
@@ -117,6 +118,12 @@ const items: MoreItem[] = [
     ownerOnly: true,
   },
   {
+    title: "Revisión de configuración",
+    description: "Lo que conviene corregir para vender y reservar sin trabas.",
+    href: "/admin/configuracion/revision",
+    capability: CAPABILITIES.SETTINGS_WRITE,
+  },
+  {
     title: "Plan y suscripción",
     description: "Estado del plan, periodo contratado y facturación de Studio Flow.",
     href: "/admin/suscripcion",
@@ -130,6 +137,12 @@ export default async function MorePage() {
     if (item.ownerOnly) return ctx.membership.role === "owner";
     return item.capability ? ctx.can(item.capability) : false;
   });
+  // NEB-01-18 · contador de la revisión de configuración.
+  const reviewSummary = ctx.can(CAPABILITIES.SETTINGS_WRITE)
+    ? await ctx.supabase
+        .rpc("studio_config_issues", { p_studio: ctx.studio.id })
+        .then(({ data, error }) => (error ? null : configIssuesSummary(parseConfigIssues(data))))
+    : null;
 
   return (
     <main className="dashboard-shell admin-module-page more-page admin-ux04-secondary">
@@ -152,7 +165,9 @@ export default async function MorePage() {
                 <small>
                   {item.requiresModule && !ctx.hasModule(item.requiresModule)
                     ? "Bloqueado · " + modulePriceLabel(item.requiresModule)
-                    : item.description}
+                    : item.href === "/admin/configuracion/revision" && reviewSummary
+                      ? reviewSummary
+                      : item.description}
                 </small>
               </span>
               <span className="module-chevron" aria-hidden="true">
