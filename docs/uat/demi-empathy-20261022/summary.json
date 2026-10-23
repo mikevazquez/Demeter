@@ -1,0 +1,62 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "runtimeSha": "8812da6bf89b2dc6e5b1b2fd6d8828b52b8f8ad1",
+  "blockStatus": "TECHNICALLY_VERIFIED_FUNCTIONAL_REVIEW_PENDING",
+  "integralUatApproved": false,
+  "functionalApprovalByMike": false,
+  "release": "No listo",
+  "currentBank": {
+    "file": "bank-v3.json",
+    "conversations": 5,
+    "turns": 15,
+    "cases": {
+      "E01": "TECHNICAL_PASS",
+      "E02": "TECHNICAL_PASS",
+      "E03": "TECHNICAL_PASS_RECEPTION_BOUNDARY_STYLE_REQUIRES_FUNCTIONAL_REVIEW",
+      "E04": "TECHNICAL_PASS_SIMULATION_LIMITS",
+      "E05": "TECHNICAL_PASS"
+    }
+  },
+  "previousBanks": [
+    {
+      "file": "bank.json",
+      "sha": "971c2e0cc852f746cd9ab2f68839b2a5a72dbd32",
+      "status": "FAILED",
+      "failures": ["E02 premature walk-in after explanation question"],
+      "partial": ["E04 repeated rule/confirmation"]
+    },
+    {
+      "file": "bank-v2.json",
+      "sha": "8c54cf162524aa78b7fda691fec8ef210e3d70c9",
+      "status": "PARTIAL",
+      "partial": [
+        "E03 cold wording",
+        "E04 repeated confirmation and waitlist described as notice only"
+      ]
+    }
+  ],
+  "localVerification": {
+    "testsPassed": 120,
+    "files": 4,
+    "types": "PASS",
+    "format": "PASS",
+    "lintErrors": 0,
+    "preexistingWarnings": 1
+  },
+  "ci": {
+    "id": 39875514146,
+    "status": "SUCCESS",
+    "supervisorId": 39875514170,
+    "supervisorStatus": "SUCCESS"
+  },
+  "notReexecuted": [
+    "F07 package creation confirmation with due date",
+    "F04 eligibility timeout investigation",
+    "E4 unsupported first-class payment simulation",
+    "P01 latency comparison",
+    "Full operational matrix and Mike functional acceptance"
+  ],
+  "pilot": "BLOCKED_INACTIVE",
+  "productionTouched": false,
+  "channelsOrAdaptersChanged": false
+}

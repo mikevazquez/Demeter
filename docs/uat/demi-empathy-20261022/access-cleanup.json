@@ -1,0 +1,12 @@
+{
+  "environment": "hedouonyhynuvwbckdlg",
+  "userId": "336a7b3d-b107-4f19-bfec-d3531b585f98",
+  "oldBrowserSessionDenied": true,
+  "browserPath": "/login/studio",
+  "loginHttpStatus": 400,
+  "loginErrorCode": "user_banned",
+  "passwordLoginDenied": true,
+  "previewLinksRevoked": true,
+  "privateCredentialsRemoved": true,
+  "privateFilesRemoved": 14
+}
