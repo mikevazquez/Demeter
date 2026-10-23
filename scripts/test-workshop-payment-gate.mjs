@@ -2137,6 +2137,21 @@ try {
     assert.equal(status.capacity_held, false);
     assert.equal(status.reservation_confirmed, false);
   });
+  // Exercise the exact release worker; pg_cron registration requires the hosted extension.
+  query(
+    source("supabase/migrations/20261023191123_workshop_provisional_expiry_scheduler.sql").split(
+      "select cron.schedule(",
+    )[0],
+  );
+  await test("expiry worker denies client roles and invalid batch sizes", () => {
+    for (const role of ["anon", "authenticated", "service_role"])
+      denied(
+        asRole(role, admin, "select private.workshop_expire_due_holds_cron(100)"),
+        "permission denied",
+      );
+    for (const limit of ["null", "0", "201"])
+      denied(`select private.workshop_expire_due_holds_cron(${limit})`, "invalid_batch_limit");
+  });
   await test("rejected or expired receipt cannot recover as confirmed and context reads change no financial records", () => {
     for (const decision of ["reject", "expire"]) {
       const w = offer({ deposit: true }),
@@ -2159,6 +2174,16 @@ try {
       const before = query(
         "select jsonb_build_object('payments',(select count(*) from public.payments),'purchases',(select count(*) from public.workshop_purchases),'reservations',(select count(*) from public.reservations))",
       );
+      if (decision === "expire") {
+        assert.ok(Number(query("select private.workshop_expire_due_holds_cron(100)")) >= 1);
+        assert.equal(
+          query(
+            `select state from public.workshop_provisional_holds where id=${sqlString(held.hold_id)}`,
+          ),
+          "expired",
+        );
+        assert.equal(query("select private.workshop_expire_due_holds_cron(100)"), "0");
+      }
       for (let i = 0; i < 2; i++) {
         const status = service(workshopContextSql(c)).current_purchase;
         assert.equal(status.status, decision === "reject" ? "rejected" : "expired");
