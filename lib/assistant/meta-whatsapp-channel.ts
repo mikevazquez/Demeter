@@ -426,6 +426,7 @@ export async function sendMetaWhatsAppText(input: {
   recipientWaId: string;
   text: string;
   fetcher?: typeof fetch;
+  singleAttempt?: boolean;
 }): Promise<MetaTextDeliveryResult> {
   const captured = await captureDemiUatText(input);
   if (captured) return captured;
@@ -489,7 +490,10 @@ export async function sendMetaWhatsAppText(input: {
         const retryable = retryableHttpStatus(response.status);
         // A 5xx can arrive after delivery. Only explicit rate limiting is retried inline.
         const canRetryInline =
-          retryable && response.status === 429 && attempt < retryDelaysMs.length;
+          input.singleAttempt !== true &&
+          retryable &&
+          response.status === 429 &&
+          attempt < retryDelaysMs.length;
 
         if (canRetryInline) {
           await new Promise<void>((resolve) => setTimeout(resolve, retryDelaysMs[attempt]));

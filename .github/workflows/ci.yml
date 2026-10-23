@@ -117,3 +117,20 @@ jobs:
           path: ${{ runner.temp }}/governance2-recovery-evidence
           if-no-files-found: error
           retention-days: 30
+
+  demi-turn-coordination:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Turn coordination (isolated PostgreSQL, simulated Meta)
+        env:
+          DEMI378_PG_TESTS: "1"
+        run: npx vitest run tests/demi-turn-coordination-postgres-378.test.ts --maxWorkers=1

@@ -1,10 +1,11 @@
+import { handleDemiWorkshopReceipt } from "@/lib/assistant/workshop-purchase";
+import { DemiTurnCoordinator, DemiCoordinationError } from "@/lib/assistant/demi-text-send-claim";
 import { demiDeliveryRetryPolicy } from "@/lib/assistant/delivery-retry-policy";
 import { runAssistantTurn } from "@/lib/assistant/orchestrator";
 import { loadDemiRuntimeConfig } from "@/lib/assistant/runtime-config";
 import { getStudentPackageStatus } from "@/lib/assistant/read-tools";
 import { loadDemiSticker } from "@/lib/assistant/sticker-media";
 import { transcribeDemiAudio } from "@/lib/assistant/audio-transcription";
-import { handleDemiWorkshopReceipt } from "@/lib/assistant/workshop-purchase";
 import { handleDemiGroupReceipt } from "@/lib/assistant/group-booking";
 import { handleDemiEnrollmentReceipt } from "@/lib/assistant/enrollment-payment";
 import { readTransferReceipt, rejectedTransferReceiptReply } from "@/lib/assistant/receipt-reader";
@@ -34,10 +35,11 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 const META_MEDIA_MESSAGE_TYPES = new Set(["image", "document", "audio", "video", "sticker"]);
 // DEMI-BATCH-01: quiet window before answering a text, so consecutive texts become one turn.
 const META_WHATSAPP_BURST_QUIET_MS = (() => {
-  const configured = Number(process.env.DEMI_META_BURST_QUIET_MS ?? "2500");
+  const fallback = process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS === "true" ? 4000 : 2500;
+  const configured = Number(process.env.DEMI_META_BURST_QUIET_MS ?? fallback);
   return Number.isFinite(configured) && configured >= 0 && configured <= 10_000
     ? Math.round(configured)
-    : 2500;
+    : fallback;
 })();
 
 type JsonObject = Record<string, unknown>;
@@ -77,14 +79,20 @@ async function markEvent(
   eventId: string,
   patch: JsonObject,
 ) {
-  await supabase
+  const atomicPatch =
+    process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS === "true" && isObject(patch.processing_result)
+      ? { ...patch, processing_result: { ...patch.processing_result, atomic_coordination: true } }
+      : patch;
+  const result = await supabase
     .from("assistant_whatsapp_events")
     .update({
-      ...patch,
+      ...atomicPatch,
       updated_at: new Date().toISOString(),
     })
     .eq("id", eventId)
     .eq("studio_id", studioId);
+  if (process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS === "true" && result.error)
+    throw new DemiCoordinationError("event_audit_unavailable", true);
 }
 
 // Only a TEXT can be superseded, and only by a newer TEXT of the same contact and studio.
@@ -95,7 +103,13 @@ async function findNewerConversationText(input: {
   eventId: string;
   eventReceivedAt: string;
   fromWaId: string;
+  coordinator?: DemiTurnCoordinator;
 }) {
+  if (input.coordinator) {
+    return (await input.coordinator.current())
+      ? null
+      : { id: "", provider_event_id: null, received_at: "" };
+  }
   if (!input.eventReceivedAt) return null;
   const { data, error } = await input.supabase
     .from("assistant_whatsapp_events")
@@ -120,7 +134,7 @@ async function markBurstSuperseded(input: {
   eventId: string;
   providerMessageId: string;
   newerProviderMessageId: string | null;
-  phase: "same_payload" | "debounce" | "before_action" | "post_assistant";
+  phase: "same_payload" | "debounce" | "before_action" | "post_assistant" | "pre_delivery";
 }) {
   const batchId = sha256Hex(
     `${input.studioId}:${input.providerMessageId}:${input.newerProviderMessageId ?? "newer"}`,
@@ -167,6 +181,9 @@ async function captureEvent(input: {
     provider_timestamp: providerTimestamp(input.timestamp),
     payload_fingerprint: sha256Hex(`${input.rawBody}\nmessage:${input.providerMessageId}`),
     processing_status: "captured",
+    ...(process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS === "true"
+      ? { coordination_text: input.text }
+      : {}),
   };
 
   const { data, error } = await input.supabase
@@ -1018,7 +1035,7 @@ async function persistAcceptedReply(input: {
     throw new Error("assistant_reply_persist_failed");
   }
 
-  await input.supabase.from("assistant_whatsapp_deliveries").insert({
+  const audit = await input.supabase.from("assistant_whatsapp_deliveries").insert({
     studio_id: input.studioId,
     event_id: input.eventId,
     conversation_id: input.conversationId,
@@ -1032,6 +1049,8 @@ async function persistAcceptedReply(input: {
     http_status: input.httpStatus,
     response_snapshot: input.responseSnapshot,
   });
+  if (process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS === "true" && audit.error)
+    throw new Error("accepted_delivery_audit_unavailable");
 
   await input.supabase
     .from("assistant_conversations")
@@ -1100,6 +1119,10 @@ async function recordFailedDelivery(input: {
     attempt: (count ?? 0) + 1,
     limit: settings?.delivery_failure_limit ?? 3,
   });
+  if (process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS === "true") {
+    policy.retryAllowed = false;
+    policy.requiresReview = true;
+  }
   if (policy.requiresReview)
     await input.supabase.rpc("assistant_create_handoff", {
       target_studio_id: input.studioId,
@@ -1361,136 +1384,976 @@ export async function POST(request: Request) {
       continue;
     }
 
-    if (["processed", "ignored", "human_review"].includes(event.processing_status)) {
-      outcomes.push({
-        provider_message_id: message.providerMessageId,
-        outcome: "duplicate_already_handled",
-      });
-      continue;
-    }
-
-    if (event.processing_status === "processing") {
-      outcomes.push({
-        provider_message_id: message.providerMessageId,
-        outcome: "duplicate_in_progress",
-      });
-      continue;
-    }
-
-    const claimed = await supabase
-      .from("assistant_whatsapp_events")
-      .update({
-        processing_status: "processing",
-        attempt_count: Number(event.attempt_count ?? 0) + 1,
-        last_error_code: null,
-      })
-      .eq("studio_id", studioId)
-      .eq("id", event.id)
-      .in("processing_status", ["captured", "error"])
-      .select("id")
-      .maybeSingle();
-    if (claimed.error) {
-      retryableFailure = true;
-      continue;
-    }
-    if (!claimed.data) {
-      outcomes.push({
-        provider_message_id: message.providerMessageId,
-        outcome: "duplicate_in_progress",
-      });
-      continue;
-    }
-
-    const { data: preparedData, error: preparedError } = await supabase.rpc(
-      "service_prepare_meta_whatsapp_message",
-      {
-        target_studio_id: studioId,
-        target_event_id: event.id,
-        target_provider_message_id: message.providerMessageId,
-        target_wa_id: message.fromWaId,
-        target_profile_name: message.profileName,
-        target_message_type: message.messageType,
-        target_message_text: message.text,
-        target_activity_at: providerTimestamp(message.timestamp) ?? new Date().toISOString(),
-      },
-    );
-
-    const prepared = isObject(preparedData) ? preparedData : null;
-    if (preparedError || !prepared || prepared.ok !== true) {
-      retryableFailure = true;
-      await markEvent(supabase, studioId, event.id, {
-        processing_status: "error",
-        processing_result: { outcome: "prepare_failed" },
-        last_error_code: "meta_message_prepare_failed",
-      });
-      outcomes.push({
-        provider_message_id: message.providerMessageId,
-        outcome: "prepare_failed",
-      });
-      continue;
-    }
-
-    const conversationId = String(prepared.assistant_conversation_id ?? "").trim();
-    const inboundTurnId = String(prepared.inbound_turn_id ?? "").trim();
-    const studentId = String(prepared.student_id ?? "").trim() || null;
-    const crmContactId = String(prepared.crm_contact_id ?? "").trim() || null;
-    const identityNeedsName = prepared.identity_needs_name === true;
-
-    if (!conversationId || !inboundTurnId) {
-      retryableFailure = true;
-      await markEvent(supabase, studioId, event.id, {
-        processing_status: "error",
-        processing_result: { outcome: "identity_incomplete" },
-        last_error_code: "assistant_identity_incomplete",
-      });
-      continue;
-    }
-
-    if (prepared.handoff_open === true) {
-      let blockingHandoff = true;
-      try {
-        blockingHandoff = await hasBlockingOpenHandoff({
-          supabase,
-          studioId,
-          conversationId,
-        });
-      } catch {
-        retryableFailure = true;
+    const atomicEnabled = process.env.DEMI_ATOMIC_TEXT_SEND_CLAIMS === "true";
+    let coordinatedReply: string | undefined;
+    let coordinatedAcceptedId: string | undefined;
+    const coordinator = atomicEnabled
+      ? new DemiTurnCoordinator((name, args) => supabase.rpc(name, args), studioId, event.id)
+      : undefined;
+    try {
+      if (coordinator) {
+        const ownership = await coordinator.acquire();
+        if (ownership !== "owned") {
+          const retry = ownership === "busy";
+          retryableFailure ||= retry;
+          outcomes.push({
+            provider_message_id: message.providerMessageId,
+            outcome: `turn_${ownership}`,
+          });
+          continue;
+        }
+        // acquire recovered a previous worker's expired processing lease.
+        if (event.processing_status === "processing") event.processing_status = "error";
+      }
+      const sendReply = async (input: Parameters<typeof sendMetaWhatsAppText>[0]) => {
+        if (!coordinator) return sendMetaWhatsAppText(input);
+        coordinatedReply = input.text;
         await markEvent(supabase, studioId, event.id, {
-          processing_status: "error",
-          processing_result: { outcome: "handoff_lookup_failed" },
-          last_error_code: "assistant_handoff_lookup_failed",
+          processing_result: { outcome: "reply_prepared", cached_reply: input.text },
+        });
+        const delivery = await coordinator.send(() =>
+          sendMetaWhatsAppText({ ...input, singleAttempt: true }),
+        );
+        if (delivery.status === "accepted") coordinatedAcceptedId = delivery.providerMessageId;
+        return delivery;
+      };
+      const runAction = <T>(name: string, args: Record<string, unknown>, run: () => Promise<T>) =>
+        coordinator ? coordinator.action(name, args, run) : run();
+
+      if (["processed", "ignored", "human_review"].includes(event.processing_status)) {
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "duplicate_already_handled",
         });
         continue;
       }
 
-      if (blockingHandoff) {
+      if (event.processing_status === "processing") {
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "duplicate_in_progress",
+        });
+        continue;
+      }
+
+      if (
+        !coordinator &&
+        isObject(event.processing_result) &&
+        event.processing_result.atomic_coordination === true
+      ) {
+        // Rollback cannot turn an old atomic attempt into an unguarded legacy resend/action.
         await markEvent(supabase, studioId, event.id, {
           processing_status: "human_review",
-          processing_result: { outcome: "human_takeover_active" },
+          processing_result: {
+            ...event.processing_result,
+            outcome: "atomic_turn_requires_reconciliation",
+          },
+        });
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "atomic_turn_requires_reconciliation",
+        });
+        continue;
+      }
+      const claimed = await supabase
+        .from("assistant_whatsapp_events")
+        .update({
+          processing_status: "processing",
+          attempt_count: Number(event.attempt_count ?? 0) + 1,
+          last_error_code: null,
+        })
+        .eq("studio_id", studioId)
+        .eq("id", event.id)
+        .in("processing_status", ["captured", "error"])
+        .select("id")
+        .maybeSingle();
+      if (claimed.error) {
+        retryableFailure = true;
+        continue;
+      }
+      if (!claimed.data) {
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "duplicate_in_progress",
+        });
+        continue;
+      }
+
+      if (coordinator)
+        await markEvent(supabase, studioId, event.id, {
+          processing_result: {
+            ...(isObject(event.processing_result) ? event.processing_result : {}),
+            atomic_coordination: true,
+          },
+        });
+
+      if (coordinator && message.messageType === "text") {
+        // A busy older webhook may not have prepared its history yet. Include all committed
+        // texts before generating; preparation itself is idempotent by provider_message_id.
+        const contacts =
+          canonicalWaId.startsWith("52") && canonicalWaId.length === 12
+            ? [canonicalWaId, `521${canonicalWaId.slice(2)}`]
+            : [canonicalWaId];
+        const pending = await supabase
+          .from("assistant_whatsapp_events")
+          .select(
+            "id,provider_event_id,contact_wa_id,message_type,coordination_text,body_preview,provider_timestamp",
+          )
+          .eq("studio_id", studioId)
+          .eq("provider", "meta_whatsapp")
+          .eq("message_type", "text")
+          .in("contact_wa_id", contacts)
+          .is("inbound_turn_id", null)
+          .neq("id", event.id)
+          .order("received_at", { ascending: true })
+          .limit(100);
+        if (pending.error || (pending.data?.length ?? 0) >= 100)
+          throw new DemiCoordinationError("turn_history_unavailable", true);
+        for (const earlier of pending.data ?? []) {
+          const result = await supabase.rpc("service_prepare_meta_whatsapp_message", {
+            target_studio_id: studioId,
+            target_event_id: earlier.id,
+            target_provider_message_id: earlier.provider_event_id,
+            target_wa_id: canonicalWaId,
+            target_profile_name: null,
+            target_message_type: earlier.message_type,
+            target_message_text: earlier.coordination_text ?? earlier.body_preview,
+            target_activity_at: earlier.provider_timestamp ?? new Date().toISOString(),
+          });
+          if (result.error || !isObject(result.data) || result.data.ok !== true)
+            throw new DemiCoordinationError("turn_history_prepare_failed", true);
+        }
+      }
+      const { data: preparedData, error: preparedError } = await supabase.rpc(
+        "service_prepare_meta_whatsapp_message",
+        {
+          target_studio_id: studioId,
+          target_event_id: event.id,
+          target_provider_message_id: message.providerMessageId,
+          target_wa_id: coordinator ? canonicalWaId : message.fromWaId,
+          target_profile_name: message.profileName,
+          target_message_type: message.messageType,
+          target_message_text: message.text,
+          target_activity_at: providerTimestamp(message.timestamp) ?? new Date().toISOString(),
+        },
+      );
+
+      const prepared = isObject(preparedData) ? preparedData : null;
+      if (preparedError || !prepared || prepared.ok !== true) {
+        retryableFailure = true;
+        await markEvent(supabase, studioId, event.id, {
+          processing_status: "error",
+          processing_result: { outcome: "prepare_failed" },
+          last_error_code: "meta_message_prepare_failed",
+        });
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "prepare_failed",
+        });
+        continue;
+      }
+
+      const conversationId = String(prepared.assistant_conversation_id ?? "").trim();
+      const inboundTurnId = String(prepared.inbound_turn_id ?? "").trim();
+      const studentId = String(prepared.student_id ?? "").trim() || null;
+      const crmContactId = String(prepared.crm_contact_id ?? "").trim() || null;
+      const identityNeedsName = prepared.identity_needs_name === true;
+
+      if (!conversationId || !inboundTurnId) {
+        retryableFailure = true;
+        await markEvent(supabase, studioId, event.id, {
+          processing_status: "error",
+          processing_result: { outcome: "identity_incomplete" },
+          last_error_code: "assistant_identity_incomplete",
+        });
+        continue;
+      }
+
+      if (prepared.handoff_open === true) {
+        let blockingHandoff = true;
+        try {
+          blockingHandoff = await hasBlockingOpenHandoff({
+            supabase,
+            studioId,
+            conversationId,
+          });
+        } catch {
+          retryableFailure = true;
+          await markEvent(supabase, studioId, event.id, {
+            processing_status: "error",
+            processing_result: { outcome: "handoff_lookup_failed" },
+            last_error_code: "assistant_handoff_lookup_failed",
+          });
+          continue;
+        }
+
+        if (blockingHandoff) {
+          await markEvent(supabase, studioId, event.id, {
+            processing_status: "human_review",
+            processing_result: { outcome: "human_takeover_active" },
+            processed_at: new Date().toISOString(),
+          });
+          outcomes.push({
+            provider_message_id: message.providerMessageId,
+            outcome: "human_takeover_active",
+          });
+          continue;
+        }
+
+        console.info("demi_meta_webhook", {
+          stage: "handoff",
+          outcome: "non_blocking_transfer_review",
+        });
+      }
+
+      const previousResult = isObject(event.processing_result) ? event.processing_result : {};
+      const cachedReply =
+        typeof previousResult.cached_reply === "string" ? previousResult.cached_reply : null;
+      if (sendReplies && cachedReply) {
+        if (message.messageType === "text") {
+          let newerText;
+          try {
+            newerText = await findNewerConversationText({
+              supabase,
+              studioId,
+              eventId: event.id,
+              eventReceivedAt: String(event.received_at ?? ""),
+              fromWaId: message.fromWaId,
+              coordinator,
+            });
+          } catch {
+            retryableFailure = true;
+            await markEvent(supabase, studioId, event.id, {
+              processing_status: "error",
+              processing_result: { outcome: "cached_reply_newer_text_lookup_failed" },
+              last_error_code: "cached_reply_newer_text_lookup_failed",
+            });
+            continue;
+          }
+          if (newerText) {
+            await markBurstSuperseded({
+              supabase,
+              studioId,
+              eventId: event.id,
+              providerMessageId: message.providerMessageId,
+              newerProviderMessageId: String(newerText.provider_event_id ?? "") || null,
+              phase: "pre_delivery",
+            });
+            outcomes.push({
+              provider_message_id: message.providerMessageId,
+              outcome: "cached_reply_superseded",
+            });
+            continue;
+          }
+        }
+        const delivery = await sendReply({
+          config: webhookConfig,
+          recipientWaId: message.fromWaId,
+          text: cachedReply,
+        });
+        if (delivery.status === "error") {
+          const failurePolicy = await recordFailedDelivery({
+            supabase,
+            studioId,
+            eventId: event.id,
+            conversationId,
+            recipientWaId: message.fromWaId,
+            reply: cachedReply,
+            errorCode: delivery.errorCode,
+            retryable: delivery.retryable,
+            httpStatus: delivery.httpStatus,
+            responseSnapshot: delivery.responseSnapshot,
+          });
+          retryableFailure = retryableFailure || failurePolicy.retryAllowed;
+        } else {
+          try {
+            await persistAcceptedReply({
+              supabase,
+              studioId,
+              eventId: event.id,
+              conversationId,
+              inboundTurnId,
+              recipientWaId: message.fromWaId,
+              reply: cachedReply,
+              providerMessageId: delivery.providerMessageId,
+              httpStatus: delivery.httpStatus,
+              responseSnapshot: delivery.responseSnapshot,
+            });
+          } catch {
+            await markEvent(supabase, studioId, event.id, {
+              processing_status: "human_review",
+              processing_result: {
+                outcome: "reply_persist_failed_after_send",
+                provider_message_id: delivery.providerMessageId,
+              },
+              last_error_code: "reply_persist_failed_after_send",
+            });
+            await supabase.rpc("assistant_create_handoff", {
+              target_studio_id: studioId,
+              target_conversation_id: conversationId,
+              target_student_id: null,
+              target_reason_code: "technical_block",
+              target_note:
+                "Meta aceptó la confirmación pero falló su registro local. No reenviar. Evento: " +
+                event.id,
+            });
+          }
+        }
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: "cached_reply_retry",
+        });
+        continue;
+      }
+
+      const isBatchableText = message.messageType === "text";
+      const eventReceivedAt = String(event.received_at ?? "");
+      const newerTextScope = {
+        supabase,
+        studioId,
+        eventId: event.id,
+        eventReceivedAt,
+        coordinator,
+        fromWaId: message.fromWaId,
+      };
+      if (isBatchableText) {
+        // Same webhook payload: later texts of this contact are processed after this one, so they
+        // are not yet stored. This text is already in the conversation history; let the last answer.
+        const laterInPayload = messages
+          .slice(messageIndex + 1)
+          .find((item) => item.fromWaId === message.fromWaId && item.messageType === "text");
+        let newerText: { provider_event_id?: unknown } | null = laterInPayload
+          ? { provider_event_id: laterInPayload.providerMessageId }
+          : null;
+        let phase: "same_payload" | "debounce" = "same_payload";
+        if (!newerText) {
+          phase = "debounce";
+          try {
+            if (coordinator) await coordinator.waitForQuiet(META_WHATSAPP_BURST_QUIET_MS);
+            else if (META_WHATSAPP_BURST_QUIET_MS > 0)
+              await new Promise<void>((done) => setTimeout(done, META_WHATSAPP_BURST_QUIET_MS));
+            newerText = await findNewerConversationText(newerTextScope);
+          } catch {
+            retryableFailure = true;
+            await markEvent(supabase, studioId, event.id, {
+              processing_status: "error",
+              processing_result: { outcome: "message_batch_lookup_failed" },
+              last_error_code: "message_batch_lookup_failed",
+            });
+            outcomes.push({
+              provider_message_id: message.providerMessageId,
+              outcome: "message_batch_lookup_failed",
+            });
+            continue;
+          }
+        }
+        if (newerText) {
+          await markBurstSuperseded({
+            supabase,
+            studioId,
+            eventId: event.id,
+            providerMessageId: message.providerMessageId,
+            newerProviderMessageId: String(newerText.provider_event_id ?? "") || null,
+            phase,
+          });
+          outcomes.push({
+            provider_message_id: message.providerMessageId,
+            outcome: "superseded_by_newer_message",
+          });
+          continue;
+        }
+      }
+
+      if (message.messageType === "unsupported") {
+        const isClickToWhatsApp =
+          message.referralSourceType === "ad" || message.referralSourceType === "post";
+        const referralCopy =
+          `${message.referralHeadline ?? ""} ${message.referralBody ?? ""}`.trim();
+        const isPoleReferral = /\bpole\b/i.test(referralCopy);
+        const reply = isClickToWhatsApp
+          ? isPoleReferral
+            ? "¡Hola! 👋 Gracias por escribir a Demeter. Claro, te ayudo a agendar tu primera clase de Pole. Puedes empezar desde cero. ¿Qué día u horario te acomoda?"
+            : "¡Hola! 👋 Gracias por escribir a Demeter. Claro, te ayudo a agendar tu primera clase. ¿Qué disciplina te interesa y qué día u horario te acomoda?"
+          : "¡Hola! Soy Demi, de Demeter Fitness. ¿Buscas información sobre las clases o quieres agendar? Dime qué necesitas y te ayudo.";
+        const deterministicOutcome = isClickToWhatsApp
+          ? "unsupported_ad_lead"
+          : "unsupported_message";
+
+        if (sendReplies) {
+          const delivery = await sendReply({
+            config: webhookConfig,
+            recipientWaId: message.fromWaId,
+            text: reply,
+          });
+
+          if (delivery.status === "error") {
+            const failurePolicy = await recordFailedDelivery({
+              supabase,
+              studioId,
+              eventId: event.id,
+              conversationId,
+              recipientWaId: message.fromWaId,
+              reply,
+              errorCode: delivery.errorCode,
+              retryable: delivery.retryable,
+              httpStatus: delivery.httpStatus,
+              responseSnapshot: delivery.responseSnapshot,
+            });
+            retryableFailure = retryableFailure || failurePolicy.retryAllowed;
+            continue;
+          }
+
+          await persistAcceptedReply({
+            supabase,
+            studioId,
+            eventId: event.id,
+            conversationId,
+            inboundTurnId,
+            reply,
+            recipientWaId: message.fromWaId,
+            providerMessageId: delivery.providerMessageId,
+            httpStatus: delivery.httpStatus,
+            responseSnapshot: delivery.responseSnapshot,
+            trace: {
+              deterministic: deterministicOutcome,
+              referral_source_type: message.referralSourceType,
+              referral_source_id: message.referralSourceId,
+            },
+          });
+        } else {
+          await markEvent(supabase, studioId, event.id, {
+            processing_status: "processed",
+            processing_result: {
+              outcome: deterministicOutcome,
+              referral_source_type: message.referralSourceType,
+              referral_source_id: message.referralSourceId,
+            },
+            processed_at: new Date().toISOString(),
+          });
+        }
+
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: deterministicOutcome,
+        });
+        continue;
+      }
+
+      let stickerImages: string[] | undefined;
+      if (message.messageType === "sticker" && message.mediaId) {
+        try {
+          stickerImages = await loadDemiSticker({
+            config: webhookConfig,
+            mediaId: message.mediaId,
+          });
+        } catch {
+          // Corrupt, expired or unsupported media follows the existing review flow.
+        }
+      }
+      let audioTranscribed = false;
+      if (message.messageType === "audio" && message.mediaId) {
+        try {
+          const transcript = await transcribeDemiAudio({
+            config: webhookConfig,
+            mediaId: message.mediaId,
+          });
+          const { error: transcriptError } = await supabase
+            .from("assistant_turns")
+            .update({ content: transcript })
+            .eq("id", inboundTurnId)
+            .eq("studio_id", studioId)
+            .eq("conversation_id", conversationId)
+            .eq("role", "user");
+          if (transcriptError) throw new Error("audio_transcript_persist_failed");
+          message.text = transcript;
+          audioTranscribed = true;
+        } catch {
+          // Unreadable audio follows the persisted human-review flow; it cannot trigger a booking.
+        }
+      }
+      if (
+        !stickerImages?.length &&
+        !audioTranscribed &&
+        (message.mediaId || META_MEDIA_MESSAGE_TYPES.has(message.messageType))
+      ) {
+        let transferReceipt: Awaited<ReturnType<typeof activateTransferReceiptIfPending>> | null =
+          null;
+
+        try {
+          transferReceipt = await runAction(
+            "receipt_handlers",
+            { media_id: message.mediaId },
+            async () => {
+              const workshopReceipt = await handleDemiWorkshopReceipt({
+                supabase,
+                studioId,
+                conversationId,
+                eventId: event.id,
+                providerMessageId: message.providerMessageId,
+                mediaId: message.mediaId,
+                messageType: message.messageType,
+                webhookConfig,
+              });
+              const groupReceipt = workshopReceipt.handled
+                ? workshopReceipt
+                : await handleDemiGroupReceipt({
+                    supabase,
+                    studioId,
+                    conversationId,
+                    eventId: event.id,
+                    providerMessageId: message.providerMessageId,
+                    mediaId: message.mediaId,
+                    messageType: message.messageType,
+                    webhookConfig,
+                  });
+              transferReceipt = groupReceipt.handled
+                ? groupReceipt
+                : await handleDemiEnrollmentReceipt({
+                    supabase,
+                    studioId,
+                    conversationId,
+                    eventId: event.id,
+                    providerMessageId: message.providerMessageId,
+                    mediaId: message.mediaId,
+                    messageType: message.messageType,
+                    webhookConfig,
+                  });
+              if (!transferReceipt.handled)
+                transferReceipt = await activateTransferReceiptIfPending({
+                  supabase,
+                  studioId,
+                  conversationId,
+                  studentId,
+                  crmContactId,
+                  eventId: event.id,
+                  providerMessageId: message.providerMessageId,
+                  mediaId: message.mediaId,
+                  messageType: message.messageType,
+                  messageText: message.text,
+                  webhookConfig,
+                  activationUrl: new URL("/login/student/activar", request.url).toString(),
+                });
+              return transferReceipt;
+            },
+          );
+        } catch (error) {
+          if (error instanceof DemiCoordinationError) throw error;
+          retryableFailure = true;
+          await markEvent(supabase, studioId, event.id, {
+            processing_status: "error",
+            processing_result: { outcome: "transfer_receipt_activation_failed" },
+            last_error_code: "transfer_receipt_activation_failed",
+          });
+          continue;
+        }
+
+        let reply: string;
+        let deterministicOutcome: string;
+
+        if (transferReceipt?.handled) {
+          reply = transferReceipt.reply;
+          deterministicOutcome = "transfer_receipt_provisional";
+        } else {
+          const handedOff = await createMediaHandoff({
+            supabase,
+            studioId,
+            conversationId,
+            studentId,
+            messageType: message.messageType,
+            providerMessageId: message.providerMessageId,
+          });
+
+          if (!handedOff) {
+            retryableFailure = true;
+            await markEvent(supabase, studioId, event.id, {
+              processing_status: "error",
+              processing_result: { outcome: "media_handoff_failed" },
+              last_error_code: "media_handoff_failed",
+            });
+            continue;
+          }
+
+          const caption = message.text.trim();
+          const paymentLanguage =
+            /\\b(pagu[eé]|pago|pagado|transfer(?:encia|í|i)|comprobante|dep[oó]sito|deposit[eé])\\b/i.test(
+              caption,
+            );
+
+          reply =
+            message.messageType === "audio"
+              ? "Recibí tu audio, pero no pude transcribirlo. ¿Puedes reenviarlo o escribirlo? Lo dejé para revisión del equipo."
+              : message.messageType === "sticker"
+                ? "Recibí tu sticker, pero no pude verlo bien. ¿Me escribes qué querías decir?"
+                : paymentLanguage
+                  ? "Recibí tu comprobante. No pude asociarlo automáticamente a una compra pendiente, así que lo dejé para validación del pago."
+                  : "Recibí tu archivo. Lo dejé para revisión.";
+
+          deterministicOutcome = "media_handoff";
+        }
+
+        if (sendReplies) {
+          const delivery = await sendReply({
+            config: webhookConfig,
+            recipientWaId: message.fromWaId,
+            text: reply,
+          });
+
+          if (delivery.status === "error") {
+            const failurePolicy = await recordFailedDelivery({
+              supabase,
+              studioId,
+              eventId: event.id,
+              conversationId,
+              recipientWaId: message.fromWaId,
+              reply,
+              errorCode: delivery.errorCode,
+              retryable: delivery.retryable,
+              httpStatus: delivery.httpStatus,
+              responseSnapshot: delivery.responseSnapshot,
+            });
+            retryableFailure = retryableFailure || failurePolicy.retryAllowed;
+            continue;
+          }
+
+          await persistAcceptedReply({
+            supabase,
+            studioId,
+            eventId: event.id,
+            conversationId,
+            inboundTurnId,
+            reply,
+            recipientWaId: message.fromWaId,
+            providerMessageId: delivery.providerMessageId,
+            httpStatus: delivery.httpStatus,
+            responseSnapshot: delivery.responseSnapshot,
+            trace: { deterministic: deterministicOutcome },
+          });
+        } else {
+          await markEvent(supabase, studioId, event.id, {
+            processing_status: "human_review",
+            processing_result: {
+              outcome: "media_handoff_shadow",
+            },
+            processed_at: new Date().toISOString(),
+          });
+        }
+
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: deterministicOutcome,
+        });
+        continue;
+      }
+
+      const receiptChoice = stickerImages?.length
+        ? null
+        : await runAction("receipt_package_choice", { text: message.text }, () =>
+            tryResolveReceiptPackageChoice({
+              supabase,
+              studioId,
+              conversationId,
+              studentId,
+              messageText: message.text,
+            }),
+          );
+      if (!stickerImages?.length && receiptChoice) {
+        const reply = receiptChoice.reply;
+        if (sendReplies) {
+          const delivery = await sendReply({
+            config: webhookConfig,
+            recipientWaId: message.fromWaId,
+            text: reply,
+          });
+          if (delivery.status === "error") {
+            const failurePolicy = await recordFailedDelivery({
+              supabase,
+              studioId,
+              eventId: event.id,
+              conversationId,
+              recipientWaId: message.fromWaId,
+              reply,
+              errorCode: delivery.errorCode,
+              retryable: delivery.retryable,
+              httpStatus: delivery.httpStatus,
+              responseSnapshot: delivery.responseSnapshot,
+            });
+            retryableFailure = retryableFailure || failurePolicy.retryAllowed;
+            continue;
+          }
+          await persistAcceptedReply({
+            supabase,
+            studioId,
+            eventId: event.id,
+            conversationId,
+            inboundTurnId,
+            reply,
+            recipientWaId: message.fromWaId,
+            providerMessageId: delivery.providerMessageId,
+            httpStatus: delivery.httpStatus,
+            responseSnapshot: delivery.responseSnapshot,
+            trace: { deterministic: receiptChoice.outcome },
+          });
+        } else {
+          await markEvent(supabase, studioId, event.id, {
+            processing_status: "processed",
+            processing_result: { outcome: receiptChoice.outcome },
+            processed_at: new Date().toISOString(),
+          });
+        }
+        outcomes.push({
+          provider_message_id: message.providerMessageId,
+          outcome: receiptChoice.outcome,
+        });
+        continue;
+      }
+
+      const { data: recentTurns, error: historyError } = await supabase
+        .from("assistant_turns")
+        .select("role,content,created_at")
+        .eq("studio_id", studioId)
+        .eq("conversation_id", conversationId)
+        .in("role", ["user", "assistant"])
+        .order("created_at", { ascending: false })
+        .limit(12);
+
+      if (historyError) {
+        retryableFailure = true;
+        await markEvent(supabase, studioId, event.id, {
+          processing_status: "error",
+          processing_result: { outcome: "history_failed" },
+          last_error_code: "conversation_history_failed",
+        });
+        continue;
+      }
+
+      const history = (recentTurns ?? [])
+        .slice()
+        .reverse()
+        .map((item) => ({
+          role: item.role as "user" | "assistant",
+          content: item.content,
+        }));
+
+      let studentCategory: string | null = null;
+      if (studentId) {
+        try {
+          const studentStatus = await getStudentPackageStatus({
+            supabase,
+            studio: {
+              id: runtimeContext.studio.id,
+              name: runtimeContext.studio.name,
+              timezone: runtimeContext.studio.timezone,
+              currency: runtimeContext.studio.currency,
+            },
+            studentId,
+          });
+          if (studentStatus.ok === true && isObject(studentStatus.student_state)) {
+            const category = String(studentStatus.student_state.category ?? "");
+            if (
+              [
+                "trial_pending",
+                "trial_attended",
+                "trial_cancelled",
+                "trial_no_show",
+                "former_student",
+                "student",
+              ].includes(category)
+            ) {
+              studentCategory = category;
+            }
+          }
+        } catch {
+          studentCategory = null;
+        }
+      }
+
+      // Learn safely: a user correction becomes a reviewable proposal, never an automatic prompt change.
+      const currentMessage = message.text.trim();
+      const normalizedCorrection = currentMessage
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLocaleLowerCase("es-MX");
+      const correctionSignal =
+        /\b(no,? eso no|eso no es|te equivocaste|esta mal|incorrecto|no es asi|quise decir|me explique mal)\b/.test(
+          normalizedCorrection,
+        );
+      if (correctionSignal) {
+        const previousAssistant =
+          [...history].reverse().find((row) => row.role === "assistant")?.content ?? "";
+        if (previousAssistant) {
+          const { data: existingProposal } = await supabase
+            .from("assistant_learning_proposals")
+            .select("id")
+            .eq("studio_id", studioId)
+            .eq("conversation_id", conversationId)
+            .eq("source_turn_id", inboundTurnId)
+            .maybeSingle();
+          if (!existingProposal) {
+            await supabase.from("assistant_learning_proposals").insert({
+              studio_id: studioId,
+              conversation_id: conversationId,
+              source_turn_id: inboundTurnId,
+              category: "correction",
+              title: "Corrección detectada en conversación",
+              evidence: `Demi: ${previousAssistant.slice(0, 700)}\nPersona: ${currentMessage.slice(0, 700)}`,
+              proposed_instruction: `Revisa esta corrección antes de incorporarla: cuando una situación equivalente ocurra, evita repetir la respuesta corregida y prioriza la información vigente de Studio Flow. Corrección de referencia: ${currentMessage.slice(0, 500)}`,
+              status: "pending",
+            });
+          }
+        }
+      }
+
+      let assistantResult;
+      try {
+        assistantResult = await runAssistantTurn({
+          supabase,
+          studio: {
+            id: runtimeContext.studio.id,
+            name: runtimeContext.studio.name,
+            timezone: runtimeContext.studio.timezone,
+            currency: runtimeContext.studio.currency,
+          },
+          config: {
+            assistant_name: runtimeContext.config.assistant_name,
+            model: runtimeContext.config.model,
+            reasoning_effort: runtimeContext.config.reasoning_effort as
+              "none" | "low" | "medium" | "high",
+            personality_instructions: runtimeContext.config.personality_instructions,
+            monthly_budget_usd_micros: runtimeContext.config.monthly_budget_usd_micros,
+            conversation_budget_usd_micros: runtimeContext.config.conversation_budget_usd_micros,
+            max_model_calls_per_turn: runtimeContext.config.max_model_calls_per_turn,
+            max_tool_calls_per_turn: runtimeContext.config.max_tool_calls_per_turn,
+          },
+          conversationId,
+          turnId: inboundTurnId,
+          studentId,
+          studentCategory,
+          crmContactId,
+          identityNeedsName,
+          activationUrl: new URL("/login/student/activar", request.url).toString(),
+          serviceMode: true,
+          history,
+          stickerImages,
+          // DEMI-BATCH-02: an action prepared from an old text must not run after a newer text.
+          actionGuard: coordinator?.action,
+          isTurnCurrent: coordinator
+            ? () => coordinator.current()
+            : isBatchableText
+              ? async () => !(await findNewerConversationText(newerTextScope))
+              : undefined,
+        });
+      } catch (error) {
+        if (error instanceof DemiCoordinationError) throw error;
+        if (error instanceof Error && error.message === "assistant_turn_superseded") {
+          await markBurstSuperseded({
+            supabase,
+            studioId,
+            eventId: event.id,
+            providerMessageId: message.providerMessageId,
+            newerProviderMessageId: null,
+            phase: "before_action",
+          });
+          outcomes.push({
+            provider_message_id: message.providerMessageId,
+            outcome: "superseded_before_action",
+          });
+          continue;
+        }
+        retryableFailure = true;
+        await markEvent(supabase, studioId, event.id, {
+          processing_status: "error",
+          processing_result: {
+            outcome: "assistant_failed",
+          },
+          last_error_code: error instanceof Error ? error.message : "assistant_failed",
+        });
+        continue;
+      }
+
+      // DEMI-BATCH-02: do not send an answer built before a newer text arrived.
+      if (isBatchableText) {
+        let newerAfterAssistant;
+        try {
+          newerAfterAssistant = await findNewerConversationText(newerTextScope);
+        } catch {
+          retryableFailure = true;
+          await markEvent(supabase, studioId, event.id, {
+            processing_status: "error",
+            processing_result: { outcome: "message_batch_recheck_failed" },
+            last_error_code: "message_batch_recheck_failed",
+          });
+          continue;
+        }
+        if (newerAfterAssistant) {
+          await markBurstSuperseded({
+            supabase,
+            studioId,
+            eventId: event.id,
+            providerMessageId: message.providerMessageId,
+            newerProviderMessageId: String(newerAfterAssistant.provider_event_id ?? "") || null,
+            phase: "post_assistant",
+          });
+          outcomes.push({
+            provider_message_id: message.providerMessageId,
+            outcome: "superseded_after_assistant",
+          });
+          continue;
+        }
+      }
+
+      if (!sendReplies) {
+        await markEvent(supabase, studioId, event.id, {
+          processing_status: "processed",
+          processing_result: {
+            outcome: "shadow_completed",
+            trace: assistantResult.trace,
+          },
           processed_at: new Date().toISOString(),
         });
         outcomes.push({
           provider_message_id: message.providerMessageId,
-          outcome: "human_takeover_active",
+          outcome: "shadow_completed",
         });
         continue;
       }
 
-      console.info("demi_meta_webhook", {
-        stage: "handoff",
-        outcome: "non_blocking_transfer_review",
-      });
-    }
+      // Recheck immediately before delivery; the durable atomic send claim is tracked separately.
+      if (isBatchableText) {
+        let newerBeforeDelivery;
+        try {
+          newerBeforeDelivery = await findNewerConversationText(newerTextScope);
+        } catch {
+          retryableFailure = true;
+          await markEvent(supabase, studioId, event.id, {
+            processing_status: "error",
+            processing_result: {
+              outcome: "message_batch_pre_delivery_lookup_failed",
+            },
+            last_error_code: "message_batch_pre_delivery_lookup_failed",
+          });
+          continue;
+        }
+        if (newerBeforeDelivery) {
+          await markBurstSuperseded({
+            supabase,
+            studioId,
+            eventId: event.id,
+            providerMessageId: message.providerMessageId,
+            newerProviderMessageId: String(newerBeforeDelivery.provider_event_id ?? "") || null,
+            phase: "pre_delivery",
+          });
+          outcomes.push({
+            provider_message_id: message.providerMessageId,
+            outcome: "superseded_before_delivery",
+          });
+          continue;
+        }
+      }
 
-    const previousResult = isObject(event.processing_result) ? event.processing_result : {};
-    const cachedReply =
-      typeof previousResult.cached_reply === "string" ? previousResult.cached_reply : null;
-    if (sendReplies && cachedReply) {
-      const delivery = await sendMetaWhatsAppText({
+      const delivery = await sendReply({
         config: webhookConfig,
         recipientWaId: message.fromWaId,
-        text: cachedReply,
+        text: assistantResult.reply,
       });
       if (delivery.status === "error") {
         const failurePolicy = await recordFailedDelivery({
@@ -1499,712 +2362,85 @@ export async function POST(request: Request) {
           eventId: event.id,
           conversationId,
           recipientWaId: message.fromWaId,
-          reply: cachedReply,
+          reply: assistantResult.reply,
           errorCode: delivery.errorCode,
           retryable: delivery.retryable,
           httpStatus: delivery.httpStatus,
           responseSnapshot: delivery.responseSnapshot,
         });
         retryableFailure = retryableFailure || failurePolicy.retryAllowed;
-      } else {
-        try {
-          await persistAcceptedReply({
-            supabase,
-            studioId,
-            eventId: event.id,
-            conversationId,
-            inboundTurnId,
-            recipientWaId: message.fromWaId,
-            reply: cachedReply,
-            providerMessageId: delivery.providerMessageId,
-            httpStatus: delivery.httpStatus,
-            responseSnapshot: delivery.responseSnapshot,
-          });
-        } catch {
-          await markEvent(supabase, studioId, event.id, {
-            processing_status: "human_review",
-            processing_result: {
-              outcome: "reply_persist_failed_after_send",
-              provider_message_id: delivery.providerMessageId,
-            },
-            last_error_code: "reply_persist_failed_after_send",
-          });
-          await supabase.rpc("assistant_create_handoff", {
-            target_studio_id: studioId,
-            target_conversation_id: conversationId,
-            target_student_id: null,
-            target_reason_code: "technical_block",
-            target_note:
-              "Meta aceptó la confirmación pero falló su registro local. No reenviar. Evento: " +
-              event.id,
-          });
-        }
-      }
-      outcomes.push({
-        provider_message_id: message.providerMessageId,
-        outcome: "cached_reply_retry",
-      });
-      continue;
-    }
-
-    const isBatchableText = message.messageType === "text";
-    const eventReceivedAt = String(event.received_at ?? "");
-    const newerTextScope = {
-      supabase,
-      studioId,
-      eventId: event.id,
-      eventReceivedAt,
-      fromWaId: message.fromWaId,
-    };
-    if (isBatchableText) {
-      // Same webhook payload: later texts of this contact are processed after this one, so they
-      // are not yet stored. This text is already in the conversation history; let the last answer.
-      const laterInPayload = messages
-        .slice(messageIndex + 1)
-        .find((item) => item.fromWaId === message.fromWaId && item.messageType === "text");
-      let newerText: { provider_event_id?: unknown } | null = laterInPayload
-        ? { provider_event_id: laterInPayload.providerMessageId }
-        : null;
-      let phase: "same_payload" | "debounce" = "same_payload";
-      if (!newerText) {
-        phase = "debounce";
-        try {
-          if (META_WHATSAPP_BURST_QUIET_MS > 0)
-            await new Promise<void>((done) => setTimeout(done, META_WHATSAPP_BURST_QUIET_MS));
-          newerText = await findNewerConversationText(newerTextScope);
-        } catch {
-          retryableFailure = true;
-          await markEvent(supabase, studioId, event.id, {
-            processing_status: "error",
-            processing_result: { outcome: "message_batch_lookup_failed" },
-            last_error_code: "message_batch_lookup_failed",
-          });
-          outcomes.push({
-            provider_message_id: message.providerMessageId,
-            outcome: "message_batch_lookup_failed",
-          });
-          continue;
-        }
-      }
-      if (newerText) {
-        await markBurstSuperseded({
-          supabase,
-          studioId,
-          eventId: event.id,
-          providerMessageId: message.providerMessageId,
-          newerProviderMessageId: String(newerText.provider_event_id ?? "") || null,
-          phase,
-        });
         outcomes.push({
           provider_message_id: message.providerMessageId,
-          outcome: "superseded_by_newer_message",
+          outcome: "delivery_failed",
+          retryable: failurePolicy.retryAllowed,
         });
         continue;
       }
-    }
 
-    if (message.messageType === "unsupported") {
-      const isClickToWhatsApp =
-        message.referralSourceType === "ad" || message.referralSourceType === "post";
-      const referralCopy = `${message.referralHeadline ?? ""} ${message.referralBody ?? ""}`.trim();
-      const isPoleReferral = /\bpole\b/i.test(referralCopy);
-      const reply = isClickToWhatsApp
-        ? isPoleReferral
-          ? "¡Hola! 👋 Gracias por escribir a Demeter. Claro, te ayudo a agendar tu primera clase de Pole. Puedes empezar desde cero. ¿Qué día u horario te acomoda?"
-          : "¡Hola! 👋 Gracias por escribir a Demeter. Claro, te ayudo a agendar tu primera clase. ¿Qué disciplina te interesa y qué día u horario te acomoda?"
-        : "¡Hola! Soy Demi, de Demeter Fitness. ¿Buscas información sobre las clases o quieres agendar? Dime qué necesitas y te ayudo.";
-      const deterministicOutcome = isClickToWhatsApp
-        ? "unsupported_ad_lead"
-        : "unsupported_message";
-
-      if (sendReplies) {
-        const delivery = await sendMetaWhatsAppText({
-          config: webhookConfig,
-          recipientWaId: message.fromWaId,
-          text: reply,
-        });
-
-        if (delivery.status === "error") {
-          const failurePolicy = await recordFailedDelivery({
-            supabase,
-            studioId,
-            eventId: event.id,
-            conversationId,
-            recipientWaId: message.fromWaId,
-            reply,
-            errorCode: delivery.errorCode,
-            retryable: delivery.retryable,
-            httpStatus: delivery.httpStatus,
-            responseSnapshot: delivery.responseSnapshot,
-          });
-          retryableFailure = retryableFailure || failurePolicy.retryAllowed;
-          continue;
-        }
-
+      try {
         await persistAcceptedReply({
           supabase,
           studioId,
           eventId: event.id,
           conversationId,
           inboundTurnId,
-          reply,
+          reply: assistantResult.reply,
           recipientWaId: message.fromWaId,
           providerMessageId: delivery.providerMessageId,
           httpStatus: delivery.httpStatus,
           responseSnapshot: delivery.responseSnapshot,
-          trace: {
-            deterministic: deterministicOutcome,
-            referral_source_type: message.referralSourceType,
-            referral_source_id: message.referralSourceId,
-          },
+          trace: assistantResult.trace,
         });
-      } else {
-        await markEvent(supabase, studioId, event.id, {
-          processing_status: "processed",
-          processing_result: {
-            outcome: deterministicOutcome,
-            referral_source_type: message.referralSourceType,
-            referral_source_id: message.referralSourceId,
-          },
-          processed_at: new Date().toISOString(),
-        });
-      }
-
-      outcomes.push({
-        provider_message_id: message.providerMessageId,
-        outcome: deterministicOutcome,
-      });
-      continue;
-    }
-
-    let stickerImages: string[] | undefined;
-    if (message.messageType === "sticker" && message.mediaId) {
-      try {
-        stickerImages = await loadDemiSticker({ config: webhookConfig, mediaId: message.mediaId });
-      } catch {
-        // Corrupt, expired or unsupported media follows the existing review flow.
-      }
-    }
-    let audioTranscribed = false;
-    if (message.messageType === "audio" && message.mediaId) {
-      try {
-        const transcript = await transcribeDemiAudio({
-          config: webhookConfig,
-          mediaId: message.mediaId,
-        });
-        const { error: transcriptError } = await supabase
-          .from("assistant_turns")
-          .update({ content: transcript })
-          .eq("id", inboundTurnId)
-          .eq("studio_id", studioId)
-          .eq("conversation_id", conversationId)
-          .eq("role", "user");
-        if (transcriptError) throw new Error("audio_transcript_persist_failed");
-        message.text = transcript;
-        audioTranscribed = true;
-      } catch {
-        // Unreadable audio follows the persisted human-review flow; it cannot trigger a booking.
-      }
-    }
-    if (
-      !stickerImages?.length &&
-      !audioTranscribed &&
-      (message.mediaId || META_MEDIA_MESSAGE_TYPES.has(message.messageType))
-    ) {
-      let transferReceipt: Awaited<ReturnType<typeof activateTransferReceiptIfPending>> | null =
-        null;
-
-      try {
-        const workshopReceipt = await handleDemiWorkshopReceipt({
-          supabase,
-          studioId,
-          conversationId,
-          eventId: event.id,
-          providerMessageId: message.providerMessageId,
-          mediaId: message.mediaId,
-          messageType: message.messageType,
-          webhookConfig,
-        });
-        const groupReceipt = workshopReceipt.handled
-          ? workshopReceipt
-          : await handleDemiGroupReceipt({
-              supabase,
-              studioId,
-              conversationId,
-              eventId: event.id,
-              providerMessageId: message.providerMessageId,
-              mediaId: message.mediaId,
-              messageType: message.messageType,
-              webhookConfig,
-            });
-        transferReceipt = groupReceipt.handled
-          ? groupReceipt
-          : await handleDemiEnrollmentReceipt({
-              supabase,
-              studioId,
-              conversationId,
-              eventId: event.id,
-              providerMessageId: message.providerMessageId,
-              mediaId: message.mediaId,
-              messageType: message.messageType,
-              webhookConfig,
-            });
-        if (!transferReceipt.handled)
-          transferReceipt = await activateTransferReceiptIfPending({
-            supabase,
-            studioId,
-            conversationId,
-            studentId,
-            crmContactId,
-            eventId: event.id,
-            providerMessageId: message.providerMessageId,
-            mediaId: message.mediaId,
-            messageType: message.messageType,
-            messageText: message.text,
-            webhookConfig,
-            activationUrl: new URL("/login/student/activar", request.url).toString(),
-          });
       } catch {
         retryableFailure = true;
-        await markEvent(supabase, studioId, event.id, {
-          processing_status: "error",
-          processing_result: { outcome: "transfer_receipt_activation_failed" },
-          last_error_code: "transfer_receipt_activation_failed",
-        });
-        continue;
-      }
-
-      let reply: string;
-      let deterministicOutcome: string;
-
-      if (transferReceipt?.handled) {
-        reply = transferReceipt.reply;
-        deterministicOutcome = "transfer_receipt_provisional";
-      } else {
-        const handedOff = await createMediaHandoff({
-          supabase,
-          studioId,
-          conversationId,
-          studentId,
-          messageType: message.messageType,
-          providerMessageId: message.providerMessageId,
-        });
-
-        if (!handedOff) {
-          retryableFailure = true;
-          await markEvent(supabase, studioId, event.id, {
-            processing_status: "error",
-            processing_result: { outcome: "media_handoff_failed" },
-            last_error_code: "media_handoff_failed",
-          });
-          continue;
-        }
-
-        const caption = message.text.trim();
-        const paymentLanguage =
-          /\\b(pagu[eé]|pago|pagado|transfer(?:encia|í|i)|comprobante|dep[oó]sito|deposit[eé])\\b/i.test(
-            caption,
-          );
-
-        reply =
-          message.messageType === "audio"
-            ? "Recibí tu audio, pero no pude transcribirlo. ¿Puedes reenviarlo o escribirlo? Lo dejé para revisión del equipo."
-            : message.messageType === "sticker"
-              ? "Recibí tu sticker, pero no pude verlo bien. ¿Me escribes qué querías decir?"
-              : paymentLanguage
-                ? "Recibí tu comprobante. No pude asociarlo automáticamente a una compra pendiente, así que lo dejé para validación del pago."
-                : "Recibí tu archivo. Lo dejé para revisión.";
-
-        deterministicOutcome = "media_handoff";
-      }
-
-      if (sendReplies) {
-        const delivery = await sendMetaWhatsAppText({
-          config: webhookConfig,
-          recipientWaId: message.fromWaId,
-          text: reply,
-        });
-
-        if (delivery.status === "error") {
-          const failurePolicy = await recordFailedDelivery({
-            supabase,
-            studioId,
-            eventId: event.id,
-            conversationId,
-            recipientWaId: message.fromWaId,
-            reply,
-            errorCode: delivery.errorCode,
-            retryable: delivery.retryable,
-            httpStatus: delivery.httpStatus,
-            responseSnapshot: delivery.responseSnapshot,
-          });
-          retryableFailure = retryableFailure || failurePolicy.retryAllowed;
-          continue;
-        }
-
-        await persistAcceptedReply({
-          supabase,
-          studioId,
-          eventId: event.id,
-          conversationId,
-          inboundTurnId,
-          reply,
-          recipientWaId: message.fromWaId,
-          providerMessageId: delivery.providerMessageId,
-          httpStatus: delivery.httpStatus,
-          responseSnapshot: delivery.responseSnapshot,
-          trace: { deterministic: deterministicOutcome },
-        });
-      } else {
         await markEvent(supabase, studioId, event.id, {
           processing_status: "human_review",
           processing_result: {
-            outcome: "media_handoff_shadow",
+            outcome: "reply_persist_failed_after_send",
+            provider_message_id: delivery.providerMessageId,
           },
-          processed_at: new Date().toISOString(),
+          last_error_code: "reply_persist_failed_after_send",
         });
+        await supabase.rpc("assistant_create_handoff", {
+          target_studio_id: studioId,
+          target_conversation_id: conversationId,
+          target_student_id: null,
+          target_reason_code: "technical_block",
+          target_note:
+            "Meta aceptó la respuesta pero falló su registro local. No reenviar. Evento: " +
+            event.id,
+        });
+        continue;
       }
 
       outcomes.push({
         provider_message_id: message.providerMessageId,
-        outcome: deterministicOutcome,
-      });
-      continue;
-    }
-
-    const receiptChoice = stickerImages?.length
-      ? null
-      : await tryResolveReceiptPackageChoice({
-          supabase,
-          studioId,
-          conversationId,
-          studentId,
-          messageText: message.text,
-        });
-    if (!stickerImages?.length && receiptChoice) {
-      const reply = receiptChoice.reply;
-      if (sendReplies) {
-        const delivery = await sendMetaWhatsAppText({
-          config: webhookConfig,
-          recipientWaId: message.fromWaId,
-          text: reply,
-        });
-        if (delivery.status === "error") {
-          const failurePolicy = await recordFailedDelivery({
-            supabase,
-            studioId,
-            eventId: event.id,
-            conversationId,
-            recipientWaId: message.fromWaId,
-            reply,
-            errorCode: delivery.errorCode,
-            retryable: delivery.retryable,
-            httpStatus: delivery.httpStatus,
-            responseSnapshot: delivery.responseSnapshot,
-          });
-          retryableFailure = retryableFailure || failurePolicy.retryAllowed;
-          continue;
-        }
-        await persistAcceptedReply({
-          supabase,
-          studioId,
-          eventId: event.id,
-          conversationId,
-          inboundTurnId,
-          reply,
-          recipientWaId: message.fromWaId,
-          providerMessageId: delivery.providerMessageId,
-          httpStatus: delivery.httpStatus,
-          responseSnapshot: delivery.responseSnapshot,
-          trace: { deterministic: receiptChoice.outcome },
-        });
-      } else {
-        await markEvent(supabase, studioId, event.id, {
-          processing_status: "processed",
-          processing_result: { outcome: receiptChoice.outcome },
-          processed_at: new Date().toISOString(),
-        });
-      }
-      outcomes.push({
-        provider_message_id: message.providerMessageId,
-        outcome: receiptChoice.outcome,
-      });
-      continue;
-    }
-
-    const { data: recentTurns, error: historyError } = await supabase
-      .from("assistant_turns")
-      .select("role,content,created_at")
-      .eq("studio_id", studioId)
-      .eq("conversation_id", conversationId)
-      .in("role", ["user", "assistant"])
-      .order("created_at", { ascending: false })
-      .limit(12);
-
-    if (historyError) {
-      retryableFailure = true;
-      await markEvent(supabase, studioId, event.id, {
-        processing_status: "error",
-        processing_result: { outcome: "history_failed" },
-        last_error_code: "conversation_history_failed",
-      });
-      continue;
-    }
-
-    const history = (recentTurns ?? [])
-      .slice()
-      .reverse()
-      .map((item) => ({
-        role: item.role as "user" | "assistant",
-        content: item.content,
-      }));
-
-    let studentCategory: string | null = null;
-    if (studentId) {
-      try {
-        const studentStatus = await getStudentPackageStatus({
-          supabase,
-          studio: {
-            id: runtimeContext.studio.id,
-            name: runtimeContext.studio.name,
-            timezone: runtimeContext.studio.timezone,
-            currency: runtimeContext.studio.currency,
-          },
-          studentId,
-        });
-        if (studentStatus.ok === true && isObject(studentStatus.student_state)) {
-          const category = String(studentStatus.student_state.category ?? "");
-          if (
-            [
-              "trial_pending",
-              "trial_attended",
-              "trial_cancelled",
-              "trial_no_show",
-              "former_student",
-              "student",
-            ].includes(category)
-          ) {
-            studentCategory = category;
-          }
-        }
-      } catch {
-        studentCategory = null;
-      }
-    }
-
-    // Learn safely: a user correction becomes a reviewable proposal, never an automatic prompt change.
-    const currentMessage = message.text.trim();
-    const normalizedCorrection = currentMessage
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLocaleLowerCase("es-MX");
-    const correctionSignal =
-      /\b(no,? eso no|eso no es|te equivocaste|esta mal|incorrecto|no es asi|quise decir|me explique mal)\b/.test(
-        normalizedCorrection,
-      );
-    if (correctionSignal) {
-      const previousAssistant =
-        [...history].reverse().find((row) => row.role === "assistant")?.content ?? "";
-      if (previousAssistant) {
-        const { data: existingProposal } = await supabase
-          .from("assistant_learning_proposals")
-          .select("id")
-          .eq("studio_id", studioId)
-          .eq("conversation_id", conversationId)
-          .eq("source_turn_id", inboundTurnId)
-          .maybeSingle();
-        if (!existingProposal) {
-          await supabase.from("assistant_learning_proposals").insert({
-            studio_id: studioId,
-            conversation_id: conversationId,
-            source_turn_id: inboundTurnId,
-            category: "correction",
-            title: "Corrección detectada en conversación",
-            evidence: `Demi: ${previousAssistant.slice(0, 700)}\nPersona: ${currentMessage.slice(0, 700)}`,
-            proposed_instruction: `Revisa esta corrección antes de incorporarla: cuando una situación equivalente ocurra, evita repetir la respuesta corregida y prioriza la información vigente de Studio Flow. Corrección de referencia: ${currentMessage.slice(0, 500)}`,
-            status: "pending",
-          });
-        }
-      }
-    }
-
-    let assistantResult;
-    try {
-      assistantResult = await runAssistantTurn({
-        supabase,
-        studio: {
-          id: runtimeContext.studio.id,
-          name: runtimeContext.studio.name,
-          timezone: runtimeContext.studio.timezone,
-          currency: runtimeContext.studio.currency,
-        },
-        config: {
-          assistant_name: runtimeContext.config.assistant_name,
-          model: runtimeContext.config.model,
-          reasoning_effort: runtimeContext.config.reasoning_effort as
-            "none" | "low" | "medium" | "high",
-          personality_instructions: runtimeContext.config.personality_instructions,
-          monthly_budget_usd_micros: runtimeContext.config.monthly_budget_usd_micros,
-          conversation_budget_usd_micros: runtimeContext.config.conversation_budget_usd_micros,
-          max_model_calls_per_turn: runtimeContext.config.max_model_calls_per_turn,
-          max_tool_calls_per_turn: runtimeContext.config.max_tool_calls_per_turn,
-        },
-        conversationId,
-        turnId: inboundTurnId,
-        studentId,
-        studentCategory,
-        crmContactId,
-        identityNeedsName,
-        activationUrl: new URL("/login/student/activar", request.url).toString(),
-        serviceMode: true,
-        history,
-        stickerImages,
-        // DEMI-BATCH-02: an action prepared from an old text must not run after a newer text.
-        isTurnCurrent: isBatchableText
-          ? async () => !(await findNewerConversationText(newerTextScope))
-          : undefined,
+        outcome: "replied",
       });
     } catch (error) {
-      if (error instanceof Error && error.message === "assistant_turn_superseded") {
-        await markBurstSuperseded({
-          supabase,
-          studioId,
-          eventId: event.id,
-          providerMessageId: message.providerMessageId,
-          newerProviderMessageId: null,
-          phase: "before_action",
-        });
-        outcomes.push({
-          provider_message_id: message.providerMessageId,
-          outcome: "superseded_before_action",
-        });
-        continue;
-      }
-      retryableFailure = true;
+      if (!coordinator) throw error;
+      const failure =
+        error instanceof DemiCoordinationError
+          ? error
+          : coordinatedAcceptedId
+            ? new DemiCoordinationError("reply_persist_failed_after_send")
+            : new DemiCoordinationError("coordinated_turn_failed", true);
+      retryableFailure ||= failure.retryable;
+      // Claim state is authoritative even if this event audit write fails.
       await markEvent(supabase, studioId, event.id, {
-        processing_status: "error",
+        processing_status: failure.retryable ? "error" : "human_review",
         processing_result: {
-          outcome: "assistant_failed",
+          outcome: failure.outcome,
+          outcome_unknown: !failure.retryable,
+          ...(coordinatedAcceptedId ? { provider_message_id: coordinatedAcceptedId } : {}),
+          ...(failure.retryable && coordinatedReply ? { cached_reply: coordinatedReply } : {}),
         },
-        last_error_code: error instanceof Error ? error.message : "assistant_failed",
+        last_error_code: failure.outcome,
       });
-      continue;
+      outcomes.push({ provider_message_id: message.providerMessageId, outcome: failure.outcome });
+    } finally {
+      await coordinator?.release();
     }
-
-    // DEMI-BATCH-02: do not send an answer built before a newer text arrived.
-    if (isBatchableText) {
-      let newerAfterAssistant;
-      try {
-        newerAfterAssistant = await findNewerConversationText(newerTextScope);
-      } catch {
-        retryableFailure = true;
-        await markEvent(supabase, studioId, event.id, {
-          processing_status: "error",
-          processing_result: { outcome: "message_batch_recheck_failed" },
-          last_error_code: "message_batch_recheck_failed",
-        });
-        continue;
-      }
-      if (newerAfterAssistant) {
-        await markBurstSuperseded({
-          supabase,
-          studioId,
-          eventId: event.id,
-          providerMessageId: message.providerMessageId,
-          newerProviderMessageId: String(newerAfterAssistant.provider_event_id ?? "") || null,
-          phase: "post_assistant",
-        });
-        outcomes.push({
-          provider_message_id: message.providerMessageId,
-          outcome: "superseded_after_assistant",
-        });
-        continue;
-      }
-    }
-
-    if (!sendReplies) {
-      await markEvent(supabase, studioId, event.id, {
-        processing_status: "processed",
-        processing_result: {
-          outcome: "shadow_completed",
-          trace: assistantResult.trace,
-        },
-        processed_at: new Date().toISOString(),
-      });
-      outcomes.push({
-        provider_message_id: message.providerMessageId,
-        outcome: "shadow_completed",
-      });
-      continue;
-    }
-
-    const delivery = await sendMetaWhatsAppText({
-      config: webhookConfig,
-      recipientWaId: message.fromWaId,
-      text: assistantResult.reply,
-    });
-
-    if (delivery.status === "error") {
-      const failurePolicy = await recordFailedDelivery({
-        supabase,
-        studioId,
-        eventId: event.id,
-        conversationId,
-        recipientWaId: message.fromWaId,
-        reply: assistantResult.reply,
-        errorCode: delivery.errorCode,
-        retryable: delivery.retryable,
-        httpStatus: delivery.httpStatus,
-        responseSnapshot: delivery.responseSnapshot,
-      });
-      retryableFailure = retryableFailure || failurePolicy.retryAllowed;
-      outcomes.push({
-        provider_message_id: message.providerMessageId,
-        outcome: "delivery_failed",
-        retryable: failurePolicy.retryAllowed,
-      });
-      continue;
-    }
-
-    try {
-      await persistAcceptedReply({
-        supabase,
-        studioId,
-        eventId: event.id,
-        conversationId,
-        inboundTurnId,
-        reply: assistantResult.reply,
-        recipientWaId: message.fromWaId,
-        providerMessageId: delivery.providerMessageId,
-        httpStatus: delivery.httpStatus,
-        responseSnapshot: delivery.responseSnapshot,
-        trace: assistantResult.trace,
-      });
-    } catch {
-      retryableFailure = true;
-      await markEvent(supabase, studioId, event.id, {
-        processing_status: "human_review",
-        processing_result: {
-          outcome: "reply_persist_failed_after_send",
-          provider_message_id: delivery.providerMessageId,
-        },
-        last_error_code: "reply_persist_failed_after_send",
-      });
-      await supabase.rpc("assistant_create_handoff", {
-        target_studio_id: studioId,
-        target_conversation_id: conversationId,
-        target_student_id: null,
-        target_reason_code: "technical_block",
-        target_note:
-          "Meta aceptó la respuesta pero falló su registro local. No reenviar. Evento: " + event.id,
-      });
-      continue;
-    }
-
-    outcomes.push({
-      provider_message_id: message.providerMessageId,
-      outcome: "replied",
-    });
   }
 
   return json(
