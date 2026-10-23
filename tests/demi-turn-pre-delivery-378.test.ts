@@ -2,7 +2,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const route = readFileSync(join(process.cwd(), "app/api/integrations/meta-whatsapp/webhook/route.ts"), "utf8");
+const route = readFileSync(
+  join(process.cwd(), "app/api/integrations/meta-whatsapp/webhook/route.ts"),
+  "utf8",
+);
 
 describe("DEMI-378 pre-delivery guard", () => {
   it("checks for newer text after generation and before sending the generated reply", () => {
@@ -12,8 +15,14 @@ describe("DEMI-378 pre-delivery guard", () => {
     expect(postAssistant).toBeGreaterThan(-1);
     expect(preDelivery).toBeGreaterThan(postAssistant);
     expect(generatedDelivery).toBeGreaterThan(preDelivery);
-    expect(route.slice(preDelivery, generatedDelivery)).toContain("await findNewerConversationText(newerTextScope)");
-    expect(route.slice(preDelivery, generatedDelivery)).toContain('outcome: "superseded_before_delivery"');
-    expect(route.slice(preDelivery, generatedDelivery)).toContain('outcome: "message_batch_pre_delivery_lookup_failed"');
+    expect(route.slice(preDelivery, generatedDelivery)).toContain(
+      "await findNewerConversationText(newerTextScope)",
+    );
+    expect(route.slice(preDelivery, generatedDelivery)).toContain(
+      'outcome: "superseded_before_delivery"',
+    );
+    expect(route.slice(preDelivery, generatedDelivery)).toContain(
+      'outcome: "message_batch_pre_delivery_lookup_failed"',
+    );
   });
 });
