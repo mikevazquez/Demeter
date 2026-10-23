@@ -488,6 +488,7 @@ export async function getCommercialOptions(
   const bankTransfer = (paymentMethods ?? []).find(
     (item) => item.code === "bank_transfer" || item.category === "transfer",
   );
+  const cash = (paymentMethods ?? []).find((item) => item.code === "cash");
 
   return {
     ok: true,
@@ -503,6 +504,29 @@ export async function getCommercialOptions(
         }
       : { compatibility_filtered: false }),
     payment_options: [
+      ...(cash
+        ? [
+            {
+              code: "cash",
+              label: cash.name || "Efectivo en el estudio",
+              channel: "studio",
+              provider: null,
+              student_package: {
+                requires_verified_regular_student: true,
+                requires_confirmation: true,
+                provisional_activation: true,
+                debt_persists_if_absent: true,
+                first_reservation_allowed: true,
+                second_reservation_requires_payment: true,
+              },
+              prospect: {
+                reservation_allowed: false,
+                walk_in_subject_to_availability: true,
+                minimum_payment_objections: 2,
+              },
+            },
+          ]
+        : []),
       ...(onlineCheckoutAvailable
         ? [
             {

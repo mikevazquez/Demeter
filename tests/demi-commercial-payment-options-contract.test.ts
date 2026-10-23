@@ -10,10 +10,11 @@ describe("Demi commercial payment options", () => {
   const readTools = source("lib/assistant/read-tools.ts");
   const orchestrator = source("lib/assistant/orchestrator.ts");
 
-  it("returns only configured digital payment options with commercial offers", () => {
+  it("returns configured cash and digital payment options with commercial offers", () => {
     expect(readTools).toContain('from("studio_payment_methods")');
     expect(readTools).toContain('"app_mercado_pago"');
     expect(readTools).toContain('"bank_transfer"');
+    expect(readTools).toContain('code: "cash"');
     expect(readTools).toContain("online_purchasable === true");
   });
 

@@ -4,12 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 
-import { requestStudioPasswordReset, signIn } from "@/app/auth/actions";
+import { signIn } from "@/app/auth/actions";
 
 type LoginCardProps = {
   mode: "studio" | "student";
   error?: string;
-  recovery?: string;
 };
 
 const studioMessages: Record<string, string> = {
@@ -164,7 +163,7 @@ function portalCopy(mode: LoginCardProps["mode"]) {
   };
 }
 
-export function LoginCard({ mode, error, recovery }: LoginCardProps) {
+export function LoginCard({ mode, error }: LoginCardProps) {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const isStudent = mode === "student";
   const messages = isStudent ? studentMessages : studioMessages;
@@ -187,14 +186,6 @@ export function LoginCard({ mode, error, recovery }: LoginCardProps) {
         </div>
 
         {error && messages[error] ? <div className="notice error">{messages[error]}</div> : null}
-        {recovery === "sent" ? (
-          <div className="notice success">
-            Te enviamos un correo para restablecer tu contraseña.
-          </div>
-        ) : null}
-        {recovery === "changed" ? (
-          <div className="notice success">Contraseña actualizada. Ya puedes iniciar sesión.</div>
-        ) : null}
 
         <form action={signIn} className="auth-form auth-login-form">
           <input type="hidden" name="mode" value={mode} />
@@ -255,18 +246,7 @@ export function LoginCard({ mode, error, recovery }: LoginCardProps) {
 
           <div className="auth-options">
             <span className="auth-remember">Sesión persistente en este dispositivo</span>
-            {isStudent ? (
-              <span className="auth-recovery-link">¿Olvidaste tu contraseña?</span>
-            ) : (
-              <button
-                className="auth-recovery-link"
-                type="submit"
-                formAction={requestStudioPasswordReset}
-                formNoValidate
-              >
-                ¿Olvidaste tu contraseña?
-              </button>
-            )}
+            <span className="auth-recovery-link">¿Olvidaste tu contraseña?</span>
           </div>
 
           <AuthSubmitButton />

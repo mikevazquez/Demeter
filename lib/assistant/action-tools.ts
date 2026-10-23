@@ -837,6 +837,8 @@ async function prepareCashPackage(ctx: AssistantActionToolContext, args: Record<
     amount_minor: item.price_minor,
     currency: item.currency,
     payment_received: false,
+    provisional_activation: true,
+    debt_persists_if_absent: true,
     first_reservation_allowed: true,
     second_reservation_requires_payment: true,
     starts_with_first_reservation: true,

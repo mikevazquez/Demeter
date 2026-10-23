@@ -3,8 +3,8 @@ import { LoginCard } from "../login-card";
 export default async function StudioLoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; recovery?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
-  const { error, recovery } = await searchParams;
-  return <LoginCard mode="studio" error={error} recovery={recovery} />;
+  const { error } = await searchParams;
+  return <LoginCard mode="studio" error={error} />;
 }
