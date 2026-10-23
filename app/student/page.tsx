@@ -222,8 +222,10 @@ export default async function StudentHomePage({
         state: query.birthday_demo === "used" ? "used" : "available",
         period_start: "2026-10-01",
         expires_on: "2026-10-31",
+        today: "2026-10-19",
         recipient_kind: query.birthday_demo === "used" ? "self" : null,
         is_birthday: query.birthday_demo === "day",
+        friend_enabled: true,
       }
     : liveBirthdayPass;
 

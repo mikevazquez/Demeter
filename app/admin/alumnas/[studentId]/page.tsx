@@ -8,6 +8,7 @@ import PendingActionButton from "@/app/admin/components/PendingActionButton";
 import StudentLifecycleActions from "./StudentLifecycleActions";
 import StudentLifecycleNoticeDialog from "./StudentLifecycleNoticeDialog";
 import Profile360Overview from "./Profile360Overview";
+import StudentBirthdayPassCard from "./StudentBirthdayPassCard";
 import StudentPackageCard from "./StudentPackageCard";
 import StudentPortalAccessSection from "./StudentPortalAccessSection";
 import StudentEvaluationsPanel from "./StudentEvaluationsPanel";
@@ -1128,6 +1129,10 @@ export default async function StudentProfilePage({
         locale={locale}
         currency={currency}
       />
+
+      {view === "summary" ? (
+        <StudentBirthdayPassCard supabase={supabase} studentId={student.id} timeZone={timeZone} />
+      ) : null}
 
       <StudentLifecycleNoticeDialog
         result={

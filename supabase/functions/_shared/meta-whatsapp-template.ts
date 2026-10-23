@@ -3,6 +3,7 @@ import { buildAsistianVariables } from "./notification-asistian-variables.ts";
 export const META_WHATSAPP_TEMPLATE_KEYS = [
   "student_welcome",
   "birthday",
+  "birthday_month",
   "reservation_confirmed",
   "reservation_cancelled",
   "waitlist_promoted",
@@ -43,6 +44,7 @@ export const META_WHATSAPP_TEMPLATE_PARAMETERS: Record<MetaWhatsAppTemplateKey, 
   {
     student_welcome: ["nombre"],
     birthday: ["nombre", "estudio"],
+    birthday_month: ["nombre", "estudio"],
     reservation_confirmed: ["nombre", "disciplina", "fecha", "hora", "coach", "ubicacion"],
     reservation_cancelled: [
       "nombre",

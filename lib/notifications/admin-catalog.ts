@@ -402,7 +402,7 @@ export const MARKETING_COMMUNICATIONS: readonly MarketingDefinition[] = [
     name: "Cumpleaños",
     description: "Envía un mensaje especial en el cumpleaños de la alumna.",
     category: "fidelizacion",
-    eventDrivenRuleKeys: ["marketing.birthday"],
+    eventDrivenRuleKeys: ["marketing.birthday", "marketing.birthday_month"],
     whatsappTemplateKey: "birthday",
     whatsappTemplateName: "demeter_cumpleanos",
     defaultAudience: "active_students",

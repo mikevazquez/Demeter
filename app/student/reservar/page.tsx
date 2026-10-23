@@ -116,7 +116,7 @@ function statusClass(session: StudentSession, waitlisted = false) {
 export default async function StudentReservePage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; error?: string; credit?: string }>;
+  searchParams: Promise<{ date?: string; error?: string; credit?: string; pase?: string }>;
 }) {
   const query = await searchParams;
   const rewardMode = query.credit === "reward";
@@ -250,6 +250,18 @@ export default async function StudentReservePage({
           <p className="sendero-eyebrow !text-[var(--sendero-mint)]">Usando créditos extra</p>
           <p className="mt-1 text-[11px] leading-5 text-zinc-400">
             Las reservas que confirmes desde este flujo se cobrarán del saldo premio disponible.
+          </p>
+        </section>
+      ) : null}
+
+      {query.pase === "cumpleanos" ? (
+        <section className="rounded-[22px] border border-[#f6d67a]/30 bg-[#f6d67a]/[0.06] px-4 py-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#f6d67a]">
+            Pase de cumpleaños
+          </p>
+          <p className="mt-1 text-[11px] leading-5 text-zinc-300">
+            Elige una clase de tu mes de cumpleaños y, en el detalle, toca «Usar mi pase de
+            cumpleaños». Puedes usarlo tú o regalárselo a una amiga.
           </p>
         </section>
       ) : null}

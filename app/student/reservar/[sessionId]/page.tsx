@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { birthdayPassFitsSession, type BirthdayPassSnapshot } from "@/lib/birthday/pass";
 import {
   bookingReasonCopyForStudent,
   formatDateTime,
@@ -59,12 +60,18 @@ export default async function StudentSessionDetailPage({
   ]);
   const rewardMode = query.credit === "reward";
   const rewardSuffix = rewardMode ? "&credit=reward" : "";
-  const [{ data, error }, { data: waitlistData }, { data: rewardStatusData }] = await Promise.all([
+  const [
+    { data, error },
+    { data: waitlistData },
+    { data: rewardStatusData },
+    { data: birthdayPassData },
+  ] = await Promise.all([
     supabase.rpc("student_session_detail", {
       target_session_id: sessionId,
     }),
     supabase.rpc("student_waitlist_feed"),
     supabase.rpc("student_reward_status_snapshot"),
+    supabase.rpc("student_birthday_pass_snapshot"),
   ]);
 
   if (error || !data) notFound();
@@ -93,6 +100,11 @@ export default async function StudentSessionDetailPage({
     reason === "enrollment_required" &&
     (enrollmentMode === "single_class_booking" || enrollmentMode === "single_class_next_purchase");
   const sessionDate = localDateKey(new Date(session.starts_at), studio.timezone);
+  const birthdayPass = (birthdayPassData ?? null) as BirthdayPassSnapshot | null;
+  const birthdayPassOffer =
+    !rewardMode &&
+    birthdayPassFitsSession(birthdayPass, session, sessionDate) &&
+    (!alreadyReserved || birthdayPass?.friend_enabled !== false);
   const eligibilityCopy = bookingReasonCopyForStudent(reason, snapshot.acquisitions, sessionDate);
   const returnDate =
     query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date) ? query.date : sessionDate;
@@ -356,6 +368,31 @@ export default async function StudentSessionDetailPage({
           )}
         </section>
       )}
+
+      {birthdayPassOffer ? (
+        <section
+          data-birthday-pass-offer
+          className="rounded-3xl border border-[#f6d67a]/30 bg-[#f6d67a]/[0.06] p-4"
+        >
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#f6d67a]">
+            Regalo de cumpleaños
+          </p>
+          <p className="mt-1 text-sm font-semibold text-white">
+            {alreadyReserved
+              ? "Regala tu pase a una amiga para esta clase"
+              : "Puedes tomar esta clase con tu pase de cumpleaños"}
+          </p>
+          <p className="mt-1 text-xs leading-5 text-zinc-400">
+            No descuenta clases de tu paquete. Úsalo tú o regálaselo a una amiga.
+          </p>
+          <Link
+            href={`/student/reservar/${session.session_id}/cumpleanos?date=${returnDate}${alreadyReserved ? "&para=amiga" : ""}`}
+            className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-[#f6d67a] px-4 py-2.5 text-sm font-bold text-[#26231b]"
+          >
+            Usar mi pase de cumpleaños
+          </Link>
+        </section>
+      ) : null}
     </main>
   );
 }

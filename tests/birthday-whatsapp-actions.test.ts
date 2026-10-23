@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { BIRTHDAY_META_BODY } from "../supabase/functions/_shared/birthday-notification";
+import {
+  BIRTHDAY_META_BODY,
+  BIRTHDAY_MONTH_META_BODY,
+} from "../supabase/functions/_shared/birthday-notification";
 
 const mocks = vi.hoisted(() => ({
   context: vi.fn(),
@@ -61,7 +64,8 @@ beforeEach(() => {
         ? { data: { connected: true, templates: { student_welcome: "welcome" } } }
         : { data: true },
   );
-  mocks.context.mockResolvedValue({ supabase: { rpc: mocks.rpc }, studio: { id: "studio-a" } });
+  mocks.context.mockResolvedValue({ supabase: { rpc: mocks.rpc }, studio: { id: "studio-a", name: "Demeter Fitness Studio" },
+  });
   mocks.diagnostics.mockResolvedValue(diagnostics());
 });
 
@@ -232,5 +236,70 @@ describe("Birthday Meta template registration and mapping", () => {
       }),
     );
     expect(mutations()).toHaveLength(0);
+  });
+});
+
+describe("CUMP-01 · day-1 notice and gift settings", () => {
+  it("accepts the day-1 template body for registration", async () => {
+    mocks.diagnostics.mockResolvedValue({ ...diagnostics(), templates: [] });
+    const data = form({
+      marketing_key: "birthday",
+      template_key: "birthday_month",
+      meta_template_name: "mes_cumpleanos_regalo",
+      language_code: "es_MX",
+      meta_category: "MARKETING",
+      meta_body: BIRTHDAY_MONTH_META_BODY,
+    });
+    await expect(submitNotificationWhatsAppTemplateAction(data)).rejects.toThrow(
+      "saved=whatsapp_template_submitted",
+    );
+    expect(mocks.submit).toHaveBeenCalledWith(
+      expect.objectContaining({ body: BIRTHDAY_MONTH_META_BODY, expectedVariables: 2 }),
+    );
+  });
+  it("does not activate the day-1 notice while the gift is off", async () => {
+    snapshot.rules.push({
+      rule_key: "marketing.birthday_month",
+      template_key: "birthday_month",
+      channels: [{ channel_key: "whatsapp" }],
+    });
+    mocks.diagnostics.mockResolvedValue({
+      connected: true,
+      templateLanguage: "es_MX",
+      templateMappings: { birthday_month: "mes_cumpleanos_regalo" },
+      templates: [
+        {
+          name: "mes_cumpleanos_regalo",
+          status: "APPROVED",
+          language: "es_MX",
+          category: "MARKETING",
+          variableCount: 2,
+        },
+      ],
+    });
+    mocks.rpc.mockImplementation(async (name: string) =>
+      name === "admin_notification_rules_snapshot"
+        ? { data: snapshot }
+        : name === "admin_birthday_settings"
+          ? { data: { gift_enabled: false } }
+          : { data: true },
+    );
+    await expect(
+      updateBirthdayNotificationAction(
+        form({ rule_key: "marketing.birthday_month", operation: "enabled", next_enabled: "true" }),
+      ),
+    ).rejects.toThrow("birthday_gift_disabled");
+    expect(mutations()).toHaveLength(0);
+  });
+  it("saves the gift settings with settings permission", async () => {
+    const { saveBirthdayGiftSettingsAction } = await import("../app/admin/notificaciones/actions");
+    const data = form({ gift_enabled: "on" });
+    await expect(saveBirthdayGiftSettingsAction(data)).rejects.toThrow("saved=birthday_settings");
+    expect(mocks.rpc).toHaveBeenCalledWith("admin_update_birthday_settings", {
+      p_studio_id: "studio-a",
+      p_gift_enabled: true,
+      p_gift_friend_enabled: false,
+    });
+    expect(mocks.context).toHaveBeenCalledWith("settings.write");
   });
 });

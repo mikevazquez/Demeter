@@ -1,0 +1,57 @@
+/* CUMP-01-08 · Pase de cumpleaños en la ficha de la alumna. */
+.birthday-pass-admin-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(246, 214, 122, 0.35);
+  background: rgba(246, 214, 122, 0.08);
+}
+
+.birthday-pass-admin-card.is-green {
+  border-color: rgba(52, 211, 153, 0.35);
+  background: rgba(52, 211, 153, 0.07);
+}
+
+.birthday-pass-admin-card.is-muted {
+  border-color: rgba(148, 163, 184, 0.3);
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.birthday-pass-admin-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  color: #b8860b;
+  background: rgba(246, 214, 122, 0.18);
+}
+
+.birthday-pass-admin-card.is-green .birthday-pass-admin-icon {
+  color: #059669;
+  background: rgba(52, 211, 153, 0.16);
+}
+
+.birthday-pass-admin-copy {
+  min-width: 0;
+}
+
+.birthday-pass-admin-copy .eyebrow {
+  margin: 0 0 2px;
+}
+
+.birthday-pass-admin-copy strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.birthday-pass-admin-copy p:not(.eyebrow) {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  opacity: 0.8;
+}

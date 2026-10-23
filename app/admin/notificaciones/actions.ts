@@ -1,6 +1,16 @@
 "use server";
 
-import { BIRTHDAY_META_BODY } from "@/supabase/functions/_shared/birthday-notification";
+import {
+  BIRTHDAY_META_BODY,
+  BIRTHDAY_MONTH_META_BODY,
+} from "@/supabase/functions/_shared/birthday-notification";
+
+// CUMP-01 · Cumpleaños maneja dos plantillas: felicitación del día y aviso del día 1.
+const BIRTHDAY_TEMPLATE_BODIES: Record<string, string> = {
+  birthday: BIRTHDAY_META_BODY,
+  birthday_month: BIRTHDAY_MONTH_META_BODY,
+};
+const BIRTHDAY_RULE_KEYS = new Set(["marketing.birthday", "marketing.birthday_month"]);
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -190,7 +200,7 @@ export async function submitNotificationWhatsAppTemplateAction(formData: FormDat
   }
 
   const templateKey = String(formData.get("template_key") ?? "").trim();
-  if (process.key === "birthday" && templateKey !== "birthday") {
+  if (process.key === "birthday" && !BIRTHDAY_TEMPLATE_BODIES[templateKey]) {
     redirect(processUrl(process.key, { error: "notification_whatsapp_template_unsupported" }));
   }
   const name = String(formData.get("meta_template_name") ?? "")
@@ -209,7 +219,10 @@ export async function submitNotificationWhatsAppTemplateAction(formData: FormDat
   }
 
   const { studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
-  if (process.key === "birthday" && (category !== "MARKETING" || body !== BIRTHDAY_META_BODY)) {
+  if (
+    process.key === "birthday" &&
+    (category !== "MARKETING" || body !== BIRTHDAY_TEMPLATE_BODIES[templateKey])
+  ) {
     redirect(processUrl(process.key, { error: "notification_whatsapp_template_invalid" }));
   }
   if (process.key === "birthday") {
@@ -231,7 +244,7 @@ export async function submitNotificationWhatsAppTemplateAction(formData: FormDat
       body,
       expectedVariables: META_WHATSAPP_TEMPLATE_PARAMETERS[templateKey].length,
       ...(process.key === "birthday"
-        ? { exampleValues: ["Camila", "Demeter Fitness Studio"] }
+        ? { exampleValues: ["Camila", studio.name || "tu estudio"] }
         : {}),
     });
   } catch (error) {
@@ -259,7 +272,7 @@ export async function mapApprovedNotificationWhatsAppTemplateAction(formData: Fo
   }
 
   const templateKey = String(formData.get("template_key") ?? "").trim();
-  if (process.key === "birthday" && templateKey !== "birthday") {
+  if (process.key === "birthday" && !BIRTHDAY_TEMPLATE_BODIES[templateKey]) {
     redirect(processUrl(process.key, { error: "notification_whatsapp_template_unsupported" }));
   }
   const templateName = String(formData.get("meta_template_name") ?? "").trim();
@@ -456,7 +469,7 @@ export async function updateBirthdayNotificationAction(formData: FormData) {
 async function updateEventDrivenRule(formData: FormData, birthday: boolean) {
   const ruleKey = String(formData.get("rule_key") ?? "").trim();
   const marketingKey = birthday
-    ? ruleKey === "marketing.birthday"
+    ? BIRTHDAY_RULE_KEYS.has(ruleKey)
       ? "birthday"
       : null
     : PACKAGE_RECOVERY_RULES.get(ruleKey);
@@ -554,6 +567,14 @@ async function updateEventDrivenRule(formData: FormData, birthday: boolean) {
         .filter((item) => item && item !== "inbox");
       if (birthday && !selected.includes("whatsapp")) {
         redirect(marketingUrl(marketingKey, { error: "birthday_whatsapp_required" }));
+      }
+      if (ruleKey === "marketing.birthday_month") {
+        const { data: giftSettings } = await supabase.rpc("admin_birthday_settings", {
+          p_studio_id: studio.id,
+        });
+        if ((giftSettings as { gift_enabled?: boolean } | null)?.gift_enabled === false) {
+          redirect(marketingUrl(marketingKey, { error: "birthday_gift_disabled" }));
+        }
       }
       if (selected.some((item) => item === "push" && !readiness.push.ready)) {
         redirect(marketingUrl(marketingKey, { error: "channel_not_ready_push" }));
@@ -794,4 +815,20 @@ export async function transitionMarketingAutomationAction(formData: FormData) {
   revalidatePath("/admin/notificaciones");
   revalidatePath(`/admin/notificaciones/marketing/${marketingKey}`);
   redirect(marketingUrl(marketingKey, { saved: nextState }));
+}
+
+/** CUMP-01-09 · Regalo de cumpleaños por estudio: activo y si se puede regalar a una amiga. */
+export async function saveBirthdayGiftSettingsAction(formData: FormData) {
+  const giftEnabled = formData.get("gift_enabled") === "on";
+  const friendEnabled = formData.get("gift_friend_enabled") === "on";
+  const { supabase, studio } = await getAdminContext(CAPABILITIES.SETTINGS_WRITE);
+  const { error } = await supabase.rpc("admin_update_birthday_settings", {
+    p_studio_id: studio.id,
+    p_gift_enabled: giftEnabled,
+    p_gift_friend_enabled: friendEnabled,
+  });
+  if (error) redirect(marketingUrl("birthday", { error: "birthday_settings_failed" }));
+  revalidatePath("/admin/notificaciones");
+  revalidatePath(marketingUrl("birthday"));
+  redirect(marketingUrl("birthday", { saved: "birthday_settings" }));
 }

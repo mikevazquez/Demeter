@@ -91,7 +91,7 @@ export default async function SessionDetailPage({
         .eq("status", "active"),
       supabase
         .from("reservations")
-        .select("id,student_id,guest_person_id,status,acquisition_id,commercial_status")
+        .select("id,student_id,guest_person_id,status,acquisition_id,commercial_status,birthday_pass_id")
         .eq("session_id", sessionId)
         .in("status", ["reserved", "attended", "no_show"])
         .order("booked_at"),
@@ -276,6 +276,8 @@ export default async function SessionDetailPage({
   const cashDebtByAcquisition = new Map(cashDebts.map((debt) => [debt.acquisitionId, debt]));
   const roster = (reservations ?? []).map((reservation) => {
     const isGuest = Boolean(reservation.guest_person_id);
+    // CUMP-01-08 · reserva con pase de cumpleaños (propia o regalada): sin paquete ni créditos.
+    const birthdayPass = Boolean(reservation.birthday_pass_id);
     const evaluationInvitation = evaluationByReservation.get(reservation.id);
     const acquisition = reservation.acquisition_id
       ? acquisitionMap.get(reservation.acquisition_id)
@@ -290,19 +292,25 @@ export default async function SessionDetailPage({
           ? (studentMap.get(reservation.student_id) ?? "Alumna")
           : "Alumna",
       status: reservation.status,
-      packageLabel: isGuest
-        ? "Invitación"
-        : acquisition
+      packageLabel: birthdayPass
+        ? isGuest
+          ? "Invitada · pase de cumpleaños"
+          : "Pase de cumpleaños"
+        : isGuest
+          ? "Invitación"
+          : acquisition
           ? (productMap.get(acquisition.product_template_id) ?? "Producto activo")
           : "Sin producto vinculado",
-      creditsLabel: isGuest
-        ? "Beneficio por nivel"
+      creditsLabel: birthdayPass
+        ? "Regalo · sin créditos"
+        : isGuest
+          ? "Beneficio por nivel"
         : acquisition?.unlimited
           ? "Ilimitado"
           : acquisition
             ? `${balance ?? 0} créditos disponibles`
             : "—",
-      expiresLabel: isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null),
+      expiresLabel: birthdayPass ? "Mes de cumpleaños" : isGuest ? "Misma clase" : formatExpiry(acquisition?.expires_on ?? null),
       studentId: reservation.student_id,
       evaluationInvitationId: evaluationInvitation?.id ?? null,
       evaluationStatus: evaluationInvitation?.status ?? null,

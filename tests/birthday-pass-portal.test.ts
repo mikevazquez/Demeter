@@ -17,6 +17,7 @@ describe("Cumpleaños Demeter · B2 student portal", () => {
     expect(home).toContain('supabase.rpc("student_birthday_pass_snapshot")');
     expect(home).toContain("<BirthdayGiftExperience");
     expect(home).toContain("pass={birthdayPass}");
+    expect(home).toContain("studioName={studio.name}");
   });
 
   it("keeps birthday data private while exposing only the day-state needed by the UI", () => {
@@ -38,11 +39,11 @@ describe("Cumpleaños Demeter · B2 student portal", () => {
   it("keeps the pass separate from the normal package in the copy and navigation", () => {
     expect(experience).toContain("Es un saldo aparte");
     expect(experience).toContain('href="/student/paquete"');
-    expect(experience).toContain('href="/student/reservar"');
+    expect(experience).toContain('"/student/reservar?pase=cumpleanos"');
   });
 
   it("marks the private birthday message for the exact birthday only", () => {
-    expect(experience).toContain('pass.is_birthday ? (');
+    expect(experience).toContain("const showGreeting = pass.is_birthday === true");
     expect(experience).toContain("Solo tú ves este mensaje");
     expect(experience).toContain('data-home-block="birthday-message"');
     expect(experience).toContain('data-home-block="birthday-pass"');
@@ -53,5 +54,12 @@ describe("Cumpleaños Demeter · B2 student portal", () => {
     expect(home).toContain('query.birthday_demo === "day"');
     expect(home).toContain('query.birthday_demo === "month"');
     expect(home).toContain('query.birthday_demo === "used"');
+  });
+
+  it("uses the studio name instead of a fixed brand and no emoji (Nébora)", () => {
+    expect(experience).not.toContain("DEMETER");
+    expect(experience).not.toContain("familia Demeter");
+    expect(experience).not.toContain("🔒");
+    expect(experience).toContain("{studioName}");
   });
 });

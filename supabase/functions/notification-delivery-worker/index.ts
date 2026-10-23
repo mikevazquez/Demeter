@@ -1,4 +1,4 @@
-import { birthdayMessage } from "../_shared/birthday-notification.ts";
+import { birthdayMessage, birthdayMonthMessage } from "../_shared/birthday-notification.ts";
 import { withSupabase } from "npm:@supabase/server@1.7.0";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.116.0";
 import { sendPushNotification, WebPushError } from "npm:@mmmike/web-push@1.3.0/send";
@@ -285,6 +285,15 @@ function renderMessageContent(delivery: DeliveryRow): RenderedMessage {
         url: "/student",
         tag: `notification-${delivery.id}`,
         providerTemplateKey: "birthday",
+      };
+
+    case "birthday_month":
+      return {
+        title: "Este mes te festejamos",
+        body: birthdayMonthMessage(safeText(variables.recipient_name) ?? "Alumna", studioName),
+        url: "/student",
+        tag: `notification-${delivery.id}`,
+        providerTemplateKey: "birthday_month",
       };
 
     case "student_welcome":
@@ -1261,6 +1270,38 @@ async function processDelivery(
           },
         );
         if (skipError || skipped !== true) throw new Error("birthday_delivery_skip_failed");
+        return {
+          ok: true,
+          deliveryId: delivery.id,
+          channel: delivery.channel_key,
+          outcome: "skipped",
+        };
+      }
+    }
+
+    // CUMP-01-10 · Aviso del día 1: se revalida que siga siendo su mes, sea elegible y el regalo esté activo.
+    if (delivery.template_key === "birthday_month") {
+      const { data: eligible, error: eligibilityError } = await adminClient.rpc(
+        "system_birthday_month_notification_eligible",
+        {
+          p_studio_id: delivery.studio_id,
+          p_student_id: delivery.recipient_entity_id,
+          p_month_start: safeText(delivery.template_variables?.month_start),
+        },
+      );
+      if (eligibilityError) throw new Error("birthday_month_delivery_eligibility_failed");
+      if (eligible !== true) {
+        const { data: skipped, error: skipError } = await adminClient.rpc(
+          "system_mark_notification_delivery_attempt_skipped",
+          {
+            p_attempt_id: attemptId,
+            p_reason_code: "birthday_month_no_longer_due",
+            p_reason_safe:
+              "Ya pasaron los primeros días del mes, la alumna dejó de ser elegible o el regalo está apagado.",
+            p_response_snapshot: { eligibility: "birthday_month_no_longer_due" },
+          },
+        );
+        if (skipError || skipped !== true) throw new Error("birthday_month_delivery_skip_failed");
         return {
           ok: true,
           deliveryId: delivery.id,

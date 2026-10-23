@@ -122,6 +122,7 @@ export function buildAsistianVariables(
 
   switch (providerTemplateKey) {
     case "birthday":
+    case "birthday_month":
       return {
         nombre: safeText(variables.recipient_name) ?? "Alumna",
         estudio: safeText(variables.studio_name) ?? "Demeter Fitness Studio",
