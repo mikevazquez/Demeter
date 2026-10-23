@@ -1486,6 +1486,41 @@ export async function POST(request: Request) {
     const cachedReply =
       typeof previousResult.cached_reply === "string" ? previousResult.cached_reply : null;
     if (sendReplies && cachedReply) {
+      if (message.messageType === "text") {
+        let newerText;
+        try {
+          newerText = await findNewerConversationText({
+            supabase,
+            studioId,
+            eventId: event.id,
+            eventReceivedAt: String(event.received_at ?? ""),
+            fromWaId: message.fromWaId,
+          });
+        } catch {
+          retryableFailure = true;
+          await markEvent(supabase, studioId, event.id, {
+            processing_status: "error",
+            processing_result: { outcome: "cached_reply_newer_text_lookup_failed" },
+            last_error_code: "cached_reply_newer_text_lookup_failed",
+          });
+          continue;
+        }
+        if (newerText) {
+          await markBurstSuperseded({
+            supabase,
+            studioId,
+            eventId: event.id,
+            providerMessageId: message.providerMessageId,
+            newerProviderMessageId: String(newerText.provider_event_id ?? "") || null,
+            phase: "pre_delivery",
+          });
+          outcomes.push({
+            provider_message_id: message.providerMessageId,
+            outcome: "cached_reply_superseded",
+          });
+          continue;
+        }
+      }
       const delivery = await sendMetaWhatsAppText({
         config: webhookConfig,
         recipientWaId: message.fromWaId,
