@@ -147,7 +147,9 @@ export async function loadSupportTab(
     });
     return error ? null : { tab, schedule: parseSupportSchedule(data) };
   }
-  const { data, error } = await supabase.rpc("platform_support_diagnostics", { p_studio: studioId });
+  const { data, error } = await supabase.rpc("platform_support_diagnostics", {
+    p_studio: studioId,
+  });
   return error ? null : { tab, diagnostics: parseSupportDiagnostics(data) };
 }
 

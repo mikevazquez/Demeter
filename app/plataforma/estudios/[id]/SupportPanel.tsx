@@ -170,7 +170,8 @@ export async function SupportTab({
     );
   }
 
-  if (!result.schedule.length) return <p className="neb-muted">Sin clases en los próximos 14 días.</p>;
+  if (!result.schedule.length)
+    return <p className="neb-muted">Sin clases en los próximos 14 días.</p>;
   return (
     <ol className="neb-audit">
       {result.schedule.map((item) => (
@@ -185,4 +186,3 @@ export async function SupportTab({
     </ol>
   );
 }
-

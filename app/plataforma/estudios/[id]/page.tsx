@@ -53,7 +53,10 @@ const NOTICES: Record<string, { tone: "ok" | "error"; text: string }> = {
   forbidden: { tone: "error", text: "Tu cuenta no es de plataforma." },
   soporte_iniciado: { tone: "ok", text: "Entraste como soporte. Se avisó a la dueña." },
   soporte_terminado: { tone: "ok", text: "Saliste del estudio. Quedó en la bitácora." },
-  paquete_guardado: { tone: "ok", text: "Paquete guardado. Quedó en la bitácora con antes y después." },
+  paquete_guardado: {
+    tone: "ok",
+    text: "Paquete guardado. Quedó en la bitácora con antes y después.",
+  },
   support_reason_required: { tone: "error", text: "Escribe el motivo (3 a 200 caracteres)." },
   support_session_required: {
     tone: "error",

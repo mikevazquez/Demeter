@@ -320,7 +320,11 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           </p>
         ) : null}
         {can(CAPABILITIES.SETTINGS_WRITE) ? (
-          <SupportAccessNotice supabase={supabase} studioId={studio.id} timeZone={studio.timezone} />
+          <SupportAccessNotice
+            supabase={supabase}
+            studioId={studio.id}
+            timeZone={studio.timezone}
+          />
         ) : null}
         {children}
       </div>
