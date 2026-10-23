@@ -1573,10 +1573,10 @@ export async function POST(request: Request) {
       }
       let delivery;
       try {
-        const delivery = await sendMetaWhatsAppText({
-        config: webhookConfig,
-        recipientWaId: message.fromWaId,
-        text: cachedReply,
+        delivery = await sendMetaWhatsAppText({
+          config: webhookConfig,
+          recipientWaId: message.fromWaId,
+          text: cachedReply,
         });
       } catch {
         await completeTextDelivery({
@@ -2279,10 +2279,10 @@ export async function POST(request: Request) {
     }
     let delivery;
     try {
-      const delivery = await sendMetaWhatsAppText({
-      config: webhookConfig,
-      recipientWaId: message.fromWaId,
-      text: assistantResult.reply,
+      delivery = await sendMetaWhatsAppText({
+        config: webhookConfig,
+        recipientWaId: message.fromWaId,
+        text: assistantResult.reply,
       });
     } catch {
       await completeTextDelivery({
