@@ -382,3 +382,13 @@
   min-width: 0;
   flex: 1 1 240px;
 }
+
+/* NEB-01-21 · barra de costo diario */
+.neb-bar {
+  display: inline-block;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: var(--neb-mint);
+  vertical-align: middle;
+}

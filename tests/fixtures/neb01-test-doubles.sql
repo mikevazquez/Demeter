@@ -486,3 +486,8 @@ create table if not exists public.studio_payment_methods (studio_id uuid not nul
 create table if not exists public.profile_field_definitions (id uuid primary key default gen_random_uuid(), studio_id uuid not null, entity_type text not null, key text not null, active boolean not null default true);
 create table if not exists public.profile_field_values (id uuid primary key default gen_random_uuid(), studio_id uuid not null, person_id uuid not null, definition_id uuid not null, value jsonb);
 alter table public.sales add column if not exists payment_due_on date;
+
+-- NEB-01-21 · Demi usage columns.
+alter table public.assistant_model_calls add column if not exists conversation_id uuid,
+  add column if not exists model text, add column if not exists cached_input_tokens integer not null default 0,
+  add column if not exists status text not null default 'completed';

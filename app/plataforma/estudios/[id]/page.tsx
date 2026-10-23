@@ -21,6 +21,7 @@ import { loadSupportState } from "@/lib/platform/support";
 import { createClient } from "@/lib/supabase/server";
 
 import { setStudioModuleAction, setStudioPlanAction, setStudioStatusAction } from "../../actions";
+import { DemiUsageTab } from "./DemiUsageTab";
 import { SupportBar, SupportTab } from "./SupportPanel";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -28,6 +29,7 @@ const TABS = [
   { key: "numeros", label: "Números" },
   { key: "plan", label: "Plan y módulos" },
   { key: "cobros", label: "Cobros" },
+  { key: "demi", label: "Demi" },
   { key: "bitacora", label: "Bitácora" },
 ] as const;
 // NEB-01-17 · Solo con sesión de soporte abierta.
@@ -145,6 +147,7 @@ export default async function PlataformaEstudioPage({
       {tab === "numeros" ? <NumbersTab detail={detail} /> : null}
       {tab === "plan" ? <PlanTab detail={detail} /> : null}
       {tab === "cobros" ? <BillingTab detail={detail} /> : null}
+      {tab === "demi" ? <DemiUsageTab supabase={supabase} studioId={id} /> : null}
       {tab === "bitacora" ? <AuditTab detail={detail} /> : null}
     </>
   );
