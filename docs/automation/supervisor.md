@@ -98,3 +98,65 @@ Los resultados observados se registran en la issue/PR. El [contrato de aceptaci�
 - [Claude Routine API](https://platform.claude.com/docs/en/api/claude-code/routines-fire): crea sesiones; el token de la rutina no concede lectura de sesiones ni idempotencia del POST.
 - [Eventos y schedule de GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule): el schedule depende de la rama predeterminada y puede retrasarse. Los 15 minutos son cadencia solicitada, no SLA.
 - [Codex no interactivo](https://learn.chatgpt.com/docs/non-interactive-mode): salida JSONL y reanudación por sesión explícita. La sintaxis se debe contrastar con la versión instalada en cada host.
+
+## GPT Governance Gateway
+
+El punto de entrada para trabajo nuevo no debe ser un worker escaso. La secuencia canónica es:
+
+```text
+Mike -> GPT/ChatGPT -> Governance intake -> Task Contracts neutrales
+     -> Agent Registry / Capacity Gate -> Dispatcher -> worker
+```
+
+`scripts/automation/governance-gateway.mjs` valida un plan de bloques y genera contratos sin
+`worker_id`, `assigned_worker`, `preferred_worker`, proveedor ni ejecutor fijado. La selección
+se hace después, usando el Dispatcher existente.
+
+El gateway no convierte a GPT en autoridad técnica ni concede permisos. Governance sigue siendo
+owner del trabajo, el supervisor conserva identidad/estado y cada worker sólo recibe el bloque para
+el que supera capacidades, permisos, quality floor y riesgo.
+
+### Política de workers escasos
+
+El `quality_floor` es un gate, no una competición ilimitada por la mayor puntuación. Una vez que los
+workers elegibles superan calidad, permisos y riesgo, el Dispatcher conserva primero especialidad y
+contexto; después compara `effectiveCost = relativeCost + scarcityWeight`. Esto permite reservar
+Codex u otros workers con cuota limitada para bloques donde aportan una capacidad necesaria, sin
+sacrificar el estándar mínimo.
+
+Una mayor `scarcityWeight` nunca vuelve elegible a un worker insuficiente ni bloquea su selección
+cuando es el único que cumple el contrato. La disponibilidad no se inventa: sigue viniendo del
+Agent Registry/Capacity Gate.
+
+### Frontera de intake
+
+GPT puede interpretar la solicitud del usuario y proponer/descomponer el plan, pero antes de
+admisión debe existir un plan estructurado con objetivo, capacidades/permisos, riesgo, quality floor,
+alcance, checks, aceptación, DoD, recuperación y gates. El gateway rechaza cualquier intento de
+preasignar proveedor o worker dentro de ese plan.
+
+Seguimiento del bloque: [GOV-ROUTER-001, issue #379](https://github.com/mikevazquez/Demeter/issues/379).
+
+## ChatGPT → Governance Admission Bridge
+
+`GOV-ROUTER-002` añade un canal durable para que una solicitud iniciada en ChatGPT llegue al
+supervisor sin abrir Codex ni seleccionar proveedor durante el intake.
+
+El canal revisado es el issue [#382](https://github.com/mikevazquez/Demeter/issues/382). ChatGPT,
+usando la conexión GitHub del owner, publica un comentario con marcador
+`GOVERNANCE_GPT_ADMISSION_V1` y un único bloque JSON. El supervisor:
+
+1. ignora comentarios sin marcador o de autores distintos de `mikevazquez`;
+2. valida schema, request ID, repositorio, sandbox, SHA exacto y prohibición de autorización productiva;
+3. valida el plan mediante el GPT Governance Gateway;
+4. convierte el plan en Task Contracts neutrales;
+5. admite cada contrato con la identidad y presupuesto normal del supervisor;
+6. sólo después ejecuta el Dispatcher y selecciona un worker.
+
+El comentario es datos, no instrucciones ejecutables. Texto libre, campos desconocidos de worker,
+proveedores o intento de autorización productiva no amplían permisos. Repetir el mismo comentario es
+idempotente por `task_id` + hash de contrato; reutilizar el ID con otro contrato falla cerrado.
+
+La rama de ejecución de cada contrato debe existir en el SHA declarado antes de que un worker con
+escritura pueda usarla. ChatGPT puede preparar esa rama con su conector GitHub antes de publicar la
+admisión; el supervisor no amplía sus permisos de registro para crear ramas de producto por sí mismo.
