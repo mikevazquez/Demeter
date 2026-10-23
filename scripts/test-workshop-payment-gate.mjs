@@ -2032,11 +2032,48 @@ try {
       "50000",
     );
   });
+  await test("legacy production conversations gain the missing discriminator without changing identities or finance", () => {
+    const before = query(
+      "select jsonb_build_object('conversations',(select count(*) from public.assistant_conversations),'payments',(select count(*) from public.payments),'purchases',(select count(*) from public.workshop_purchases),'students',(select count(*) from public.students))",
+    );
+    query(`begin; alter table public.assistant_conversations drop column assistant_key;
+      ${source("supabase/migrations/20261023192600_demi_workshop_conversation_identity_compat.sql")}; commit;`);
+    query(
+      source("supabase/migrations/20261023192600_demi_workshop_conversation_identity_compat.sql"),
+    );
+    assert.equal(
+      query(
+        "select count(*) from public.assistant_conversations where assistant_key is distinct from 'demi'",
+      ),
+      "0",
+    );
+    assert.equal(
+      query(
+        "select jsonb_build_object('conversations',(select count(*) from public.assistant_conversations),'payments',(select count(*) from public.payments),'purchases',(select count(*) from public.workshop_purchases),'students',(select count(*) from public.students))",
+      ),
+      before,
+    );
+    denied(
+      "update public.assistant_conversations set assistant_key='unknown'",
+      "assistant_conversations_assistant_key_check",
+    );
+  });
   query(
     `begin; ${source("supabase/migrations/20261023134522_demi_workshop_conversation_context.sql")}; commit;`,
   );
   const workshopContextSql = (c, tenant = studio) =>
     `select public.service_demi_workshop_context(${sqlString(tenant)},${sqlString(c?.id)})`;
+  await test("workshop context excludes non-Demi conversations after legacy schema compatibility", () => {
+    const c = conversation();
+    query(
+      `update public.assistant_conversations set assistant_key='polina' where id=${sqlString(c.id)}`,
+    );
+    denied(asRole("service_role", null, workshopContextSql(c)), "conversation_identity_mismatch");
+    query(
+      `update public.assistant_conversations set assistant_key='demi' where id=${sqlString(c.id)}`,
+    );
+    assert.equal(service(workshopContextSql(c)).ok, true);
+  });
   await test("workshop information distinguishes disabled from empty and denies foreign or client recovery", () => {
     const c = conversation();
     for (const role of ["anon", "authenticated"])
