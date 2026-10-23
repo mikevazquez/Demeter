@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import { WorkshopPaymentMethodFields } from "@/components/WorkshopPaymentMethodFields";
 
 import { registerWorkshopPayment } from "./workshop-actions";
 
@@ -10,6 +11,7 @@ type Props = {
   balanceMinor: number;
   currency: string;
   locale: string;
+  requestId: string;
 };
 
 export function WorkshopPaymentForm({
@@ -18,8 +20,10 @@ export function WorkshopPaymentForm({
   balanceMinor,
   currency,
   locale,
+  requestId,
 }: Props) {
   const [state, action, pending] = useActionState(registerWorkshopPayment, { error: null });
+  const [initialRequestId] = useState(requestId);
   const currentBalance = state.balanceMinor ?? balanceMinor;
   const balance = new Intl.NumberFormat(locale, {
     style: "currency",
@@ -40,6 +44,11 @@ export function WorkshopPaymentForm({
       <form action={action} key={currentBalance}>
         <input type="hidden" name="purchase_id" value={purchaseId} />
         <input type="hidden" name="student_id" value={studentId} />
+        <input
+          type="hidden"
+          name="payment_request_id"
+          value={state.nextRequestId ?? initialRequestId}
+        />
 
         <div className="profile360-workshop-payment-balance">
           <span>Saldo pendiente</span>
@@ -63,27 +72,7 @@ export function WorkshopPaymentForm({
           <small>Edita el monto para un abono parcial o déjalo igual para liquidar.</small>
         </label>
 
-        <label>
-          Método
-          <select name="payment_method" required defaultValue="">
-            <option value="" disabled>
-              Selecciona método
-            </option>
-            <option value="efectivo">Efectivo</option>
-            <option value="transferencia">Transferencia</option>
-          </select>
-        </label>
-
-        <label>
-          Referencia
-          <input
-            name="payment_reference"
-            minLength={3}
-            maxLength={200}
-            required
-            disabled={pending}
-          />
-        </label>
+        <WorkshopPaymentMethodFields initialMethod="" disabled={pending} />
 
         <label>
           Notas

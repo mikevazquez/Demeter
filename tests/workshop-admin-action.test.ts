@@ -66,6 +66,27 @@ describe("authenticated workshop server action", () => {
     expect((await purchaseWorkshop({ error: null }, data)).receipt).toBeUndefined();
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
+  it("accepts a cash purchase without a bank reference using the existing purchase request identity", async () => {
+    const data = form();
+    data.set("payment_method", "cash");
+    data.delete("reference");
+    mocks.rpc.mockResolvedValue({ data: null, error: { message: "session_full" } });
+    await purchaseWorkshop({ error: null }, data);
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      "admin_purchase_workshop_checked",
+      expect.objectContaining({
+        p_payment_method: "cash",
+        p_reference: `cash:${id}`,
+        p_request_id: id,
+      }),
+    );
+  });
+  it("rejects a transfer purchase without a bank reference before calling checkout", async () => {
+    const data = form();
+    data.delete("reference");
+    expect((await purchaseWorkshop({ error: null }, data)).error).toBeTruthy();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
   it("does not report success or revalidate after a capacity rejection", async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: "session_full" } });
     const result = await purchaseWorkshop({ error: null }, form());

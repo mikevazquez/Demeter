@@ -1982,6 +1982,40 @@ try {
     );
     denied(asRole("anon", null, sql), "permission denied");
   });
+  await test("cash request identities replay purchases and allow equal distinct installments without duplicate payments", () => {
+    const w = offer({ deposit: true });
+    const r = review(w, { amount: 30000, method: "cash" });
+    r.reference = `cash:${r.key}`;
+    const purchaseSql = checkedSql(r, 1);
+    const p = json(asRole("authenticated", admin, purchaseSql));
+    assert.equal(json(asRole("authenticated", admin, purchaseSql)).replayed, true);
+    const first = `cash:${randomUUID()}`;
+    const second = `cash:${randomUUID()}`;
+    const paymentSql = profileInstallment(p, 10000, first, "cash");
+    assert.equal(json(asRole("authenticated", admin, paymentSql)).balance_minor, 20000);
+    assert.equal(json(asRole("authenticated", admin, paymentSql)).replayed, true);
+    denied(
+      asRole("authenticated", admin, profileInstallment(p, 11000, first, "cash")),
+      "idempotency_conflict",
+    );
+    assert.equal(
+      json(asRole("authenticated", admin, profileInstallment(p, 10000, second, "cash")))
+        .balance_minor,
+      10000,
+    );
+    assert.equal(
+      query(`select count(*) from public.payments where sale_id=${sqlString(p.sale_id)}`),
+      "3",
+    );
+    assert.equal(
+      query(`select sum(amount_minor) from public.payments where sale_id=${sqlString(p.sale_id)}`),
+      "50000",
+    );
+    denied(
+      asRole("authenticated", admin, profileInstallment(p, 10000, "", "bank_transfer")),
+      "payment_reference_required",
+    );
+  });
   await test("simultaneous Hoy and profile payments use the same lock order and cannot overcollect", async () => {
     const w = offer({ deposit: true }),
       p = json(asRole("authenticated", admin, checkedSql(review(w, { amount: 30000 }), 1)));

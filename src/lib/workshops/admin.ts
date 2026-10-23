@@ -1,3 +1,5 @@
+import { workshopPaymentReference } from "./payment-reference";
+
 export interface WorkshopSummary {
   id: string;
   title: string;
@@ -61,7 +63,12 @@ export function workshopPurchaseInput(data: FormData) {
   const sessionIds = data.getAll("session_ids").map(String);
   const amountMinor = receivedAmountMinor(String(data.get("received_amount") ?? ""));
   const method = String(data.get("payment_method") ?? "");
-  const reference = String(data.get("reference") ?? "").trim();
+  const reference = workshopPaymentReference(
+    method,
+    String(data.get("reference") ?? ""),
+    requestId,
+    1,
+  );
   const revisionText = String(data.get("offer_revision") ?? "");
   if (
     !/^\d+$/.test(revisionText) ||
@@ -81,7 +88,7 @@ export function workshopPurchaseInput(data: FormData) {
     return { ok: false as const, error: "Revisa las fechas seleccionadas." };
   if (amountMinor == null)
     return { ok: false as const, error: "Escribe un importe válido, con hasta dos decimales." };
-  if (!["cash", "bank_transfer"].includes(method) || !reference || reference.length > 200)
+  if (!["cash", "bank_transfer"].includes(method) || reference === null)
     return { ok: false as const, error: "Revisa el método y la referencia del pago." };
   if (data.get("payment_received") !== "on")
     return { ok: false as const, error: "Confirma que ya recibiste y verificaste el pago." };

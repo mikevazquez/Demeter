@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { receivedAmountMinor, workshopUuid } from "@/src/lib/workshops/admin";
+import { workshopPaymentReference } from "@/src/lib/workshops/payment-reference";
 
 export async function registerWorkshopAbono(data: FormData) {
   const saleId = String(data.get("sale_id") ?? "");
@@ -12,7 +13,12 @@ export async function registerWorkshopAbono(data: FormData) {
   const sessionId = String(data.get("session_id") ?? "");
   const amount = receivedAmountMinor(String(data.get("payment_amount") ?? ""));
   const method = String(data.get("payment_method") ?? "");
-  const reference = String(data.get("payment_reference") ?? "").trim();
+  const requestId = String(data.get("payment_request_id") ?? "");
+  const reference = workshopPaymentReference(
+    method,
+    String(data.get("payment_reference") ?? ""),
+    requestId,
+  );
   const requestedBack = String(data.get("return_to") ?? "");
   const back = /^\/admin(?:\?date=\d{4}-\d{2}-\d{2})?(?:#session-[0-9a-f-]{36})?$/.test(
     requestedBack,
@@ -22,14 +28,17 @@ export async function registerWorkshopAbono(data: FormData) {
   const fail = (code: string) => {
     const destination = new URL(back, "https://local.invalid");
     destination.searchParams.set("error", code);
+    if (method === "cash" && workshopUuid.test(requestId) && workshopUuid.test(saleId)) {
+      destination.searchParams.set("workshop_payment_request", requestId);
+      destination.searchParams.set("workshop_payment_sale", saleId);
+    }
     return redirect(destination.pathname + destination.search + destination.hash);
   };
   if (
     ![saleId, reservationId, sessionId].every((id) => workshopUuid.test(id)) ||
     amount === null ||
     !["cash", "bank_transfer"].includes(method) ||
-    reference.length < 3 ||
-    reference.length > 200
+    reference === null
   )
     fail("workshop_payment_invalid");
 

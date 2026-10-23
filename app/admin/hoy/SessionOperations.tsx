@@ -12,6 +12,8 @@ import { ExistingStudentAddForm } from "./ExistingStudentAddForm";
 import { PendingClassPaymentDialog } from "./PendingClassPaymentDialog";
 import { registerWorkshopAbono } from "./workshop-abono-actions";
 import { GiftIcon } from "./GiftIcon";
+import { WorkshopPaymentMethodFields } from "@/components/WorkshopPaymentMethodFields";
+import { workshopUuid } from "@/src/lib/workshops/admin";
 
 type RosterItem = {
   id: string;
@@ -95,6 +97,7 @@ export function SessionOperations({
   const [newWalkin, setNewWalkin] = useState(false);
   const [paymentItem, setPaymentItem] = useState<RosterItem | null>(null);
   const [workshopPaymentItem, setWorkshopPaymentItem] = useState<RosterItem | null>(null);
+  const [workshopPaymentRequestId, setWorkshopPaymentRequestId] = useState("");
   const [cancelItem, setCancelItem] = useState<RosterItem | null>(null);
   const [feedback, setFeedback] = useState<{
     kind: "success" | "error";
@@ -339,7 +342,17 @@ export function SessionOperations({
                             <button
                               type="button"
                               className="today-payment-pending-tag"
-                              onClick={() => setWorkshopPaymentItem(item)}
+                              onClick={() => {
+                                const params = new URLSearchParams(window.location.search);
+                                const savedId = params.get("workshop_payment_request") ?? "";
+                                setWorkshopPaymentRequestId(
+                                  params.get("workshop_payment_sale") === item.workshopSaleId &&
+                                    workshopUuid.test(savedId)
+                                    ? savedId
+                                    : crypto.randomUUID(),
+                                );
+                                setWorkshopPaymentItem(item);
+                              }}
                             >
                               Registrar abono →
                             </button>
@@ -638,6 +651,7 @@ export function SessionOperations({
               </button>
             </header>
             <form action={registerWorkshopAbono}>
+              <input type="hidden" name="payment_request_id" value={workshopPaymentRequestId} />
               <input type="hidden" name="sale_id" value={workshopPaymentItem.workshopSaleId} />
               <input type="hidden" name="reservation_id" value={workshopPaymentItem.id} />
               <input type="hidden" name="session_id" value={sessionId} />
@@ -658,22 +672,7 @@ export function SessionOperations({
                   required
                 />
               </label>
-              <label className="today-payment-field">
-                <span>Método</span>
-                <select name="payment_method" defaultValue="cash" required>
-                  <option value="cash">Efectivo</option>
-                  <option value="bank_transfer">Transferencia</option>
-                </select>
-              </label>
-              <label className="today-payment-field">
-                <span>Referencia única del pago</span>
-                <input
-                  name="payment_reference"
-                  required
-                  maxLength={200}
-                  placeholder="Folio o referencia"
-                />
-              </label>
+              <WorkshopPaymentMethodFields fieldClassName="today-payment-field" />
               <div className="today-payment-actions">
                 <button
                   type="button"

@@ -1,7 +1,9 @@
 "use server";
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { workshopUuid } from "@/src/lib/workshops/admin";
+import { workshopPaymentReference } from "@/src/lib/workshops/payment-reference";
 
 export interface WorkshopContinuationState {
   error: string | null;
@@ -52,6 +54,7 @@ export interface WorkshopPaymentState {
   error: string | null;
   paidMinor?: number;
   balanceMinor?: number;
+  nextRequestId?: string;
 }
 
 function moneyToMinor(value: string) {
@@ -65,7 +68,7 @@ function moneyToMinor(value: string) {
 const workshopPaymentErrorCopy: Record<string, string> = {
   payment_invalid: "Escribe un monto válido.",
   payment_method_required: "Selecciona un método de pago.",
-  payment_reference_required: "Escribe una referencia para identificar el pago sin duplicarlo.",
+  payment_reference_required: "Escribe la referencia bancaria de la transferencia.",
   payment_method_unavailable: "Ese método no está habilitado en el estudio.",
   idempotency_conflict: "La referencia ya se usó con otro importe o método. Revisa el historial.",
   payment_exceeds_balance: "El abono no puede ser mayor al saldo pendiente.",
@@ -80,14 +83,19 @@ export async function registerWorkshopPayment(
   _state: WorkshopPaymentState,
   data: FormData,
 ): Promise<WorkshopPaymentState> {
+  const fail = (error: string): WorkshopPaymentState => ({ ..._state, error });
   const ctx = await getAdminContext("students.read");
-  if (!ctx.can("sales.write")) return { error: "Necesitas permisos de ventas." };
+  if (!ctx.can("sales.write")) return fail("Necesitas permisos de ventas.");
 
   const purchaseId = String(data.get("purchase_id") ?? "");
   const studentId = String(data.get("student_id") ?? "");
   const paymentMinor = moneyToMinor(String(data.get("payment_amount") ?? ""));
   const paymentMethod = String(data.get("payment_method") ?? "").trim();
-  const paymentReference = String(data.get("payment_reference") ?? "").trim();
+  const paymentReference = workshopPaymentReference(
+    paymentMethod,
+    String(data.get("payment_reference") ?? ""),
+    String(data.get("payment_request_id") ?? ""),
+  );
   const paymentNotes = String(data.get("payment_notes") ?? "").trim();
 
   if (
@@ -96,11 +104,12 @@ export async function registerWorkshopPayment(
     paymentMinor === null ||
     paymentMinor <= 0 ||
     !["cash", "bank_transfer", "efectivo", "transferencia"].includes(paymentMethod) ||
-    paymentReference.length < 3 ||
-    paymentReference.length > 200 ||
+    paymentReference === null ||
     data.get("payment_received") !== "on"
   ) {
-    return { error: "Revisa el monto, método y referencia, y confirma el dinero recibido." };
+    return fail(
+      "Revisa el monto y método, la referencia bancaria si es transferencia y confirma el dinero recibido.",
+    );
   }
 
   const response = await (async () => {
@@ -119,11 +128,10 @@ export async function registerWorkshopPayment(
   })();
 
   if (response.error) {
-    return {
-      error:
-        workshopPaymentErrorCopy[response.error.message] ??
+    return fail(
+      workshopPaymentErrorCopy[response.error.message] ??
         "No pudimos registrar el pago. Revisa el historial antes de reintentar.",
-    };
+    );
   }
 
   const result = response.data as {
@@ -140,7 +148,7 @@ export async function registerWorkshopPayment(
     (result?.paid_minor ?? -1) < 0 ||
     (result?.balance_minor ?? -1) < 0
   ) {
-    return { error: "No pudimos verificar el pago. Actualiza antes de reintentar." };
+    return fail("No pudimos verificar el pago. Actualiza antes de reintentar.");
   }
 
   revalidatePath(`/admin/alumnas/${studentId}`);
@@ -153,5 +161,6 @@ export async function registerWorkshopPayment(
     error: null,
     paidMinor: result.paid_minor,
     balanceMinor: result.balance_minor,
+    nextRequestId: randomUUID(),
   };
 }

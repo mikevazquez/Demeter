@@ -6,6 +6,7 @@ import { calculateDeposit, quoteWorkshopPurchase } from "@/src/lib/workshops/pur
 import { receivedAmountMinor, type WorkshopAdminContext } from "@/src/lib/workshops/admin";
 import { workshopBalanceDueAt } from "@/src/lib/workshops/first-session-policy";
 import { purchaseWorkshop } from "../actions";
+import { WorkshopPaymentMethodFields } from "@/components/WorkshopPaymentMethodFields";
 
 export function WorkshopPurchaseForm({
   context,
@@ -28,8 +29,7 @@ export function WorkshopPurchaseForm({
   const [amount, setAmount] = useState<string | null>(null);
   const [paymentChoice, setPaymentChoice] = useState<"deposit" | "custom" | "full">("deposit");
   const [studentId, setStudentId] = useState("");
-  const [method, setMethod] = useState(context.paymentMethods[0] ?? "");
-  const [reference, setReference] = useState("");
+  const [purchaseRequestId] = useState(requestId);
   const [receivedChecked, setReceivedChecked] = useState(false);
   const offer = context.offer;
   const quote = quoteWorkshopPurchase(
@@ -105,8 +105,8 @@ export function WorkshopPurchaseForm({
     <form action={action} onReset={(event) => event.preventDefault()} className="activities-stage">
       <h2>Registrar compra y reservar</h2>
       <p>
-        Registra únicamente dinero recibido y verificado. La referencia identifica este pago y
-        permite reintentar sin duplicarlo.
+        Registra únicamente dinero recibido y verificado. Para transferencias, captura la referencia
+        bancaria.
       </p>
       {!canPurchase ? (
         <p>
@@ -128,7 +128,7 @@ export function WorkshopPurchaseForm({
       {currency !== "MXN" ? <p>Este registro de pagos solo admite pesos mexicanos.</p> : null}
       <fieldset className="workshop-purchase-fields" disabled={pending || unavailable}>
         <input type="hidden" name="offer_id" value={offer.id} />
-        <input type="hidden" name="request_id" value={requestId} />
+        <input type="hidden" name="request_id" value={purchaseRequestId} />
         <input type="hidden" name="offer_revision" value={offer.revision} />
         {(quote.ok ? quote.sessionIds : []).map((id) => (
           <input type="hidden" name="session_ids" key={id} value={id} />
@@ -297,32 +297,14 @@ export function WorkshopPurchaseForm({
               }}
             />
           </label>
-          <label className="activities-field">
-            <span>Pago recibido por</span>
-            <select
-              name="payment_method"
-              required
-              value={method}
-              onChange={(event) => setMethod(event.target.value as "cash" | "bank_transfer")}
-            >
-              {context.paymentMethods.map((method) => (
-                <option key={method} value={method}>
-                  {method === "cash" ? "Efectivo" : "Transferencia verificada"}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="activities-field activities-field-wide">
-            <span>Referencia bancaria o folio del recibo</span>
-            <input
-              name="reference"
-              required
-              maxLength={200}
-              autoComplete="off"
-              value={reference}
-              onChange={(event) => setReference(event.target.value)}
-            />
-          </label>
+          <WorkshopPaymentMethodFields
+            methods={context.paymentMethods}
+            initialMethod={context.paymentMethods[0] ?? ""}
+            referenceName="reference"
+            referenceMinLength={1}
+            fieldClassName="activities-field"
+            referenceClassName="activities-field activities-field-wide"
+          />
         </div>
         {quote.ok && effectiveReceived != null && effectiveReceived <= quote.totalMinor ? (
           <p aria-live="polite">

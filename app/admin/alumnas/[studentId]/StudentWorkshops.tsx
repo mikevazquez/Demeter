@@ -132,6 +132,7 @@ export async function StudentWorkshops({
               <div className="profile360-workshop-actions">
                 {p.balanceMinor > 0 && ctx.can("sales.write") ? (
                   <WorkshopPaymentForm
+                    requestId={randomUUID()}
                     purchaseId={p.id}
                     studentId={studentId}
                     balanceMinor={p.balanceMinor}

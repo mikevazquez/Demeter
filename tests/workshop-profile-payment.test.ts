@@ -8,6 +8,7 @@ import { registerWorkshopPayment } from "@/app/admin/alumnas/[studentId]/worksho
 
 const purchaseId = "00000000-0000-4000-8000-000000000001";
 const studentId = "00000000-0000-4000-8000-000000000002";
+const requestId = "00000000-0000-4000-8000-000000000003";
 
 function form(amount = "300.00") {
   const data = new FormData();
@@ -52,7 +53,12 @@ describe("student workshop installment payment", () => {
       p_payment_reference: "ABONO-01",
       p_payment_notes: "Segundo abono",
     });
-    expect(result).toEqual({ error: null, paidMinor: 60000, balanceMinor: 0 });
+    expect(result).toEqual({
+      error: null,
+      paidMinor: 60000,
+      balanceMinor: 0,
+      nextRequestId: expect.any(String),
+    });
     expect(mocks.revalidate).toHaveBeenCalledWith(`/admin/alumnas/${studentId}`);
   });
 
@@ -72,9 +78,39 @@ describe("student workshop installment payment", () => {
     data.delete("payment_received");
     expect((await registerWorkshopPayment({ error: null }, data)).error).toBeTruthy();
     const noReference = form();
+    noReference.set("payment_method", "transferencia");
+    noReference.set("payment_request_id", requestId);
     noReference.delete("payment_reference");
     expect((await registerWorkshopPayment({ error: null }, noReference)).error).toBeTruthy();
     expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it("allows cash without a reference, rotates identity only after success and uses the same key on retry", async () => {
+    const data = form("100");
+    data.set("payment_request_id", requestId);
+    data.delete("payment_reference");
+    mocks.rpc.mockRejectedValueOnce(new Error("lost response"));
+    const unknown = await registerWorkshopPayment({ error: null }, data);
+    expect(unknown.error).toContain("historial");
+    expect(unknown.nextRequestId).toBeUndefined();
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+    mocks.rpc.mockResolvedValue({
+      data: { purchase_id: purchaseId, paid_minor: 40000, balance_minor: 20000 },
+      error: null,
+    });
+    const success = await registerWorkshopPayment(unknown, data);
+    expect(success.nextRequestId).toMatch(/^[a-f0-9-]{36}$/);
+    expect(success.nextRequestId).not.toBe(requestId);
+    for (const [name, args] of mocks.rpc.mock.calls) {
+      expect(name).toBe("admin_register_workshop_payment");
+      expect(args.p_payment_reference).toBe(`cash:${requestId}`);
+    }
+    const next = form("100");
+    next.delete("payment_reference");
+    next.set("payment_request_id", success.nextRequestId!);
+    mocks.rpc.mockRejectedValueOnce(new Error("lost response"));
+    const nextUnknown = await registerWorkshopPayment(success, next);
+    expect(nextUnknown.nextRequestId).toBe(success.nextRequestId);
+    expect(mocks.rpc.mock.calls.at(-1)?.[1].p_payment_reference).not.toBe(`cash:${requestId}`);
   });
   it("does not retry an unknown outcome", async () => {
     mocks.rpc.mockRejectedValue(new Error("connection lost"));
