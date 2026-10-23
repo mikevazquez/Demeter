@@ -1,0 +1,93 @@
+{
+  "date_utc": "2026-10-23",
+  "base_sha": "a7df0a20e4c536b4313f9dd5f15d5e67ca0a41e1",
+  "branch": "codex/demi-instagram-production-20261023",
+  "sandbox_project": "hedouonyhynuvwbckdlg",
+  "sandbox_migration_version": "20261023132154",
+  "source_migration_version": "20261023065724",
+  "files_sha256": {
+    "supabase/migrations/20261023065724_demi_instagram_signing_secret_studio_scope.sql": "b63674a4fa6629ad20a26f57986dde08e63de6e48368e4a1411a59aaea4288f0",
+    "tests/demi-instagram-signing-secret-uat.sql": "60836051df3fbfd10a47184b9e6c93003890d71f8b9e76ad17d592b2a6235d03",
+    "tests/demi-meta-inbox-signature-runtime.test.ts": "663086ddd6c8200b19bb04a34cc2fe06d89eb31e03cf5f48c973d190466245f8"
+  },
+  "sql_uat": {
+    "result": "PASS",
+    "assertions": 13,
+    "remaining_synthetic_vault_fixtures": 0,
+    "rollback": true
+  },
+  "local_tests": {
+    "result": "PASS",
+    "files": 4,
+    "tests": 34,
+    "eslint": "PASS",
+    "typecheck": "PASS",
+    "diff_check": "PASS"
+  },
+  "sandbox_http_probes": [
+    {
+      "request_id": 196305,
+      "scope": "empty Instagram envelope; saved Instagram key",
+      "status": 200,
+      "body": {
+        "ok": true,
+        "accepted": true,
+        "messages": 0
+      }
+    },
+    {
+      "request_id": 196306,
+      "scope": "empty Instagram envelope; saved Messenger key",
+      "status": 401,
+      "body": {
+        "error": "invalid_signature"
+      }
+    }
+  ],
+  "meta_diagnostics": {
+    "account": {
+      "username": "demeter_fitness_studio",
+      "user_id": "17841468835993555",
+      "api_id": "28616021298024732",
+      "profile_http_status": 200
+    },
+    "account_subscription": {
+      "http_status": 200,
+      "app_id": "17950277640294534",
+      "subscribed_fields": ["messages"]
+    },
+    "application_callback": "UNVERIFIED",
+    "debug_probes": [
+      {
+        "request_id": 196301,
+        "host": "graph.facebook.com",
+        "status": 400,
+        "code": 2,
+        "type": "OAuthException"
+      },
+      {
+        "request_id": 196302,
+        "host": "graph.instagram.com",
+        "status": 403,
+        "code": 10,
+        "type": "IGApiException"
+      }
+    ],
+    "interpretation": "Account reads succeed. Management/debug failures do not prove the account token is invalid. Current application callback and Meta-generated HMAC are unverified."
+  },
+  "production": {
+    "project": "qfhojvgvhrbautvczffq",
+    "read_only_verification": true,
+    "getter_present": false,
+    "instagram_key_present": false,
+    "instagram_connection_present": false,
+    "messenger_connection_present": true,
+    "activated": false
+  },
+  "limitations": [
+    "No external Instagram inbound/response verified",
+    "Instagram application callback not verified or changed",
+    "No production migration or configuration applied",
+    "DEMI-PILOT-01 remains blocked"
+  ]
+}
