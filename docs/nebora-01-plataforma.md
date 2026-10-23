@@ -216,15 +216,24 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 - Pantallas: Configuración › Reservas › «Primera clase». El alta de alumna muestra el monto real
   del abono.
 
+### NEB-01-37 · Tiempos de los recordatorios de Demi (`20261022220000`)
+
+- En `demi_followup_settings`: horas de recordatorio de pago, días de recuperación de paquete o
+  inscripción, días para alumna inactiva, días antes de vencer el paquete y minutos de apartado
+  de la primera clase pagada por adelantado. Arranque = Demeter hoy (2 y 6 h; 7, 15 y 30 días;
+  14 días; 3 días antes; 30 minutos).
+- `service_schedule_demi_followups` se ajusta sobre su definición vigente; el apartado usa la
+  configuración. Pantalla: Demi › Seguimientos › «Tiempos de los recordatorios» (dueño).
+
 ## Pruebas
 
 - SQL local, nunca contra Sandbox ni producción:
   `PGHOST=… PGPORT=… PGUSER=postgres scripts/neb01-sql-tests.sh`. Corre 18 controles de plataforma
-  13 de bloqueos y solicitudes, 3 de marca, 12 de la consola, 7 de zona horaria, 13 de reglas de reserva, 9 de penalizaciones y 6 de primera clase, y deshace todo al terminar.
+  13 de bloqueos y solicitudes, 3 de marca, 12 de la consola, 7 de zona horaria, 13 de reglas de reserva, 9 de penalizaciones, 6 de primera clase y 4 de recordatorios de Demi, y deshace todo al terminar.
 - Vitest: `tests/neb01-catalog.test.ts`, `tests/neb01-guards.test.ts`, `tests/neb01-branding.test.ts`,
   `tests/neb01-console.test.ts`, `tests/neb01-timezone.test.ts`,
-  `tests/neb01-booking-windows.test.ts`, `tests/neb01-penalties.test.ts` y
-  `tests/neb01-trial-credit.test.ts`.
+  `tests/neb01-booking-windows.test.ts`, `tests/neb01-penalties.test.ts`,
+  `tests/neb01-trial-credit.test.ts` y `tests/neb01-demi-timings.test.ts`.
 
 ## Para Codex
 
@@ -232,8 +241,8 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
    `20261022211000_neb01_plans_modules_entitlements` y `20261022212000_neb01_entitlement_guards` y
    `20261022213000_neb01_module_activation_requests`, `20261022214000_neb01_studio_brand_name`,
    `20261022215000_neb01_platform_console_reads`, `20261022216000_neb01_studio_local_time`,
-   `20261022217000_neb01_booking_windows`, `20261022218000_neb01_student_penalties` y
-   `20261022219000_neb01_trial_enrollment_credit`.
+   `20261022217000_neb01_booking_windows`, `20261022218000_neb01_student_penalties`,
+   `20261022219000_neb01_trial_enrollment_credit` y `20261022220000_neb01_demi_reminder_timings`.
 2. Insertar a Mike en `platform_admins` con su cuenta de Sandbox.
 3. Verificar que todos los estudios quedaron en `allaccess/internal` y correr QA.
 4. Con la cuenta de Mike, abrir `/plataforma` y la ficha de Demeter. Con una cuenta que no sea
@@ -252,5 +261,7 @@ Definición (borrador)». Mike aprobó la definición y el demo de la consola el
 8. Primera clase: en un estudio de prueba poner precio $200, abono $100, inscripción mínima $500
    y 3 días; confirmar que Demi cobra $200, que el alta ofrece abonar $100 hasta 3 días después y
    que en Demeter todo sigue en $150 el mismo día.
+9. Recordatorios de Demi: confirmar que Demeter conserva 2/6 h, 7/15/30 días, 14 días, 3 días y
+   30 minutos; en un estudio de prueba cambiarlos y revisar las fechas de `demi_followups` nuevos.
 
 Producción no se toca sin la autorización explícita de Mike.

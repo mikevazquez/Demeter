@@ -412,3 +412,45 @@ begin
  values(st.studio_id,st.id,source.id,source.sale_id,(option->>'reservation_id')::uuid,sale,line,15000,today,(select auth.uid()));
  return jsonb_build_object('ok',true,'replayed',false,'sale_id',sale,'total_minor',total,'paid_minor',initial_payment_minor,'balance_minor',0,'trial_credit_minor',15000);
 end; $$;
+
+-- NEB-01-37 · stand-ins: follow-up settings and the current scheduling function.
+create table public.demi_followup_settings (studio_id uuid primary key references public.studios(id), enabled boolean not null default false, prospect_interval_hours integer not null default 24, templates jsonb not null default '{}');
+CREATE OR REPLACE FUNCTION public.service_schedule_demi_followups(p_studio uuid, p_conversation uuid, p_kind text, p_source_ref text, p_source_at timestamp with time zone)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+declare c public.assistant_conversations%rowtype; person uuid; delays interval[]; i integer; settings public.demi_followup_settings%rowtype; payment_group public.demi_group_bookings%rowtype; v_source_ref text:=p_source_ref; v_source_at timestamptz:=p_source_at;
+begin
+ if auth.role() is distinct from 'service_role' then raise exception 'forbidden'; end if;
+ select * into settings from public.demi_followup_settings where studio_id=p_studio and enabled;
+ if not found then return jsonb_build_object('ok',false,'reason_code','followups_disabled'); end if;
+ select * into c from public.assistant_conversations where id=p_conversation and studio_id=p_studio;
+ if not found then return jsonb_build_object('ok',false,'reason_code','conversation_not_found'); end if;
+ select person_id into person from public.students where id=c.student_id and studio_id=p_studio;
+ if person is null then select person_id into person from public.crm_contacts where id=nullif(c.context->>'crm_contact_id','')::uuid and studio_id=p_studio; end if;
+ if person is null then return jsonb_build_object('ok',false,'reason_code','identity_required'); end if;
+ if nullif(p_source_ref,'') is null or p_source_at is null then return jsonb_build_object('ok',false,'reason_code','source_required'); end if;
+ if p_kind='prospect' then
+  select * into payment_group from public.demi_group_bookings where studio_id=p_studio and conversation_id=p_conversation and status='awaiting_receipt' order by created_at desc limit 1;
+  if found then
+   v_source_ref:='payment:'||payment_group.id; v_source_at:=payment_group.created_at;
+   update public.demi_followups set state='cancelled',reason_code='payment_requested',lease_token=null,lease_until=null
+    where studio_id=p_studio and conversation_id=p_conversation and kind='prospect' and source_ref<>('payment:'||payment_group.id) and state in ('pending','processing');
+  end if;
+ end if;
+ if payment_group.id is not null then delays:=array[interval '2 hours',interval '6 hours'];
+ elsif p_kind in ('prospect','post_trial') then delays:=array[make_interval(hours=>settings.prospect_interval_hours),make_interval(hours=>settings.prospect_interval_hours*2)];
+ elsif p_kind in ('package','enrollment') then delays:=array[interval '7 days',interval '15 days',interval '30 days'];
+ elsif p_kind='inactive' then delays:=array[interval '14 days'];
+ elsif p_kind='package_expiring' then delays:=array[interval '-3 days'];
+ elsif p_kind='package_expired' then delays:=array[interval '0 days'];
+ else return jsonb_build_object('ok',false,'reason_code','invalid_kind'); end if;
+ if p_kind in ('prospect','post_trial') and private.demi_group_has_active_reservation(p_studio,p_conversation) then return jsonb_build_object('ok',true,'steps',0,'reason_code','group_reservation_exists'); end if;
+ for i in 1..array_length(delays,1) loop
+  insert into public.demi_followups(studio_id,person_id,conversation_id,kind,source_ref,source_at,step,due_at)
+  values(p_studio,person,c.id,p_kind,v_source_ref,v_source_at,i,v_source_at+delays[i]) on conflict do nothing;
+ end loop;
+ return jsonb_build_object('ok',true,'steps',array_length(delays,1));
+end; $function$;
+
