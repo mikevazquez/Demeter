@@ -4,6 +4,8 @@ import {
   canonicalMetaWaId,
   forwardSignedMetaWebhook,
   pilotForwardTarget,
+  runPilotDeferredTurn,
+  schedulePilotBackground,
 } from "../lib/assistant/pilot-forwarding";
 
 describe("Demi pilot webhook forwarding", () => {
@@ -85,5 +87,45 @@ describe("Demi pilot webhook forwarding", () => {
 
     expect(result).toEqual({ ok: true, status: 200 });
     expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries a deferred turn only while it reports a retryable failure", async () => {
+    const statuses = [500, 200];
+    const attempt = vi.fn(async () => new Response(null, { status: statuses.shift() }));
+    const sleep = vi.fn(async () => {});
+    expect(await runPilotDeferredTurn(attempt, { sleep })).toEqual({
+      ok: true,
+      attempts: 2,
+      status: 200,
+    });
+    expect(attempt).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops after the bounded number of attempts", async () => {
+    const attempt = vi.fn(async () => {
+      throw new Error("synthetic");
+    });
+    const result = await runPilotDeferredTurn(attempt, { sleep: async () => {} });
+    expect(result).toEqual({ ok: false, attempts: 2, status: 500 });
+    expect(attempt).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry a successful deferred turn", async () => {
+    const attempt = vi.fn(async () => new Response(null, { status: 200 }));
+    expect((await runPilotDeferredTurn(attempt)).attempts).toBe(1);
+    expect(attempt).toHaveBeenCalledTimes(1);
+  });
+
+  it("contains background task errors instead of crashing the request", async () => {
+    const tasks: Array<() => Promise<unknown>> = [];
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    schedulePilotBackground(
+      async () => {
+        throw new Error("synthetic");
+      },
+      (task) => tasks.push(task),
+    );
+    await expect(tasks[0]()).resolves.toBeUndefined();
   });
 });
