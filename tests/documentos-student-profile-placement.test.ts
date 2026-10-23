@@ -17,9 +17,10 @@ describe("DOCUMENTOS-01 person-centric information architecture", () => {
   const evidenceRedirect = source("app/admin/documentos/aceptaciones/[acceptanceId]/page.tsx");
 
   it("places document status inside the student profile 360", () => {
-    expect(overview).toContain('href={href("documents")}');
-    expect(overview).toContain("Documentos");
-    expect(profile).toContain('view === "documents"');
+    // P360-V2-06: los documentos viven en la pestaña Expediente.
+    expect(overview).toContain('documents: "record"');
+    expect(overview).toContain('id="documentos"');
+    expect(profile).toContain('tab === "record"');
     expect(profile).toContain("<StudentDocumentsPanel");
     expect(panel).toContain('supabase.rpc("admin_student_document_profile"');
     expect(panel).toContain("<strong>Pendientes</strong>");

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
+import { profile360Source } from "./support/profile360-source";
 
 function source(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8");
@@ -115,7 +116,7 @@ describe("Flow 01 student onboarding", () => {
     const studentsPage = source("app/admin/alumnas/page.tsx");
     const onboarding = source("app/admin/alumnas/[studentId]/alta/StudentOnboardingForm.tsx");
     const reservation = source("app/admin/alumnas/[studentId]/reservar/page.tsx");
-    const profile = source("app/admin/alumnas/[studentId]/page.tsx");
+    const profile = profile360Source();
 
     expect(pendingButton).toContain("useFormStatus");
     expect(pendingButton).toContain("LoadingSpinner");
@@ -144,10 +145,11 @@ describe("Flow 01 student onboarding", () => {
   });
 
   it("finishes in Profile 360 with Spanish read-model states and no reservation action", () => {
-    const profile = source("app/admin/alumnas/[studentId]/page.tsx");
-    const overview = source("app/admin/alumnas/[studentId]/Profile360Overview.tsx");
+    // P360-V2-02: los avisos viven ahora en la lista de pendientes del Resumen.
+    const profile = profile360Source();
+    const overview = profile;
     expect(profile).toContain("lifecycleCopy");
-    expect(profile).toContain("Sin créditos disponibles");
+    expect(profile).toContain("Sin clases disponibles");
     expect(profile).toContain("Saldo pendiente");
     expect(overview).toContain("Sin próxima clase");
     expect(profile).not.toContain("Reservar primera clase");

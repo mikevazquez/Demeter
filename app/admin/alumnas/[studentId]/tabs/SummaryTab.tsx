@@ -144,6 +144,13 @@ export default function SummaryTab({ model }: { model: Profile360Model }) {
           <span>Nota interna</span>
           <strong>{internalNote || "Sin nota"}</strong>
         </div>
+        {canSell && !enrollment && student.lifecycle_status !== "inactive" ? (
+          <div className="p360v2-task-actions">
+            <Link className="crm-btn" href={`/admin/ventas/nueva?student_id=${student.id}`}>
+              Agregar inscripción
+            </Link>
+          </div>
+        ) : null}
       </section>
     </div>
   );

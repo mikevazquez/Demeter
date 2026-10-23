@@ -1093,6 +1093,26 @@ export default async function IntelligencePage({
     viewHref(target, days) + (discipline ? "&discipline=" + encodeURIComponent(discipline) : "");
   const [pageTitle, pageDescription] = titleFor(view);
 
+  // P360-V2-07: los indicadores de entrada comercial salieron del directorio de Alumnas.
+  const entryFacts =
+    view === "conversion"
+      ? ((
+          await supabase
+            .from("student_entry_conversion_facts")
+            .select("entry_mode,converted_to_regular_package")
+            .eq("studio_id", studio.id)
+        ).data ?? [])
+      : [];
+  const singleClassEntries = entryFacts.filter((item) => item.entry_mode === "single_class").length;
+  const introductoryEntries = entryFacts.filter(
+    (item) => item.entry_mode === "introductory_package",
+  ).length;
+  const introductoryConversions = entryFacts.filter(
+    (item) => item.entry_mode === "introductory_package" && item.converted_to_regular_package,
+  ).length;
+  const introductoryConversionRate =
+    introductoryEntries > 0 ? Math.round((introductoryConversions / introductoryEntries) * 100) : 0;
+
   return (
     <main className="intel-page">
       <header className="intel-header">
@@ -1862,6 +1882,32 @@ export default async function IntelligencePage({
               tone={trialConversion >= previousTrialConversion ? "positive" : "warning"}
             />
           </section>
+
+          <Section
+            title="Entrada comercial"
+            description="Cómo empezaron las alumnas y cuántas pasaron del introductorio a un paquete regular. Total histórico."
+          >
+            <section className="intel-kpi-grid">
+              <MetricCard
+                label="Entrada · clase suelta"
+                value={String(singleClassEntries)}
+                delta="Total histórico"
+                tone="info"
+              />
+              <MetricCard
+                label="Entrada · introductorio"
+                value={String(introductoryEntries)}
+                delta="Total histórico"
+                tone="info"
+              />
+              <MetricCard
+                label="Intro → paquete regular"
+                value={introductoryConversionRate + "%"}
+                delta={introductoryConversions + " de " + introductoryEntries}
+                tone="positive"
+              />
+            </section>
+          </Section>
 
           <TrendChart
             title="Contactos y compras atribuidas"

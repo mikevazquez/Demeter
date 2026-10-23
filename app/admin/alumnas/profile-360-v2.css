@@ -298,6 +298,9 @@
   border-radius: 50%;
   background: var(--p360v2-accent);
 }
+.p360v2-dot.is-ok {
+  background: var(--p360v2-accent);
+}
 .p360v2-dot.is-bad {
   background: var(--p360v2-bad);
 }
@@ -319,4 +322,42 @@
     grid-template-columns: 1fr;
     gap: 4px;
   }
+}
+
+.p360v2-directory .p360v2-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  text-decoration: none;
+}
+.p360v2-person-body {
+  display: grid;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+.p360v2-person-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.p360v2-person-top strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.p360v2-next-text {
+  overflow: hidden;
+  color: var(--p360v2-text);
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.p360v2-extra {
+  flex: none;
+  color: var(--p360v2-muted);
+  font-size: 11px;
 }

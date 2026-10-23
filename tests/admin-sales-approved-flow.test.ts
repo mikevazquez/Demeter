@@ -55,7 +55,9 @@ describe("Registrar venta reuses the approved commercial flow", () => {
   });
 
   it("lets authorized staff sell a new package from Perfil 360 with the student preselected", () => {
-    expect(profile).toContain("canSell={can(CAPABILITIES.SALES_WRITE)}");
+    // P360-V2-01: «Vender» es una acción rápida del encabezado del Perfil 360.
+    expect(profile).toContain("const canSell = can(CAPABILITIES.SALES_WRITE)");
+    expect(profile).toContain("href={`/admin/ventas/nueva?student_id=${student.id}`}");
     expect(profile).toContain('href={"/admin/ventas/nueva?student_id=" + student.id}');
     expect(profile).toContain("+ Registrar venta");
   });
