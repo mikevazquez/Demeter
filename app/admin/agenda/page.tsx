@@ -261,12 +261,19 @@ export default async function AgendaPage({
   const { data: activityPrograms } = programIds.length
     ? await supabase
         .from("activity_programs")
-        .select("id,kind")
+        .select("id,kind,active")
         .eq("studio_id", studio.id)
         .in("id", programIds)
-    : { data: [] as { id: string; kind: string }[] };
+    : { data: [] as { id: string; kind: string; active: boolean }[] };
 
-  const sessionIds = (sessions ?? []).map((session) => session.id);
+  const programActiveMap = new Map((activityPrograms ?? []).map((item) => [item.id, item.active]));
+  const templateById = new Map(allTemplates.map((item) => [item.id, item]));
+  const visibleSessions = (sessions ?? []).filter((session) => {
+    const template = templateById.get(session.template_id);
+    return !template?.program_id || programActiveMap.get(template.program_id) !== false;
+  });
+
+  const sessionIds = visibleSessions.map((session) => session.id);
   const { data: reservations } = sessionIds.length
     ? await supabase
         .from("reservations")
@@ -298,7 +305,7 @@ export default async function AgendaPage({
     );
   }
 
-  const calendarSessions = (sessions ?? []).map((session) => {
+  const calendarSessions = visibleSessions.map((session) => {
     const startParts = localClockParts(session.starts_at, timeZone);
     const durationMinutes = Math.max(
       Math.round(
