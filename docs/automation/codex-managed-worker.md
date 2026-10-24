@@ -1,0 +1,82 @@
+# GOV-WORKER-005 · Codex Managed Worker
+
+Seguimiento: [issue #395](https://github.com/mikevazquez/Demeter/issues/395).
+
+## Objetivo de esta fase
+
+Preparar un adapter Codex administrado por Governance 2.0 sin registrarlo todavía en el
+Supervisor operativo. Esta fase demuestra contrato, aislamiento y requisitos de host; no acredita
+un host real ni una ejecución de Codex.
+
+El worker se identifica como `codex-managed-worker` y empieza deliberadamente limitado a
+`repository_review`, `repository:read` y `riskTier=0`.
+
+## Requisitos del host
+
+El host debe:
+
+1. tener Codex CLI instalado;
+2. tener una sesión existente autenticada con **ChatGPT**;
+3. conseguir que `codex login status` reporte `Logged in using ChatGPT` bajo el mismo entorno
+   restringido que usará el proceso administrado;
+4. tener un checkout limpio en la rama y SHA exactos admitidos por Governance;
+5. ejecutar el proceso mediante `createManagedWorkerDispatch`; una sesión abierta fuera del
+   adapter no se considera observable por Governance.
+
+El registro Codex selecciona explícitamente el perfil `codex-chatgpt`: permite `HOME`,
+`CODEX_HOME`, proxies y certificados del entorno de Demeter para reutilizar la sesión existente.
+Probe y proceso usan el mismo filtro. No pasa `OPENAI_API_KEY`, `GITHUB_TOKEN`, `GH_TOKEN`,
+`NODE_OPTIONS` ni variables de producto. Otros workers mantienen el entorno mínimo por defecto.
+No se leen, copian ni imprimen archivos de autenticación. Un probe fallido conserva `disconnected`.
+
+`login status` acredita credenciales locales, no que el token siga vigente o pueda renovarse.
+El piloto real puede devolver `unauthorized` antes de producir respuesta. El wrapper reconoce
+`codex_error_info` y `codexErrorInfo` como errores tipados y bloquea el intento por autenticación;
+no clasifica por el texto del error ni reintenta automáticamente tras renovar la sesión.
+
+## Ejecución
+
+`buildCodexManagedRegistration` usa el protocolo JSONL ya observado por
+`supervisor-process.mjs` y fuerza:
+
+```text
+codex exec --json --sandbox read-only -
+```
+
+Antes de construir stdin se vuelve a comprobar:
+
+- raíz exacta del checkout;
+- rama exacta del contrato;
+- HEAD igual a `base_sha`;
+- árbol de trabajo limpio;
+- contrato `read_only=true`;
+- recuperación `read_only`;
+- identidad exacta de task, attempt, contract hash y dispatch fingerprint.
+
+Un drift o árbol sucio detiene el lanzamiento antes de entregar trabajo al modelo.
+
+## Frontera de esta entrega
+
+Esta rama **no**:
+
+- añade el worker a `registeredWorkers` de `supervisor-runner.mjs`;
+- modifica el authority registry;
+- publica `GOVERNANCE_WORKER_STATE_V1` para Codex;
+- ejecuta Codex real;
+- concede permisos de escritura, push, PR, merge o producción.
+
+El siguiente gate, después de liberar el slot actual, es registrar un host real y hacer un piloto
+E2E read-only. Sólo con esa evidencia se decidirá si ampliar el worker a trabajo generativo.
+
+## Criterios del piloto posterior
+
+El E2E debe demostrar, con el mismo `task_id` y contrato:
+
+1. probe ChatGPT válido bajo el entorno administrado;
+2. un solo attempt y un solo launch claim;
+3. eventos JSONL observados;
+4. cierre del process group;
+5. no cambios en el checkout;
+6. receipt/evidencia independiente;
+7. slot liberado por el Supervisor;
+8. `no_capacity` o auth failure tratados fail-closed, sin regeneración silenciosa.

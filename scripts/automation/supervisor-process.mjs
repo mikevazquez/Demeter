@@ -16,7 +16,11 @@ function check(value, message) {
 
 // registeredSessionId must come from the caller's durable, authorized task registry.
 // This function validates syntax; it cannot establish the provenance of an arbitrary ID.
-export function buildCodexCommand({ binary = "codex", registeredSessionId } = {}) {
+export function buildCodexCommand({
+  binary = "codex",
+  registeredSessionId,
+  sandbox = "workspace-write",
+} = {}) {
   check(
     typeof binary === "string" && binary.length > 0 && !binary.includes("\0"),
     "Invalid binary",
@@ -26,7 +30,8 @@ export function buildCodexCommand({ binary = "codex", registeredSessionId } = {}
       (typeof registeredSessionId === "string" && SESSION_ID.test(registeredSessionId)),
     "A registered Codex session UUID is required for resume",
   );
-  const args = ["exec", "--json", "--sandbox", "workspace-write"];
+  check(["read-only", "workspace-write"].includes(sandbox), "Invalid Codex sandbox");
+  const args = ["exec", "--json", "--sandbox", sandbox];
   if (registeredSessionId !== undefined) args.push("resume", registeredSessionId);
   args.push("-");
   return { command: binary, args };
@@ -60,7 +65,7 @@ function runtimeEnvironment() {
 // No classification based on assistant prose, command output, stderr, or an error message.
 function failureClass(error) {
   if (!error || typeof error !== "object") return "worker_error";
-  const info = error.codexErrorInfo ?? error.code ?? error.type;
+  const info = error.codexErrorInfo ?? error.codex_error_info ?? error.code ?? error.type;
   let code = typeof info === "string" ? info : info?.type;
   let http = info?.httpStatusCode ?? error.httpStatusCode;
   if (info && typeof info === "object" && !code) {
