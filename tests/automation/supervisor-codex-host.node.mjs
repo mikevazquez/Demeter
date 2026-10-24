@@ -258,6 +258,13 @@ test("real synthetic process shares authority and independently verifies one wor
   assert.equal(f.counts.launches, 1);
 });
 
+test("a contract without category uses the same software quality floor as the shared dispatcher", async (t) => {
+  const f = await fixture(t, { overrides: { quality_floor: 0.93 } });
+  const result = await runCodexHostTick(f.options);
+  assert.equal(result.state.tasks[0].status, "verified");
+  assert.equal(f.counts.launches, 1);
+});
+
 test("lost POST acknowledgement recovers the same receipt without another POST or process", async (t) => {
   const f = await fixture(t);
   f.switches.loseAck = true;

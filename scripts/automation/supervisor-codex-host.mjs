@@ -368,7 +368,7 @@ export async function runCodexHostTick({
     return evaluateWorker(
       {
         taskId: id,
-        category: c.category,
+        category: c.category ?? "software",
         requiredCapabilities: c.required_capabilities ?? ["repository_review"],
         requiredPermissions: c.required_permissions ?? ["repository:read"],
         qualityFloor: c.quality_floor ?? 0.8,
