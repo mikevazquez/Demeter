@@ -1,15 +1,15 @@
 # Governance · Supervisor de trabajo
 
 **Última consulta del supervisor:** No registrada
-**Última transición persistida:** 24/10/2026, 08&#58;49&#58;07 CDMX · Hace menos de 1 min
-**Vista generada:** 24/10/2026, 08&#58;49&#58;10 CDMX
-**Registro actualizado:** 24/10/2026, 08&#58;49&#58;07 CDMX · Hace menos de 1 min
-**Secuencia:** 9 · **Asignación activa registrada:** No registrada
+**Última transición persistida:** 24/10/2026, 09&#58;37&#58;51 CDMX · Hace menos de 1 min
+**Vista generada:** 24/10/2026, 09&#58;37&#58;54 CDMX
+**Registro actualizado:** 24/10/2026, 09&#58;37&#58;51 CDMX · Hace menos de 1 min
+**Secuencia:** 10 · **Asignación activa registrada:** No registrada
 
 La actividad del worker se comprueba por su propia señal. Umbral de antigüedad: 30 min.
 Un resultado entregado todavía requiere verificación; la aprobación de producción se registra por separado.
 
-[Consultar ejecución del supervisor](<https://github.com/mikevazquez/Demeter/actions/runs/40104174265>)
+[Consultar ejecución del supervisor](<https://github.com/mikevazquez/Demeter/actions/runs/40107835357>)
 
 | Tarea | Estado | Worker | Última señal del worker | Intervención de Mike |
 | --- | --- | --- | --- | --- |
@@ -25,7 +25,7 @@ Revisar la documentación del GPT Governance Gateway y devolver evidencia de só
 - **Tarea:** GOV-ROUTER-002-PILOT-B1
 - **Worker / intento:** claude-code-routine-worker / 84c5ca51-eeda-4b6a-861b-184d22c5eeb9
 - **Última señal del worker:** No registrada
-- **Envío solicitado:** 23/10/2026, 14&#58;19&#58;38 CDMX · Hace 18 h
+- **Envío solicitado:** 23/10/2026, 14&#58;19&#58;38 CDMX · Hace 19 h
 - **Rama:** governance2/gpt/gov-router-002-pilot-b1
 - **SHA del resultado:** <code>No registrado</code>
 - **Siguiente acción:** No hay worker elegible&#46; Esperar capacidad o conectar el ejecutor registrado&#46;
