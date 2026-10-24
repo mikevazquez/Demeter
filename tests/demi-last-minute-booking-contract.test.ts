@@ -12,9 +12,7 @@ describe("Demi last-minute booking contract", () => {
 
   it("keeps scheduled sessions bookable through their start minute", () => {
     expect(actions).toContain("Math.floor(now / 60_000) * 60_000");
-    expect(actions).toContain(
-      "new Date(session.starts_at).getTime() >= currentMinuteStart(now)",
-    );
+    expect(actions).toContain("new Date(session.starts_at).getTime() >= currentMinuteStart(now)");
   });
 
   it("shows classes until the start minute and drops only older starts", () => {
