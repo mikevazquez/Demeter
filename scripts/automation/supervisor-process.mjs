@@ -30,10 +30,7 @@ export function buildCodexCommand({
       (typeof registeredSessionId === "string" && SESSION_ID.test(registeredSessionId)),
     "A registered Codex session UUID is required for resume",
   );
-  check(
-    ["read-only", "workspace-write"].includes(sandbox),
-    "Invalid Codex sandbox",
-  );
+  check(["read-only", "workspace-write"].includes(sandbox), "Invalid Codex sandbox");
   const args = ["exec", "--json", "--sandbox", sandbox];
   if (registeredSessionId !== undefined) args.push("resume", registeredSessionId);
   args.push("-");
