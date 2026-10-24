@@ -1,0 +1,345 @@
+/* AUTH-REC-01 · Password recovery screens, Sendero style (same palette as Sendero Agenda). */
+.srec-shell {
+  --srec-bg: #1d1e23;
+  --srec-surface: #292b33;
+  --srec-line: #ffffff14;
+  --srec-line-strong: #ffffff33;
+  --srec-text: #f1eee6;
+  --srec-copy: #c4c2bd;
+  --srec-muted: #a3a6b2;
+  --srec-accent: #8fe6c8;
+  --srec-accent-soft: #8fe6c824;
+  --srec-gold: #f6d67a;
+  --srec-ink: #302a43;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  background: var(--srec-bg);
+  color: var(--srec-text);
+}
+.srec-card {
+  width: 100%;
+  max-width: 440px;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  padding: 28px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.srec-header {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+}
+.srec-header strong {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+.srec-icon-link {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--srec-line);
+  border-radius: 999px;
+  color: var(--srec-text);
+}
+.srec-path {
+  display: flex;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.srec-path li {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--srec-muted);
+  text-align: center;
+}
+.srec-path li[aria-current="step"] {
+  color: var(--srec-text);
+  font-weight: 600;
+}
+.srec-path-line {
+  flex: 0 0 32px !important;
+  height: 2px;
+  margin-top: 13px;
+  background: var(--srec-line-strong);
+}
+.srec-path-line.is-done {
+  background: var(--srec-accent);
+}
+.srec-dot {
+  width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  border: 2px solid var(--srec-line-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--srec-muted);
+}
+.srec-dot.is-current {
+  border: 0;
+  background: var(--srec-gold);
+  color: var(--srec-ink);
+}
+.srec-dot.is-done {
+  border: 0;
+  background: var(--srec-accent-soft);
+  color: var(--srec-accent);
+}
+.srec-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.srec-intro.is-center {
+  align-items: center;
+  text-align: center;
+}
+.srec-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--srec-muted);
+}
+.srec-title {
+  margin: 0;
+  font-family: "Sendero Marcellus", Marcellus, Georgia, serif;
+  font-size: 34px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.srec-copy {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--srec-copy);
+}
+.srec-copy strong {
+  color: var(--srec-text);
+}
+.srec-badge {
+  width: 80px;
+  height: 80px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--srec-accent-soft);
+  color: var(--srec-accent);
+}
+.srec-badge.is-warning {
+  background: #f6d67a24;
+  color: var(--srec-gold);
+}
+.srec-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+}
+.srec-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--srec-line);
+  border-radius: 16px;
+  background: var(--srec-surface);
+}
+.srec-field:focus-within {
+  border-color: var(--srec-accent);
+}
+.srec-field-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.srec-field-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--srec-muted);
+}
+.srec-field input {
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--srec-text);
+  font-size: 16px;
+  outline: none;
+}
+.srec-field input::placeholder {
+  color: #80838d;
+}
+.srec-toggle {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--srec-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.srec-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--srec-surface);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--srec-copy);
+}
+.srec-note svg {
+  flex: 0 0 18px;
+  margin-top: 1px;
+  color: var(--srec-muted);
+}
+.srec-error {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #963e5133;
+  border: 1px solid #e3b9c255;
+  color: #f3dde2;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.srec-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 2px;
+  list-style: none;
+}
+.srec-rules li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--srec-muted);
+}
+.srec-rules li.is-met {
+  color: var(--srec-accent);
+}
+.srec-destinations {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--srec-line);
+  border-radius: 16px;
+  background: var(--srec-surface);
+  font-size: 14px;
+}
+.srec-destinations div {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.srec-destinations svg {
+  color: var(--srec-muted);
+}
+.srec-primary,
+.srec-secondary {
+  min-height: 52px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.srec-primary {
+  border: 0;
+  background: var(--srec-accent);
+  color: #1d1e23;
+}
+.srec-secondary {
+  border: 1px solid var(--srec-line-strong);
+  background: transparent;
+  color: var(--srec-text);
+  font-weight: 600;
+}
+.srec-primary:disabled,
+.srec-secondary:disabled {
+  opacity: 0.55;
+}
+.srec-link {
+  align-self: center;
+  padding: 10px 16px;
+  color: var(--srec-accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.srec-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.srec-small {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--srec-muted);
+  text-align: center;
+}
+.srec-preview {
+  padding: 12px 14px;
+  border: 1px dashed var(--srec-gold);
+  border-radius: 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--srec-copy);
+  overflow-wrap: anywhere;
+}
+.srec-preview a {
+  color: var(--srec-gold);
+}
+.srec-shell .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.srec-footer form {
+  display: contents;
+}
+button.srec-link {
+  border: 0;
+  background: transparent;
+}

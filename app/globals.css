@@ -955,6 +955,8 @@ a.admin-nav-item:hover .nav-dot {
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
+  text-decoration: none;
+  padding: 12px 0;
 }
 
 .auth-submit {

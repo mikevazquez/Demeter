@@ -246,7 +246,12 @@ export function LoginCard({ mode, error }: LoginCardProps) {
 
           <div className="auth-options">
             <span className="auth-remember">Sesión persistente en este dispositivo</span>
-            <span className="auth-recovery-link">¿Olvidaste tu contraseña?</span>
+            <Link
+              className="auth-recovery-link"
+              href={isStudent ? "/login/student/recuperar" : "/login/studio/recuperar"}
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
           </div>
 
           <AuthSubmitButton />
