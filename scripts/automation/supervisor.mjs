@@ -432,13 +432,27 @@ export async function tickSupervisor({
   runUrl = null,
   observerId = "scheduled-supervisor",
   staleAfterMinutes = 30,
+  workerSignals = [],
   id = randomUUID,
 }) {
   const time = at(now ?? new Date().toISOString());
   ensure(
-    ID.test(observerId) && Number.isFinite(staleAfterMinutes) && staleAfterMinutes >= 1,
+    ID.test(observerId) &&
+      Number.isFinite(staleAfterMinutes) &&
+      staleAfterMinutes >= 1 &&
+      Array.isArray(workerSignals),
     "Valid observer configuration required",
   );
+  for (const signal of workerSignals) {
+    ensure(
+      signal &&
+        ID.test(signal.workerId ?? "") &&
+        ["no_capacity", "disconnected"].includes(signal.state) &&
+        typeof signal.observedAt === "string" &&
+        Number.isFinite(Date.parse(signal.observedAt)),
+      "Trusted worker capacity signals require workerId, state and observedAt",
+    );
+  }
   const snapshot = await store.read();
   validateSupervisorState(snapshot.state);
   const active = snapshot.state.tasks.find(
@@ -501,10 +515,37 @@ export async function tickSupervisor({
         ["sent", "running"].includes(active.status) &&
         Date.parse(time) - Date.parse(last) > staleAfterMinutes * 60_000
       ) {
-        task.status = "no_signal";
-        task.requires_user_action = true;
-        task.next_action =
-          "No se observa señal reciente. Revisar la sesión; no se ha autorizado un relevo.";
+        const capacitySignal = workerSignals
+          .filter(
+            (signal) =>
+              signal.workerId === attempt.worker_id &&
+              Date.parse(signal.observedAt) >= Date.parse(attempt.intent_at),
+          )
+          .sort((a, b) => Date.parse(b.observedAt) - Date.parse(a.observedAt))[0];
+        if (
+          task.contract.read_only &&
+          task.contract.recovery.mode === "read_only" &&
+          capacitySignal
+        ) {
+          const persistedAttempt = task.attempts.at(-1);
+          persistedAttempt.status = "rejected_capacity";
+          persistedAttempt.finished_at = time;
+          persistedAttempt.capacity_signal = {
+            state: capacitySignal.state,
+            observed_at: new Date(capacitySignal.observedAt).toISOString(),
+          };
+          waitOrBlock(
+            task,
+            next,
+            time,
+            "Capacidad del worker agotada en una tarea de sólo lectura; reintentar con otro worker elegible tras la pausa.",
+          );
+        } else {
+          task.status = "no_signal";
+          task.requires_user_action = true;
+          task.next_action =
+            "No se observa señal reciente. Sin una señal confiable de capacidad o cierre del proceso no se autoriza un relevo.";
+        }
       }
     }
     if (JSON.stringify(task) === JSON.stringify(active))
@@ -539,7 +580,18 @@ export async function tickSupervisor({
       (!task.next_attempt_at || Date.parse(task.next_attempt_at) <= Date.parse(time)),
   );
   if (!eligible) return { ...snapshot, action: "idle" };
-  const decision = workers.length
+  const capacityFailedWorkers = new Set(
+    eligible.attempts
+      .filter((attempt) => ["rejected_capacity", "stale_capacity"].includes(attempt.status))
+      .map((attempt) => attempt.worker_id),
+  );
+  const workersWithoutRecentCapacityFailure = workers.filter(
+    (worker) => !capacityFailedWorkers.has(worker.workerId),
+  );
+  const candidateWorkers = workersWithoutRecentCapacityFailure.length
+    ? workersWithoutRecentCapacityFailure
+    : workers;
+  const decision = candidateWorkers.length
     ? dispatchTask(
         {
           taskId: eligible.task_id,
@@ -552,7 +604,7 @@ export async function tickSupervisor({
           qualityFloor: eligible.contract.quality_floor ?? 0.8,
           riskTier: eligible.contract.risk_tier ?? (eligible.contract.read_only ? 0 : 1),
         },
-        workers,
+        candidateWorkers,
       )
     : { assignedWorker: null };
   const next = clone(snapshot.state);
