@@ -11,6 +11,7 @@ const CURRENT = "b".repeat(40);
 const CONTRACT_HASH = "c".repeat(64);
 const FINGERPRINT = "d".repeat(64);
 const RECEIPT_URL = `https://github.com/${REPO}/issues/341#issuecomment-123`;
+const RUN_URL = `https://github.com/${REPO}/actions/runs/123`;
 const FILE = "scripts/automation/review.mjs";
 const lowerBody = (receipt) =>
   `\`\`\`governance-worker-receipt-v2\n${JSON.stringify(receipt)}\n\`\`\``;
@@ -98,6 +99,18 @@ function fixture({ readOnly = false, withPr = false } = {}) {
         user: { login: "mikevazquez" },
         html_url: RECEIPT_URL,
         body: upperBody(receipt),
+      };
+    } else if (endpoint === `${api}/actions/runs/123`) {
+      kind = "run";
+      response = {
+        id: 123,
+        html_url: RUN_URL,
+        repository: { full_name: REPO },
+        name: "Governance Supervisor",
+        head_branch: "main",
+        event: "schedule",
+        status: "completed",
+        conclusion: "success",
       };
     } else if (endpoint === `${api}/git/ref/heads/feat/governance-supervisor`) {
       kind = "ref";
@@ -195,6 +208,27 @@ test("read-only receipts require an unchanged exact base and successful independ
   assert.equal(result.checkpoint.current_sha, BASE);
   assert.deepEqual(result.checkpoint.files_changed, []);
   assert.ok(!f.calls.some(({ endpoint }) => endpoint.includes("/compare/")));
+});
+
+test("GitHub Actions run-backed managed receipts are verified against the completed Governance run", async () => {
+  const f = fixture({ readOnly: true });
+  f.attempt.worker_id = "github-actions-evidence-worker";
+  f.receipt.worker_id = "github-actions-evidence-worker";
+  f.source.author = "github-actions[bot]";
+  f.source.channel = "github_actions_run";
+  f.source.receipt_url = RUN_URL;
+  f.policy.allowed_sources.push({
+    author: "github-actions[bot]",
+    channel: "github_actions_run",
+    worker_id: "github-actions-evidence-worker",
+    receipt_url_prefix: `https://github.com/${REPO}/actions/runs/`,
+  });
+  const result = await outcome(f, "verified");
+  assert.equal(result.evidence.receipt_url, RUN_URL);
+  assert.ok(f.calls.some(({ endpoint }) => endpoint.endsWith("/actions/runs/123")));
+
+  f.hooks.run = (response) => ({ ...response, conclusion: "failure" });
+  await outcome(f, "blocked", "receipt_run_source_mismatch");
 });
 
 test("read-only baseline with missing expected CI remains pending despite reported tests", async () => {

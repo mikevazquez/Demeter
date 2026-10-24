@@ -192,3 +192,31 @@ test("Identical receipt retransmissions keep one result despite object key order
   assert.deepEqual(result.receipt, receipt);
   assert.match(result.source.receipt_url, /101$/);
 });
+
+test("observer prefers a persisted managed receipt without reading the comment channel", async () => {
+  let calls = 0;
+  const receipt = {
+    task_id: "TASK-2",
+    attempt_id: "attempt-2",
+    worker_id: "github-actions-evidence-worker",
+  };
+  const source = {
+    author: "github-actions[bot]",
+    channel: "github_actions_run",
+    receipt_url: "https://github.com/mikevazquez/Demeter/actions/runs/123",
+  };
+  const observer = createReceiptObserver(async () => {
+    calls++;
+    throw new Error("comment channel must not be read for a persisted managed receipt");
+  });
+  const result = await observer({
+    task: { task_id: "TASK-2" },
+    attempt: {
+      attempt_id: "attempt-2",
+      managed_receipt: receipt,
+      managed_receipt_source: source,
+    },
+  });
+  assert.deepEqual(result, { receipt, source });
+  assert.equal(calls, 0);
+});

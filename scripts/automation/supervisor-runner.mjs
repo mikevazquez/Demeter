@@ -8,6 +8,12 @@ import { renderSupervisorHtml, renderSupervisorMarkdown } from "./supervisor-das
 import { fireClaudeRoutine } from "./claude-routine-worker.mjs";
 import { verifySupervisorReceipt } from "./supervisor-evidence.mjs";
 import { reconcileGatewayAdmissions } from "./governance-admission.mjs";
+import { applyWorkerStateSignals, fetchWorkerStateSignals } from "./governance-worker-state.mjs";
+import {
+  evidenceWorkerProfile,
+  GITHUB_ACTIONS_EVIDENCE_WORKER_ID,
+  runGitHubActionsEvidenceWorker,
+} from "./github-actions-evidence-worker.mjs";
 
 export const SUPERVISOR_CONFIG = Object.freeze({
   repository: "mikevazquez/Demeter",
@@ -162,6 +168,11 @@ function parseReceipt(body) {
 
 export function createReceiptObserver(request) {
   return async ({ task, attempt }) => {
+    if (attempt.managed_receipt && attempt.managed_receipt_source)
+      return {
+        receipt: structuredClone(attempt.managed_receipt),
+        source: structuredClone(attempt.managed_receipt_source),
+      };
     const matches = [];
     for (let page = 1; page <= 20; page++) {
       const comments = await request(
@@ -459,21 +470,32 @@ export async function runSupervisorCommand({
   const configured =
     mode !== "proof-tick" &&
     Boolean(environment.CLAUDE_ROUTINE_FIRE_URL && environment.CLAUDE_ROUTINE_FIRE_TOKEN);
-  const workers = [
+  const registeredWorkers = [
     {
       workerId: "claude-code-routine-worker",
       state: configured ? "available" : "disconnected",
-      stateSource: "configured_routine_bridge_capacity_unprobed",
-      capabilities: ["repository_review"],
+      stateSource: configured
+        ? "configured_routine_bridge_capacity_unprobed"
+        : "routine_bridge_not_configured",
+      capabilities: ["repository_review", "ci_evidence_review"],
       permissions: ["repository:read", "receipt:write"],
       quality: { default: 0.9 },
       relativeCost: 1,
       maxRiskTier: 0,
     },
+    evidenceWorkerProfile(),
   ];
+  const workerSignals =
+    mode === "tick"
+      ? await fetchWorkerStateSignals(request, {
+          allowedWorkers: registeredWorkers.map((worker) => worker.workerId),
+        })
+      : [];
+  const workers = applyWorkerStateSignals(registeredWorkers, workerSignals);
   const result = await tickSupervisor({
     store,
     workers,
+    workerSignals,
     runUrl,
     observerId: `github-${environment.GITHUB_RUN_ID ?? "manual"}-${environment.GITHUB_JOB ?? "tick"}`,
     observe: createReceiptObserver(request),
@@ -488,11 +510,19 @@ export async function runSupervisorCommand({
               channel: "github_issue_comment",
               receipt_url_prefix: "https://github.com/mikevazquez/Demeter/issues/341#issuecomment-",
             },
+            {
+              author: "github-actions[bot]",
+              channel: "github_actions_run",
+              worker_id: GITHUB_ACTIONS_EVIDENCE_WORKER_ID,
+              receipt_url_prefix: "https://github.com/mikevazquez/Demeter/actions/runs/",
+            },
           ],
           require_baseline_ci: true,
         },
       }),
     dispatch: async ({ task, attempt }) => {
+      if (attempt.worker_id === GITHUB_ACTIONS_EVIDENCE_WORKER_ID)
+        return runGitHubActionsEvidenceWorker({ task, attempt, request, runUrl });
       const response = await fireClaudeRoutine({
         fireUrl: environment.CLAUDE_ROUTINE_FIRE_URL,
         token: environment.CLAUDE_ROUTINE_FIRE_TOKEN,

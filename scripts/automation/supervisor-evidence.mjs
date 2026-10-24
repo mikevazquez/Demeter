@@ -336,6 +336,30 @@ function validateInput(task, attempt, receipt, policy) {
 }
 
 async function verifySource({ source, url, receipt, request, repository }) {
+  if (source.channel === "github_actions_run") {
+    const prefix = `/${repository}/actions/runs/`;
+    ensure(
+      url.hostname === "github.com" &&
+        url.pathname.startsWith(prefix) &&
+        /^\d+$/.test(url.pathname.slice(prefix.length)) &&
+        !url.hash,
+      "receipt_run_url_invalid",
+    );
+    const id = url.pathname.slice(prefix.length);
+    const remote = await request("GET", `repos/${repository}/actions/runs/${id}`);
+    ensure(
+      String(remote?.id) === id &&
+        remote.html_url === url.href &&
+        remote.repository?.full_name === repository &&
+        remote.name === "Governance Supervisor" &&
+        remote.head_branch === "main" &&
+        ["schedule", "workflow_dispatch"].includes(remote.event) &&
+        remote.status === "completed" &&
+        remote.conclusion === "success",
+      "receipt_run_source_mismatch",
+    );
+    return;
+  }
   if (source.channel !== "github_issue_comment") return;
   const prefix = `/${repository}/issues/`;
   ensure(

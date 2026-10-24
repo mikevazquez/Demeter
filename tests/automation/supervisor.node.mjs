@@ -481,6 +481,65 @@ test("a delivered process result is not technically verified or UAT approved", a
   assert.equal((await store.read()).state.active_task_id, task.task_id);
 });
 
+test("a bounded managed receipt is persisted on the reserved read-only attempt", async () => {
+  const { store, options } = await setup();
+  const result = await tickSupervisor({
+    ...options,
+    workers: [worker({ workerId: "github-actions-evidence-worker" })],
+    dispatch: async ({ task, attempt }) => ({
+      status: "delivered",
+      terminal_observed: true,
+      process_group_closed: true,
+      receipt: {
+        task_id: task.task_id,
+        attempt_id: attempt.attempt_id,
+        worker_id: attempt.worker_id,
+        contract_sha256: task.contract_sha256,
+        dispatch_fingerprint: attempt.dispatch_fingerprint,
+      },
+      source: {
+        author: "github-actions[bot]",
+        channel: "github_actions_run",
+        receipt_url: "https://github.com/mikevazquez/Demeter/actions/runs/123",
+      },
+    }),
+  });
+  assert.equal(result.action, "delivered");
+  const task = await taskOf(store);
+  assert.equal(task.attempts[0].managed_receipt.task_id, task.task_id);
+  assert.equal(task.attempts[0].managed_receipt_source.channel, "github_actions_run");
+  assert.equal(task.status, "delivered");
+  assert.equal(task.verification_status, "pending");
+});
+
+test("managed receipt identity cannot be smuggled across attempts", async () => {
+  const { options } = await setup();
+  await assert.rejects(
+    tickSupervisor({
+      ...options,
+      workers: [worker({ workerId: "github-actions-evidence-worker" })],
+      dispatch: async ({ task, attempt }) => ({
+        status: "delivered",
+        terminal_observed: true,
+        process_group_closed: true,
+        receipt: {
+          task_id: task.task_id,
+          attempt_id: "another-attempt",
+          worker_id: attempt.worker_id,
+          contract_sha256: task.contract_sha256,
+          dispatch_fingerprint: attempt.dispatch_fingerprint,
+        },
+        source: {
+          author: "github-actions[bot]",
+          channel: "github_actions_run",
+          receipt_url: "https://github.com/mikevazquez/Demeter/actions/runs/123",
+        },
+      }),
+    }),
+    /Managed receipt identity mismatch/,
+  );
+});
+
 test("independent verification closes a technical task and allows the next queued task", async () => {
   const { store, options, calls } = await setup();
   await admitSupervisorTask({
@@ -780,6 +839,63 @@ test("product default-branch aliases and sensitive control files are rejected at
   for (const path of [".git/config", ".env", ".env.local"]) {
     assert.throws(() => validateSupervisorContract(contract({ allowed_paths: [path] })));
   }
+});
+
+test("a temporarily unroutable queued task does not starve a later routable task", async () => {
+  const { store, options, calls } = await setup();
+  await admitSupervisorTask({
+    store,
+    contract: contract({
+      task_id: "evidence-task",
+      branch: "governance2/evidence-task",
+      required_capabilities: ["ci_evidence_review"],
+    }),
+    authorization,
+    now: START,
+  });
+  const result = await tickSupervisor({
+    ...options,
+    workers: [
+      worker({
+        workerId: "github-actions-evidence-worker",
+        capabilities: ["ci_evidence_review"],
+      }),
+    ],
+  });
+  assert.equal(result.action, "sent");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].task.task_id, "evidence-task");
+  assert.equal(calls[0].attempt.worker_id, "github-actions-evidence-worker");
+  assert.equal((await taskOf(store)).status, "queued");
+  assert.equal((await taskOf(store, "evidence-task")).status, "sent");
+  assert.equal((await store.read()).state.active_task_id, "evidence-task");
+});
+
+test("when no ready task is routable only the first task is paused with backoff", async () => {
+  const { store, options, calls } = await setup();
+  await admitSupervisorTask({
+    store,
+    contract: contract({
+      task_id: "second-unroutable",
+      branch: "governance2/second-unroutable",
+    }),
+    authorization,
+    now: START,
+  });
+  const result = await tickSupervisor({
+    ...options,
+    workers: [
+      worker({
+        workerId: "github-actions-evidence-worker",
+        capabilities: ["ci_evidence_review"],
+      }),
+    ],
+  });
+  assert.equal(result.action, "paused_capacity");
+  assert.equal(calls.length, 0);
+  assert.equal((await taskOf(store)).status, "paused_capacity");
+  assert.equal((await taskOf(store, "second-unroutable")).status, "queued");
+  assert.equal((await store.read()).state.active_task_id, null);
 });
 
 test("a terminally blocked task does not prevent a separate eligible task from continuing", async () => {
