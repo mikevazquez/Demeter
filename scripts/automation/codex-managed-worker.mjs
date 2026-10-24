@@ -158,6 +158,7 @@ export function buildCodexManagedRegistration({
   binary = "codex",
   timeoutMs = 20 * 60_000,
   inspectWorkspace = inspectCodexManagedWorkspace,
+  outputFile,
 } = {}) {
   ensure(
     typeof cwd === "string" && path.isAbsolute(cwd) && !cwd.includes("\0"),
@@ -165,6 +166,17 @@ export function buildCodexManagedRegistration({
   );
   ensure(typeof inspectWorkspace === "function", "Workspace inspector required");
   const command = buildCodexCommand({ binary, sandbox: "read-only" });
+  if (outputFile !== undefined) {
+    ensure(
+      typeof outputFile === "string" &&
+        path.isAbsolute(outputFile) &&
+        !outputFile.includes("\0") &&
+        (path.relative(cwd, outputFile) === ".." ||
+          path.relative(cwd, outputFile).startsWith(`..${path.sep}`)),
+      "Codex receipt output must be outside the workspace",
+    );
+    command.args.splice(command.args.length - 1, 0, "--output-last-message", outputFile);
+  }
   return {
     worker_id: CODEX_MANAGED_WORKER_ID,
     command: command.command,

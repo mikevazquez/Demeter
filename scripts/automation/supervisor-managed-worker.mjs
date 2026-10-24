@@ -238,7 +238,9 @@ export function createManagedWorkerDispatch({
     cwd: registration.cwd,
     inputForTask: registration.inputForTask,
     environmentProfile: registration.environmentProfile ?? "isolated",
+    hostId: registration.hostId,
   });
+  ensure(config.hostId === undefined || ID.test(config.hostId), "Invalid registered host identity");
   // Reject an unknown profile before consuming an attempt or acquiring a launch claim.
   managedRuntimeEnvironment({}, config.environmentProfile);
   const invokedAttempts = new Set();
@@ -272,6 +274,7 @@ export function createManagedWorkerDispatch({
       validateSupervisorState(snapshot.state);
       const durable = snapshot.state.tasks.find((entry) => entry.task_id === task?.task_id);
       const claimed = durable?.attempts.at(-1);
+      ensure(claimed?.managed_host_id === config.hostId, "Reserved host registration mismatch");
       ensure(
         durable?.status === "dispatching" && snapshot.state.active_task_id === task.task_id,
         "An active reserved launch intent is required",
@@ -357,6 +360,7 @@ export function createManagedWorkerDispatch({
       );
       const time = new Date(now()).toISOString();
       claimed.managed_launch_claim = { worker_id: config.worker_id, claimed_at: time };
+      if (config.hostId) claimed.managed_launch_claim.host_id = config.hostId;
       next.sequence = snapshot.state.sequence + 1;
       next.previous = snapshot.version;
       next.updated_at = time;
