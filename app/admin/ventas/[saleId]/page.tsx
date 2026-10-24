@@ -149,18 +149,24 @@ export default async function SaleDetailPage({
     workshopPurchase?.total_minor ??
     (lines ?? []).reduce((sum, line) => sum + (line.refunded_at ? 0 : line.line_total_minor), 0);
   const balance = Math.max(collectibleTotal - netCollected, 0);
+  const correctionTotal = (payments ?? [])
+    .filter((payment) => payment.kind === "refund" && payment.method === "correction")
+    .reduce((sum, payment) => sum + payment.amount_minor, 0);
+  const realRefunded = Math.max(refunded - correctionTotal, 0);
   const paymentState =
     sale.status === "voided"
       ? "Anulada"
-      : refunded > 0
-        ? refunded >= grossPaid && grossPaid > 0
-          ? "Reembolsada"
-          : "Con reembolso"
-        : grossPaid >= collectibleTotal
-          ? "Pagada"
-          : grossPaid > 0
-            ? "Parcial"
-            : "Pendiente";
+      : correctionTotal > 0 && netCollected === 0 && realRefunded === 0
+        ? "Corregida"
+        : refunded > 0
+          ? refunded >= grossPaid && grossPaid > 0
+            ? "Reembolsada"
+            : "Con reembolso"
+          : grossPaid >= collectibleTotal
+            ? "Pagada"
+            : grossPaid > 0
+              ? "Parcial"
+              : "Pendiente";
   const canWrite = ctx.can(CAPABILITIES.SALES_WRITE);
   const { data: trialCredit, error: trialCreditError } = await ctx.supabase
     .from("trial_enrollment_credits")
@@ -414,7 +420,11 @@ export default async function SaleDetailPage({
                 className="grid gap-2 py-3 md:grid-cols-[120px_1fr_auto] md:items-center"
               >
                 <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  {payment.kind === "refund" ? "Reembolso" : "Pago"}
+                  {payment.kind === "refund"
+                    ? payment.method === "correction"
+                      ? "Corrección"
+                      : "Reembolso"
+                    : "Pago"}
                 </span>
                 <div>
                   <p className="text-sm text-zinc-300">

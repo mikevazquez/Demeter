@@ -56,7 +56,7 @@ type ActivityCategory = "actividades" | "talleres" | "eventos" | "masterclass";
 export default async function ActivitiesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tipo?: string }>;
+  searchParams: Promise<{ tipo?: string; deleted?: string }>;
 }) {
   const params = await searchParams;
   const category: ActivityCategory =
@@ -132,6 +132,7 @@ export default async function ActivitiesPage({
   const uatWorkshopOffers = workshopOffers.filter((offer) => isUatOffer(offer.title));
   const visiblePrograms = (programs ?? []).filter(
     (program) =>
+      program.active &&
       !isUatOffer(program.name) &&
       (category === "eventos"
         ? program.kind === "event"
@@ -280,6 +281,15 @@ export default async function ActivitiesPage({
           </Link>
         ) : null}
       </header>
+
+      {params.deleted ? (
+        <p role="status" className="program-enrollment-success">
+          <strong>Taller eliminado</strong>
+          <span>
+            Se cancelaron sus sesiones futuras y reservas activas, y se retiró de la operación.
+          </span>
+        </p>
+      ) : null}
 
       <nav
         aria-label="Tipo de actividad"

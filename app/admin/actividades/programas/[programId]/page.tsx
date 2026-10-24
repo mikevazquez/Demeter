@@ -3,12 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { EnrollmentForm } from "./EnrollmentForm";
+import { DeleteProgramForm } from "./DeleteProgramForm";
 export default async function ProgramPage({
   params,
   searchParams,
 }: {
   params: Promise<{ programId: string }>;
-  searchParams: Promise<{ enrolled?: string }>;
+  searchParams: Promise<{ enrolled?: string; error?: string }>;
 }) {
   const [{ programId }, query, ctx] = await Promise.all([
     params,
@@ -22,6 +23,7 @@ export default async function ProgramPage({
         .select("*")
         .eq("studio_id", ctx.studio.id)
         .eq("id", programId)
+        .eq("active", true)
         .maybeSingle(),
       ctx.supabase
         .from("activity_program_sessions")
@@ -133,6 +135,20 @@ export default async function ProgramPage({
           <span>El pago quedó registrado y el cupo está reservado en las fechas elegidas.</span>
         </p>
       ) : null}
+      {query.error === "payments" ? (
+        <p role="alert" className="program-enrollment-success">
+          <strong>No se puede eliminar todavía</strong>
+          <span>
+            Este taller tiene pagos registrados. Corrige o anula esas ventas antes de eliminarlo
+            para no borrar ni ocultar historial financiero.
+          </span>
+        </p>
+      ) : query.error ? (
+        <p role="alert" className="program-enrollment-success">
+          <strong>No se pudo eliminar el taller</strong>
+          <span>Revisa su estado e inténtalo nuevamente.</span>
+        </p>
+      ) : null}
       <section className="program-dates-section" aria-labelledby="program-dates-title">
         <div className="program-dates-heading">
           <h2 id="program-dates-title">Fechas del programa</h2>
@@ -193,6 +209,9 @@ export default async function ProgramPage({
           options={options}
           requestId={randomUUID()}
         />
+      ) : null}
+      {ctx.can("products.write") && ctx.can("schedule.write") ? (
+        <DeleteProgramForm programId={programId} programName={program.name} />
       ) : null}
     </main>
   );
