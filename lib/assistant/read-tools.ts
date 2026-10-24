@@ -10,7 +10,6 @@ import { loadDemiRuntimeConfig } from "./runtime-config";
 import { preparationFromStudioPrompt } from "./class-preparation";
 import { getWorkshopInformation } from "./workshop-information";
 import { getActivityProgramInformation, type ProgramInformation } from "./program-information";
-import { currentMinuteStart } from "./session-bookability";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CommercialOptionsArgs, SearchClassAvailabilityArgs } from "./tool-contracts";
@@ -37,6 +36,10 @@ function normalize(value: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("es-MX")
     .trim();
+}
+
+function currentMinuteStart(now = Date.now()) {
+  return Math.floor(now / 60_000) * 60_000;
 }
 
 function validDate(value: string) {
