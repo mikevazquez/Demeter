@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { autoProvisionStudentAccess } from "@/lib/student/auto-access";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { normalizeMexicanPhone } from "@/lib/phone";
@@ -69,9 +70,11 @@ export async function createStudent(formData: FormData) {
     errorRedirect("student_create_failed");
   }
 
+  const access = await autoProvisionStudentAccess(supabase, studentId);
+
   revalidatePath("/admin/alumnas");
   revalidatePath("/admin");
-  redirect(`/admin/alumnas/${studentId}/alta`);
+  redirect(`/admin/alumnas/${studentId}/alta?access=${access.status}`);
 }
 
 export async function setStudentLifecycle(formData: FormData) {

@@ -90,7 +90,12 @@ describe("F10 student portal contracts", () => {
     expect(edgeFunction).toContain('await userClient\n      .from("studio_memberships")');
     expect(edgeFunction).toContain('await userClient\n      .from("role_capabilities")');
     expect(edgeFunction).not.toContain('await adminClient\n      .from("students")');
-    expect(edgeFunction).toContain('.eq("capability_key", "settings.write")');
+    // P360-V2-ACC (23-oct-2026): la provisión inicial por WhatsApp la puede disparar quien da de
+    // alta; devolver el enlace, reenviarlo y la contraseña temporal siguen exigiendo settings.write.
+    expect(edgeFunction).toContain(
+      '.in("capability_key", ["settings.write", "students.write", "attendance.write"])',
+    );
+    expect(edgeFunction).toContain('const canManageAccess = capabilityKeys.has("settings.write")');
     expect(edgeFunction).toContain("auth.admin.createUser");
     expect(edgeFunction).toContain("email_confirm: true");
     expect(edgeFunction).not.toContain("phone_confirm: true");

@@ -14,8 +14,8 @@ const messages: Record<string, { title: string; copy: string; tone?: "error" | "
     tone: "error",
   },
   pending: {
-    title: "Tu registro ya existe",
-    copy: "Tu cuenta está registrada en Demeter, pero el acceso inicial todavía no está activado. Por ahora solicita al estudio que active tu acceso.",
+    title: "Activa tu cuenta",
+    copy: "Te enviamos por WhatsApp un enlace para crear tu contraseña. Búscalo en tu chat con Demeter y ábrelo para entrar. Si no lo encuentras, escríbenos por WhatsApp y te lo reenviamos.",
     tone: "success",
   },
   error: {

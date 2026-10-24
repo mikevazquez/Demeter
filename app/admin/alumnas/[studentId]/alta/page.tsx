@@ -6,6 +6,11 @@ import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import StudentOnboardingForm from "./StudentOnboardingForm";
 import OnboardingCompletedDialog from "./OnboardingCompletedDialog";
+import {
+  autoAccessMessage,
+  autoAccessNoticeClass,
+  isAutoAccessStatus,
+} from "@/lib/student/auto-access-copy";
 import { loadTrialEnrollmentCredits } from "@/lib/assistant/trial-enrollment-credit";
 
 function localDate(timeZone: string) {
@@ -75,7 +80,7 @@ export default async function StudentOnboardingPage({
   searchParams,
 }: {
   params: Promise<{ studentId: string }>;
-  searchParams: Promise<{ error?: string; completed?: string; sale?: string }>;
+  searchParams: Promise<{ error?: string; completed?: string; sale?: string; access?: string }>;
 }) {
   const [{ studentId }, query, { supabase, studio, can }] = await Promise.all([
     params,
@@ -179,6 +184,10 @@ export default async function StudentOnboardingPage({
         <div className="notice error">
           {errorCopy[decodeURIComponent(query.error)] ?? "No se pudo completar el alta."}
         </div>
+      ) : null}
+
+      {query.access && isAutoAccessStatus(query.access) ? (
+        <div className={autoAccessNoticeClass(query.access)}>{autoAccessMessage(query.access)}</div>
       ) : null}
 
       {completedHere ? <OnboardingCompletedDialog /> : null}

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { normalizeMexicanPhone } from "@/lib/phone";
+import { autoProvisionStudentAccess } from "@/lib/student/auto-access";
 
 const CANCELLATION_REASON_CODES = new Set([
   "schedule_conflict",
@@ -403,7 +404,7 @@ export async function createWalkinFromToday(formData: FormData) {
   }
 
   const { supabase } = await getAdminContext(CAPABILITIES.ATTENDANCE_WRITE);
-  const { error } = await supabase.rpc("create_walkin_student", {
+  const { data: walkin, error } = await supabase.rpc("create_walkin_student", {
     target_session_id: sessionId,
     p_first_name: firstName,
     p_last_name: lastName || null,
@@ -413,6 +414,11 @@ export async function createWalkinFromToday(formData: FormData) {
   if (error) {
     redirect(withQuery(returnUrl, "error", error.message));
   }
+
+  await autoProvisionStudentAccess(
+    supabase,
+    (walkin as { student_id?: string | null } | null)?.student_id,
+  );
 
   refreshSession(sessionId);
   revalidatePath("/admin/alumnas");

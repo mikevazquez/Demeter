@@ -39,6 +39,7 @@ describe("student generic access entry", () => {
   it("keeps first access blocked until secure verification exists", () => {
     expect(action).toContain('if (status === "pending")');
     expect(action).toContain('redirect("/acceso?state=pending")');
-    expect(page).toContain("acceso inicial todavía no está activado");
+    // P360-V2-ACC: el acceso se envía por WhatsApp al dar de alta; la entrada pública solo orienta.
+    expect(page).toContain("Te enviamos por WhatsApp un enlace para crear tu contraseña");
   });
 });

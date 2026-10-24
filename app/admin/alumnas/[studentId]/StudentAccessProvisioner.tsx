@@ -123,8 +123,9 @@ function StudentActivationAction({
       <p>
         {mode === "provision" ? (
           <>
-            Se creará una cuenta de acceso para <strong>{phone}</strong>. La alumna recibirá por
-            WhatsApp un enlace seguro para crear su propia contraseña.
+            El acceso se envía solo al dar de alta, pero esta vez no se completó. Al reintentar se
+            crea su cuenta para <strong>{phone}</strong> y recibe por WhatsApp el enlace para crear
+            su contraseña.
           </>
         ) : (
           <>
@@ -144,10 +145,10 @@ function StudentActivationAction({
         {isPending ? (
           <span className="inline-flex items-center justify-center gap-2">
             <LoadingSpinner />
-            <span>{mode === "provision" ? "Habilitando acceso…" : "Generando enlace…"}</span>
+            <span>{mode === "provision" ? "Enviando acceso…" : "Generando enlace…"}</span>
           </span>
         ) : mode === "provision" ? (
-          "Habilitar acceso al portal"
+          "Reintentar envío de acceso"
         ) : (
           "Reenviar enlace de activación"
         )}

@@ -15,7 +15,10 @@ describe("Flow 01 student onboarding", () => {
 
     expect(actions).toContain("existingStudentRedirect");
     expect(actions).toContain("#alta-rapida");
-    expect(actions).toContain("redirect(\`/admin/alumnas/\${studentId}/alta\`)");
+    // P360-V2-ACC: el alta sigue en /alta y además informa el resultado del acceso automático.
+    expect(actions).toContain(
+      "redirect(\`/admin/alumnas/\${studentId}/alta?access=\${access.status}\`)",
+    );
     expect(studentsPage).toContain('id="alta-rapida"');
     expect(studentsPage).toContain("DuplicateStudentDialog");
     expect(duplicateDialog).toContain("Ya encontramos este expediente");

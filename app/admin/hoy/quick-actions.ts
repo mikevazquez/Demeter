@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminContext } from "@/lib/auth/admin-context";
 import { CAPABILITIES } from "@/lib/auth/capabilities";
 import { normalizeMexicanPhone } from "@/lib/phone";
+import { autoAccessMessage, autoProvisionStudentAccess } from "@/lib/student/auto-access";
 
 type QuickResult = { ok: boolean; message: string; student?: { id: string; fullName: string } };
 
@@ -143,10 +144,15 @@ export async function createQuickStudent(formData: FormData): Promise<QuickResul
         ? "Se alcanzó el límite de alumnas activas del plan."
         : "No se pudo crear la alumna.",
     };
+  const access = await autoProvisionStudentAccess(supabase, id);
   revalidatePath("/admin");
   revalidatePath("/admin/alumnas");
   const fullName = [first, last].filter(Boolean).join(" ");
-  return { ok: true, message: `${fullName} fue creada.`, student: { id, fullName } };
+  return {
+    ok: true,
+    message: `${fullName} fue creada. ${autoAccessMessage(access.status)}`,
+    student: { id, fullName },
+  };
 }
 
 export async function createQuickSale(formData: FormData): Promise<QuickResult> {
