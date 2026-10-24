@@ -1,0 +1,87 @@
+
+> demeter@0.1.0 test:workshops:db
+> node scripts/test-workshop-payment-gate.mjs
+
+PASS six historical migrations reconstruct the exact Sandbox workshop catalog
+PASS all seven module tables enable RLS and deny direct client writes
+PASS replacement preserves historical authorization, purchase and payment records
+PASS both public and private historical review entrypoints are retired for all client roles
+PASS historical request IDs and received-payment references cannot be spent again
+PASS review preserves schedule permissions and active account/studio restrictions
+PASS only authenticated staff with sales/schedule permissions in this studio can attest
+PASS pending/absent confirmation and unsupported currency/method are rejected
+PASS review records the real actor and database quote without reserving or selling
+PASS cross-studio students/offers, duplicate selection and required enrollment fail closed
+PASS both unsafe RPCs and direct evidence writes are inaccessible
+PASS authorized individual checkout persists one sale/payment and every reservation
+PASS review replays reordered sessions but rejects changed amount, mode, student or reference
+PASS checkout rejects missing evidence, another tenant and a changed checkout key
+PASS overpayment, inadequate deposit and a missing balance date are rejected
+PASS deposit checkout preserves balance/policy and replay survives subsequent payments
+PASS price/deposit changes after review cannot silently change the authorized purchase
+PASS a full session after review leaves authorization and all financial rows untouched
+PASS induced second-reservation failure rolls back sale, payment, reservations and consumption
+PASS evidence cannot be edited/deleted, including by its database owner
+PASS two independent connections consume the same authorization exactly once
+PASS two independent buyers of the last seat produce one sale and one unconsumed authorization
+PASS expired sessions and disabled payment methods cannot be attested
+PASS authenticated context scopes offers, students, prices and cupos to this studio
+PASS read context hides student identities without students.read and refuses writes
+PASS admin action RPC atomically buys selected individual dates with a deposit and stable replay
+PASS admin RPC denies service/anonymous callers and cross-studio or inactive students
+PASS booking/enrollment domain blockers roll back even the received-payment authorization
+PASS admin transaction requires explicit receipt attestation and rejects altered replay parameters
+PASS two authenticated administrative buyers serialize the last seat with no losing authorization
+PASS editor context and save require active schedule/products permissions in this studio
+PASS creation creates dedicated Agenda dates with studio timezone and preserves inherited policy
+PASS creation and edits are idempotent, including simultaneous retries
+PASS invalid date, foreign discipline, insufficient space and conflicts roll back all authoring rows
+PASS unsold edit preserves existing session identity and retires removed dates without deletion
+PASS stale edits and cross-offer session reassignment are rejected
+PASS commercial history freezes prices/policy/dates while allowing an audited name-only edit
+PASS unconsumed reviewed payment and historical reservations also freeze configuration
+PASS changed prices reject stale checkout without recording an unexpected balance
+PASS concurrent purchase/edit yields either a frozen edit or a stale checkout, never a mixed contract
+PASS regular packages cannot enter owned or retired workshop dates; legacy/normal rules remain intact
+PASS enrollment-required workshop accepts a valid enrollment across all selected dates
+PASS expired, refunded, future and other-tenant enrollments cannot authorize funds
+PASS enrollment expires inclusively on each selected local date, not just today
+PASS explicit guest offer bypasses enrollment while inherited required policy still blocks
+PASS new deposits freeze their first selected date and the studio-local accounting deadline
+PASS individual selection keeps its own deadline and full payments carry no debt date
+PASS workshop review notices revalidate their actual hold, conversation and lease
+PASS Demi catalog and quote use live workshops while preparation holds no capacity or funds
+PASS receipt atomically holds selected seats with no income; duplicate delivery is idempotent
+PASS two real receipt transactions competing for the last seat create exactly one hold
+PASS unaccepted, mismatched, wrong-source and stale quotes cannot reserve seats
+PASS withdrawal releases only this student's future dates and preserves payments, debt and history
+PASS installments use the existing ledger, synchronize balance and reject conflicting replay or excess
+PASS parallel installments cannot overcollect a workshop balance
+PASS ordinary sale lines keep their collectible and unlock behavior
+PASS only the first recorded absence with debt seeds one continuity question
+PASS continuation requires delivered question and a later explicit owned reply; withdrawal keeps debt
+PASS frozen overdue policy releases future dates once; keep and fully paid purchases remain
+PASS continuing retains future seats, schedules debt reminders once and never repeats the question
+PASS contact opt-out and human control suppress workshop messages before delivery
+PASS payment and overdue evaluation serialize on the same sale without erasing money
+PASS profile payments before the first date replay and settle through the existing ledger
+PASS cash request identities replay purchases and allow equal distinct installments without duplicate payments
+PASS simultaneous Hoy and profile payments use the same lock order and cannot overcollect
+PASS legacy production conversations gain the missing discriminator without changing identities or finance
+PASS workshop context excludes non-Demi conversations after legacy schema compatibility
+PASS workshop information distinguishes disabled from empty and denies foreign or client recovery
+PASS Demi recovers quote, receipt, provisional and verified purchase without premature income
+PASS expired workshop quote does not recover as a valid payment or confirmed reservation
+PASS expiry worker denies client roles and invalid batch sizes
+PASS rejected or expired receipt cannot recover as confirmed and context reads change no financial records
+PASS new workshop participant has no enrollment, package, trial credit, Auth, payment or reservation until checkout
+PASS concurrent participant registration creates exactly one profile and one audit record
+PASS participant registration rejects client authority, invented names, foreign turns and required enrollment
+PASS a phone belonging to another person cannot create or claim a workshop participant
+PASS Meta guest uses only its bound channel identity and does not authenticate a claimed phone
+PASS confirmation migration is repeatable and preserves checkout privileges
+PASS workshop full deposit emits one booking event per selected date and replay emits none
+PASS workshop sessions deposit emits one booking event per selected date and replay emits none
+PASS rejected workshop payment and foreign studio cannot leave booking events
+PASS event failure rolls back workshop funds, reservations and partial event writes
+82/82 local PostgreSQL integration scenarios passed. No remote database used.
