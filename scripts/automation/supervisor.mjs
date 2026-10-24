@@ -560,41 +560,42 @@ export async function tickSupervisor({
         "El observador anterior dejó un intento reservado. Reconciliar antes de reintentar.";
     } else {
       const last = attempt.last_activity_at ?? attempt.intent_at;
-      if (
+      const capacitySignal = workerSignals
+        .filter(
+          (signal) =>
+            signal.workerId === attempt.worker_id &&
+            Date.parse(signal.observedAt) >= Date.parse(attempt.intent_at),
+        )
+        .sort((a, b) => Date.parse(b.observedAt) - Date.parse(a.observedAt))[0];
+      const staleReadOnlyCapacity =
+        task.contract.read_only &&
+        task.contract.recovery.mode === "read_only" &&
+        capacitySignal &&
+        (active.status === "no_signal" ||
+          (["sent", "running"].includes(active.status) &&
+            Date.parse(time) - Date.parse(last) > staleAfterMinutes * 60_000));
+      if (staleReadOnlyCapacity) {
+        const persistedAttempt = task.attempts.at(-1);
+        persistedAttempt.status = "rejected_capacity";
+        persistedAttempt.finished_at = time;
+        persistedAttempt.capacity_signal = {
+          state: capacitySignal.state,
+          observed_at: new Date(capacitySignal.observedAt).toISOString(),
+        };
+        waitOrBlock(
+          task,
+          next,
+          time,
+          "Capacidad del worker agotada en una tarea de sólo lectura; reintentar con otro worker elegible tras la pausa.",
+        );
+      } else if (
         ["sent", "running"].includes(active.status) &&
         Date.parse(time) - Date.parse(last) > staleAfterMinutes * 60_000
       ) {
-        const capacitySignal = workerSignals
-          .filter(
-            (signal) =>
-              signal.workerId === attempt.worker_id &&
-              Date.parse(signal.observedAt) >= Date.parse(attempt.intent_at),
-          )
-          .sort((a, b) => Date.parse(b.observedAt) - Date.parse(a.observedAt))[0];
-        if (
-          task.contract.read_only &&
-          task.contract.recovery.mode === "read_only" &&
-          capacitySignal
-        ) {
-          const persistedAttempt = task.attempts.at(-1);
-          persistedAttempt.status = "rejected_capacity";
-          persistedAttempt.finished_at = time;
-          persistedAttempt.capacity_signal = {
-            state: capacitySignal.state,
-            observed_at: new Date(capacitySignal.observedAt).toISOString(),
-          };
-          waitOrBlock(
-            task,
-            next,
-            time,
-            "Capacidad del worker agotada en una tarea de sólo lectura; reintentar con otro worker elegible tras la pausa.",
-          );
-        } else {
-          task.status = "no_signal";
-          task.requires_user_action = true;
-          task.next_action =
-            "No se observa señal reciente. Sin una señal confiable de capacidad o cierre del proceso no se autoriza un relevo.";
-        }
+        task.status = "no_signal";
+        task.requires_user_action = true;
+        task.next_action =
+          "No se observa señal reciente. Sin una señal confiable de capacidad o cierre del proceso no se autoriza un relevo.";
       }
     }
     if (JSON.stringify(task) === JSON.stringify(active))
