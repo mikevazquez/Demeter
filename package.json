@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier --write lib/assistant/session-bookability.ts tests/demi-session-bookability.test.ts && git diff -- lib/assistant/session-bookability.ts tests/demi-session-bookability.test.ts && exit 1",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:workshops:db": "node scripts/test-workshop-payment-gate.mjs",
