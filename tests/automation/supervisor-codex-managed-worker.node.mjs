@@ -54,7 +54,7 @@ function fixture() {
   return { task, attempt, workspace };
 }
 
-test("runtime environment drops auth, GitHub and product secrets", () => {
+test("runtime environment preserves ChatGPT selectors and transport without keys or product secrets", () => {
   assert.deepEqual(
     codexManagedRuntimeEnvironment({
       PATH: "/bin",
@@ -66,11 +66,18 @@ test("runtime environment drops auth, GitHub and product secrets", () => {
       GITHUB_TOKEN: "secret",
       GH_TOKEN: "secret",
       NEXT_PUBLIC_SUPABASE_URL: "secret",
+      HTTPS_PROXY: "http://proxy:8080",
+      SSL_CERT_FILE: "/trusted/ca.pem",
+      NODE_OPTIONS: "must-not-pass",
     }),
     {
       PATH: "/bin",
       TMPDIR: "/tmp",
       LANG: "en_US.UTF-8",
+      HOME: "/secret-home",
+      CODEX_HOME: "/secret-codex",
+      HTTPS_PROXY: "http://proxy:8080",
+      SSL_CERT_FILE: "/trusted/ca.pem",
     },
   );
 });
@@ -80,7 +87,7 @@ test("host is available only for ChatGPT login under the restricted environment"
   const available = probeCodexManagedHost({
     environment: {
       PATH: "/bin",
-      HOME: "/must-not-pass",
+      HOME: "/worker-home",
       OPENAI_API_KEY: "must-not-pass",
     },
     spawnImpl(command, args, options) {
@@ -94,7 +101,7 @@ test("host is available only for ChatGPT login under the restricted environment"
   });
   assert.equal(observed.command, "codex");
   assert.deepEqual(observed.args, ["login", "status"]);
-  assert.deepEqual(observed.options.env, { PATH: "/bin" });
+  assert.deepEqual(observed.options.env, { PATH: "/bin", HOME: "/worker-home" });
 
   const apiKey = probeCodexManagedHost({
     spawnImpl: () => ({ status: 0, stdout: "Logged in using an API key", stderr: "" }),
@@ -209,6 +216,7 @@ test("registration uses Codex JSONL managed mode and rechecks workspace before i
   assert.equal(registration.command, "codex");
   assert.deepEqual(registration.args, ["exec", "--json", "--sandbox", "read-only", "-"]);
   assert.equal(registration.cwd, cwd);
+  assert.equal(registration.environmentProfile, "codex-chatgpt");
   assert.equal(registration.timeoutMs, 20 * 60_000);
   const input = registration.inputForTask({ task, attempt, checkpoint: null });
   assert.equal(inspections, 1);

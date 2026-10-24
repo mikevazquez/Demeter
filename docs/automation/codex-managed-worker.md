@@ -23,9 +23,11 @@ El host debe:
 5. ejecutar el proceso mediante `createManagedWorkerDispatch`; una sesión abierta fuera del
    adapter no se considera observable por Governance.
 
-El adapter no pasa `HOME`, `CODEX_HOME`, `OPENAI_API_KEY`, `GITHUB_TOKEN`, `GH_TOKEN` ni
-secrets de producto. Si la autenticación no funciona sin esos valores, el host queda
-`disconnected`; no se amplía el entorno para forzar disponibilidad.
+El registro Codex selecciona explícitamente el perfil `codex-chatgpt`: permite `HOME`,
+`CODEX_HOME`, proxies y certificados del entorno de Demeter para reutilizar la sesión existente.
+Probe y proceso usan el mismo filtro. No pasa `OPENAI_API_KEY`, `GITHUB_TOKEN`, `GH_TOKEN`,
+`NODE_OPTIONS` ni variables de producto. Otros workers mantienen el entorno mínimo por defecto.
+No se leen, copian ni imprimen archivos de autenticación. Un probe fallido conserva `disconnected`.
 
 ## Ejecución
 

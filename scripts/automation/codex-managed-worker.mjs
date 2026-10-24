@@ -1,14 +1,16 @@
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { buildCodexCommand } from "./supervisor-process.mjs";
-import { createManagedWorkerDispatch } from "./supervisor-managed-worker.mjs";
+import {
+  createManagedWorkerDispatch,
+  managedRuntimeEnvironment,
+} from "./supervisor-managed-worker.mjs";
 
 export const CODEX_MANAGED_WORKER_ID = "codex-managed-worker";
 
 const SHA = /^[a-f0-9]{40}$/;
 const DIGEST = /^[a-f0-9]{64}$/;
 const ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$/;
-const MANAGED_ENVIRONMENT_KEYS = Object.freeze(["PATH", "TMPDIR", "LANG", "LC_ALL"]);
 
 const ensure = (condition, message) => {
   if (!condition) throw new Error(message);
@@ -19,12 +21,7 @@ export function codexManagedRuntimeEnvironment(source = {}) {
     source && typeof source === "object" && !Array.isArray(source),
     "Runtime environment source required",
   );
-  return Object.fromEntries(
-    MANAGED_ENVIRONMENT_KEYS.filter((name) => typeof source[name] === "string").map((name) => [
-      name,
-      source[name],
-    ]),
-  );
+  return managedRuntimeEnvironment(source, "codex-chatgpt");
 }
 
 export function probeCodexManagedHost({
@@ -171,6 +168,7 @@ export function buildCodexManagedRegistration({
   return {
     worker_id: CODEX_MANAGED_WORKER_ID,
     command: command.command,
+    environmentProfile: "codex-chatgpt",
     args: command.args,
     cwd,
     timeoutMs,

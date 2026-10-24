@@ -6,7 +6,10 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
-import { createManagedWorkerDispatch } from "../../scripts/automation/supervisor-managed-worker.mjs";
+import {
+  createManagedWorkerDispatch,
+  managedRuntimeEnvironment,
+} from "../../scripts/automation/supervisor-managed-worker.mjs";
 import {
   admitSupervisorTask,
   tickSupervisor,
@@ -20,6 +23,30 @@ const posix = { skip: process.platform === "win32" };
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const digest = (value, algorithm = "sha256") => createHash(algorithm).update(value).digest("hex");
 const later = (minutes) => new Date(Date.parse(START) + minutes * 60_000).toISOString();
+
+test("managed environment requires explicit ChatGPT profile and rejects unknown profiles", () => {
+  const source = {
+    PATH: "/bin",
+    HOME: "/worker",
+    CODEX_HOME: "/auth",
+    HTTPS_PROXY: "http://proxy",
+    GH_TOKEN: "secret",
+    OPENAI_API_KEY: "secret",
+    SUPABASE_SERVICE_ROLE_KEY: "secret",
+    NODE_OPTIONS: "secret",
+  };
+  assert.deepEqual(managedRuntimeEnvironment(source), { PATH: "/bin" });
+  assert.deepEqual(managedRuntimeEnvironment(source, "codex-chatgpt"), {
+    PATH: "/bin",
+    HOME: "/worker",
+    CODEX_HOME: "/auth",
+    HTTPS_PROXY: "http://proxy",
+  });
+  assert.throws(
+    () => managedRuntimeEnvironment(source, "inherit-all"),
+    /Invalid managed environment profile/,
+  );
+});
 
 async function directoryFixture(t) {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "supervisor-managed-integration-"));
@@ -535,6 +562,46 @@ test(
     assert.equal(result.action, "uncertain");
     assert.equal(result.state.active_task_id, missing.taskContract.task_id);
     assert.equal(result.state.tasks[0].attempts.length, 1);
+  },
+);
+
+test(
+  "registered ChatGPT profile reaches the real child without provider or product keys",
+  posix,
+  async (t) => {
+    const fixture = await setup(t, {
+      overrides: { read_only: true, recovery: { mode: "read_only", max_attempts: 1 } },
+      code: `${PRELUDE}
+      check(process.env.HOME === data.expected_home);
+      check(process.env.CODEX_HOME === data.expected_codex_home);
+      check(process.env.HTTPS_PROXY === data.expected_proxy);
+      for (const key of ["OPENAI_API_KEY", "GH_TOKEN", "GITHUB_TOKEN", "NEXT_PUBLIC_SUPABASE_URL", "NODE_OPTIONS"])
+        check(process.env[key] === undefined);
+      emit({type:"turn.completed"});`,
+      reconcile: false,
+    });
+    const dispatch = createManagedWorkerDispatch({
+      store: fixture.store,
+      registration: {
+        ...fixture.registration,
+        environmentProfile: "codex-chatgpt",
+        inputForTask: (input) =>
+          JSON.stringify({
+            ...JSON.parse(inputForTask(input)),
+            expected_home: process.env.HOME,
+            expected_codex_home: process.env.CODEX_HOME,
+            expected_proxy: process.env.HTTPS_PROXY,
+          }),
+      },
+      now: () => new Date(START),
+    });
+    let outcome;
+    const result = await tickSupervisor({
+      ...fixture.options,
+      dispatch: async (input) => (outcome = await dispatch(input)),
+    });
+    assert.equal(result.action, "delivered");
+    assert.equal(outcome.process_group_closed, true);
   },
 );
 
