@@ -42,6 +42,18 @@ ACL, reglas, plantillas, canales, reservas ordinarias ni compras históricas.
   heredadas**. Los archivos de configuración regenerados por Next se restauran;
   no forman parte del cambio.
 
+### Integración con el main actualizado
+
+Durante la validación se fusionó #397 de catálogo de Demi en main
+`516254bff16f4654b6b1885871d4ee4e8db6f5eb`. Se incorporó a esta rama sin
+conflictos (merge `b9f966c6054dc1c90c7fc14ac4a5dc82795cc2ab`) y se repitieron
+las pruebas: **84/84 PostgreSQL PASS** ([salida](postgres-integrated.txt)),
+**2.065 Vitest PASS / 13 SKIP**, tipos y formato correctos. La diferencia de dos
+casos SQL pertenece a #397; los cinco casos nuevos de confirmaciones siguen
+aprobados. La función original también coincide con la definición productiva al
+normalizar espacios y terminador SQL. CI del PR verifica la integración final;
+sus resultados y SHA se registran en Governance.
+
 No hay una nueva decisión funcional o visual: se restaura la confirmación ya
 configurada, por lo que no se pide repetir la UAT histórica de Talleres. La
 verificación técnica anterior corresponde al sandbox local aislado; no se
@@ -64,7 +76,7 @@ eventos creados, avisos encolados, aceptados, entregados y fallidos.
 
 Al corte de esta evidencia no se ha modificado producción ni enviado mensajes.
 El PR y CI se vinculan al contrato canónico; un CI de otro PR no acredita éste.
-PR #397 de catálogo de Demi conserva su alcance y candidata independientes.
+PR #397 de catálogo de Demi ya está integrado; este fix conserva su alcance.
 
 ## Rollback
 
