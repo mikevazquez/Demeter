@@ -126,6 +126,9 @@ test("failed turn classification uses typed provider codes, never prose", posix,
   for (const [error, expected] of [
     [{ codexErrorInfo: "UsageLimitExceeded" }, "capacity"],
     [{ codexErrorInfo: "Unauthorized" }, "authentication"],
+    [{ codex_error_info: "unauthorized" }, "authentication"],
+    [{ codex_error_info: "usage_limit_exceeded" }, "capacity"],
+    [{ code: "Unauthorized" }, "authentication"],
     [{ codexErrorInfo: { httpConnectionFailed: { httpStatusCode: 429 } } }, "capacity"],
     [{ message: "UsageLimitExceeded Unauthorized secret" }, "worker_error"],
   ]) {

@@ -43,13 +43,29 @@ async function bounded(callback, timeoutMs = CALLBACK_TIMEOUT_MS) {
   }
 }
 
-function runtimeEnvironment() {
-  // No provider keys, GitHub tokens, HOME, CODEX_HOME, NODE_OPTIONS or shell options.
+export function managedRuntimeEnvironment(source = process.env, profile = "isolated") {
+  ensure(["isolated", "codex-chatgpt"].includes(profile), "Invalid managed environment profile");
+  // Selectors and transport only; never provider keys, GitHub tokens or product variables.
   // The registered executor must be provisioned separately; this adapter never logs in.
+  const keys = ["PATH", "TMPDIR", "LANG", "LC_ALL"];
+  if (profile === "codex-chatgpt")
+    keys.push(
+      "HOME",
+      "CODEX_HOME",
+      "HTTP_PROXY",
+      "HTTPS_PROXY",
+      "ALL_PROXY",
+      "NO_PROXY",
+      "http_proxy",
+      "https_proxy",
+      "all_proxy",
+      "no_proxy",
+      "SSL_CERT_FILE",
+      "SSL_CERT_DIR",
+      "NODE_EXTRA_CA_CERTS",
+    );
   return Object.fromEntries(
-    ["PATH", "TMPDIR", "LANG", "LC_ALL"]
-      .filter((name) => typeof process.env[name] === "string")
-      .map((name) => [name, process.env[name]]),
+    keys.filter((name) => typeof source[name] === "string").map((name) => [name, source[name]]),
   );
 }
 
@@ -221,7 +237,10 @@ export function createManagedWorkerDispatch({
     args: Object.freeze([...registration.args]),
     cwd: registration.cwd,
     inputForTask: registration.inputForTask,
+    environmentProfile: registration.environmentProfile ?? "isolated",
   });
+  // Reject an unknown profile before consuming an attempt or acquiring a launch claim.
+  managedRuntimeEnvironment({}, config.environmentProfile);
   const invokedAttempts = new Set();
 
   async function reconcile({ phase, task, attempt, checkpoint, processResult }) {
@@ -361,7 +380,7 @@ export function createManagedWorkerDispatch({
         command: config.command,
         args: [...config.args],
         cwd: config.cwd,
-        env: runtimeEnvironment(),
+        env: managedRuntimeEnvironment(process.env, config.environmentProfile),
         input,
         timeoutMs,
         observerTimeoutMs,
