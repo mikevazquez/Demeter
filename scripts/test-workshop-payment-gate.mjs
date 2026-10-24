@@ -2486,6 +2486,110 @@ try {
       "false",
     );
   });
+  // Use the real append-only event ledger. No dispatcher/provider is installed.
+  query(source("supabase/migrations/20260918204721_sf160_domain_events.sql"));
+  query(source("supabase/migrations/20260923221722_notificaciones01b_engine_persistence.sql"));
+  query(source("supabase/migrations/20260923221723_notificaciones01b_engine_runtime.sql"));
+  const checkoutAcl = query(`select proacl::text from pg_proc where oid=
+    'public.workshop_checkout_confirm_v2(uuid,uuid,uuid,uuid[],text,uuid,integer,text,text)'::regprocedure`);
+  const confirmationFix = source(
+    "supabase/migrations/20261024054339_workshop_booking_confirmation_events.sql",
+  );
+  query(confirmationFix);
+  query(confirmationFix);
+  await test("confirmation migration is repeatable and preserves checkout privileges", () => {
+    assert.equal(
+      query(`select proacl::text from pg_proc where oid=
+      'public.workshop_checkout_confirm_v2(uuid,uuid,uuid,uuid[],text,uuid,integer,text,text)'::regprocedure`),
+      checkoutAcl,
+    );
+  });
+  const workshopEvents = (purchaseId) =>
+    json(`select coalesce(jsonb_agg(jsonb_build_object(
+      'studio',e.studio_id,'type',e.event_type,'source',e.source_entity_type,
+      'reservation',e.source_entity_id,'key',e.deduplication_key,'payload',e.payload)
+      order by e.source_entity_id),'[]'::jsonb)
+      from public.domain_events e join public.workshop_purchase_sessions ps
+        on ps.reservation_id=e.source_entity_id
+      where ps.purchase_id=${sqlString(purchaseId)}`);
+  for (const mode of ["full", "sessions"]) {
+    await test(`workshop ${mode} deposit emits one booking event per selected date and replay emits none`, () => {
+      const w = offer({ count: 3, deposit: true });
+      const r = review(w, {
+        mode,
+        sessions: mode === "sessions" ? w.sessions.slice(0, 2) : w.sessions,
+        amount: mode === "sessions" ? 15000 : 30000,
+      });
+      const receipt = json(asRole("authenticated", admin, checkedSql(r, 1)));
+      const events = workshopEvents(receipt.purchase_id);
+      assert.equal(events.length, r.sessions.length);
+      assert.deepEqual(events.map((e) => e.payload.session_id).sort(), r.sessions);
+      for (const event of events) {
+        assert.equal(event.studio, studio);
+        assert.equal(event.type, "booking.created");
+        assert.equal(event.source, "reservation");
+        assert.equal(event.key, `booking.created:${event.reservation}`);
+        assert.equal(event.payload.reservation_id, event.reservation);
+        assert.equal(event.payload.student_id, student);
+        assert.equal(event.payload.workshop_purchase_id, receipt.purchase_id);
+        assert.equal(event.payload.source, "workshop_checkout");
+        assert.equal(event.payload.acquisition_id, null);
+        assert.equal(event.payload.credit_cost, 0);
+      }
+      assert.equal(json(asRole("authenticated", admin, checkedSql(r, 1))).replayed, true);
+      assert.deepEqual(workshopEvents(receipt.purchase_id), events);
+      assert.equal(
+        query(`select count(*) from public.notification_event_processings p
+        join public.domain_events e on e.event_id=p.event_id
+        where e.payload->>'workshop_purchase_id'=${sqlString(receipt.purchase_id)}
+          and p.state='pending' and p.engine_key='notification_engine:v1'`),
+        String(r.sessions.length),
+      );
+      assert.equal(
+        query(`select count(*) from public.payments where sale_id=${sqlString(receipt.sale_id)}`),
+        "1",
+      );
+    });
+  }
+  await test("rejected workshop payment and foreign studio cannot leave booking events", () => {
+    const r = review(offer({ deposit: true }), { amount: 1 });
+    const before = query("select count(*) from public.domain_events");
+    denied(asRole("authenticated", admin, checkedSql(r, 1)), "insufficient_deposit");
+    denied(
+      asRole("authenticated", admin, checkedSql({ ...r, studio: otherStudio }, 1)),
+      "forbidden",
+    );
+    noPurchase(r);
+    assert.equal(query("select count(*) from public.domain_events"), before);
+  });
+  await test("event failure rolls back workshop funds, reservations and partial event writes", () => {
+    const r = review(offer({ count: 2, deposit: true }), { amount: 30000 });
+    const before = query("select count(*) from public.domain_events");
+    query(`create function private.local_fail_workshop_event() returns trigger language plpgsql as $$
+      begin
+        if new.payload->>'session_id'=${sqlString(r.sessions[1])} then
+          raise exception 'synthetic_event_failure';
+        end if;
+        return new;
+      end; $$;
+      create trigger local_fail_workshop_event before insert on public.domain_events
+      for each row execute function private.local_fail_workshop_event();`);
+    try {
+      denied(asRole("authenticated", admin, checkedSql(r, 1)), "synthetic_event_failure");
+      noPurchase(r);
+      assert.equal(
+        query(
+          `select count(*) from public.reservations where session_id=any(${array(r.sessions)})`,
+        ),
+        "0",
+      );
+      assert.equal(query("select count(*) from public.domain_events"), before);
+    } finally {
+      query(
+        "drop trigger local_fail_workshop_event on public.domain_events; drop function private.local_fail_workshop_event()",
+      );
+    }
+  });
   console.log(
     `${passed}/${passed} local PostgreSQL integration scenarios passed. No remote database used.`,
   );
