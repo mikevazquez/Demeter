@@ -9,6 +9,7 @@ import { fireClaudeRoutine } from "./claude-routine-worker.mjs";
 import { verifySupervisorReceipt } from "./supervisor-evidence.mjs";
 import { reconcileGatewayAdmissions } from "./governance-admission.mjs";
 import { applyWorkerStateSignals, fetchWorkerStateSignals } from "./governance-worker-state.mjs";
+import { codexManagedWorkerProfile } from "./codex-managed-worker.mjs";
 import {
   evidenceWorkerProfile,
   GITHUB_ACTIONS_EVIDENCE_WORKER_ID,
@@ -25,6 +26,26 @@ export const SUPERVISOR_CONFIG = Object.freeze({
   receiptIssue: 341,
   authorizationIssue: "https://github.com/mikevazquez/Demeter/issues/353",
 });
+
+export function supervisorWorkerProfiles({ configured = false } = {}) {
+  return [
+    {
+      workerId: "claude-code-routine-worker",
+      state: configured ? "available" : "disconnected",
+      stateSource: configured
+        ? "configured_routine_bridge_capacity_unprobed"
+        : "routine_bridge_not_configured",
+      capabilities: ["repository_review", "ci_evidence_review"],
+      permissions: ["repository:read", "receipt:write"],
+      quality: { default: 0.9 },
+      relativeCost: 1,
+      maxRiskTier: 0,
+    },
+    evidenceWorkerProfile(),
+    // Known identity only. Actions cannot probe or advertise a local ChatGPT host.
+    codexManagedWorkerProfile(),
+  ];
+}
 
 const ensure = (condition, message) => {
   if (!condition) throw new Error(message);
@@ -470,21 +491,7 @@ export async function runSupervisorCommand({
   const configured =
     mode !== "proof-tick" &&
     Boolean(environment.CLAUDE_ROUTINE_FIRE_URL && environment.CLAUDE_ROUTINE_FIRE_TOKEN);
-  const registeredWorkers = [
-    {
-      workerId: "claude-code-routine-worker",
-      state: configured ? "available" : "disconnected",
-      stateSource: configured
-        ? "configured_routine_bridge_capacity_unprobed"
-        : "routine_bridge_not_configured",
-      capabilities: ["repository_review", "ci_evidence_review"],
-      permissions: ["repository:read", "receipt:write"],
-      quality: { default: 0.9 },
-      relativeCost: 1,
-      maxRiskTier: 0,
-    },
-    evidenceWorkerProfile(),
-  ];
+  const registeredWorkers = supervisorWorkerProfiles({ configured });
   const workerSignals =
     mode === "tick"
       ? await fetchWorkerStateSignals(request, {

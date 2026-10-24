@@ -174,6 +174,10 @@ export function validateSupervisorState(state) {
         "Attempt differs from its admitted contract",
       );
       at(attempt.intent_at);
+      ensure(
+        attempt.managed_host_id === undefined || ID.test(attempt.managed_host_id),
+        "Invalid reserved host identity",
+      );
       if (attempt.managed_receipt !== undefined || attempt.managed_receipt_source !== undefined) {
         ensure(task.contract.read_only === true, "Managed receipt requires read-only task");
         ensure(
@@ -482,6 +486,7 @@ export async function tickSupervisor({
   observerId = "scheduled-supervisor",
   staleAfterMinutes = 30,
   workerSignals = [],
+  pauseUnroutable = true,
   id = randomUUID,
 }) {
   const time = at(now ?? new Date().toISOString());
@@ -492,6 +497,7 @@ export async function tickSupervisor({
       Array.isArray(workerSignals),
     "Valid observer configuration required",
   );
+  ensure(typeof pauseUnroutable === "boolean", "Invalid unroutable task policy");
   for (const signal of workerSignals) {
     ensure(
       signal &&
@@ -553,6 +559,13 @@ export async function tickSupervisor({
       }
     } else if (observation?.status === "stopped") {
       applyOutcome(task, next, observation, time);
+    } else if (
+      active.status === "dispatching" &&
+      attempt.managed_host_id &&
+      Date.parse(time) - Date.parse(attempt.intent_at) < 30_000
+    ) {
+      // Retain the live host's slot during its pre-spawn CAS window. Never replay on expiry.
+      return { ...snapshot, action: "observed_no_change" };
     } else if (active.status === "dispatching") {
       task.status = "uncertain";
       task.requires_user_action = true;
@@ -666,6 +679,8 @@ export async function tickSupervisor({
   const selected = routes.find(({ decision }) => decision.assignedWorker) ?? routes[0];
   const eligible = selected.candidate;
   const decision = selected.decision;
+  if (!decision.assignedWorker && !pauseUnroutable)
+    return { ...snapshot, action: "no_eligible_worker" };
   const next = clone(snapshot.state);
   const task = next.tasks.find((entry) => entry.task_id === eligible.task_id);
   if (!decision.assignedWorker) {
@@ -704,6 +719,16 @@ export async function tickSupervisor({
     observer_id: observerId,
     run_url: runUrl,
   };
+  const managedHostId = workers.find(
+    (worker) => worker.workerId === decision.assignedWorker,
+  )?.managedHostId;
+  if (managedHostId !== undefined) {
+    ensure(
+      ID.test(managedHostId) && managedHostId === observerId,
+      "Managed host must reserve its own local worker",
+    );
+    attempt.managed_host_id = managedHostId;
+  }
   ensure(
     ID.test(attempt.attempt_id) && DIGEST.test(attempt.contract_sha256),
     "Invalid attempt identity",

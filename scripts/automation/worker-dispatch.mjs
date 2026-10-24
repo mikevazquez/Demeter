@@ -13,6 +13,18 @@ function validateWorker(worker) {
   assert(Array.isArray(worker.capabilities), `capabilities required for ${worker.workerId}`);
   assert(Array.isArray(worker.permissions), `permissions required for ${worker.workerId}`);
   assert(
+    worker.managedHostId === undefined ||
+      /^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$/.test(worker.managedHostId),
+    "Invalid managed host identity",
+  );
+  assert(
+    worker.allowedTaskIds === undefined ||
+      (Array.isArray(worker.allowedTaskIds) &&
+        worker.allowedTaskIds.length <= 100 &&
+        worker.allowedTaskIds.every((id) => typeof id === "string" && id.length > 0)),
+    "Invalid worker task scope",
+  );
+  assert(
     Number.isFinite(worker.quality?.default),
     `default quality required for ${worker.workerId}`,
   );
@@ -80,6 +92,8 @@ export function evaluateWorker(task, gatedWorker) {
   const reasons = [];
 
   if (state !== "available") reasons.push(`state:${state}`);
+  if (worker.allowedTaskIds && !worker.allowedTaskIds.includes(task.taskId))
+    reasons.push("outside_worker_scope");
   if (!hasAll(worker.capabilities, task.requiredCapabilities)) reasons.push("missing_capability");
   if (!hasAll(worker.permissions, task.requiredPermissions)) reasons.push("missing_permission");
 
