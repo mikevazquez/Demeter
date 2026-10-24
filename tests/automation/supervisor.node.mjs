@@ -650,6 +650,36 @@ test("read-only silence releases the slot as stale capacity without inventing co
   assert.equal(calls.length, 1);
 });
 
+test("persisted read-only no_signal recovers when a trusted capacity signal arrives later", async () => {
+  const { store, options, calls } = await setup();
+  await tickSupervisor(options);
+  await tickSupervisor({ ...options, now: after(31) });
+  let task = await taskOf(store);
+  assert.equal(task.status, "no_signal");
+  assert.equal(task.requires_user_action, true);
+  assert.equal((await store.read()).state.active_task_id, task.task_id);
+
+  await tickSupervisor({
+    ...options,
+    now: after(32),
+    workerSignals: [
+      {
+        workerId: "claude-code-web",
+        state: "no_capacity",
+        observedAt: after(32),
+      },
+    ],
+  });
+
+  task = await taskOf(store);
+  assert.equal(task.status, "paused_capacity");
+  assert.equal(task.requires_user_action, false);
+  assert.equal(task.attempts[0].status, "rejected_capacity");
+  assert.equal(task.attempts[0].finished_at, after(32));
+  assert.equal((await store.read()).state.active_task_id, null);
+  assert.equal(calls.length, 1);
+});
+
 test("read-only stale capacity preserves task identity and prefers another eligible worker", async () => {
   const { store, options, calls, taskContract } = await setup();
   await tickSupervisor(options);
