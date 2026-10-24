@@ -160,7 +160,7 @@ export function buildCodexManagedRegistration({
     "Registered Codex workspace required",
   );
   ensure(typeof inspectWorkspace === "function", "Workspace inspector required");
-  const command = buildCodexCommand({ binary });
+  const command = buildCodexCommand({ binary, sandbox: "read-only" });
   return {
     worker_id: CODEX_MANAGED_WORKER_ID,
     command: command.command,
