@@ -1,0 +1,27 @@
+name: GOV-WORKER-005 Format Proof
+
+on:
+  pull_request:
+    paths:
+      - "scripts/automation/codex-managed-worker.mjs"
+      - ".github/workflows/gov-worker-005-format-proof.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  format-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Show exact Prettier diff
+        run: |
+          npx prettier --write scripts/automation/codex-managed-worker.mjs
+          echo "GOV_WORKER_005_PRETTIER_DIFF_BEGIN"
+          git diff -- scripts/automation/codex-managed-worker.mjs
+          echo "GOV_WORKER_005_PRETTIER_DIFF_END"
