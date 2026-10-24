@@ -38,6 +38,10 @@ function normalize(value: string) {
     .trim();
 }
 
+function currentMinuteStart(now = Date.now()) {
+  return Math.floor(now / 60_000) * 60_000;
+}
+
 function validDate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
@@ -214,14 +218,14 @@ export async function searchClassAvailability(
     requestedActivity && !hasLiteralActivity
       ? requestedActivity.replace(/\bpaul\b/g, "pole")
       : requestedActivity;
-  const earliestBookableStart = Date.now() + 30 * 60_000;
+  const earliestBookableStart = currentMinuteStart();
   const exactTemplateMatchExists = activityNeedle
     ? templates.some((item) => activityWords(item.name) === activityWords(activityNeedle))
     : false;
   const matches = [];
 
   for (const session of sessions ?? []) {
-    if (new Date(session.starts_at).getTime() <= earliestBookableStart) continue;
+    if (new Date(session.starts_at).getTime() < earliestBookableStart) continue;
     const template = templateMap.get(session.template_id);
     if (!template?.active) continue;
     const discipline = template.discipline_id

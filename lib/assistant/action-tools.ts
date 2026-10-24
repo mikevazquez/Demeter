@@ -776,9 +776,14 @@ async function getDemiTrialPrepaymentRequirement(ctx: AssistantActionToolContext
   };
 }
 
+function currentMinuteStart(now = Date.now()) {
+  return Math.floor(now / 60_000) * 60_000;
+}
+
 function isSessionBookableNow(session: { status: string; starts_at: string }, now = Date.now()) {
   return (
-    session.status === "scheduled" && new Date(session.starts_at).getTime() > now + 30 * 60_000
+    session.status === "scheduled" &&
+    new Date(session.starts_at).getTime() >= currentMinuteStart(now)
   );
 }
 

@@ -71,6 +71,31 @@ describe("Demi personalized schedule", () => {
     expect(result.searched_range?.after_time).toBe("18:00");
   });
 
+  it("keeps a class available until its start minute ends", async () => {
+    vi.useFakeTimers();
+
+    vi.setSystemTime(new Date("2026-10-21T22:59:45Z"));
+    const lastMinute = await searchClassAvailability(catalog(), {
+      ...args,
+      date_to: "2026-10-21",
+    });
+    expect(lastMinute.matches?.map((x) => x.session_ref)).toContain("session:early");
+
+    vi.setSystemTime(new Date("2026-10-21T23:00:45Z"));
+    const currentMinute = await searchClassAvailability(catalog(), {
+      ...args,
+      date_to: "2026-10-21",
+    });
+    expect(currentMinute.matches?.map((x) => x.session_ref)).toContain("session:early");
+
+    vi.setSystemTime(new Date("2026-10-21T23:01:00Z"));
+    const afterStartMinute = await searchClassAvailability(catalog(), {
+      ...args,
+      date_to: "2026-10-21",
+    });
+    expect(afterStartMinute.matches?.map((x) => x.session_ref)).not.toContain("session:early");
+  });
+
   it("paginates a full requested period without repeating the first options", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-10-21T16:00:00Z"));
