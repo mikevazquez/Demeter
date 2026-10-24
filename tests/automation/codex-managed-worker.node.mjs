@@ -207,7 +207,7 @@ test("registration uses Codex JSONL managed mode and rechecks workspace before i
   });
   assert.equal(registration.worker_id, CODEX_MANAGED_WORKER_ID);
   assert.equal(registration.command, "codex");
-  assert.deepEqual(registration.args, ["exec", "--json", "--sandbox", "workspace-write", "-"]);
+  assert.deepEqual(registration.args, ["exec", "--json", "--sandbox", "read-only", "-"]);
   assert.equal(registration.cwd, cwd);
   assert.equal(registration.timeoutMs, 20 * 60_000);
   const input = registration.inputForTask({ task, attempt, checkpoint: null });
