@@ -486,6 +486,7 @@ export async function tickSupervisor({
   observerId = "scheduled-supervisor",
   staleAfterMinutes = 30,
   workerSignals = [],
+  pauseUnroutable = true,
   id = randomUUID,
 }) {
   const time = at(now ?? new Date().toISOString());
@@ -496,6 +497,7 @@ export async function tickSupervisor({
       Array.isArray(workerSignals),
     "Valid observer configuration required",
   );
+  ensure(typeof pauseUnroutable === "boolean", "Invalid unroutable task policy");
   for (const signal of workerSignals) {
     ensure(
       signal &&
@@ -677,6 +679,8 @@ export async function tickSupervisor({
   const selected = routes.find(({ decision }) => decision.assignedWorker) ?? routes[0];
   const eligible = selected.candidate;
   const decision = selected.decision;
+  if (!decision.assignedWorker && !pauseUnroutable)
+    return { ...snapshot, action: "no_eligible_worker" };
   const next = clone(snapshot.state);
   const task = next.tasks.find((entry) => entry.task_id === eligible.task_id);
   if (!decision.assignedWorker) {

@@ -413,6 +413,61 @@ test("remote branch drift and a receipt directory symlink do not reserve an atte
   assert.equal(f.events.length, count);
 });
 
+test("a scoped task still in backoff cannot pause an unrelated ready task", async (t) => {
+  const f = await fixture(t);
+  await admitSupervisorTask({
+    store: f.store,
+    contract: { ...f.contract, task_id: "other-ready-task" },
+    authorization: {
+      actor: "mikevazquez",
+      reference: `https://github.com/${REPO}/issues/400`,
+      authorized_at: new Date().toISOString(),
+    },
+  });
+  const current = await f.store.read(),
+    next = copy(current.state);
+  next.tasks[0].status = "paused_capacity";
+  next.tasks[0].next_attempt_at = new Date(Date.now() + 3600000).toISOString();
+  await f.store.compareAndSwap(current.version, next, { type: "synthetic-backoff" });
+  const count = f.events.length;
+  const result = await runCodexHostTick(f.options);
+  assert.equal(result.action, "no_matching_host_task");
+  assert.equal(f.events.length, count);
+  assert.equal(f.counts.launches, 0);
+  assert.equal(result.state.tasks[1].status, "queued");
+});
+
+test("a race that makes the scoped task unavailable cannot mutate another task", async (t) => {
+  const f = await fixture(t);
+  await admitSupervisorTask({
+    store: f.store,
+    contract: { ...f.contract, task_id: "other-ready-task" },
+    authorization: {
+      actor: "mikevazquez",
+      reference: `https://github.com/${REPO}/issues/400`,
+      authorized_at: new Date().toISOString(),
+    },
+  });
+  const request = f.options.request;
+  let raced = false;
+  f.options.request = async (method, endpoint, body) => {
+    if (!raced && endpoint.includes("/issues/389/comments?")) {
+      raced = true;
+      const current = await f.store.read(),
+        next = copy(current.state);
+      next.tasks[0].status = "paused_capacity";
+      next.tasks[0].next_attempt_at = new Date(Date.now() + 3600000).toISOString();
+      await f.store.compareAndSwap(current.version, next, { type: "synthetic-concurrent-backoff" });
+    }
+    return request(method, endpoint, body);
+  };
+  const result = await runCodexHostTick(f.options);
+  assert.equal(result.action, "no_eligible_worker");
+  assert.equal(result.state.tasks[1].status, "queued");
+  assert.equal(f.counts.launches, 0);
+  assert.equal(f.events.filter((e) => e.type === "no_eligible_worker").length, 0);
+});
+
 test("a concurrent observer retains a fresh host intent and cannot steal its launch", async (t) => {
   const f = await fixture(t),
     original = f.options.makeDispatch;

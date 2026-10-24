@@ -332,6 +332,7 @@ export async function runCodexHostTick({
       (t) =>
         config.allowed_task_ids.includes(t.task_id) &&
         sameWorkspace(workspace, t.contract) &&
+        (!t.next_attempt_at || Date.parse(t.next_attempt_at) <= new Date(now()).getTime()) &&
         ["queued", "paused_capacity"].includes(t.status),
     )
     .map((t) => t.task_id);
@@ -451,6 +452,7 @@ export async function runCodexHostTick({
   const result = await tickSupervisor({
     store,
     workers: [profile],
+    pauseUnroutable: false,
     dispatch,
     observe,
     verify,
