@@ -10,9 +10,7 @@ describe("Demi last-minute booking boundary", () => {
 
   it("keeps the whole current minute bookable", () => {
     expect(currentMinuteStart(now)).toBe(Date.parse("2026-10-24T17:30:00.000Z"));
-    expect(
-      isSessionStartCurrentOrFutureMinute("2026-10-24T17:30:00.000Z", now),
-    ).toBe(true);
+    expect(isSessionStartCurrentOrFutureMinute("2026-10-24T17:30:00.000Z", now)).toBe(true);
     expect(
       isSessionBookableNow(
         { status: "scheduled", starts_at: "2026-10-24T17:30:00.000Z" },
