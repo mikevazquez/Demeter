@@ -60,9 +60,7 @@ export function probeCodexManagedHost({
   return {
     state: "disconnected",
     stateSource:
-      result?.error?.code === "ENOENT"
-        ? "codex_cli_missing"
-        : "codex_chatgpt_login_required",
+      result?.error?.code === "ENOENT" ? "codex_cli_missing" : "codex_chatgpt_login_required",
   };
 }
 
@@ -75,7 +73,7 @@ export function codexManagedWorkerProfile({ probe } = {}) {
     state: trustedAvailable ? "available" : "disconnected",
     stateSource: trustedAvailable
       ? probe.stateSource
-      : probe?.stateSource ?? "codex_host_not_registered",
+      : (probe?.stateSource ?? "codex_host_not_registered"),
     capabilities: ["repository_review"],
     permissions: ["repository:read"],
     quality: { default: 0.92, software: 0.94 },
