@@ -1,15 +1,15 @@
 # Governance · Supervisor de trabajo
 
 **Última consulta del supervisor:** No registrada
-**Última transición persistida:** 23/10/2026, 22&#58;58&#58;39 CDMX · Hace menos de 1 min
-**Vista generada:** 23/10/2026, 22&#58;58&#58;42 CDMX
-**Registro actualizado:** 23/10/2026, 22&#58;58&#58;39 CDMX · Hace menos de 1 min
-**Secuencia:** 6 · **Asignación activa registrada:** No registrada
+**Última transición persistida:** 24/10/2026, 00&#58;32&#58;24 CDMX · Hace menos de 1 min
+**Vista generada:** 24/10/2026, 00&#58;32&#58;27 CDMX
+**Registro actualizado:** 24/10/2026, 00&#58;32&#58;24 CDMX · Hace menos de 1 min
+**Secuencia:** 7 · **Asignación activa registrada:** No registrada
 
 La actividad del worker se comprueba por su propia señal. Umbral de antigüedad: 30 min.
 Un resultado entregado todavía requiere verificación; la aprobación de producción se registra por separado.
 
-[Consultar ejecución del supervisor](<https://github.com/mikevazquez/Demeter/actions/runs/40064424890>)
+[Consultar ejecución del supervisor](<https://github.com/mikevazquez/Demeter/actions/runs/40070591498>)
 
 | Tarea | Estado | Worker | Última señal del worker | Intervención de Mike |
 | --- | --- | --- | --- | --- |
@@ -25,10 +25,10 @@ Revisar la documentación del GPT Governance Gateway y devolver evidencia de só
 - **Tarea:** GOV-ROUTER-002-PILOT-B1
 - **Worker / intento:** claude-code-routine-worker / 84c5ca51-eeda-4b6a-861b-184d22c5eeb9
 - **Última señal del worker:** No registrada
-- **Envío solicitado:** 23/10/2026, 14&#58;19&#58;38 CDMX · Hace 8 h
+- **Envío solicitado:** 23/10/2026, 14&#58;19&#58;38 CDMX · Hace 10 h
 - **Rama:** governance2/gpt/gov-router-002-pilot-b1
 - **SHA del resultado:** <code>No registrado</code>
-- **Siguiente acción:** Capacidad del worker agotada en una tarea de sólo lectura; reintentar con otro worker elegible tras la pausa&#46;
+- **Siguiente acción:** No hay worker elegible&#46; Esperar capacidad o conectar el ejecutor registrado&#46;
 - **Intervención de Mike:** No requerida
 
 [Sesión](<https://claude.ai/code/cse_01Bq4KiMUdJP4SmEd2ixZw7u>) · [Ejecución](<https://github.com/mikevazquez/Demeter/actions/runs/40018303953>)
