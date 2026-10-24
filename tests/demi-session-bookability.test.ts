@@ -12,19 +12,13 @@ describe("Demi last-minute booking boundary", () => {
     expect(currentMinuteStart(now)).toBe(Date.parse("2026-10-24T17:30:00.000Z"));
     expect(isSessionStartCurrentOrFutureMinute("2026-10-24T17:30:00.000Z", now)).toBe(true);
     expect(
-      isSessionBookableNow(
-        { status: "scheduled", starts_at: "2026-10-24T17:30:00.000Z" },
-        now,
-      ),
+      isSessionBookableNow({ status: "scheduled", starts_at: "2026-10-24T17:30:00.000Z" }, now),
     ).toBe(true);
   });
 
   it("keeps future classes bookable even when they start in less than 30 minutes", () => {
     expect(
-      isSessionBookableNow(
-        { status: "scheduled", starts_at: "2026-10-24T17:31:00.000Z" },
-        now,
-      ),
+      isSessionBookableNow({ status: "scheduled", starts_at: "2026-10-24T17:31:00.000Z" }, now),
     ).toBe(true);
   });
 
@@ -40,10 +34,7 @@ describe("Demi last-minute booking boundary", () => {
 
   it("does not allow non-scheduled sessions", () => {
     expect(
-      isSessionBookableNow(
-        { status: "cancelled", starts_at: "2026-10-24T17:31:00.000Z" },
-        now,
-      ),
+      isSessionBookableNow({ status: "cancelled", starts_at: "2026-10-24T17:31:00.000Z" }, now),
     ).toBe(false);
   });
 });
