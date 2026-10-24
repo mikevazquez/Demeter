@@ -106,14 +106,8 @@ export function inspectCodexManagedWorkspace(cwd, { spawnImpl = spawnSync } = {}
   const branch = runGit(cwd, ["branch", "--show-current"], spawnImpl);
   const head = runGit(cwd, ["rev-parse", "HEAD"], spawnImpl);
   const status = runGit(cwd, ["status", "--porcelain", "--untracked-files=all"], spawnImpl);
-  ensure(
-    path.resolve(root) === path.resolve(cwd),
-    "Managed workspace must be the repository root",
-  );
-  ensure(
-    branch.length > 0 && !branch.startsWith("refs/"),
-    "Managed workspace branch required",
-  );
+  ensure(path.resolve(root) === path.resolve(cwd), "Managed workspace must be the repository root");
+  ensure(branch.length > 0 && !branch.startsWith("refs/"), "Managed workspace branch required");
   ensure(SHA.test(head), "Managed workspace HEAD invalid");
   return { root, branch, head, clean: status === "" };
 }
@@ -124,10 +118,7 @@ export function buildCodexManagedInput({ task, attempt, checkpoint, workspace } 
     task.contract.recovery?.mode === "read_only",
     "Codex managed pilot requires read-only recovery",
   );
-  ensure(
-    attempt?.worker_id === CODEX_MANAGED_WORKER_ID,
-    "Codex managed worker identity mismatch",
-  );
+  ensure(attempt?.worker_id === CODEX_MANAGED_WORKER_ID, "Codex managed worker identity mismatch");
   ensure(
     ID.test(task.task_id ?? "") && ID.test(attempt.attempt_id ?? ""),
     "Managed task identity invalid",
@@ -207,10 +198,7 @@ export function createCodexManagedDispatch({
 } = {}) {
   const probe = probeCodexManagedHost({ binary, spawnImpl, environment });
   const profile = codexManagedWorkerProfile({ probe });
-  ensure(
-    profile.state === "available",
-    "Codex managed host is not ChatGPT-authenticated",
-  );
+  ensure(profile.state === "available", "Codex managed host is not ChatGPT-authenticated");
   const registration = buildCodexManagedRegistration({
     cwd,
     binary,
