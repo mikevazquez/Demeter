@@ -1,12 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useId, useMemo, useState } from "react";
 import { calculateDeposit, quoteWorkshopPurchase } from "@/src/lib/workshops/purchase-quote";
 import { receivedAmountMinor, type WorkshopAdminContext } from "@/src/lib/workshops/admin";
 import { workshopBalanceDueAt } from "@/src/lib/workshops/first-session-policy";
 import { purchaseWorkshop } from "../actions";
 import { WorkshopPaymentMethodFields } from "@/components/WorkshopPaymentMethodFields";
+
+function normalizeStudentSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-MX")
+    .trim();
+}
 
 export function WorkshopPurchaseForm({
   context,
@@ -29,6 +37,11 @@ export function WorkshopPurchaseForm({
   const [amount, setAmount] = useState<string | null>(null);
   const [paymentChoice, setPaymentChoice] = useState<"deposit" | "custom" | "full">("deposit");
   const [studentId, setStudentId] = useState("");
+  const [studentQuery, setStudentQuery] = useState("");
+  const [studentSearchOpen, setStudentSearchOpen] = useState(false);
+  const [studentSearchIndex, setStudentSearchIndex] = useState(0);
+  const studentSearchInputId = useId();
+  const studentSearchListboxId = `${studentSearchInputId}-matches`;
   const [purchaseRequestId] = useState(requestId);
   const [receivedChecked, setReceivedChecked] = useState(false);
   const offer = context.offer;
@@ -81,6 +94,41 @@ export function WorkshopPurchaseForm({
     new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone }).format(
       new Date(value),
     );
+  const studentMatches = useMemo(() => {
+    const normalizedQuery = normalizeStudentSearch(studentQuery);
+    if (normalizedQuery.length < 2) return [];
+
+    return context.students
+      .map((student) => ({
+        ...student,
+        normalizedName: normalizeStudentSearch(student.name),
+      }))
+      .filter((student) => student.normalizedName.includes(normalizedQuery))
+      .sort((a, b) => {
+        const aStarts = a.normalizedName.startsWith(normalizedQuery);
+        const bStarts = b.normalizedName.startsWith(normalizedQuery);
+        if (aStarts !== bStarts) return aStarts ? -1 : 1;
+        return a.name.localeCompare(b.name, "es-MX");
+      })
+      .slice(0, 8);
+  }, [context.students, studentQuery]);
+
+  const selectedStudent = context.students.find((student) => student.id === studentId) ?? null;
+
+  const chooseStudent = (student: { id: string; name: string }) => {
+    setStudentId(student.id);
+    setStudentQuery(student.name);
+    setStudentSearchOpen(false);
+    setStudentSearchIndex(0);
+  };
+
+  const updateStudentQuery = (value: string) => {
+    setStudentQuery(value);
+    setStudentId("");
+    setStudentSearchIndex(0);
+    setStudentSearchOpen(normalizeStudentSearch(value).length >= 2);
+  };
+
   const unavailable =
     !canPurchase ||
     currency !== "MXN" ||
@@ -133,22 +181,111 @@ export function WorkshopPurchaseForm({
         {(quote.ok ? quote.sessionIds : []).map((id) => (
           <input type="hidden" name="session_ids" key={id} value={id} />
         ))}
-        <label className="activities-field">
-          <span>Alumna</span>
-          <select
-            name="student_id"
-            required
-            value={studentId}
-            onChange={(event) => setStudentId(event.target.value)}
-          >
-            <option value="">Seleccionar alumna</option>
-            {context.students.map((student) => (
-              <option key={student.id} value={student.id}>
-                {student.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="activities-field activities-student-search">
+          <label htmlFor={studentSearchInputId}>Alumna</label>
+          <input type="hidden" name="student_id" value={studentId} />
+          <div className="activities-combobox">
+            <input
+              id={studentSearchInputId}
+              type="search"
+              value={studentQuery}
+              placeholder="Escribe el nombre de la alumna"
+              autoComplete="off"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-controls={studentSearchListboxId}
+              aria-expanded={studentSearchOpen && normalizeStudentSearch(studentQuery).length >= 2}
+              aria-activedescendant={
+                studentSearchOpen && studentMatches[studentSearchIndex]
+                  ? `${studentSearchListboxId}-option-${studentSearchIndex}`
+                  : undefined
+              }
+              onChange={(event) => updateStudentQuery(event.target.value)}
+              onFocus={() => {
+                if (normalizeStudentSearch(studentQuery).length >= 2 && !selectedStudent) {
+                  setStudentSearchOpen(true);
+                }
+              }}
+              onBlur={() => setStudentSearchOpen(false)}
+              onKeyDown={(event) => {
+                if (!studentSearchOpen || studentMatches.length === 0) {
+                  if (
+                    event.key === "ArrowDown" &&
+                    normalizeStudentSearch(studentQuery).length >= 2
+                  ) {
+                    setStudentSearchOpen(true);
+                  }
+                  return;
+                }
+
+                if (event.key === "ArrowDown") {
+                  event.preventDefault();
+                  setStudentSearchIndex((current) => (current + 1) % studentMatches.length);
+                } else if (event.key === "ArrowUp") {
+                  event.preventDefault();
+                  setStudentSearchIndex(
+                    (current) => (current - 1 + studentMatches.length) % studentMatches.length,
+                  );
+                } else if (event.key === "Enter" && studentMatches[studentSearchIndex]) {
+                  event.preventDefault();
+                  chooseStudent(studentMatches[studentSearchIndex]);
+                } else if (event.key === "Escape") {
+                  setStudentSearchOpen(false);
+                }
+              }}
+            />
+            {studentQuery ? (
+              <button
+                type="button"
+                className="activities-combobox-clear"
+                aria-label="Limpiar alumna"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                  setStudentQuery("");
+                  setStudentId("");
+                  setStudentSearchOpen(false);
+                  setStudentSearchIndex(0);
+                }}
+              >
+                ×
+              </button>
+            ) : null}
+            {studentSearchOpen && normalizeStudentSearch(studentQuery).length >= 2 ? (
+              <div
+                id={studentSearchListboxId}
+                role="listbox"
+                className="activities-combobox-results"
+              >
+                {studentMatches.length ? (
+                  studentMatches.map((student, index) => (
+                    <button
+                      key={student.id}
+                      id={`${studentSearchListboxId}-option-${index}`}
+                      type="button"
+                      role="option"
+                      aria-selected={studentId === student.id}
+                      className={index === studentSearchIndex ? "is-active" : undefined}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onMouseEnter={() => setStudentSearchIndex(index)}
+                      onClick={() => chooseStudent(student)}
+                    >
+                      <strong>{student.name}</strong>
+                    </button>
+                  ))
+                ) : (
+                  <p className="activities-combobox-empty">
+                    No encontramos alumnas con ese nombre.
+                  </p>
+                )}
+              </div>
+            ) : null}
+          </div>
+          <small>
+            {selectedStudent
+              ? "Alumna seleccionada. Puedes borrar el nombre para cambiarla."
+              : "Escribe al menos 2 letras y elige una coincidencia."}
+          </small>
+        </div>
         <fieldset className="activities-choice">
           <legend>Qué compra</legend>
           <label>
@@ -333,7 +470,11 @@ export function WorkshopPurchaseForm({
           Ya recibí y verifiqué el dinero de este pago.
         </label>
         <p>El cupo y el importe se confirman al guardar.</p>
-        <button className="activities-next-button" type="submit" disabled={pending || !amountValid}>
+        <button
+          className="activities-next-button"
+          type="submit"
+          disabled={pending || !amountValid || !studentId}
+        >
           {pending ? "Registrando…" : "Registrar pago y reservar"}
         </button>
       </fieldset>
