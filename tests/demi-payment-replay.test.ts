@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
 import { describe, expect, it, vi } from "vitest";
-import * as sessionBookability from "../lib/assistant/session-bookability";
 
 function harness(status: string, reservationStatus = "reserved", prospect = true) {
   const source = readFileSync("lib/assistant/action-tools.ts", "utf8").replace(
@@ -14,11 +13,7 @@ function harness(status: string, reservationStatus = "reserved", prospect = true
     "module",
     "exports",
     transformSync(source, { loader: "ts", format: "cjs" }).code,
-  )(
-    (name: string) => (name === "./session-bookability" ? sessionBookability : {}),
-    loadedModule,
-    loadedModule.exports,
-  );
+  )(() => ({}), loadedModule, loadedModule.exports);
   const rpc = vi.fn(() => {
     throw new Error("Replay must not execute a new operation");
   });
