@@ -1,4 +1,5 @@
 import * as turnCoordination from "../lib/assistant/demi-text-send-claim";
+import * as sessionBookability from "../lib/assistant/session-bookability";
 import { firstClassPaymentInstructions } from "../lib/assistant/first-class-payment-instructions";
 import {
   isMixedInformationActionRequest,
@@ -32,6 +33,7 @@ function serverModule<T>(path: string, dependencies: Record<string, unknown>) {
   new Function("require", "module", "exports", code)(
     (name: string) => {
       if (name === "./demi-text-send-claim") return turnCoordination;
+      if (name === "./session-bookability") return sessionBookability;
       if (name === "./workshop-purchase" && !(name in dependencies))
         return {
           workshopPurchaseAction: () => {
