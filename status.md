@@ -1,35 +1,35 @@
 # Governance · Supervisor de trabajo
 
 **Última consulta del supervisor:** No registrada
-**Última transición persistida:** 23/10/2026, 17&#58;14&#58;24 CDMX · Hace menos de 1 min
-**Vista generada:** 23/10/2026, 17&#58;14&#58;27 CDMX
-**Registro actualizado:** 23/10/2026, 17&#58;14&#58;24 CDMX · Hace menos de 1 min
-**Secuencia:** 5 · **Asignación activa registrada:** GOV-ROUTER-002-PILOT-B1
+**Última transición persistida:** 23/10/2026, 22&#58;58&#58;39 CDMX · Hace menos de 1 min
+**Vista generada:** 23/10/2026, 22&#58;58&#58;42 CDMX
+**Registro actualizado:** 23/10/2026, 22&#58;58&#58;39 CDMX · Hace menos de 1 min
+**Secuencia:** 6 · **Asignación activa registrada:** No registrada
 
 La actividad del worker se comprueba por su propia señal. Umbral de antigüedad: 30 min.
 Un resultado entregado todavía requiere verificación; la aprobación de producción se registra por separado.
 
-[Consultar ejecución del supervisor](<https://github.com/mikevazquez/Demeter/actions/runs/40038489570>)
+[Consultar ejecución del supervisor](<https://github.com/mikevazquez/Demeter/actions/runs/40064424890>)
 
 | Tarea | Estado | Worker | Última señal del worker | Intervención de Mike |
 | --- | --- | --- | --- | --- |
-| GOV-ROUTER-002-PILOT-B1 · Revisar la documentación del GPT Governance Gateway y devolver evidencia de sólo lectura&#46; | Sin señal | claude-code-routine-worker | No registrada | Sí |
+| GOV-ROUTER-002-PILOT-B1 · Revisar la documentación del GPT Governance Gateway y devolver evidencia de sólo lectura&#46; | Bloqueado | claude-code-routine-worker | No registrada | No requerida |
 | GOV-ROUTER-003-OP-B1 · Revisar en modo solo lectura el Admission Bridge y ejecutar las pruebas del supervisor sobre el SHA exacto, publicando un receipt V2 verificable&#46; | En cola | No registrado | No registrada | No requerida |
 
 ## Revisar la documentación del GPT Governance Gateway y devolver evidencia de sólo lectura&#46;
 
-**Sin señal** · No se acredita actividad reciente del worker&#46; No autoriza un relevo por sí solo&#46;
+**Bloqueado** · Capacidad insuficiente; conservar el checkpoint y respetar el próximo reintento&#46;
 
 Revisar la documentación del GPT Governance Gateway y devolver evidencia de sólo lectura&#46;
 
 - **Tarea:** GOV-ROUTER-002-PILOT-B1
 - **Worker / intento:** claude-code-routine-worker / 84c5ca51-eeda-4b6a-861b-184d22c5eeb9
 - **Última señal del worker:** No registrada
-- **Envío solicitado:** 23/10/2026, 14&#58;19&#58;38 CDMX · Hace 2 h
+- **Envío solicitado:** 23/10/2026, 14&#58;19&#58;38 CDMX · Hace 8 h
 - **Rama:** governance2/gpt/gov-router-002-pilot-b1
 - **SHA del resultado:** <code>No registrado</code>
-- **Siguiente acción:** No se observa señal reciente&#46; Revisar la sesión; no se ha autorizado un relevo&#46;
-- **Intervención de Mike:** Sí
+- **Siguiente acción:** Capacidad del worker agotada en una tarea de sólo lectura; reintentar con otro worker elegible tras la pausa&#46;
+- **Intervención de Mike:** No requerida
 
 [Sesión](<https://claude.ai/code/cse_01Bq4KiMUdJP4SmEd2ixZw7u>) · [Ejecución](<https://github.com/mikevazquez/Demeter/actions/runs/40018303953>)
 
