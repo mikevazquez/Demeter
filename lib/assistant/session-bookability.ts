@@ -15,7 +15,6 @@ export function isSessionBookableNow(
   now = Date.now(),
 ) {
   return (
-    session.status === "scheduled" &&
-    isSessionStartCurrentOrFutureMinute(session.starts_at, now)
+    session.status === "scheduled" && isSessionStartCurrentOrFutureMinute(session.starts_at, now)
   );
 }
