@@ -5,6 +5,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getCommercialOptions, type AssistantStudioContext } from "./read-tools";
+import { isSessionBookableNow } from "./session-bookability";
 import { workshopPurchaseAction } from "./workshop-purchase";
 import { groupBookingAction } from "./group-booking";
 import type {
@@ -774,12 +775,6 @@ async function getDemiTrialPrepaymentRequirement(ctx: AssistantActionToolContext
     demiRequiresPayment,
     effectiveRequiresPayment: studioRequiresPayment || demiRequiresPayment,
   };
-}
-
-function isSessionBookableNow(session: { status: string; starts_at: string }, now = Date.now()) {
-  return (
-    session.status === "scheduled" && new Date(session.starts_at).getTime() > now + 30 * 60_000
-  );
 }
 
 async function prepareCashPackage(ctx: AssistantActionToolContext, args: Record<string, unknown>) {
