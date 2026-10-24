@@ -2263,6 +2263,28 @@ try {
   query(
     `begin; ${source("supabase/migrations/20261023140144_demi_workshop_guest_registration.sql")}; commit;`,
   );
+  await test("workshop visibility correction is repeatable and preserves restricted function access", () => {
+    const migration = source(
+      "supabase/migrations/20261024052608_demi_workshop_dedicated_catalog_visibility.sql",
+    );
+    for (let attempt = 0; attempt < 2; attempt++) query(`begin; ${migration}; commit;`);
+    for (const signature of [
+      "public.service_demi_workshop_catalog(uuid)",
+      "public.service_register_demi_workshop_participant(uuid,uuid,uuid,uuid,text)",
+    ]) {
+      assert.equal(
+        query(`select has_function_privilege('service_role',${sqlString(signature)},'execute')`),
+        "t",
+      );
+      for (const role of ["anon", "authenticated"])
+        assert.equal(
+          query(
+            `select has_function_privilege(${sqlString(role)},${sqlString(signature)},'execute')`,
+          ),
+          "f",
+        );
+    }
+  });
   function guestFixture() {
     const w = offer({ deposit: true }),
       c = conversation(null),
@@ -2283,9 +2305,64 @@ try {
   }
   const registerGuestSql = (g) =>
     `select public.service_register_demi_workshop_participant(${sqlString(studio)},${sqlString(g.c.id)},${sqlString(g.w.offerId)},${sqlString(g.turn)},${sqlString(g.name)})`;
+  await test("Demi lists editor-created workshops without exposing their dates as regular classes", () => {
+    const saved = save(draft());
+    const w = {
+      offerId: saved.offer_id,
+      sessions: editorContext(saved.offer_id).draft.dates.map((row) => row.sessionId),
+    };
+    const catalog = service(`select public.service_demi_workshop_catalog(${sqlString(studio)})`);
+    const item = catalog.find((x) => x.workshop_ref === `workshop:${w.offerId}`);
+    assert.ok(item, "The workshop editor's real dates must appear in Demi's workshop catalog");
+    assert.equal(item.sessions.length, w.sessions.length);
+    assert.equal(item.full_price_minor, 60000);
+    assert.ok(item.sessions.every((s) => s.individual_price_minor === 15000));
+    assert.equal(
+      query(
+        `select bool_or(assistant_visible) from public.class_sessions where id=any(${array(w.sessions)})`,
+      ),
+      "f",
+    );
+    query(
+      `update public.class_sessions set starts_at=now()-interval '1 day' where id=${sqlString(w.sessions[0])}`,
+    );
+    const remaining = service(
+      `select public.service_demi_workshop_catalog(${sqlString(studio)})`,
+    ).find((x) => x.workshop_ref === `workshop:${w.offerId}`);
+    assert.equal(remaining.sessions.length, w.sessions.length - 1);
+    query(`update public.class_sessions set status='cancelled' where id=any(${array(w.sessions)})`);
+    assert.ok(
+      !service(`select public.service_demi_workshop_catalog(${sqlString(studio)})`).some(
+        (x) => x.workshop_ref === `workshop:${w.offerId}`,
+      ),
+    );
+    assert.ok(
+      !service(`select public.service_demi_workshop_catalog(${sqlString(otherStudio)})`).some(
+        (x) => x.workshop_ref === `workshop:${w.offerId}`,
+      ),
+    );
+    query(
+      `update public.workshop_studio_policies set demi_enabled=false where studio_id=${sqlString(studio)}`,
+    );
+    assert.deepEqual(
+      service(`select public.service_demi_workshop_catalog(${sqlString(studio)})`),
+      [],
+    );
+    denied(
+      asRole("anon", null, `select public.service_demi_workshop_catalog(${sqlString(studio)})`),
+      "permission denied",
+    );
+    query(
+      `update public.workshop_studio_policies set demi_enabled=true where studio_id=${sqlString(studio)}`,
+    );
+  });
   await test("new workshop participant has no enrollment, package, trial credit, Auth, payment or reservation until checkout", () => {
-    const g = guestFixture(),
-      registered = service(registerGuestSql(g));
+    const g = guestFixture();
+    // The editor intentionally keeps dedicated workshop dates out of regular sales.
+    query(
+      `update public.class_sessions set assistant_visible=false where id=any(${array(g.w.sessions)})`,
+    );
+    const registered = service(registerGuestSql(g));
     assert.equal(registered.profile_registered, true);
     assert.equal(registered.reservation_confirmed, false);
     assert.equal(registered.payment_verified, false);
