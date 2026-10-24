@@ -16,7 +16,11 @@ function check(value, message) {
 
 // registeredSessionId must come from the caller's durable, authorized task registry.
 // This function validates syntax; it cannot establish the provenance of an arbitrary ID.
-export function buildCodexCommand({ binary = "codex", registeredSessionId } = {}) {
+export function buildCodexCommand({
+  binary = "codex",
+  registeredSessionId,
+  sandbox = "workspace-write",
+} = {}) {
   check(
     typeof binary === "string" && binary.length > 0 && !binary.includes("\0"),
     "Invalid binary",
@@ -26,7 +30,11 @@ export function buildCodexCommand({ binary = "codex", registeredSessionId } = {}
       (typeof registeredSessionId === "string" && SESSION_ID.test(registeredSessionId)),
     "A registered Codex session UUID is required for resume",
   );
-  const args = ["exec", "--json", "--sandbox", "workspace-write"];
+  check(
+    ["read-only", "workspace-write"].includes(sandbox),
+    "Invalid Codex sandbox",
+  );
+  const args = ["exec", "--json", "--sandbox", sandbox];
   if (registeredSessionId !== undefined) args.push("resume", registeredSessionId);
   args.push("-");
   return { command: binary, args };
