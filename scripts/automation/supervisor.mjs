@@ -36,6 +36,31 @@ const at = (value) => {
   return new Date(value).toISOString();
 };
 
+function managedReceipt(task, attempt, outcome) {
+  if (outcome.receipt === undefined && outcome.source === undefined) return null;
+  ensure(task.contract.read_only === true, "Managed receipts require a read-only contract");
+  ensure(
+    outcome.receipt &&
+      outcome.receipt.task_id === task.task_id &&
+      outcome.receipt.attempt_id === attempt.attempt_id &&
+      outcome.receipt.worker_id === attempt.worker_id &&
+      outcome.receipt.contract_sha256 === task.contract_sha256 &&
+      outcome.receipt.dispatch_fingerprint === attempt.dispatch_fingerprint,
+    "Managed receipt identity mismatch",
+  );
+  ensure(
+    outcome.source?.author === "github-actions[bot]" &&
+      outcome.source.channel === "github_actions_run" &&
+      /^https:\/\/github\.com\/mikevazquez\/Demeter\/actions\/runs\/\d+$/.test(
+        outcome.source.receipt_url ?? "",
+      ),
+    "Managed receipt source invalid",
+  );
+  const serialized = JSON.stringify({ receipt: outcome.receipt, source: outcome.source });
+  ensure(Buffer.byteLength(serialized) <= 128 * 1024, "Managed receipt exceeds limit");
+  return { receipt: clone(outcome.receipt), source: clone(outcome.source) };
+}
+
 function canonical(value) {
   if (value === null || typeof value === "boolean" || typeof value === "string")
     return JSON.stringify(value);
@@ -149,6 +174,25 @@ export function validateSupervisorState(state) {
         "Attempt differs from its admitted contract",
       );
       at(attempt.intent_at);
+      if (attempt.managed_receipt !== undefined || attempt.managed_receipt_source !== undefined) {
+        ensure(task.contract.read_only === true, "Managed receipt requires read-only task");
+        ensure(
+          attempt.managed_receipt?.task_id === task.task_id &&
+            attempt.managed_receipt?.attempt_id === attempt.attempt_id &&
+            attempt.managed_receipt?.worker_id === attempt.worker_id &&
+            attempt.managed_receipt?.contract_sha256 === task.contract_sha256 &&
+            attempt.managed_receipt?.dispatch_fingerprint === attempt.dispatch_fingerprint,
+          "Persisted managed receipt identity mismatch",
+        );
+        ensure(
+          attempt.managed_receipt_source?.author === "github-actions[bot]" &&
+            attempt.managed_receipt_source?.channel === "github_actions_run" &&
+            /^https:\/\/github\.com\/mikevazquez\/Demeter\/actions\/runs\/\d+$/.test(
+              attempt.managed_receipt_source?.receipt_url ?? "",
+            ),
+          "Persisted managed receipt source invalid",
+        );
+      }
     }
   }
   const active = state.tasks.filter((task) => ACTIVE.has(task.status));
@@ -311,6 +355,11 @@ function applyOutcome(task, next, outcome, time) {
     outcome.terminal_observed === true &&
     outcome.process_group_closed === true
   ) {
+    const embedded = managedReceipt(task, attempt, outcome);
+    if (embedded) {
+      attempt.managed_receipt = embedded.receipt;
+      attempt.managed_receipt_source = embedded.source;
+    }
     attempt.status = "delivered";
     attempt.finished_at = time;
     task.status = "delivered";
@@ -574,39 +623,48 @@ export async function tickSupervisor({
     }
   }
 
-  const eligible = snapshot.state.tasks.find(
+  const ready = snapshot.state.tasks.filter(
     (task) =>
       ["queued", "paused_capacity"].includes(task.status) &&
       (!task.next_attempt_at || Date.parse(task.next_attempt_at) <= Date.parse(time)),
   );
-  if (!eligible) return { ...snapshot, action: "idle" };
-  const capacityFailedWorkers = new Set(
-    eligible.attempts
-      .filter((attempt) => ["rejected_capacity", "stale_capacity"].includes(attempt.status))
-      .map((attempt) => attempt.worker_id),
-  );
-  const workersWithoutRecentCapacityFailure = workers.filter(
-    (worker) => !capacityFailedWorkers.has(worker.workerId),
-  );
-  const candidateWorkers = workersWithoutRecentCapacityFailure.length
-    ? workersWithoutRecentCapacityFailure
-    : workers;
-  const decision = candidateWorkers.length
-    ? dispatchTask(
-        {
-          taskId: eligible.task_id,
-          category: eligible.contract.category ?? "software",
-          requiredCapabilities: eligible.contract.required_capabilities ?? ["repository_review"],
-          requiredPermissions: eligible.contract.required_permissions ?? [
-            "repository:read",
-            "receipt:write",
-          ],
-          qualityFloor: eligible.contract.quality_floor ?? 0.8,
-          riskTier: eligible.contract.risk_tier ?? (eligible.contract.read_only ? 0 : 1),
-        },
-        candidateWorkers,
-      )
-    : { assignedWorker: null };
+  if (!ready.length) return { ...snapshot, action: "idle" };
+
+  const route = (candidate) => {
+    const capacityFailedWorkers = new Set(
+      candidate.attempts
+        .filter((attempt) => ["rejected_capacity", "stale_capacity"].includes(attempt.status))
+        .map((attempt) => attempt.worker_id),
+    );
+    const workersWithoutRecentCapacityFailure = workers.filter(
+      (worker) => !capacityFailedWorkers.has(worker.workerId),
+    );
+    const candidateWorkers = workersWithoutRecentCapacityFailure.length
+      ? workersWithoutRecentCapacityFailure
+      : workers;
+    const decision = candidateWorkers.length
+      ? dispatchTask(
+          {
+            taskId: candidate.task_id,
+            category: candidate.contract.category ?? "software",
+            requiredCapabilities: candidate.contract.required_capabilities ?? ["repository_review"],
+            requiredPermissions: candidate.contract.required_permissions ?? [
+              "repository:read",
+              "receipt:write",
+            ],
+            qualityFloor: candidate.contract.quality_floor ?? 0.8,
+            riskTier: candidate.contract.risk_tier ?? (candidate.contract.read_only ? 0 : 1),
+          },
+          candidateWorkers,
+        )
+      : { assignedWorker: null };
+    return { candidate, decision };
+  };
+
+  const routes = ready.map(route);
+  const selected = routes.find(({ decision }) => decision.assignedWorker) ?? routes[0];
+  const eligible = selected.candidate;
+  const decision = selected.decision;
   const next = clone(snapshot.state);
   const task = next.tasks.find((entry) => entry.task_id === eligible.task_id);
   if (!decision.assignedWorker) {
