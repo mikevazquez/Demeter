@@ -65,7 +65,7 @@ function runtimeEnvironment() {
 // No classification based on assistant prose, command output, stderr, or an error message.
 function failureClass(error) {
   if (!error || typeof error !== "object") return "worker_error";
-  const info = error.codexErrorInfo ?? error.code ?? error.type;
+  const info = error.codexErrorInfo ?? error.codex_error_info ?? error.code ?? error.type;
   let code = typeof info === "string" ? info : info?.type;
   let http = info?.httpStatusCode ?? error.httpStatusCode;
   if (info && typeof info === "object" && !code) {

@@ -532,7 +532,7 @@ test(
 test("typed authentication failure blocks retry even for a read-only task", posix, async (t) => {
   const fixture = await setup(t, {
     overrides: { read_only: true, recovery: { mode: "read_only", max_attempts: 3 } },
-    code: `${PRELUDE} emit({type:"turn.failed",error:{code:"Unauthorized"}}); process.exitCode=1;`,
+    code: `${PRELUDE} emit({type:"turn.failed",error:{codex_error_info:"unauthorized"}}); process.exitCode=1;`,
     reconcile: false,
   });
   let outcome;

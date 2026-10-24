@@ -29,6 +29,11 @@ Probe y proceso usan el mismo filtro. No pasa `OPENAI_API_KEY`, `GITHUB_TOKEN`, 
 `NODE_OPTIONS` ni variables de producto. Otros workers mantienen el entorno mínimo por defecto.
 No se leen, copian ni imprimen archivos de autenticación. Un probe fallido conserva `disconnected`.
 
+`login status` acredita credenciales locales, no que el token siga vigente o pueda renovarse.
+El piloto real puede devolver `unauthorized` antes de producir respuesta. El wrapper reconoce
+`codex_error_info` y `codexErrorInfo` como errores tipados y bloquea el intento por autenticación;
+no clasifica por el texto del error ni reintenta automáticamente tras renovar la sesión.
+
 ## Ejecución
 
 `buildCodexManagedRegistration` usa el protocolo JSONL ya observado por
