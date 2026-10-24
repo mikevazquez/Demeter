@@ -10,6 +10,7 @@ import { loadDemiRuntimeConfig } from "./runtime-config";
 import { preparationFromStudioPrompt } from "./class-preparation";
 import { getWorkshopInformation } from "./workshop-information";
 import { getActivityProgramInformation, type ProgramInformation } from "./program-information";
+import { currentMinuteStart } from "./session-bookability";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CommercialOptionsArgs, SearchClassAvailabilityArgs } from "./tool-contracts";
@@ -214,14 +215,14 @@ export async function searchClassAvailability(
     requestedActivity && !hasLiteralActivity
       ? requestedActivity.replace(/\bpaul\b/g, "pole")
       : requestedActivity;
-  const earliestBookableStart = Date.now() + 30 * 60_000;
+  const earliestBookableStart = currentMinuteStart();
   const exactTemplateMatchExists = activityNeedle
     ? templates.some((item) => activityWords(item.name) === activityWords(activityNeedle))
     : false;
   const matches = [];
 
   for (const session of sessions ?? []) {
-    if (new Date(session.starts_at).getTime() <= earliestBookableStart) continue;
+    if (new Date(session.starts_at).getTime() < earliestBookableStart) continue;
     const template = templateMap.get(session.template_id);
     if (!template?.active) continue;
     const discipline = template.discipline_id
