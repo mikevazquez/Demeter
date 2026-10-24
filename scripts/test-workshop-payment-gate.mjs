@@ -2486,6 +2486,102 @@ try {
       "false",
     );
   });
+  await test("integer deposit migration is repeatable and keeps the quote private", () => {
+    const migration = source(
+      "supabase/migrations/20261024054746_demi_workshop_integer_deposit_quote.sql",
+    );
+    for (let attempt = 0; attempt < 2; attempt++) query(`begin; ${migration}; commit;`);
+    for (const role of ["anon", "authenticated", "service_role"])
+      assert.equal(
+        query(
+          `select has_function_privilege(${sqlString(role)},'private.workshop_payment_quote(uuid,uuid,uuid,uuid[],text)','execute')`,
+        ),
+        "f",
+      );
+  });
+  await test("fixed deposits with PostgreSQL decimal scale complete quote, acceptance and reviewed checkout", () => {
+    const body = {
+      ...draft(),
+      depositMode: "fixed",
+      depositValue: 30000,
+      requiresEnrollment: false,
+    };
+    const saved = save(body);
+    const w = {
+      offerId: saved.offer_id,
+      sessions: editorContext(saved.offer_id).draft.dates.map((row) => row.sessionId),
+    };
+    // Production stores fixed deposits as numeric cents with a decimal scale.
+    query(
+      `update public.workshop_offers set deposit_value=30000.00 where id=${sqlString(w.offerId)}`,
+    );
+    const c = conversation();
+    const intent = service(prepareSql(w, c));
+    assert.equal(intent.amount_minor, 30000);
+    assert.equal(intent.total_minor, 60000);
+    assert.equal(intent.reservation_confirmed, false);
+    assert.equal(service(prepareSql(w, c)).intent_id, intent.intent_id);
+    assert.equal(
+      query(
+        `select count(*) from public.workshop_provisional_holds where request_id=${sqlString(intent.intent_id)}`,
+      ),
+      "0",
+    );
+    const accepted = service(accept(c).sql);
+    assert.equal(accepted.amount_minor, 30000);
+    assert.equal(accepted.status, "receipt_required");
+    const held = service(receipt(intent, c).sql);
+    assert.equal(held.payment_verified, false);
+    const bought = json(
+      asRole(
+        "authenticated",
+        admin,
+        `select public.admin_confirm_workshop_provisional_hold(${sqlString(studio)},${sqlString(held.hold_id)},true)`,
+      ),
+    );
+    assert.equal(
+      query(
+        `select paid_minor from public.workshop_purchases where id=${sqlString(bought.purchase_id)}`,
+      ),
+      "30000",
+    );
+    assert.equal(
+      query(`select count(*) from public.payments where sale_id=${sqlString(bought.sale_id)}`),
+      "1",
+    );
+  });
+  await test("scaled deposit cents preserve full/fixed/percentage totals and reject fractions", () => {
+    for (const [mode, value, expected] of [
+      ["fixed", "60000.00", 60000],
+      ["percent", "12.50", 7500],
+      ["full", "null", 60000],
+    ]) {
+      const w = offer();
+      query(
+        `update public.workshop_offers set deposit_mode=${sqlString(mode)},deposit_value=${value} where id=${sqlString(w.offerId)}`,
+      );
+      const result = service(prepareSql(w, conversation()));
+      assert.equal(result.amount_minor, expected);
+      assert.equal(result.total_minor, 60000);
+    }
+    const individual = offer();
+    query(
+      `update public.workshop_offers set deposit_mode='fixed',deposit_value=30000.00 where id=${sqlString(individual.offerId)}`,
+    );
+    const single = service(
+      prepareSql({ ...individual, sessions: [individual.sessions[0]] }, conversation()).replace(
+        "'full'",
+        "'sessions'",
+      ),
+    );
+    assert.equal(single.total_minor, 15000);
+    assert.equal(single.amount_minor, 15000);
+    const w = offer();
+    query(
+      `update public.workshop_offers set deposit_mode='fixed',deposit_value=30000.25 where id=${sqlString(w.offerId)}`,
+    );
+    denied(asRole("service_role", null, prepareSql(w, conversation())), "invalid_deposit");
+  });
   console.log(
     `${passed}/${passed} local PostgreSQL integration scenarios passed. No remote database used.`,
   );
