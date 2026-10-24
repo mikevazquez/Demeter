@@ -272,10 +272,12 @@ export async function runCodexHostTick({
   inspectWorkspace = inspectCodexManagedWorkspace,
   makeDispatch = createManagedWorkerDispatch,
   now = () => new Date(),
+  signal,
 }) {
   validateCodexHostConfig(config, executorSha);
   ensure(owner === "mikevazquez", "Codex host requires the configured owner identity");
   ensure(typeof request === "function" && store, "Host authority adapters required");
+  if (signal?.aborted) return { ...(await store.read()), action: "host_cancelled" };
   await fs.mkdir(config.receipt_directory, { recursive: true, mode: 0o700 });
   const physicalWorkspace = await fs.realpath(config.workspace);
   const physicalReceipts = await fs.realpath(config.receipt_directory);
@@ -380,6 +382,7 @@ export async function runCodexHostTick({
   if (!allowed.length) return { ...snapshot, action: "no_eligible_host_task" };
   profile.allowedTaskIds = allowed;
   profile.managedHostId = config.host_id;
+  if (signal?.aborted) return { ...(await store.read()), action: "host_cancelled" };
   const dispatch = async (input) => {
     const { task, attempt } = input;
     ensure(
@@ -398,6 +401,7 @@ export async function runCodexHostTick({
       inspectWorkspace,
     });
     registration.hostId = config.host_id;
+    registration.signal = signal;
     const baseInput = registration.inputForTask;
     registration.inputForTask = (value) =>
       baseInput(value) +
@@ -547,21 +551,31 @@ async function main() {
     legacySha256: SUPERVISOR_CONFIG.legacySha256,
     request,
   });
-  const result = await runCodexHostTick({
-    config,
-    executorSha: head.stdout.trim(),
-    owner: identity.stdout.trim(),
-    request,
-    store,
-  });
-  writeSync(
-    1,
-    JSON.stringify({
-      action: result.action,
-      registry_version: result.version,
-      active_task_id: result.state.active_task_id,
-    }) + "\n",
-  );
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  process.once("SIGINT", cancel);
+  process.once("SIGTERM", cancel);
+  try {
+    const result = await runCodexHostTick({
+      config,
+      executorSha: head.stdout.trim(),
+      owner: identity.stdout.trim(),
+      request,
+      store,
+      signal: controller.signal,
+    });
+    writeSync(
+      1,
+      JSON.stringify({
+        action: result.action,
+        registry_version: result.version,
+        active_task_id: result.state.active_task_id,
+      }) + "\n",
+    );
+  } finally {
+    process.removeListener("SIGINT", cancel);
+    process.removeListener("SIGTERM", cancel);
+  }
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url))
   main().catch(() => {

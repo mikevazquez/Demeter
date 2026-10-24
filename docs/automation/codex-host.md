@@ -80,6 +80,9 @@ disponibilidad global. Una nueva invocación del comando observa primero el mism
 no es una orden de regeneración. No se debe habilitar la plantilla ni disparar tareas como parte
 de una revisión o un push del PR. Merge y activación operativa son gates independientes.
 
+SIGINT/SIGTERM abortan el proceso poseído mediante el wrapper y esperan su cierre. Si el host
+desaparece sin poder guardar prueba de cierre, el claim permanece incierto y no permite replay.
+
 ## Evidencia y límites de esta entrega
 
 Los tests HOST-01…HOST-07 usan procesos Node reales con protocolo Codex sintético, store CAS y

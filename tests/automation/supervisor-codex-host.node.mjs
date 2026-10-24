@@ -304,6 +304,35 @@ test("auth, capacity and timeout preserve one launch and never publish success",
   }
 });
 
+test("host cancellation before launch is read-only and during launch closes the owned group", async (t) => {
+  const f = await fixture(t, { mode: "timeout" }),
+    controller = new AbortController(),
+    count = f.events.length;
+  controller.abort();
+  const cancelled = await runCodexHostTick({ ...f.options, signal: controller.signal });
+  assert.equal(cancelled.action, "host_cancelled");
+  assert.equal(f.events.length, count);
+  const live = new AbortController(),
+    original = f.options.makeDispatch;
+  let outcome;
+  f.options.makeDispatch = (args) => {
+    const dispatch = original(args);
+    return async (input) => {
+      const timer = setTimeout(() => live.abort(), 30);
+      try {
+        return (outcome = await dispatch(input));
+      } finally {
+        clearTimeout(timer);
+      }
+    };
+  };
+  await runCodexHostTick({ ...f.options, signal: live.signal });
+  assert.equal(outcome.failure_class, "cancelled");
+  assert.equal(outcome.process_group_closed, true);
+  assert.equal(f.counts.launches, 1);
+  assert.equal(f.counts.posts, 0);
+});
+
 test("wrong receipt identity, private fields and drift cannot publish or self-certify", async (t) => {
   for (const mode of ["wrong_identity", "private_field"]) {
     const f = await fixture(t, { mode }),
