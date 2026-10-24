@@ -401,7 +401,7 @@ export async function runCodexHostTick({
     const baseInput = registration.inputForTask;
     registration.inputForTask = (value) =>
       baseInput(value) +
-      "\nReturn only one raw JSON governance-worker-receipt-v2 object, no markdown. Copy task_id, worker_id, attempt_id, contract_sha256 and dispatch_fingerprint exactly from the delivery. Include status (completed, blocked or failed), base_sha, current_sha, files_changed, commands_run, tests_passed, blockers, remaining_work and next_action. Report only commands and checks actually executed; never fabricate tests. Use blocked when required work or checks cannot be completed. Do not publish the receipt yourself; the host relays it. No other fields.";
+      "\nReturn only one raw JSON object, no markdown. Set schema to governance-worker-receipt-v2. Copy task_id, worker_id, attempt_id, contract_sha256 and dispatch_fingerprint exactly from the delivery. Include status (completed, blocked or failed), base_sha, current_sha, files_changed, commands_run, tests_passed, blockers, remaining_work and next_action. Use arrays of strings for files_changed, commands_run, tests_passed, blockers and remaining_work; next_action is a string or null. Report only commands and checks actually executed; never fabricate tests. Use blocked when required work or checks cannot be completed. Do not publish the receipt yourself; the host relays it. No other fields.";
     const outcome = await makeDispatch({ store, registration, now })(input);
     if (outcome.status !== "delivered") return outcome;
     try {
